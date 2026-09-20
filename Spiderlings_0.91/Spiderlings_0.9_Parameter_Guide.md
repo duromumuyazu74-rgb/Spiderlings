@@ -12,18 +12,18 @@
 
 当前源码 `0.92.34` 注册十件 Lv1、五件 Lv2、八件 Lv3 和 Cocoon，全部使用正式交付美术。所有 Spiderlings Webbing 的 `weight` 为 `0`、`enemyTags` 为空、敌方施加 tightness 为 `0` 且 lock 为空；敌人只可通过 shared resolver 选择精确 ID，各部位独立按自身 Lv1 → Lv2 → Lv3 链晋级，眼罩和封口直接从 Lv1 到 Lv3。每次命中在可新增或升级的部位中按原权重随机，满级部位不再入选；不必补齐全身低级层，也不用等下一回合。结茧只要求八件 Lv3 全部真实装备，不要求 Lv1／Lv2 齐全；玩家仍可手动装备。
 
-| Family | ID | Group | 关键效果 |
-|---|---|---|---|
-| Arm | `SpiderlingsWebbingLv1Arm` | `ItemArms` | Wristtie，`bindarms: true`，不绑定手 |
-| Mitten Left | `SpiderlingsWebbingLv1MittenLeft` | `ItemHands` | 左手独立佩戴，`bindhands: 0.5`；手臂为 Free 时显示，与腿姿无关 |
+| Family       | ID                                 | Group       | 关键效果                                                       |
+| ------------ | ---------------------------------- | ----------- | -------------------------------------------------------------- |
+| Arm          | `SpiderlingsWebbingLv1Arm`         | `ItemArms`  | Wristtie，`bindarms: true`，不绑定手                           |
+| Mitten Left  | `SpiderlingsWebbingLv1MittenLeft`  | `ItemHands` | 左手独立佩戴，`bindhands: 0.5`；手臂为 Free 时显示，与腿姿无关 |
 | Mitten Right | `SpiderlingsWebbingLv1MittenRight` | `ItemHands` | 右手独立佩戴，`bindhands: 0.5`；手臂为 Free 时显示，与腿姿无关 |
-| Belly | `SpiderlingsWebbingLv1Belly` | `ItemTorso` | 纯躯干覆盖，不限制四肢 |
-| Legs | `SpiderlingsWebbingLv1Legs` | `ItemLegs` | Closed 站姿；不附加移动减速 |
-| Ankles | `SpiderlingsWebbingLv1Ankles` | `ItemFeet` | Closed 站姿；不附加移动减速 |
-| Foot | `SpiderlingsWebbingLv1Foot` | `ItemBoots` | Closed 站姿；不附加移动减速 |
-| Blindfold | `SpiderlingsWebbingLv1Blindfold` | `ItemHead` | Lv1 轻度眼罩，`blindfold: 1` |
-| Stuffing | `SpiderlingsWebbingLv1Stuffing` | `ItemMouth` | 内层 gag `0.10` |
-| Gag | `SpiderlingsWebbingLv1Gag` | `ItemMouth` | 外层 gag `0.15` |
+| Belly        | `SpiderlingsWebbingLv1Belly`       | `ItemTorso` | 纯躯干覆盖，不限制四肢                                         |
+| Legs         | `SpiderlingsWebbingLv1Legs`        | `ItemLegs`  | Closed 站姿；不附加移动减速                                    |
+| Ankles       | `SpiderlingsWebbingLv1Ankles`      | `ItemFeet`  | Closed 站姿；不附加移动减速                                    |
+| Foot         | `SpiderlingsWebbingLv1Foot`        | `ItemBoots` | Closed 站姿；不附加移动减速                                    |
+| Blindfold    | `SpiderlingsWebbingLv1Blindfold`   | `ItemHead`  | Lv1 轻度眼罩，`blindfold: 1`                                   |
+| Stuffing     | `SpiderlingsWebbingLv1Stuffing`    | `ItemMouth` | 内层 gag `0.10`                                                |
+| Gag          | `SpiderlingsWebbingLv1Gag`         | `ItemMouth` | 外层 gag `0.15`                                                |
 
 Stuffing 与 Gag 按同一物理链规范化，合计 gag 为 `0.25`，外层 Gag 解除后才可操作 Stuffing。Lv1 的一次有效 Cut/Struggle/Remove 即完成；Cut 销毁，Struggle/Remove 回收到松散背包物品，重新装备获得新实例。按次脱困会显示对应动作的过程描述：割开切口、撑松丝缕或剥开网面；真正解除时显示完成描述。丝茧另有茧壁与脱茧文案。无耐力、缺少工具或外层阻挡不会显示进展，行动次数与消耗不变。任一 Spiderlings Webbing 的实际 Remove 或 Struggle 行动都会从四个 `Sounds/webs-sweep-away-by-hand-*.ogg` 中随机播放一个；Cut 不使用这组音效。
 
@@ -55,12 +55,12 @@ Legs 与 Ankles 的 Lv1 位于站立裙层下方；两者的 Lv2/Lv3 使用 `Ove
 
 0.92.28 将内部 `cost` 从 `0` 调为 `-1`，界面显示 `-2`，选中返还 2 点。KD 的 `KDPERKCOSTMULT = 2`，`KinkyDungeonGetStatPoints` 从余额减去内部 cost；负号表示提供点数。对照基线为本机安装版 5.4.92 的 `out/main.js` 与只读 5.5.0 的 `Game/src/player/KinkyDungeonPerks.ts`，以下点数及显示倍率在两版一致。
 
-| 起始 Perk | 内部 cost | 返还界面点数 | 决定本次定价的差异 |
-| --- | ---: | ---: | --- |
-| 绳缚开局 `Hogtied` | -0.5 | 1 | 原生绳缚套装，移除初始武器、钥匙和开锁工具，附带 Nawashi 任务。 |
-| 丝茧初醒 `SpiderlingsCocoonStart` | **-1** | **2** | 24 件分层蛛丝；丝茧解除前无法操作全部内层，限制手臂、双手、视野、发声和移动。 |
-| 乳胶开局 `StartLatex` | -1.5 | 3 | 原生乳胶套装包含红／紫／蓝锁，附带 LatexDoll 任务。 |
-| 女仆／狼女／黑曜石开局 `StartMaid` / `StartWolfgirl` / `StartObsidian` | -2 | 4 | 带锁套装、各自任务与势力关系变化，并清空钥匙和开锁工具。 |
+| 起始 Perk                                                              | 内部 cost | 返还界面点数 | 决定本次定价的差异                                                            |
+| ---------------------------------------------------------------------- | --------: | -----------: | ----------------------------------------------------------------------------- |
+| 绳缚开局 `Hogtied`                                                     |      -0.5 |            1 | 原生绳缚套装，移除初始武器、钥匙和开锁工具，附带 Nawashi 任务。               |
+| 丝茧初醒 `SpiderlingsCocoonStart`                                      |    **-1** |        **2** | 24 件分层蛛丝；丝茧解除前无法操作全部内层，限制手臂、双手、视野、发声和移动。 |
+| 乳胶开局 `StartLatex`                                                  |      -1.5 |            3 | 原生乳胶套装包含红／紫／蓝锁，附带 LatexDoll 任务。                           |
+| 女仆／狼女／黑曜石开局 `StartMaid` / `StartWolfgirl` / `StartObsidian` |        -2 |            4 | 带锁套装、各自任务与势力关系变化，并清空钥匙和开锁工具。                      |
 
 套装和副作用核对 5.5.0 的 `KDPerkStart` 与 `Game/src/prison/KinkyDungeonJail.ts` 中 `KDCustomDefeatUniforms`；不把这些副作用全当作负面，也不以件数直接换算点数。蛛丝在无敌人干扰、无外部解除、每次行动合法有效的条件下，纯 Struggle 路径的动作预算为 `50 + 5×2 + 8×2 + 10×1 = 86`；有可用切割工具时纯 Cut 的对应预算为 76。这里是按源码目标计算的有效动作数，不是实测游戏回合数；恢复耐力、无效尝试及敌方干扰会增加实际耗时。
 
@@ -72,13 +72,13 @@ Legs 与 Ankles 的 Lv1 位于站立裙层下方；两者的 Lv2/Lv3 使用 `Ove
 
 基础生命值由 `Spiderlings.js` 中各敌人定义的 `maxhp` 指定。
 
-| 敌人 | ID | 基础生命值（`maxhp`） |
-| --- | --- | --- |
-| 织网幼蛛 | `Spinner` | 2 |
-| 跃击幼蛛 | `Jumper` | 1 |
-| 喷网幼蛛 | `WebCaster` | 1 |
-| 掘穴幼蛛 | `Tunneler` | 1 |
-| 蛛巢入口 | `NestEntrance` | 12 |
+| 敌人     | ID             | 基础生命值（`maxhp`） |
+| -------- | -------------- | --------------------- |
+| 织网幼蛛 | `Spinner`      | 2                     |
+| 跃击幼蛛 | `Jumper`       | 1                     |
+| 喷网幼蛛 | `WebCaster`    | 1                     |
+| 掘穴幼蛛 | `Tunneler`     | 1                     |
+| 蛛巢入口 | `NestEntrance` | 12                    |
 
 ## 女仆与幼蛛的选敌
 
@@ -104,12 +104,12 @@ KD 以加权不放回抽选补充三个特性候选，再逐一随机分配给�
 
 其他派系层即使带幼蛛侵扰，也保留该层原有随机敌人池和基础人口槽，只增加侵扰固有的五巢任务。女仆层没有侵扰时使用上述敌人配置，但不增加五巢任务。
 
-| 类别 | 原生生成权重倍率 |
-| --- | ---: |
-| 幼蛛及巢穴 | 1 |
-| 女仆 | 3 |
-| 装扮公司（不含护士） | 0.5 |
-| 护士 | 1 |
+| 类别                 | 原生生成权重倍率 |
+| -------------------- | ---------------: |
+| 幼蛛及巢穴           |                1 |
+| 女仆                 |                3 |
+| 装扮公司（不含护士） |              0.5 |
+| 护士                 |                1 |
 
 倍率作用于原生候选权重，不代表每层固定人数或百分比，少数类别不保证每层出现。常量位于 `SpiderlingsInfestation.js` 的 `POPULATION_MULTIPLIERS`，目前没有单独的菜单设置。幼蛛继续共用单图数量上限、小队与巢穴增援设置；其他势力不占幼蛛名额。无法放下五个任务巢穴时取消任务；敌人配置仍按地图主势力决定，女仆层继续使用上述随机池，其他派系层使用原有配置。
 
@@ -121,10 +121,10 @@ KD 以加权不放回抽选补充三个特性候选，再逐一随机分配给�
 
 解除最外层 Spiderlings 蛛网、使其直接内层外部装备恢复为槽位根时，保留该装备的原实例、ID、锁和挣脱进度。此时仍执行 KD 原生解除及蛛网物品去向，只修正原生重建根造成的状态丢失；其他装备作为外层时的解除行为保持原生规则。
 
-| 来源 | 十一项权重 |
-|---|---|
-| Spinner | `3/3/3/3/2/1/1/3/3/3/3` |
-| Jumper | `1/1/1/2/3/3/3/1/1/1/1` |
+| 来源      | 十一项权重              |
+| --------- | ----------------------- |
+| Spinner   | `3/3/3/3/2/1/1/3/3/3/3` |
+| Jumper    | `1/1/1/2/3/3/3/1/1/1/1` |
 | WebCaster | `2/2/2/2/2/2/2/2/2/2/2` |
 
 Spinner 使用 `MeleeEffectSuicide`，Jumper 使用保留 `Spell/Melee/Effect/Suicide` 四个 KD 攻击 token 的 `SpellMeleeEffectSuicide`：对玩家实际新增或修补丝茧进度才离场；每次有效普通命中均结算基础 `0.05 tickle`，成功与未推进相同，不再追加 `fullBoundBonus`。Tunneler 与 NestEntrance 不进入此表。
@@ -139,12 +139,12 @@ Jumper 的普通攻击距离为两格，`movePoints: 1.25`；数值低于 Spinne
 
 玩家与敌对 NPC 共用 `Spiderlings.Combat.CONFIG` 的轻微 tickle 伤害；玩家绑定继续推进合格的实体 Webbing，NPC 使用原生 Slime 束缚。
 
-| 攻击 | 共用基础伤害 | NPC 基础束缚量 |
-|---|---:|---:|
-| 普通近战 | 0.05 | 1.5 |
-| 跃击 | 0.10 | 3 |
-| 喷网直击 | 0.05 | 3 |
-| 喷网轨迹 | 0.01 | 0.5 |
+| 攻击     | 共用基础伤害 | NPC 基础束缚量 |
+| -------- | -----------: | -------------: |
+| 普通近战 |         0.05 |            1.5 |
+| 跃击     |         0.10 |              3 |
+| 喷网直击 |         0.05 |              3 |
+| 喷网轨迹 |         0.01 |            0.5 |
 
 原生 glue 抗性、免疫、护盾、可束缚条件和已减速/失能倍率继续影响束缚；tickle 抗性单独影响伤害。NPC 自有轻触伤害在原生倍率调整后，增幅最多为输入值的两倍，避免弱点固定加 0.5/1 将微量伤害放大；减伤与护盾仍有效。这里是基础量，并非最终扣血量。Slime 材料由原生系统累计并挣脱，保留其他材料。不会自动生成 NPC 实体装备，也不把玩家的 23 件内层和 Cocoon 套到 NPC 身上。
 
@@ -181,13 +181,13 @@ NPC 跃击同时锁定实体 ID 与原地格，两次完整玩家行动后结算
 
 `SpiderlingsCore.js` 的自然刷怪、固定四人小队与 NestEntrance 循环增援保持独立。自然刷怪权重为 Spinner/Jumper/WebCaster/Tunneler/NestEntrance `12/12/8/4/2`；默认开启的 `Spiderling squad` 在每张新生成合格地图原子放置 Jumper、WebCaster、Tunneler、Spinner 各一只。
 
-| 设置 | 默认值 | 作用 |
-|---|---:|---|
-| 单图幼蛛上限 | `25` | 非负整数；`0` 不限制。统计当前地图四类存活幼蛛，包含友方，巢穴不占名额 |
-| Spinner/Jumper/WebCaster/Tunneler 权重 | `2/2/2/1` | 仅控制巢穴循环增援的单位选择，各项范围 `0..10` |
-| 单巢穴存活子代上限 | `6` | 非负整数且无配置上限；`0` 停止后续循环增援 |
-| 每巢累计掘穴幼蛛上限 | `3` | 非负整数；`0` 不召唤 Tunneler。成功召唤累计，死亡或造巢不返还，新巢独立计数 |
-| 增援间隔 | `2` | 合格敌方回合计时，范围 `2..20` |
+| 设置                                   |    默认值 | 作用                                                                        |
+| -------------------------------------- | --------: | --------------------------------------------------------------------------- |
+| 单图幼蛛上限                           |      `25` | 非负整数；`0` 不限制。统计当前地图四类存活幼蛛，包含友方，巢穴不占名额      |
+| Spinner/Jumper/WebCaster/Tunneler 权重 | `2/2/2/1` | 仅控制巢穴循环增援的单位选择，各项范围 `0..10`                              |
+| 单巢穴存活子代上限                     |       `6` | 非负整数且无配置上限；`0` 停止后续循环增援                                  |
+| 每巢累计掘穴幼蛛上限                   |       `3` | 非负整数；`0` 不召唤 Tunneler。成功召唤累计，死亡或造巢不返还，新巢独立计数 |
+| 增援间隔                               |       `2` | 合格敌方回合计时，范围 `2..20`                                              |
 
 每巢的 Tunneler 累计计数随巢穴实体保存；达到设置上限后，该巢只从其他正权重种类中抽选，若无候选则保留到期计时等待设置变化。召唤失败不计数。调低上限不删除已有幼蛛，调高后只增加剩余额度，不重置已用次数。旧地图首次启用该字段时，按仍存在于地图且带该巢父 ID 的 Tunneler 初始化；已被移除的历史子代无法追溯。单图上限的新默认值只用于未保存该设置的情况，已有保存值（包括 20）继续保留，可在设置中手动修改。
 
