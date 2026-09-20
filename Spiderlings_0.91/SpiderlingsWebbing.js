@@ -72,7 +72,7 @@
     const WEBSPRAY_INACTIVITY_TURNS = 7;
     const CLOSED_TAGS = Object.freeze(["FeetLinked", "BlockKneel", "BlockHogtie"]);
     const ENEMY_PROFILES = Object.freeze({
-        Spinner: Object.freeze([3, 3, 3, 3, 2, 1, 1, 3, 3, 3, 3]),
+        Spinner: Object.freeze([0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0]),
         Jumper: Object.freeze([1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1]),
         WebCaster: Object.freeze([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]),
     });
@@ -416,12 +416,18 @@
     }
 
     function pairedOuterLayerFor(item) {
+        const cocoon = typeof KinkyDungeonGetRestraintItem === "function"
+            && chainFrom(KinkyDungeonGetRestraintItem("ItemDevices")).find(candidate => candidate.name == COCOON_ID);
+        if (item?.name === "SpiderlingsSpinnerLegbinder") return cocoon || undefined;
         const descriptor = DEFAULT_DESCRIPTOR_MAP.get(item && item.name);
         if (!descriptor || !stageNumber(descriptor.stage)
             || typeof KinkyDungeonGetRestraintItem != "function") return undefined;
         // Cocoon is the outermost action gate across all Webbing groups.
-        const cocoon = chainFrom(KinkyDungeonGetRestraintItem("ItemDevices")).find(candidate => candidate.name == COCOON_ID);
         if (cocoon) return cocoon;
+        if (["Legs", "Ankles", "Foot"].includes(descriptor.family)) {
+            const bag = chainFrom(KinkyDungeonGetRestraintItem("ItemLegs")).find(candidate => candidate.name === "SpiderlingsSpinnerLegbinder");
+            if (bag) return bag;
+        }
         const rank = innerRank(descriptor, descriptor.group);
         return chainFrom(KinkyDungeonGetRestraintItem(descriptor.group)).find((candidate) => {
             const outer = DEFAULT_DESCRIPTOR_MAP.get(candidate && candidate.name);
@@ -432,7 +438,7 @@
     }
 
     function isSpiderlingsRestraint(item) {
-        return !!(item && DEFAULT_DESCRIPTOR_MAP.has(item.name));
+        return !!(item && (DEFAULT_DESCRIPTOR_MAP.has(item.name) || item.name === "SpiderlingsSpinnerLegbinder"));
     }
 
     function stageNumber(stage) {
@@ -544,7 +550,7 @@
             && snapshotFlag(snapshot.registered, COCOON_ID)
             && snapshotFlag(snapshot.poseCompatible, COCOON_ID)
             && snapshotFlag(snapshot.addCompatible, COCOON_ID);
-        if (sourceAllowsDirectCocoon(source) && completion.lv3Complete
+        if (profileName !== "Spinner" && sourceAllowsDirectCocoon(source) && completion.lv3Complete
             && preHitSlow >= WEBSPRAY_MAX_STACKS && cocoonCompatible) {
             return {
                 progressed: false,
@@ -923,7 +929,8 @@
         const nativeUnlink = KinkyDungeonUnLinkItem;
         if (nativeUnlink[EXTERNAL_UNLINK_MARKER]) return true;
         const unlinkPreservingExternal = function(item, ...args) {
-            const descriptor = DEFAULT_DESCRIPTOR_MAP.get(item && item.name);
+            const descriptor = DEFAULT_DESCRIPTOR_MAP.get(item && item.name)
+                || (item?.name === "SpiderlingsSpinnerLegbinder" ? {group: "ItemLegs"} : undefined);
             const external = descriptor && item.dynamicLink;
             const definition = external && (typeof KDRestraint == "function" ? KDRestraint(external) : restraintById(external.name));
             const preserve = definition && !DEFAULT_DESCRIPTOR_MAP.has(external.name)
@@ -1292,8 +1299,10 @@
         if (typeof KDPlayerEffects == "undefined" || !KDPlayerEffects) return false;
         KDPlayerEffects[ENEMY_BIND_EFFECT] = (_target, _damage, playerEffect, _spell, faction, _bullet, entity) => {
             const profile = playerEffect && playerEffect.profile;
+            if (profile === "Spinner" && (api.SpinnerCapture?.hit(entity) || api.SpinnerField?.suppressesBinding(entity))) return {effect:false};
+            if (_target?.player && api.SpinnerCapture?.state()) return {effect:false};
             const outcome = applyEnemyProgression(profile, entity, faction);
-            if (outcome.progressed && entity && playerEffect?.consumeOnProgress === true) entity.hp = 0;
+            if (outcome.progressed && entity && profile !== "Spinner" && playerEffect?.consumeOnProgress === true) entity.hp = 0;
             return {effect: outcome.progressed === true};
         };
         return true;
@@ -1392,6 +1401,8 @@
         if (typeof addTextKey == "function") addTextKey(CROSS_FIRE_MESSAGE, CROSS_FIRE_FALLBACK);
         if (typeof KDPlayerEffects != "undefined" && KDPlayerEffects) {
             KDPlayerEffects[WEBSPRAY_EFFECT] = (_target, _damage, playerEffect, _spell, faction, bullet, entity) => {
+                // Already airborne Spiderlings spray also waits out the capture; NPC routes are separate.
+                if (_target?.player && api.SpinnerCapture?.state()) return {sfx:"Null",effect:false};
                 const catalog = runtimeEnemyCatalog();
                 const snapshot = runtimeEnemySnapshot(catalog, entity);
                 snapshot.webSpray = runtimeWebSprayState;

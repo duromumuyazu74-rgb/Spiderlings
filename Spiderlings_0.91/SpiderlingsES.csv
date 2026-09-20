@@ -1,6 +1,6 @@
 NameSpinner,Cría de araña hiladora
 AttackSpinner,La cría de araña hiladora corre pegada a tu cuerpo; sus patas finas dejan un cosquilleo punzante.
-AttackSpinnerBind,La cría de araña hiladora corre a tu alrededor, deja un lazo de seda pegajosa y desaparece. (+RestraintAdded)
+AttackSpinnerBind,La araña enrolla seda alrededor de tus piernas y permanece cerca para seguir tejiendo. (+RestraintAdded)
 KillSpinner,La cría de araña hiladora recoge sus patas finas y retrocede hasta perderse en las sombras.
 NameJumper,Cría de araña saltadora
 AttackJumper,La cría de araña saltadora se abalanza de pronto; sus patas rozan tu cuerpo y provocan un cosquilleo punzante.
@@ -153,3 +153,36 @@ KinkyDungeonStatSpiderlingsCocoonStart,Despertar de seda
 KinkyDungeonStatDescSpiderlingsCocoonStart,Despiertas en un capullo suave, completamente envuelta de pies a cabeza en capas tupidas de seda de araña. Cada pequeño movimiento tira de los hilos que se ciñen a tu cuerpo.
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La arañita saltadora mira el suelo bajo su rival y se agacha para saltar.
 KDModButtonspiderlingsNestTunnelerCap,Tunneler totales por nido (0: ninguno)
+RestraintSpiderlingsSpinnerLegbinder,Saco de seda para las piernas
+RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve desde las plantas hasta la parte alta de los muslos. Los brazos quedan libres.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Demo de bandas anchas de seda en espiral. Cuatro cortes o seis acciones para soltar; a medio tejer requiere la mitad.
+SpiderlingsSpinnerPull,Soltarse · 10 de energía · 1 turno
+SpiderlingsSpinnerContest,Spinner: {count} · tejido +{rate}/turno
+SpiderlingsSpinnerStart,La trampa intacta te sujeta. Completa la barra de escape primero; más Spinner aumentan la velocidad y la meta de escape.
+SpiderlingsSpinnerWin,Rompes los hilos. Todos los Spinner participantes quedan aturdidos cuatro turnos.
+SpiderlingsSpinnerInterrupt,Se interrumpe el tejido. Puedes actuar; la seda ya depositada permanece.
+SpiderlingsSpinnerTired,Necesitas 10 de energía. Aún puedes esperar o beber una poción.
+SpiderlingsSpinnerWrap,La envoltura dura cinco turnos del mundo; los brazos conservan su estado.
+SpiderlingsSpinnerDone,El saco está listo. Puedes atacar, usar objetos, moverte despacio o quitártelo.
+KinkyDungeonStatSpiderlingsSpinnerDemo,Prueba de tejedoras
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Entra en un campo plano. Las tejedoras colocan trampas y conectan rutas de escape. Prueba el duelo y cinco turnos de envoltura.
+NameSpiderlingsSilkAnchor,Nudo de telaraña
+KillSpiderlingsSilkAnchor,La barrera de seda se rompe.
+SpiderlingsFieldPreparing,Las tejedoras colocan trampas y las conectan para cortar la retirada. Sal antes del cierre o corta una conexión.
+SpiderlingsFieldReady,Dos trampas están conectadas. Las tejedoras bloquean otra salida.
+SpiderlingsFieldSprung,Las conexiones rodean la zona. Quienes sigan dentro pueden ser capturados.
+SpiderlingsFieldBroken,Un nudo se rompe y la trampa te libera.
+SpiderlingsFieldReset,Reiniciar prueba
+SpiderlingsFieldJumper,Soltar saltadora
+SpiderlingsFieldStatus,Campo: {phase} · trampas {count}/4 · conexiones {links}/4
+SpiderlingsFieldPhasepreparing,Preparando
+SpiderlingsFieldPhaseready,Conexión lista
+SpiderlingsFieldPhasesprung,Cerrado
+SpiderlingsFieldPhasebroken,Rota
+SpiderlingsFieldPhasecomplete,Completada
+SpiderlingsSpinnerWeave,Atadura: {value}/100
+SpiderlingsSpinnerEscape,Escape: {value}/{goal}
+SpiderlingsFieldAddSpinner,Añadir Spinner
+SpiderlingsFieldTrap,La seda del suelo frena tus pies brevemente.
+SpiderlingsFieldRebuild,Las tejedoras volverán a construir en {turns} turnos del mundo.
+SpiderlingsFieldWaiting,Trampas listas. La entrada oeste queda abierta hasta que entres.

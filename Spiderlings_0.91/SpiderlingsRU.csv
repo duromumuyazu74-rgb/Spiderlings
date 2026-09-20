@@ -1,6 +1,6 @@
 NameSpinner,Паучонок-прядильщик
 AttackSpinner,Паучонок-прядильщик быстро ползает по твоему телу; тонкие лапки оставляют колючий зуд.
-AttackSpinnerBind,Паучонок-прядильщик торопливо снует вокруг тебя, оставляет виток липкого шёлка и исчезает. (+RestraintAdded)
+AttackSpinnerBind,"Паучок обвивает ноги шёлком и остаётся рядом, продолжая плести. (+RestraintAdded)"
 KillSpinner,Паучонок-прядильщик подбирает тонкие лапки, пятится в тень и исчезает.
 NameJumper,Паучонок-прыгун
 AttackJumper,Паучонок-прыгун внезапно бросается ближе; тонкие лапки задевают тело, вызывая колючий зуд.
@@ -153,3 +153,36 @@ KinkyDungeonStatSpiderlingsCocoonStart,Пробуждение в коконе
 KinkyDungeonStatDescSpiderlingsCocoonStart,Вы просыпаетесь в мягком коконе: плотные слои паучьего шёлка окутывают вас с головы до ног. При каждом лёгком движении натягиваются нити, тесно прилегающие к телу.
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Прыгающий паучок смотрит под ноги противнику и припадает к земле перед прыжком.
 KDModButtonspiderlingsNestTunnelerCap,Всего Tunneler на гнездо (0: не призывать)
+RestraintSpiderlingsSpinnerLegbinder,Шёлковый мешок для ног
+RestraintSpiderlingsSpinnerLegbinderDesc,Шёлк охватывает ноги от подошв до верхней части бёдер. Руки свободны.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Демо широких спиральных шёлковых лент. Четыре разреза или шесть попыток снять; для половины нужно вдвое меньше.
+SpiderlingsSpinnerPull,Разорвать нити · 10 выносливости · 1 ход
+SpiderlingsSpinnerContest,Spinner: {count} · плетение +{rate}/ход
+SpiderlingsSpinnerStart,Целая сеть удерживает ноги. Заполни шкалу освобождения первой; новые Spinner ускоряют плетение и повышают цель освобождения.
+SpiderlingsSpinnerWin,Нити разорваны. Все участвующие Spinner оглушены на четыре следующих хода.
+SpiderlingsSpinnerInterrupt,Плетение прервано. Можно действовать; уже сплетённый шёлк остаётся.
+SpiderlingsSpinnerTired,Нужно 10 выносливости. Можно подождать или выпить зелье.
+SpiderlingsSpinnerWrap,Опутывание ног длится пять мировых ходов; состояние рук сохраняется.
+SpiderlingsSpinnerDone,Мешок готов. Можно атаковать, применять предметы, медленно двигаться или снять его.
+KinkyDungeonStatSpiderlingsSpinnerDemo,Проба паучьего плетения
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Плоское поле: паучки ставят ловушки и соединяют их поперёк путей отхода. Испытайте противоборство и пять ходов обматывания.
+NameSpiderlingsSilkAnchor,Узел паутины
+KillSpiderlingsSilkAnchor,Граница паутины рвётся.
+SpiderlingsFieldPreparing,Паучки ставят ловушки и соединяют их поперёк пути отхода. Уйдите до замыкания или разрежьте связь.
+SpiderlingsFieldReady,Две ловушки соединены. Паучки перекрывают следующий путь отхода.
+SpiderlingsFieldSprung,Связи окружили область. Оставшегося внутри игрока могут поймать.
+SpiderlingsFieldBroken,Узел разорван. Ловушка и удержание исчезают.
+SpiderlingsFieldReset,Повторить опыт
+SpiderlingsFieldJumper,Выпустить прыгуна
+SpiderlingsFieldStatus,Поле: {phase} · ловушки {count}/4 · связи {links}/4
+SpiderlingsFieldPhasepreparing,Строится
+SpiderlingsFieldPhaseready,Соединение
+SpiderlingsFieldPhasesprung,Замкнуто
+SpiderlingsFieldPhasebroken,Разрушена
+SpiderlingsFieldPhasecomplete,Завершена
+SpiderlingsSpinnerWeave,Путы: {value}/100
+SpiderlingsSpinnerEscape,Освобождение: {value}/{goal}
+SpiderlingsFieldAddSpinner,Добавить Spinner
+SpiderlingsFieldTrap,Шёлк на земле ненадолго замедляет ваши шаги.
+SpiderlingsFieldRebuild,Паучки начнут строить заново через {turns} ходов мира.
+SpiderlingsFieldWaiting,Ловушки готовы. Западный вход открыт пока вы не войдёте.

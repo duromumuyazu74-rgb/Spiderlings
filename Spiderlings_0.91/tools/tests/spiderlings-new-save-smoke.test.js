@@ -19,7 +19,7 @@ const scripts = [
   "SpiderlingsCore.js", "SpiderlingsModelRuntime.js", "Spiderlings.js",
   "SpiderlingsInfestation.js",
   "SpiderlingsCombat.js",
-    "SpiderlingsJumperDash.js", "SpiderlingsWebbingModels.js", "SpiderlingsWebbing.js",
+    "SpiderlingsJumperDash.js", "SpiderlingsWebbingModels.js", "SpiderlingsWebbing.js", "SpiderlingsSpinnerArt.js", "SpiderlingsSpinnerCapture.js", "SpiderlingsSpinnerField.js",
 ];
 const lv1Id = (family) => `SpiderlingsWebbingLv1${family}`;
 const lv2Id = (family) => `SpiderlingsWebbingLv2${family}`;
@@ -52,6 +52,7 @@ function freshNewSaveRuntime() {
     KinkyDungeonPlayerEntity: {player: true},
     KinkyDungeonPlayerBuffs: {},
     KDGameData: {PrisonerState: ""},
+    KDMapData: {Entities: []},
     KDCurrentModels: new Map(),
     KDTapeLink: ["Wrapping"], KDTapeRender: ["Wrapping"], KDBindable: "Bindable",
     KDDevices: "Devices", KDCorsetLink: "Corsets", KDHarnessLink: "Harnesses",
@@ -205,12 +206,12 @@ test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Coc
   const runtime = freshNewSaveRuntime();
   const restraintIds = runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort();
   const modelIds = runtime.models.map((entry) => entry.Name).sort();
-  assert.deepEqual(restraintIds, [...families.map(lv1Id), ...lv2Families.map(lv2Id), ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}`), cocoonId].sort());
+  assert.deepEqual(restraintIds, [...families.map(lv1Id), ...lv2Families.map(lv2Id), ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}`), cocoonId, "SpiderlingsSpinnerLegbinder"].sort());
   assert.deepEqual(modelIds, [
     ...families.map((family) => `${lv1Id(family)}Model`),
     ...lv2Families.map((family) => `${lv2Id(family)}Model`),
     ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}Model`),
-    "SpiderlingsWebbingCocoonModel",
+    "SpiderlingsWebbingCocoonModel", "SpiderlingsSpinnerLegbinderModel",
   ].sort());
   assert.equal(runtime.context.Spiderlings.LooseWebbing, undefined);
   assert.equal(runtime.context.Spiderlings.SilkProgression, undefined);
@@ -292,7 +293,7 @@ test("new-save resolver keeps profiles, no-op, WebSpray provenance, cap, and tim
   const runtime = freshNewSaveRuntime();
   const api = runtime.context.Spiderlings.Webbing;
   assert.deepEqual(plain(api.ENEMY_PROFILES), {
-    Spinner: [3, 3, 3, 3, 2, 1, 1, 3, 3, 3, 3],
+    Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
     Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
     WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
   });
@@ -332,7 +333,8 @@ test("developer Cocoon scenario keeps gates, twenty-fourth layer, repair, escape
   assert.notEqual(resolve(runtime, snapshot(lv1, 5), bind("Spinner")).outcome.selectedId, cocoonId);
   assert.notEqual(resolve(runtime, snapshot(lv1, 5), bind("Spinner", true)).outcome.selectedId, cocoonId);
   assert.notEqual(resolve(runtime, snapshot(allPhysical, 4), bind("Spinner")).outcome.selectedId, cocoonId);
-  assert.equal(resolve(runtime, snapshot(allPhysical, 5), bind("Spinner")).outcome.selectedId, cocoonId);
+  assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("Spinner")).outcome.selectedId, cocoonId);
+  assert.equal(resolve(runtime, snapshot(allPhysical, 5), bind("Jumper")).outcome.selectedId, cocoonId);
   assert.equal(allPhysical.length + 1, 24, "Cocoon is the twenty-fourth outer restraint after the twenty-three physical layers");
   assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("Tunneler")).outcome.selectedId, cocoonId);
   assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("NestEntrance")).outcome.selectedId, cocoonId);

@@ -1,10 +1,32 @@
-# Spiderlings 0.92.38 维护说明
+# Spiderlings 0.92.36-test.11 维护说明
 
-0.92.38：修复 KD 5.5.3 原生警报只更新发信者、遗漏接收者的实体目标记录。复用原生实际接收者列表同步追踪坐标／ID，保留感知筛选、afterSignal 改向、蛛丝禁言和旧版本路径。同时为原地掘巢召唤补齐 noSprite 标记，避免请求不存在的 SummonNestEntrance.png；巢穴生成、引导、提示和音效不变。外观颜色没有变化时不再从每件装备的 afterDress 事件反复清空原生模型缓存；读档旧颜色修正、换色和纹理解码完成后的刷新仍保留。兼容与整体验证记录见 `docs/spiderlings-full-review-0.92.38.zh-CN.md`。
+test.11 采用五份 `T's Enemies` 交付包的新怪物图。Spinner、Tunneler、WebCaster、NestEntrance 的本体与原色／粉色蛛丝层按原始画布坐标做 alpha 合成，输出 `Enemies/<name>.png` 与 `Enemies/<name>Pink.png`；不缩放、移位或重新调色。Jumper 包只有成图，两种设置共用原样采用的 `Enemies/Jumper.png`。原始图层、采用脚本及验证记录保存在 `.scratch/spiderlings-enemy-art-20260920/`。
 
-0.92.37：修复 KD 5.5.3 召唤成功提示的玩家回退对象导致 `KDCanDom` 读取不存在的 `Enemy.bound` 而崩溃。仅在原生 `KDIsSubbier` 存在时包装它：第二参数为玩家则返回 false，NPC、空参数与其余参数完整交回原函数。召唤、提示及玩家称谓保留，无存档迁移。使用报告中同址 5.5.3 脚本复现异常，修复后缺失／失效／玩家来源的真实召唤各成功一次，报告存档加载并推进 30 回合无异常。证据见 `docs/spiderlings-crash-0.92.36.zh-CN.md`。
+现有 `spiderlingsPinkWebbing` 设置同时控制拘束、投射物与四种带蛛丝的怪物外观。`SpiderlingsModelRuntime.js` 在原生 `KDDraw` 入口按当前设置选择对应 PNG，已有地图实体在下一次绘制时换色；敌人名称、存档实体和玩法参数不变。九张敌人 PNG 在脚本前显式登记，不进入拘束 atlas。安装包为 `Spiderlings_0.92.36-test.11.zip`，正式基线仍为 `0.92.36`。
+
+以下 test.10 条目保留其交付记录。
+
+test.10 将 Spinner 立绘包裹改为实际 PNG 测试素材。`Models/SpiderlingsSpinnerLegbinder/` 中的 Band、Tail、Finished、Closure 四张原图由 Image Gen 生成，直接加载，不进入共用蛛丝图集。`SpiderlingsSpinnerArt.js` 在 Capture 之前加载，负责纹理网格、前后层与成品衔接；粉色由同图染色。局部画布与取图框见目录内双语 README；更换同规格四图无需改代码或重建图集。`tools/artist-kit/` 提供独立画师包的预览打包脚本，不随可安装 ZIP 发布。地图四项仍沿用 test.9 的占位接入。交接与验证见 [画师说明](../docs/spiderlings-spinner-capture/ARTIST-HANDOFF.html) 和 [test.10 记录](../docs/spiderlings-spinner-capture/TEST10-PIPELINE.md)。
+
+0.92.36-test.9：修复 KD 5.5.3 原生警报只更新发信者、遗漏接收者的实体目标记录。复用原生实际接收者列表同步追踪坐标／ID，保留感知筛选、afterSignal 改向、蛛丝禁言和旧版本路径。同时为原地掘巢召唤补齐 noSprite 标记，避免请求不存在的 SummonNestEntrance.png；巢穴生成、引导、提示和音效不变。外观颜色没有变化时不再从每件装备的 afterDress 事件反复清空原生模型缓存；读档旧颜色修正、换色和纹理解码完成后的刷新仍保留。兼容与整体验证记录见 `docs/spiderlings-full-review-0.92.38.zh-CN.md`。
+
+0.92.36-test.8：修复 KD 5.5.3 召唤成功提示的玩家回退对象导致 `KDCanDom` 读取不存在的 `Enemy.bound` 而崩溃。仅在原生 `KDIsSubbier` 存在时包装它：第二参数为玩家则返回 false，NPC、空参数与其余参数完整交回原函数。召唤、提示及玩家称谓保留，无存档迁移。使用报告中同址 5.5.3 脚本复现异常，修复后缺失／失效／玩家来源的真实召唤各成功一次，报告存档加载并推进 30 回合无异常。证据见 `docs/spiderlings-crash-0.92.36.zh-CN.md`。
 
 以下内容保留原有功能与历史交付记录。
+
+当前测试版以 0.92.36 为正式基线。Spinner 先放四处地面陷阱，再连接已有陷阱拦截玩家退路，按最近移动方向优先封边。四条连接完整、玩家仍在内部、至少两只合法近战 Spinner 才开始对抗。进入对抗即强制并腿，方案 D 的粗蛛丝宽带逐圈缠绕，预览不施加装备。拘束目标 100，两只每世界回合 +12.5（八回合）、额外每只 +4；挣脱目标 75、额外每只 +25，一次有效挣脱 +25。中途增援保留进度，失败后固定五回合实际施加。 场地元数据与连接结点随原生存档保存；旧围场缺少连接结构时解除控制，保留已有物品。玩法、限制和验收见 [试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)。
+
+以下为 test.2 历史记录。
+
+当前测试源码与包为 `0.92.36-test.2`，正式基线为 `0.92.36`。`SpiderlingsSpinnerField.js` 在 Capture 后加载；可选起始 Perk 进入独立 31×21 平坦场地，两个真实 Spinner 使用移动／行动预算逐步布置 7×7 可破坏围网，留下西侧入口和地面触发丝。结点是原生可攻击占格实体（HP 2／弱点 0.5），所有权保存在场地地图数据中；破坏、结束或离图仅清理本轮结点。
+
+Spinner 玩家和 NPC 近战均不因施网成功退场；正常战败仍有效。场地准备与等待协作期间不施普通腿网，对抗仅绘制独立半透明预览与活动白线。失败后五世界回合依次施加 20% 至 100% 的同一腿袋。捕获预览在原生模型子网格上方使用自有渲染纹理；渲染只插值，不改变装备或回合。场地／阶段／结点／物品随原生存档保留；重置与放出 Jumper 使用可点击的场内按钮。当前步骤、限制和分版本验证见 [试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)。
+
+以下 test.1 条目保留历史交付事实，当前规则以本节和试玩说明为准。
+
+当前测试源码为 `0.92.36-test.1`，正式基线为 `0.92.36`。Spinner 腿袋 demo 的玩法、素材坐标、实机矩阵和安装步骤见 [试玩交付说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)。`SpiderlingsSpinnerCapture.js` 在 Webbing 与 Jumper 后加载，负责独立腿袋、四回合对抗、两回合自动缠绕及原生存档恢复。普通 Spinner 仅推进 Legs／Ankles／Foot，不能新结全身茧；既有丝茧修补继续生效。完整与半程腿袋都阻止重复协作；不兼容的外部装备沿用原生拒绝。
+
+腿袋图像为运行时纹理视图：完整裁剪自原图 y=1880，半程 y=2540，保留 2480×3508 画布及原始坐标。两色 atlas 和直接 PNG 采用同一裁剪，无源图改写。直接 PNG 必须使用原生 `modTextureLoader` 的显式 PNG 描述，不能按无扩展名 blob URL 推测加载器。连接线固定 #FFFFFF。失败计时属于世界回合；Jumper 玩家目标的预警在此遭遇范围仅由真实输入消费，自动两回合和多回合动作的延迟 tick 不消费额外机会。
 
 0.92.36 修复加固丝茧中等待仍阻止据点撤退：`Webbing.isCocoonPassive()` 从真实丝茧装备、当前行动、警戒活动与待加固状态判断玩家是否停止反抗，供整个据点（包括任务巢穴）共用。首个 Wait 即可累计十五回合安静；不额外等待 25 回合散开警戒。攻击、挣扎、施法、被阻挡的移动尝试以及未完成加固仍打断计时；正常玩家和可反抗 NPC 保留威胁判定。该查询兼顾 tick 前的 LastAction 和 tickAfter 前原生清空 LastAction 的时序。旧侵扰存档直接生效，原有 25 回合散开移动规则保持。用户 5.4.92 日志与双版本复核见 `.scratch/spiderlings-cocoon-retirement-20260913/`。
 
@@ -157,3 +179,5 @@ powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderli
 ```
 
 构建脚本先重建 atlas，再按 manifest 与七份 CSV 的精确 allowlist 打包。最终 watcher 检查源文件、行为测试和实际 ZIP；完成后按包内 `AGENTS.md` 创建聚焦提交。正式版本与测试版本不得混用或静默覆盖。历史 ZIP 和已退役运行时素材保存在 [archive/spiderlings](../archive/spiderlings/README.md)，旧设计与验收文档见 [文档归档](../docs/archive/spiderlings-0.91/README.md)。
+
+玩家从区域西侧外部进入；Spinner 在未发现玩家时预放四陷阱、织好三边，进入后封住最后一边。结点被打断或陷阱被拆除后等待二十个后续世界回合，再由存活 Spinner 重新布场，不生成替补。空闲布场动作每次修补一个连接结点 0.1 HP，最高 2；连接显示最薄弱处生命。对抗及五回合包裹期间，其他敌对蜘蛛暂停攻击玩家并调整等候位置；额外 Spinner 仍可加入。已有玩家目标 Jumper 预警撤销，自有在途喷网不造成伤害或施加；结束后重新攻击与预警，NPC 对战保持原流程。

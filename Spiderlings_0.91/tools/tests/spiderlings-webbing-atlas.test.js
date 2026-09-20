@@ -92,9 +92,9 @@ for (const [atlasName, frames] of [["spiderlings-webbing-0", expectedFrames], ["
 
 }
 
-test("the 0.92.38 manifest publishes displacement maps and the atlas before scripts while retaining every direct fallback", () => {
+test("the 0.92.36-test.11 manifest publishes displacement maps and the atlas before scripts while retaining every direct fallback", () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
-  assert.equal(manifest.modbuild, "0.92.38");
+  assert.equal(manifest.modbuild, "0.92.36-test.11");
   assert.equal(manifest.author, "Art assets: T_Swizzle; Original mod author: anthropocentricity; Reset author: Chlorlne");
   assert.deepEqual(manifest.fileorder.filter((entry) => entry.startsWith("TextureAtlas/")), atlasFiles);
 

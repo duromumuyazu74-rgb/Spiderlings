@@ -114,15 +114,17 @@ test("signal goal compatibility preserves redirected listeners and old runtimes"
     assert.equal(legacy.c.KDUpdateMoveToEntity, undefined);
 });
 
-test("only the armed native Spiderling melee converts damage, consumes on binding and reports success", () => {
+test("armed Spinner melee keeps the source alive while converting native NPC binding", () => {
     const {c, spawn} = fixture();
     const source = spawn(1, "Spinner", "Enemy"), target = spawn(2, "Maidforce", "Maidforce");
     target.weak = true;
     assert.equal(c.KinkyDungeonEnemyLoop(source, target), 1.5);
     assert.equal(target.hp, 7.95); assert.equal(target.boundLevel, 1.5);
-    assert.equal(source.hp, 0); assert.equal(source.failed, false);
+    assert.equal(source.hp, 8); assert.equal(source.failed, false);
+    assert.equal(c.KinkyDungeonEnemyLoop(source, target), 1.5);
+    assert.equal(source.hp, 8);assert.equal(target.boundLevel, 3);
     c.KinkyDungeonDamageEnemy(target, {damage: 2, type: "fire"}, false, true, undefined, undefined, source);
-    assert.equal(target.hp, 5.95, "unrelated damage retains native return semantics");
+    assert.ok(Math.abs(target.hp-5.90)<1e-8, "unrelated damage retains native return semantics");
 });
 
 test("spider silk blocks helpless NPC speech and signals, and releases on recovery or silk removal",()=>{

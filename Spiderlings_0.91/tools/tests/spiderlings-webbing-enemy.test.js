@@ -205,7 +205,7 @@ function loadRuntime(options = {}) {
 }
 
 function select(runtime, {
-  profile = "Spinner",
+  profile = "WebCaster",
   random = 0,
   items = [],
   snapshot,
@@ -227,7 +227,7 @@ test("enemy profiles preserve canonical family weights and exclude Tunneler/Nest
   const runtime = loadRuntime();
   const profiles = plain(runtime.context.Spiderlings.Webbing.ENEMY_PROFILES);
   assert.deepEqual(profiles, {
-    Spinner: [3, 3, 3, 3, 2, 1, 1, 3, 3, 3, 3],
+    Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
     Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
     WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
   });
@@ -235,19 +235,30 @@ test("enemy profiles preserve canonical family weights and exclude Tunneler/Nest
   assert.equal(profiles.NestEntrance, undefined);
 });
 
+test("Spinner player bindings stop at the three lower families and never create Cocoon", () => {
+  const r=loadRuntime(),catalog=syntheticCatalog([1,2,3]);
+  for(const random of [0,.499,.5,.749,.75,1]) {
+    const result=select(r,{profile:"Spinner",catalog,random});
+    assert.ok(["Legs","Ankles","Foot"].includes(result.family));
+  }
+  const items=catalog.filter(e=>e.stage!=="Cocoon").map(e=>({name:e.id,group:e.group}));
+  const snapshot=snapshotFor(items);snapshot.webSpray={stacks:5};
+  assert.notEqual(select(r,{profile:"Spinner",catalog,snapshot}).selectedId,"SpiderlingsWebbingCocoon");
+});
+
 test("resolver filters first, renormalizes weights, and uses right-open random boundaries", () => {
   const runtime = loadRuntime();
   const items = [];
   const expected = [
     [0, "Arm"],
-    [3.1 / 22, "MittenLeft"],
-    [6.1 / 22, "MittenRight"],
-    [9.1 / 22, "Belly"],
-    [12.1 / 22, "Legs"],
-    [14.1 / 22, "Ankles"],
-    [15.1 / 22, "Foot"],
-    [16.1 / 22, "Blindfold"],
-    [19.1 / 22, "Stuffing"],
+    [2.1 / 18, "MittenLeft"],
+    [4.1 / 18, "MittenRight"],
+    [6.1 / 18, "Belly"],
+    [8.1 / 18, "Legs"],
+    [10.1 / 18, "Ankles"],
+    [12.1 / 18, "Foot"],
+    [14.1 / 18, "Blindfold"],
+    [16.1 / 18, "Stuffing"],
     [1, "Stuffing"],
   ];
   for (const [random, family] of expected) {
@@ -297,8 +308,8 @@ test("mouth ordering prevents premature Gag and broken-chain Stuffing reinsertio
   assert.deepEqual(select(runtime, {snapshot: onlyMouth([ownedItem(1, "Gag")]), catalog}), {
     progressed: false,
     reason: "no-eligible-candidate",
-    profile: "Spinner",
-    source: {kind: "enemy", name: "Spinner"},
+    profile: "WebCaster",
+    source: {kind: "enemy", name: "WebCaster"},
   });
   assert.equal(select(runtime, {snapshot: onlyMouth([]), catalog}).selectedId, id(1, "Stuffing"));
 });
@@ -323,7 +334,7 @@ test("independent families mix upgrades with empty parts and exclude saturated p
 test("consecutive direct hits without ticks can upgrade one family to full then fill another", () => {
   const runtime = loadRuntime({globals: {KDRandom: () => 0, KinkyDungeonCurrentTick: 100}});
   runtime.context.KDCurrentModels.set(runtime.context.KinkyDungeonPlayer, {Poses: {Closed: true, Wristtie: true, Free: true}});
-  for (let n = 0; n < 5; n++) assert.equal(bindSpinner(runtime).effect, true);
+  for (let n = 0; n < 5; n++) assert.equal(bindWebCaster(runtime).effect, true);
   assert.deepEqual(runtime.addCalls.map(args => args[0].name), [
     id(1, "Arm"), id(2, "Arm"), id(3, "Arm"), id(1, "MittenLeft"), id(1, "MittenRight"),
   ]);
@@ -358,13 +369,14 @@ test("Lv3 preserves each source's body and head preferences with complete inner 
   const catalog = syntheticCatalog([1, 2, 3]);
   const inner = [...families.map((family) => ownedItem(1, family)), ...lv2Families.map((family) => ownedItem(2, family))];
   for (const [profile, weights] of Object.entries({
-    Spinner: [3, 3, 2, 1, 1, 3, 3],
+    Spinner: [0, 0, 2, 1, 1, 0, 0],
     Jumper: [1, 2, 3, 3, 3, 1, 1],
     WebCaster: [2, 2, 2, 2, 2, 2, 2],
   })) {
     const total = weights.reduce((sum, weight) => sum + weight, 0);
     let start = 0;
     for (let index = 0; index < weights.length; index += 1) {
+      if (!weights[index]) continue;
       const result = select(runtime, {profile, catalog, items: inner, random: (start + weights[index] / 2) / total});
       assert.equal(result.selectedId, id(3, lv3Families[index]));
       assert.equal(result.stage, "Lv3");
@@ -384,14 +396,14 @@ test("Lv3 Hood waits for both Lv3 eye and mouth layers, then uses its source wei
     assert.notEqual(select(runtime, {catalog, items, random: 1}).selectedId, id(3, "Hood"));
   }
   const items = [...inner, ...["Blindfold", "Gag"].map((family) => ownedItem(3, family))];
-  for (const [profile, total, hoodWeight] of [["Spinner", 13, 3], ["Jumper", 13, 1], ["WebCaster", 12, 2]]) {
+  for (const [profile, total, hoodWeight] of [["Jumper", 13, 1], ["WebCaster", 12, 2]]) {
     assert.equal(select(runtime, {profile, catalog, items, random: (total - hoodWeight - 0.1) / total}).selectedId, id(3, "Foot"));
     assert.equal(select(runtime, {profile, catalog, items, random: (total - hoodWeight + 0.1) / total}).selectedId, id(3, "Hood"));
   }
 });
 
-test("Spinner, Jumper melee and Jumper landing payloads can each add the full Lv3 set one item per hit", () => {
-  for (const [profile, consumeOnProgress] of [["Spinner", false], ["Jumper", false], ["Jumper", true]]) {
+test("WebCaster, Jumper melee and Jumper landing payloads can each add the full Lv3 set one item per hit", () => {
+  for (const [profile, consumeOnProgress] of [["WebCaster", false], ["Jumper", false], ["Jumper", true]]) {
     const runtime = loadRuntime({globals: {KDRandom: () => 1}});
     runtime.seed(families);
     runtime.seed(lv2Families, 2);
@@ -418,14 +430,14 @@ test("Lv3 filters native rejection, poses and external restraints before drawing
   runtime.seed(families);
   runtime.seed(lv2Families, 2);
   runtime.state.canAdd = (restraint) => restraint.name !== id(3, "Arm");
-  assert.equal(bindSpinner(runtime).effect, true);
+  assert.equal(bindWebCaster(runtime).effect, true);
   assert.equal(runtime.addCalls[0][0].name, id(3, "Belly"));
   runtime.state.addResult = 0;
-  assert.equal(bindSpinner(runtime).effect, false);
+  assert.equal(bindWebCaster(runtime).effect, false);
   assert.equal(runtime.addCalls.length, 2);
   assert.equal(runtime.addCalls[1][0].name, id(3, "Legs"));
   runtime.state.addResult = 1;
-  assert.equal(bindSpinner(runtime).effect, true);
+  assert.equal(bindWebCaster(runtime).effect, true);
   assert.equal(runtime.addCalls[2][0].name, id(3, "Legs"));
 
   const catalog = syntheticCatalog([1, 2, 3]);
@@ -443,9 +455,9 @@ test("Spinner/Jumper definitions use exact effect progression and leave summon-o
     const definition = enemy(name);
     assert.equal(definition.attack.includes("Melee"), true);
     assert.equal(definition.attack.includes("Effect"), true);
-    assert.equal(definition.attack.includes("Suicide"), true);
+    assert.equal(definition.attack.includes("Suicide"), name === "Jumper");
     assert.equal(definition.attack.includes("Spell"), name === "Jumper");
-    assert.equal(definition.suicideOnEffect, true);
+    assert.equal(definition.suicideOnEffect, name === "Jumper");
     assert.equal(Object.prototype.hasOwnProperty.call(definition, "suicideOnAdd"), false);
     assert.equal(definition.fullBoundBonus, bonus);
     assert.deepEqual(plain(definition.effect), {
@@ -486,10 +498,22 @@ test("Spinner/Jumper definitions use exact effect progression and leave summon-o
   assert.equal(nest.effect, undefined);
 });
 
+test("Spinner survives repeated player binding even when an old payload requests consumption", () => {
+  const runtime=loadRuntime();
+  const definition=runtime.context.KinkyDungeonEnemies.find(e=>e.name==="Spinner");
+  const source={Enemy:definition,hp:3,id:301};
+  for(let n=0;n<3;n++){
+    const result=runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind(runtime.context.KinkyDungeonPlayerEntity,
+      "tickle",{profile:"Spinner",consumeOnProgress:true},undefined,"Enemy",undefined,source);
+    assert.equal(result.effect,true);assert.equal(source.hp,3);
+  }
+  assert.equal(runtime.addCalls.length,3);
+});
+
 test("successful enemy hit adds one exact unlocked Lv1 at zero tightness and drives departure", () => {
   const runtime = loadRuntime();
   runtime.seed(families.filter((family) => family !== "Arm"));
-  const spinnerDefinition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Spinner");
+  const spinnerDefinition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Jumper");
   const spinner = {Enemy: spinnerDefinition, hp: 3, id: 10};
   const handler = runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind;
   assert.equal(typeof handler, "function");
@@ -569,7 +593,7 @@ test("left and right mittens are applied as independent linked ItemHands restrai
   runtime.seed(families.filter((family) => !["MittenLeft", "MittenRight"].includes(family)));
   runtime.context.KDCurrentModels.set(runtime.context.KinkyDungeonPlayer, {Poses: {Closed: true, Free: true}});
   runtime.state.canAdd = restraint => restraint.Group === "ItemHands";
-  const definition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Spinner");
+  const definition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Jumper");
   const spinner = {Enemy: definition, hp: 3, id: 22};
   const bind = () => runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
     runtime.context.KinkyDungeonPlayerEntity,
@@ -595,7 +619,7 @@ test("mitten application bypasses inaccessible arms while preserving native link
   runtime.state.blockers = (restraint, player, bypass) => bypass ? [] : [arms];
   runtime.state.canAdd = (restraint, bypass, lock, noStack, current, deep, noOverpower) =>
     restraint.Group === "ItemHands" && restraint.bypass === true && noOverpower === true;
-  const definition = runtime.context.KinkyDungeonEnemies.find(entry => entry.name === "Spinner");
+  const definition = runtime.context.KinkyDungeonEnemies.find(entry => entry.name === "Jumper");
   const spinner = {Enemy: definition, hp: 3, id: 24};
   const bind = () => runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
     runtime.context.KinkyDungeonPlayerEntity, "tickle", definition.effect.effect,
@@ -619,7 +643,7 @@ test("enemy Lv2 progression contains five body families without mittens, eyes, o
   const runtime = loadRuntime();
   runtime.seed(families, 1);
   runtime.state.canAdd = restraint => restraint.name.includes("Lv2");
-  const definition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Spinner");
+  const definition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Jumper");
   const spinner = {Enemy: definition, hp: 3, id: 23};
   const bind = () => runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
     runtime.context.KinkyDungeonPlayerEntity,
@@ -646,10 +670,10 @@ function equipExternal(runtime, name, group, armour = true) {
   return item;
 }
 
-function bindSpinner(runtime) {
-  const definition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "Spinner");
+function bindWebCaster(runtime) {
+  const definition = runtime.context.KinkyDungeonEnemies.find((entry) => entry.name === "WebCaster");
   return runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
-    runtime.context.KinkyDungeonPlayerEntity, "tickle", definition.effect.effect,
+    runtime.context.KinkyDungeonPlayerEntity, "tickle", {profile: "WebCaster"},
     undefined, "Enemy", undefined, {Enemy: definition, hp: 3, id: 80});
 }
 
@@ -698,14 +722,14 @@ test("armour links complete ten Lv1, five Lv2 and eight Lv3 through independent 
   const names = () => runtime.context.KinkyDungeonAllRestraintDynamic().map(({item}) => item.name);
   for (let hit = 0; hit < 15; hit += 1) {
     const before = names().length;
-    assert.equal(bindSpinner(runtime).effect, true);
+    assert.equal(bindWebCaster(runtime).effect, true);
     while (runtime.scheduled.length) runtime.scheduled.shift()();
     assert.equal(names().length, before + 1, "one physical item per successful hit");
     const equipped = runtime.context.KinkyDungeonAllRestraintDynamic().map(({item}) => item);
     assert.ok(equipped.includes(tunic) && equipped.includes(boots));
     assert.deepEqual([plain(tunic), plain(boots)], original);
   }
-  assert.equal(bindSpinner(runtime).effect, false, "full layers alone cannot trigger Cocoon");
+  assert.equal(bindWebCaster(runtime).effect, false, "full layers alone cannot trigger Cocoon");
   assert.equal(runtime.addCalls.length, 15);
   for (const entry of syntheticCatalog([1, 2, 3])) assert.ok(names().includes(entry.id));
   for (const args of runtime.canAddCalls) assert.equal(args[6], true, "native noOverpower remains enabled");
@@ -725,7 +749,7 @@ test("external linking rejects native incompatibility, blockers and missing nati
     runtime.seed(lv2Families.filter(f => f !== "Belly"), 2);
     runtime.seed(lv3Families.filter(f => f !== "Belly"), 3);
     configure(runtime);
-    assert.equal(bindSpinner(runtime).effect, false);
+    assert.equal(bindWebCaster(runtime).effect, false);
     assert.equal(runtime.addCalls.length, 0);
     assert.deepEqual(plain(tunic), original);
   }
@@ -736,11 +760,11 @@ test("failed native armour add does not reroll, remove armour, or advance; next 
   runtime.state.canAdd = restraint => restraint.Group === "ItemTorso";
   const tunic = equipExternal(runtime, "ChainTunic", "ItemTorso");
   runtime.seed(families.filter((family) => family !== "Belly"));
-  assert.equal(bindSpinner(runtime).effect, false);
+  assert.equal(bindWebCaster(runtime).effect, false);
   assert.equal(runtime.addCalls.length, 1);
   assert.equal(runtime.equipment.get("ItemTorso"), tunic);
   runtime.state.addResult = 1;
-  assert.equal(bindSpinner(runtime).effect, true);
+  assert.equal(bindWebCaster(runtime).effect, true);
   assert.equal(runtime.addCalls.length, 2);
   assert.equal(runtime.equipment.get("ItemTorso").dynamicLink, tunic);
   assert.equal(runtime.equipment.get("ItemTorso").name, id(1, "Belly"));

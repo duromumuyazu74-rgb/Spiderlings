@@ -152,6 +152,19 @@ test("Dash locks one tile, starts five-turn cooldown, and creates one purple war
   assert.deepEqual(calls.messages, [8]);
 });
 
+test("automatic capture ticks age the cast boundary but preserve both subsequent reaction opportunities", () => {
+  const context=loadDefinitions(), source={id:501,x:0,y:0,hp:2,Enemy:{name:"Jumper"}};
+  const controller=context.Spiderlings.JumperDash.createController({
+    landingCandidates:()=>[{x:3,y:0}],isPlayerAt:()=>false,findSource:()=>source,
+  });
+  assert.equal(controller.begin(source,{x:4,y:0}).started,true);
+  controller.advancePlayerAction(false);controller.advancePlayerAction(false);
+  assert.equal(controller.snapshot()[0].opportunities,0);
+  controller.advancePlayerAction();assert.equal(controller.snapshot()[0].opportunities,1);
+  controller.advancePlayerAction(false);assert.equal(controller.snapshot()[0].opportunities,1);
+  assert.equal(controller.advancePlayerAction()[0].outcome,"evaded");
+});
+
 test("Dash resolves only after two complete player actions and lands before one certain contact payload", () => {
   const context = loadDefinitions();
   const source = {id: 9, x: 0, y: 0, hp: 2, Enemy: {name: "Jumper"}};

@@ -195,6 +195,12 @@ Use runtime files to understand behavior. Prefer copying data patterns from `Kin
 
 KD 5.5 `KinkyDungeonUpdateSingleBulletVisual` copies the gameplay bullet name into its visual record; `KinkyDungeonDrawFight` derives `Game/Bullets/<name>.png` from that name. `KDDraw` updates even an existing sprite from the supplied image path on every draw. Spiderlings 0.92.20 therefore redirects only the four exact rooted SpiderWeb/SpiderWebHit/WebSpray/WebSprayTrail image paths to their delivered `Pink.png` counterparts when `spiderlingsPinkWebbing` is enabled. Keep spell names, bullet names, trail provenance and original texture aliases intact. All eight direct PNGs are registered before scripts; this does not change the restraint atlas inputs. The color-routing regression in `spiderlings-webbing-lv1.test.js` covers saved pink settings, repeated toggles, unchanged drawing arguments and unrelated image paths.
 
+### Enemy artwork color selection
+
+Spiderlings `0.92.36-test.11` extends the existing draw-time color selection to the exact rooted `Enemies/Spinner.png`, `Tunneler.png`, `WebCaster.png` and `NestEntrance.png` paths. The supplied body and silk layers are composited at their original coordinates into separate normal and pink PNGs. Jumper has one delivered image shared by both settings. Register all nine enemy PNGs before scripts and keep them outside the restraint atlas.
+
+KD 5.5 `KDDrawEnemySprite` sends the enemy image path to `KDDraw`; KD 5.4.92 `KDDraw` assigns the requested texture even when reusing an existing sprite. Selecting the path on each draw updates visible and saved entities without changing enemy definitions, IDs or caches. Keep unrelated paths, draw arguments and return values intact. The enemy artwork regression in `spiderlings-webbing-lv1.test.js` covers restored settings, repeated toggles, the shared Jumper image and unrelated enemies.
+
 ### Direct PNG readiness in KD 5.4.92
 
 The installed KD 5.4.92 runtime uses Pixi 7.2.1. Its `resolveModURL` rewrites logical paths to extensionless `KDModFiles` blob URLs. Use `Assets.load({src: logicalPath, format: "png", loadParser: "modTextureLoader", data: ...})` for direct Mod PNGs, as for the atlas image. A plain string request can finish without producing a decoded texture; `Assets.backgroundLoad` only acknowledges background scheduling and is not a rendering readiness promise. Native `KDTex` caches `Texture.from(blob)` immediately, even while `baseTexture.valid` is false. Do not accept that cache entry as ready. Cache the decoded result under the KD logical path and Pixi aliases before the post-apply redress. Empty load results must remain retryable.
@@ -377,6 +383,28 @@ KD 5.5 sends `beforeMove` after resetting `KinkyDungeonNoMoveFlag` and tests the
 
 ## Spiderlings-Specific Checks
 
+### Spinner leg bag native contracts (0.92.36-test.1)
+
+KD 5.5 and local 5.4.92 use `KDChangeStamina` for attributed stamina changes. A native restraint action pays and emits `struggle` once, then may schedule three additional world ticks. Count the encounter deadline at world `tickAfter`; count player-targeted Jumper opportunities once per genuine `KDProcessInput` scope. Automatic weaving remains a native `KDSendInput("tick", {delta:1})` world action. Ordinary players and NPC-targeted dashes preserve their existing controller routes.
+
+`beforeStruggleCalc.canCut === false` alone does not reject cutting: a native environmental `hasAffinity` can make it legal (`Game/src/restraint/KinkyDungeonRestraints.ts`). An adapter that tests only the weapon flag accidentally allows native progress to bypass its counted contract. The Webbing lifecycle regression covers the legal affinity/mixed-method route. Native unlinking may reconstruct an exposed root; the existing external-item preservation adapter includes the independent leg bag so its identity and half/full progress survive overlay removal.
+
+Native enemy stun decreases before `KinkyDungeonEnemyLoop`. The four-turn success reward therefore also keeps its own saved remaining-turn counter, preventing action on the fourth rewarded world turn while retaining any longer native stun. Native movement uses debt: bag `hobble:2` permits escape from a Jumper snapshot within two real inputs even immediately after moving; the `hobble:3` control can use both inputs paying debt. Dual-version traces and native texture renders are in `.scratch/spiderlings-spinner-capture/implementation/`.
+
+Derived PIXI textures preserve the source `orig` and intersect `frame`/`trim` at the original canvas y coordinate. A direct Mod PNG fallback uses `{src: logicalPath, format:"png", loadParser:"modTextureLoader"}`; a blob URL alone lacks the extension needed for automatic loader selection. The checker protects the independent ItemLegs/hobble contract; native fallback tests deliberately fail both owned atlas parses and verify all four leg-bag aliases.
+
+### Spinner field and animated preview contracts (0.92.36-test.2)
+
+In both pinned runtimes, character body and clothes may render through `Submeshes` outside the main model `Container`. A preview attached only to that container can appear behind boots and legs. The owned preview now copies the container transform into its own render texture and attaches that texture above the character's `Mesh` submeshes. Interpolation and winding lines run on render time; only native positive world ticks change capture progress. The contest owns no equipment. Five subsequent automatic world turns produce 20/40/60/80/100% on the same item; derived textures retain the original canvas, with twenty aliases across the two colors including legacy half progress. The checker protects the independent item, white color and five-turn configuration. Native `visual-ui` and `arena` probes verify fallback rendering, per-turn items and interruption on both versions.
+
+The optional starting perk uses `KDDefaultMapData` to create its own flat room and an owned `alts` entry with `spawns:false`, `enemies:false`; it does not flatten a generated ordinary map. Web knots are native hostile obstacle entities with HP and collision, created with `DialogueCreateEnemy`, and removed by their saved IDs. Ordinary attacks break the barrier; field AI spends action credit and uses native path/movement checks. Guard ordinary Spinner equipment application while field participants approach: the first Spinner can reach the player before the second becomes an eligible capture partner. Dropping the `Suicide` attack token alone is insufficient for persistence; shared player progression and native NPC binding also have source-consumption paths. Their Spinner exclusions are covered by the enemy and combat regressions. Actual ZIP integration evidence is in `.scratch/spiderlings-spinner-capture/implementation-test2/`.
+
+### Dynamic Spinner contest (0.92.36-test.3)
+
+Capture admission now requires the owned triggered field with all twenty-four live boundary entities at their saved positions, the player inside it, and at least two legal melee Spinners inside. Membership is refreshed from current native eligibility; arrival/removal changes the escape target without changing earned progress or consuming time. Weaving is settled once at positive `tickAfter`, using only eligible participants that actually passed through the encounter's enemy-action route that turn. A Spinner arriving after its enemy action is eligible for the group but receives no retroactive weaving contribution. Source-only invalidation, field geometry, dynamic membership and old counter migration have lifecycle regressions; native ZIP traces cover natural approach and both games.
+
+Visual animation updates its owned preview render texture directly. Calling the entire `RenderModelContainer` on each animation frame also invokes native `RenderMCSubmeshes` and marks the character for update; reserve that route for native model refreshes. KD 5.5 source-checkout browser evidence lacks the shipped native atlases, so direct-image fixture preparation may additionally invalidate native submesh hashes after decoding. That fixture preparation is outside the Mod and does not alter game files or game-turn counters.
+
 After changing `Spiderlings_0.91/`, run:
 
 ```powershell
@@ -413,6 +441,19 @@ The owned resolver now checks all eight physically equipped Lv3 items, without r
 
 `KDGetBlockersToAddRestraint(restraint, player, bypass)` does not read `restraint.bypass` itself. Unlike the higher-level native add/can-add functions, a direct preflight call must pass the flag explicitly. Both split mittens declare `bypass: true`; the owned snapshot uses this flag for its blocker query while retaining `KDCanAddRestraint` with `noOverpower=true`. Other Spiderlings items still use ordinary blocker checks. This bypasses inaccessible ItemArms and Block_ItemHands restrictions on application without removing those blockers. Same-group link legality and player escape restrictions remain. Reproduction: native LatexArmbinder blocks both mittens without bypass; see `.scratch/spiderlings-cocoon-lv3-20260913/mitten-diagnosis.json`.
 
+### Ground traps, paired connections and immediate pose (0.92.36-test.5)
+
+KD 5.5 `Game/src/map/KinkyDungeonTraps.ts` dispatches `KDTrapTypes[tile.Trap]` only for a moved entity on tile metadata `Type: "Trap"`. The walkable floor can stay `0`. The custom handler returns `{triggered,msg}`; native code counts triggers. Both KD 5.5 and 5.4.92 native movement probes verify one-use slowing without equipment. Pairwise connections use owned native obstacle entities, and admission requires four placed trap anchors plus four intact connections around the player.
+
+The player model poses are rebuilt before `afterDress`; applying `Closed` and `FeetLinked` there during the contest or owned item presence enforces legs together without mutating `NPCDesiredPoses`. Removing the preview restores the native preferred pose. An owned RenderTexture overlay draws broad ribbon polygons at original canvas coordinates, with no source image rewriting or per-frame call to the complete native model renderer. The player bag model layer is suppressed while its overlay supplies the visual; an outer Cocoon hides the owned overlay. Native evidence: `.scratch/spiderlings-spinner-capture/implementation-test5/`; lifecycle tests protect eight-turn completion, simultaneous escape and connection admission.
+
+
+### Spinner field maintenance and capture waiting (0.92.36-test.7)
+
+Native `KinkyDungeonEnemyLoop` receives the chosen target. Capture waiting intercepts only hostile Spiderlings acting against the player; NPC targets pass through. Repositioning uses `KinkyDungeonEnemyCanMove` and `KinkyDungeonEnemyTryMove` with the real delta. Cancel existing player Jumper controller states at capture entry as well as suppressing new casts; guard the owned queued WebSpray effect separately. Field rebuild time advances on positive `tickAfter` delta, excluding the destruction action itself. KD 5.5 increments `KinkyDungeonCurrentTick` before this event. The remaining counter is map data and survives native save/load. Native input evidence for 5.5 and 5.4.92 is in `.scratch/spiderlings-spinner-capture/implementation-test7/`.
+
+When `StandalonePatched` is true, KD applies visual camera offsets to `kdgameboard` itself. Child graphics use the integer camera origin; subtracting the event's visual offset again makes lines drift during camera movement. Text drawn with `DrawTextKD` belongs to the root canvas and needs the board translation. The dual-version native maintenance probe checks line coordinates while the real camera offset is nonzero.
+
 ### KD 5.5.3 summon dialogue player fallback (0.92.37 / 0.92.36-test.8)
 
 `KinkyDungeonBulletHit` uses `KDPlayer()` as the dialogue enemy when the summon source is absent or no longer resolves. In the reported 5.5.3 runtime, `KDGetGenericDialogueParams` calls the new `KDIsSubbier`, which passes that player into NPC-only `KDCanDom` and dereferences `enemy.Enemy.bound`. With Ghost reputation >= -25 the first dominance check can crash (the report has Ghost 50). Core wraps `KDIsSubbier` only when available: player subjects return false; native NPC/null checks and arguments remain unchanged. Keep the real player object for pronouns and the original summon/message pipeline. Earlier runtimes without this helper install nothing. The encounters regression exercises the native summon hit path, zero/single/multi creation and missing/removed/player/NPC sources; the checker verifies player exclusion and NPC delegation. See [diagnosis](spiderlings-crash-0.92.36.zh-CN.md) for the exact 5.5.3 source and browser evidence.
@@ -425,3 +466,9 @@ The shipped 5.5.3 `KinkyDungeonMakeNoiseSignal` writes each receiver's `gx`/`gy`
 `SummonNestEntrance` is an inert self-cast summon with no travelling artwork. Like the other Spiderlings summon spells it needs `noSprite: true`: native `KinkyDungeonUpdateSingleBulletVisual` otherwise registers its spell name and the renderer requests the nonexistent `Game/Bullets/SummonNestEntrance.png`. Keep native summoning, channel time, text and SFX; the runtime checker protects this flag.
 
 Native `ForceRefreshModels` clears both model update caches. An unchanged owned `afterDress` callback must not clear them again for every equipped restraint. Synchronize folders and invalidate only when a saved model copy actually changes color; retain explicit post-apply/removal and displacement-ready refreshes. The existing color/save-copy regression now also asserts cache preservation across 24 unchanged inventory callbacks.
+
+## Spinner test.10 纹理覆盖层（2026-09-19）
+
+独立腿袋以四张直接 PNG 为源；manifest 必须在 `SpiderlingsSpinnerArt.js` 前列入原图，Art 在 Capture 前执行。不要沿用旧运行时 Cocoon 裁剪别名，或将相同路径加入 Webbing 图集后造成旧纹理优先。测试 `spiderlings-spinner-art.test.js` 检查此顺序和直接加载。
+
+原生 `DrawCharacter` 为每个 ContainerInfo 保存 `Zoom`，`DrawCharacterModels` 使用 `Zoom × MODEL_SCALE` 绘制源坐标。覆盖层必须使用这组缩放；不能从任意 SpriteList 元素反推，因为独立精灵可能缩放不同。自有前后渲染纹理作为 `ContainerInfo.Mesh` 子项与原生 Submeshes 排序，并复制 Container 的位置、旋转、缩放和轴点。重建容器时销毁自有渲染纹理，保留共享 PNG BaseTexture。

@@ -2,7 +2,7 @@
   "modname": "Spiderlings",
   "moddesc": "Meet nimble spiderlings that weave soft silk into layered bindings and a close-fitting cocoon, with web-spray encounters for Kinkiest Dungeon 5.4.x / 5.5.x.",
   "author": "Art assets: T_Swizzle; Original mod author: anthropocentricity; Reset author: Chlorlne",
-  "modbuild": "0.92.38",
+  "modbuild": "0.92.36-test.11",
   "gamemajor": 5,
   "gameminor": 4,
   "gamepatch_min": 0,
@@ -23,6 +23,10 @@
     "Enemies/Spinner.png",
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
+    "Enemies/NestEntrancePink.png",
+    "Enemies/SpinnerPink.png",
+    "Enemies/TunnelerPink.png",
+    "Enemies/WebCasterPink.png",
     "Models/SpiderlingsWebbingLv1/ArmWebbing.png",
     "Models/SpiderlingsWebbingLv1/MittenLeft.png",
     "Models/SpiderlingsWebbingLv1/MittenRight.png",
@@ -73,6 +77,10 @@
     "Models/SpiderlingsWebbingLv3Pink/Hood.png",
     "Models/SpiderlingsWebbingCocoonPink/Cocoon.png",
     "Models/SpiderlingsWebbingCocoonPink/OuterWebs.png",
+    "Models/SpiderlingsSpinnerLegbinder/Band.png",
+    "Models/SpiderlingsSpinnerLegbinder/Tail.png",
+    "Models/SpiderlingsSpinnerLegbinder/Finished.png",
+    "Models/SpiderlingsSpinnerLegbinder/Closure.png",
     "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
     "DisplacementMaps/SpiderlingsWebbingLv2BellySquish.png",
     "DisplacementMaps/SpiderlingsWebbingLv2LegsSquish.png",
@@ -93,6 +101,9 @@
     "SpiderlingsCombat.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
-    "SpiderlingsWebbing.js"
+    "SpiderlingsWebbing.js",
+    "SpiderlingsSpinnerArt.js",
+    "SpiderlingsSpinnerCapture.js",
+    "SpiderlingsSpinnerField.js"
   ]
 }

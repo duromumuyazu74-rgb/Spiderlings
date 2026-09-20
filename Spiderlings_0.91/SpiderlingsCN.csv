@@ -1,6 +1,6 @@
 NameSpinner,织网幼蛛
 AttackSpinner,织网幼蛛迈着细碎的步子爬过你的身体，细足轻扫，带来一阵微痒。
-AttackSpinnerBind,织网幼蛛轻巧地绕过你，将一圈蛛丝贴合地缠好，随后离开了视线。(+RestraintAdded)
+AttackSpinnerBind,结网幼蛛绕着双腿织下一圈蛛丝，仍停留在附近继续行动。(+RestraintAdded)
 KillSpinner,织网幼蛛收起细足，慢慢退开，离开了视线。
 NameJumper,跃击幼蛛
 AttackJumper,跃击幼蛛轻巧地跃到近前，细足擦过你的身体，带起一阵微痒。
@@ -153,3 +153,36 @@ KinkyDungeonStatSpiderlingsCocoonStart,丝茧初醒
 KinkyDungeonStatDescSpiderlingsCocoonStart,你在柔软的丝茧中醒来，细密的蛛丝从头到脚层层贴裹，将你完全包覆。每一次轻轻挪动，都牵动着紧贴全身的丝缕。
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跃击幼蛛盯住对手脚下的地面，伏低身体，准备跃去。
 KDModButtonspiderlingsNestTunnelerCap,每巢累计掘穴幼蛛上限（0 为不召唤）
+RestraintSpiderlingsSpinnerLegbinder,蛛丝腿袋
+RestraintSpiderlingsSpinnerLegbinderDesc,蛛丝从脚底包裹至大腿上段，双臂仍可自由活动。
+RestraintSpiderlingsSpinnerLegbinderDesc2,试玩宽带螺旋蛛丝。完整切割四次或解开／挣脱六次；半程次数减半，混用共享进度。
+SpiderlingsSpinnerPull,挣开蛛丝 · 精力 10 · 1 回合
+SpiderlingsSpinnerContest,参与幼蛛：{count} · 每回合织网 +{rate}
+SpiderlingsSpinnerStart,完整围网牵住了你的双腿。在拘束进度填满前完成挣脱；加入的幼蛛会加快织网并提高挣脱目标。
+SpiderlingsSpinnerWin,你挣开了连接丝。所有参与幼蛛眩晕四个后续回合。
+SpiderlingsSpinnerInterrupt,协作结网被打断，你可以继续行动；已经织成的蛛丝会留下。
+SpiderlingsSpinnerTired,挣开需要 10 精力。你仍可等待或使用药水。
+SpiderlingsSpinnerWrap,结网幼蛛开始包裹双腿，持续五个世界回合；上身和手臂保持原有状态。
+SpiderlingsSpinnerDone,腿袋已织成。你可以攻击、用物、缓慢移动或解除腿袋。
+KinkyDungeonStatSpiderlingsSpinnerDemo,结网幼蛛试玩
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,进入平坦场地，观看幼蛛放置地面陷阱并连接封路，体验双进度对抗、五回合包裹和跳跃幼蛛避让。
+NameSpiderlingsSilkAnchor,蛛网结点
+KillSpiderlingsSilkAnchor,蛛网边界裂开了。
+SpiderlingsFieldPreparing,幼蛛先放地面陷阱，再连接陷阱拦截退路。可以在封闭前离开，或切断连接。
+SpiderlingsFieldReady,两个陷阱已连接。幼蛛继续拦截其他退路。
+SpiderlingsFieldSprung,陷阱连接已围住区域，仍在内部的玩家可能被捕获。
+SpiderlingsFieldBroken,结点断裂，围网瓦解，牵制解除。
+SpiderlingsFieldReset,重置试玩
+SpiderlingsFieldJumper,放出跳跃幼蛛
+SpiderlingsFieldStatus,蛛网场地：{phase} · 陷阱 {count}/4 · 连接 {links}/4
+SpiderlingsFieldPhasepreparing,织网准备
+SpiderlingsFieldPhaseready,连接准备
+SpiderlingsFieldPhasesprung,连接完整
+SpiderlingsFieldPhasebroken,已破坏
+SpiderlingsFieldPhasecomplete,已完成
+SpiderlingsSpinnerWeave,拘束进度：{value}/100
+SpiderlingsSpinnerEscape,挣脱进度：{value}/{goal}
+SpiderlingsFieldAddSpinner,加入一只 Spinner
+SpiderlingsFieldTrap,地面蛛丝缠住脚步，短暂减缓移动。
+SpiderlingsFieldRebuild,幼蛛将在 {turns} 个世界回合后重新开始布场。
+SpiderlingsFieldWaiting,陷阱已备好。西侧入口在你进入前保持开放。

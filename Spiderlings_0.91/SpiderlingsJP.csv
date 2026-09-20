@@ -1,6 +1,6 @@
 NameSpinner,幼蛛の糸紡ぎ
 AttackSpinner,幼蛛の糸紡ぎが体に沿って素早く這い、細い脚がちくちくした痒みを残す。
-AttackSpinnerBind,幼蛛の糸紡ぎが慌ただしく周りを巡り、粘り強い糸をひと巻き残して姿を消した。(+RestraintAdded)
+AttackSpinnerBind,幼蛛は脚に糸を巻き、近くに留まって織り続けます。(+RestraintAdded)
 KillSpinner,幼蛛の糸紡ぎは細い脚を畳み、影の中へ退いて消えた。
 NameJumper,幼蛛の跳躍者
 AttackJumper,幼蛛の跳躍者が不意に飛びかかり、細い脚が体をかすめて痒みを走らせる。
@@ -153,3 +153,36 @@ KinkyDungeonStatSpiderlingsCocoonStart,繭の中の目覚め
 KinkyDungeonStatDescSpiderlingsCocoonStart,柔らかな繭の中で目覚めると、幾重にも織り重ねられた蜘蛛の糸が頭からつま先までぴたりと覆っています。少し身じろぎするたび、全身に沿う糸がそっと引かれます。
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跳躍する幼蜘蛛は相手の足元を見つめ、身を低くして跳ぶ構えを取る。
 KDModButtonspiderlingsNestTunnelerCap,巣ごとの掘穴幼蛛の累計上限（0：召喚しない）
+RestraintSpiderlingsSpinnerLegbinder,蛛糸の脚袋
+RestraintSpiderlingsSpinnerLegbinderDesc,足裏から太ももの上部までを包む蛛糸。両腕は自由に動かせる。
+RestraintSpiderlingsSpinnerLegbinderDesc2,幅広い帯状の蛛糸を螺旋状に巻くデモ。切断4回、解除／抵抗6回。半完成なら半分で進捗共有。
+SpiderlingsSpinnerPull,糸を振りほどく · 体力10 · 1ターン
+SpiderlingsSpinnerContest,参加幼蛛：{count} · 毎ターン製織 +{rate}
+SpiderlingsSpinnerStart,完全な網が脚を捕らえた。拘束ゲージより先に脱出ゲージを満たそう。援軍は製織速度と脱出目標を増やす。
+SpiderlingsSpinnerWin,糸を振りほどいた。参加中の幼蛛すべてが続く四ターンの間気絶する。
+SpiderlingsSpinnerInterrupt,共同の糸紡ぎが中断した。行動できるが、織られた糸は残る。
+SpiderlingsSpinnerTired,体力が10必要。待機やポーションの使用はできる。
+SpiderlingsSpinnerWrap,五つの世界ターンをかけて脚を包みます。腕の状態は維持されます。
+SpiderlingsSpinnerDone,脚袋が完成。攻撃、アイテム使用、ゆっくりした移動、解除ができる。
+KinkyDungeonStatSpiderlingsSpinnerDemo,紡ぎ子グモの体験
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,平坦な試験場で幼グモが地面に罠を置き、罠同士を糸で結んで退路を塞ぐ。対抗と5ターンの巻き付けを試せる。
+NameSpiderlingsSilkAnchor,蛛糸の結び目
+KillSpiderlingsSilkAnchor,蛛糸の囲いが裂けた。
+SpiderlingsFieldPreparing,幼グモは地面に罠を置いてから結び、退路を塞ぐ。閉鎖前に逃げるか接続を切ろう。
+SpiderlingsFieldReady,2つの罠が結ばれた。別の退路を塞ごうとしている。
+SpiderlingsFieldSprung,罠の接続が区域を囲んだ。内部に残ると捕獲される可能性がある。
+SpiderlingsFieldBroken,結び目が切れ、罠と牽制が解除されました。
+SpiderlingsFieldReset,試遊リセット
+SpiderlingsFieldJumper,跳躍幼蛛を放す
+SpiderlingsFieldStatus,蛛糸の区域：{phase} · 罠 {count}/4 · 接続 {links}/4
+SpiderlingsFieldPhasepreparing,準備中
+SpiderlingsFieldPhaseready,接続準備
+SpiderlingsFieldPhasesprung,閉鎖完了
+SpiderlingsFieldPhasebroken,破壊済み
+SpiderlingsFieldPhasecomplete,完了
+SpiderlingsSpinnerWeave,拘束：{value}/100
+SpiderlingsSpinnerEscape,脱出：{value}/{goal}
+SpiderlingsFieldAddSpinner,Spinner を追加
+SpiderlingsFieldTrap,地面の蛛糸に足が引っ掛かり、一時的に移動が遅くなる。
+SpiderlingsFieldRebuild,あと {turns} ワールドターンで幼グモが再設置を始める。
+SpiderlingsFieldWaiting,罠の準備完了。入るまで西側の入口は開いている。
