@@ -108,16 +108,16 @@ Spinner 玩家和 NPC 近战均不因施网成功退场；正常战败仍有效�
 
 ## 运行时与状态
 
-| 文件 | 职责 |
-| --- | --- |
-| `SpiderlingsCore.js` | 注册入口、拘束目录、自然权重、固定小队与巢穴增援 |
-| `SpiderlingsModelRuntime.js` | atlas-first 别名加载、direct fallback、位移图预载与重绘 |
-| `Spiderlings.js` | 五类敌人、技能、英文 fallback、女仆敌对与选敌优先级 |
-| `SpiderlingsInfestation.js` | 原生侵扰修饰符、五巢任务、完成记录与出口门禁 |
-| `SpiderlingsCombat.js` | NPC 束缚、近战效果成功、喷网碰撞及轨迹去重 |
-| `SpiderlingsJumperDash.js` | 蓄力跃击、目标格预警、落点重验与取消 |
-| `SpiderlingsWebbingModels.js` | 图层、姿势、覆盖与五部位 displacement |
-| `SpiderlingsWebbing.js` | 24 件拘束、shared resolver 实体进阶、操作门禁、逃脱与丝茧加固 |
+| 文件                          | 职责                                                          |
+| ----------------------------- | ------------------------------------------------------------- |
+| `SpiderlingsCore.js`          | 注册入口、拘束目录、自然权重、固定小队与巢穴增援              |
+| `SpiderlingsModelRuntime.js`  | atlas-first 别名加载、direct fallback、位移图预载与重绘       |
+| `Spiderlings.js`              | 五类敌人、技能、英文 fallback、女仆敌对与选敌优先级           |
+| `SpiderlingsInfestation.js`   | 原生侵扰修饰符、五巢任务、完成记录与出口门禁                  |
+| `SpiderlingsCombat.js`        | NPC 束缚、近战效果成功、喷网碰撞及轨迹去重                    |
+| `SpiderlingsJumperDash.js`    | 蓄力跃击、目标格预警、落点重验与取消                          |
+| `SpiderlingsWebbingModels.js` | 图层、姿势、覆盖与五部位 displacement                         |
+| `SpiderlingsWebbing.js`       | 24 件拘束、shared resolver 实体进阶、操作门禁、逃脱与丝茧加固 |
 
 敌方进阶按部位独立进行，身体 Lv1 → Lv2 → Lv3，眼罩 Lv1 → Lv3，口塞 → Lv1 封口 → Lv3 封口；Hood 需要 Lv3 眼罩和封口。每个未满部位只提供下一件候选，统一按来源权重随机选择。每次命中重新检查，不需要等下一回合；十件 Lv1、五件 Lv2、八件 Lv3 全齐后，才按命中前五层 slow 与允许的 direct 来源施加 Cocoon。每次命中最多施加一件。玩家手动装备绕过敌方进阶前置，装备链仍遵守原生兼容与自有层序。外部护甲、普通拘束及混合链通过原生无覆盖添加检查且无 blocker 时可叠加，外部实例及属性保留；原生不兼容时保留原槽。Cocoon 使用同样的兼容判定。
 
@@ -135,13 +135,13 @@ WebSpray slow 只接收 `WebCaster.WebSpray` 精确来源；普通 SpiderWeb 使
 
 Lv1 全部无 displacement。Lv2/Lv3 共用对应部位图与参数：
 
-| 部位 | 目标 | 强度 | 裁切原点 |
-| --- | --- | ---: | --- |
-| Arm | `Rope1` | 1200 | `(650,749)` |
-| Belly | `CorsetTorso` | 1200 | `(459,1280)` |
-| Legs | `Skirts` | 2000 | `(110,1657)` |
-| Ankles | `Skirts` | 2000 | `(383,2085)` |
-| Foot | `Shoes` | 100 | `(741,2928)` |
+| 部位   | 目标          | 强度 | 裁切原点     |
+| ------ | ------------- | ---: | ------------ |
+| Arm    | `Rope1`       | 1200 | `(650,749)`  |
+| Belly  | `CorsetTorso` | 1200 | `(459,1280)` |
+| Legs   | `Skirts`      | 2000 | `(110,1657)` |
+| Ankles | `Skirts`      | 2000 | `(383,2085)` |
+| Foot   | `Shoes`       |  100 | `(741,2928)` |
 
 Legs/Ankles 的 Lv1 位于站立裙层下；Lv2/Lv3 位于 `OverSkirtDeco`、`Pri: 51/52`，四件外层均用 `NoOverride: true` 保留整张裙层，由画稿实际遮盖。Lv1/Lv2 保留原衣物，不添加 `Encase*`、`FlattenedUnderbust` 或 `WrapArms`，不通过 erase map 清掉手套。两只 Lv1 手套只要求手臂 `Free`；Arm 只绑定手臂。
 
