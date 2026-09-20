@@ -21,6 +21,14 @@ powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderli
 
 The builder uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are preserved; replacing one requires an intentional replacement. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
 
+`Repository checks` builds the same allowlisted ZIP on every pull request and maintained-branch push. It verifies every archive entry against that commit, rejects extra or missing files, confirms that atlas generation left no uncommitted difference, and uploads `spiderlings-<commit SHA>` as a GitHub Actions artifact for 14 days. This public-run package does not include the private game and original-art checks, so it is a delivery candidate until the local watcher and required in-game acceptance pass.
+
+To verify an existing package against the checked-out commit without rebuilding it:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
+```
+
 ## Issues and branches
 
 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues) holds new specs, tickets and triage. See [tracker operations](agents/issue-tracker.md) and [labels](agents/triage-labels.md). Old scratch records remain in the original KD workspace; historical links in imported maintenance records refer to that workspace and are not new acceptance evidence.
@@ -31,6 +39,8 @@ Keep commits focused and link the applicable Issue. Publishing only these initia
 
 ## Releases
 
-Only formal versions receive a `v<modbuild>` tag and GitHub Release. Verify the final installable ZIP and commit first. Push the tag to its reviewed formal commit, read back the remote tag, then create a Release with `gh release create --verify-tag --notes-file <file>` and attach the versioned ZIP. Read back release state and the uploaded asset. Test versions currently remain on `test`; do not create a test Release.
+Only formal versions receive a `v<modbuild>` tag and GitHub Release. After the accepted formal change merges, identify the successful `Repository checks` run for that exact `main` commit and download its `spiderlings-<commit SHA>` artifact. Verify the contained ZIP against the same checkout, run the required package and in-game acceptance on that file, and record its SHA-256.
+
+Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Read the Release and download its attachment again to confirm the filename, size and SHA-256. Test versions remain workflow artifacts from `test`; do not create a test Release.
 
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
