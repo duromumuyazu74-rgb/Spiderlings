@@ -1,0 +1,23 @@
+{
+  "public": [
+    "spiderlings-webbing-cutover.test.js",
+    "spiderlings-webbing-cocoon.test.js",
+    "spiderlings-webbing-enemy.test.js",
+    "spiderlings-spinner-art.test.js",
+    "spiderlings-spinner-capture.test.js",
+    "spiderlings-model-runtime.test.js",
+    "spiderlings-release-version.test.js"
+  ],
+  "local": [
+    "spiderlings-encounters.test.js",
+    "spiderlings-combat.test.js",
+    "spiderlings-maid-hostility.test.js",
+    "spiderlings-infestation.test.js",
+    "spiderlings-webbing-lv1.test.js",
+    "spiderlings-webbing-lifecycle.test.js",
+    "spiderlings-jumper-dash.test.js",
+    "spiderlings-webbing-webspray.test.js",
+    "spiderlings-webbing-atlas.test.js",
+    "spiderlings-new-save-smoke.test.js"
+  ]
+}

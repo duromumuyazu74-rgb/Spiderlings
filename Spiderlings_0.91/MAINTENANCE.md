@@ -64,11 +64,11 @@ Lv1 没有 displacement。Lv2/Lv3 共用对应部位配置：
 
 测试包由 manifest、96 个 `fileorder` 条目和七份 CSV 组成，共 104 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
 
-在仓库根目录执行完整本地检查：
+按 [CONTRIBUTING.md 的验证矩阵](../CONTRIBUTING.md#verification)选择检查范围。仅修改文档不需要游戏输入、版本升级或本地 ZIP。运行时交付在 Spiderlings 仓库根目录构建最终 ZIP 后执行完整本地检查：
 
 ```powershell
 python -m pip install -r .\Spiderlings_0.91\tools\requirements-atlas.txt
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -RunCheck
+powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
 ```
 

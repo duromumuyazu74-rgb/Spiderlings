@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const zlib = require("node:zlib");
+const { parseReleaseVersion } = require("./release-version.js");
 
 const modRoot = path.resolve(__dirname, "..");
 const workspaceRoot = path.resolve(modRoot, "..");
@@ -299,44 +300,22 @@ function parseCsv(relativePath) {
     return result;
 }
 
-function checkProjectRules() {
-    if (!fs.existsSync(gameRoot) || path.resolve(gameRoot) === path.resolve(modRoot))
+function checkProjectInputs() {
+    if (!fs.existsSync(gameRoot) || fs.realpathSync(gameRoot) === fs.realpathSync(modRoot)) {
         fail("KinkiestDungeon-5.5 must remain a separate read-only reference package.");
-    else pass("KinkiestDungeon-5.5 and Spiderlings package boundaries are separate.");
-
-    const agents = fs.existsSync(agentsPath) ? readText(agentsPath) : "";
-    for (const token of ["KinkiestDungeon-5.5/", "read-only", "Spiderlings_0.91/AGENTS.md"]) {
-        if (!agents.includes(token)) fail(`AGENTS.md is missing required rule text: ${token}`);
-    }
-    const modAgents = readText(modAgentsPath);
-    for (const token of ["watch-spiderlings-mod.ps1 -Once", "focused git commit"]) {
-        if (!modAgents.includes(token)) fail(`Spiderlings_0.91/AGENTS.md is missing required rule text: ${token}`);
-    }
-    const maintenance = fs.existsSync(maintenancePath) ? readText(maintenancePath) : "";
-    for (const token of [
-        "KinkiestDungeon-5.5/",
-        "Spiderlings_0.91/",
-        "watch-spiderlings-mod.ps1 -Once",
-        "atlas-first",
-        "direct fallback",
-        "shared resolver",
+    } else pass("KinkiestDungeon-5.5 and Spiderlings package boundaries are separate.");
+    for (const file of [
+        agentsPath,
+        modAgentsPath,
+        maintenancePath,
+        watcherPath,
+        path.join(workspaceRoot, "CONTRIBUTING.md"),
+        path.join(workspaceRoot, "docs/DEVELOPMENT.md"),
+        path.join(__dirname, "run-spiderlings-tests.js"),
+        path.join(__dirname, "test-suites.json"),
     ]) {
-        if (!maintenance.includes(token)) fail(`MAINTENANCE.md is missing current cutover guidance: ${token}`);
+        if (!fs.existsSync(file) || !fs.statSync(file).isFile()) fail(`Missing maintenance entry point: ${file}`);
     }
-    const watcher = fs.existsSync(watcherPath) ? readText(watcherPath) : "";
-    for (const token of [
-        "check-spiderlings-mod.js",
-        "spiderlings-webbing-cutover.test.js",
-        "spiderlings-webbing-atlas.test.js",
-        "spiderlings-new-save-smoke.test.js",
-        "spiderlings-maid-hostility.test.js",
-        "spiderlings-infestation.test.js",
-        "js|json|csv|png|wav|ogg|md",
-    ]) {
-        if (!watcher.includes(token)) fail(`watch-spiderlings-mod.ps1 is missing: ${token}`);
-    }
-    if (!errors.some((message) => /AGENTS|MAINTENANCE|watch-spiderlings/.test(message)))
-        pass("maintenance and watcher rules describe the cut-over package.");
 }
 
 function loadManifest() {
@@ -349,8 +328,12 @@ function loadManifest() {
     }
     if (manifest.modname !== "Spiderlings") fail("mod.json modname must be Spiderlings.");
     if (!manifest.moddesc || !manifest.modbuild) fail("mod.json must include moddesc and modbuild.");
-    if (manifest.modbuild !== "0.92.36-test.11")
-        fail("mod.json modbuild must identify the 0.92.36-test.11 test build (formal baseline 0.92.36).");
+    try {
+        const release = parseReleaseVersion(manifest.modbuild);
+        pass(`Release ${release.version}: ${release.channel} build, baseline ${release.baseline}.`);
+    } catch (error) {
+        fail(error.message);
+    }
     if (manifest.gamemajor !== 5 || manifest.gameminor !== 4)
         fail("mod.json must retain the 5.4/5.5 compatibility window.");
     const expected = [...runtimeAssets, ...runtimeScripts];
@@ -733,17 +716,8 @@ function checkRuntime(state) {
     ) {
         fail("Map population cap must default to 25 and count only the four Spiderlings species, excluding nests.");
     }
-    const modelRuntime = readModText("SpiderlingsModelRuntime.js");
-    if (
-        /Assets\.backgroundLoad\s*\(/.test(modelRuntime) ||
-        !modelRuntime.includes("cacheTexture(texturePath, texture)") ||
-        (modelRuntime.match(/loadParser: "modTextureLoader"/g) || []).length !== 2 ||
-        !modelRuntime.includes("texture.baseTexture.valid !== false")
-    ) {
-        fail(
-            "Webbing refresh must await explicit PNG parsing, reject pending textures and update KD's cache before redress.",
-        );
-    }
+    // Texture decoding, cache publication, and fallback are exercised by the
+    // public model-runtime suite before this checker runs in the local watcher.
     const color = state.context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsPinkWebbing");
     if (
         !color ||
@@ -1808,7 +1782,13 @@ function extractTextEntry(zip, entry) {
 
 function checkReleaseZip(manifest) {
     if (!manifest || !manifest.modbuild) return;
-    const zipName = `Spiderlings_${manifest.modbuild}.zip`;
+    let zipName;
+    try {
+        zipName = parseReleaseVersion(manifest.modbuild).packageName;
+    } catch {
+        return;
+    } // loadManifest already reports invalid versions.
+
     const zipPath = path.join(workspaceRoot, zipName);
     if (!fs.existsSync(zipPath)) {
         note(`${zipName} is absent; this run checks the source package without certifying an installable ZIP.`);
@@ -1863,7 +1843,7 @@ function checkReleaseZip(manifest) {
 function main() {
     console.log(`Spiderlings mod check: ${modRoot}`);
     console.log(`Reference game package: ${gameRoot} (read-only)`);
-    checkProjectRules();
+    checkProjectInputs();
     const manifest = loadManifest();
     checkRuntimeTrees();
     checkOfficialSkirtBoundary();

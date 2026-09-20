@@ -1,6 +1,6 @@
 # Development and publishing
 
-Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for language restrictions, incremental formatting, commits and required PR checks. Both maintained branches use PRs; the sole maintainer can merge after checks without another person's approval.
+Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for language restrictions, incremental formatting, commits and required PR checks. Its [verification matrix](../CONTRIBUTING.md#verification) determines which checks and delivery steps apply to a change. Both maintained branches use PRs; the sole maintainer can merge after checks without another person's approval.
 
 ## Setup
 
@@ -14,8 +14,7 @@ Use Node.js with its built-in test runner, PowerShell, and Python with `Pillow` 
 These inputs are not downloaded or redistributed by the repository. An existing KD workspace can supply them through local directory junctions; all generated files remain outside those targets. Run commands from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -RunCheck
+powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
