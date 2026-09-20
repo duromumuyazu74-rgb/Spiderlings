@@ -33,4 +33,4 @@ English is the primary repository language; Simplified Chinese is also supported
 
 ## Credits
 
-Art assets: T_Swizzle. Original mod author: anthropocentricity. Reset author: Chlorlne. Existing authorship in the manifest and source is preserved. This repository does not grant a new license to third-party artwork or the official game.
+Art assets: T_Swizzle. Original mod author: anthropocentricity. Revived and maintained by: Chlorlne. Existing authorship in the manifest and source is preserved. This repository does not grant a new license to third-party artwork or the official game.
