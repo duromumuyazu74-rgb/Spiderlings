@@ -1,0 +1,4 @@
+interface:
+  display_name: "KD 机制与版本向导"
+  short_description: "基于 KD 5.4.x 的源码证据调查底层机制，并对照 5.5 版本差异"
+  default_prompt: "使用 $kd-mechanics 调查这个 KD 机制及 Mod 接入点，确认目标补丁并给出源码证据。"

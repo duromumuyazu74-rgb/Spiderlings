@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Spiderlings Atlas"
+  short_description: "Rebuild, verify, and package the Spiderlings atlas"
+  default_prompt: "Use $build-spiderlings-atlas to rebuild, verify, and package the current Spiderlings TextureAtlas release."

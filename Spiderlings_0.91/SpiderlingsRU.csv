@@ -1,0 +1,155 @@
+NameSpinner,Паучонок-прядильщик
+AttackSpinner,Паучонок-прядильщик быстро ползает по твоему телу; тонкие лапки оставляют колючий зуд.
+AttackSpinnerBind,Паучонок-прядильщик торопливо снует вокруг тебя, оставляет виток липкого шёлка и исчезает. (+RestraintAdded)
+KillSpinner,Паучонок-прядильщик подбирает тонкие лапки, пятится в тень и исчезает.
+NameJumper,Паучонок-прыгун
+AttackJumper,Паучонок-прыгун внезапно бросается ближе; тонкие лапки задевают тело, вызывая колючий зуд.
+AttackJumperBind,Паучонок-прыгун приземляется на тебя, рывком затягивает шёлк и в следующий миг исчезает. (+RestraintAdded)
+KillJumper,Паучонок-прыгун спотыкаясь отступает и вскоре скрывается в тени.
+NameTunneler,Паучонок-землекоп
+KillTunneler,Паучонок-землекоп исчезает, оставляя на месте лишь несколько шёлковых нитей.
+NameNestEntrance,Вход в гнездо
+KillNestEntrance,Вход в гнездо с грохотом рушится, и прятавшиеся внутри паучата высыпают наружу!
+NameWebCaster,Паучонок-плеватель
+KillWebCaster,Паучонок-плеватель съёживается и отступает в темноту.
+KinkyDungeonSpellSummonSpinner,Призвать прядильщика
+KinkyDungeonSummonSummonSpinner,Паучонок-прядильщик выползает из темноты, протягивая шёлковые нити между тонкими лапками.
+KinkyDungeonSpellCastSummonSpinner,Из темноты доносится тихий топот; вот-вот появится паучонок-прядильщик.
+KinkyDungeonSpellSummonJumper,Призвать прыгуна
+KinkyDungeonSummonSummonJumper,Паучонок-прыгун выскакивает наружу и легко опускает тонкие лапки на землю.
+KinkyDungeonSpellCastSummonJumper,Из темноты доносится торопливый шорох; вот-вот появится паучонок-прыгун.
+KinkyDungeonSpellSpiderlingsJumperDash,Прыжковая атака прыгуна
+KinkyDungeonSpellCastSpiderlingsJumperDash,Паучонок-прыгун впивается взглядом в землю у твоих ног, припадает к ней и тесно подбирает тонкие лапки.
+KinkyDungeonSpellSummonWebCaster,Призвать плевателя
+KinkyDungeonSummonSummonWebCaster,Паучонок-плеватель выползает наружу, волоча за собой липкую нить.
+KinkyDungeonSpellCastSummonWebCaster,Из темноты тянется липкий шёлк; вот-вот появится паучонок-плеватель.
+KinkyDungeonSpellSummonTunneler,Призвать землекопа
+KinkyDungeonSummonSummonTunneler,Паучонок-землекоп выбирается из темноты и шуршит по земле.
+KinkyDungeonSpellCastSummonTunneler,Из темноты доносится тихое скребущее шуршание; вот-вот появится паучонок-землекоп.
+KinkyDungeonSpellSummonNestEntrance,Выкопать паучье гнездо
+KinkyDungeonSummonSummonNestEntrance,Земля раскалывается, открывая покрытую шёлком дыру; появился новый вход в гнездо!
+KinkyDungeonSpellCastSummonNestEntrance,Паучонок-землекоп припадает к земле и роет, а по трещинам расползается шёлк!
+KinkyDungeonSpellWebSpray,Струя паутины
+KinkyDungeonSpellCastWebSpray,Паучонок-плеватель выпрыскивает к тебе пучок липкого шёлка; белые нити внезапно раскрываются в воздухе!
+KinkyDungeonSpellWebSprayDamage,Летящий липкий шёлк опутывает тебя спереди! (DamageDealt)
+KinkyDungeonSpellWebSprayBind,Выброшенный шёлк липнет к телу и сплетается в паутину!
+KinkyDungeonSpellSpiderWeb,Паутина на земле
+KinkyDungeonSpellCastSpiderWeb,Липкие нити опускаются на землю, расстилая вокруг неровную паутину.
+KinkyDungeonSpellSpiderWebDamage,Ты ступаешь в паутину, и липкие нити обвивают стопы! (DamageDealt)
+KinkyDungeonSpellSpiderWebBind,Ты ступаешь в паутину, и липкие нити у ног тут же начинают обвиваться вокруг них!
+KDModButtonSpiderlings,Паучата
+KDModButtonspiderlingsSquad,Постоянный отряд паучат
+KDModButtonspiderlingsNestSummonWeights,Веса видов подкреплений гнезда
+KDModButtonspiderlingsNestSpinnerWeight,Вес прядильщика
+KDModButtonspiderlingsNestJumperWeight,Вес прыгуна
+KDModButtonspiderlingsNestWebCasterWeight,Вес плевателя
+KDModButtonspiderlingsNestTunnelerWeight,Вес землекопа
+KDModButtonspiderlingsNestReinforcementControl,Повторные подкрепления гнезда
+KDModButtonspiderlingsNestReinforcementCap,Живые подкрепления на гнездо
+KDModButtonspiderlingsNestReinforcementInterval,Интервал проверки подкреплений (ходы)
+RestraintSpiderlingsWebbingLv1Arm,Шёлковые путы на руки
+RestraintSpiderlingsWebbingLv1ArmDesc,Несколько липких нитей обвивают запястья, стягивая руки за спиной.
+RestraintSpiderlingsWebbingLv1ArmDesc2,Между нитями ещё видны просветы. Стоит чуть повернуться, и тонкие белые линии натягиваются.
+RestraintSpiderlingsWebbingLv1MittenLeft,Шёлковая варежка · левая
+RestraintSpiderlingsWebbingLv1MittenLeftDesc,Тонкий шёлк прилипает к левой ладони, собирая пальцы под общей мягкой оболочкой.
+RestraintSpiderlingsWebbingLv1MittenLeftDesc2,Кончики пальцев упираются в пушистые волокна; с края свисает несколько свободных нитей.
+RestraintSpiderlingsWebbingLv1MittenRight,Шёлковая варежка · правая
+RestraintSpiderlingsWebbingLv1MittenRightDesc,Тонкий шёлк прилипает к правой ладони, собирая пальцы под общей мягкой оболочкой.
+RestraintSpiderlingsWebbingLv1MittenRightDesc2,Костяшки образуют неглубокие бугорки, а липкие нити огибают кисть и тянутся к ладони.
+RestraintSpiderlingsWebbingLv1Belly,Шёлковая обмотка живота
+RestraintSpiderlingsWebbingLv1BellyDesc,Узкая полоса липкого шёлка облегает низ живота.
+RestraintSpiderlingsWebbingLv1BellyDesc2,Тонкие ворсинки по краям чуть колышутся в такт движениям тела.
+RestraintSpiderlingsWebbingLv1Legs,Шёлковые путы на ноги
+RestraintSpiderlingsWebbingLv1LegsDesc,Редкие нити пересекают сведённые ноги, протягивая между ними тонкие белые линии.
+RestraintSpiderlingsWebbingLv1LegsDesc2,Ячейки ещё отчётливо видны; потянешь в одном месте — дрожат и соседние нити.
+RestraintSpiderlingsWebbingLv1Ankles,Шёлковые путы на щиколотки
+RestraintSpiderlingsWebbingLv1AnklesDesc,Несколько нитей перекрещиваются между щиколотками, мягко сводя их вместе.
+RestraintSpiderlingsWebbingLv1AnklesDesc2,Белые нити огибают щиколотки и натягиваются узким мостиком между стопами.
+RestraintSpiderlingsWebbingLv1Foot,Шёлковая оболочка стоп
+RestraintSpiderlingsWebbingLv1FootDesc,Тонкий шёлк укрывает сведённые стопы, слипаясь по их краям.
+RestraintSpiderlingsWebbingLv1FootDesc2,Тонкие нити расходятся по подъёмам; под паутиной ещё ясно видны очертания пальцев.
+RestraintSpiderlingsWebbingLv1Blindfold,Шёлковая повязка на глаза
+RestraintSpiderlingsWebbingLv1BlindfoldDesc,Тонкая полоса шёлка прикрывает глаза, смягчая свет и размывая далёкие очертания.
+RestraintSpiderlingsWebbingLv1BlindfoldDesc2,Края липнут у уголков глаз, а свободные нити касаются щёк при поворотах головы.
+RestraintSpiderlingsWebbingLv2Arm,Плетёные путы на руки
+RestraintSpiderlingsWebbingLv2ArmDesc,Шёлк снова и снова проходит между запястьями и руками; отдельные нити сплелись в широкие толстые ленты.
+RestraintSpiderlingsWebbingLv2ArmDesc2,При движении каждая нить натягивает всю паутину. У запястий теснятся липкие узлы.
+RestraintSpiderlingsWebbingLv2Belly,Плетёная обмотка живота
+RestraintSpiderlingsWebbingLv2BellyDesc,Шёлк расходится по низу живота, укрывая узкую ленту толстой обмоткой.
+RestraintSpiderlingsWebbingLv2BellyDesc2,Новые и старые нити слипаются, а перекрещенные узоры доходят до боков талии.
+RestraintSpiderlingsWebbingLv2Legs,Плетёные путы на ноги
+RestraintSpiderlingsWebbingLv2LegsDesc,Толстый шёлк пересекает ноги, затягивая пространство между ними сплошной паутиной.
+RestraintSpiderlingsWebbingLv2LegsDesc2,Прежние ячейки сузились до небольших щелей; перекрывающиеся ленты движутся вместе с ногами.
+RestraintSpiderlingsWebbingLv2Ankles,Плетёные путы на щиколотки
+RestraintSpiderlingsWebbingLv2AnklesDesc,Шёлк многократно обвивает щиколотки, укрывая пересечённые нити толстыми кольцами.
+RestraintSpiderlingsWebbingLv2AnklesDesc2,Липкие нити соединяют кольца; движение щиколоток заставляет спутанные белые линии тянуть друг друга.
+RestraintSpiderlingsWebbingLv2Foot,Плетёная оболочка стоп
+RestraintSpiderlingsWebbingLv2FootDesc,Шёлк снова и снова ложится на стопы, заключая края и подъёмы в толстую паутину.
+RestraintSpiderlingsWebbingLv2FootDesc2,Очертания пальцев расплылись; на поверхности остались лишь перекрывающиеся шёлковые бороздки.
+RestraintSpiderlingsWebbingLv1Stuffing,Шёлковая набивка для рта
+RestraintSpiderlingsWebbingLv1StuffingDesc,Мягкий комок шёлка заполняет рот, размывая прежде чёткие слова.
+RestraintSpiderlingsWebbingLv1StuffingDesc2,За губами собираются пушистые волокна, превращая недоговорённые слова в невнятное бормотание.
+RestraintSpiderlingsWebbingLv1Gag,Шёлковый кляп
+RestraintSpiderlingsWebbingLv1GagDesc,Широкая полоса шёлка закрывает рот, приглушая голос.
+RestraintSpiderlingsWebbingLv1GagDesc2,Липкие нити тянутся от уголков губ к щекам; по краям ещё различимы отдельные пряди.
+RestraintSpiderlingsWebbingLv3Arm,Плотные путы на руки
+RestraintSpiderlingsWebbingLv3ArmDesc,Плотный шёлк целиком укрывает руки за спиной, погребая узлы у запястий в толстой белой оболочке.
+RestraintSpiderlingsWebbingLv3ArmDesc2,Движения лишь продавливают мелкие складки; прежних просветов больше не найти.
+RestraintSpiderlingsWebbingLv3Belly,Плотная обмотка живота
+RestraintSpiderlingsWebbingLv3BellyDesc,Тонкие нити густо ложатся друг на друга, заключая живот в непрерывную оболочку.
+RestraintSpiderlingsWebbingLv3BellyDesc2,Узоры плетения тонут в толстой поверхности; при движении тела проступают только неглубокие складки.
+RestraintSpiderlingsWebbingLv3Legs,Плотные путы на ноги
+RestraintSpiderlingsWebbingLv3LegsDesc,Шёлк полностью укрывает сведённые ноги, заполняя просветы между ними густыми белыми нитями.
+RestraintSpiderlingsWebbingLv3LegsDesc2,Очертания обеих ног сливаются; прежние ленты скрылись под гладкой оболочкой.
+RestraintSpiderlingsWebbingLv3Ankles,Плотные путы на щиколотки
+RestraintSpiderlingsWebbingLv3AnklesDesc,Густой шёлк окружает щиколотки, сплетая соседние кольца в бесшовную оболочку.
+RestraintSpiderlingsWebbingLv3AnklesDesc2,Узлы и стыки исчезли; при движении меняются лишь неглубокие вмятины у щиколоток.
+RestraintSpiderlingsWebbingLv3Foot,Плотная оболочка стоп
+RestraintSpiderlingsWebbingLv3FootDesc,Шёлк полностью заключает стопы в толстую оболочку, скрывая подробности краёв и подъёмов.
+RestraintSpiderlingsWebbingLv3FootDesc2,Бесчисленные нити сливаются в сплошную белизну, оставляя лишь общую форму сведённых стоп.
+RestraintSpiderlingsWebbingLv3Blindfold,Плотная повязка на глаза
+RestraintSpiderlingsWebbingLv3BlindfoldDesc,Густой шёлк закрывает глаза, погребая края повязки в непрерывной белой поверхности.
+RestraintSpiderlingsWebbingLv3BlindfoldDesc2,У щёк больше не колышутся свободные нити; плотно прилегающая оболочка поворачивается вместе с головой.
+RestraintSpiderlingsWebbingLv3Gag,Плотный шёлковый кляп
+RestraintSpiderlingsWebbingLv3GagDesc,Толстый шёлк закрывает рот, укрывая переплетённую паутину плотной сплошной поверхностью.
+RestraintSpiderlingsWebbingLv3GagDesc2,Стыки у губ исчезли; глухие звуки проходят сквозь шёлк, вызывая едва заметную дрожь.
+RestraintSpiderlingsWebbingLv3Hood,Плотный шёлковый капюшон
+RestraintSpiderlingsWebbingLv3HoodDesc,Непрозрачный шёлк спускается от макушки и заключает всю голову в толстый капюшон.
+RestraintSpiderlingsWebbingLv3HoodDesc2,Волосы и черты лица скрываются под белыми нитями; остаётся лишь покачивающийся силуэт.
+RestraintSpiderlingsWebbingCocoon,Кокон из паучьего шёлка
+RestraintSpiderlingsWebbingCocoonDesc,Плотный шёлк оборачивает тело толстым коконом. Край сходится подо ртом, оставляя верхнюю часть головы снаружи.
+RestraintSpiderlingsWebbingCocoonDesc2,Стенка кокона вздрагивает от движений. Волочащиеся нити шуршат по полу, словно передавая в темноту шевеление внутри.
+KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 скрывается под TargetLv2; пальцы касаются лишь липкого шёлка снаружи.
+KinkyDungeonSpiderlingsCocoonAnchored,Паучата протягивают паутину вокруг кокона и крепко пришпиливают тебя к месту!
+KDMapMod_SpiderlingsInfestation,Нашествие паучат
+KinkyDungeonMapModSpiderlingsInfestation,Шёлк расползается по углам, и в тени шорох отвечает шороху. У этого места давно появились другие обитатели.
+KDEscapeMethod_SpiderlingsInfestation,Уничтожить отмеченные гнёзда
+KDEscapeMethodDesc_SpiderlingsInfestation,Гнёзда первых обитателей всё ещё шевелятся во тьме; из глубины входов доносится мелкое царапанье.
+SpiderlingsInfestationProgress,Уничтожено отмеченных гнёзд: CURRENT/5
+SpiderlingsInfestationBlocked,Ты останавливаешься перед лестницей. Шорох в глубине гнёзд всё ещё не стих. (CURRENT/5)
+SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (5/5)
+KDModButtonspiderlingsPinkWebbing,Розовая паутина (выкл.: исходная)
+KinkyDungeonSpiderlingsWebbingInterwoven,Переплетённые нити стягиваются и опутывают ещё одну часть твоего тела.
+KinkyDungeonStruggleCutFailSpiderlingsWebbing,Ты надрезаешь TargetRestraint. Липкие нити лопаются и разрез становится немного глубже.
+KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Ты надрезаешь TargetRestraint. Липкие нити лопаются и разрез становится немного глубже.
+KinkyDungeonStruggleCutSuccessSpiderlingsWebbing,Ты перерезаешь последние нити TargetRestraint. Клочья паутины осыпаются.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,Ты тянешь TargetRestraint. Натянутые нити слабеют и просвет в плетении становится чуть шире.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,Ты тянешь TargetRestraint. Натянутые нити слабеют и просвет в плетении становится чуть шире.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsWebbing,Ты вырываешься из последних липких нитей TargetRestraint и собираешь освободившуюся паутину.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,Ты распутываешь слипшиеся нити TargetRestraint. Небольшой участок паутины отлипает.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,Ты распутываешь слипшиеся нити TargetRestraint. Небольшой участок паутины отлипает.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Ты снимаешь TargetRestraint и собираешь освободившиеся нити.
+KinkyDungeonStruggleCutFailSpiderlingsCocoon,Ты вводишь лезвие в TargetRestraint. Вдоль узкого разреза в стенке кокона рвутся ещё несколько нитей.
+KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Ты вводишь лезвие в TargetRestraint. Вдоль узкого разреза в стенке кокона рвутся ещё несколько нитей.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Ты перерезаешь последний шов TargetRestraint. Рассечённая оболочка кокона спадает с тела.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Ты давишь на TargetRestraint изнутри. Стенка кокона дрожит и несколько внутренних нитей поддаются.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Ты давишь на TargetRestraint изнутри. Стенка кокона дрожит и несколько внутренних нитей поддаются.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ты расширяешь разрыв в TargetRestraint и протискиваешься из обмякшей оболочки кокона.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,Ты понемногу отслаиваешь край TargetRestraint. Слипшиеся слои расходятся чуть дальше.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,Ты понемногу отслаиваешь край TargetRestraint. Слипшиеся слои расходятся чуть дальше.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Ты раскрываешь слои TargetRestraint и выбираешься из ослабленного кокона.
+KDModButtonspiderlingsMapPopulationCap,Пауки на карте (0: без лимита)
+KinkyDungeonStatSpiderlingsCocoonStart,Пробуждение в коконе
+KinkyDungeonStatDescSpiderlingsCocoonStart,Вы просыпаетесь в мягком коконе: плотные слои паучьего шёлка окутывают вас с головы до ног. При каждом лёгком движении натягиваются нити, тесно прилегающие к телу.
+KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Прыгающий паучок смотрит под ноги противнику и припадает к земле перед прыжком.
+KDModButtonspiderlingsNestTunnelerCap,Всего Tunneler на гнездо (0: не призывать)

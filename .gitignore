@@ -1,0 +1,15 @@
+# Local reference inputs
+/KinkiestDungeon-5.5/
+/T‘s NEW Webbing LV1/
+/T‘s NEW Webbing LV2/
+/DSmap/
+/node_modules/
+/.scratch/
+/test-results/
+/.codex/
+/.vscode/
+__pycache__/
+*.log
+.env
+.env.*
+*.zip

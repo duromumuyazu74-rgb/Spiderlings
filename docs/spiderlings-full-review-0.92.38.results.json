@@ -1,0 +1,2211 @@
+{
+  "date": "2026-09-14",
+  "releases": [
+    {
+      "file": "Spiderlings_0.92.38.zip",
+      "bytes": 20071527,
+      "sha256": "7e947c8c93d762703753339a9a2e77485c3ee24cddc4d5601f8617e950737162"
+    },
+    {
+      "file": "Spiderlings_0.92.36-test.9.zip",
+      "bytes": 20095612,
+      "sha256": "2fd3a9f5b0e44877ba4b0fd0cc4e7bc6e59f292ccf47c7470d463396c9eb813d"
+    }
+  ],
+  "sourceTests": {
+    "formal": {
+      "pass": 277,
+      "fail": 0
+    },
+    "test": {
+      "pass": 290,
+      "fail": 0
+    }
+  },
+  "compatibility": [
+    {
+      "version": "5.4.92",
+      "probes": [
+        {
+          "name": "new-save-turns",
+          "ok": true
+        },
+        {
+          "name": "player-dialogue",
+          "ok": true
+        },
+        {
+          "name": "webspray-through-cocoon",
+          "ok": true
+        },
+        {
+          "name": "equipment-save-load",
+          "ok": true
+        },
+        {
+          "name": "native-counted-remove",
+          "ok": true
+        },
+        {
+          "name": "NPC-silk-contact",
+          "ok": true
+        }
+      ],
+      "coreErrors": [],
+      "infestationMaps": 15,
+      "allActiveMapsHaveFiveNests": true,
+      "retirementModes": [
+        "passive",
+        "blocked-move",
+        "active-npc",
+        "no-cocoon",
+        "reinforcements"
+      ],
+      "retirementErrors": []
+    },
+    {
+      "version": "5.5.0",
+      "probes": [
+        {
+          "name": "new-save-turns",
+          "ok": true
+        },
+        {
+          "name": "player-dialogue",
+          "ok": true
+        },
+        {
+          "name": "webspray-through-cocoon",
+          "ok": true
+        },
+        {
+          "name": "equipment-save-load",
+          "ok": true
+        },
+        {
+          "name": "native-counted-remove",
+          "ok": true
+        },
+        {
+          "name": "NPC-silk-contact",
+          "ok": true
+        }
+      ],
+      "coreErrors": [],
+      "infestationMaps": 15,
+      "allActiveMapsHaveFiveNests": true,
+      "retirementModes": [
+        "passive",
+        "blocked-move",
+        "active-npc",
+        "no-cocoon",
+        "reinforcements"
+      ],
+      "retirementErrors": []
+    },
+    {
+      "version": "5.5.3",
+      "probes": [
+        {
+          "name": "new-save-turns",
+          "ok": true
+        },
+        {
+          "name": "player-dialogue",
+          "ok": true
+        },
+        {
+          "name": "webspray-through-cocoon",
+          "ok": true
+        },
+        {
+          "name": "equipment-save-load",
+          "ok": true
+        },
+        {
+          "name": "native-counted-remove",
+          "ok": true
+        },
+        {
+          "name": "NPC-silk-contact",
+          "ok": true
+        }
+      ],
+      "coreErrors": [],
+      "infestationMaps": 15,
+      "allActiveMapsHaveFiveNests": true,
+      "retirementModes": [
+        "passive",
+        "blocked-move",
+        "active-npc",
+        "no-cocoon",
+        "reinforcements"
+      ],
+      "retirementErrors": []
+    }
+  ],
+  "endurance": [
+    {
+      "version": "5.4.92",
+      "finalPackage": false,
+      "timing": {
+        "turns": 1000,
+        "p50": 9.100000023841858,
+        "p95": 18.400000005960464,
+        "max": 211.19999998807907,
+        "first100p50": 8.800000011920929,
+        "last100p50": 8.299999982118607
+      },
+      "samples": [
+        {
+          "turn": 50,
+          "entities": 9,
+          "spiders": 6,
+          "bullets": 13,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 13
+        },
+        {
+          "turn": 100,
+          "entities": 22,
+          "spiders": 18,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 150,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 200,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 250,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 300,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 350,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 400,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 450,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 500,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 550,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 600,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 650,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 700,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 750,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 800,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 850,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 900,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 950,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 1000,
+          "entities": 24,
+          "spiders": 20,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        }
+      ],
+      "frameSample": {
+        "median": 416.6000000000058,
+        "max": 850
+      },
+      "errorCounts": {},
+      "missing": []
+    },
+    {
+      "version": "5.5.0",
+      "finalPackage": false,
+      "timing": {
+        "turns": 1000,
+        "p50": 10.199999988079071,
+        "p95": 42.19999998807907,
+        "max": 365.2000000178814,
+        "first100p50": 8,
+        "last100p50": 7.800000011920929
+      },
+      "samples": [
+        {
+          "turn": 50,
+          "entities": 8,
+          "spiders": 5,
+          "bullets": 31,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 2
+        },
+        {
+          "turn": 100,
+          "entities": 17,
+          "spiders": 12,
+          "bullets": 32,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 150,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 200,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 250,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 300,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 350,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 400,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 450,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 500,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 550,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 600,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 650,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 700,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 750,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 800,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 850,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 900,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 950,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        },
+        {
+          "turn": 1000,
+          "entities": 30,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 364000000,
+          "items": 24
+        }
+      ],
+      "frameSample": {
+        "median": 666.6999999999971,
+        "max": 1533.2999999999884
+      },
+      "errorCounts": {
+        "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22": 124
+      },
+      "missing": [
+        "/TextureAtlas/game_0000.json",
+        "/TextureAtlas/models_0000.json",
+        "/TextureAtlas/displacement_0000.json"
+      ]
+    },
+    {
+      "version": "5.5.3",
+      "finalPackage": true,
+      "timing": {
+        "turns": 1000,
+        "p50": 6.600000023841858,
+        "p95": 10.199999988079071,
+        "max": 41.19999998807907,
+        "first100p50": 6.0999999940395355,
+        "last100p50": 6.799999982118607
+      },
+      "samples": [
+        {
+          "turn": 50,
+          "entities": 8,
+          "spiders": 5,
+          "bullets": 42,
+          "effects": 0,
+          "heap": 162627272,
+          "items": 2
+        },
+        {
+          "turn": 100,
+          "entities": 7,
+          "spiders": 4,
+          "bullets": 21,
+          "effects": 0,
+          "heap": 197657662,
+          "items": 3
+        },
+        {
+          "turn": 150,
+          "entities": 23,
+          "spiders": 18,
+          "bullets": 27,
+          "effects": 0,
+          "heap": 236859448,
+          "items": 13
+        },
+        {
+          "turn": 200,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 263437239,
+          "items": 24
+        },
+        {
+          "turn": 250,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 270665415,
+          "items": 24
+        },
+        {
+          "turn": 300,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 264461147,
+          "items": 24
+        },
+        {
+          "turn": 350,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 288279307,
+          "items": 24
+        },
+        {
+          "turn": 400,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 305632354,
+          "items": 24
+        },
+        {
+          "turn": 450,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 358451710,
+          "items": 24
+        },
+        {
+          "turn": 500,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 355543478,
+          "items": 24
+        },
+        {
+          "turn": 550,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 376169950,
+          "items": 24
+        },
+        {
+          "turn": 600,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 368224394,
+          "items": 24
+        },
+        {
+          "turn": 650,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 428181577,
+          "items": 24
+        },
+        {
+          "turn": 700,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 413335365,
+          "items": 24
+        },
+        {
+          "turn": 750,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 426936129,
+          "items": 24
+        },
+        {
+          "turn": 800,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 423388977,
+          "items": 24
+        },
+        {
+          "turn": 850,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 429129461,
+          "items": 24
+        },
+        {
+          "turn": 900,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 445540893,
+          "items": 24
+        },
+        {
+          "turn": 950,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 472648525,
+          "items": 24
+        },
+        {
+          "turn": 1000,
+          "entities": 32,
+          "spiders": 25,
+          "bullets": 0,
+          "effects": 0,
+          "heap": 468173637,
+          "items": 24
+        }
+      ],
+      "frameSample": {
+        "median": 6.099999999998545,
+        "max": 6.200000000004366
+      },
+      "errorCounts": {},
+      "missing": [
+        "/Game/Locks/Red.png"
+      ]
+    }
+  ],
+  "visuals": [
+    {
+      "version": "5.4.92",
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 (0x00002786) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "baseFrames": {
+        "median": 6.099999999999454,
+        "max": 6.200000000000728
+      },
+      "modIdleFrames": {
+        "median": 6.099999999998545,
+        "max": 12.200000000000728
+      },
+      "cases": [
+        {
+          "pink": false,
+          "level": 1,
+          "items": [
+            "SpiderlingsWebbingLv1Arm",
+            "SpiderlingsWebbingLv1MittenRight",
+            "SpiderlingsWebbingLv1MittenLeft",
+            "SpiderlingsWebbingLv1Belly",
+            "SpiderlingsWebbingLv1Legs",
+            "SpiderlingsWebbingLv1Ankles",
+            "SpiderlingsWebbingLv1Foot",
+            "SpiderlingsWebbingLv1Blindfold",
+            "SpiderlingsWebbingLv1Gag",
+            "SpiderlingsWebbingLv1Stuffing"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": false,
+          "level": 2,
+          "items": [
+            "SpiderlingsWebbingLv2Arm",
+            "SpiderlingsWebbingLv2Belly",
+            "SpiderlingsWebbingLv2Legs",
+            "SpiderlingsWebbingLv2Ankles",
+            "SpiderlingsWebbingLv2Foot"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": false,
+          "level": 3,
+          "items": [
+            "SpiderlingsWebbingLv3Arm",
+            "SpiderlingsWebbingLv3Belly",
+            "SpiderlingsWebbingLv3Legs",
+            "SpiderlingsWebbingLv3Ankles",
+            "SpiderlingsWebbingLv3Foot",
+            "SpiderlingsWebbingLv3Gag",
+            "SpiderlingsWebbingLv3Hood",
+            "SpiderlingsWebbingLv3Blindfold"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": false,
+          "level": 4,
+          "items": [
+            "SpiderlingsWebbingCocoon"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 1,
+          "items": [
+            "SpiderlingsWebbingLv1Arm",
+            "SpiderlingsWebbingLv1MittenRight",
+            "SpiderlingsWebbingLv1MittenLeft",
+            "SpiderlingsWebbingLv1Belly",
+            "SpiderlingsWebbingLv1Legs",
+            "SpiderlingsWebbingLv1Ankles",
+            "SpiderlingsWebbingLv1Foot",
+            "SpiderlingsWebbingLv1Blindfold",
+            "SpiderlingsWebbingLv1Gag",
+            "SpiderlingsWebbingLv1Stuffing"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 2,
+          "items": [
+            "SpiderlingsWebbingLv2Arm",
+            "SpiderlingsWebbingLv2Belly",
+            "SpiderlingsWebbingLv2Legs",
+            "SpiderlingsWebbingLv2Ankles",
+            "SpiderlingsWebbingLv2Foot"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 3,
+          "items": [
+            "SpiderlingsWebbingLv3Arm",
+            "SpiderlingsWebbingLv3Belly",
+            "SpiderlingsWebbingLv3Legs",
+            "SpiderlingsWebbingLv3Ankles",
+            "SpiderlingsWebbingLv3Foot",
+            "SpiderlingsWebbingLv3Gag",
+            "SpiderlingsWebbingLv3Hood",
+            "SpiderlingsWebbingLv3Blindfold"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 18.19999999999709
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 4,
+          "items": [
+            "SpiderlingsWebbingCocoon"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        }
+      ],
+      "errorCounts": {
+        "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22": 46
+      },
+      "missing": [
+        "/Game/Locks/Red.png",
+        "/Game/Locks/Red.png"
+      ]
+    },
+    {
+      "version": "5.5.3",
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 (0x00002786) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "baseFrames": {
+        "median": 6.099999999998545,
+        "max": 6.200000000000728
+      },
+      "modIdleFrames": {
+        "median": 6.099999999998545,
+        "max": 6.200000000000728
+      },
+      "cases": [
+        {
+          "pink": false,
+          "level": 1,
+          "items": [
+            "SpiderlingsWebbingLv1Arm",
+            "SpiderlingsWebbingLv1MittenRight",
+            "SpiderlingsWebbingLv1MittenLeft",
+            "SpiderlingsWebbingLv1Belly",
+            "SpiderlingsWebbingLv1Legs",
+            "SpiderlingsWebbingLv1Ankles",
+            "SpiderlingsWebbingLv1Foot",
+            "SpiderlingsWebbingLv1Blindfold",
+            "SpiderlingsWebbingLv1Gag",
+            "SpiderlingsWebbingLv1Stuffing"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000000728
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": false,
+          "level": 2,
+          "items": [
+            "SpiderlingsWebbingLv2Arm",
+            "SpiderlingsWebbingLv2Belly",
+            "SpiderlingsWebbingLv2Legs",
+            "SpiderlingsWebbingLv2Ankles",
+            "SpiderlingsWebbingLv2Foot"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000004366
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": false,
+          "level": 3,
+          "items": [
+            "SpiderlingsWebbingLv3Arm",
+            "SpiderlingsWebbingLv3Belly",
+            "SpiderlingsWebbingLv3Legs",
+            "SpiderlingsWebbingLv3Ankles",
+            "SpiderlingsWebbingLv3Foot",
+            "SpiderlingsWebbingLv3Gag",
+            "SpiderlingsWebbingLv3Hood",
+            "SpiderlingsWebbingLv3Blindfold"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000004366
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": false,
+          "level": 4,
+          "items": [
+            "SpiderlingsWebbingCocoon"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 127.40000000000146
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 1,
+          "items": [
+            "SpiderlingsWebbingLv1Arm",
+            "SpiderlingsWebbingLv1MittenRight",
+            "SpiderlingsWebbingLv1MittenLeft",
+            "SpiderlingsWebbingLv1Belly",
+            "SpiderlingsWebbingLv1Legs",
+            "SpiderlingsWebbingLv1Ankles",
+            "SpiderlingsWebbingLv1Foot",
+            "SpiderlingsWebbingLv1Blindfold",
+            "SpiderlingsWebbingLv1Gag",
+            "SpiderlingsWebbingLv1Stuffing"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000004366
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 2,
+          "items": [
+            "SpiderlingsWebbingLv2Arm",
+            "SpiderlingsWebbingLv2Belly",
+            "SpiderlingsWebbingLv2Legs",
+            "SpiderlingsWebbingLv2Ankles",
+            "SpiderlingsWebbingLv2Foot"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000004366
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 3,
+          "items": [
+            "SpiderlingsWebbingLv3Arm",
+            "SpiderlingsWebbingLv3Belly",
+            "SpiderlingsWebbingLv3Legs",
+            "SpiderlingsWebbingLv3Ankles",
+            "SpiderlingsWebbingLv3Foot",
+            "SpiderlingsWebbingLv3Gag",
+            "SpiderlingsWebbingLv3Hood",
+            "SpiderlingsWebbingLv3Blindfold"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000004366
+          },
+          "textureFailures": []
+        },
+        {
+          "pink": true,
+          "level": 4,
+          "items": [
+            "SpiderlingsWebbingCocoon"
+          ],
+          "frames": {
+            "median": 6.099999999998545,
+            "max": 6.200000000004366
+          },
+          "textureFailures": []
+        }
+      ],
+      "errorCounts": {},
+      "missing": [
+        "/Game/Locks/Red.png",
+        "/Game/Locks/Red.png"
+      ]
+    }
+  ],
+  "signal": {
+    "out": {
+      "sender": 1,
+      "heard": [
+        2
+      ],
+      "listener": 2,
+      "gx": 10,
+      "gy": 10,
+      "gx_ent": 10,
+      "gy_ent": 10,
+      "g_ent_id": 1
+    },
+    "errors": []
+  },
+  "summonAssets": [
+    {
+      "zip": "Spiderlings_0.92.38.zip",
+      "v": "5.4.92",
+      "out": {
+        "cast": {
+          "result": "Cast",
+          "data": {
+            "spell": {
+              "enemySpell": true,
+              "name": "SummonNestEntrance",
+              "noSprite": true,
+              "selfcast": true,
+              "minRange": 0,
+              "sfx": "Bones",
+              "manacost": 24,
+              "components": [
+                "Verbal"
+              ],
+              "level": 4,
+              "projectileTargeting": true,
+              "castRange": 50,
+              "type": "inert",
+              "onhit": "summon",
+              "summon": [
+                {
+                  "name": "NestEntrance",
+                  "count": 1,
+                  "strict": true
+                }
+              ],
+              "time": 12,
+              "power": 0,
+              "delay": 1,
+              "range": 0.5,
+              "size": 1,
+              "aoe": 1.5,
+              "lifetime": 1,
+              "speed": 1,
+              "playerEffect": {},
+              "channel": 3
+            },
+            "bulletfired": {
+              "born": -1,
+              "time": 0,
+              "x": 10,
+              "y": 10,
+              "vx": 0,
+              "vy": 0,
+              "xx": 10,
+              "yy": 10,
+              "spriteID": "2SummonNestEntrance1789396074667",
+              "ox": 10,
+              "oy": 10,
+              "bullet": {
+                "noSprite": true,
+                "faction": "Enemy",
+                "name": "SummonNestEntrance",
+                "width": 1,
+                "height": 1,
+                "summon": [
+                  {
+                    "name": "NestEntrance",
+                    "count": 1,
+                    "strict": true
+                  }
+                ],
+                "targetX": 10,
+                "targetY": 10,
+                "source": 1,
+                "lifetime": 1,
+                "hit": "summon",
+                "damage": null,
+                "spell": {
+                  "enemySpell": true,
+                  "name": "SummonNestEntrance",
+                  "noSprite": true,
+                  "selfcast": true,
+                  "minRange": 0,
+                  "sfx": "Bones",
+                  "manacost": 24,
+                  "components": [
+                    "Verbal"
+                  ],
+                  "level": 4,
+                  "projectileTargeting": true,
+                  "castRange": 50,
+                  "type": "inert",
+                  "onhit": "summon",
+                  "summon": [
+                    {
+                      "name": "NestEntrance",
+                      "count": 1,
+                      "strict": true
+                    }
+                  ],
+                  "time": 12,
+                  "power": 0,
+                  "delay": 1,
+                  "range": 0.5,
+                  "size": 1,
+                  "aoe": 1.5,
+                  "lifetime": 1,
+                  "speed": 1,
+                  "playerEffect": {},
+                  "channel": 3
+                }
+              },
+              "collisionUpdate": true,
+              "warnings": [
+                "9,9",
+                "9,10",
+                "9,11",
+                "10,9",
+                "10,10",
+                "10,11",
+                "11,9",
+                "11,10",
+                "11,11"
+              ]
+            },
+            "target": null,
+            "targetX": 10,
+            "targetY": 10,
+            "originX": 2,
+            "originY": 2,
+            "flags": {
+              "miscastChance": 0
+            },
+            "enemy": {
+              "summoned": true,
+              "Enemy": {
+                "name": "Tunneler",
+                "clusterWith": "spiderlings",
+                "color": "#FF00FF",
+                "tags": {
+                  "Tunneler": true,
+                  "ignoretiedup": true,
+                  "doortrap": true,
+                  "spiderlings": true,
+                  "melee": true,
+                  "fireweakness": true,
+                  "glueresist": true,
+                  "acidweakness": true,
+                  "opendoors": true,
+                  "SpiderlingsMapPopulation": true,
+                  "SpiderlingsInfestationPopulation": true,
+                  "SpiderlingsInfestationSpider": true
+                },
+                "squeeze": true,
+                "ignorechance": 0.75,
+                "noSpellsWhenHarmless": true,
+                "followRange": 1,
+                "AI": "wander",
+                "sneakThreshold": 1,
+                "visionRadius": 5,
+                "maxhp": 1,
+                "minLevel": 0,
+                "weight": 4,
+                "movePoints": 1.5,
+                "attackPoints": 2,
+                "suicideOnSpell": true,
+                "fullBoundBonus": 1,
+                "attack": "Spell",
+                "attackWidth": 1,
+                "attackRange": 0,
+                "power": 1,
+                "spells": [
+                  "SummonNestEntrance"
+                ],
+                "spellCooldownMult": 2,
+                "spellCooldownMod": 8,
+                "castWhileMoving": false,
+                "terrainTags": {
+                  "secondhalf": 2,
+                  "lastthird": 2,
+                  "doortrap": 3,
+                  "trap": 5,
+                  "spiderlings": 10
+                },
+                "allFloors": true,
+                "shrines": [
+                  "Latex"
+                ],
+                "nonHumanoid": true,
+                "GFX": {
+                  "spriteWidth": 72,
+                  "spriteHeight": 72
+                }
+              },
+              "id": 1,
+              "x": 10,
+              "y": 12,
+              "visual_x": 10,
+              "visual_y": 10,
+              "hp": 1,
+              "movePoints": 0,
+              "attackPoints": 0,
+              "flags": {
+                "wander": 35,
+                "fidget": 7,
+                "nofidget": 3,
+                "targ_player": 1,
+                "aggression": 1
+              },
+              "buffs": {},
+              "castCooldown": 0,
+              "castCooldownSpecial": 0,
+              "playWithPlayer": 0,
+              "vulnerable": 0,
+              "tx": 2,
+              "ty": 2,
+              "target": -1,
+              "warningTiles": [],
+              "personality": "",
+              "gx": 12,
+              "gy": 25,
+              "aware": false,
+              "moved": true,
+              "idle": false,
+              "fx": 9,
+              "fy": 13,
+              "action": "",
+              "sound": 6,
+              "exertion": 0,
+              "sprinted": false,
+              "lastx": 10,
+              "lasty": 11
+            },
+            "delta": 1,
+            "components": [
+              "Verbal"
+            ],
+            "failed": [],
+            "gaggedMiscastFlag": false,
+            "gaggedMiscastType": "Gagged",
+            "channel": 3,
+            "castID": 1,
+            "manacost": 0
+          }
+        },
+        "spellFlag": true,
+        "invisible": true,
+        "visual": false,
+        "nests": 1
+      },
+      "errors": [],
+      "missing": []
+    },
+    {
+      "zip": "Spiderlings_0.92.38.zip",
+      "v": "5.5.0",
+      "out": {
+        "cast": {
+          "result": "Cast",
+          "data": {
+            "spell": {
+              "enemySpell": true,
+              "name": "SummonNestEntrance",
+              "noSprite": true,
+              "selfcast": true,
+              "minRange": 0,
+              "sfx": "Bones",
+              "manacost": 24,
+              "components": [
+                "Verbal"
+              ],
+              "level": 4,
+              "projectileTargeting": true,
+              "castRange": 50,
+              "type": "inert",
+              "onhit": "summon",
+              "summon": [
+                {
+                  "name": "NestEntrance",
+                  "count": 1,
+                  "strict": true
+                }
+              ],
+              "time": 12,
+              "power": 0,
+              "delay": 1,
+              "range": 0.5,
+              "size": 1,
+              "aoe": 1.5,
+              "lifetime": 1,
+              "speed": 1,
+              "playerEffect": {},
+              "channel": 3
+            },
+            "bulletfired": {
+              "born": -1,
+              "time": 0,
+              "x": 10,
+              "y": 10,
+              "vx": 0,
+              "vy": 0,
+              "xx": 10,
+              "yy": 10,
+              "spriteID": "2SummonNestEntrance1789396089353",
+              "ox": 10,
+              "oy": 10,
+              "bullet": {
+                "noSprite": true,
+                "faction": "Enemy",
+                "name": "SummonNestEntrance",
+                "width": 1,
+                "height": 1,
+                "summon": [
+                  {
+                    "name": "NestEntrance",
+                    "count": 1,
+                    "strict": true
+                  }
+                ],
+                "targetX": 10,
+                "targetY": 10,
+                "source": 1,
+                "lifetime": 1,
+                "hit": "summon",
+                "damage": null,
+                "spell": {
+                  "enemySpell": true,
+                  "name": "SummonNestEntrance",
+                  "noSprite": true,
+                  "selfcast": true,
+                  "minRange": 0,
+                  "sfx": "Bones",
+                  "manacost": 24,
+                  "components": [
+                    "Verbal"
+                  ],
+                  "level": 4,
+                  "projectileTargeting": true,
+                  "castRange": 50,
+                  "type": "inert",
+                  "onhit": "summon",
+                  "summon": [
+                    {
+                      "name": "NestEntrance",
+                      "count": 1,
+                      "strict": true
+                    }
+                  ],
+                  "time": 12,
+                  "power": 0,
+                  "delay": 1,
+                  "range": 0.5,
+                  "size": 1,
+                  "aoe": 1.5,
+                  "lifetime": 1,
+                  "speed": 1,
+                  "playerEffect": {},
+                  "channel": 3
+                }
+              },
+              "collisionUpdate": true,
+              "warnings": []
+            },
+            "target": null,
+            "targetX": 10,
+            "targetY": 10,
+            "originX": 2,
+            "originY": 2,
+            "flags": {
+              "miscastChance": 0
+            },
+            "enemy": {
+              "summoned": true,
+              "Enemy": {
+                "name": "Tunneler",
+                "clusterWith": "spiderlings",
+                "color": "#FF00FF",
+                "tags": {
+                  "Tunneler": true,
+                  "ignoretiedup": true,
+                  "doortrap": true,
+                  "spiderlings": true,
+                  "melee": true,
+                  "fireweakness": true,
+                  "glueresist": true,
+                  "acidweakness": true,
+                  "opendoors": true,
+                  "SpiderlingsMapPopulation": true,
+                  "SpiderlingsInfestationPopulation": true,
+                  "SpiderlingsInfestationSpider": true
+                },
+                "squeeze": true,
+                "ignorechance": 0.75,
+                "noSpellsWhenHarmless": true,
+                "followRange": 1,
+                "AI": "wander",
+                "sneakThreshold": 1,
+                "visionRadius": 5,
+                "maxhp": 1,
+                "minLevel": 0,
+                "weight": 4,
+                "movePoints": 1.5,
+                "attackPoints": 2,
+                "suicideOnSpell": true,
+                "fullBoundBonus": 1,
+                "attack": "Spell",
+                "attackWidth": 1,
+                "attackRange": 0,
+                "power": 1,
+                "spells": [
+                  "SummonNestEntrance"
+                ],
+                "spellCooldownMult": 2,
+                "spellCooldownMod": 8,
+                "castWhileMoving": false,
+                "terrainTags": {
+                  "secondhalf": 2,
+                  "lastthird": 2,
+                  "doortrap": 3,
+                  "trap": 5,
+                  "spiderlings": 10
+                },
+                "allFloors": true,
+                "shrines": [
+                  "Latex"
+                ],
+                "nonHumanoid": true,
+                "GFX": {
+                  "spriteWidth": 72,
+                  "spriteHeight": 72
+                }
+              },
+              "id": 1,
+              "x": 11,
+              "y": 12,
+              "visual_x": 10,
+              "visual_y": 10,
+              "hp": 1,
+              "movePoints": 0,
+              "attackPoints": 0,
+              "flags": {
+                "wander": 8,
+                "fidget": 7,
+                "nofidget": 3,
+                "targ_player": 1,
+                "aggression": 1
+              },
+              "buffs": {},
+              "castCooldown": 0,
+              "castCooldownSpecial": 0,
+              "playWithPlayer": 0,
+              "vulnerable": 0,
+              "tx": 2,
+              "ty": 2,
+              "target": -1,
+              "warningTiles": [],
+              "personality": "Dom",
+              "gx": 12,
+              "gy": 13,
+              "aware": false,
+              "moved": true,
+              "idle": false,
+              "fx": 12,
+              "fy": 12,
+              "action": "",
+              "flip": true,
+              "sound": 6,
+              "exertion": 0,
+              "sprinted": false,
+              "lastx": 11,
+              "lasty": 11
+            },
+            "delta": 1,
+            "components": [
+              "Verbal"
+            ],
+            "failed": [],
+            "gaggedMiscastFlag": false,
+            "gaggedMiscastType": "Gagged",
+            "channel": 3,
+            "castID": 1,
+            "manacost": 0
+          }
+        },
+        "spellFlag": true,
+        "invisible": true,
+        "visual": false,
+        "nests": 1
+      },
+      "errors": [],
+      "missing": [
+        "/TextureAtlas/game_0000.json",
+        "/TextureAtlas/models_0000.json",
+        "/TextureAtlas/displacement_0000.json",
+        "/TextureAtlas/game_0000.json",
+        "/TextureAtlas/models_0000.json",
+        "/TextureAtlas/displacement_0000.json"
+      ]
+    },
+    {
+      "zip": "Spiderlings_0.92.36-test.9.zip",
+      "v": "5.5.3",
+      "out": {
+        "cast": {
+          "result": "Cast",
+          "data": {
+            "spell": {
+              "enemySpell": true,
+              "name": "SummonNestEntrance",
+              "noSprite": true,
+              "selfcast": true,
+              "minRange": 0,
+              "sfx": "Bones",
+              "manacost": 24,
+              "components": [
+                "Verbal"
+              ],
+              "level": 4,
+              "projectileTargeting": true,
+              "castRange": 50,
+              "type": "inert",
+              "onhit": "summon",
+              "summon": [
+                {
+                  "name": "NestEntrance",
+                  "count": 1,
+                  "strict": true
+                }
+              ],
+              "time": 12,
+              "power": 0,
+              "delay": 1,
+              "range": 0.5,
+              "size": 1,
+              "aoe": 1.5,
+              "lifetime": 1,
+              "speed": 1,
+              "playerEffect": {},
+              "channel": 3
+            },
+            "bulletfired": {
+              "born": -1,
+              "time": 0,
+              "x": 10,
+              "y": 10,
+              "vx": 0,
+              "vy": 0,
+              "xx": 10,
+              "yy": 10,
+              "spriteID": "2SummonNestEntrance1789396141034",
+              "ox": 10,
+              "oy": 10,
+              "bullet": {
+                "noSprite": true,
+                "faction": "Enemy",
+                "name": "SummonNestEntrance",
+                "width": 1,
+                "height": 1,
+                "summon": [
+                  {
+                    "name": "NestEntrance",
+                    "count": 1,
+                    "strict": true
+                  }
+                ],
+                "targetX": 10,
+                "targetY": 10,
+                "source": 1,
+                "lifetime": 1,
+                "hit": "summon",
+                "damage": null,
+                "spell": {
+                  "enemySpell": true,
+                  "name": "SummonNestEntrance",
+                  "noSprite": true,
+                  "selfcast": true,
+                  "minRange": 0,
+                  "sfx": "Bones",
+                  "manacost": 24,
+                  "components": [
+                    "Verbal"
+                  ],
+                  "level": 4,
+                  "projectileTargeting": true,
+                  "castRange": 50,
+                  "type": "inert",
+                  "onhit": "summon",
+                  "summon": [
+                    {
+                      "name": "NestEntrance",
+                      "count": 1,
+                      "strict": true
+                    }
+                  ],
+                  "time": 12,
+                  "power": 0,
+                  "delay": 1,
+                  "range": 0.5,
+                  "size": 1,
+                  "aoe": 1.5,
+                  "lifetime": 1,
+                  "speed": 1,
+                  "playerEffect": {},
+                  "channel": 3
+                }
+              },
+              "collisionUpdate": true,
+              "warnings": []
+            },
+            "target": null,
+            "targetX": 10,
+            "targetY": 10,
+            "originX": 2,
+            "originY": 2,
+            "flags": {
+              "miscastChance": 0
+            },
+            "enemy": {
+              "summoned": true,
+              "Enemy": {
+                "name": "Tunneler",
+                "clusterWith": "spiderlings",
+                "color": "#FF00FF",
+                "tags": {
+                  "Tunneler": true,
+                  "ignoretiedup": true,
+                  "doortrap": true,
+                  "spiderlings": true,
+                  "melee": true,
+                  "fireweakness": true,
+                  "glueresist": true,
+                  "acidweakness": true,
+                  "opendoors": true,
+                  "SpiderlingsMapPopulation": true,
+                  "SpiderlingsInfestationPopulation": true,
+                  "SpiderlingsInfestationSpider": true
+                },
+                "squeeze": true,
+                "ignorechance": 0.75,
+                "noSpellsWhenHarmless": true,
+                "followRange": 1,
+                "AI": "wander",
+                "sneakThreshold": 1,
+                "visionRadius": 5,
+                "maxhp": 1,
+                "minLevel": 0,
+                "weight": 4,
+                "movePoints": 1.5,
+                "attackPoints": 2,
+                "suicideOnSpell": true,
+                "fullBoundBonus": 1,
+                "attack": "Spell",
+                "attackWidth": 1,
+                "attackRange": 0,
+                "power": 1,
+                "spells": [
+                  "SummonNestEntrance"
+                ],
+                "spellCooldownMult": 2,
+                "spellCooldownMod": 8,
+                "castWhileMoving": false,
+                "terrainTags": {
+                  "secondhalf": 2,
+                  "lastthird": 2,
+                  "doortrap": 3,
+                  "trap": 5,
+                  "spiderlings": 10
+                },
+                "allFloors": true,
+                "shrines": [
+                  "Latex"
+                ],
+                "nonHumanoid": true,
+                "GFX": {
+                  "spriteWidth": 72,
+                  "spriteHeight": 72
+                }
+              },
+              "id": 1,
+              "x": 8,
+              "y": 10,
+              "visual_x": 10,
+              "visual_y": 10,
+              "hp": 1,
+              "movePoints": 0,
+              "attackPoints": 0,
+              "CustomPronoun": "It",
+              "flags": {
+                "wander": 8,
+                "fidget": 7,
+                "nofidget": 3,
+                "targ_player": 1
+              },
+              "buffs": {},
+              "castCooldown": 0,
+              "castCooldownSpecial": 0,
+              "playWithPlayer": 0,
+              "vulnerable": 0,
+              "tx": 2,
+              "ty": 2,
+              "target": -1,
+              "warningTiles": [],
+              "personality": "Voyeur",
+              "gx": 7,
+              "gy": 10,
+              "aware": false,
+              "moved": true,
+              "idle": false,
+              "fx": 7,
+              "fy": 10,
+              "action": "",
+              "sound": 6,
+              "exertion": 0,
+              "sprinted": false,
+              "lastx": 9,
+              "lasty": 10
+            },
+            "delta": 1,
+            "components": [
+              "Verbal"
+            ],
+            "failed": [],
+            "gaggedMiscastFlag": false,
+            "gaggedMiscastType": "Gagged",
+            "channel": 3,
+            "castID": 1,
+            "manacost": 0
+          },
+          "location": {
+            "born": -1,
+            "time": 0,
+            "x": 10,
+            "y": 10,
+            "vx": 0,
+            "vy": 0,
+            "xx": 10,
+            "yy": 10,
+            "spriteID": "2SummonNestEntrance1789396141034",
+            "ox": 10,
+            "oy": 10,
+            "bullet": {
+              "noSprite": true,
+              "faction": "Enemy",
+              "name": "SummonNestEntrance",
+              "width": 1,
+              "height": 1,
+              "summon": [
+                {
+                  "name": "NestEntrance",
+                  "count": 1,
+                  "strict": true
+                }
+              ],
+              "targetX": 10,
+              "targetY": 10,
+              "source": 1,
+              "lifetime": 1,
+              "hit": "summon",
+              "damage": null,
+              "spell": {
+                "enemySpell": true,
+                "name": "SummonNestEntrance",
+                "noSprite": true,
+                "selfcast": true,
+                "minRange": 0,
+                "sfx": "Bones",
+                "manacost": 24,
+                "components": [
+                  "Verbal"
+                ],
+                "level": 4,
+                "projectileTargeting": true,
+                "castRange": 50,
+                "type": "inert",
+                "onhit": "summon",
+                "summon": [
+                  {
+                    "name": "NestEntrance",
+                    "count": 1,
+                    "strict": true
+                  }
+                ],
+                "time": 12,
+                "power": 0,
+                "delay": 1,
+                "range": 0.5,
+                "size": 1,
+                "aoe": 1.5,
+                "lifetime": 1,
+                "speed": 1,
+                "playerEffect": {},
+                "channel": 3
+              }
+            },
+            "collisionUpdate": true,
+            "warnings": []
+          }
+        },
+        "spellFlag": true,
+        "invisible": true,
+        "visual": false,
+        "nests": 1
+      },
+      "errors": [],
+      "missing": [
+        "/Game/Locks/Red.png"
+      ]
+    },
+    {
+      "zip": "Spiderlings_0.92.38.zip",
+      "v": "5.5.3",
+      "out": {
+        "cast": {
+          "result": "Cast",
+          "data": {
+            "spell": {
+              "enemySpell": true,
+              "name": "SummonNestEntrance",
+              "noSprite": true,
+              "selfcast": true,
+              "minRange": 0,
+              "sfx": "Bones",
+              "manacost": 24,
+              "components": [
+                "Verbal"
+              ],
+              "level": 4,
+              "projectileTargeting": true,
+              "castRange": 50,
+              "type": "inert",
+              "onhit": "summon",
+              "summon": [
+                {
+                  "name": "NestEntrance",
+                  "count": 1,
+                  "strict": true
+                }
+              ],
+              "time": 12,
+              "power": 0,
+              "delay": 1,
+              "range": 0.5,
+              "size": 1,
+              "aoe": 1.5,
+              "lifetime": 1,
+              "speed": 1,
+              "playerEffect": {},
+              "channel": 3
+            },
+            "bulletfired": {
+              "born": -1,
+              "time": 0,
+              "x": 10,
+              "y": 10,
+              "vx": 0,
+              "vy": 0,
+              "xx": 10,
+              "yy": 10,
+              "spriteID": "2SummonNestEntrance1789396116290",
+              "ox": 10,
+              "oy": 10,
+              "bullet": {
+                "noSprite": true,
+                "faction": "Enemy",
+                "name": "SummonNestEntrance",
+                "width": 1,
+                "height": 1,
+                "summon": [
+                  {
+                    "name": "NestEntrance",
+                    "count": 1,
+                    "strict": true
+                  }
+                ],
+                "targetX": 10,
+                "targetY": 10,
+                "source": 1,
+                "lifetime": 1,
+                "hit": "summon",
+                "damage": null,
+                "spell": {
+                  "enemySpell": true,
+                  "name": "SummonNestEntrance",
+                  "noSprite": true,
+                  "selfcast": true,
+                  "minRange": 0,
+                  "sfx": "Bones",
+                  "manacost": 24,
+                  "components": [
+                    "Verbal"
+                  ],
+                  "level": 4,
+                  "projectileTargeting": true,
+                  "castRange": 50,
+                  "type": "inert",
+                  "onhit": "summon",
+                  "summon": [
+                    {
+                      "name": "NestEntrance",
+                      "count": 1,
+                      "strict": true
+                    }
+                  ],
+                  "time": 12,
+                  "power": 0,
+                  "delay": 1,
+                  "range": 0.5,
+                  "size": 1,
+                  "aoe": 1.5,
+                  "lifetime": 1,
+                  "speed": 1,
+                  "playerEffect": {},
+                  "channel": 3
+                }
+              },
+              "collisionUpdate": true,
+              "warnings": []
+            },
+            "target": null,
+            "targetX": 10,
+            "targetY": 10,
+            "originX": 2,
+            "originY": 2,
+            "flags": {
+              "miscastChance": 0
+            },
+            "enemy": {
+              "summoned": true,
+              "Enemy": {
+                "name": "Tunneler",
+                "clusterWith": "spiderlings",
+                "color": "#FF00FF",
+                "tags": {
+                  "Tunneler": true,
+                  "ignoretiedup": true,
+                  "doortrap": true,
+                  "spiderlings": true,
+                  "melee": true,
+                  "fireweakness": true,
+                  "glueresist": true,
+                  "acidweakness": true,
+                  "opendoors": true,
+                  "SpiderlingsMapPopulation": true,
+                  "SpiderlingsInfestationPopulation": true,
+                  "SpiderlingsInfestationSpider": true
+                },
+                "squeeze": true,
+                "ignorechance": 0.75,
+                "noSpellsWhenHarmless": true,
+                "followRange": 1,
+                "AI": "wander",
+                "sneakThreshold": 1,
+                "visionRadius": 5,
+                "maxhp": 1,
+                "minLevel": 0,
+                "weight": 4,
+                "movePoints": 1.5,
+                "attackPoints": 2,
+                "suicideOnSpell": true,
+                "fullBoundBonus": 1,
+                "attack": "Spell",
+                "attackWidth": 1,
+                "attackRange": 0,
+                "power": 1,
+                "spells": [
+                  "SummonNestEntrance"
+                ],
+                "spellCooldownMult": 2,
+                "spellCooldownMod": 8,
+                "castWhileMoving": false,
+                "terrainTags": {
+                  "secondhalf": 2,
+                  "lastthird": 2,
+                  "doortrap": 3,
+                  "trap": 5,
+                  "spiderlings": 10
+                },
+                "allFloors": true,
+                "shrines": [
+                  "Latex"
+                ],
+                "nonHumanoid": true,
+                "GFX": {
+                  "spriteWidth": 72,
+                  "spriteHeight": 72
+                }
+              },
+              "id": 1,
+              "x": 12,
+              "y": 11,
+              "visual_x": 10,
+              "visual_y": 10,
+              "hp": 1,
+              "movePoints": 0,
+              "attackPoints": 0,
+              "CustomPronoun": "It",
+              "flags": {
+                "wander": 26,
+                "fidget": 7,
+                "nofidget": 3,
+                "targ_player": 1
+              },
+              "buffs": {},
+              "castCooldown": 0,
+              "castCooldownSpecial": 0,
+              "playWithPlayer": 0,
+              "vulnerable": 0,
+              "tx": 2,
+              "ty": 2,
+              "target": -1,
+              "warningTiles": [],
+              "personality": "Voyeur",
+              "gx": 12,
+              "gy": 10,
+              "aware": false,
+              "moved": true,
+              "idle": false,
+              "fx": 13,
+              "fy": 10,
+              "action": "",
+              "flip": true,
+              "sound": 6,
+              "exertion": 0,
+              "sprinted": false,
+              "lastx": 11,
+              "lasty": 10
+            },
+            "delta": 1,
+            "components": [
+              "Verbal"
+            ],
+            "failed": [],
+            "gaggedMiscastFlag": false,
+            "gaggedMiscastType": "Gagged",
+            "channel": 3,
+            "castID": 1,
+            "manacost": 0
+          },
+          "location": {
+            "born": -1,
+            "time": 0,
+            "x": 10,
+            "y": 10,
+            "vx": 0,
+            "vy": 0,
+            "xx": 10,
+            "yy": 10,
+            "spriteID": "2SummonNestEntrance1789396116290",
+            "ox": 10,
+            "oy": 10,
+            "bullet": {
+              "noSprite": true,
+              "faction": "Enemy",
+              "name": "SummonNestEntrance",
+              "width": 1,
+              "height": 1,
+              "summon": [
+                {
+                  "name": "NestEntrance",
+                  "count": 1,
+                  "strict": true
+                }
+              ],
+              "targetX": 10,
+              "targetY": 10,
+              "source": 1,
+              "lifetime": 1,
+              "hit": "summon",
+              "damage": null,
+              "spell": {
+                "enemySpell": true,
+                "name": "SummonNestEntrance",
+                "noSprite": true,
+                "selfcast": true,
+                "minRange": 0,
+                "sfx": "Bones",
+                "manacost": 24,
+                "components": [
+                  "Verbal"
+                ],
+                "level": 4,
+                "projectileTargeting": true,
+                "castRange": 50,
+                "type": "inert",
+                "onhit": "summon",
+                "summon": [
+                  {
+                    "name": "NestEntrance",
+                    "count": 1,
+                    "strict": true
+                  }
+                ],
+                "time": 12,
+                "power": 0,
+                "delay": 1,
+                "range": 0.5,
+                "size": 1,
+                "aoe": 1.5,
+                "lifetime": 1,
+                "speed": 1,
+                "playerEffect": {},
+                "channel": 3
+              }
+            },
+            "collisionUpdate": true,
+            "warnings": []
+          }
+        },
+        "spellFlag": true,
+        "invisible": true,
+        "visual": false,
+        "nests": 1
+      },
+      "errors": [],
+      "missing": [
+        "/Game/Locks/Red.png",
+        "/Game/Locks/Red.png"
+      ]
+    }
+  ],
+  "knownPressureException": {
+    "symptom": "KD 5.5.3 renderer exits during large batches of turns while drawing is paused; reproduced serially too",
+    "audioDisabledRun": {
+      "turns": 1000,
+      "errors": []
+    },
+    "modelRefreshDisabledStillReproduced": true,
+    "rootCauseConfirmed": false
+  }
+}

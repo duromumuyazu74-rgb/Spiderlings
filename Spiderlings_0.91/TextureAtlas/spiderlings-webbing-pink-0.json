@@ -1,0 +1,515 @@
+{
+  "frames": {
+    "Models/SpiderlingsWebbingLv1Pink/ArmWebbing.png": {
+      "frame": {
+        "x": 2658,
+        "y": 3463,
+        "w": 593,
+        "h": 499
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 890,
+        "y": 826,
+        "w": 593,
+        "h": 499
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/MittenLeft.png": {
+      "frame": {
+        "x": 3823,
+        "y": 877,
+        "w": 270,
+        "h": 266
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1573,
+        "y": 1463,
+        "w": 270,
+        "h": 266
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/MittenRight.png": {
+      "frame": {
+        "x": 3788,
+        "y": 1145,
+        "w": 274,
+        "h": 249
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 532,
+        "y": 1075,
+        "w": 274,
+        "h": 249
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Belly.png": {
+      "frame": {
+        "x": 1,
+        "y": 3737,
+        "w": 549,
+        "h": 263
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 898,
+        "y": 1372,
+        "w": 549,
+        "h": 263
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Legs.png": {
+      "frame": {
+        "x": 3253,
+        "y": 3463,
+        "w": 568,
+        "h": 415
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 911,
+        "y": 1847,
+        "w": 568,
+        "h": 415
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Ankles.png": {
+      "frame": {
+        "x": 1296,
+        "y": 2977,
+        "w": 350,
+        "h": 417
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1035,
+        "y": 2509,
+        "w": 350,
+        "h": 417
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Foot.png": {
+      "frame": {
+        "x": 3414,
+        "y": 1054,
+        "w": 344,
+        "h": 102
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 987,
+        "y": 3045,
+        "w": 344,
+        "h": 102
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Blindfold.png": {
+      "frame": {
+        "x": 3571,
+        "y": 3880,
+        "w": 407,
+        "h": 167
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1030,
+        "y": 484,
+        "w": 407,
+        "h": 167
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Stuffing.png": {
+      "frame": {
+        "x": 2658,
+        "y": 3964,
+        "w": 182,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1151,
+        "y": 640,
+        "w": 182,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv1Pink/Gag.png": {
+      "frame": {
+        "x": 2842,
+        "y": 3964,
+        "w": 308,
+        "h": 103
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1071,
+        "y": 658,
+        "w": 308,
+        "h": 103
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv2Pink/ArmWebbing.png": {
+      "frame": {
+        "x": 2974,
+        "y": 1,
+        "w": 673,
+        "h": 648
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 890,
+        "y": 771,
+        "w": 673,
+        "h": 648
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv2Pink/Belly.png": {
+      "frame": {
+        "x": 2195,
+        "y": 2665,
+        "w": 1591,
+        "h": 796
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 889,
+        "y": 1126,
+        "w": 1591,
+        "h": 796
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv2Pink/Legs.png": {
+      "frame": {
+        "x": 2053,
+        "y": 3463,
+        "w": 603,
+        "h": 621
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 885,
+        "y": 1723,
+        "w": 603,
+        "h": 621
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv2Pink/Ankles.png": {
+      "frame": {
+        "x": 1296,
+        "y": 3463,
+        "w": 362,
+        "h": 630
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1026,
+        "y": 2348,
+        "w": 362,
+        "h": 630
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv2Pink/Foot.png": {
+      "frame": {
+        "x": 3414,
+        "y": 877,
+        "w": 362,
+        "h": 175
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 972,
+        "y": 3018,
+        "w": 362,
+        "h": 175
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/ArmWebbing.png": {
+      "frame": {
+        "x": 1,
+        "y": 2977,
+        "w": 679,
+        "h": 758
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 885,
+        "y": 719,
+        "w": 679,
+        "h": 758
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Belly.png": {
+      "frame": {
+        "x": 682,
+        "y": 3620,
+        "w": 607,
+        "h": 453
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 885,
+        "y": 1322,
+        "w": 607,
+        "h": 453
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Legs.png": {
+      "frame": {
+        "x": 682,
+        "y": 2977,
+        "w": 612,
+        "h": 641
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 880,
+        "y": 1722,
+        "w": 612,
+        "h": 641
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Ankles.png": {
+      "frame": {
+        "x": 1660,
+        "y": 3463,
+        "w": 391,
+        "h": 629
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1000,
+        "y": 2348,
+        "w": 391,
+        "h": 629
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Foot.png": {
+      "frame": {
+        "x": 3649,
+        "y": 570,
+        "w": 419,
+        "h": 305
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 921,
+        "y": 2930,
+        "w": 419,
+        "h": 305
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Blindfold.png": {
+      "frame": {
+        "x": 2974,
+        "y": 877,
+        "w": 438,
+        "h": 236
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1007,
+        "y": 420,
+        "w": 438,
+        "h": 236
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Gag.png": {
+      "frame": {
+        "x": 3253,
+        "y": 3880,
+        "w": 316,
+        "h": 182
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1069,
+        "y": 618,
+        "w": 316,
+        "h": 182
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingLv3Pink/Hood.png": {
+      "frame": {
+        "x": 3649,
+        "y": 1,
+        "w": 445,
+        "h": 567
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1003,
+        "y": 236,
+        "w": 445,
+        "h": 567
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingCocoonPink/Cocoon.png": {
+      "frame": {
+        "x": 2195,
+        "y": 1,
+        "w": 777,
+        "h": 2662
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 813,
+        "y": 620,
+        "w": 777,
+        "h": 2662
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsWebbingCocoonPink/OuterWebs.png": {
+      "frame": {
+        "x": 1,
+        "y": 1,
+        "w": 2192,
+        "h": 2974
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 112,
+        "y": 529,
+        "w": 2192,
+        "h": 2974
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    }
+  },
+  "meta": {
+    "app": "Spiderlings lossless Webbing atlas builder",
+    "version": "1.0",
+    "image": "spiderlings-webbing-pink-0.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 4096,
+      "h": 4096
+    },
+    "scale": "1"
+  }
+}

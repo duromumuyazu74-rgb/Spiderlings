@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Preserve published runtime bytes across clones and branch switches.
+Spiderlings_0.91/** -text

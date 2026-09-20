@@ -1,0 +1,155 @@
+NameSpinner,Młody pająk prządka
+AttackSpinner,Młody pająk prządka przebiega po twoim ciele; cienkie odnóża zostawiają kłujące łaskotanie.
+AttackSpinnerBind,Młody pająk prządka śmiga wokół ciebie, zostawia pętlę lepkiego jedwabiu i znika. (+RestraintAdded)
+KillSpinner,Młody pająk prządka podkurcza cienkie odnóża i cofa się w cienie, aż znika.
+NameJumper,Młody pająk skoczek
+AttackJumper,Młody pająk skoczek nagle się zbliża; jego cienkie odnóża muskają ciało, wywołując kłujące łaskotanie.
+AttackJumperBind,Młody pająk skoczek ląduje na tobie, ruchem napina swój jedwab i w okamgnieniu znika. (+RestraintAdded)
+KillJumper,Młody pająk skoczek chwiejnym krokiem się cofa i szybko ginie w cieniach.
+NameTunneler,Młody pająk kopacz
+KillTunneler,Młody pająk kopacz znika, pozostawiając tylko kilka jedwabnych nici.
+NameNestEntrance,Wejście do gniazda
+KillNestEntrance,Wejście do gniazda zapada się z hukiem, a ukryte w nim młode pająki wylewają się na zewnątrz!
+NameWebCaster,Młody pająk miotacz sieci
+KillWebCaster,Młody pająk miotacz sieci kuli się i wycofuje w ciemność.
+KinkyDungeonSpellSummonSpinner,Przywołaj prządkę
+KinkyDungeonSummonSummonSpinner,Młody pająk prządka wychodzi z ciemności, ciągnąc nici między cienkimi odnóżami.
+KinkyDungeonSpellCastSummonSpinner,Z ciemności dobiega cichy tupot; młody pająk prządka zaraz się pojawi.
+KinkyDungeonSpellSummonJumper,Przywołaj skoczka
+KinkyDungeonSummonSummonJumper,Młody pająk skoczek wyskakuje i lekko stawia cienkie odnóża na ziemi.
+KinkyDungeonSpellCastSummonJumper,Z ciemności dobiega pospieszny szelest; młody pająk skoczek zaraz się pojawi.
+KinkyDungeonSpellSpiderlingsJumperDash,Szarża skoczka
+KinkyDungeonSpellCastSpiderlingsJumperDash,Młody pająk skoczek wpatruje się w ziemię pod tobą, obniża ciało i ciasno podkurcza odnóża.
+KinkyDungeonSpellSummonWebCaster,Przywołaj miotacza sieci
+KinkyDungeonSummonSummonWebCaster,Młody pająk miotacz sieci wychodzi, ciągnąc za sobą lepką nić.
+KinkyDungeonSpellCastSummonWebCaster,Lepki jedwab wyciąga się z ciemności; młody pająk miotacz sieci zaraz się pojawi.
+KinkyDungeonSpellSummonTunneler,Przywołaj kopacza
+KinkyDungeonSummonSummonTunneler,Młody pająk kopacz wychodzi z ciemności i przemyka po ziemi.
+KinkyDungeonSpellCastSummonTunneler,Z ciemności dobiega ciche skrobanie; młody pająk kopacz zaraz się pojawi.
+KinkyDungeonSpellSummonNestEntrance,Wykop pajęcze gniazdo
+KinkyDungeonSummonSummonNestEntrance,Ziemia pęka, odsłaniając otwór pokryty jedwabiem; pojawiło się nowe wejście do gniazda!
+KinkyDungeonSpellCastSummonNestEntrance,Młody pająk kopacz przywiera do ziemi i kopie, a jedwab rozchodzi się wzdłuż szczelin!
+KinkyDungeonSpellWebSpray,Strumień pajęczyny
+KinkyDungeonSpellCastWebSpray,Młody pająk miotacz sieci wystrzeliwuje ku tobie wiązkę lepkiego jedwabiu; białe nici nagle rozwierają się w powietrzu!
+KinkyDungeonSpellWebSprayDamage,Nadlatujący lepki jedwab trafia cię od przodu! (DamageDealt)
+KinkyDungeonSpellWebSprayBind,Rozpylony jedwab przykleja się do ciała i splątuje w sieć!
+KinkyDungeonSpellSpiderWeb,Pajęczyna na ziemi
+KinkyDungeonSpellCastSpiderWeb,Lepkie nici opadają na ziemię, rozciągając wokół nieregularną sieć.
+KinkyDungeonSpellSpiderWebDamage,Wchodzisz w pajęczynę, a lepkie nici oplatają ci stopy! (DamageDealt)
+KinkyDungeonSpellSpiderWebBind,Wchodzisz w pajęczynę, a lepkie nitki przy stopach zaraz wspinają się po nich!
+KDModButtonSpiderlings,Młode pająki
+KDModButtonspiderlingsSquad,Stały oddział młodych pająków
+KDModButtonspiderlingsNestSummonWeights,Wagi rodzajów posiłków z gniazda
+KDModButtonspiderlingsNestSpinnerWeight,Waga prządki
+KDModButtonspiderlingsNestJumperWeight,Waga skoczka
+KDModButtonspiderlingsNestWebCasterWeight,Waga miotacza sieci
+KDModButtonspiderlingsNestTunnelerWeight,Waga kopacza
+KDModButtonspiderlingsNestReinforcementControl,Powtarzające się posiłki z gniazda
+KDModButtonspiderlingsNestReinforcementCap,Żywe posiłki na gniazdo
+KDModButtonspiderlingsNestReinforcementInterval,Odstęp sprawdzania posiłków (tury)
+RestraintSpiderlingsWebbingLv1Arm,Jedwabne więzy ramion
+RestraintSpiderlingsWebbingLv1ArmDesc,Kilka lepkich nici oplata nadgarstki i ściąga ramiona za plecy.
+RestraintSpiderlingsWebbingLv1ArmDesc2,Między nićmi wciąż widać przerwy. Lekki ruch napina cienkie białe linie.
+RestraintSpiderlingsWebbingLv1MittenLeft,Jedwabna rękawica · lewa
+RestraintSpiderlingsWebbingLv1MittenLeftDesc,Cienki jedwab przylega do lewej dłoni, zbierając palce we wspólnej miękkiej osłonie.
+RestraintSpiderlingsWebbingLv1MittenLeftDesc2,Opuszki dotykają puszystych włókien; z brzegu zwisa kilka luźnych nitek.
+RestraintSpiderlingsWebbingLv1MittenRight,Jedwabna rękawica · prawa
+RestraintSpiderlingsWebbingLv1MittenRightDesc,Cienki jedwab przylega do prawej dłoni, zbierając palce we wspólnej miękkiej osłonie.
+RestraintSpiderlingsWebbingLv1MittenRightDesc2,Knykcie tworzą płytkie wypukłości, a lepkie nitki wiją się od grzbietu dłoni ku jej wnętrzu.
+RestraintSpiderlingsWebbingLv1Belly,Jedwabna opaska na brzuch
+RestraintSpiderlingsWebbingLv1BellyDesc,Wąska taśma lepkiego jedwabiu przylega do podbrzusza.
+RestraintSpiderlingsWebbingLv1BellyDesc2,Drobne włókna na brzegach kołyszą się łagodnie wraz z ciałem.
+RestraintSpiderlingsWebbingLv1Legs,Jedwabne więzy nóg
+RestraintSpiderlingsWebbingLv1LegsDesc,Rzadkie nici przecinają złączone nogi, kreśląc między nimi cienkie białe linie.
+RestraintSpiderlingsWebbingLv1LegsDesc2,Oczka sieci wciąż są wyraźne; pociągnięcie w jednym miejscu wprawia sąsiednie nici w drżenie.
+RestraintSpiderlingsWebbingLv1Ankles,Jedwabne więzy kostek
+RestraintSpiderlingsWebbingLv1AnklesDesc,Kilka nici krzyżuje się między kostkami, łagodnie je zbliżając.
+RestraintSpiderlingsWebbingLv1AnklesDesc2,Białe nitki okrążają kostki i rozpinają między stopami wąski mostek.
+RestraintSpiderlingsWebbingLv1Foot,Jedwabna osłona stóp
+RestraintSpiderlingsWebbingLv1FootDesc,Cienki jedwab okrywa złączone stopy i skleja się wzdłuż ich brzegów.
+RestraintSpiderlingsWebbingLv1FootDesc2,Drobne nici biegną po podbiciu; pod siecią wciąż wyraźnie widać zarys palców.
+RestraintSpiderlingsWebbingLv1Blindfold,Jedwabna opaska na oczy
+RestraintSpiderlingsWebbingLv1BlindfoldDesc,Cienka taśma jedwabiu przesłania oczy, przytłumiając światło i rozmywając odległe kształty.
+RestraintSpiderlingsWebbingLv1BlindfoldDesc2,Brzegi przylegają do kącików oczu, a luźne nitki muskają policzki przy obrocie głowy.
+RestraintSpiderlingsWebbingLv2Arm,Splecione więzy ramion
+RestraintSpiderlingsWebbingLv2ArmDesc,Jedwab wielokrotnie oplata nadgarstki i ramiona; osobne nici zmieniły się w szerokie, grube pasy.
+RestraintSpiderlingsWebbingLv2ArmDesc2,Przy skręcie ciała każda nitka napina całą sieć. Przy nadgarstkach tłoczą się lepkie węzły.
+RestraintSpiderlingsWebbingLv2Belly,Spleciona opaska na brzuch
+RestraintSpiderlingsWebbingLv2BellyDesc,Jedwab rozchodzi się po podbrzuszu, okrywając wąską taśmę grubym splotem.
+RestraintSpiderlingsWebbingLv2BellyDesc2,Nowe i stare nici sklejają się ze sobą, a krzyżujące się wzory sięgają boków talii.
+RestraintSpiderlingsWebbingLv2Legs,Splecione więzy nóg
+RestraintSpiderlingsWebbingLv2LegsDesc,Gruby jedwab przecina nogi i zamienia przestrzeń między nimi w ciągłą sieć.
+RestraintSpiderlingsWebbingLv2LegsDesc2,Dawniej otwarte oczka zwęziły się do szczelin; nakładające się pasy poruszają się wraz z nogami.
+RestraintSpiderlingsWebbingLv2Ankles,Splecione więzy kostek
+RestraintSpiderlingsWebbingLv2AnklesDesc,Jedwab raz po raz okrąża kostki, osłaniając skrzyżowane nici grubymi pierścieniami.
+RestraintSpiderlingsWebbingLv2AnklesDesc2,Lepkie nitki łączą pierścienie; ruch kostek ciągnie splątane białe linie ku sobie.
+RestraintSpiderlingsWebbingLv2Foot,Spleciona osłona stóp
+RestraintSpiderlingsWebbingLv2FootDesc,Jedwab wielokrotnie pokrywa stopy, zamykając ich brzegi i podbicia w grubej sieci.
+RestraintSpiderlingsWebbingLv2FootDesc2,Zarys palców się rozmył; na powierzchni zostały tylko zachodzące na siebie prążki jedwabiu.
+RestraintSpiderlingsWebbingLv1Stuffing,Jedwabny wkład do ust
+RestraintSpiderlingsWebbingLv1StuffingDesc,Miękki kłębek jedwabiu wypełnia usta, zamazując brzmienie słów.
+RestraintSpiderlingsWebbingLv1StuffingDesc2,Za wargami zbierają się puszyste włókna, w których niedokończone słowa rozpadają się w niewyraźny pomruk.
+RestraintSpiderlingsWebbingLv1Gag,Jedwabny knebel
+RestraintSpiderlingsWebbingLv1GagDesc,Szeroka taśma jedwabiu zakrywa usta i tłumi głos.
+RestraintSpiderlingsWebbingLv1GagDesc2,Lepkie nici biegną od kącików ust ku policzkom; na brzegach wciąż widać nakładające się pasma.
+RestraintSpiderlingsWebbingLv3Arm,Zwarte więzy ramion
+RestraintSpiderlingsWebbingLv3ArmDesc,Gęsty jedwab otacza ramiona za plecami i grzebie węzły przy nadgarstkach w grubej białej skorupie.
+RestraintSpiderlingsWebbingLv3ArmDesc2,Skręty ciała wyciskają drobne zmarszczki na skorupie; dawnych szczelin nie sposób już znaleźć.
+RestraintSpiderlingsWebbingLv3Belly,Zwarta opaska na brzuch
+RestraintSpiderlingsWebbingLv3BellyDesc,Drobne nici leżą gęsto na sobie, otulając brzuch ciągłą skorupą.
+RestraintSpiderlingsWebbingLv3BellyDesc2,Wzory splotu znikają w grubej powierzchni; przy ruchu ciała pojawiają się tylko płytkie fałdy.
+RestraintSpiderlingsWebbingLv3Legs,Zwarte więzy nóg
+RestraintSpiderlingsWebbingLv3LegsDesc,Jedwab całkowicie okrywa złączone nogi, wypełniając przerwy między nimi gęstymi białymi nićmi.
+RestraintSpiderlingsWebbingLv3LegsDesc2,Kontury obu nóg zlewają się, a dawne pasy tkwią pod gładką osłoną.
+RestraintSpiderlingsWebbingLv3Ankles,Zwarte więzy kostek
+RestraintSpiderlingsWebbingLv3AnklesDesc,Gęsty jedwab zamyka kostki i splata sąsiednie pierścienie w osłonę bez szwów.
+RestraintSpiderlingsWebbingLv3AnklesDesc2,Węzły i łączenia zniknęły; z ruchem zmieniają się tylko płytkie odciski przy kostkach.
+RestraintSpiderlingsWebbingLv3Foot,Zwarta osłona stóp
+RestraintSpiderlingsWebbingLv3FootDesc,Jedwab całkowicie otacza stopy, ukrywając szczegóły brzegów i podbić w grubej skorupie.
+RestraintSpiderlingsWebbingLv3FootDesc2,Niezliczone nici zlewają się w biel, pozostawiając tylko wspólny kształt stóp.
+RestraintSpiderlingsWebbingLv3Blindfold,Zwarta opaska na oczy
+RestraintSpiderlingsWebbingLv3BlindfoldDesc,Gęsty jedwab osłania oczy i grzebie brzegi opaski w nieprzerwanej białej powierzchni.
+RestraintSpiderlingsWebbingLv3BlindfoldDesc2,Przy policzkach nie powiewają już luźne nitki; ciasna osłona obraca się z głową jako całość.
+RestraintSpiderlingsWebbingLv3Gag,Zwarty jedwabny knebel
+RestraintSpiderlingsWebbingLv3GagDesc,Gruby jedwab rozpościera się na ustach, okrywając splecioną sieć gęstą, ciągłą powierzchnią.
+RestraintSpiderlingsWebbingLv3GagDesc2,Łączenia przy wargach zniknęły; stłumione dźwięki przenikają przez jedwab i wprawiają go w lekkie drżenie.
+RestraintSpiderlingsWebbingLv3Hood,Zwarty jedwabny kaptur
+RestraintSpiderlingsWebbingLv3HoodDesc,Nieprzejrzysty jedwab spływa od czubka głowy i zamyka ją całą w grubym kapturze.
+RestraintSpiderlingsWebbingLv3HoodDesc2,Włosy i rysy twarzy znikają pod bielą; zostaje tylko kontur kołyszący się z każdym ruchem.
+RestraintSpiderlingsWebbingCocoon,Kokon pajęczego jedwabiu
+RestraintSpiderlingsWebbingCocoonDesc,Gęsty jedwab otacza ciało grubym kokonem. Jego brzeg zbiera się pod ustami, pozostawiając górną część głowy na zewnątrz.
+RestraintSpiderlingsWebbingCocoonDesc2,Ściana kokonu drży przy każdym skręcie. Wleczone nici szeleszczą po podłodze, jakby niosły w ciemność poruszenia z jego wnętrza.
+KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 leży pod TargetLv2; dotykasz jedynie lepkiego jedwabiu na wierzchu.
+KinkyDungeonSpiderlingsCocoonAnchored,Młode pająki rozpinają sieci wokół kokonu i mocno przytwierdzają cię do miejsca!
+KDMapMod_SpiderlingsInfestation,Inwazja małych pająków
+KinkyDungeonMapModSpiderlingsInfestation,Jedwab pełznie po kątach, a w cieniach szelest odpowiada szelestowi. To miejsce od dawna ma innych mieszkańców.
+KDEscapeMethod_SpiderlingsInfestation,Zniszcz oznaczone gniazda
+KDEscapeMethodDesc_SpiderlingsInfestation,Gniazda, które jako pierwsze zajęły to miejsce, wciąż poruszają się w ciemności; z głębi wejść dobiega ciche skrobanie.
+SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/5
+SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/5)
+SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (5/5)
+KDModButtonspiderlingsPinkWebbing,Różowa pajęczyna (wył.: oryginalna)
+KinkyDungeonSpiderlingsWebbingInterwoven,Krzyżujące się nici zaciskają się i krępują kolejną część twojego ciała.
+KinkyDungeonStruggleCutFailSpiderlingsWebbing,Nacinasz TargetRestraint. Lepkie nici pękają i szczelina staje się głębsza.
+KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Nacinasz TargetRestraint. Lepkie nici pękają i szczelina staje się głębsza.
+KinkyDungeonStruggleCutSuccessSpiderlingsWebbing,Przecinasz ostatnie nici TargetRestraint. Strzępy pajęczyny odpadają.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,Napierasz na TargetRestraint. Napięte nici luzują się i szczelina w splocie nieco się poszerza.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,Napierasz na TargetRestraint. Napięte nici luzują się i szczelina w splocie nieco się poszerza.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsWebbing,Uwalniasz się od ostatnich lepkich nici TargetRestraint i zbierasz poluzowaną pajęczynę.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,Rozdzielasz sklejone nici TargetRestraint. Mały fragment splotu odkleja się.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,Rozdzielasz sklejone nici TargetRestraint. Mały fragment splotu odkleja się.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Zdejmujesz TargetRestraint i zbierasz luźne nici.
+KinkyDungeonStruggleCutFailSpiderlingsCocoon,Wsuwasz ostrze w TargetRestraint. Kolejne nici pękają wzdłuż wąskiego nacięcia w ścianie kokonu.
+KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Wsuwasz ostrze w TargetRestraint. Kolejne nici pękają wzdłuż wąskiego nacięcia w ścianie kokonu.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Przecinasz ostatnie spojenie TargetRestraint. Rozcięta powłoka kokonu zsuwa się z ciała.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Napierasz na TargetRestraint od środka. Ściana kokonu drży i kilka wewnętrznych nici ustępuje.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Napierasz na TargetRestraint od środka. Ściana kokonu drży i kilka wewnętrznych nici ustępuje.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Rozpychasz szczelinę w TargetRestraint i przeciskasz się poza obwisłą powłokę kokonu.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,Odrywasz stopniowo brzeg TargetRestraint. Sklejone warstwy rozchodzą się nieco dalej.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,Odrywasz stopniowo brzeg TargetRestraint. Sklejone warstwy rozchodzą się nieco dalej.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Rozchylasz warstwy TargetRestraint i wysuwasz się z poluzowanego kokonu.
+KDModButtonspiderlingsMapPopulationCap,Pająki na mapie (0: bez limitu)
+KinkyDungeonStatSpiderlingsCocoonStart,Przebudzenie w jedwabiu
+KinkyDungeonStatDescSpiderlingsCocoonStart,Budzisz się w miękkim kokonie, od stóp do głów otulona gęsto utkanymi warstwami pajęczego jedwabiu. Każdy drobny ruch napina nici przylegające do całego ciała.
+KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Skaczący pajączek wpatruje się w ziemię pod przeciwnikiem i przyczaja do skoku.
+KDModButtonspiderlingsNestTunnelerCap,Łączny limit Tunneler na gniazdo (0: brak)

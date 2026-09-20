@@ -1,0 +1,427 @@
+# Spiderlings Official Modding Reference Guide
+
+This guide collects the official KD 5.5 source locations and patterns that should be checked before changing or adapting the Spiderlings mod. The official game package is reference-only: do not edit `KinkiestDungeon-5.5/`.
+
+## Summary
+
+KD 5.5 does not include a single official "how to create a new restraint" tutorial. The guidance is spread across:
+
+- mod package examples under `KinkiestDungeon-5.5/Mods/`;
+- TypeScript type definitions for restraints, models, layers, and poses;
+- official restraint data in `Game/src/restraint/KinkyDungeonRestraintsList.ts`;
+- official model registrations in `Data/ModelList_*.ts`;
+- runtime helper logic in `Data/Models.ts` and `Game/src/restraint/`.
+
+For Spiderlings work, copy the relevant pattern into Spiderlings-owned files and names instead of modifying official files.
+
+## Official itch.io Tutorial Review For KD 5.5
+
+Source board: <https://itch.io/board/3693437/tutorials>. Reviewed against the local `KinkiestDungeon-5.5/` package on 2026-06-09.
+
+The itch tutorials are useful, but some examples are older than the local 5.5 source. Treat them as official intent and workflow guidance, then confirm the exact data shape in `KinkiestDungeon-5.5/` before copying code.
+
+### Directly Applicable To Spiderlings
+
+- **FAQ**: <https://itch.io/t/3869152/faq>
+  - Mods should be zip files with files at the zip root, not inside a nested mod-name folder. Nested roots can break custom asset loading.
+  - `.js` files in zip files may trigger Windows false positives; `.ks` files or 7zip packaging are recommended workarounds.
+  - `KDAddEvent(...)` and `HasPerk(...)` are still present in KD 5.5 (`Game/src/effect/KinkyDungeonEvents.ts`, `Game/src/base/KDModUtils.ts`).
+- **Mod JSON**: <https://itch.io/t/4135169/mod-json>
+  - Keep `mod.json` populated with `modname`, `moddesc`, `author`, `modbuild`, `gamemajor`, `gameminor`, `gamepatch_min`, `gamepatch_max`, and `priority`.
+  - `gamepatch_max: -1` and other `-1` game version fields are official "ignore this datedness field" values.
+  - The tutorial example shows numeric `modbuild`, but KD 5.5 types it as a string in `Scripts/KDMods.ts`. Spiderlings' string build value is compatible with the local 5.5 loader.
+  - Spiderlings intentionally keeps `gameminor: 4` so the same package can target 5.4 and 5.5; do not change this to `5` unless the checker and compatibility policy are updated together.
+- **Asset Packing**: <https://itch.io/t/3869107/asset-packing>
+  - Custom model assets should live under `Models/` in the mod zip root unless there is a deliberate custom loader path.
+  - KD 5.5 still supports `TextureAtlas/` mod atlases through `modAtlasLoader` in `Data/Preload.ts`.
+  - `KDModFiles` is still the mod file blob map used by the loader; manual preloads can use `KDModFiles["Models/" + file]`.
+  - For Spiderlings release zips, list custom PNG assets in `mod.json` `fileorder` before the Spiderlings scripts. This ensures `KDModFiles` already has model/enemy image blob URLs before early Pixi texture lookup can cache a missing texture.
+  - KD 5.5 `KDRenderJourneyMap` resolves modifier overlays as `KinkyDungeonRootDirectory + "UI/MapMod/" + slot.MapMod + ".png"`, above the base floor tile at the same size (default 72×72). Register `UI/MapMod/SpiderlingsInfestation.png` before scripts through `fileorder`; the native Mod loader supplies the rooted blob alias. No extra icon field or drawing wrapper is needed. Keep the supplied transparent artwork as a direct PNG outside the restraint atlas.
+  - Non-script files such as custom OGG sounds (Spiderlings 0.92.14 uses mono 22.05 kHz Vorbis) also receive a `KDModFiles[KinkyDungeonRootDirectory + file]` blob entry. Package them through the same explicit `fileorder`, then pass that logical rooted path to `KinkyDungeonPlaySound(...)` so `AudioPlayInstantSoundKD(...)` resolves the blob.
+  - Spiderlings Webbing 0.92 keeps twenty-five explicit `Models/...png` direct fallbacks: ten Lv1 runtime images (including independent left/right mittens), five Lv2 images, eight Lv3 images, Cocoon and OuterWebs. Version 0.92.4 adopts all twenty-five PNGs from the complete `T's NEW Webbing (6).zip` (ten Lv1, five Lv2, eight Lv3, Cocoon, and OuterWebs), with independent Left hand and Right hand artwork. The corrected Cocoon and newly supplied Hood fit the existing atlas; existing Lv1/Lv2 paths are reused and no placeholder is retained. The original `TextureAtlas/spiderlings-webbing-0.{json,png}` page remains 4096×4096, using lossless alpha trimming and MaxRects-style free-rectangle packing. Pixi `sourceSize` / `spriteSourceSize` restores original canvas placement; the builder never scales, rotates, resamples, or recolors a source and performs no automated visual/image-content acceptance. Five separately packaged cropped displacement maps drive matching Lv2/Lv3 Arm, Belly, Legs, Ankles, and Foot layers; Lv1 has no displacement. These maps are not atlas inputs. A separately requested human in-game display checklist may record observations without changing the source contract or becoming a packaging validator.
+  - In KD 5.5/Pixi 7.2, do not rely on automatic spritesheet parsing to resolve `meta.image` relative to a mod JSON blob URL. `SpiderlingsModelRuntime.js` fetches the JSON through its `KDModFiles` blob, loads the fixed logical atlas PNG with `modTextureLoader`, constructs `PIXI.Spritesheet`, awaits `parse()`, and seeds the full `Models/...png` aliases in `kdpixitex`. Only then may model preload skip direct decoding; any failure falls back to the unchanged PNG.
+  - A displacement PNG present in `mod.json` and `KDModFiles` is registered but not necessarily decoded when KD first creates its filtered render texture. Eagerly load Spiderlings-owned displacement paths through Pixi Assets, make post-apply redress await the matching in-flight decode, and issue at most one corrective redress for already-equipped save items after the eager set becomes ready.
+- **Custom Enemies**: <https://itch.io/t/3869114/custom-enemies>
+  - Enemy sprites in `Enemies/` are 72 x 72.
+  - Add text keys for enemy name, defeat text, bind attack text, and non-bind attack text.
+  - Enemy definitions still use `KinkyDungeonEnemies.push(...)` in the local example mod, and official enemy data still lives in `Game/src/enemy/KinkyDungeonEnemiesList.ts`.
+  - Restraint-application tags such as `ropeRestraints`, `leatherRestraints`, or `clothRestraints` connect a generic selection source to the restraint pool. A normal enemy bind supplies its enemy tags (with special-attack additions/removals), while spells and other effects may supply their own tag lists. The current Spiderlings Webbing family is an explicit exception: its exact-ID shared resolver owns eligibility and weights, and all twenty-four restraints keep `enemyTags: {}` so KD's broad random pool cannot select them. Lv3 is part of enemy progression after physical Lv1/Lv2 completion and is also manually equippable.
+
+### Conditionally Applicable
+
+- **Journey modifier eligibility (KD 5.5 and local 5.4.92)**:
+  - Map population and modifier objectives have separate owners. Native `KDStairActions.ts` forwards the journey `Faction` as `forceFaction` into `KinkyDungeonCreateMap`; `KDMapGen.ts` establishes `KDMapData.MapFaction` before calling `KinkyDungeonPlaceEnemies`. Use this saved main-faction value to select the Maidforce-only random population profile during initial and wandering population, independently of `MapMod` and nest-task progress. Do not infer the main faction from a currently visible maid, guard faction, or the infestation modifier. Native enemy-pool regressions exercise Maidforce, Bandit and Nevermere both with and without infestation.
+  - `Game/src/map/KDJourney.ts` keeps `KDMapModRefreshList` across `KDInitJourneyMap` calls. `KDJourneySlotTypes.basic` filters only when refilling the three-entry pool through `KDGetMapGenList`, then consumes cached entries without checking their destination floor. A modifier's `filter(slot)` alone cannot enforce its minimum floor across new journeys. Spiderlings wraps the basic-slot entry to discard only its own cached modifier below floor 3; it also clears unvisited early infestation previews on registration and `afterLoadGame`. Preserve unrelated cached modifiers, the independent `Faction` field and visited history. The native-journey regression is in `spiderlings-infestation.test.js`; the two-version reproduction is in `.scratch/spiderlings-early-infestation-20260913/`.
+
+- **Repo and Clothes Template**: <https://itch.io/t/3869129/repo-and-clothes-template>
+  - The source repo link and clothing template are useful references, but this workspace's `KinkiestDungeon-5.5/` is the pinned local truth for compatibility work.
+  - Custom enemy outfits should be checked against `KDModelDresses`, `KDModelHair`, `KDModelFace`, and `KDModelStyles`, which still exist in KD 5.5.
+- **Enchantments**: <https://itch.io/t/3869126/enchantments>
+  - The concept is still valid: add an entry to `KDEnchantVariantList`, add tooltip text, define event-producing enchantment data, and use inventory event maps for new effects.
+  - The exact 5.5 structure is `KDEventEnchantmentModular.MyEnchant = { tags, prefix?, suffix?, types: { ... } }`. Do not copy old tutorial snippets that put numeric modifier keys directly on the enchantment root.
+  - Direct item application still uses `KDGiveInventoryVariant(...)` or `KDEquipInventoryVariant(...)`, but use the current signatures in `Game/src/item/KinkyDungeonInventory.ts`.
+- **Buffs**: <https://itch.io/t/3869103/buffs>
+  - Buffs are still applied with `KinkyDungeonApplyBuffToEntity(...)` and read with `KDEntityBuffedStat(...)`.
+  - `KinkyDungeonMultiplicativeStat(...)` is still the helper for converting linear buff stats into multipliers.
+  - If Spiderlings adds buff icons or aura sprites, validate case-sensitive asset names and paths.
+- **Tile Editor**: <https://itch.io/t/3869179/tile-editor>
+  - Relevant only if Spiderlings adds custom map tiles, POIs, or terrain.
+  - Exported tiles should be added through `KDMapTilesList.<Name> = ...`; editor data is stored separately and may need reset/merge after game updates.
+  - In the checked-in KD 5.5 source, `KDGetTileWeight(...)` applies tag bonuses and multipliers for candidate eligibility, but `KD_GetMapTile(...)` adds the unmodified `mapTile.weight` to the random-selection total. Treat eligibility weight and actual draw contribution as distinct when validating this version; see `Game/src/map/KinkyDungeonEditorGen.ts:217-261` and `:321-348`.
+  - The same source reads `tagCounts[mapTile.maxTags[i]]` even though counts are stored by tag string. Do not assume `maxTags` enforces the apparent per-tag limit without an actual runtime test or a later compatibility profile; see `Game/src/map/KinkyDungeonEditorGen.ts:155-159` and `:242-244`.
+
+## Required Reference Files
+
+### Mod Package Format
+
+- `KinkiestDungeon-5.5/README.md`
+  - Mentions official example mods in the `Mods` folder.
+- `KinkiestDungeon-5.5/Mods/example_enemy/mod.json`
+  - Minimal mod metadata and load-order structure.
+- `KinkiestDungeon-5.5/Mods/example_enemy/init.ks`
+  - Example content registration in a mod package.
+- `KinkiestDungeon-5.5/Mods/example_unlimitedbed/mod.json`
+  - Another minimal package example.
+
+Use these only for package structure. They are not restraint-specific examples.
+
+### Localization Loading
+
+- `KinkiestDungeon-5.5/Scripts/Text.ts`
+  - `TextGet` returns `[NotFound] <key>` for missing text unless `KDToggles.ModCompat` enables the legacy bare-key result. A comparison with the bare key does not reliably detect missing text. Register English runtime messages with `addTextKey` before the active-language CSV overrides them; the Spiderlings checker verifies the paired outer-layer gate registration.
+- `KinkiestDungeon-5.5/Scripts/KDMods.ts`
+  - Mod loading appends files ending in `EN.csv`, followed by files ending in the active language code plus `.csv`. Matching active-language keys therefore override English keys, while missing target keys retain the English value.
+- `KinkiestDungeon-5.5/Scripts/Translation.ts`
+  - `KDLoadTranslations(...)` is not a general RFC CSV parser: it normalizes line endings, splits on lines, uses the first comma as the key/value boundary, and only strips one matching pair of outer quotes from the value.
+  - A later duplicate key in one file replaces the earlier row. A row with no comma is not reliably rejected because the parser does not test the `-1` result from `indexOf(',')`; validate such rows before packaging instead of assuming KD will report them cleanly.
+
+### Weapon And Consumable Data Shape
+
+- `KinkiestDungeon-5.5/Game/src/base/KDTypeDefs.ts`
+  - `interface weapon` and `interface consumable` are separate runtime shapes; do not combine their behavior fields into a generic item definition.
+- `KinkiestDungeon-5.5/Game/src/fight/KinkyDungeonWeaponList.ts`
+  - Official weapons demonstrate that `chance` is an accuracy multiplier and may exceed `1`; it is not a stored percentage.
+- `KinkiestDungeon-5.5/Game/src/fight/KinkyDungeonFight.ts`
+  - Effective weapon accuracy and damage are modified by player restraints and combat state. `crit` and `bindcrit` are conditional multipliers, while enemy dodge resources and evasion pity participate in hit resolution.
+- `KinkiestDungeon-5.5/Game/src/base/game/KinkyDungeonGame.ts`
+  - `staminacost` becomes a base attack cost before event and state adjustments; binding fields are copied into attack data as separate values.
+- `KinkiestDungeon-5.5/Game/src/item/KinkyDungeonConsumables.ts`
+  - Consumable attempts take the newer `itemEffect` path when present and otherwise use legacy `type`, requirement, delay, and effect handling. Preserve the selected path explicitly.
+  - Quantity deduction differs by route in the checked-in source: targeted immediate `itemEffect` use consumes `result.consumed`, delayed commit checks that value but deducts `useQuantity` or one, and the direct immediate attempt branch has no equivalent automatic decrement. Validate each route instead of assuming one consume-on-use rule.
+
+### Restraint Data Shape
+
+- `KinkiestDungeon-5.5/Game/src/base/KDTypeDefs.ts`
+  - `interface restraint extends KDRestraintProps` is the authoritative field shape.
+  - Important required/common fields include:
+    - `name`
+    - `Group`
+    - `Asset` / `AssetGroup`
+    - `Model`
+    - `power`
+    - `weight`
+    - `minLevel`
+    - `escapeChance`
+    - `enemyTags`
+    - `playerTags`
+    - `shrine`
+    - link/render fields such as `LinkableBy`, `renderWhenLinked`, `LinkAll`, `AlwaysLinkable`
+
+- `KinkiestDungeon-5.5/Game/src/restraint/KinkyDungeonRestraintsList.ts`
+  - Main official restraint list.
+  - Use this as the primary source for copying field patterns from similar official restraints.
+  - The top of the file defines reusable link/render tag templates such as `KDTapeLink`, `KDTapeRender`, `KDBindable`, and `KDWrappable`.
+
+### Model And Layer Definitions
+
+- `KinkiestDungeon-5.5/Data/ModelTypes.ts`
+  - Official `Model`, `ModelLayer`, `PoseMod`, and related type shapes.
+- `KinkiestDungeon-5.5/Data/Models.ts`
+  - Runtime model registration and sprite resolution logic.
+  - Key functions/patterns:
+    - `AddModel(Model, Strings?)`
+    - `ToLayerMap(...)`
+    - `GetModelLayers(...)`
+    - `LayerSpriteCustom(...)`
+  - Normal front-facing sprite files resolve as `Models/<Folder>/<SpriteOrLayerName><PoseSuffix>.png`; back-facing layers resolve through `ModelsBack/<Folder>/...` when `Poses.Back` is active.
+  - `ModelLayerStringCustom(...)` can use a custom root path, but normal Spiderlings restraint art should stay under `Models/` unless a custom loader path is intentional.
+  - Runtime displacement strength uses `(layer.DisplaceAmount || 50)`. An explicit `0` therefore resolves to the default `50` rather than disabling displacement; negative nonzero values remain truthy and reverse the filter scale. Disable a diagnostic source explicitly instead of relying on a zero amount, and show authored versus effective values in authoring tools.
+  - Target selection uses `layer.DisplaceLayerGroups || layer.DisplaceLayers`. If both fields are present, layer groups win and the exact-layer targets are ignored; authoring tools should diagnose the ambiguous definition.
+- `KinkiestDungeon-5.5/Data/Preload.ts`
+  - `KDOptimizeDisplacementMapInfo` registers `xPad` and `yPad` for a displacement PNG that has been trimmed from the full character canvas. `Data/Models.ts` applies that translation before it creates the displacement-filter sprite.
+  - A smaller PNG is not automatically restored to its original full-canvas position. A Mod that exports a trimmed displacement map must also register the exact logical `DisplacementMaps/<name>.png` key and crop-origin padding, or keep the map on its full canvas.
+  - Official `CorsetSquish.png` is the local reference: its entry restores a 2480 x 880 map with `xPad: 0` and `yPad: 1000`.
+- `KinkiestDungeon-5.5/Data/ModelList_Restraints.ts`
+  - Official restraint model examples.
+  - The contributor tips at the top are especially relevant:
+    - learn body-part layering;
+    - hands render above arms, feet above legs;
+    - higher-priority layers should cover lower-priority layers where needed.
+- `KinkiestDungeon-5.5/Data/ModelListBase.ts`
+  - Official base-body model definitions for `Body`, `SmoothBody`, and `DollBody`.
+  - Use this when investigating editor-only mannequin replacements for legacy blank templates: it is the authoritative map of human body layers, pose coverage, and default base-layer semantics before looking for matching raster donors under `Models/*`.
+  - In the KD 5.5 reference package, the corresponding source rasters are under `M1/Models/Body`, `M1/Models/BodySmooth`, and `M1/Models/BodyDoll`, not the root `Models/` directory. `KinkiestDungeon-5.5/tools/wtxpck.models.conf` maps the `M1` through `M5` model tiers to the runtime `Models/` prefix. Search these configured tiers before reporting a missing base-body raster; do not silently replace a real gap with Spiderlings runtime assets.
+- `KinkiestDungeon-5.5/Data/ModelList_TapeHeavy.ts`
+- `KinkiestDungeon-5.5/Data/ModelList_TapeMed.ts`
+- `KinkiestDungeon-5.5/Data/ModelList_TapeLight.ts`
+  - Useful reference for Spiderlings web/tape-style restraints and pose-aware wrapping.
+
+### Poses, Layers, And Canvas
+
+- `KinkiestDungeon-5.5/Data/Poses.ts`
+  - Official pose constants such as `ARMPOSES`, `HANDRIGHTPOSES`, `HANDLEFTPOSES`, `FOREHANDRIGHTPOSES`, and `FOREHANDLEFTPOSES`.
+  - Check this before adding or removing pose names.
+- `KinkiestDungeon-5.5/Data/Defs.ts`
+  - Official layer names and model canvas constants.
+  - Runtime constants are `MODELWIDTH = 2480` and `MODELHEIGHT = 3500`.
+  - Many official M3-style PNG assets are 2480 x 3508. Use the closest official/template PNG dimensions for asset work, but remember runtime anchor math normalizes with the 2480 x 3500 constants.
+- Current Spiderlings Arm Webbing and Web Mittens are separate gameplay items. Arm is `ItemArms`, Wristtie-only, and binds arms without binding hands. `Mitten Left` and `Mitten Right` are separate linked `ItemHands` restraints and each contributes `bindhands: 0.5`. Their invariant delivered art requires Free arms but is independent of leg pose, so Wristtie and every unsupported arm pose naturally fail that requirement; do not add a redundant `HidePoses.Wristtie`, use `TEST`, or morph the delivered sprite. During the clothing-preserving displacement test, neither mitten adds `EncaseHand*` nor uses `EraseSprite`/`EraseLayers`/`EraseMorph`; an existing glove therefore remains and may visually overlap the web mitten. Do not set `HideWhenOverridden` on either Spiderlings mitten layer: KD computes the highest priority for the shared `MittenLeft` / `MittenRight` layer before the first post-equip clothing/model pass, so yielding to a pre-existing higher-priority hand layer makes the newly equipped mitten disappear until another Webbing change triggers a rebuild. KD has no separate left/right hand restraint groups, so independent mittens share `ItemHands` and rely on explicit same-family link tags and canonical chain ordering.
+- In `Data/Models.ts`, highest-priority and `CrossHideOverride` collection calls `LayerIsHidden(...)`, which checks `HidePoseConditional` and hidden layers but does not evaluate `Poses` or `HidePoses`. An unsupported or covered layer can therefore suppress other layers even though it will not draw. Lv3 Arm on `WrappingChest` uses `CrossHideOverride`, `HideOverrideLayerMulti: ["ChestBinding"]`, and `ForceSingleOverride: true`; its `HidePoseConditional` must also exclude Free, Boxtie, Yoked, Front, Up, Crossed, and `SpiderlingsWebbingCocoonCover`. This prevents an invisible Arm from clearing the chest during priority collection. Preserve both the draw-time and priority-time visibility rules when changing these poses.
+
+### Runtime Behavior
+
+- `KinkiestDungeon-5.5/Game/src/player/KinkyDungeonPerks.ts`
+  - Starting scenarios register a preset with `category: "Start"` and a same-key `KDPerkStart` handler. Native `KDInitPerks` executes truthy selected handlers in ascending `startPriority`, temporarily enabling MagicHands. Registering the Mod must not itself equip starting items. Spiderlings' Cocoon start adds physical restraints from Lv1 through Lv3 to Cocoon through its native equipment adapter; the new-save regression executes the pinned `KDInitPerks` to verify selected/unselected behavior and all twenty-four layers.
+- `KinkiestDungeon-5.5/Game/src/restraint/KDRestraintUtility.ts`
+  - Helpers for blockers and compatibility checks.
+- `KinkiestDungeon-5.5/Game/src/restraint/KinkyDungeonRestraints.ts`
+  - Runtime add/check/link behavior, including `KDCanAddRestraint` and `KinkyDungeonAddRestraint`.
+- `KinkiestDungeon-5.5/Scripts/KDMods.ts`
+  - A `range` mod setting always requires finite `rangelow` and `rangehigh` values. Use a `string` setting plus Spiderlings-owned validation when a non-negative integer setting deliberately has no configured maximum; initialize its default through the mod settings registration because the string renderer does not provide range-style defaulting.
+
+Use runtime files to understand behavior. Prefer copying data patterns from `KinkyDungeonRestraintsList.ts` before reaching for runtime hooks.
+
+### Bullet artwork color selection
+
+KD 5.5 `KinkyDungeonUpdateSingleBulletVisual` copies the gameplay bullet name into its visual record; `KinkyDungeonDrawFight` derives `Game/Bullets/<name>.png` from that name. `KDDraw` updates even an existing sprite from the supplied image path on every draw. Spiderlings 0.92.20 therefore redirects only the four exact rooted SpiderWeb/SpiderWebHit/WebSpray/WebSprayTrail image paths to their delivered `Pink.png` counterparts when `spiderlingsPinkWebbing` is enabled. Keep spell names, bullet names, trail provenance and original texture aliases intact. All eight direct PNGs are registered before scripts; this does not change the restraint atlas inputs. The color-routing regression in `spiderlings-webbing-lv1.test.js` covers saved pink settings, repeated toggles, unchanged drawing arguments and unrelated image paths.
+
+### Direct PNG readiness in KD 5.4.92
+
+The installed KD 5.4.92 runtime uses Pixi 7.2.1. Its `resolveModURL` rewrites logical paths to extensionless `KDModFiles` blob URLs. Use `Assets.load({src: logicalPath, format: "png", loadParser: "modTextureLoader", data: ...})` for direct Mod PNGs, as for the atlas image. A plain string request can finish without producing a decoded texture; `Assets.backgroundLoad` only acknowledges background scheduling and is not a rendering readiness promise. Native `KDTex` caches `Texture.from(blob)` immediately, even while `baseTexture.valid` is false. Do not accept that cache entry as ready. Cache the decoded result under the KD logical path and Pixi aliases before the post-apply redress. Empty load results must remain retryable.
+
+The first-pink-application regression in `spiderlings-webbing-lv1.test.js` covers early background completion, explicit blob parsing, an already cached pending texture and redraw without another player action. The checker protects these loading requirements. Native 5.4.92 before/after traces are in `.scratch/spiderlings-first-refresh/`; this verifies the enemy binding effect and texture refresh sequence, not all 5.4 gameplay.
+
+### Webbing color settings and model copies
+
+KD 5.5 `Scripts/KDMods.ts` saves `KDModSettings` when leaving the configuration page, then emits `afterModConfig`; `KDLoadModSettings` emits `afterModSettingsLoad`. Use both to restore and apply the default-false `spiderlingsPinkWebbing` boolean. `Data/Models.ts` copies models into `ModelContainer.Models` in `addModel`, so changing only `ModelDefs` cannot update an already drawn character. Synchronize the owned `Folder` values in definitions, player Appearance and current model-container copies, refresh on configuration exit, and restore copies on `afterDress`. `ModelLayerString` resolves these folders normally; do not overwrite original atlas aliases with pink textures. Pink PNG paths are explicitly packaged as fallbacks and packed into `TextureAtlas/spiderlings-webbing-pink-0.{json,png}` (4096×4096). Both color atlases are loaded eagerly at Mod startup, validating all twenty-five frames per sheet before publishing their separate aliases. A failing sheet does not discard the other color's ready atlas. First-hit and color-switch paths reuse the already parsed frames, so healthy atlas loads do not require per-item PNG decoding during combat. The native-path and cache-race regressions in `spiderlings-webbing-lv1.test.js` cover both colors, saved copies, startup settings and unchanged rendering/gameplay metadata; the checker requires the setting and all locale labels.
+
+### Editor Preview Approximation
+
+- For MTE mannequin restraint previews, do not load the full KD runtime in the browser. Build a deterministic virtual stack from Spiderlings editor data, then draw only restraints that survive that stack.
+- KD 5.5 reference points checked for the preview engine:
+  - `KDCanAddRestraint` rejects ineligible restraints before add/replace logic and calls blocker helpers.
+  - `KinkyDungeonAddRestraintIfWeaker` allows empty-slot equip, dynamic linking through stricter/linkable current items, or overpower replacement when the incoming restraint is stronger.
+  - `KinkyDungeonIsLinkable` refuses `NoLinkOver`, checks link size, and permits links through fields such as `Link`, `LinkableBy`, `LinkAll`, and `AlwaysLinkable`.
+  - `KDGroupBlocked` blocks `Block_<Group>` and chastity/chastitybra protected groups.
+  - `KDCheckLinkSize` and `KDCheckLinkTotal` constrain dynamic-link chains; editor previews should report this as an approximation when `linkSize` fields are present.
+- Same `Group` restraints should not be blindly drawn together. The editor may show an item as rejected, replaced, or linked under another restraint; only visible accepted/replacement layers should be composited.
+- `ItemHands` should be treated as blocked when the virtual stack already includes an `ItemArms` restraint that makes hands inaccessible.
+- Layer preview should resolve model layers by KD layer order plus `Pri`, account for pose fields (`AddPose`, `RemovePoses`, `AddPoseConditional`, `AddPoseIf`, `Poses`, `MorphPoses`, `Invariant`), and report `HideWhenOverridden`, `NoOverride`, `GlobalDefaultOverride`, missing PNGs, and unsupported poses as diagnostics.
+- The KD Artwork Fit Workbench uses an authorized, checksummed KD 5.5 snapshot containing only the front-facing `Body`, `BodySmooth`, and `BodyDoll` layers required by `ModelListBase.ts`. Its manifest must preserve the explicit UI-to-folder mapping and official layer provenance; it must not infer a body folder from the UI name.
+- The workbench pose controls come directly from `KDWardrobe_PoseArms` and `KDWardrobe_PoseLegs`: seven arm poses by five leg poses. It does not add ad hoc pose names or treat unrelated runtime pose flags as selectable mannequin poses.
+- Bundled mannequin layers remain editor references. They must never be written into `Spiderlings_0.91/`, listed in Spiderlings `mod.json` `fileorder`, included in Spiderlings release zips, or baked into formal user-art exports.
+- `ModelsBack/`, KD `Back` rendering, facial expressions, and displacement-driven mouth deformation remain outside the first artwork-fit workbench scope.
+
+## Recommended Workflow For A New Or Adapted Spiderlings Restraint
+
+1. Pick the closest official analog in `KinkyDungeonRestraintsList.ts`.
+2. Copy the idea, not the official file. Create or update a Spiderlings-owned restraint in `Spiderlings_0.91/`.
+3. Use `SPIDERLINGS.createRestraint(...)` for Spiderlings restraint data when possible.
+4. Register any Spiderlings-owned visual model with `AddModel(...)` in Spiderlings-owned model files.
+5. Put new or adapted PNGs under `Spiderlings_0.91/Models/<SpiderlingsFolder>/`.
+6. Use Spiderlings-owned model names, folder names, layer names, and asset names where practical.
+7. Add or update `KinkyDungeonAddRestraintText(...)` English fallback text.
+8. Add or update all `Spiderlings*.csv` translation keys:
+   - `Restraint<Name>`
+   - `Restraint<Name>Desc`
+   - `Restraint<Name>Desc2`
+9. Ensure Spiderlings monsters can actually apply the restraint through `enemyTags`, unless the restraint is intentionally inventory-only or terrain-only.
+10. Ensure Spiderlings web restraints have refresh events for:
+    - `postApply`
+    - `postRemoval`
+    - `afterDress`
+11. Run the Spiderlings automated check.
+12. If adding custom PNG assets, add them to `mod.json` `fileorder` before the Spiderlings scripts so KD registers their `KDModFiles` entries first.
+13. If adding custom asset preloading, verify the zip root contains both `Models/` and the explicitly registered `TextureAtlas/` pair directly at the root. The Spiderlings release keeps the model PNGs as fallback and loads only `spiderlings-webbing-0`; legacy `spiderlings-0/1/2` pages remain forbidden.
+
+## Model And Asset Rules
+
+- Never edit `KinkiestDungeon-5.5/Models` or `KinkiestDungeon-5.5/Data`.
+- Do not override official model names unless the goal is deliberate compatibility binding. Prefer Spiderlings-owned model names.
+- Root mod zip layout matters. Files should be directly in the zip root; do not package everything inside a nested `Spiderlings/` folder.
+- Standard custom model assets should be in `Spiderlings_0.91/Models/...` so they land in `Models/...` in the mod zip.
+- Release `mod.json` should preload custom `Models/`, `Enemies/`, and `Bullets/` image files before script files in `fileorder`.
+- `fileorder` only ensures KD has a `KDModFiles` URL for custom assets before scripts run; it does not guarantee Pixi has decoded them. For the ten Webbing Lv1 files, five Lv2 files, eight Lv3 files, and Cocoon, `SpiderlingsModelRuntime.js` first loads and validates all twenty-five frames of each color in its own derived Webbing atlas before caching their exact KD-facing `Models/...png` aliases. Failure in one sheet falls back to direct PNG preload for that color while preserving the other sheet. The release builder alone may alpha-bound trim those explicit inputs into the derived page; it must not resize, rotate, resample, recolor, recursively collect assets, or turn packing into visual/pixel/hash acceptance.
+- If a layer can render in `Back`, account for `ModelsBack/...` resolution or deliberately prevent the back pose from selecting that layer.
+- A model layer with `Poses: ToMap(["Front", "Free"])` expects pose-specific files unless `MorphPoses` or `Invariant` changes the file name.
+- `MorphPoses` intentionally reuses another pose suffix. Use it only when the visual sprite should truly be shared.
+- Pose order can matter because `LayerSpriteCustom(...)` selects the first matching layer pose.
+- `GlobalDefaultOverride` is a defaulting helper; it should not be used as a substitute for checking the actual expected PNG names.
+- Leg/feet web models that add `FeetLinked`, `LegBind`, `Legbinders`, or `Hobbleskirts` must have matching restraint-side tags, usually `addTag: ["FeetLinked"]`. Model `AddPose` alone is not enough for KD's leg pose selection.
+- Current Spiderlings Webbing slow state is not an equipped LooseWebbing stage. Only direct/trail effects with exact `WebCaster.WebSpray` provenance enter the shared resolver, which maintains one capped `SpiderlingsWebSpraySlow` buff and a seven-turn inactivity timer. Generic `SpiderWeb` retains its native KD effect and does not call this route.
+- For the external-item-preserving enemy route, require an empty `KDGetBlockersToAddRestraint` result and `KDCanAddRestraint(restraint, false, "", false, current, true, true, entity) === true` before choosing a candidate. The seventh argument prohibits overpowering in root/deep-link checks; `KinkyDungeonAddRestraint` can remove blockers, so its success alone is insufficient. Apply this to armour, ordinary restraints and mixed chains, including Cocoon in ItemDevices. Restricting compatibility to `armor: true` rejects natively compatible LatexArmbinder/WolfBallGag chains and stalls the complete-set gates. Keep all physical 10/5/8 stage requirements and reject native incompatibility. KD 5.4.92 user-log reconstruction and unit regressions cover the shared boundary.
+- KD 5.5 `KinkyDungeonUnLinkItem` re-adds the newly exposed root with `KinkyDungeonAddRestraint(..., Unlink=true)`, recreating its ID and dropping escape progress. After a successful unlink of an exact Spiderlings root immediately over an external item, restore the original external instance only when the resulting root matches its name and remaining chain. This applies to armour and ordinary restraints. Retain native removal, inventory fate, messages and events, then refresh link/event/struggle/model caches through the existing adapter. Unrelated outer items retain native behaviour; tests execute the pinned native unlink function.
+- The old `TrapBindings` wrapper, LooseWebbing/Cocoon1–5 restraints, staged Loose events, WebHeavy models, and native wide-tag enemy selection are retired and belong only to history/denylist checks. Do not restore them as compatibility fallbacks.
+- Ten `SpiderlingsWebbingLv1*`, five `SpiderlingsWebbingLv2*`, eight `SpiderlingsWebbingLv3*`, and `SpiderlingsWebbingCocoon` are registered with delivered artwork. Lv1 covers Arm, Mitten Left, Mitten Right, Belly, Legs, Ankles, Foot, Blindfold, Stuffing, and Gag. Lv2 covers only Arm, Belly, Legs, Ankles, and Foot. Lv3 covers Arm, Belly, Legs, Ankles, Foot, Blindfold, Gag, and Hood; each has power 3 and a two-effective-action escape target. Enemy progression is Lv1 → Lv2 → Lv3 → Cocoon: complete physical Lv1/Lv2 unlock Lv3, and all twenty-three physical inner items plus five pre-existing slow stacks are required before an eligible subsequent direct hit can apply Cocoon. Lv3 Hood requires physical Lv3 Blindfold and Gag; the Lv1 Gag/Stuffing ordering rule must not reject Lv3 Gag, which has no same-stage Stuffing. Each ordinary application adds at most one item; WebCaster crossfire may add one eligible inner item after a successful direct application, globally capped at once per player turn and never applying or repairing Cocoon. WebSpray trail can advance Lv3 once per turn but cannot apply Cocoon. Direct manual equipment still bypasses enemy progression gates. Cocoon uses `Models/SpiderlingsWebbingCocoon/Cocoon.png` and is an `ItemDevices` final state with `hobble: 3`; ordinary movement is blocked only while its outer webs are anchored with its counted escape and bounded repair. The enemy/Cocoon tests and checker assert the Lv3 transition and full physical threshold.
+- Cocoon must add the same `Wristties` model tag as Lv1 Arm Webbing. KD 5.5 resolves `Boxties` before `Wristties`, so adding both while Cocoon covers an existing Arm Webbing changes the rendered arm pose to Boxtie. Matching `Wristties` keeps the pose stable across Cocoon application; the common `postApply` / `postRemoval` model-refresh events restore the remaining equipment pose after removal. Cocoon also owns restraint-side `FeetLinked`, `BlockKneel`, and `BlockHogtie` tags, so it retains its delivered Closed standing pose when equipped without inner layers. Its `FurnitureFront` layer at priority 100 covers the torso, limbs, and lower face; the upper head remains exposed unless the independent Lv3 Hood is equipped.
+- Arm renders only Wristtie. Belly and the three lower-body models render only their delivered standing `Closed` coverage; unsupported `Spread`, `Kneel`, `KneelClosed`, `Hogtie`, Boxtie, Crossed, Yoked, and other poses must be excluded rather than fabricated with `MorphPoses` or additional pose-specific displacement assets. Belly remains mechanically pure `ItemTorso`; the three lower restraints add only `FeetLinked` / `BlockKneel` / `BlockHogtie` pose tags and deliberately omit `hobble` and `blockfeet`. KD adds those mechanical fields into SlowLevel, so they must not be used when WebSpray is intended to be the sole Spiderlings slowdown source.
+- KD escape `data.cost` values are negative. Counted Lv2/Lv3/Cocoon handlers must test stamina with `KinkyDungeonHasStamina(-data.cost, true)`, must not advance during query/blocked/illegal attempts, and must record progress only from the post-cost `struggle` event after a real failed action. Writing progress and forcing `escapeChance <= 0` in `beforeStruggleCalc` creates free no-turn clicks and is forbidden.
+- During the current manual test, no Lv1/Lv2 Webbing model adds `Encase*`, `FlattenedUnderbust`, or `WrapArms`, and the mittens do not erase existing glove layers; original clothing stays available to render at both stages. Cocoon retains its final coverage poses. All Lv1 models have no displacement. Five cropped PNGs adopted from `DSmap` (Ankles updated in 0.92.15) are shared by matching Lv2 and Lv3 source layers, with unchanged export targets/strength: Arm `Rope1`/1200, Belly `CorsetTorso`/1200, Legs `Skirts`/2000, Ankles `Skirts`/2000, Foot `Shoes`/100. Register `KDOptimizeDisplacementMapInfo` at the renamed logical PNG paths with crop origins Arm (650,749), Belly (459,1280), Legs (110,1657), Ankles (383,2085), Foot (741,2928). Hidden or unsupported source layers contribute no displacement; Lv3 replaces the hidden Lv2 source with the same map. Arm, Belly, and Foot keep paired Lv1/Lv2 layers at `Pri: 50/51`, with Lv2 `NoOverride: true` so both stages remain visible. Legs and Ankles use separate inner and outer layers: Lv1 uses `WrappingLegsOver` and `WrappingAnklesOver` respectively, below standing `OverSkirt`, `SkirtOver`, `Skirt` and their decoration slots. Lv2/Lv3 use `OverSkirtDeco` at priority 51/52, above the standing skirt bodies and their ordinary decorations. All four outer Legs/Ankles layers declare `NoOverride: true` so native priority collection does not suppress an entire skirt layer; their own Lv3 cover pose still hides both inner webbing models. `WrappingLegsOver2` is insufficient because it lies below `OverSkirt`. Keep the existing standing-only pose coverage; kneeling skirt slots are not a supported Legs/Ankles pose. Native drawing uses `-ModelLayers[layer] + LayerPri(...)`, with submeshes additionally sorted by meta-layer; compare the final native composition, not local priority numbers alone.
+- Lv3 full-region artwork uses priority 52 and its own cover poses to hide the matching Lv1/Lv2 artwork while retaining the physical linked items. The hidden inner layers stop rendering their displacement maps. Lv3 Arm uses `WrappingChest`; Belly uses `WrappingTorsoLower`; Legs uses `OverSkirtDeco`; Ankles uses `OverSkirtDeco`; Foot uses `WrappingLegs`. Lv3 Blindfold/Gag use `Blindfold`/`GagMuzzle` and hide under `FullHood`. Hood uses `Hood`, hides covered head/hair layers, and belongs to the native `ItemHead` restraint group so it remains reachable from KD's normal escape HUD. Cocoon hides inner body artwork through its own cover pose without adding `EncaseHead` or automatically supplying a Hood.
+- Spiderlings linked layers use a player-input gate rather than KD's broad `inaccessible` field. An equipped Cocoon is the outermost gate across groups for every exact Lv1/Lv2/Lv3 Webbing ID, including both mittens and Hood, even when only part of the inner set is equipped. Check the actual ItemDevices chain before same-group coverings; Cocoon remains operable and removal immediately restores the ordinary per-group gates. This action restriction is independent of visual coverage and outer-web reinforcement. For the five Arm/Belly/Legs/Ankles/Foot families, matching Lv2 blocks Lv1 and matching Lv3 blocks Lv1/Lv2. Lv3 Gag blocks Lv1 Stuffing/Gag; head ordering is Lv1 Blindfold → Lv3 Blindfold → Lv3 Hood. KD 5.5's `KDDynamicLinkListSurface(...)` exposes the linked items while they declare `accessible: true`; `KDGetStruggleButtons(data.item)` and `KDGetStruggleContextMenu(item, sg, target, entity)` supply HUD and context-menu actions; return empty lists for covered player items without filtering `KDDynamicLinkListSurface` or changing indices. Options restore immediately after outer removal. `KDInputTypes.struggle` is the narrow pre-cost seam for blocking player Cut/Struggle/Remove. The gate checks exact IDs in the Cocoon device chain and the relevant same-group chain, returns `Blocked` with localized feedback and `Audio/ClickError.ogg`, and does not call the native handler, spend a turn/resource, write progress, redirect the target, block unrelated linked items, or affect direct system removal. Do not implement this rule by forcing `escapeChance <= 0` in `beforeStruggleCalc`, which can still enter KD's impossible-attempt cost/time behavior.
+
+- KD 5.5 cosmetic ears use `AnimalEars`, `AnimalEarsFront`, and `AnimalEarsMid`, separately from ordinary `Ears`; tails use `Tail`, `TailNoRot`, and `TailFront`. `HideEars` and body `Encase*` poses do not hide these layers. Spiderlings Lv3 Hood lists the three animal-ear layers in its own `HideLayers`; Lv3 Legs and Cocoon each list the three tail layers. `DrawCharacterModels` rebuilds `MC.HiddenLayers` from active models, and `LayerIsHidden` applies it before drawing; removing the covering models restores visibility without deleting cosmetic appearance items or modifying official models. The native-renderer regression and checker assert these layer contracts.
+
+## Native head and mouth restriction progression
+
+KD 5.5 `KinkyDungeonAllRestraintDynamic` visits the outer item before its inner links. `KinkyDungeonGetBlindLevel` adds at least one blindness step per blindfold, takes the item's stronger value, then multiplies by 1.5; visually hidden inner layers still contribute. `KinkyDungeonGagTotal` sums all worn gag fields; `KinkyDungeonCanTalk(true)` and the Verbal component check use a 0.99 threshold, while strict `KinkyDungeonCanTalk()` rejects any gag. Keep these native distinctions and trait modifiers. Spiderlings 0.92.4 uses blindfold 1/2/4 and gag 0.10/0.15/0.50/1.00 for Stuffing/Lv1 Gag/Lv3 Gag/Hood so ordinary complete chains retain partial vision and verbal casting before Hood. The native sensory tests in `spiderlings-webbing-lv1.test.js` execute the pinned inventory, stats and Verbal component functions for layered wear, standalone wear and removal; the checker also protects the registered values.
+
+## Restraint Data Rules
+
+- `name` is the internal restraint ID. New Spiderlings behavior should use a unique Spiderlings-owned name.
+- `Group` controls the equipment slot.
+- `Asset` is compatibility/base item data, not necessarily the final visual.
+- `Model` is the KD 5.5 rendered model. In Spiderlings, prefer Spiderlings-owned models for Spiderlings visuals.
+- `enemyTags` is a map from selection tag to additive weight modifier. For candidates scanned from the global restraint registry, at least one requested tag must match for the restraint to enter the initial candidate pool; matching `enemyTagsMult` entries then multiply its weight. Explicit caller-provided inventory candidates can enter through a separate path. The name is historical: selection tags can come from enemies, spells, traps, furniture, jail logic, or other effects.
+- A matched restraint is still conditional on effective level, floor, group/equip compatibility, will and player-tag weighting, caller filters, variants, and—during ordinary enemy binding—the enemy's restraint inventory or unlimited-restraint policy.
+- Some runtime effects resolve a restraint directly by name and therefore bypass the tag-weight candidate pool; validate those references separately from `enemyTags` reachability.
+- `playerTags`, `playerTagsMissing`, and related fields are weight modifiers, not hard requirements unless using very large positive/negative values.
+- `shrine` tags become part of the player's restraint tag ecosystem and affect later selection.
+- Link/render fields such as `LinkableBy` and `renderWhenLinked` should usually follow the closest official analog.
+
+## Enemy, Event, And Effect Rules
+
+- Passive Cocoon garrison (0.92.36, KD 5.4.92 / 5.5): `KinkyDungeonAdvanceTime` sends tick before the Webbing vigil updates and clears LastAction before tickAfter. `isCocoonPassive()` checks real equipment, pending activity/reinforcement, and explicit Wait at turn start or the resulting idleTurns at turn end. Exclude this player once for the whole garrison threat scan, including objective nests, rather than calling mobile-only `isCocoonDispersing` per defender. The latter only changes movement at 25 idle turns and four tiles; it does not remove NPCs. Preserve the fifteen-turn garrison timer and both-boundary threat latch. User-log positions/equipment, old-build failure, save/load at turn fourteen, blocked movement, active maids and recurring nest reinforcements are covered in `.scratch/spiderlings-cocoon-retirement-20260913/`.
+
+- Rival acquisition and quiet garrison (0.92.35, KD 5.5 / 5.4.92): native `KinkyDungeonNearestPlayer` rejects two unaware offscreen NPCs despite successful LOS. Owned wild spiders (including immobile nests) may become aware on actual native perception of an eligible Maidforce rival before the rival-only selection pass. The existing idle `hunt` / `wander.aftermove` path search now serves both factions, preserving duties and movement gates. Quiet-turn opponents exclude native helpless/imprisoned/stunned/frozen/noAttack NPCs and require native perception from either NPC within the existing twelve-tile boundary. Re-evaluate at both turn boundaries so recovery or an active opponent leaving mid-turn cannot count as peace. Full-turn evidence and negative regressions: `.scratch/spiderlings-rival-retirement-20260913/` and the maid-hostility/infestation tests.
+
+- NPC silk gag (0.92.35): `KDCommanderOrders.flee.apply` explicitly permits helpless NPCs to call for help through `KDEnemyCanTalk` and `KinkyDungeonMakeNoiseSignal`; ordinary shared aggro uses `KDEnemyCanSignalOthers` / `KDEnemyCanSignal`. Helplessness alone is therefore not a gag. Compare `specialBoundLevel.Slime` across before/afterDamageEnemy for an owned `SpiderlingsNPCSilk` payload, persist attribution on that NPC, and suppress those speech/signal gates only while attribution, Slime and native helplessness all remain. Do not change shared enemy tags or overwrite unrelated native silence. Recovery restores the native gates; removing all Slime clears attribution. Old unattributed saves are not retroactively attributed. Native binding, commander/direct-signal calls and actual save/load are exercised in the same evidence runner; they are function probes separate from its full-turn approach and retirement scenarios.
+
+- Lifetime nest Tunneler budget (0.92.34): `SpiderlingsNestTunnelerCount` belongs to the nest entity and increments only after a successful recurring Tunneler summon. Filter that species before weighted selection when its configured budget is exhausted; never reset on child death, settings reload or map revisit. KD 5.4.92 and 5.5 native save/load preserve the field. Seed an absent legacy counter once from still-attributable map entities; removed historical spawns cannot be reconstructed. New nest entities have independent counters. The default map cap is now 25; saved user values remain authoritative. Tests and native save/load evidence: `.scratch/spiderlings-nest-tunneler-cap-20260913/`.
+
+- Maid search (0.92.33): wrap native `hunt` / `wander.aftermove`, preserving the prior hook result. KD calls this after its movement attempt and under the native immobility / StayHere / Defensive / overrideMove gates. Only idle Maidforce without another NPC target, active player chase/provocation or special duty receives a nearby Spiderling path goal. Use native pathfinding with the actor’s movable tiles, lock permissions and short-search budget; the 12-tile search radius and 24-step route cap do not grant extra combat vision. Once native LOS within the maid’s vision (including unaware blindness limits) succeeds, mark the maid aware: otherwise the native NPC selector rejects two unaware offscreen rivals even at melee range. Return true only when a reachable goal is selected, preventing random wandering from overwriting it in that turn. Native movement, perception and damage remain authoritative. Pinned AI regressions are in `spiderlings-maid-hostility.test.js`; full-turn evidence is in `.scratch/spiderlings-maid-search-20260913/`.
+
+- Shared contact profiles (0.92.27, superseding the zero-HP outcome below): `Spiderlings.Combat.CONFIG` defines melee/dash/direct/trail tickle damage as 0.05/0.10/0.05/0.01 for both recipients. The NPC adapter retains the marked glue binding component, then adds one marked tickle component in `afterDamageEnemy`, without passing the already-consumed bullet again. `duringDamageEnemy` caps only that contact's `dmgDealt` at twice its scaled `dmg`: native flat weakness bonuses of 0.5/1 overwhelm these tiny base values. Lower native damage, immunity and shields remain effective. `hitNPC(source, target, kind)` reports binding progress for consumption; the scoped melee return also reports actual damage/shield loss when binding fails. Record trail contact even if binding is resisted, so duplicate trails cannot repeatedly deal damage. Player spray applies the shared damage only after resolver acceptance, once per accepted contact, with no extra damage for a crossfire bonus. Native 5.4.92/5.5 evidence: `.scratch/spiderlings-shared-combat-0927/`.
+
+- NPC silk attacks (0.92.26): pass `damage: 0`, `type: "glue"`, explicit `bind` and `bindType: "Slime"` through native enemy damage, retaining resistance, shields and `KDTieUpEnemy`. Severe weakness adds one HP damage even to a zero base, so the owned `duringDamageEnemy` event zeros only its marked payload's `dmgDealt`. Native NPC melee returns damage, not binding success; a synchronous per-enemy-loop scope converts only the armed Spiderling melee call and reports positive binding as an effect to that caller, while damage events remain zero. Actual added binding controls source consumption. Do not apply this return convention globally.
+
+- WebSpray NPC collision needs both native collision predicates and the hit handler. `Enemy` faction favorability toward Maidforce can veto a pair that `KDHostile` correctly regards as hostile. For an exact owned source/hostile NPC query, a local spell view with `friendlyfire: true` lets the original predicates keep geometry, collision and unique-hit gates; shared definitions and player queries remain unchanged. The hit view removes both bullet and spell player effects to prevent Slime tags from also generating NPC equipment. Restore the real bullet data in `finally`, retaining native hit bookkeeping. Trail limits clear only after positive-time turns and on transitions/`afterLoadGame`. `spiderlings-combat.test.js` runs the pinned native collision predicates; native 5.4.92/5.5 evidence is in `.scratch/spiderlings-npc-combat-0926/`.
+
+- NPC Jumper Dash stores target ID as well as the launch tile, revalidates hostility and occupancy, and uses the native `enemyCast.player` recipient. The player's Cocoon dispersal must not suppress a Dash against an NPC. `afterLoadGame` clears wind-ups and warnings; native binding/material state stays in the saved entities.
+
+- Spiderlings 0.92.16 caps the four living mobile species per map (default 20; zero unlimited), excluding nests and preserving already loaded over-cap populations. KD 5.5 `KinkyDungeonGetEnemy` consumes exclusion `filterTags` at argument 7, including its minimum-weight fallback; add the owned `SpiderlingsMapPopulation` tag only to the four species and append it to a copied filter list when full. `KinkyDungeonHandleWanderingSpawns` also selects `RespawnQueue` entries through `KinkyDungeonGetEnemyByName`; suppress full-cap species only during that synchronous wave and restore lookup scope in `finally`, leaving blocked entries queued. `KinkyDungeonSummonEnemy` returns actual created entities and its callers dereference them, so clamp the requested count before native creation instead of returning null from `KDAddEntity`. `KDOndeath.summon` uses this same summon entry. Squads preflight four slots; due nests keep their timer when the map is full. The native selector, wandering wave, summon and death-handler regressions live in `spiderlings-encounters.test.js`.
+
+- WebCaster crossfire uses native projectile `bullet.bullet.source` (falling back to the effect's entity ID), revalidates living hostile sources and the physical wall/bar path, and selects the bonus from a fresh post-hit equipment snapshot. The bonus cannot add/repair Cocoon or increment SlowLevel. The `KDGetDir` preference operates only inside native kite movement targeting `KinkyDungeonPlayerEntity`; KD 5.5 also passes NPC rivals and plain coordinate path goals through this function, and those calls must retain the native direction (fixed in 0.92.21). `KinkyDungeonEnemyCanMove` and native direction delta (1 cardinal, 1.5 diagonal) must still apply. Do not call a movement function or change move points from the preference. `spiderlings-webbing-webspray.test.js` covers source transport through the pinned KD 5.5 player-effect function, global bonus cap, invalidation, equipment eligibility, diagonal cost and native direction preservation for NPC/coordinate targets; KD 5.4.92 native evidence is in `.scratch/spiderlings-crossfire/`.
+
+- KD 5.5 defaults an ordinary enemy spell's minimum range to `1.5` when neither `Enemy.minSpellRange` nor `spell.minRange` is defined; selection requires a strictly greater Euclidean distance. WebSpray explicitly sets `minRange: 0` so a cornered WebCaster can still spray. Native `hunt` also resets `gx/gy` to the enemy's own tile at adjacent range, and its movement gate can then reject retreat even when `AIData.kite` is true. Spiderlings preserves the existing `hunt.beforemove` hook and, only for WebCaster with active native kiting and a stationary goal, points the goal away from the target. It respects `StayHere` / `overrideMove` and retains native mobility, occupancy, cooldown and casting checks; never set the goal to the player's tile here, because KD's player-goal shortcut bypasses the normal mobility predicate. Regression coverage is in `spiderlings-webbing-webspray.test.js`; native before/after and full-turn evidence is in `.scratch/spiderlings-webcaster-ai/`.
+
+- Enemies that bind through KD's ordinary pool need both an attack mode containing `Bind` and a tag path matching restraint `enemyTags`. Spiderlings-owned effects deliberately avoid that broad pool. Spinner uses `MeleeEffectSuicide`; Jumper uses `SpellMeleeEffectSuicide`, because KD 5.5 only enters the enemy spell branch when `enemy.Enemy.attack.includes("Spell")`, and `castWhileMoving: true` is also required when that enemy already moved. Jumper must not use KD's built-in `specialAttack: "Dash"` with one attack point: that can resolve in the same enemy action and uses attack-origin warning geometry. Its registered `inert` spell is only a transport into `enemyCast`; the Spiderlings-owned controller removes the native bullet, enforces physical range `> 2 && <= 4`, and counts exactly two complete player actions after initiation. KD 5.5 assigns `enemy.castCooldownSpecial = spell.specialCD` before it sends `enemyCast`, so a mod-owned commit handler must not re-run the ready-cooldown candidate gate after that event; doing so produces the misleading state where native cast audio plays but no custom lifecycle begins. KD decrements timed immobilization before emitting `beforeEnemyLoop`, so the controller can keep only an actively winding source stationary by restoring `enemy.immobile` to at least one in that event; once the source-keyed Dash state is gone, it stops refreshing the value and ordinary movement resumes. The controller revalidates route with KD 5.5's physical-path helper `KinkyDungeonCheckPath(..., allowBars=false, blockEnemies=true)` and checks legal occupancy before moving the source, then applies one certain contact payload only after landing. Source death/removal/stun/freeze and transition events must clear source-keyed state plus warnings; slow/bind/silence do not interrupt this leg-driven action. No-progress Dash damage must be added to that same impact rather than left in the ordinary-attack pending-bonus map. WebCaster direct/trail effects carry explicit `WebCaster.WebSpray` provenance. Tunneler and NestEntrance have no direct Webbing profile.
+- New enemy definitions should follow the local `Mods/example_enemy/init.ks` and `Game/src/enemy/KinkyDungeonEnemiesList.ts` structures, not only old forum snippets.
+- KD 5.5 NPC target selection and melee use `KDHostile(enemy, other)`, while NPC projectile collision additionally rejects `KDFactionFavorable(bullet.faction, target)`. Maidforce and generic Enemy have a native relation of `+0.1`, so changing only target hostility allows a maid to select a Spiderling while its ranged attack still passes through. Spiderlings applies both gates only to its exact Spinner/Jumper/WebCaster/Tunneler/NestEntrance targets (including natural and Tunneler-created nests), preserving faction/allied/party/servant/ceasefire overrides and the global Enemy relation. `tools/tests/spiderlings-maid-hostility.test.js` exercises the pinned native faction and target functions; actual NPC damage and spawn-source coverage are recorded in the collaborator-feedback verification directory. WebCaster's existing inert WebSpray is player-specific and does not imply NPC spray damage.
+- Use `KDAddEvent(...)` for registering new event handlers when possible. It creates the trigger bucket before assigning the event function.
+- The current fixed Spiderlings squad uses a Spiderlings-owned `KDEventMapGeneric` `postMapgen` handler. It is default-enabled, creates Jumper/WebCaster/Tunneler/Spinner atomically on eligible new ordinary maps, and records a terminal per-map outcome so it never backfills or retries. See `docs/archive/spiderlings-0.91/spiderlings-fixed-squad-spawn-plan.zh-CN.md`.
+- KD 5.5 calls `KinkyDungeonPlaceEnemies(...)` only when the current alt room permits `enemies`; use this as the primary gate for a post-map-generation Spiderlings encounter injector. Also respect the alt room's `spawns` flag and `bossroom` flag so a mod never adds enemies to KD-authored no-spawn or boss maps. The current fixed squad follows this boundary; the retired random single-enemy fallback does not return. The relevant references are `Game/src/map/KDMapGen.ts` and `Game/src/map/KinkyDungeonAlt.ts`.
+- Since Spiderlings 0.92.18, Maidforce/Spiderlings targeting prefers the rival over a closer player. Native `KinkyDungeonNearestPlayer` initializes the NPC search radius from player distance when `KDHostile(actor)` is true. During one synchronous rival-only selection pass, the owned KDHostile wrapper removes this player-distance ceiling and excludes other pairs; the native selector still owns LOS, radius, helpless/prisoner and low-priority checks. Restore the selection scope in finally, and call the normal native selector if no rival qualifies. Do not globally neutralize player hostility or edit shared Enemy definitions. Committed playerAttack events (including misses) and afterDamageEnemy with native aggro, faction Player and no NPC attacker set the attacked actor's native SpiderlingsPlayerProvoked flag for 10 turns; active provocation selects the player only with LOS and native hostility. Flag serialization/ticking remains native. Unit tests cover the KD 5.5 selector and flags; controlled KD 5.5 and installed KD 5.4.92 native fights and melee/spell retargeting are recorded in `.scratch/spiderlings-rival-priority/`.
+- Infestation uses the pinned `KinkyDungeonPlaceEnemies` entry after terrain/navigation creation and before native random population. Since 0.92.17 it retains the native population budget. A call-scoped `KinkyDungeonGetEnemy` wrapper adds owned membership and weight tags only during initial population or wandering selection; native level, rank, alliance, tile, map-cap and minimum-weight fallback rules remain in charge. Maidforce humans and Dressmaker faction/applyFaction definitions are distinguished from the shared `dressmaker` tag (also present on Apprentice Librarian); Nurse has a separate multiplier. Native PlaceEnemies processes preset spawnpoints through this same selector: copy their ftags and add an unused owned exclusion tag to opt out without changing their original tags, requirements, faction or force flag. Restore the selection scope in finally on success or error. ForceSpawn, generic lookups, queued respawns and scripted encounters remain native. afterGetSpawnBoxes removes only the base minor exclusion, allowing ordinary maids to fill random population slots. Failed nest placement leaves ordinary population intact. Tests are in `tools/tests/spiderlings-infestation.test.js`; complete-map evidence is in `.scratch/spiderlings-infestation-population/`. Earlier releases used enemyMult: -1 because KD 5.5 ignores zero; that suppression is retired. Five initial objectives still receive questtarget and no_pers_wander, since KDEnemyCanDespawn otherwise lets persistent targets leave maps; earlier placement/despawn evidence remains in `.scratch/spiderlings-collaborator-feedback/verification/infestation-runtime.json`.
+- For a map-owned destruction objective, count a target ID only after `KDRemoveEntity` returns success with `kill` and the previously present target has left that map. `death`/`kill` notifications precede removal and `removeEnemy` can cancel it. Preserve native death bursts and keep JSON state on `KDMapData` for native save/load/revisit. Select the dedicated EscapeType through `calcEscapeMethod`, since map generation overwrites `EscapeMethod` after `postMapgen`. Use `beforeStairCancel` for direct/forced exits: first-time lowercase `s` routes through PerkRoom with zero `AdvanceAmount`, so a positive-advance-only check misses it; uppercase `S` and same-floor `H` remain open. Sources: `Game/src/enemy/KinkyDungeonEnemies.ts`, `Game/src/map/KinkyDungeonEscapeList.ts`, `Game/src/map/KDStairActions.ts`, and `Game/src/map/KinkyDungeonTiles.ts`. The infestation behavior and native lifecycle tests exercise these contracts.
+- For a per-enemy recurring behavior with stateful ownership or caps, use a Spiderlings-owned `KDEventMapGeneric` `afterEnemyTick` handler. `KinkyDungeonSummonEnemy(...)` returns the created entity list, so tag only returned entities with their parent ID. The current Nest contract resets its timer after a probability attempt even when all three spawn searches fail, while full caps and all-zero weights leave a due timer ready; do not describe it as the older success-only reset rule or rely on a generic spell list.
+- Treat leash/escort entry as a deferred extension, not the Nest Depth MVP. If it is implemented later, use Spiderlings-owned `postApply`/intent entries and resolve the same canonical side-room ID, completion state, and return protocol as the random entrance. KD's `Default` leash reason requires `Leashable`; relevant patterns remain `KinkyDungeonAttachTetherToEntity(...)`, `KDLeashReason`, `KDIntentEvents`, and `enemy.IntentLeashPoint`. See `docs/archive/spiderlings-0.91/spiderlings-nest-depth-capture-plan.zh-CN.md` and `docs/archive/spiderlings-0.91/spiderlings-nest-depth-capture-plan.en.md`.
+- For a KD 5.5 same-floor side room, reuse the vanilla lair/shortcut protocol instead of inventing a map stack: register uniquely named `alts`/`KinkyDungeonCreateMapGenType` and, when available, `KDLairTypes` plus the `KDLairEntrance*Script` tables; create an individualized room through `KDAddLair(...)`/`KDPersonalAlt`; and enter through an `H` tile created by `KDMakeShortcutStairs(...)`. `H` and the returning `S` use zero `AdvanceAmount`, while `KDSaveRoom(...)`/`KDLoadMapFromWorld(...)` cache both `RoomType` maps under the same `KDWorldSlot`. Evidence: `Game/src/map/KDLairs.ts`, `Game/src/map/KDLairEntrances.ts`, `Game/src/map/KinkyDungeonTiles.ts`, `Game/src/map/KDStairActions.ts`, and `Game/src/base/game/KinkyDungeonGame.ts`.
+- Vanilla `KDLairEntranceFilterScript.Cave` only assigns `-1000` near critical `SpecialAreas`; `KDFindEntrance(...)` still selects a negative-score candidate if all candidates are negative. Its Cave placement can mutate excavation before failure and has no multi-entity rollback. A Spiderlings entrance that promises guards must therefore hard-reject critical cells, plan the entrance and all guards before writes, and roll back without gameplay events. Do not override `KinkyDungeonCreateMap`, `KDGoThruTile`, `KDAdvanceLevel`, `KDBuildLairs`, `KDLoadMapFromWorld`, or vanilla Dragon/DragonLair keys.
+- The local source audit confirms these lair fields and signatures only for KD 5.5. Feature-detect `KDAddLair`, `KDLairTypes`, `KDPersonalAlt`, `KDMakeShortcutStairs`, `UsedEntrances`, and the `ShortcutPositions` shape before enabling a side-room feature on 5.4; if a required structure is absent, fail that feature closed rather than falling back to direct teleportation.
+- For Dragon-like large bosses, treat `GFX.spriteWidth/spriteHeight` as visual-only. KD 5.5 enemy occupancy remains single-tile through `KinkyDungeonEnemyAt(x, y)`. For true multi-tile blocking, use a Spiderlings-owned main boss entity plus synchronized blocker/segment entities, and use `ondeath.summon` or `bossstage` for phase transitions. See `docs/archive/spiderlings-0.91/spiderlings-multitile-boss-phase-plan.zh-CN.md` and `docs/archive/spiderlings-0.91/spiderlings-multitile-boss-phase-plan.en.md`.
+- If adding enchantments, match the current `KDEnchantment` interface in `Game/src/base/KDTypeDefs.ts` and examples in `Game/src/item/KDEnchant.ts`.
+- If adding buffs, match the current `KDBuff` interface in `Game/src/base/KDTypeDefs.ts` and examples in `Game/src/effect/KinkyDungeonBuffsList.ts`.
+
+## Preview Tooling and Native Submeshes
+
+KD 5.5's `DrawCharacter` in `Data/Models.ts` carries `OldSubmeshes` into a refreshed container. Groups absent from the new composition can remain in `Submeshes` after their old planes are destroyed by `KDDoGraphicsSanitize` in `Game/src/base/game/KinkyDungeonDraw.ts`. A preview tool composing native submeshes must select live planes still parented to the current `ContainerInfo.Mesh`; registry membership alone does not mean a plane is renderable. This is exercised by Displacement Lab's real Spiderlings Arm-to-Belly painting regression in `tools/kd-displacement-lab/tests/core-brushes-no-map-setup.spec.mjs`.
+
+## NPC crossfire and task-nest evacuation
+
+The subsequent 0.92.34 layout revision restores a trio and pair, keeping within-group Euclidean distances 4–5 and the nearest cross-group distance 6–8. Reuse the full placement connectivity check for their union. Carve each group's bounding area separately; after planning all terrain openings, flood-fill with stationary nests blocked and exclude proposed cells that cannot be reached without crossing a nest. A KD 5.4.92 grouped-map sample exposed such a newly opened pocket. The corrected 5.4.92/5.5 native runs each retain twelve of twelve generated objectives and preserve connectivity; evidence is in `.scratch/spiderlings-groups-return-20260913/`. Saved objective positions and the shared quiet garrison remain unchanged.
+
+The clearing review adds two native boundaries: `KinkyDungeonGetAccessible` walks eight directions and returns interactable cells, excluding locked entries. Before carving, retain walls adjacent to originally inaccessible interactable cells; preserving the locked door alone can still open its room from the side or diagonally. Quiet retirement checks hostility among participants as well as outsiders. Sample at `tick` and `tickAfter`, advancing the timer only once, so an opponent present at turn start but removed during enemy processing does not turn that contested turn into a quiet one. Regression and two-version native verification are in `.scratch/spiderlings-clearing-review-20260913/`.
+
+For the subsequent unpublished 0.92.34 clearing update, `KinkyDungeonMapSet` changes only `KDMapData.Grid`; it does not refresh navigation. Nest creation runs inside the wrapped `KinkyDungeonPlaceEnemies`, after the initial navigation build. Clear native path caches and call `KinkyDungeonGenNavMap` after successful terrain carving so initial population and AI see the opened cells. Restrict carving to ordinary terrain inside the ring plus one walking margin; retain interactive/protected tiles. Do not run carving on map load. Both 5.4.92 and 5.5 generated twelve fixed-seed maps with valid navigation and connected five-nest objectives in `.scratch/spiderlings-clearing-retirement-20260913/`.
+
+`tickAfter` carries elapsed game-turn delta once per update; `afterEnemyTick` has separate allied and hostile passes and would double-count an unfiltered timer. Store the infestation's fifteen-turn quiet timer and original anchors on the map. Native `KDRemoveEntity(enemy, false)` honors removal cancellation and avoids the kill/capture branch, including death summons and objective kill credit. Exclude player allies, party members and imprisoned spiders before selecting excess wild spiders. Both native runtimes were advanced fourteen full turns, saved/loaded, then advanced once more: nine test spiders became five, with all five nests and zero objective destruction retained. Enemy appearance reset the timer.
+
+The unpublished 0.92.34 update adds NPC crossfire only after two distinct eligible WebCasters produce native binding progress with direct WebSpray hits within two turns. Send the bonus through native enemy damage with base `bind: 2`, `bindType: "Slime"` and the owned zero-HP marker; skip the contact-damage follow-up for this bonus. Native resistance and binding multipliers still apply. Reserve the target's four-turn cooldown before the native call and retain it on the saved entity; pending source pairs are transient and clear on loading or transitions. Native 5.4.92 and 5.5 probes confirm zero bonus HP damage and cooldown persistence through actual save/load.
+
+For objective nests, native `afterDamageEnemy` reports HP after subtraction and supplies `dmgDealt`, `attacker` and `faction`. Attribute the positive-to-dead crossing, using the actual attacker's faction when available and the projectile faction otherwise; a nonlethal maid hit or later corpse hit must not claim a player's kill. Native `KDRemoveEntity` can cancel at `removeEnemy`; after successful removal, it runs entity `ondeath` entries before prototype `Enemy.ondeath`. Temporarily prepend an owned entity death entry and restore the original list in `finally`. This gives a Maidforce-killed original objective nest one independent Tunneler attempt before its ordinary burst, while canceled removals produce none. Use native summons so the map cap still applies; do not increment the nest's recurring Tunneler counter. Unit regressions cover attribution/cancellation, and native probes cover both game versions, the exhausted lifetime quota, one remaining map slot and a full map. Evidence: `.scratch/spiderlings-npc-cooperation-20260913/`.
+
+## Nest defense and grouped objectives
+
+Spiderlings 0.92.32 uses native `KinkyDungeonNearestPlayer(nest, true, true)` to detect a Maidforce rival independently of player sight. This retains native vision radius, blind sight, helplessness and imprisonment checks; NestEntrance blindSight is 30, so native perception can cross walls. Native `afterDamageEnemy` supplies `enemy`, `attacker` and `aggro`; a hostile NPC contact refreshes the owned enemy flag for one configured reinforcement interval plus the current tick. These are additional eligibility paths only; normal probability, timers and both population caps still apply. Newly placed infestation objectives form a pair and trio: within-group Euclidean distance 4–5, cross-group Chebyshev distance at least 6. Euclidean distance must match the existing five-tile reinforcement bonus (a diagonal offset of 5,5 does not qualify). Validate removal connectivity and an attackable neighbor for the complete union, not just each group. Native map/selector/damage/summon evidence is in `.scratch/spiderlings-nest-defense-20260913/`.
+
+## Initial themed population and neutral allowance
+
+In KD 5.4.92 and 5.5, `KinkyDungeonPlaceEnemies` counts preset NPCs toward `ncount` at their normal rank cost, even though presets consume only 0.025 of the main population budget. Once `ncount > neutralCount`, random selection requires hostility toward Player. Default Player relations to Maidforce (-0.1) and Dressmaker (-0.4) exceed the -0.5 hostility threshold, so this excludes both groups and leaves Spiderlings filling the themed floor. Since 0.92.31, only initial random selection on an eligible ordinary Maidforce map clears `requireHostile: "Player"` on a copied alliance argument. Preserve other alliance predicates, native population/rank/level/tile limits, preset exclusion and hostile wandering searches; never change global faction relations. The regression uses neutral human factions and an exhausted allowance, and native full-map evidence is in `.scratch/spiderlings-maid-spawn-fix-20260913/`.
+
+## Journey modifier selection
+
+KD 5.5 `KDJourneySlotTypes.basic` reads `KDMapMods[MapMod].faction` before choosing escape methods and side rooms, falling back to the biome faction list only when no modifier faction is supplied. `KDGetMapGenList` refills three distinct weighted modifiers; the journey then consumes these in random order. Modifier weight is therefore not a per-node percentage. Spiderlings 0.92.30 uses weight 100 and `faction: "Maidforce"` on its owned modifier to pair newly selected infestations with the existing maid population profile, preserving existing journey slots and saved maps. The native journey regression in `spiderlings-infestation.test.js` checks pairing in a non-maid biome, comparative frequency, other themes and the floor-three boundary.
+
+## Counted escape feedback
+
+KD 5.5 `KinkyDungeonStruggle` selects `KinkyDungeonStruggle{method}Fail{data.failSuffix}` for incomplete actions and may append `Aroused`. KD can prefer its assisted Fail2/Fail3 wording even when failSuffix is set (the zero-chance counted action is raised to native minimum speed). The scoped KinkyDungeonStruggle/TextGet wrappers redirect only those two lookups while the current Spiderlings action remains armed, restoring the call context on return or exception. They do not change chance, cost, result or unrelated lookups. Set the suffix only after the existing effective-action checks; a blanket restraint `failSuffix` can misdescribe an uncounted attempt. `KDSuccessRemove` reads restraint `customEscapeSucc` for `KinkyDungeonStruggle{method}Success{suffix}` after native removal and uses that suffix instead of `Aroused`. Both substitute `TargetRestraint` with the actual item name. Spiderlings 0.92.12 registers separate Webbing/Cocoon text for Cut, Struggle and Remove, including the incomplete Aroused variants. The Cocoon regression and translation checker cover eligibility and keys; `.scratch/spiderlings-escape-feedback/` records the native KD 5.4.92 Chinese/English message flow.
+
+## Cocoon outer-web compatibility
+
+KD 5.5 defaults `KDStruggleTime` to 4. `KinkyDungeonStruggle` emits one post-cost `struggle` event and schedules `KDAddDelayedStruggle` ticks for the remaining action duration; normal UI interaction lets those ticks finish before the next action. A three-attempt frequency detector must therefore allow the native four-turn cadence. Since 0.92.29, Spiderlings uses a twelve-turn window shared by legal Cut/Remove/Struggle attempts and attack intents, latching `reinforcementPending` at three until the next WebCaster direct hit. KD 5.4.92 and 5.5 set LastAction to Attack in KinkyDungeonLaunchAttack before AdvanceTime, including misses; read it at tick before enemy AI and native clearing, rather than counting damage or projectile events. Offensive afterPlayerCast notifications are coalesced into the same turn count, excluding heal/inert/buff spells. Pending WebCasters prioritize a visible hostile player over Maidforce rivals and do not disperse while reinforcement is pending; native LOS, mobility, spell costs and cooldowns still govern delivery. Spinner/Jumper repair alone cannot anchor. Regression tests cover the native selector and counter, and `.scratch/spiderlings-cocoon-diagnosis-20260913/` exercises native missed attacks followed by AI-generated spray. Native Spinner/Jumper `ignoretiedup` / `ignorechance` can suppress attacks on a fully bound player. Since 0.92.11, Cocoon vigil wraps `KDOverrideIgnore` for living hostile aggressive Spiderlings targeting the player; native awareness, status, attack cost and `forceIgnore` still apply. Count inactivity at `tick`, before enemy updates and before `KinkyDungeonLastAction` is cleared; count blocked movement from `beforeMove`. At 25 idle turns, scoped `hunt` / `wander` beforemove handlers suppress attacks and supply legal outward goals to native movement, while the Jumper controller cancels pending wind-ups. Waiting must not discard pending reinforcement. See `.scratch/spiderlings-cocoon-vigil/` for KD 5.4.92 native flow evidence and the Cocoon/Dash regressions for lifecycle boundaries. Native enemy verification must advance complete delayed actions and let the enemy AI generate hits, rather than directly invoke the effect handler.
+
+KD 5.5 sends `beforeMove` after resetting `KinkyDungeonNoMoveFlag` and tests the flag before changing position; the blocked attempt still reaches native time advancement (`Game/src/base/game/KinkyDungeonGame.ts`). Spiderlings uses this event only while the equipped Cocoon has anchored outer webs. Ordinary Cocoon uses native `hobble: 3`. The flag limits ordinary movement, following the normal movement path rather than intercepting map transitions or scripted relocation.
+
+`KinkyDungeonDressPlayer` sends `afterDress` after rebuilding `KDCurrentModels.get(Character).Poses`. The Spiderlings handler adds its owned anchored pose only to the player and only from the equipped Cocoon state; `ModelDrawLayer` honors the outer layer's `RequirePoses` (`Data/Models.ts`). This preserves the single restraint identity and restores the layer after redress/save loading. The checker asserts the model gate and lifecycle registrations; Cocoon regression tests exercise frequency, source filtering, removal and restored item data.
+
+## Spiderlings-Specific Checks
+
+After changing `Spiderlings_0.91/`, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
+```
+
+The check should catch common issues:
+
+- broken `mod.json` load order;
+- JS syntax errors;
+- missing registered models;
+- missing model PNG references;
+- missing hand pose PNGs;
+- hand pose fallback regressions;
+- missing refresh events;
+- missing translation keys;
+- missing enemy application paths for normal Spiderlings restraints.
+
+MTE-side validation also guards editor-only compatibility data:
+
+- field help coverage for required editor fields and diagnostics;
+- category/filter source data for monster, restraint, skill, model, mannequin, and translation tabs;
+- MTE-owned mannequin asset manifest and pose-map consistency;
+- `kd-preview-cache.json` drift against the read-only KD 5.5 wardrobe/model/pose sources;
+- release zip exclusion for `MTE/editor-assets/kd-mannequin/`.
+
+If the check does not cover a newly discovered KD compatibility rule, add that validation to `Spiderlings_0.91/tools/check-spiderlings-mod.js`.
+
+### Lv3-only Cocoon equipment prerequisite (unpublished 0.92.34)
+
+The owned resolver now checks all eight physically equipped Lv3 items, without requiring complete Lv1/Lv2 sets. Preserve pre-hit five WebSpray stacks, the direct-source allowlist and native no-overpower equipment compatibility. KD 5.4.92 and the pinned 5.5 runtime both accepted the actual WebSpray effect with exactly eight Lv3 restraints equipped, added Cocoon as the ninth item and cleared spray slow. This is a Mod eligibility change, not a change to native linking. Evidence: `.scratch/spiderlings-cocoon-lv3-20260913/native-result.json`.
+
+### Split mitten application through blocked hands (unpublished 0.92.34)
+
+`KDGetBlockersToAddRestraint(restraint, player, bypass)` does not read `restraint.bypass` itself. Unlike the higher-level native add/can-add functions, a direct preflight call must pass the flag explicitly. Both split mittens declare `bypass: true`; the owned snapshot uses this flag for its blocker query while retaining `KDCanAddRestraint` with `noOverpower=true`. Other Spiderlings items still use ordinary blocker checks. This bypasses inaccessible ItemArms and Block_ItemHands restrictions on application without removing those blockers. Same-group link legality and player escape restrictions remain. Reproduction: native LatexArmbinder blocks both mittens without bypass; see `.scratch/spiderlings-cocoon-lv3-20260913/mitten-diagnosis.json`.
+
+### KD 5.5.3 summon dialogue player fallback (0.92.37 / 0.92.36-test.8)
+
+`KinkyDungeonBulletHit` uses `KDPlayer()` as the dialogue enemy when the summon source is absent or no longer resolves. In the reported 5.5.3 runtime, `KDGetGenericDialogueParams` calls the new `KDIsSubbier`, which passes that player into NPC-only `KDCanDom` and dereferences `enemy.Enemy.bound`. With Ghost reputation >= -25 the first dominance check can crash (the report has Ghost 50). Core wraps `KDIsSubbier` only when available: player subjects return false; native NPC/null checks and arguments remain unchanged. Keep the real player object for pronouns and the original summon/message pipeline. Earlier runtimes without this helper install nothing. The encounters regression exercises the native summon hit path, zero/single/multi creation and missing/removed/player/NPC sources; the checker verifies player exclusion and NPC delegation. See [diagnosis](spiderlings-crash-0.92.36.zh-CN.md) for the exact 5.5.3 source and browser evidence.
+
+
+## KD 5.5.3 alarm recipient goals (0.92.38 / test.9)
+
+The shipped 5.5.3 `KinkyDungeonMakeNoiseSignal` writes each receiver's `gx`/`gy` but calls `KDUpdateMoveToEntity` on the sender. Refresh only native returned receivers whose goal still equals the sender's current tile; preserve `afterSignal` redirects and the existing silk-gag early return. On engines without `KDUpdateMoveToEntity`, keep the native result unchanged. Never replace native hearing/faction filters or wrap unrelated AI. `tools/tests/spiderlings-combat.test.js` covers listener metadata, unchanged old-engine behavior, event redirects, and gag suppression. The actual 5.5.3 package probe is recorded in `.scratch/spiderlings-full-review-20260914/signal-live.json`.
+
+`SummonNestEntrance` is an inert self-cast summon with no travelling artwork. Like the other Spiderlings summon spells it needs `noSprite: true`: native `KinkyDungeonUpdateSingleBulletVisual` otherwise registers its spell name and the renderer requests the nonexistent `Game/Bullets/SummonNestEntrance.png`. Keep native summoning, channel time, text and SFX; the runtime checker protects this flag.
+
+Native `ForceRefreshModels` clears both model update caches. An unchanged owned `afterDress` callback must not clear them again for every equipped restraint. Synchronize folders and invalidate only when a saved model copy actually changes color; retain explicit post-apply/removal and displacement-ready refreshes. The existing color/save-copy regression now also asserts cache preservation across 24 unchanged inventory callbacks.

@@ -1,0 +1,252 @@
+{
+  "verified_at": "2026-09-13",
+  "scope": "File snapshots, not whole-version compatibility certification",
+  "profiles": {
+    "5.4.92": {
+      "root": "C:/Game1/kinky-dungeon-win_64 (2)/resources/app",
+      "version_marker": "5.4.92",
+      "layout": "bundle",
+      "files_scanned": 1,
+      "sha256": {
+        "Screens/MiniGame/KinkyDungeon/Text_KinkyDungeon.csv": "131d782ee5e65af5828f664107f7c135c8933e9333b005829b7e2d42e1ddd5b7",
+        "out/main.js": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4"
+      },
+      "symbols": {
+        "KinkyDungeonTickBuffs": {
+          "matches": [
+            {
+              "file": "out/main.js",
+              "line": 105953,
+              "kind": "function-declaration"
+            },
+            {
+              "file": "out/main.js",
+              "line": 106080,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 106084,
+              "kind": "reference"
+            }
+          ],
+          "total_matches": 3,
+          "truncated": false
+        },
+        "KDApplyBuff": {
+          "matches": [
+            {
+              "file": "out/main.js",
+              "line": 106233,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 106238,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 106242,
+              "kind": "function-declaration"
+            }
+          ],
+          "total_matches": 3,
+          "truncated": false
+        },
+        "KDBoundEffects": {
+          "matches": [
+            {
+              "file": "out/main.js",
+              "line": 38229,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38279,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38711,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38735,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38797,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38818,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38847,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38972,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 38993,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 39126,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 39284,
+              "kind": "reference"
+            },
+            {
+              "file": "out/main.js",
+              "line": 39517,
+              "kind": "reference"
+            }
+          ],
+          "total_matches": 73,
+          "truncated": true
+        }
+      },
+      "missing_symbols": [],
+      "scope": "Static file evidence; version marker and symbol presence do not prove runtime compatibility."
+    },
+    "5.5.0": {
+      "root": "KinkiestDungeon-5.5",
+      "version_marker": "5.5.0",
+      "layout": "explicit-files",
+      "files_scanned": 3,
+      "sha256": {
+        "Screens/MiniGame/KinkyDungeon/Text_KinkyDungeon.csv": "c977769d7f90c93c64980cb4db2a37b9aa90e96b2e21da3a2341df4972e6ce33",
+        "Game/src/effect/KinkyDungeonBuffs.ts": "0e7e6015f86ceff53dc444dfbff36f23f23bc6498c52def98fce05da7a60e054",
+        "Game/src/enemy/KinkyDungeonEnemies.ts": "9281e8a60fbc48fa5177fcb87f2abbe0178c56e2b581796c4bb5dd26da9e5242",
+        "Game/src/effect/KinkyDungeonEvents.ts": "8be855855b5d286d9c2f8474321b90925f469ca50fd421baf04c8cf0d5dd01cb"
+      },
+      "symbols": {
+        "KinkyDungeonTickBuffs": {
+          "matches": [
+            {
+              "file": "Game/src/effect/KinkyDungeonBuffs.ts",
+              "line": 85,
+              "kind": "function-declaration"
+            },
+            {
+              "file": "Game/src/effect/KinkyDungeonBuffs.ts",
+              "line": 226,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/effect/KinkyDungeonBuffs.ts",
+              "line": 229,
+              "kind": "reference"
+            }
+          ],
+          "total_matches": 3,
+          "truncated": false
+        },
+        "KDApplyBuff": {
+          "matches": [
+            {
+              "file": "Game/src/effect/KinkyDungeonBuffs.ts",
+              "line": 405,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/effect/KinkyDungeonBuffs.ts",
+              "line": 408,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/effect/KinkyDungeonBuffs.ts",
+              "line": 421,
+              "kind": "function-declaration"
+            }
+          ],
+          "total_matches": 3,
+          "truncated": false
+        },
+        "KDBoundEffects": {
+          "matches": [
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 327,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 397,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 870,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 893,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 969,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 993,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 1023,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 1166,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 1186,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 1333,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 1550,
+              "kind": "reference"
+            },
+            {
+              "file": "Game/src/enemy/KinkyDungeonEnemies.ts",
+              "line": 1870,
+              "kind": "reference"
+            }
+          ],
+          "total_matches": 37,
+          "truncated": true
+        }
+      },
+      "missing_symbols": [],
+      "scope": "Static file evidence; version marker and symbol presence do not prove runtime compatibility."
+    }
+  }
+}

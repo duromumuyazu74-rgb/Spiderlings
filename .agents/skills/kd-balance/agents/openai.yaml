@@ -1,0 +1,4 @@
+interface:
+  display_name: "KD 数值策划"
+  short_description: "结合 KD 原生机制规划敌人、控制、逃脱与经济数值，并验证版本影响"
+  default_prompt: "使用 $kd-balance 为这项 KD Mod 玩法制定有原生基准和验证依据的数值方案。"
