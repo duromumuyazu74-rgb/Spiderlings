@@ -61,6 +61,8 @@ GitHub CI runs repository checks, policy tests and the public group. It also reg
 
 After the applicable checks pass, create a focused git commit for the authorized local changes, preserving unrelated working and staged changes. Record required local and in-game evidence in the PR. Commits and PR preparation do not imply permission to merge or publish a Release.
 
+For a package verification run, `npm run report:delivery` collects these checks, source state, ZIP verification and logs in one report. [Delivery evidence](docs/DELIVERY-EVIDENCE.md) explains the public/full modes and optional game acceptance input. The matrix still determines which checks are needed; documentation-only edits do not require a delivery report.
+
 ## Formal promotion and releases
 
 Formal versions use `major.minor.patch`, normally incrementing the latest formal patch number. An already prepared formal source version without a ZIP may be packaged as that version. Test deliveries use their formal baseline plus an increasing `-test.N`, starting at 1; each delivery gets a new ZIP and leaves the formal sequence unchanged. Keep the manifest's `modbuild` and `Spiderlings_<modbuild>.zip` consistent. Preserve previous formal and test ZIPs. Source edits alone do not complete a runtime delivery.
