@@ -45,7 +45,7 @@ npm run test:public
 
 For a change targeting `main`, use `--base origin/main`. `check` includes staged, unstaged and untracked files that are not ignored. It also validates the two README language links and manifest file availability. Format only the named changed files with `npx prettier --write <file...>`.
 
-GitHub CI runs the same source checks, the policy-checker tests, and the self-contained webbing cutover, cocoon and enemy regressions. The test branch additionally runs its Spinner artwork regression. This is a public-source subset, not the complete KD compatibility suite.
+GitHub CI runs the same source checks, the policy-checker tests, and the self-contained webbing cutover, cocoon and enemy regressions. The test branch additionally runs its Spinner artwork regression. CI also regenerates the committed atlas, builds and verifies the installable ZIP, and retains that commit's package as a 14-day workflow artifact. These checks use public repository inputs and do not replace the complete local KD compatibility suite.
 
 Gameplay, asset and package changes also require the existing full local watcher and the owning Mod's delivery gates. Those tests require the read-only official game source and original artwork folders, which CI does not distribute. Put the complete watcher result and any required in-game evidence in the PR. Documentation and repository-tooling changes do not require a new Mod version or ZIP when runtime files are unchanged.
 
