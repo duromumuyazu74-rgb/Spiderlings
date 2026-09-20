@@ -4,6 +4,8 @@ Read `Spiderlings_0.91/AGENTS.md` before changing the Mod and its documentation.
 
 For implementation, formatting, commits, PRs or publication, read `CONTRIBUTING.md`. It defines the JavaScript runtime and JavaScript/Python/PowerShell tool language policy, incremental code conventions, single-maintainer PR gates and verification scope. Changes to `main` and `test` go through PRs; no second-person approval is required. Keep formatting cleanup in separate commits.
 
+Markdown-only changes may use descriptive commit/PR titles without Conventional Commit prefixes or Issue boilerplate. Apply this exception to each documentation commit even when it is carried into a mixed PR; code/configuration changes retain the full metadata checks.
+
 `KinkiestDungeon-5.5/` is a read-only local game reference. Never edit, generate files or install dependencies there. Logs and temporary output belong in `.scratch/`. Original artwork reference directories are local inputs, excluded from Git.
 
 For issues, specs, implementation tickets, triage and wayfinding, read `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`. GitHub Issues is authoritative. Existing local records remain historical evidence. For domain changes, read `docs/agents/domain.md` and `CONTEXT-MAP.md`.
