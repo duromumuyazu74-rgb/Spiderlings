@@ -2,6 +2,8 @@
 
 Describe the problem and resulting behavior in English; other languages may supplement it.
 
+For a Markdown-only change, a plain title such as `Update README.md` and a short description are sufficient. You may remove the Issue and Validation sections below. Code/configuration changes follow the full template.
+
 ## Issue
 
 Refs #

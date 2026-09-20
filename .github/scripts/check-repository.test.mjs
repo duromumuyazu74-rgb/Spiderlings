@@ -1,7 +1,42 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ESLint } from "eslint";
-import { validateFile, validatePullRequest, validSubject } from "./check-repository.mjs";
+import {
+    isDocumentationOnly,
+    validateCommitSubject,
+    validateFile,
+    validatePullRequest,
+    validSubject,
+} from "./check-repository.mjs";
+
+test("the reported README edit needs no commit prefix or Issue boilerplate", () => {
+    const files = ["README.md"];
+    assert.deepEqual(validatePullRequest({ title: "Update README.md", body: "## Change\n\nFix Readme" }, files), []);
+    assert.deepEqual(validateCommitSubject("1c91c913a626fa136ac881d8ccbd1760859fb391", "Update README.md", files), []);
+});
+
+test("documentation commits remain valid when carried into a mixed implementation PR", () => {
+    const pr = { title: "fix: preserve escape progress", body: "Refs #12" };
+    assert.deepEqual(validatePullRequest(pr, ["README.md", "Spiderlings_0.91/SpiderlingsWebbing.js"]), []);
+    assert.deepEqual(validateCommitSubject("docs-sha", "Update README.md", ["README.md"]), []);
+    assert.equal(
+        validateCommitSubject("code-sha", "Update code", ["Spiderlings_0.91/SpiderlingsWebbing.js"]).length,
+        1,
+    );
+});
+
+test("mixed changes, deleted code and code renamed to Markdown do not gain the documentation exception", () => {
+    for (const files of [
+        [],
+        ["README.md", ".github/workflows/repository-checks.yml"],
+        ["deleted.js", "README.md"],
+        ["old.py", "docs/new.md"],
+    ]) {
+        assert.equal(isDocumentationOnly(files), false);
+        assert.equal(validatePullRequest({ title: "Update README.md", body: "" }, files).length, 2);
+    }
+    assert.equal(isDocumentationOnly(["README.md", "docs/removed.md"]), true);
+});
 
 test("commit subjects use Conventional Commits without multiline metadata", () => {
     assert.equal(validSubject("style: format README tables"), true);

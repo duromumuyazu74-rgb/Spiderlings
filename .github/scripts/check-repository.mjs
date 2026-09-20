@@ -31,7 +31,17 @@ export function validSubject(subject) {
     );
 }
 
-export function validatePullRequest(pr) {
+export function isDocumentationOnly(files) {
+    return files.length > 0 && files.every((file) => /\.md$/i.test(file));
+}
+
+export function validateCommitSubject(sha, subject, files) {
+    if (policy.grandfatheredCommits.includes(sha) || validSubject(subject) || isDocumentationOnly(files)) return [];
+    return [`${sha}: commit subject must use type(scope): English summary`];
+}
+
+export function validatePullRequest(pr, files = []) {
+    if (isDocumentationOnly(files)) return [];
     const errors = [];
     if (!validSubject(pr.title)) {
         errors.push(
@@ -50,8 +60,8 @@ export function validatePullRequest(pr) {
 }
 
 export function changedFiles(base) {
-    // Include staged, unstaged and new files locally; a clean CI checkout uses only the committed diff.
-    const tracked = git("diff", "--name-only", "-z", "--diff-filter=ACMR", base, "--");
+    // Include deletions and both sides of renames when deciding whether a change is documentation-only.
+    const tracked = git("diff", "--no-renames", "--name-only", "-z", base, "--");
     const added = git("ls-files", "--others", "--exclude-standard", "-z");
     return [...new Set((tracked + added).split("\0").filter(Boolean))].sort();
 }
@@ -65,16 +75,30 @@ async function main() {
     const event = process.env.GITHUB_EVENT_PATH ? JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8")) : {};
     const base = args[1] ?? event.pull_request?.base.sha ?? process.env.BASE_SHA ?? "origin/test";
     git("rev-parse", "--verify", `${base}^{commit}`);
-    const files = changedFiles(base);
+    const changed = changedFiles(base);
+    const files = changed.filter((file) => existsSync(file));
     const errors = files.map(validateFile).filter(Boolean);
-    if (event.pull_request) errors.push(...validatePullRequest(event.pull_request));
+    if (event.pull_request) errors.push(...validatePullRequest(event.pull_request, changed));
     const head = event.pull_request?.head.sha ?? "HEAD";
     const commits = git("log", "--format=%H%x00%s", "-z", `${base}..${head}`).split("\0").filter(Boolean);
     for (let index = 0; index < commits.length; index += 2) {
         const [sha, subject] = commits.slice(index, index + 2);
-        if (!policy.grandfatheredCommits.includes(sha) && !validSubject(subject)) {
-            errors.push(`${sha}: commit subject must use type(scope): English summary`);
-        }
+        if (policy.grandfatheredCommits.includes(sha) || validSubject(subject)) continue;
+        const commitFiles = git(
+            "diff-tree",
+            "--root",
+            "--no-commit-id",
+            "--no-renames",
+            "--name-only",
+            "-r",
+            "-m",
+            "-z",
+            sha,
+            "--",
+        )
+            .split("\0")
+            .filter(Boolean);
+        errors.push(...validateCommitSubject(sha, subject, commitFiles));
     }
 
     const linter = new ESLint();
