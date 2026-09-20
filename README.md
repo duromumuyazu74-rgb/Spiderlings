@@ -27,6 +27,8 @@ Source, runtime artwork and build/check scripts live in `Spiderlings_0.91/`; the
 
 Report bugs and track specs/tickets in [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues). Matt Pocock skills use the [project tracker configuration](docs/agents/issue-tracker.md).
 
+See [contribution rules](CONTRIBUTING.md) for supported languages, code conventions and the single-maintainer PR workflow. Player feedback is welcome in any language.
+
 English is the primary repository language; Simplified Chinese is also supported. Keep both README versions in sync when installation steps, branch versions or download links change.
 
 ## Credits
