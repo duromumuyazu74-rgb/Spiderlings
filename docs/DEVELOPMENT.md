@@ -1,5 +1,7 @@
 # Development and publishing
 
+Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for language restrictions, incremental formatting, commits and required PR checks. Both maintained branches use PRs; the sole maintainer can merge after checks without another person's approval.
+
 ## Setup
 
 Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The source path stays `Spiderlings_0.91/` so existing tools retain their paths.
