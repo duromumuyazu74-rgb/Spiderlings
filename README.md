@@ -1,25 +1,33 @@
 # Spiderlings
 
+**English** | [简体中文](README.zh-CN.md)
+
 Spiderlings is a Kinkiest Dungeon Mod for KD 5.4.x / 5.5.x, with spider encounters, layered webbing restraints, cocoons and a pink webbing option.
 
-## Download / 下载
+## Download and install
 
-Get the installable **Spiderlings_0.92.38.zip** from [the latest formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest). Load that ZIP through the game's Mod manager. GitHub's automatically generated Source code ZIP is a repository snapshot, not an installable Mod. Enable one Spiderlings version at a time.
+1. Download [Spiderlings_0.92.38.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) from the [formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest).
+2. Load the ZIP through the game's Mod manager.
+3. Enable one Spiderlings version at a time.
 
-正式版请下载 Release 附件中的安装包，并在游戏 Mod 管理器中载入。测试版与正式版择一启用。
+Use the attached installable ZIP. GitHub's automatic Source code archives contain the development repository and cannot be loaded directly as a Mod.
+
+## Versions
 
 | Branch | Version | Purpose |
 | --- | --- | --- |
-| `main` | `0.92.38` | Formal release / 正式版 |
-| `test` | `0.92.36-test.11` | Development and playtesting / 测试开发版 |
+| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main) | `0.92.38` | Formal release |
+| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.11` | Development and playtesting |
 
-This checkout contains **0.92.36-test.11**. Test development retains its `0.92.36` baseline; it also includes the compatibility fixes carried into formal `0.92.38`. Test builds have no GitHub Release at present.
+The test branch retains its `0.92.36` baseline and includes the compatibility fixes carried into formal `0.92.38`. It adds experimental Spinner capture gameplay and artwork. Only formal versions have GitHub Releases at present; build test packages locally using the [development guide](docs/DEVELOPMENT.md).
 
 ## Development
 
-Source, runtime artwork and build/check scripts live in `Spiderlings_0.91/`; the directory name is historical. See [development and publishing](docs/DEVELOPMENT.md), [maintenance](Spiderlings_0.91/MAINTENANCE.md), and [design](docs/spiderlings-0.92-game-design.zh-CN.md).
+Source, runtime artwork and build/check scripts live in `Spiderlings_0.91/`; the directory name is historical. See [development and publishing](docs/DEVELOPMENT.md), [maintenance notes in Chinese](Spiderlings_0.91/MAINTENANCE.md), and [game design in Chinese](docs/spiderlings-0.92-game-design.zh-CN.md).
 
 Report bugs and track specs/tickets in [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues). Matt Pocock skills use the [project tracker configuration](docs/agents/issue-tracker.md).
+
+English is the primary repository language; Simplified Chinese is also supported. Keep both README versions in sync when installation steps, branch versions or download links change.
 
 ## Credits
 
