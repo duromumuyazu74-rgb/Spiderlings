@@ -2,11 +2,34 @@
 
 // Shared Spiderlings Webbing action resolver with narrow KD registration/debug effects.
 (() => {
-    const api = globalThis.Spiderlings = globalThis.Spiderlings || {};
-    const LV1_FAMILIES = Object.freeze(["Arm", "MittenLeft", "MittenRight", "Belly", "Legs", "Ankles", "Foot", "Blindfold", "Stuffing", "Gag"]);
+    const api = (globalThis.Spiderlings = globalThis.Spiderlings || {});
+    const LV1_FAMILIES = Object.freeze([
+        "Arm",
+        "MittenLeft",
+        "MittenRight",
+        "Belly",
+        "Legs",
+        "Ankles",
+        "Foot",
+        "Blindfold",
+        "Stuffing",
+        "Gag",
+    ]);
     const LV2_FAMILIES = Object.freeze(["Arm", "Belly", "Legs", "Ankles", "Foot"]);
     const LV3_FAMILIES = Object.freeze(["Arm", "Belly", "Legs", "Ankles", "Foot", "Blindfold", "Gag", "Hood"]);
-    const PROFILE_FAMILIES = Object.freeze(["Arm", "MittenLeft", "MittenRight", "Belly", "Legs", "Ankles", "Foot", "Blindfold", "Stuffing", "Gag", "Hood"]);
+    const PROFILE_FAMILIES = Object.freeze([
+        "Arm",
+        "MittenLeft",
+        "MittenRight",
+        "Belly",
+        "Legs",
+        "Ankles",
+        "Foot",
+        "Blindfold",
+        "Stuffing",
+        "Gag",
+        "Hood",
+    ]);
     const ARM_ID = "SpiderlingsWebbingLv1Arm";
     const COCOON_ID = "SpiderlingsWebbingCocoon";
     const COCOON_MODEL_ID = "SpiderlingsWebbingCocoonModel";
@@ -20,31 +43,44 @@
     const VIGIL_STATE = "SpiderlingsCocoonVigil";
     const VIGIL_IDLE_TURNS = 25;
     const COCOON_ANCHORED_MESSAGE = "KinkyDungeonSpiderlingsCocoonAnchored";
-    const COCOON_ANCHORED_FALLBACK = "The spiderlings lay webs around the cocoon, securing it in place. You cannot move while they hold it there.";
+    const COCOON_ANCHORED_FALLBACK =
+        "The spiderlings lay webs around the cocoon, securing it in place. You cannot move while they hold it there.";
     const LV2_ESCAPE_EVENT = "SpiderlingsLv2Escape";
     const LV3_ESCAPE_EVENT = "SpiderlingsLv3Escape";
-    const COCOON_REPAIR_AMOUNT = 0.10;
-    const COCOON_ESCAPE_ACTIONS = Object.freeze({Cut: 40, Struggle: 50, Remove: 50});
-    const COCOON_ESCAPE_CHANCE = Object.freeze({Cut: 0.025, Struggle: 0.02, Remove: 0.02});
+    const COCOON_REPAIR_AMOUNT = 0.1;
+    const COCOON_ESCAPE_ACTIONS = Object.freeze({ Cut: 40, Struggle: 50, Remove: 50 });
+    const COCOON_ESCAPE_CHANCE = Object.freeze({ Cut: 0.025, Struggle: 0.02, Remove: 0.02 });
     const COCOON_ESCAPE_GATE_PENALTY = 100;
     const LV1_ESCAPE_CHANCE = 100;
     const ESCAPE_METHODS = Object.freeze(["Cut", "Struggle", "Remove"]);
     const ESCAPE_TEXT = {
         SpiderlingsWebbing: {
-            Cut: ["You cut carefully along a seam in TargetRestraint. A few threads part, extending the opening a little further.",
-                "You cut the last connecting threads of TargetRestraint, letting the fragments of silk fall gently away."],
-            Struggle: ["You push against TargetRestraint. The strands ease apart with your movements, widening the gaps in the weave.",
-                "You pull free of the last clinging threads of TargetRestraint and gather the loosened silk."],
-            Remove: ["You tease apart the clinging threads of TargetRestraint, slowly lifting a small patch of the weave.",
-                "You peel away TargetRestraint, gathering the loosened threads together."],
+            Cut: [
+                "You cut carefully along a seam in TargetRestraint. A few threads part, extending the opening a little further.",
+                "You cut the last connecting threads of TargetRestraint, letting the fragments of silk fall gently away.",
+            ],
+            Struggle: [
+                "You push against TargetRestraint. The strands ease apart with your movements, widening the gaps in the weave.",
+                "You pull free of the last clinging threads of TargetRestraint and gather the loosened silk.",
+            ],
+            Remove: [
+                "You tease apart the clinging threads of TargetRestraint, slowly lifting a small patch of the weave.",
+                "You peel away TargetRestraint, gathering the loosened threads together.",
+            ],
         },
         SpiderlingsCocoon: {
-            Cut: ["You continue cutting along a seam in TargetRestraint. Threads part in the cocoon wall, and the soft edges fall back.",
-                "You cut through the last seam of TargetRestraint, and the severed cocoon layers slowly fall away."],
-            Struggle: ["You press outward against TargetRestraint. Shallow folds form in the cocoon as more strands loosen inside.",
-                "You widen the opening in TargetRestraint and slip out of the softened layers, gathering the loose silk."],
-            Remove: ["You slowly peel back the edge of TargetRestraint, parting the clinging layers a little further.",
-                "You peel open TargetRestraint and slip out of the loosened silk, gathering up the freed cocoon."],
+            Cut: [
+                "You continue cutting along a seam in TargetRestraint. Threads part in the cocoon wall, and the soft edges fall back.",
+                "You cut through the last seam of TargetRestraint, and the severed cocoon layers slowly fall away.",
+            ],
+            Struggle: [
+                "You press outward against TargetRestraint. Shallow folds form in the cocoon as more strands loosen inside.",
+                "You widen the opening in TargetRestraint and slip out of the softened layers, gathering the loose silk.",
+            ],
+            Remove: [
+                "You slowly peel back the edge of TargetRestraint, parting the clinging layers a little further.",
+                "You peel open TargetRestraint and slip out of the loosened silk, gathering up the freed cocoon.",
+            ],
         },
     };
     const OUTER_GAG_TAG = "SpiderlingsWebbingLv2OuterGag";
@@ -93,7 +129,7 @@
         Object.freeze({
             family: "Arm",
             group: "ItemArms",
-            mechanics: Object.freeze({bindarms: true}),
+            mechanics: Object.freeze({ bindarms: true }),
             shrine: Object.freeze(["Wristties"]),
             text: Object.freeze({
                 Lv1: Object.freeze([
@@ -117,7 +153,7 @@
             family: "MittenLeft",
             group: "ItemHands",
             linkFamily: "Mittens",
-            mechanics: Object.freeze({bindhands: 0.5, bypass: true}),
+            mechanics: Object.freeze({ bindhands: 0.5, bypass: true }),
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Mitten · Left",
@@ -130,7 +166,7 @@
             family: "MittenRight",
             group: "ItemHands",
             linkFamily: "Mittens",
-            mechanics: Object.freeze({bindhands: 0.5, bypass: true}),
+            mechanics: Object.freeze({ bindhands: 0.5, bypass: true }),
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Mitten · Right",
@@ -230,8 +266,8 @@
             family: "Blindfold",
             group: "ItemHead",
             stageMechanics: Object.freeze({
-                Lv1: Object.freeze({blindfold: 1}),
-                Lv3: Object.freeze({blindfold: 2}),
+                Lv1: Object.freeze({ blindfold: 1 }),
+                Lv3: Object.freeze({ blindfold: 2 }),
             }),
             text: Object.freeze({
                 Lv1: Object.freeze([
@@ -249,7 +285,7 @@
         Object.freeze({
             family: "Stuffing",
             group: "ItemMouth",
-            mechanics: Object.freeze({gag: 0.1, alwaysRender: true, alwaysAccessible: true}),
+            mechanics: Object.freeze({ gag: 0.1, alwaysRender: true, alwaysAccessible: true }),
             shrine: Object.freeze([INNER_STUFFING_TAG]),
             linkableBy: Object.freeze([OUTER_GAG_TAG]),
             renderWhenLinked: Object.freeze([OUTER_GAG_TAG]),
@@ -265,8 +301,8 @@
             family: "Gag",
             group: "ItemMouth",
             stageMechanics: Object.freeze({
-                Lv1: Object.freeze({gag: 0.15}),
-                Lv3: Object.freeze({gag: 0.5}),
+                Lv1: Object.freeze({ gag: 0.15 }),
+                Lv3: Object.freeze({ gag: 0.5 }),
             }),
             shrine: Object.freeze([OUTER_GAG_TAG]),
             linkableBy: Object.freeze([INNER_STUFFING_TAG]),
@@ -286,7 +322,7 @@
         Object.freeze({
             family: "Hood",
             group: "ItemHead",
-            mechanics: Object.freeze({blindfold: 4, gag: 1}),
+            mechanics: Object.freeze({ blindfold: 4, gag: 1 }),
             text: Object.freeze({
                 Lv3: Object.freeze([
                     "Dense Silken Hood",
@@ -307,7 +343,7 @@
     const CROSS_FIRE_FALLBACK = "Two strands interweave against your body, binding another part of it.";
 
     function emptyWebSprayState() {
-        return {stacks: 0, inactiveTurns: 0, lastTriggerTurn: null, lastTrailTurn: null};
+        return { stacks: 0, inactiveTurns: 0, lastTriggerTurn: null, lastTrailTurn: null };
     }
 
     function normalizedWebSprayState(state) {
@@ -383,23 +419,32 @@
             stage: "Lv3",
             requiredActions: 2,
         }));
-        return [...lv1, ...lv2, ...lv3, {
-            id: COCOON_ID,
-            family: "Cocoon",
-            group: "ItemDevices",
-            stage: "Cocoon",
-            requiredActionsByMethod: COCOON_ESCAPE_ACTIONS,
-        }];
+        return [
+            ...lv1,
+            ...lv2,
+            ...lv3,
+            {
+                id: COCOON_ID,
+                family: "Cocoon",
+                group: "ItemDevices",
+                stage: "Cocoon",
+                requiredActionsByMethod: COCOON_ESCAPE_ACTIONS,
+            },
+        ];
     }
 
     function catalogDescriptorMap(catalog) {
-        return new Map((catalog || []).map((entry) => {
-            const restraint = entry && entry.restraint;
-            const id = entry && (entry.id || (restraint && restraint.name));
-            const family = entry && (entry.family || entry.module);
-            const group = entry && (entry.group || (restraint && restraint.Group) || FAMILY_GROUPS[family]);
-            return [id, {...entry, id, family, group}];
-        }).filter(([id]) => id));
+        return new Map(
+            (catalog || [])
+                .map((entry) => {
+                    const restraint = entry && entry.restraint;
+                    const id = entry && (entry.id || (restraint && restraint.name));
+                    const family = entry && (entry.family || entry.module);
+                    const group = entry && (entry.group || (restraint && restraint.Group) || FAMILY_GROUPS[family]);
+                    return [id, { ...entry, id, family, group }];
+                })
+                .filter(([id]) => id),
+        );
     }
 
     const DEFAULT_LIFECYCLE_CATALOG = Object.freeze(buildDefaultLifecycleCatalog().map(Object.freeze));
@@ -416,24 +461,30 @@
     }
 
     function pairedOuterLayerFor(item) {
-        const cocoon = typeof KinkyDungeonGetRestraintItem === "function"
-            && chainFrom(KinkyDungeonGetRestraintItem("ItemDevices")).find(candidate => candidate.name == COCOON_ID);
+        const cocoon =
+            typeof KinkyDungeonGetRestraintItem === "function" &&
+            chainFrom(KinkyDungeonGetRestraintItem("ItemDevices")).find((candidate) => candidate.name == COCOON_ID);
         if (item?.name === "SpiderlingsSpinnerLegbinder") return cocoon || undefined;
         const descriptor = DEFAULT_DESCRIPTOR_MAP.get(item && item.name);
-        if (!descriptor || !stageNumber(descriptor.stage)
-            || typeof KinkyDungeonGetRestraintItem != "function") return undefined;
+        if (!descriptor || !stageNumber(descriptor.stage) || typeof KinkyDungeonGetRestraintItem != "function")
+            return undefined;
         // Cocoon is the outermost action gate across all Webbing groups.
         if (cocoon) return cocoon;
         if (["Legs", "Ankles", "Foot"].includes(descriptor.family)) {
-            const bag = chainFrom(KinkyDungeonGetRestraintItem("ItemLegs")).find(candidate => candidate.name === "SpiderlingsSpinnerLegbinder");
+            const bag = chainFrom(KinkyDungeonGetRestraintItem("ItemLegs")).find(
+                (candidate) => candidate.name === "SpiderlingsSpinnerLegbinder",
+            );
             if (bag) return bag;
         }
         const rank = innerRank(descriptor, descriptor.group);
         return chainFrom(KinkyDungeonGetRestraintItem(descriptor.group)).find((candidate) => {
             const outer = DEFAULT_DESCRIPTOR_MAP.get(candidate && candidate.name);
-            return outer && outer.group == descriptor.group
-                && innerRank(outer, descriptor.group) > rank
-                && (outer.family == descriptor.family || outer.stage == "Lv3");
+            return (
+                outer &&
+                outer.group == descriptor.group &&
+                innerRank(outer, descriptor.group) > rank &&
+                (outer.family == descriptor.family || outer.stage == "Lv3")
+            );
         });
     }
 
@@ -452,15 +503,15 @@
         const stage = descriptor && stageNumber(descriptor.stage);
         if (!descriptor || !stage || descriptor.group != group) return undefined;
         if (group == "ItemMouth") {
-            const ranks = {"1:Stuffing": 0, "1:Gag": 1, "3:Gag": 2};
+            const ranks = { "1:Stuffing": 0, "1:Gag": 1, "3:Gag": 2 };
             return ranks[`${stage}:${descriptor.family}`];
         }
         if (group == "ItemHead") {
-            const ranks = {"1:Blindfold": 0, "3:Blindfold": 1, "3:Hood": 2};
+            const ranks = { "1:Blindfold": 0, "3:Blindfold": 1, "3:Hood": 2 };
             return ranks[`${stage}:${descriptor.family}`];
         }
         if (group == "ItemHands") {
-            const ranks = {"1:MittenLeft": 0, "1:MittenRight": 1};
+            const ranks = { "1:MittenLeft": 0, "1:MittenRight": 1 };
             return ranks[`${stage}:${descriptor.family}`];
         }
         return stage - 1;
@@ -493,20 +544,20 @@
             const catalog = completeStageCatalog(descriptors, stage);
             return !!catalog && stageFamilies(stage).every((family) => names.has(catalog.get(family).id));
         };
-        return {names, lv1Complete: complete(1), lv2Complete: complete(2), lv3Complete: complete(3)};
+        return { names, lv1Complete: complete(1), lv2Complete: complete(2), lv3Complete: complete(3) };
     }
 
     function sourceAllowsDirectCocoon(source) {
         if (!source) return false;
         if (source.kind == "enemy") return ["Spinner", "Jumper", "WebCaster"].includes(source.name);
-        return source.kind == "webSpray"
-            && source.provenance == WEBSPRAY_PROVENANCE
-            && source.triggerSource == "direct";
+        return (
+            source.kind == "webSpray" && source.provenance == WEBSPRAY_PROVENANCE && source.triggerSource == "direct"
+        );
     }
 
     function cocoonRepairDecision(item, source) {
-        const cutProgress = Math.max(0, Number(item && item.cutProgress || 0));
-        const struggleProgress = Math.max(0, Number(item && item.struggleProgress || 0));
+        const cutProgress = Math.max(0, Number((item && item.cutProgress) || 0));
+        const struggleProgress = Math.max(0, Number((item && item.struggleProgress) || 0));
         const totalProgress = cutProgress + struggleProgress;
         const repairAmount = Math.min(COCOON_REPAIR_AMOUNT, totalProgress);
         const remaining = Math.max(0, totalProgress - repairAmount);
@@ -526,9 +577,9 @@
     function enemyBindResolution(descriptors, snapshot, action) {
         const profileName = typeof action.profile == "string" ? action.profile : action.source && action.source.name;
         const weights = Array.isArray(action.profile) ? action.profile : ENEMY_PROFILES[profileName];
-        const source = action.source || {kind: "enemy", name: profileName};
+        const source = action.source || { kind: "enemy", name: profileName };
         if (!weights || weights.length != PROFILE_FAMILIES.length) {
-            return {progressed: false, reason: "unknown-profile", profile: profileName, source};
+            return { progressed: false, reason: "unknown-profile", profile: profileName, source };
         }
 
         const completion = physicalCompletion(descriptors, snapshot);
@@ -536,22 +587,28 @@
         const cocoonItem = (snapshot.items || []).find((item) => item && item.name == COCOON_ID);
         if (cocoonItem) {
             if (!sourceAllowsDirectCocoon(source)) {
-                return {progressed: false, reason: "cocoon-source-rejected", profile: profileName, source};
+                return { progressed: false, reason: "cocoon-source-rejected", profile: profileName, source };
             }
-            return {...cocoonRepairDecision(cocoonItem, source), profile: profileName};
+            return { ...cocoonRepairDecision(cocoonItem, source), profile: profileName };
         }
 
         const cocoonDescriptor = descriptors.get(COCOON_ID);
         const preHitSlow = normalizedWebSprayState(snapshot.webSpray).stacks;
-        const cocoonGroup = snapshot.groups && snapshot.groups.ItemDevices || [];
-        const cocoonCompatible = cocoonDescriptor
-            && (!cocoonGroup.some((item) => item && !descriptors.has(item.name))
-                || snapshot.externalLinkCompatible?.[COCOON_ID] === true)
-            && snapshotFlag(snapshot.registered, COCOON_ID)
-            && snapshotFlag(snapshot.poseCompatible, COCOON_ID)
-            && snapshotFlag(snapshot.addCompatible, COCOON_ID);
-        if (profileName !== "Spinner" && sourceAllowsDirectCocoon(source) && completion.lv3Complete
-            && preHitSlow >= WEBSPRAY_MAX_STACKS && cocoonCompatible) {
+        const cocoonGroup = (snapshot.groups && snapshot.groups.ItemDevices) || [];
+        const cocoonCompatible =
+            cocoonDescriptor &&
+            (!cocoonGroup.some((item) => item && !descriptors.has(item.name)) ||
+                snapshot.externalLinkCompatible?.[COCOON_ID] === true) &&
+            snapshotFlag(snapshot.registered, COCOON_ID) &&
+            snapshotFlag(snapshot.poseCompatible, COCOON_ID) &&
+            snapshotFlag(snapshot.addCompatible, COCOON_ID);
+        if (
+            profileName !== "Spinner" &&
+            sourceAllowsDirectCocoon(source) &&
+            completion.lv3Complete &&
+            preHitSlow >= WEBSPRAY_MAX_STACKS &&
+            cocoonCompatible
+        ) {
             return {
                 progressed: false,
                 reason: "cocoon-selected",
@@ -566,7 +623,7 @@
         }
 
         const lv1Catalog = completeStageCatalog(descriptors, 1);
-        if (!lv1Catalog) return {progressed: false, reason: "incomplete-lv1-catalog", profile: profileName, source};
+        if (!lv1Catalog) return { progressed: false, reason: "incomplete-lv1-catalog", profile: profileName, source };
         const catalogs = [lv1Catalog, completeStageCatalog(descriptors, 2), completeStageCatalog(descriptors, 3)];
 
         const eligible = [];
@@ -578,18 +635,27 @@
             if (!descriptor) continue;
             const stage = stageNumber(descriptor.stage);
             if (chain.some((entry) => stageNumber(entry.stage) > stage && names.has(entry.id))) continue;
-            if (stage > 1 && LV2_FAMILIES.includes(family)
-                && (!names.has(lv1Catalog.get(family).id)
-                    || (stage == 3 && !names.has(catalogs[1]?.get(family)?.id)))) continue;
+            if (
+                stage > 1 &&
+                LV2_FAMILIES.includes(family) &&
+                (!names.has(lv1Catalog.get(family).id) || (stage == 3 && !names.has(catalogs[1]?.get(family)?.id)))
+            )
+                continue;
             const index = PROFILE_FAMILIES.indexOf(family);
             const weight = Number(weights[index] || 0);
             if (!descriptor || !(weight > 0) || names.has(descriptor.id)) continue;
-            const groupItems = snapshot.groups && snapshot.groups[descriptor.group] || [];
-            if (groupItems.some((item) => item && !descriptors.has(item.name))
-                && snapshot.externalLinkCompatible?.[descriptor.id] !== true) continue;
-            if (!snapshotFlag(snapshot.registered, descriptor.id)
-                || !snapshotFlag(snapshot.poseCompatible, descriptor.id)
-                || !snapshotFlag(snapshot.addCompatible, descriptor.id)) continue;
+            const groupItems = (snapshot.groups && snapshot.groups[descriptor.group]) || [];
+            if (
+                groupItems.some((item) => item && !descriptors.has(item.name)) &&
+                snapshot.externalLinkCompatible?.[descriptor.id] !== true
+            )
+                continue;
+            if (
+                !snapshotFlag(snapshot.registered, descriptor.id) ||
+                !snapshotFlag(snapshot.poseCompatible, descriptor.id) ||
+                !snapshotFlag(snapshot.addCompatible, descriptor.id)
+            )
+                continue;
 
             if (stage == 3 && family == "Hood") {
                 if (!["Blindfold", "Gag"].every((inner) => names.has(catalogs[2].get(inner).id))) continue;
@@ -600,10 +666,11 @@
                 const gag = lv1Catalog.get("Gag");
                 if (gag && names.has(gag.id)) continue;
             }
-            eligible.push({descriptor, weight});
+            eligible.push({ descriptor, weight });
         }
 
-        if (!eligible.length) return {progressed: false, reason: "no-eligible-candidate", profile: profileName, source};
+        if (!eligible.length)
+            return { progressed: false, reason: "no-eligible-candidate", profile: profileName, source };
         const totalWeight = eligible.reduce((sum, entry) => sum + entry.weight, 0);
         const randomSource = typeof action.random == "function" ? action.random : () => action.random;
         const sampled = Number(randomSource());
@@ -636,13 +703,23 @@
         if (action.provenance != WEBSPRAY_PROVENANCE || !["direct", "trail"].includes(triggerSource)) {
             return {
                 nextSnapshot: snapshot,
-                outcome: {accepted: false, reason: "invalid-webspray-source", triggerSource, provenance: action.provenance},
+                outcome: {
+                    accepted: false,
+                    reason: "invalid-webspray-source",
+                    triggerSource,
+                    provenance: action.provenance,
+                },
             };
         }
         if (triggerSource == "trail" && current.lastTrailTurn === action.turn) {
             return {
                 nextSnapshot: snapshot,
-                outcome: {accepted: false, reason: "trail-rate-limited", triggerSource, provenance: action.provenance},
+                outcome: {
+                    accepted: false,
+                    reason: "trail-rate-limited",
+                    triggerSource,
+                    provenance: action.provenance,
+                },
             };
         }
 
@@ -650,7 +727,7 @@
         if (cocoonItem) {
             if (triggerSource != "direct") {
                 return {
-                    nextSnapshot: {...snapshot, webSpray: emptyWebSprayState()},
+                    nextSnapshot: { ...snapshot, webSpray: emptyWebSprayState() },
                     outcome: {
                         accepted: false,
                         reason: "cocoon-trail-rejected",
@@ -663,11 +740,11 @@
             const repair = enemyBindResolution(descriptors, snapshot, {
                 type: "enemyBind",
                 profile: "WebCaster",
-                source: {kind: "webSpray", provenance: WEBSPRAY_PROVENANCE, triggerSource},
+                source: { kind: "webSpray", provenance: WEBSPRAY_PROVENANCE, triggerSource },
                 random: action.random,
             });
             return {
-                nextSnapshot: {...snapshot, webSpray: emptyWebSprayState()},
+                nextSnapshot: { ...snapshot, webSpray: emptyWebSprayState() },
                 outcome: {
                     ...repair,
                     accepted: true,
@@ -681,7 +758,7 @@
         const progression = enemyBindResolution(descriptors, snapshot, {
             type: "enemyBind",
             profile: "WebCaster",
-            source: {kind: "webSpray", provenance: WEBSPRAY_PROVENANCE, triggerSource},
+            source: { kind: "webSpray", provenance: WEBSPRAY_PROVENANCE, triggerSource },
             random: action.random,
         });
         const selectedCocoon = progression.selectedId == COCOON_ID;
@@ -692,7 +769,7 @@
             lastTrailTurn: triggerSource == "trail" ? action.turn : current.lastTrailTurn,
         };
         return {
-            nextSnapshot: {...snapshot, webSpray: nextWebSpray},
+            nextSnapshot: { ...snapshot, webSpray: nextWebSpray },
             outcome: {
                 accepted: true,
                 reason: "webspray-triggered",
@@ -713,26 +790,26 @@
         const current = normalizedWebSprayState(snapshot.webSpray);
         const delta = Number(action.delta || 0);
         if (!(delta > 0) || current.stacks < 1) {
-            return {nextSnapshot: snapshot, outcome: {advanced: false, cleared: false, slowStacks: current.stacks}};
+            return { nextSnapshot: snapshot, outcome: { advanced: false, cleared: false, slowStacks: current.stacks } };
         }
         if (current.lastTriggerTurn === action.turn) {
-            const nextWebSpray = {...current, inactiveTurns: 0};
+            const nextWebSpray = { ...current, inactiveTurns: 0 };
             return {
-                nextSnapshot: {...snapshot, webSpray: nextWebSpray},
-                outcome: {advanced: true, cleared: false, slowStacks: current.stacks, inactiveTurns: 0},
+                nextSnapshot: { ...snapshot, webSpray: nextWebSpray },
+                outcome: { advanced: true, cleared: false, slowStacks: current.stacks, inactiveTurns: 0 },
             };
         }
         const inactiveTurns = current.inactiveTurns + delta;
         if (inactiveTurns >= WEBSPRAY_INACTIVITY_TURNS) {
             return {
-                nextSnapshot: {...snapshot, webSpray: emptyWebSprayState()},
-                outcome: {advanced: true, cleared: true, slowStacks: 0, inactiveTurns: 0},
+                nextSnapshot: { ...snapshot, webSpray: emptyWebSprayState() },
+                outcome: { advanced: true, cleared: true, slowStacks: 0, inactiveTurns: 0 },
             };
         }
-        const nextWebSpray = {...current, inactiveTurns};
+        const nextWebSpray = { ...current, inactiveTurns };
         return {
-            nextSnapshot: {...snapshot, webSpray: nextWebSpray},
-            outcome: {advanced: true, cleared: false, slowStacks: current.stacks, inactiveTurns},
+            nextSnapshot: { ...snapshot, webSpray: nextWebSpray },
+            outcome: { advanced: true, cleared: false, slowStacks: current.stacks, inactiveTurns },
         };
     }
 
@@ -746,31 +823,45 @@
         if (action.type == "webSprayTurnElapsed") return resolveWebSprayTurn(snapshot, action);
         if (action.type == "clearWebSpray") {
             return {
-                nextSnapshot: {...snapshot, webSpray: emptyWebSprayState()},
-                outcome: {cleared: true, slowStacks: 0, reason: action.reason || "explicit-clear"},
+                nextSnapshot: { ...snapshot, webSpray: emptyWebSprayState() },
+                outcome: { cleared: true, slowStacks: 0, reason: action.reason || "explicit-clear" },
             };
         }
 
         if (action.type == "enemyBind") {
-            return {nextSnapshot: snapshot, outcome: enemyBindResolution(descriptors, snapshot, action)};
+            return { nextSnapshot: snapshot, outcome: enemyBindResolution(descriptors, snapshot, action) };
         }
 
         if (action.type == "inspectPhysical") {
             const names = new Set((snapshot.items || []).map((item) => item && item.name).filter(Boolean));
             const present = [...descriptors.values()].filter((descriptor) => names.has(descriptor.id));
-            const lv1Families = new Set(present
-                .filter((descriptor) => stageNumber(descriptor.stage) == 1 && LV1_FAMILIES.includes(descriptor.family))
-                .map((descriptor) => descriptor.family));
-            const lv2Families = new Set(present
-                .filter((descriptor) => stageNumber(descriptor.stage) == 2 && LV2_FAMILIES.includes(descriptor.family))
-                .map((descriptor) => descriptor.family));
-            const lv3Families = new Set(present
-                .filter((descriptor) => stageNumber(descriptor.stage) == 3 && LV3_FAMILIES.includes(descriptor.family))
-                .map((descriptor) => descriptor.family));
+            const lv1Families = new Set(
+                present
+                    .filter(
+                        (descriptor) => stageNumber(descriptor.stage) == 1 && LV1_FAMILIES.includes(descriptor.family),
+                    )
+                    .map((descriptor) => descriptor.family),
+            );
+            const lv2Families = new Set(
+                present
+                    .filter(
+                        (descriptor) => stageNumber(descriptor.stage) == 2 && LV2_FAMILIES.includes(descriptor.family),
+                    )
+                    .map((descriptor) => descriptor.family),
+            );
+            const lv3Families = new Set(
+                present
+                    .filter(
+                        (descriptor) => stageNumber(descriptor.stage) == 3 && LV3_FAMILIES.includes(descriptor.family),
+                    )
+                    .map((descriptor) => descriptor.family),
+            );
             const lv1Count = lv1Families.size;
             const lv2Count = lv2Families.size;
             const lv3Count = lv3Families.size;
-            const cocoonPresent = present.some((descriptor) => descriptor.stage == "Cocoon" || descriptor.family == "Cocoon");
+            const cocoonPresent = present.some(
+                (descriptor) => descriptor.stage == "Cocoon" || descriptor.family == "Cocoon",
+            );
             return {
                 nextSnapshot: snapshot,
                 outcome: {
@@ -789,46 +880,65 @@
 
         if (action.type == "manualEquipResult") {
             if (action.accepted !== true) {
-                return {nextSnapshot: snapshot, outcome: {normalized: false, changed: false, reason: "native-rejected"}};
+                return {
+                    nextSnapshot: snapshot,
+                    outcome: { normalized: false, changed: false, reason: "native-rejected" },
+                };
             }
             const group = action.group;
             const current = (snapshot.groups && snapshot.groups[group]) || [];
             const ranked = current.map((item) => {
                 const descriptor = descriptors.get(item && item.name);
-                return {item, rank: innerRank(descriptor, group)};
+                return { item, rank: innerRank(descriptor, group) };
             });
             if (ranked.some((entry) => entry.rank === undefined)) {
-                return {nextSnapshot: snapshot, outcome: {normalized: false, changed: false, group, reason: "external-item"}};
+                return {
+                    nextSnapshot: snapshot,
+                    outcome: { normalized: false, changed: false, group, reason: "external-item" },
+                };
             }
-            const ordered = ranked.slice().sort((left, right) => left.rank - right.rank).map((entry) => entry.item);
+            const ordered = ranked
+                .slice()
+                .sort((left, right) => left.rank - right.rank)
+                .map((entry) => entry.item);
             const changed = ordered.some((item, index) => item != current[index]);
             const nextSnapshot = {
                 ...snapshot,
-                groups: {...(snapshot.groups || {}), [group]: ordered},
+                groups: { ...(snapshot.groups || {}), [group]: ordered },
             };
-            return {nextSnapshot, outcome: {normalized: true, changed, group, orderedInnerToOuter: ordered}};
+            return { nextSnapshot, outcome: { normalized: true, changed, group, orderedInnerToOuter: ordered } };
         }
 
         if (action.type == "escapeAttempt") {
             const item = action.item;
             const descriptor = descriptors.get(item && item.name);
-            if (!descriptor) return {nextSnapshot: snapshot, outcome: {completed: false, progressed: false, reason: "not-owned"}};
+            if (!descriptor)
+                return {
+                    nextSnapshot: snapshot,
+                    outcome: { completed: false, progressed: false, reason: "not-owned" },
+                };
             if (!ESCAPE_METHODS.includes(action.method)) {
-                return {nextSnapshot: snapshot, outcome: {completed: false, progressed: false, reason: "unsupported-method"}};
+                return {
+                    nextSnapshot: snapshot,
+                    outcome: { completed: false, progressed: false, reason: "unsupported-method" },
+                };
             }
             if (action.effective !== true) {
-                return {nextSnapshot: snapshot, outcome: {completed: false, progressed: false, reason: "blocked"}};
+                return { nextSnapshot: snapshot, outcome: { completed: false, progressed: false, reason: "blocked" } };
             }
             const stage = stageNumber(descriptor.stage);
-            const configuredActions = descriptor.requiredActionsByMethod
-                && descriptor.requiredActionsByMethod[action.method] != null
-                ? descriptor.requiredActionsByMethod[action.method]
-                : descriptor.requiredActions && typeof descriptor.requiredActions == "object"
-                    ? descriptor.requiredActions[action.method]
-                    : descriptor.requiredActions;
+            const configuredActions =
+                descriptor.requiredActionsByMethod && descriptor.requiredActionsByMethod[action.method] != null
+                    ? descriptor.requiredActionsByMethod[action.method]
+                    : descriptor.requiredActions && typeof descriptor.requiredActions == "object"
+                      ? descriptor.requiredActions[action.method]
+                      : descriptor.requiredActions;
             const requiredActions = Number(configuredActions || stage || 0);
             if (!(requiredActions > 0)) {
-                return {nextSnapshot: snapshot, outcome: {completed: false, progressed: false, reason: "unsupported-stage"}};
+                return {
+                    nextSnapshot: snapshot,
+                    outcome: { completed: false, progressed: false, reason: "unsupported-stage" },
+                };
             }
             const previousActions = Number(action.progress || 0);
             const effectiveActions = Math.min(requiredActions, previousActions + 1);
@@ -846,7 +956,7 @@
             };
         }
 
-        return {nextSnapshot: snapshot, outcome: {reason: "unsupported-action"}};
+        return { nextSnapshot: snapshot, outcome: { reason: "unsupported-action" } };
     }
 
     // KD adapter: preserve native item instances while normalizing Spiderlings-owned link order.
@@ -855,8 +965,12 @@
         if (typeof KinkyDungeonReplaceRestraintRoot == "function") {
             return KinkyDungeonReplaceRestraintRoot(group, previousRoot, nextRoot) !== false;
         }
-        if (typeof KinkyDungeonInventory != "undefined" && KinkyDungeonInventory
-            && typeof KinkyDungeonInventory.get == "function" && typeof Restraint != "undefined") {
+        if (
+            typeof KinkyDungeonInventory != "undefined" &&
+            KinkyDungeonInventory &&
+            typeof KinkyDungeonInventory.get == "function" &&
+            typeof Restraint != "undefined"
+        ) {
             const equipped = KinkyDungeonInventory.get(Restraint);
             if (equipped && equipped.get(previousRoot.name) == previousRoot) {
                 equipped.delete(previousRoot.name);
@@ -880,26 +994,27 @@
     }
 
     function normalizeManualGroup(group) {
-        if (typeof KinkyDungeonGetRestraintItem != "function") return {normalized: false, group, reason: "missing-runtime"};
+        if (typeof KinkyDungeonGetRestraintItem != "function")
+            return { normalized: false, group, reason: "missing-runtime" };
         const previousRoot = KinkyDungeonGetRestraintItem(group);
-        if (!previousRoot) return {normalized: true, changed: false, group, root: undefined};
+        if (!previousRoot) return { normalized: true, changed: false, group, root: undefined };
         const currentOuterToInner = chainFrom(previousRoot);
         const currentInnerToOuter = [...currentOuterToInner].reverse();
         const resolution = resolveWebbingAction({
-            snapshot: {groups: {[group]: currentInnerToOuter}},
-            action: {type: "manualEquipResult", accepted: true, group},
+            snapshot: { groups: { [group]: currentInnerToOuter } },
+            action: { type: "manualEquipResult", accepted: true, group },
         });
-        if (!resolution.outcome.normalized) return {...resolution.outcome, root: previousRoot};
+        if (!resolution.outcome.normalized) return { ...resolution.outcome, root: previousRoot };
         const ordered = [...resolution.outcome.orderedInnerToOuter].reverse();
         const changed = resolution.outcome.changed;
-        if (!changed) return {normalized: true, changed: false, group, root: previousRoot};
+        if (!changed) return { normalized: true, changed: false, group, root: previousRoot };
         const nextRoot = ordered[0];
         if (!replaceGroupRoot(group, previousRoot, nextRoot)) {
-            return {normalized: false, changed: false, group, root: previousRoot, reason: "root-replacement-failed"};
+            return { normalized: false, changed: false, group, root: previousRoot, reason: "root-replacement-failed" };
         }
         for (let index = 0; index < ordered.length; index++) ordered[index].dynamicLink = ordered[index + 1];
         refreshNormalizedGroup(nextRoot);
-        return {normalized: true, changed: true, group, root: nextRoot};
+        return { normalized: true, changed: true, group, root: nextRoot };
     }
 
     function scheduleManualNormalization(group) {
@@ -925,24 +1040,34 @@
     }
 
     function registerExternalUnlinkPreservation() {
-        if (typeof KinkyDungeonUnLinkItem != "function" || typeof KinkyDungeonGetRestraintItem != "function") return false;
+        if (typeof KinkyDungeonUnLinkItem != "function" || typeof KinkyDungeonGetRestraintItem != "function")
+            return false;
         const nativeUnlink = KinkyDungeonUnLinkItem;
         if (nativeUnlink[EXTERNAL_UNLINK_MARKER]) return true;
-        const unlinkPreservingExternal = function(item, ...args) {
-            const descriptor = DEFAULT_DESCRIPTOR_MAP.get(item && item.name)
-                || (item?.name === "SpiderlingsSpinnerLegbinder" ? {group: "ItemLegs"} : undefined);
+        const unlinkPreservingExternal = function (item, ...args) {
+            const descriptor =
+                DEFAULT_DESCRIPTOR_MAP.get(item && item.name) ||
+                (item?.name === "SpiderlingsSpinnerLegbinder" ? { group: "ItemLegs" } : undefined);
             const external = descriptor && item.dynamicLink;
-            const definition = external && (typeof KDRestraint == "function" ? KDRestraint(external) : restraintById(external.name));
-            const preserve = definition && !DEFAULT_DESCRIPTOR_MAP.has(external.name)
-                && KinkyDungeonGetRestraintItem(descriptor.group) === item;
+            const definition =
+                external && (typeof KDRestraint == "function" ? KDRestraint(external) : restraintById(external.name));
+            const preserve =
+                definition &&
+                !DEFAULT_DESCRIPTOR_MAP.has(external.name) &&
+                KinkyDungeonGetRestraintItem(descriptor.group) === item;
             const result = nativeUnlink.call(this, item, ...args);
             if (preserve && Array.isArray(result) && result.includes(item)) {
                 const restored = KinkyDungeonGetRestraintItem(descriptor.group);
                 // KD recreates the newly exposed root on unlink, losing its ID and progress.
                 // Keep native removal events/item fate, then restore this retained external item.
-                if (restored && restored !== external && restored.name === external.name
-                    && restored.dynamicLink === external.dynamicLink
-                    && replaceGroupRoot(descriptor.group, restored, external)) refreshNormalizedGroup(external);
+                if (
+                    restored &&
+                    restored !== external &&
+                    restored.name === external.name &&
+                    restored.dynamicLink === external.dynamicLink &&
+                    replaceGroupRoot(descriptor.group, restored, external)
+                )
+                    refreshNormalizedGroup(external);
             }
             return result;
         };
@@ -955,11 +1080,10 @@
         equip(id, options = {}) {
             const restraint = restraintById(id);
             if (!restraint || typeof KinkyDungeonAddRestraint != "function") {
-                return {applied: false, id, reason: "missing-runtime"};
+                return { applied: false, id, reason: "missing-runtime" };
             }
-            if (typeof KDCanAddRestraint == "function"
-                && !KDCanAddRestraint(restraint, false, "", false)) {
-                return {applied: false, id, reason: "incompatible"};
+            if (typeof KDCanAddRestraint == "function" && !KDCanAddRestraint(restraint, false, "", false)) {
+                return { applied: false, id, reason: "incompatible" };
             }
             const result = KinkyDungeonAddRestraint(
                 restraint,
@@ -975,7 +1099,7 @@
             const applied = Number(result) > 0 && !!equippedItem(id);
             if (applied) scheduleManualNormalization(restraint.Group);
             if (applied && id == COCOON_ID) clearRuntimeWebSpray("cocoon-equipped");
-            return {applied, id, lock: "", tightness: 0};
+            return { applied, id, lock: "", tightness: 0 };
         },
         remove(item, method) {
             if (!item || typeof KinkyDungeonRemoveRestraintSpecific != "function") return false;
@@ -987,9 +1111,14 @@
     });
 
     function currentPoseNames() {
-        if (typeof KDCurrentModels == "undefined" || !KDCurrentModels || typeof KDCurrentModels.get != "function") return new Set();
-        const player = typeof KinkyDungeonPlayer != "undefined" ? KinkyDungeonPlayer
-            : typeof KinkyDungeonPlayerEntity != "undefined" ? KinkyDungeonPlayerEntity : undefined;
+        if (typeof KDCurrentModels == "undefined" || !KDCurrentModels || typeof KDCurrentModels.get != "function")
+            return new Set();
+        const player =
+            typeof KinkyDungeonPlayer != "undefined"
+                ? KinkyDungeonPlayer
+                : typeof KinkyDungeonPlayerEntity != "undefined"
+                  ? KinkyDungeonPlayerEntity
+                  : undefined;
         const model = player && KDCurrentModels.get(player);
         const poses = model && model.Poses;
         if (!poses) return new Set();
@@ -999,7 +1128,8 @@
     }
 
     function runtimePoseCompatible(family, poses) {
-        if (family == "Stuffing" || family == "Gag" || family == "Blindfold" || family == "Cocoon" || !poses.size) return true;
+        if (family == "Stuffing" || family == "Gag" || family == "Blindfold" || family == "Cocoon" || !poses.size)
+            return true;
         if (["Kneel", "KneelClosed", "Hogtie"].some((pose) => poses.has(pose))) return false;
         if (family == "Arm") return poses.has("Closed");
         if (family == "MittenLeft" || family == "MittenRight") return true;
@@ -1011,7 +1141,7 @@
         const groups = {};
         const items = [];
         const seen = new Set();
-        if (typeof KinkyDungeonGetRestraintItem != "function") return {items, groups};
+        if (typeof KinkyDungeonGetRestraintItem != "function") return { items, groups };
         for (const group of new Set([...Object.values(FAMILY_GROUPS), "ItemDevices"])) {
             const outerToInner = chainFrom(KinkyDungeonGetRestraintItem(group));
             groups[group] = [...outerToInner].reverse();
@@ -1022,7 +1152,7 @@
                 }
             }
         }
-        return {items, groups};
+        return { items, groups };
     }
 
     function runtimeEnemyCatalog() {
@@ -1050,18 +1180,23 @@
                 compatible = !(KDGetBlockersToAddRestraint(restraint, player, restraint.bypass === true) || []).length;
             }
             if (compatible && typeof KDCanAddRestraint == "function") {
-                const current = typeof KinkyDungeonGetRestraintItem == "function"
-                    ? KinkyDungeonGetRestraintItem(restraint.Group) : undefined;
+                const current =
+                    typeof KinkyDungeonGetRestraintItem == "function"
+                        ? KinkyDungeonGetRestraintItem(restraint.Group)
+                        : undefined;
                 compatible = KDCanAddRestraint(restraint, false, "", false, current, true, true, entity) === true;
             }
             snapshot.addCompatible[descriptor.id] = compatible;
             // Native no-overpower linking applies to both armour and ordinary restraints.
             // An occupied group is eligible only when no blocker must be removed.
-            const externalItems = (snapshot.groups[descriptor.group] || []).filter((item) => item && !ownedIds.has(item.name));
-            snapshot.externalLinkCompatible[descriptor.id] = compatible
-                && typeof KDGetBlockersToAddRestraint == "function"
-                && typeof KDCanAddRestraint == "function"
-                && externalItems.length > 0;
+            const externalItems = (snapshot.groups[descriptor.group] || []).filter(
+                (item) => item && !ownedIds.has(item.name),
+            );
+            snapshot.externalLinkCompatible[descriptor.id] =
+                compatible &&
+                typeof KDGetBlockersToAddRestraint == "function" &&
+                typeof KDCanAddRestraint == "function" &&
+                externalItems.length > 0;
         }
         return snapshot;
     }
@@ -1094,10 +1229,13 @@
         const repair = outcome && outcome.cocoonRepair;
         if (!item || !repair) return false;
         const state = item.data && item.data[COCOON_OUTER_STATE];
-        const anchored = !state?.anchored && sourceAllowsDirectCocoon(outcome.source)
-            && (outcome.source.kind == "webSpray" || outcome.source.name == "WebCaster")
-            && (state?.reinforcementPending
-                || (state?.attemptAges || []).filter((age) => age >= 0 && age < COCOON_STRUGGLE_WINDOW).length >= COCOON_STRUGGLE_THRESHOLD);
+        const anchored =
+            !state?.anchored &&
+            sourceAllowsDirectCocoon(outcome.source) &&
+            (outcome.source.kind == "webSpray" || outcome.source.name == "WebCaster") &&
+            (state?.reinforcementPending ||
+                (state?.attemptAges || []).filter((age) => age >= 0 && age < COCOON_STRUGGLE_WINDOW).length >=
+                    COCOON_STRUGGLE_THRESHOLD);
         if (anchored) {
             state.anchored = true;
             delete state.reinforcementPending;
@@ -1105,8 +1243,14 @@
             syncCocoonOuterPose();
             if (api.refreshSpiderlingsPlayerModelSoon) api.refreshSpiderlingsPlayerModelSoon(item);
             const localized = typeof TextGet == "function" ? TextGet(COCOON_ANCHORED_MESSAGE) : COCOON_ANCHORED_MESSAGE;
-            if (typeof KinkyDungeonSendActionMessage == "function") KinkyDungeonSendActionMessage(10,
-                localized && localized != COCOON_ANCHORED_MESSAGE ? localized : COCOON_ANCHORED_FALLBACK, "orange", 3, true);
+            if (typeof KinkyDungeonSendActionMessage == "function")
+                KinkyDungeonSendActionMessage(
+                    10,
+                    localized && localized != COCOON_ANCHORED_MESSAGE ? localized : COCOON_ANCHORED_FALLBACK,
+                    "orange",
+                    3,
+                    true,
+                );
         }
         const repaired = Number(repair.repairAmount) > 0;
         if (repaired) {
@@ -1117,8 +1261,12 @@
     }
 
     function syncCocoonOuterPose(character) {
-        if (typeof KinkyDungeonPlayer == "undefined" || (character && character !== KinkyDungeonPlayer)
-            || typeof KDCurrentModels == "undefined") return;
+        if (
+            typeof KinkyDungeonPlayer == "undefined" ||
+            (character && character !== KinkyDungeonPlayer) ||
+            typeof KDCurrentModels == "undefined"
+        )
+            return;
         const poses = KDCurrentModels.get(KinkyDungeonPlayer)?.Poses;
         if (!poses) return;
         if (equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored) poses[COCOON_OUTER_POSE] = true;
@@ -1131,7 +1279,7 @@
             delete KDMapData[VIGIL_STATE];
             return undefined;
         }
-        return KDMapData[VIGIL_STATE] ||= {idleTurns: 0, activityPending: false};
+        return (KDMapData[VIGIL_STATE] ||= { idleTurns: 0, activityPending: false });
     }
 
     function needsCocoonReinforcement() {
@@ -1152,22 +1300,32 @@
     function recordCocoonResistance(item = equippedItem(COCOON_ID)) {
         if (!item) return;
         item.data ||= {};
-        const state = item.data[COCOON_OUTER_STATE] ||= {anchored: false, attemptAges: []};
+        const state = (item.data[COCOON_OUTER_STATE] ||= { anchored: false, attemptAges: [] });
         if (state.anchored) return;
-        state.attemptAges = [...(state.attemptAges || []).filter((age) => age >= 0 && age < COCOON_STRUGGLE_WINDOW), 0]
-            .slice(-COCOON_STRUGGLE_THRESHOLD);
+        state.attemptAges = [
+            ...(state.attemptAges || []).filter((age) => age >= 0 && age < COCOON_STRUGGLE_WINDOW),
+            0,
+        ].slice(-COCOON_STRUGGLE_THRESHOLD);
         if (state.attemptAges.length >= COCOON_STRUGGLE_THRESHOLD) state.reinforcementPending = true;
     }
 
     function vigilEnemy(enemy, player) {
-        return player?.player && ["Spinner", "Jumper", "WebCaster", "Tunneler"].includes(enemy?.Enemy?.name)
-            && enemy.hp > 0 && typeof KDHostile == "function" && KDHostile(enemy, player)
-            && (typeof KinkyDungeonAggressive != "function" || KinkyDungeonAggressive(enemy, player));
+        return (
+            player?.player &&
+            ["Spinner", "Jumper", "WebCaster", "Tunneler"].includes(enemy?.Enemy?.name) &&
+            enemy.hp > 0 &&
+            typeof KDHostile == "function" &&
+            KDHostile(enemy, player) &&
+            (typeof KinkyDungeonAggressive != "function" || KinkyDungeonAggressive(enemy, player))
+        );
     }
 
     function isCocoonDispersing(enemy, player) {
-        return vigilEnemy(enemy, player) && !(enemy.Enemy.name == "WebCaster" && needsCocoonReinforcement())
-            && (cocoonVigil()?.idleTurns || 0) >= VIGIL_IDLE_TURNS;
+        return (
+            vigilEnemy(enemy, player) &&
+            !(enemy.Enemy.name == "WebCaster" && needsCocoonReinforcement()) &&
+            (cocoonVigil()?.idleTurns || 0) >= VIGIL_IDLE_TURNS
+        );
     }
 
     function registerCocoonVigil() {
@@ -1175,7 +1333,10 @@
         addRuntimeEvent(KDEventMapGeneric, "beforeMove", VIGIL_STATE, (_event, data) => {
             if (!data || (!data.x && !data.y)) return;
             const state = cocoonVigil();
-            if (state) { state.idleTurns = 0; state.activityPending = true; }
+            if (state) {
+                state.idleTurns = 0;
+                state.activityPending = true;
+            }
         });
         // tick runs once before both enemy passes; tickAfter has already lost LastAction.
         addRuntimeEvent(KDEventMapGeneric, "tick", VIGIL_STATE, (_event, data) => {
@@ -1187,13 +1348,20 @@
             // Multi-hit weapons and missed attacks still represent one intent.
             if (action == "Attack" || state.attackSpellPending) recordCocoonResistance();
             delete state.attackSpellPending;
-            state.idleTurns = state.activityPending || (action && action != "Wait")
-                ? 0 : Math.min(VIGIL_IDLE_TURNS, state.idleTurns + data.delta);
+            state.idleTurns =
+                state.activityPending || (action && action != "Wait")
+                    ? 0
+                    : Math.min(VIGIL_IDLE_TURNS, state.idleTurns + data.delta);
             state.activityPending = false;
         });
         addRuntimeEvent(KDEventMapGeneric, "afterPlayerCast", VIGIL_STATE, (_event, data) => {
-            if (!data?.spell || data.spell.type == "buff" || !data.spell.damage
-                || ["heal", "inert"].includes(data.spell.damage)) return;
+            if (
+                !data?.spell ||
+                data.spell.type == "buff" ||
+                !data.spell.damage ||
+                ["heal", "inert"].includes(data.spell.damage)
+            )
+                return;
             const state = cocoonVigil();
             if (state) state.attackSpellPending = true;
         });
@@ -1204,10 +1372,14 @@
         }
         if (typeof KDOverrideIgnore == "function") {
             const nativeOverride = KDOverrideIgnore;
-            KDOverrideIgnore = function(enemy, player) {
+            KDOverrideIgnore = function (enemy, player) {
                 const original = nativeOverride.apply(this, arguments);
-                if (vigilEnemy(enemy, player) && (cocoonVigil()?.idleTurns < VIGIL_IDLE_TURNS
-                    || (enemy.Enemy.name == "WebCaster" && needsCocoonReinforcement()))) return true;
+                if (
+                    vigilEnemy(enemy, player) &&
+                    (cocoonVigil()?.idleTurns < VIGIL_IDLE_TURNS ||
+                        (enemy.Enemy.name == "WebCaster" && needsCocoonReinforcement()))
+                )
+                    return true;
                 return original;
             };
         }
@@ -1216,7 +1388,7 @@
             const ai = KDAIType[name];
             if (!ai) continue;
             const beforemove = ai.beforemove;
-            ai.beforemove = function(enemy, player, aiData) {
+            ai.beforemove = function (enemy, player, aiData) {
                 if (!isCocoonDispersing(enemy, player)) return beforemove.apply(this, arguments);
                 aiData.ignore = true;
                 aiData.wantsToAttack = false;
@@ -1226,20 +1398,35 @@
                 enemy.warningTiles = [];
                 // Give KD a legal outward goal; native movement still pays its normal cost.
                 const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
-                if (distance >= 4 || KDIsImmobile(enemy)
-                    || KDEnemyHasFlag(enemy, "StayHere") || KDEnemyHasFlag(enemy, "overrideMove")) return true;
+                if (
+                    distance >= 4 ||
+                    KDIsImmobile(enemy) ||
+                    KDEnemyHasFlag(enemy, "StayHere") ||
+                    KDEnemyHasFlag(enemy, "overrideMove")
+                )
+                    return true;
                 let goal;
                 let farthest = distance;
-                for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-                    if (!dx && !dy) continue;
-                    const dir = {x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2};
-                    const range = Math.hypot(enemy.x + dx - player.x, enemy.y + dy - player.y);
-                    if (range > farthest && KinkyDungeonEnemyCanMove(enemy, dir,
-                        aiData.MovableTiles, aiData.AvoidTiles, aiData.ignoreLocks, 0)) {
-                        goal = {x: enemy.x + dx, y: enemy.y + dy};
-                        farthest = range;
+                for (let dx = -1; dx <= 1; dx++)
+                    for (let dy = -1; dy <= 1; dy++) {
+                        if (!dx && !dy) continue;
+                        const dir = { x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2 };
+                        const range = Math.hypot(enemy.x + dx - player.x, enemy.y + dy - player.y);
+                        if (
+                            range > farthest &&
+                            KinkyDungeonEnemyCanMove(
+                                enemy,
+                                dir,
+                                aiData.MovableTiles,
+                                aiData.AvoidTiles,
+                                aiData.ignoreLocks,
+                                0,
+                            )
+                        ) {
+                            goal = { x: enemy.x + dx, y: enemy.y + dy };
+                            farthest = range;
+                        }
                     }
-                }
                 if (!goal) return true;
                 enemy.gx = goal.x;
                 enemy.gy = goal.y;
@@ -1252,17 +1439,24 @@
     function registerCocoonOuterEvents() {
         if (typeof KDEventMapGeneric == "undefined") return false;
         addRuntimeEvent(KDEventMapGeneric, "tickAfter", COCOON_OUTER_STATE, (_event, data) => {
-            const delta = Number(data && data.delta || 0);
+            const delta = Number((data && data.delta) || 0);
             if (!(delta > 0)) return;
             const state = equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE];
-            if (state && !state.anchored) state.attemptAges = (state.attemptAges || [])
-                .map((age) => age + delta).filter((age) => age < COCOON_STRUGGLE_WINDOW);
+            if (state && !state.anchored)
+                state.attemptAges = (state.attemptAges || [])
+                    .map((age) => age + delta)
+                    .filter((age) => age < COCOON_STRUGGLE_WINDOW);
         });
         addRuntimeEvent(KDEventMapGeneric, "beforeMove", COCOON_OUTER_STATE, () => {
-            if (equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored
-                && typeof KinkyDungeonNoMoveFlag != "undefined") KinkyDungeonNoMoveFlag = true;
+            if (
+                equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored &&
+                typeof KinkyDungeonNoMoveFlag != "undefined"
+            )
+                KinkyDungeonNoMoveFlag = true;
         });
-        addRuntimeEvent(KDEventMapGeneric, "afterDress", COCOON_OUTER_STATE, (_event, data) => syncCocoonOuterPose(data?.Character));
+        addRuntimeEvent(KDEventMapGeneric, "afterDress", COCOON_OUTER_STATE, (_event, data) =>
+            syncCocoonOuterPose(data?.Character),
+        );
         addRuntimeEvent(KDEventMapGeneric, "postRemoval", COCOON_OUTER_STATE, () => syncCocoonOuterPose());
         if (typeof addTextKey == "function") addTextKey(COCOON_ANCHORED_MESSAGE, COCOON_ANCHORED_FALLBACK);
         return true;
@@ -1277,33 +1471,41 @@
             snapshot,
             action: {
                 type: "enemyBind",
-                source: {kind: "enemy", name: entity && entity.Enemy && entity.Enemy.name || profile},
+                source: { kind: "enemy", name: (entity && entity.Enemy && entity.Enemy.name) || profile },
                 profile,
-                random: () => typeof KDRandom == "function" ? KDRandom() : Math.random(),
+                random: () => (typeof KDRandom == "function" ? KDRandom() : Math.random()),
             },
         });
         if (resolution.outcome.cocoonRepair) {
             clearRuntimeWebSpray("cocoon-reinforced");
-            const progressed = applyCocoonRepair(resolution.outcome, snapshot.items.find((item) => item && item.name == COCOON_ID));
-            return {...resolution.outcome, progressed};
+            const progressed = applyCocoonRepair(
+                resolution.outcome,
+                snapshot.items.find((item) => item && item.name == COCOON_ID),
+            );
+            return { ...resolution.outcome, progressed };
         }
         if (!resolution.outcome.selectedId) {
-            return {...resolution.outcome, progressed: false};
+            return { ...resolution.outcome, progressed: false };
         }
         const progressed = applySelectedRestraint(resolution.outcome.selectedId, entity, faction);
         if (progressed && resolution.outcome.selectedId == COCOON_ID) clearRuntimeWebSpray("enemy-cocoon-applied");
-        return {...resolution.outcome, progressed, reason: progressed ? "applied" : "native-add-failed"};
+        return { ...resolution.outcome, progressed, reason: progressed ? "applied" : "native-add-failed" };
     }
 
     function registerEnemyBindEffect() {
         if (typeof KDPlayerEffects == "undefined" || !KDPlayerEffects) return false;
         KDPlayerEffects[ENEMY_BIND_EFFECT] = (_target, _damage, playerEffect, _spell, faction, _bullet, entity) => {
             const profile = playerEffect && playerEffect.profile;
-            if (profile === "Spinner" && (api.SpinnerCapture?.hit(entity) || api.SpinnerField?.suppressesBinding(entity))) return {effect:false};
-            if (_target?.player && api.SpinnerCapture?.state()) return {effect:false};
+            if (
+                profile === "Spinner" &&
+                (api.SpinnerCapture?.hit(entity) || api.SpinnerField?.suppressesBinding(entity))
+            )
+                return { effect: false };
+            if (_target?.player && api.SpinnerCapture?.state()) return { effect: false };
             const outcome = applyEnemyProgression(profile, entity, faction);
-            if (outcome.progressed && entity && profile !== "Spinner" && playerEffect?.consumeOnProgress === true) entity.hp = 0;
-            return {effect: outcome.progressed === true};
+            if (outcome.progressed && entity && profile !== "Spinner" && playerEffect?.consumeOnProgress === true)
+                entity.hp = 0;
+            return { effect: outcome.progressed === true };
         };
         return true;
     }
@@ -1345,8 +1547,8 @@
     function clearRuntimeWebSpray(reason) {
         crossfireMark = null;
         const resolution = resolveWebbingAction({
-            snapshot: {webSpray: runtimeWebSprayState},
-            action: {type: "clearWebSpray", reason},
+            snapshot: { webSpray: runtimeWebSprayState },
+            action: { type: "clearWebSpray", reason },
         });
         runtimeWebSprayState = normalizedWebSprayState(resolution.nextSnapshot.webSpray);
         expireWebSpraySlow();
@@ -1364,8 +1566,8 @@
     function pruneCrossfireMark() {
         const player = typeof KinkyDungeonPlayerEntity != "undefined" ? KinkyDungeonPlayerEntity : undefined;
         const casters = api.activeWebCasters(player);
-        if (crossfireMark && (runtimeWebSprayTurn - crossfireMark.turn > 2
-            || !casters.includes(crossfireMark.caster))) crossfireMark = null;
+        if (crossfireMark && (runtimeWebSprayTurn - crossfireMark.turn > 2 || !casters.includes(crossfireMark.caster)))
+            crossfireMark = null;
         return casters;
     }
 
@@ -1377,23 +1579,35 @@
         const caster = casters.find((entry) => entry.id === sourceId);
         if (!caster) return;
         const partner = crossfireMark && crossfireMark.caster !== caster;
-        crossfireMark = {caster, turn: runtimeWebSprayTurn};
+        crossfireMark = { caster, turn: runtimeWebSprayTurn };
         if (!partner || !primaryApplied || crossfireBonusTurn === runtimeWebSprayTurn) return;
         const catalog = runtimeEnemyCatalog();
         const snapshot = runtimeEnemySnapshot(catalog, caster);
         if (snapshot.items.some((item) => item.name == COCOON_ID)) return;
         // Re-read physical equipment after the ordinary hit; zero slow excludes Cocoon.
         snapshot.webSpray = emptyWebSprayState();
-        const resolution = resolveWebbingAction({catalog, snapshot, action: {
-            type: "enemyBind", profile: "WebCaster", source: {kind: "enemy", name: "WebCaster"},
-            random: () => typeof KDRandom == "function" ? KDRandom() : Math.random(),
-        }});
+        const resolution = resolveWebbingAction({
+            catalog,
+            snapshot,
+            action: {
+                type: "enemyBind",
+                profile: "WebCaster",
+                source: { kind: "enemy", name: "WebCaster" },
+                random: () => (typeof KDRandom == "function" ? KDRandom() : Math.random()),
+            },
+        });
         const id = resolution.outcome.selectedId;
         if (!id || id == COCOON_ID || !applySelectedRestraint(id, caster, faction)) return;
         crossfireBonusTurn = runtimeWebSprayTurn;
         const localized = typeof TextGet == "function" ? TextGet(CROSS_FIRE_MESSAGE) : CROSS_FIRE_MESSAGE;
-        if (typeof KinkyDungeonSendActionMessage == "function") KinkyDungeonSendActionMessage(8,
-            localized && localized != CROSS_FIRE_MESSAGE ? localized : CROSS_FIRE_FALLBACK, "orange", 3, true);
+        if (typeof KinkyDungeonSendActionMessage == "function")
+            KinkyDungeonSendActionMessage(
+                8,
+                localized && localized != CROSS_FIRE_MESSAGE ? localized : CROSS_FIRE_FALLBACK,
+                "orange",
+                3,
+                true,
+            );
     }
 
     // Runtime integration stays below the pure resolver so KD event quirks cannot leak into state rules.
@@ -1402,7 +1616,7 @@
         if (typeof KDPlayerEffects != "undefined" && KDPlayerEffects) {
             KDPlayerEffects[WEBSPRAY_EFFECT] = (_target, _damage, playerEffect, _spell, faction, bullet, entity) => {
                 // Already airborne Spiderlings spray also waits out the capture; NPC routes are separate.
-                if (_target?.player && api.SpinnerCapture?.state()) return {sfx:"Null",effect:false};
+                if (_target?.player && api.SpinnerCapture?.state()) return { sfx: "Null", effect: false };
                 const catalog = runtimeEnemyCatalog();
                 const snapshot = runtimeEnemySnapshot(catalog, entity);
                 snapshot.webSpray = runtimeWebSprayState;
@@ -1415,26 +1629,30 @@
                         triggerSource: playerEffect && playerEffect.triggerSource,
                         profile: "WebCaster",
                         turn: runtimeWebSprayTurn,
-                        random: () => typeof KDRandom == "function" ? KDRandom() : Math.random(),
-                        position: bullet ? {x: bullet.x, y: bullet.y} : undefined,
+                        random: () => (typeof KDRandom == "function" ? KDRandom() : Math.random()),
+                        position: bullet ? { x: bullet.x, y: bullet.y } : undefined,
                     },
                 });
                 runtimeWebSprayState = normalizedWebSprayState(resolution.nextSnapshot.webSpray);
                 if (resolution.outcome.clearSlow) expireWebSpraySlow();
-                if (!resolution.outcome.accepted) return {sfx: "Null", effect: false};
+                if (!resolution.outcome.accepted) return { sfx: "Null", effect: false };
                 api.Combat.damagePlayer(playerEffect.triggerSource);
                 if (resolution.outcome.cocoonRepair) {
-                    const repaired = applyCocoonRepair(resolution.outcome, snapshot.items.find((item) => item && item.name == COCOON_ID));
+                    const repaired = applyCocoonRepair(
+                        resolution.outcome,
+                        snapshot.items.find((item) => item && item.name == COCOON_ID),
+                    );
                     expireWebSpraySlow();
-                    return {sfx: "Null", effect: repaired};
+                    return { sfx: "Null", effect: repaired };
                 }
                 syncWebSpraySlow();
                 if (resolution.outcome.selectedId) {
                     const applied = applySelectedRestraint(resolution.outcome.selectedId, entity, faction);
-                    if (applied && resolution.outcome.selectedId == COCOON_ID) clearRuntimeWebSpray("webspray-cocoon-applied");
+                    if (applied && resolution.outcome.selectedId == COCOON_ID)
+                        clearRuntimeWebSpray("webspray-cocoon-applied");
                     else applyCrossfireBonus(playerEffect, bullet, entity, faction, applied);
                 }
-                return {sfx: "Null", effect: true};
+                return { sfx: "Null", effect: true };
             };
         }
         if (typeof KDEventMapGeneric == "undefined") return false;
@@ -1445,11 +1663,11 @@
             }
         });
         addRuntimeEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsWebSprayInactivity", (_event, data) => {
-            const delta = Number(data && data.delta || 0);
+            const delta = Number((data && data.delta) || 0);
             if (!(delta > 0)) return;
             const resolution = resolveWebbingAction({
-                snapshot: {webSpray: runtimeWebSprayState},
-                action: {type: "webSprayTurnElapsed", turn: runtimeWebSprayTurn, delta},
+                snapshot: { webSpray: runtimeWebSprayState },
+                action: { type: "webSprayTurnElapsed", turn: runtimeWebSprayTurn, delta },
             });
             runtimeWebSprayState = normalizedWebSprayState(resolution.nextSnapshot.webSpray);
             runtimeWebSprayTurn += delta;
@@ -1457,7 +1675,9 @@
             syncWebSpraySlow();
         });
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro"]) {
-            addRuntimeEvent(KDEventMapGeneric, trigger, "SpiderlingsWebSprayClear", () => clearRuntimeWebSpray(trigger));
+            addRuntimeEvent(KDEventMapGeneric, trigger, "SpiderlingsWebSprayClear", () =>
+                clearRuntimeWebSpray(trigger),
+            );
         }
         return true;
     }
@@ -1466,8 +1686,12 @@
         if (typeof KDEventMapGeneric == "undefined") return false;
         addRuntimeEvent(KDEventMapGeneric, "beforeDamage", PLAYER_HIT_DAMAGE_EVENT, (_event, data) => {
             const source = data?.attacker || data?.enemy;
-            if (!["Spinner", "Jumper"].includes(source?.Enemy?.name)
-                || !data.target?.player || !data.attack?.includes("Effect")) return;
+            if (
+                !["Spinner", "Jumper"].includes(source?.Enemy?.name) ||
+                !data.target?.player ||
+                !data.attack?.includes("Effect")
+            )
+                return;
             data.damage = api.Combat.damageInfo("melee").damage;
         });
         return true;
@@ -1476,59 +1700,82 @@
     function registerRestraints() {
         if (!api.restraintCatalog || typeof api.restraintCatalog.register != "function") return false;
         for (const stage of ["Lv1", "Lv2", "Lv3"]) {
-          for (const definition of FAMILY_DATA.filter((entry) => stageFamilies(stage).includes(entry.family))) {
-            const id = `SpiderlingsWebbing${stage}${definition.family}`;
-            const model = `${id}Model`;
-            const familyLayerTag = `SpiderlingsWebbing${definition.linkFamily || definition.family}Layer`;
-            const text = [...definition.text[stage]];
-            api.restraintCatalog.register({
-                id,
-                module: definition.family,
-                stage,
-                model,
-                restraint: {
-                name: id,
-                inventory: true,
-                unlimited: true,
-                accessible: true,
-                Asset: "DuctTape",
-                Model: model,
-                Color: "#ffffff",
-                Group: definition.group,
-                ...(definition.mechanics || {}),
-                ...(definition.stageMechanics && definition.stageMechanics[stage] || {}),
-                power: stageNumber(stage),
-                weight: 0,
-                escapeChance: {Cut: LV1_ESCAPE_CHANCE, Remove: LV1_ESCAPE_CHANCE, Struggle: LV1_ESCAPE_CHANCE},
-                affinity: {},
-                helpChance: {},
-                failSuffix: {},
-                customEscapeSucc: "SpiderlingsWebbing",
-                alwaysEscapable: [...ESCAPE_METHODS],
-                enemyTags: {},
-                playerTags: {},
-                minLevel: 0,
-                allFloors: true,
-                shrine: ["Wrapping", "Latex", `SpiderlingsWebbing${stage}`, familyLayerTag, ...(definition.shrine || [])],
-                addTag: [...(definition.addTag || [])],
-                LinkableBy: [familyLayerTag, ...(definition.linkableBy || []),
-                    ...(definition.family == "Blindfold" ? ["SpiderlingsWebbingHoodLayer"] : []),
-                    ...(definition.family == "Hood" ? ["SpiderlingsWebbingBlindfoldLayer"] : [])],
-                renderWhenLinked: [...(definition.renderWhenLinked || [])],
-                events: [
-                    {inheritLinked: true, trigger: "postApply", type: MANUAL_NORMALIZE_EVENT},
-                    {inheritLinked: true, trigger: "struggle", type: ESCAPE_SOUND_EVENT},
-                    {inheritLinked: true, trigger: "beforeSuccessRemove", type: ESCAPE_SOUND_EVENT},
-                    ...(stage != "Lv1" ? [
-                        {inheritLinked: true, trigger: "beforeStruggleCalc", type: stage == "Lv2" ? LV2_ESCAPE_EVENT : LV3_ESCAPE_EVENT},
-                        {inheritLinked: true, trigger: "struggle", type: stage == "Lv2" ? LV2_ESCAPE_EVENT : LV3_ESCAPE_EVENT},
-                    ] : []),
-                    {inheritLinked: true, trigger: "beforeSuccessRemove", type: FINAL_ESCAPE_EVENT},
-                ],
-                },
-                text,
-            });
-          }
+            for (const definition of FAMILY_DATA.filter((entry) => stageFamilies(stage).includes(entry.family))) {
+                const id = `SpiderlingsWebbing${stage}${definition.family}`;
+                const model = `${id}Model`;
+                const familyLayerTag = `SpiderlingsWebbing${definition.linkFamily || definition.family}Layer`;
+                const text = [...definition.text[stage]];
+                api.restraintCatalog.register({
+                    id,
+                    module: definition.family,
+                    stage,
+                    model,
+                    restraint: {
+                        name: id,
+                        inventory: true,
+                        unlimited: true,
+                        accessible: true,
+                        Asset: "DuctTape",
+                        Model: model,
+                        Color: "#ffffff",
+                        Group: definition.group,
+                        ...(definition.mechanics || {}),
+                        ...((definition.stageMechanics && definition.stageMechanics[stage]) || {}),
+                        power: stageNumber(stage),
+                        weight: 0,
+                        escapeChance: {
+                            Cut: LV1_ESCAPE_CHANCE,
+                            Remove: LV1_ESCAPE_CHANCE,
+                            Struggle: LV1_ESCAPE_CHANCE,
+                        },
+                        affinity: {},
+                        helpChance: {},
+                        failSuffix: {},
+                        customEscapeSucc: "SpiderlingsWebbing",
+                        alwaysEscapable: [...ESCAPE_METHODS],
+                        enemyTags: {},
+                        playerTags: {},
+                        minLevel: 0,
+                        allFloors: true,
+                        shrine: [
+                            "Wrapping",
+                            "Latex",
+                            `SpiderlingsWebbing${stage}`,
+                            familyLayerTag,
+                            ...(definition.shrine || []),
+                        ],
+                        addTag: [...(definition.addTag || [])],
+                        LinkableBy: [
+                            familyLayerTag,
+                            ...(definition.linkableBy || []),
+                            ...(definition.family == "Blindfold" ? ["SpiderlingsWebbingHoodLayer"] : []),
+                            ...(definition.family == "Hood" ? ["SpiderlingsWebbingBlindfoldLayer"] : []),
+                        ],
+                        renderWhenLinked: [...(definition.renderWhenLinked || [])],
+                        events: [
+                            { inheritLinked: true, trigger: "postApply", type: MANUAL_NORMALIZE_EVENT },
+                            { inheritLinked: true, trigger: "struggle", type: ESCAPE_SOUND_EVENT },
+                            { inheritLinked: true, trigger: "beforeSuccessRemove", type: ESCAPE_SOUND_EVENT },
+                            ...(stage != "Lv1"
+                                ? [
+                                      {
+                                          inheritLinked: true,
+                                          trigger: "beforeStruggleCalc",
+                                          type: stage == "Lv2" ? LV2_ESCAPE_EVENT : LV3_ESCAPE_EVENT,
+                                      },
+                                      {
+                                          inheritLinked: true,
+                                          trigger: "struggle",
+                                          type: stage == "Lv2" ? LV2_ESCAPE_EVENT : LV3_ESCAPE_EVENT,
+                                      },
+                                  ]
+                                : []),
+                            { inheritLinked: true, trigger: "beforeSuccessRemove", type: FINAL_ESCAPE_EVENT },
+                        ],
+                    },
+                    text,
+                });
+            }
         }
         api.restraintCatalog.register({
             id: COCOON_ID,
@@ -1549,8 +1796,8 @@
                 Group: "ItemDevices",
                 power: 10,
                 weight: 0,
-                escapeChance: {...COCOON_ESCAPE_CHANCE},
-                limitChance: {Cut: 0, Struggle: 0, Remove: 0},
+                escapeChance: { ...COCOON_ESCAPE_CHANCE },
+                limitChance: { Cut: 0, Struggle: 0, Remove: 0 },
                 affinity: {},
                 helpChance: {},
                 failSuffix: {},
@@ -1565,12 +1812,12 @@
                 LinkableBy: [],
                 renderWhenLinked: [],
                 events: [
-                    {inheritLinked: true, trigger: "postApply", type: COCOON_APPLY_EVENT},
-                    {inheritLinked: true, trigger: "struggle", type: ESCAPE_SOUND_EVENT},
-                    {inheritLinked: true, trigger: "beforeSuccessRemove", type: ESCAPE_SOUND_EVENT},
-                    {inheritLinked: true, trigger: "beforeStruggleCalc", type: COCOON_ESCAPE_EVENT},
-                    {inheritLinked: true, trigger: "struggle", type: COCOON_ESCAPE_EVENT},
-                    {inheritLinked: true, trigger: "beforeSuccessRemove", type: FINAL_ESCAPE_EVENT},
+                    { inheritLinked: true, trigger: "postApply", type: COCOON_APPLY_EVENT },
+                    { inheritLinked: true, trigger: "struggle", type: ESCAPE_SOUND_EVENT },
+                    { inheritLinked: true, trigger: "beforeSuccessRemove", type: ESCAPE_SOUND_EVENT },
+                    { inheritLinked: true, trigger: "beforeStruggleCalc", type: COCOON_ESCAPE_EVENT },
+                    { inheritLinked: true, trigger: "struggle", type: COCOON_ESCAPE_EVENT },
+                    { inheritLinked: true, trigger: "beforeSuccessRemove", type: FINAL_ESCAPE_EVENT },
                 ],
             },
             text: [
@@ -1585,8 +1832,13 @@
     function registerManualNormalizeEvent() {
         if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
-            if (typeof KinkyDungeonFlags == "undefined" || !KinkyDungeonFlags
-                || typeof KinkyDungeonFlags.get != "function" || !KinkyDungeonFlags.get("SelfBondage")) return;
+            if (
+                typeof KinkyDungeonFlags == "undefined" ||
+                !KinkyDungeonFlags ||
+                typeof KinkyDungeonFlags.get != "function" ||
+                !KinkyDungeonFlags.get("SelfBondage")
+            )
+                return;
             const added = data && data.item ? data.item : item;
             const descriptor = DEFAULT_DESCRIPTOR_MAP.get(added && added.name);
             if (descriptor && stageNumber(descriptor.stage)) scheduleManualNormalization(descriptor.group);
@@ -1614,15 +1866,25 @@
         if (typeof KDEventMapInventory == "undefined") return false;
         const beforeHandler = (_event, item, data) => {
             if (item) pendingCountedEscapes.delete(item);
-            if (!data || item !== data.restraint || item.name != COCOON_ID || data.query
-                || !ESCAPE_METHODS.includes(data.struggleType)) return;
+            if (
+                !data ||
+                item !== data.restraint ||
+                item.name != COCOON_ID ||
+                data.query ||
+                !ESCAPE_METHODS.includes(data.struggleType)
+            )
+                return;
             if (data.struggleType == "Cut" && data.canCut === false) return;
             const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
-            if (data.struggleGroup && typeof KDGroupBlocked == "function"
-                && KDGroupBlocked(data.struggleGroup) && !(definition && definition.alwaysStruggleable)) return;
+            if (
+                data.struggleGroup &&
+                typeof KDGroupBlocked == "function" &&
+                KDGroupBlocked(data.struggleGroup) &&
+                !(definition && definition.alwaysStruggleable)
+            )
+                return;
             const cost = Number(data.cost || 0);
-            const hasStamina = typeof KinkyDungeonHasStamina != "function"
-                || KinkyDungeonHasStamina(-cost, true);
+            const hasStamina = typeof KinkyDungeonHasStamina != "function" || KinkyDungeonHasStamina(-cost, true);
             if (!hasStamina) return;
 
             const requiredActions = COCOON_ESCAPE_ACTIONS[data.struggleType];
@@ -1650,9 +1912,15 @@
         const afterHandler = (_event, item, data) => {
             const armedMethod = item && pendingCountedEscapes.get(item);
             if (item) pendingCountedEscapes.delete(item);
-            if (!data || item !== data.restraint || item.name != COCOON_ID || data.result != "Fail"
-                || armedMethod != data.struggleType
-                || !ESCAPE_METHODS.includes(data.struggleType)) return;
+            if (
+                !data ||
+                item !== data.restraint ||
+                item.name != COCOON_ID ||
+                data.result != "Fail" ||
+                armedMethod != data.struggleType ||
+                !ESCAPE_METHODS.includes(data.struggleType)
+            )
+                return;
             const increment = 1 / COCOON_ESCAPE_ACTIONS[data.struggleType];
             if (data.struggleType == "Cut") item.cutProgress = Math.max(0, Number(item.cutProgress || 0)) + increment;
             else item.struggleProgress = Math.max(0, Number(item.struggleProgress || 0)) + increment;
@@ -1671,15 +1939,26 @@
         };
         const beforeHandler = (_event, item, data) => {
             if (item) pendingCountedEscapes.delete(item);
-            if (!data || item !== data.restraint || !isStage(item) || data.query
-                || !ESCAPE_METHODS.includes(data.struggleType)) return;
+            if (
+                !data ||
+                item !== data.restraint ||
+                !isStage(item) ||
+                data.query ||
+                !ESCAPE_METHODS.includes(data.struggleType)
+            )
+                return;
             if (data.struggleType == "Cut" && data.canCut === false) return;
             const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
-            if (data.struggleGroup && typeof KDGroupBlocked == "function"
-                && KDGroupBlocked(data.struggleGroup) && !(definition && definition.alwaysStruggleable)) return;
+            if (
+                data.struggleGroup &&
+                typeof KDGroupBlocked == "function" &&
+                KDGroupBlocked(data.struggleGroup) &&
+                !(definition && definition.alwaysStruggleable)
+            )
+                return;
             const cost = Number(data.cost || 0);
             if (typeof KinkyDungeonHasStamina == "function" && !KinkyDungeonHasStamina(-cost, true)) return;
-            const progress = Math.max(0, Number(item.data && item.data[ESCAPE_PROGRESS_KEY] || 0));
+            const progress = Math.max(0, Number((item.data && item.data[ESCAPE_PROGRESS_KEY]) || 0));
             if (progress >= DEFAULT_DESCRIPTOR_MAP.get(item.name).requiredActions - 1) {
                 item.cutProgress = 1;
                 data.escapeChance = 1;
@@ -1697,9 +1976,15 @@
         const afterHandler = (_event, item, data) => {
             const armedMethod = item && pendingCountedEscapes.get(item);
             if (item) pendingCountedEscapes.delete(item);
-            if (!data || item !== data.restraint || !isStage(item) || data.result != "Fail"
-                || armedMethod != data.struggleType
-                || !ESCAPE_METHODS.includes(data.struggleType)) return;
+            if (
+                !data ||
+                item !== data.restraint ||
+                !isStage(item) ||
+                data.result != "Fail" ||
+                armedMethod != data.struggleType ||
+                !ESCAPE_METHODS.includes(data.struggleType)
+            )
+                return;
             item.data = item.data || {};
             item.data[ESCAPE_PROGRESS_KEY] = Math.max(0, Number(item.data[ESCAPE_PROGRESS_KEY] || 0)) + 1;
         };
@@ -1724,16 +2009,21 @@
         if (typeof KinkyDungeonStruggle != "function" || typeof TextGet != "function") return;
         let currentAttempt;
         const nativeStruggle = KinkyDungeonStruggle;
-        KinkyDungeonStruggle = function(group, method, index, query) {
+        KinkyDungeonStruggle = function (group, method, index, query) {
             const previous = currentAttempt;
-            const item = playerStruggleTarget({group, index});
-            currentAttempt = !query && isSpiderlingsRestraint(item) && ESCAPE_METHODS.includes(method)
-                ? {item, method} : undefined;
-            try { return nativeStruggle.apply(this, arguments); }
-            finally { currentAttempt = previous; }
+            const item = playerStruggleTarget({ group, index });
+            currentAttempt =
+                !query && isSpiderlingsRestraint(item) && ESCAPE_METHODS.includes(method)
+                    ? { item, method }
+                    : undefined;
+            try {
+                return nativeStruggle.apply(this, arguments);
+            } finally {
+                currentAttempt = previous;
+            }
         };
         const nativeText = TextGet;
-        TextGet = function(key) {
+        TextGet = function (key) {
             const attempt = currentAttempt;
             if (attempt && pendingCountedEscapes.get(attempt.item) === attempt.method) {
                 const prefix = "KinkyDungeonStruggle" + attempt.method + "Fail";
@@ -1749,7 +2039,7 @@
     function registerFinalEscapeEvent() {
         if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
-            const target = data && (data.restraint || data.item) ? (data.restraint || data.item) : item;
+            const target = data && (data.restraint || data.item) ? data.restraint || data.item : item;
             if (!isSpiderlingsRestraint(target) || !data) return;
             data.destroyChance = data.struggleType == "Cut" ? 1 : 0;
         };
@@ -1760,8 +2050,13 @@
     function registerEscapeSoundEvent() {
         if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
-            if (!data || item !== data.restraint || !["Remove", "Struggle"].includes(data.struggleType)
-                || !isSpiderlingsRestraint(item)) return;
+            if (
+                !data ||
+                item !== data.restraint ||
+                !["Remove", "Struggle"].includes(data.struggleType) ||
+                !isSpiderlingsRestraint(item)
+            )
+                return;
             const sound = ESCAPE_SOUNDS[Math.floor(Math.random() * ESCAPE_SOUNDS.length)];
             KinkyDungeonPlaySound(KinkyDungeonRootDirectory + sound);
         };
@@ -1775,9 +2070,8 @@
         if (!data || typeof KinkyDungeonGetRestraintItem != "function") return undefined;
         const root = KinkyDungeonGetRestraintItem(data.group);
         if (!root || !data.index) return root;
-        const surface = typeof KDDynamicLinkListSurface == "function"
-            ? KDDynamicLinkListSurface(root)
-            : chainFrom(root);
+        const surface =
+            typeof KDDynamicLinkListSurface == "function" ? KDDynamicLinkListSurface(root) : chainFrom(root);
         return surface[data.index] || root;
     }
 
@@ -1788,10 +2082,10 @@
     }
 
     function showPairedOuterGateMessage(inner, outer) {
-        const localized = typeof TextGet == "function" ? TextGet(PAIRED_OUTER_GATE_MESSAGE_KEY) : PAIRED_OUTER_GATE_MESSAGE_KEY;
-        const template = localized && localized != PAIRED_OUTER_GATE_MESSAGE_KEY
-            ? localized
-            : PAIRED_OUTER_GATE_MESSAGE_FALLBACK;
+        const localized =
+            typeof TextGet == "function" ? TextGet(PAIRED_OUTER_GATE_MESSAGE_KEY) : PAIRED_OUTER_GATE_MESSAGE_KEY;
+        const template =
+            localized && localized != PAIRED_OUTER_GATE_MESSAGE_KEY ? localized : PAIRED_OUTER_GATE_MESSAGE_FALLBACK;
         const message = template
             .replace("TargetLv1", restraintDisplayName(inner))
             .replace("TargetLv2", restraintDisplayName(outer));
@@ -1805,29 +2099,32 @@
     }
 
     function registerPairedOuterLayerGate() {
-        if (typeof addTextKey == "function") addTextKey(PAIRED_OUTER_GATE_MESSAGE_KEY, PAIRED_OUTER_GATE_MESSAGE_FALLBACK);
+        if (typeof addTextKey == "function")
+            addTextKey(PAIRED_OUTER_GATE_MESSAGE_KEY, PAIRED_OUTER_GATE_MESSAGE_FALLBACK);
         // Keep native link indices intact: hide actions, not the linked items.
         // Both HUD layouts and the player restraint context menu use these lists.
         if (typeof KDGetStruggleButtons == "function" && !KDGetStruggleButtons[PAIRED_OUTER_GATE_MARKER]) {
             const nativeButtons = KDGetStruggleButtons;
-            KDGetStruggleButtons = function(data) {
+            KDGetStruggleButtons = function (data) {
                 return pairedOuterLayerFor(data && data.item) ? [] : nativeButtons.apply(this, arguments);
             };
             KDGetStruggleButtons[PAIRED_OUTER_GATE_MARKER] = true;
         }
         if (typeof KDGetStruggleContextMenu == "function" && !KDGetStruggleContextMenu[PAIRED_OUTER_GATE_MARKER]) {
             const nativeMenu = KDGetStruggleContextMenu;
-            KDGetStruggleContextMenu = function(item, sg, target, entity) {
+            KDGetStruggleContextMenu = function (item, sg, target, entity) {
                 return target && target.player && pairedOuterLayerFor(item) ? [] : nativeMenu.apply(this, arguments);
             };
             KDGetStruggleContextMenu[PAIRED_OUTER_GATE_MARKER] = true;
         }
-        if (typeof KDInputTypes == "undefined" || !KDInputTypes || typeof KDInputTypes.struggle != "function") return false;
+        if (typeof KDInputTypes == "undefined" || !KDInputTypes || typeof KDInputTypes.struggle != "function")
+            return false;
         const nativeStruggleInput = KDInputTypes.struggle;
         if (nativeStruggleInput[PAIRED_OUTER_GATE_MARKER]) return true;
         const guardedStruggleInput = (data) => {
             const target = playerStruggleTarget(data);
-            const outer = target && ESCAPE_METHODS.includes(data && data.type) ? pairedOuterLayerFor(target) : undefined;
+            const outer =
+                target && ESCAPE_METHODS.includes(data && data.type) ? pairedOuterLayerFor(target) : undefined;
             if (!outer) return nativeStruggleInput(data);
             showPairedOuterGateMessage(target, outer);
             return "Blocked";
@@ -1845,11 +2142,14 @@
         const id = "SpiderlingsCocoonStart";
         if (typeof addTextKey == "function") {
             addTextKey("KinkyDungeonStat" + id, "Silken Awakening");
-            addTextKey("KinkyDungeonStatDesc" + id, "You awaken in a soft cocoon, completely wrapped from head to toe in close-woven layers of spider silk. Each small movement tugs at the threads nestled against you.");
+            addTextKey(
+                "KinkyDungeonStatDesc" + id,
+                "You awaken in a soft cocoon, completely wrapped from head to toe in close-woven layers of spider silk. Each small movement tugs at the threads nestled against you.",
+            );
         }
         if (typeof KinkyDungeonStatsPresets == "undefined" || typeof KDPerkStart == "undefined") return;
         // Native KD displays twice the internal cost: -1 grants two perk points.
-        KinkyDungeonStatsPresets[id] = {id, category: "Start", cost: -1, startPriority: 1100, tags: ["start"]};
+        KinkyDungeonStatsPresets[id] = { id, category: "Start", cost: -1, startPriority: 1100, tags: ["start"] };
         KDPerkStart[id] = () => {
             // Native KDInitPerks invokes this only for a selected new-game perk.
             // Equip from the innermost layer outward so every physical item remains linked.
@@ -1868,23 +2168,23 @@
     function completeEffectiveEscape(id, method, options = {}) {
         const catalog = options.catalog || defaultLifecycleCatalog();
         const item = options.item || equippedItem(id);
-        if (!item) return {completed: false, id, method, reason: "not-equipped"};
-        const progress = Number(item.data && item.data[ESCAPE_PROGRESS_KEY] || 0);
+        if (!item) return { completed: false, id, method, reason: "not-equipped" };
+        const progress = Number((item.data && item.data[ESCAPE_PROGRESS_KEY]) || 0);
         const resolution = resolveWebbingAction({
             catalog,
-            snapshot: {items: [item]},
-            action: {type: "escapeAttempt", item, method, effective: options.legal === true, progress},
+            snapshot: { items: [item] },
+            action: { type: "escapeAttempt", item, method, effective: options.legal === true, progress },
         });
         const outcome = resolution.outcome;
-        if (!outcome.progressed) return {id, method, ...outcome};
+        if (!outcome.progressed) return { id, method, ...outcome };
         item.data = item.data || {};
         item.data[ESCAPE_PROGRESS_KEY] = outcome.effectiveActions;
-        if (!outcome.completed) return {id, method, ...outcome};
+        if (!outcome.completed) return { id, method, ...outcome };
         const completed = kdAdapter.remove(item, method);
-        return {id, method, ...outcome, completed};
+        return { id, method, ...outcome, completed };
     }
 
-    const webbing = api.Webbing = Object.freeze({
+    const webbing = (api.Webbing = Object.freeze({
         ARM_ID,
         COCOON_APPLY_EVENT,
         COCOON_ESCAPE_ACTIONS,
@@ -1927,7 +2227,7 @@
         equipForDebug,
         pairedOuterLayerFor,
         resolveWebbingAction,
-    });
+    }));
 
     registerRestraints();
     registerCocoonStart();

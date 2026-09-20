@@ -4,14 +4,14 @@
 // KD loads mod files as global scripts, so a namespace is safer than many globals.
 // KD 会把 mod 文件作为全局脚本加载，因此使用命名空间比散落多个全局变量更安全。
 (() => {
-    const api = globalThis.Spiderlings = globalThis.Spiderlings || {};
+    const api = (globalThis.Spiderlings = globalThis.Spiderlings || {});
 
     // KD 5.5.3 summon messages use KDPlayer() when the caster is gone.
     // KDIsSubbier then calls the NPC-only KDCanDom on that player, which has
     // no Enemy definition. Keep player pronouns/messages and all NPC checks.
     if (typeof KDIsSubbier == "function") {
         const nativeIsSubbier = KDIsSubbier;
-        KDIsSubbier = function(player, enemy) {
+        KDIsSubbier = function (player, enemy) {
             if (enemy?.player) return false;
             return nativeIsSubbier.apply(this, arguments);
         };
@@ -20,32 +20,101 @@
     // Mod configuration constants / Mod 配置常量。
     const MOD_ID = "Spiderlings";
     const MOD_CONFIG = [
-        {type: "boolean", name: "spiderlingsPinkWebbing", refvar: "spiderlingsPinkWebbing", default: false, block: undefined},
-        {type: "boolean", name: "spiderlingsSquad", refvar: "spiderlingsSquad", default: true, block: undefined},
-        {type: "text", refvar: "spiderlingsMapPopulationCap"},
-        {type: "string", name: "spiderlingsMapPopulationCap", refvar: "spiderlingsMapPopulationCap", default: "25", block: undefined},
-        {type: "text", refvar: "spiderlingsNestSummonWeights"},
-        {type: "range", name: "spiderlingsNestSpinnerWeight", refvar: "spiderlingsNestSpinnerWeight", default: 2, rangelow: 0, rangehigh: 10, stepcount: 1, block: undefined},
-        {type: "range", name: "spiderlingsNestJumperWeight", refvar: "spiderlingsNestJumperWeight", default: 2, rangelow: 0, rangehigh: 10, stepcount: 1, block: undefined},
-        {type: "range", name: "spiderlingsNestWebCasterWeight", refvar: "spiderlingsNestWebCasterWeight", default: 2, rangelow: 0, rangehigh: 10, stepcount: 1, block: undefined},
-        {type: "range", name: "spiderlingsNestTunnelerWeight", refvar: "spiderlingsNestTunnelerWeight", default: 1, rangelow: 0, rangehigh: 10, stepcount: 1, block: undefined},
-        {type: "text", refvar: "spiderlingsNestReinforcementControl"},
-        {type: "string", name: "spiderlingsNestReinforcementCap", refvar: "spiderlingsNestReinforcementCap", default: "6", block: undefined},
-        {type: "text", refvar: "spiderlingsNestTunnelerCap"},
-        {type: "string", name: "spiderlingsNestTunnelerCap", refvar: "spiderlingsNestTunnelerCap", default: "3", block: undefined},
-        {type: "range", name: "spiderlingsNestReinforcementInterval", refvar: "spiderlingsNestReinforcementInterval", default: 2, rangelow: 2, rangehigh: 20, stepcount: 1, block: undefined},
+        {
+            type: "boolean",
+            name: "spiderlingsPinkWebbing",
+            refvar: "spiderlingsPinkWebbing",
+            default: false,
+            block: undefined,
+        },
+        { type: "boolean", name: "spiderlingsSquad", refvar: "spiderlingsSquad", default: true, block: undefined },
+        { type: "text", refvar: "spiderlingsMapPopulationCap" },
+        {
+            type: "string",
+            name: "spiderlingsMapPopulationCap",
+            refvar: "spiderlingsMapPopulationCap",
+            default: "25",
+            block: undefined,
+        },
+        { type: "text", refvar: "spiderlingsNestSummonWeights" },
+        {
+            type: "range",
+            name: "spiderlingsNestSpinnerWeight",
+            refvar: "spiderlingsNestSpinnerWeight",
+            default: 2,
+            rangelow: 0,
+            rangehigh: 10,
+            stepcount: 1,
+            block: undefined,
+        },
+        {
+            type: "range",
+            name: "spiderlingsNestJumperWeight",
+            refvar: "spiderlingsNestJumperWeight",
+            default: 2,
+            rangelow: 0,
+            rangehigh: 10,
+            stepcount: 1,
+            block: undefined,
+        },
+        {
+            type: "range",
+            name: "spiderlingsNestWebCasterWeight",
+            refvar: "spiderlingsNestWebCasterWeight",
+            default: 2,
+            rangelow: 0,
+            rangehigh: 10,
+            stepcount: 1,
+            block: undefined,
+        },
+        {
+            type: "range",
+            name: "spiderlingsNestTunnelerWeight",
+            refvar: "spiderlingsNestTunnelerWeight",
+            default: 1,
+            rangelow: 0,
+            rangehigh: 10,
+            stepcount: 1,
+            block: undefined,
+        },
+        { type: "text", refvar: "spiderlingsNestReinforcementControl" },
+        {
+            type: "string",
+            name: "spiderlingsNestReinforcementCap",
+            refvar: "spiderlingsNestReinforcementCap",
+            default: "6",
+            block: undefined,
+        },
+        { type: "text", refvar: "spiderlingsNestTunnelerCap" },
+        {
+            type: "string",
+            name: "spiderlingsNestTunnelerCap",
+            refvar: "spiderlingsNestTunnelerCap",
+            default: "3",
+            block: undefined,
+        },
+        {
+            type: "range",
+            name: "spiderlingsNestReinforcementInterval",
+            refvar: "spiderlingsNestReinforcementInterval",
+            default: 2,
+            rangelow: 2,
+            rangehigh: 20,
+            stepcount: 1,
+            block: undefined,
+        },
     ];
 
     // Nest reinforcement population weights / 巢穴增援种群权重。
     const SHARED_SPIDERLING_OPTIONS = Object.freeze([
-        Object.freeze({enemy: "Spinner", refvar: "spiderlingsNestSpinnerWeight", default: 2}),
-        Object.freeze({enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 2}),
-        Object.freeze({enemy: "WebCaster", refvar: "spiderlingsNestWebCasterWeight", default: 2}),
-        Object.freeze({enemy: "Tunneler", refvar: "spiderlingsNestTunnelerWeight", default: 1}),
+        Object.freeze({ enemy: "Spinner", refvar: "spiderlingsNestSpinnerWeight", default: 2 }),
+        Object.freeze({ enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 2 }),
+        Object.freeze({ enemy: "WebCaster", refvar: "spiderlingsNestWebCasterWeight", default: 2 }),
+        Object.freeze({ enemy: "Tunneler", refvar: "spiderlingsNestTunnelerWeight", default: 1 }),
     ]);
-    const DEFAULT_SPIDERLING_WEIGHTS = Object.freeze(Object.fromEntries(
-        SHARED_SPIDERLING_OPTIONS.map((option) => [option.enemy, option.default])
-    ));
+    const DEFAULT_SPIDERLING_WEIGHTS = Object.freeze(
+        Object.fromEntries(SHARED_SPIDERLING_OPTIONS.map((option) => [option.enemy, option.default])),
+    );
     const NORMAL_SPIDERLING_WEIGHTS = Object.freeze({
         Spinner: 12,
         Jumper: 12,
@@ -86,10 +155,12 @@
     }
 
     function normalizeSpiderlingWeights(weights = {}) {
-        return Object.fromEntries(SHARED_SPIDERLING_OPTIONS.map((option) => [
-            option.enemy,
-            clampSpiderlingWeight(weights[option.enemy], option.default),
-        ]));
+        return Object.fromEntries(
+            SHARED_SPIDERLING_OPTIONS.map((option) => [
+                option.enemy,
+                clampSpiderlingWeight(weights[option.enemy], option.default),
+            ]),
+        );
     }
 
     function selectWeightedSpiderling(weights = {}, random = Math.random) {
@@ -110,11 +181,9 @@
     function nativePopulationOverrides(name, tags = {}) {
         const weight = NORMAL_SPIDERLING_WEIGHTS[name];
         if (weight == undefined) return null;
-        const normalizedTags = Array.isArray(tags)
-            ? tags.filter((tag) => tag != "minor")
-            : Object.assign({}, tags);
+        const normalizedTags = Array.isArray(tags) ? tags.filter((tag) => tag != "minor") : Object.assign({}, tags);
         if (!Array.isArray(normalizedTags)) delete normalizedTags.minor;
-        return {weight, tags: normalizedTags};
+        return { weight, tags: normalizedTags };
     }
 
     function pointKey(pointOrX, y) {
@@ -130,8 +199,16 @@
     }
 
     function isSquadCellLegal(cell, options = {}) {
-        if (!cell || !Number.isInteger(cell.x) || !Number.isInteger(cell.y)
-            || cell.x <= 0 || cell.y <= 0 || cell.x >= options.width || cell.y >= options.height) return false;
+        if (
+            !cell ||
+            !Number.isInteger(cell.x) ||
+            !Number.isInteger(cell.y) ||
+            cell.x <= 0 ||
+            cell.y <= 0 ||
+            cell.x >= options.width ||
+            cell.y >= options.height
+        )
+            return false;
         if (options.isMovable && !options.isMovable(cell)) return false;
         if (options.isOccupied && options.isOccupied(cell)) return false;
         if (options.isOffLimits && options.isOffLimits(cell)) return false;
@@ -146,7 +223,7 @@
         const result = [];
         for (let y = 1; y < options.height; y += 1) {
             for (let x = 1; x < options.width; x += 1) {
-                const cell = {x, y};
+                const cell = { x, y };
                 if (isSquadCellLegal(cell, options)) result.push(cell);
             }
         }
@@ -154,7 +231,7 @@
     }
 
     function canonicalCells(cells) {
-        return cells.map((cell) => ({x: cell.x, y: cell.y})).sort(comparePoints);
+        return cells.map((cell) => ({ x: cell.x, y: cell.y })).sort(comparePoints);
     }
 
     function candidateKey(cells) {
@@ -166,11 +243,13 @@
         for (let y = 1; y < options.height - 1; y += 1) {
             for (let x = 1; x < options.width - 1; x += 1) {
                 const cells = [
-                    {x, y}, {x: x + 1, y},
-                    {x, y: y + 1}, {x: x + 1, y: y + 1},
+                    { x, y },
+                    { x: x + 1, y },
+                    { x, y: y + 1 },
+                    { x: x + 1, y: y + 1 },
                 ];
                 if (cells.every((cell) => isSquadCellLegal(cell, options))) {
-                    result.push({anchor: {x, y}, cells});
+                    result.push({ anchor: { x, y }, cells });
                 }
             }
         }
@@ -199,7 +278,7 @@
         if (!isConnectedCandidate(cells)) return null;
         const ordered = canonicalCells(cells);
         const anchor = ordered.find((candidate) => ordered.every((cell) => chebyshevDistance(candidate, cell) <= 2));
-        return anchor ? {x: anchor.x, y: anchor.y} : null;
+        return anchor ? { x: anchor.x, y: anchor.y } : null;
     }
 
     function isSquareCandidate(cells) {
@@ -221,7 +300,7 @@
                 const cells = candidateIndexes.map((index) => legal[index]);
                 const anchor = findCompactAnchor(cells);
                 if (anchor && !isSquareCandidate(cells)) {
-                    candidates.set(candidateKey(cells), {anchor, cells: canonicalCells(cells)});
+                    candidates.set(candidateKey(cells), { anchor, cells: canonicalCells(cells) });
                 }
                 return;
             }
@@ -233,7 +312,11 @@
                     for (let dy = -1; dy <= 1; dy += 1) {
                         if (dx === 0 && dy === 0) continue;
                         const neighborIndex = indexByKey.get(pointKey(cell.x + dx, cell.y + dy));
-                        if (neighborIndex != undefined && neighborIndex > rootIndex && !candidateIndexes.includes(neighborIndex)) {
+                        if (
+                            neighborIndex != undefined &&
+                            neighborIndex > rootIndex &&
+                            !candidateIndexes.includes(neighborIndex)
+                        ) {
                             frontier.add(neighborIndex);
                         }
                     }
@@ -243,7 +326,7 @@
                 enumerateConnectedSubsets(
                     rootIndex,
                     [...candidateIndexes, neighborIndex].sort((left, right) => left - right),
-                    visited
+                    visited,
                 );
             }
         }
@@ -264,7 +347,7 @@
         const squares = enumerateSquareCandidates(options);
         const tier = squares.length > 0 ? "square" : "compact";
         const candidates = squares.length > 0 ? squares : enumerateCompactCandidates(options);
-        if (candidates.length === 0) return {outcome: "unplaceable"};
+        if (candidates.length === 0) return { outcome: "unplaceable" };
 
         const random = options.random || Math.random;
         const candidate = candidates[Math.floor(normalizedRandom(random) * candidates.length)];
@@ -277,8 +360,11 @@
             outcome: "placeable",
             tier,
             candidateCount: candidates.length,
-            anchor: {x: candidate.anchor.x, y: candidate.anchor.y},
-            placements: candidate.cells.map((cell, index) => ({enemy: members[index], cell: {x: cell.x, y: cell.y}})),
+            anchor: { x: candidate.anchor.x, y: candidate.anchor.y },
+            placements: candidate.cells.map((cell, index) => ({
+                enemy: members[index],
+                cell: { x: cell.x, y: cell.y },
+            })),
         };
     }
 
@@ -329,9 +415,7 @@
     }
 
     function countLivingOffspring(entities = [], parentID) {
-        return entities.filter((entity) => entity
-            && entity.hp > 0
-            && entity[NEST_PARENT_ID_FIELD] === parentID).length;
+        return entities.filter((entity) => entity && entity.hp > 0 && entity[NEST_PARENT_ID_FIELD] === parentID).length;
     }
 
     function reinforcementSpatialKey(entity) {
@@ -363,7 +447,7 @@
             bucket.push(entity);
             hostileNestBuckets.set(key, bucket);
         }
-        return {nests, hostileNests, hostileNestBuckets, livingOffspringByParent, knownTunnelersByParent};
+        return { nests, hostileNests, hostileNestBuckets, livingOffspringByParent, knownTunnelersByParent };
     }
 
     function countNearbyHostileNests(nest, hostileNestBuckets) {
@@ -374,8 +458,11 @@
             for (let dy = -1; dy <= 1; dy += 1) {
                 const bucket = hostileNestBuckets.get(`${bucketX + dx},${bucketY + dy}`) || [];
                 for (const candidate of bucket) {
-                    if (candidate !== nest && Math.hypot(candidate.x - nest.x, candidate.y - nest.y)
-                        <= NEST_REINFORCEMENT_PROXIMITY_RADIUS) count += 1;
+                    if (
+                        candidate !== nest &&
+                        Math.hypot(candidate.x - nest.x, candidate.y - nest.y) <= NEST_REINFORCEMENT_PROXIMITY_RADIUS
+                    )
+                        count += 1;
                 }
             }
         }
@@ -388,7 +475,7 @@
         const interval = normalizeReinforcementInterval(options.interval);
         const delta = Number(options.delta);
         if (!options.eligible || cap === 0 || !Number.isFinite(delta) || delta <= 0) {
-            return {attempt: false, timer};
+            return { attempt: false, timer };
         }
 
         const nextTimer = Math.min(interval, timer + delta);
@@ -417,7 +504,7 @@
 
     // Registration helper: replace by name instead of duplicating entries on reload.
     // 注册工具：按 name 覆盖旧条目，避免重复加载 mod 后出现同名怪物/拘束/法术多份。
-    api.registerNamed = function(array, object) {
+    api.registerNamed = function (array, object) {
         const index = array.findIndex((entry) => entry.name == object.name);
         if (index >= 0) array.splice(index, 1, object);
         else array.push(object);
@@ -452,12 +539,13 @@
 
     function buildRestraint(definition) {
         const restraint = definition.restraint;
-        if (!restraint || typeof restraint != "object") throw new TypeError("Spiderlings restraint definitions require restraint data.");
+        if (!restraint || typeof restraint != "object")
+            throw new TypeError("Spiderlings restraint definitions require restraint data.");
         for (const shrine of RESTRAINT_COMMON_SHRINES) restraint.shrine = addUnique(restraint.shrine, shrine);
         restraint.events = Array.isArray(restraint.events) ? restraint.events : [];
         for (const trigger of RESTRAINT_REFRESH_TRIGGERS) {
             if (!restraint.events.some((event) => event.trigger == trigger && event.type == RESTRAINT_REFRESH_EVENT)) {
-                restraint.events.push({inheritLinked: true, trigger, type: RESTRAINT_REFRESH_EVENT});
+                restraint.events.push({ inheritLinked: true, trigger, type: RESTRAINT_REFRESH_EVENT });
             }
         }
         return restraint;
@@ -471,32 +559,38 @@
         register(definition) {
             const descriptor = describeRestraintDefinition(definition);
             const restraint = buildRestraint(definition);
-            restraintCatalogEntries.set(descriptor.id, Object.freeze({
-                ...descriptor,
-                restraint,
-            }));
+            restraintCatalogEntries.set(
+                descriptor.id,
+                Object.freeze({
+                    ...descriptor,
+                    restraint,
+                }),
+            );
             api.registerNamed(KinkyDungeonRestraints, restraint);
             if (definition.text) api.registerRestraintText(descriptor.id, ...definition.text);
             return restraint;
         },
     });
 
-    api.registerRestraintText = function(name, displayName, description, flavorText) {
+    api.registerRestraintText = function (name, displayName, description, flavorText) {
         if (typeof KinkyDungeonAddRestraintText != "function") return false;
         const entry = restraintCatalogEntries.get(name);
         if (entry) {
-            restraintCatalogEntries.set(name, Object.freeze({
-                ...entry,
-                text: Object.freeze([displayName, description, flavorText]),
-            }));
+            restraintCatalogEntries.set(
+                name,
+                Object.freeze({
+                    ...entry,
+                    text: Object.freeze([displayName, description, flavorText]),
+                }),
+            );
         }
         KinkyDungeonAddRestraintText(name, displayName, description, flavorText);
         return true;
     };
 
     // Add a restraint to KinkyDungeonRestraints / 添加拘束到 KinkyDungeonRestraints。
-    api.createRestraint = function(object) {
-        return api.restraintCatalog.register({restraint: object});
+    api.createRestraint = function (object) {
+        return api.restraintCatalog.register({ restraint: object });
     };
 
     function disableLegacyNestSpells(enemy) {
@@ -507,20 +601,20 @@
     // Add enemies to KinkyDungeonEnemies / 添加怪物到 KinkyDungeonEnemies。
     // KD 5.5 draws enemy sprites from Game/Enemies/<name>.png; spiderlings use 72x72 non-humanoid sprites.
     // KD 5.5 会按 Game/Enemies/<name>.png 查找贴图；幼蛛统一声明为非人形 72x72 贴图。
-    api.addEnemies = function(enemies) {
+    api.addEnemies = function (enemies) {
         for (let enemy of enemies) {
             const populationOverrides = nativePopulationOverrides(enemy.name, enemy.tags);
             if (populationOverrides) Object.assign(enemy, populationOverrides);
             if (SQUAD_MEMBERS.includes(enemy.name)) enemy.tags.SpiderlingsMapPopulation = true;
             disableLegacyNestSpells(enemy);
             enemy.nonHumanoid = true;
-            enemy.GFX = Object.assign({spriteWidth: 72, spriteHeight: 72}, enemy.GFX || {});
+            enemy.GFX = Object.assign({ spriteWidth: 72, spriteHeight: 72 }, enemy.GFX || {});
             api.registerNamed(KinkyDungeonEnemies, enemy);
         }
     };
 
     // Add enemy spells to KinkyDungeonSpellListEnemies / 添加敌方法术到 KinkyDungeonSpellListEnemies。
-    api.addSpells = function(spells) {
+    api.addSpells = function (spells) {
         for (let spell of spells) api.registerNamed(KinkyDungeonSpellListEnemies, spell);
     };
 
@@ -531,7 +625,7 @@
 
     // Register defaults after settings load, while still letting Spiderlings run without KDModConfigs.
     // 在设置加载后注册默认值，同时保证没有 KDModConfigs 时 Spiderlings 也能正常运行。
-    api.ensureModSettings = function() {
+    api.ensureModSettings = function () {
         if (typeof KDModConfigs != "undefined") KDModConfigs[MOD_ID] = MOD_CONFIG;
         if (typeof KDModSettings == "undefined") return;
         if (KDModSettings == null) KDModSettings = {};
@@ -543,13 +637,13 @@
         }
     };
 
-    api.getSetting = function(refvar) {
+    api.getSetting = function (refvar) {
         const fallback = configDefault(refvar);
         if (typeof KDModSettings == "undefined" || !KDModSettings || !KDModSettings[MOD_ID]) return fallback;
         return KDModSettings[MOD_ID][refvar] != undefined ? KDModSettings[MOD_ID][refvar] : fallback;
     };
 
-    api.getMapPopulationCap = function() {
+    api.getMapPopulationCap = function () {
         const value = String(api.getSetting("spiderlingsMapPopulationCap")).trim();
         const numeric = Number(value);
         return /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
@@ -559,8 +653,11 @@
         const cap = api.getMapPopulationCap();
         if (cap === 0) return Infinity;
         const entities = typeof KDMapData != "undefined" ? KDMapData?.Entities || [] : [];
-        const living = entities.filter((entity) => entity.hp > 0
-            && SQUAD_MEMBERS.includes(typeof entity.Enemy == "string" ? entity.Enemy : entity.Enemy?.name)).length;
+        const living = entities.filter(
+            (entity) =>
+                entity.hp > 0 &&
+                SQUAD_MEMBERS.includes(typeof entity.Enemy == "string" ? entity.Enemy : entity.Enemy?.name),
+        ).length;
         return Math.max(0, cap - living);
     }
 
@@ -568,7 +665,7 @@
     // registered species when the current map has no free spider slots.
     if (typeof KinkyDungeonGetEnemy == "function") {
         const nativeGetEnemy = KinkyDungeonGetEnemy;
-        KinkyDungeonGetEnemy = function(...args) {
+        KinkyDungeonGetEnemy = function (...args) {
             if (availableSpiderlingSlots() === 0) {
                 args[7] = [...(args[7] || []), "SpiderlingsMapPopulation"];
             }
@@ -582,17 +679,20 @@
         let selectingWanderingSpawns = false;
         const nativeWanderingSpawns = KinkyDungeonHandleWanderingSpawns;
         const nativeGetEnemyByName = KinkyDungeonGetEnemyByName;
-        KinkyDungeonGetEnemyByName = function(name) {
+        KinkyDungeonGetEnemyByName = function (name) {
             const result = nativeGetEnemyByName.apply(this, arguments);
-            if (selectingWanderingSpawns && SQUAD_MEMBERS.includes(result?.name)
-                && availableSpiderlingSlots() === 0) return undefined;
+            if (selectingWanderingSpawns && SQUAD_MEMBERS.includes(result?.name) && availableSpiderlingSlots() === 0)
+                return undefined;
             return result;
         };
-        KinkyDungeonHandleWanderingSpawns = function() {
+        KinkyDungeonHandleWanderingSpawns = function () {
             const previous = selectingWanderingSpawns;
             selectingWanderingSpawns = true;
-            try { return nativeWanderingSpawns.apply(this, arguments); }
-            finally { selectingWanderingSpawns = previous; }
+            try {
+                return nativeWanderingSpawns.apply(this, arguments);
+            } finally {
+                selectingWanderingSpawns = previous;
+            }
         };
     }
 
@@ -600,7 +700,7 @@
     // native entry. Clamp before creation so callers receive only real entities.
     if (typeof KinkyDungeonSummonEnemy == "function") {
         const nativeSummonEnemy = KinkyDungeonSummonEnemy;
-        KinkyDungeonSummonEnemy = function(x, y, summonType, count, ...rest) {
+        KinkyDungeonSummonEnemy = function (x, y, summonType, count, ...rest) {
             const name = typeof summonType == "string" ? summonType : summonType?.name;
             if (SQUAD_MEMBERS.includes(name)) {
                 const slots = availableSpiderlingSlots();
@@ -613,41 +713,40 @@
 
     // Clamp saved values so broken localStorage cannot create invalid spell arrays.
     // 限制存档设置值，避免损坏的 localStorage 生成无效召唤列表。
-    api.getNestWeight = function(refvar, fallback) {
+    api.getNestWeight = function (refvar, fallback) {
         const raw = Number(api.getSetting(refvar));
         return clampSpiderlingWeight(raw, fallback);
     };
 
-    api.getSharedSpiderlingWeights = function() {
-        return Object.fromEntries(SHARED_SPIDERLING_OPTIONS.map((option) => [
-            option.enemy,
-            api.getNestWeight(option.refvar, option.default),
-        ]));
+    api.getSharedSpiderlingWeights = function () {
+        return Object.fromEntries(
+            SHARED_SPIDERLING_OPTIONS.map((option) => [option.enemy, api.getNestWeight(option.refvar, option.default)]),
+        );
     };
 
-    api.getNestReinforcementCap = function() {
+    api.getNestReinforcementCap = function () {
         return normalizeReinforcementCap(api.getSetting("spiderlingsNestReinforcementCap"));
     };
 
-    api.getNestTunnelerCap = function() {
+    api.getNestTunnelerCap = function () {
         const value = String(api.getSetting("spiderlingsNestTunnelerCap")).trim();
         const numeric = Number(value);
         return /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 3;
     };
 
-    api.getNestReinforcementInterval = function() {
+    api.getNestReinforcementInterval = function () {
         return normalizeReinforcementInterval(api.getSetting("spiderlingsNestReinforcementInterval"));
     };
 
     // Compatibility entry point for older Spiderlings.js data. Recurring nest spells are disabled.
     // 兼容旧 Spiderlings.js 数据的入口；巢穴循环法术已停用。
-    api.buildNestEntranceSpells = function() {
+    api.buildNestEntranceSpells = function () {
         return [];
     };
 
     // Keep the legacy generic spell path disabled after settings load/save.
     // 设置读取或保存后仍保持旧通用法术路径停用。
-    api.refreshNestEntranceSummons = function() {
+    api.refreshNestEntranceSummons = function () {
         if (typeof KinkyDungeonEnemies == "undefined") return;
         const nestEntrance = KinkyDungeonEnemies.find((enemy) => enemy.name == "NestEntrance");
         disableLegacyNestSpells(nestEntrance);
@@ -656,7 +755,7 @@
 
     // Hook KD's settings events so changes take effect without editing the mod file.
     // 挂接 KD 设置事件，让配置变化无需手改 mod 文件即可生效。
-    api.registerModConfig = function() {
+    api.registerModConfig = function () {
         api.ensureModSettings();
         if (typeof KDEventMapGeneric == "undefined") return;
         KDEventMapGeneric["afterModSettingsLoad"] = KDEventMapGeneric["afterModSettingsLoad"] || {};
@@ -675,7 +774,7 @@
 
     // English fallback labels for the configuration screen.
     // 配置界面的英文兜底文本；中文翻译在 SpiderlingsCN.csv 中。
-    api.registerModConfigText = function() {
+    api.registerModConfigText = function () {
         if (typeof addTextKey != "function") return;
         addTextKey("KDModButtonSpiderlings", "Spiderlings");
         addTextKey("KDModButtonspiderlingsPinkWebbing", "Pink webbing (off: original)");
@@ -706,17 +805,24 @@
             start: KDMapData.StartPosition,
             end: KDMapData.EndPosition,
             shortcuts: Object.values(KDMapData.ShortcutPositions || {}),
-            isMovable: (cell) => typeof KinkyDungeonMapGet == "function"
-                && typeof KinkyDungeonMovableTilesEnemy != "undefined"
-                && KinkyDungeonMovableTilesEnemy.includes(mapTile(cell)),
+            isMovable: (cell) =>
+                typeof KinkyDungeonMapGet == "function" &&
+                typeof KinkyDungeonMovableTilesEnemy != "undefined" &&
+                KinkyDungeonMovableTilesEnemy.includes(mapTile(cell)),
             isOccupied: (cell) => {
                 if (typeof KinkyDungeonEntityAt == "function" && KinkyDungeonEntityAt(cell.x, cell.y)) return true;
-                if (typeof KinkyDungeonPlayerEntity != "undefined" && KinkyDungeonPlayerEntity
-                    && KinkyDungeonPlayerEntity.x == cell.x && KinkyDungeonPlayerEntity.y == cell.y) return true;
+                if (
+                    typeof KinkyDungeonPlayerEntity != "undefined" &&
+                    KinkyDungeonPlayerEntity &&
+                    KinkyDungeonPlayerEntity.x == cell.x &&
+                    KinkyDungeonPlayerEntity.y == cell.y
+                )
+                    return true;
                 return (KDMapData.Entities || []).some((entity) => entity && entity.x == cell.x && entity.y == cell.y);
             },
-            isOffLimits: (cell) => (typeof KDDefaultAvoidTiles != "undefined" && KDDefaultAvoidTiles.includes(mapTile(cell)))
-                || (typeof KinkyDungeonTilesGet == "function" && KinkyDungeonTilesGet(pointKey(cell))?.OL === true),
+            isOffLimits: (cell) =>
+                (typeof KDDefaultAvoidTiles != "undefined" && KDDefaultAvoidTiles.includes(mapTile(cell))) ||
+                (typeof KinkyDungeonTilesGet == "function" && KinkyDungeonTilesGet(pointKey(cell))?.OL === true),
             isReachable: (cell) => !!(KDMapData.RandomPathablePoints && KDMapData.RandomPathablePoints[pointKey(cell)]),
             random,
         };
@@ -749,13 +855,19 @@
             setSquadState(SQUAD_STATES.UNPLACEABLE);
             return false;
         }
-        const definitionsReady = typeof KinkyDungeonGetEnemyByName == "function"
-            && plan.placements.every((placement) => !!KinkyDungeonGetEnemyByName(placement.enemy));
+        const definitionsReady =
+            typeof KinkyDungeonGetEnemyByName == "function" &&
+            plan.placements.every((placement) => !!KinkyDungeonGetEnemyByName(placement.enemy));
         const targetsReady = plan.placements.every((placement) => isSquadCellLegal(placement.cell, placementOptions));
-        const capacityReady = Array.isArray(KDMapData.Entities)
-            && KDMapData.Entities.length + plan.placements.length <= 300;
-        if (!definitionsReady || !targetsReady || !capacityReady
-            || typeof KinkyDungeonSummonEnemy != "function" || typeof KDRemoveEntity != "function") {
+        const capacityReady =
+            Array.isArray(KDMapData.Entities) && KDMapData.Entities.length + plan.placements.length <= 300;
+        if (
+            !definitionsReady ||
+            !targetsReady ||
+            !capacityReady ||
+            typeof KinkyDungeonSummonEnemy != "function" ||
+            typeof KDRemoveEntity != "function"
+        ) {
             setSquadState(SQUAD_STATES.CREATION_FAILED);
             return false;
         }
@@ -764,14 +876,31 @@
         for (const placement of plan.placements) {
             const point = placement.cell;
             const created = KinkyDungeonSummonEnemy(
-                point.x, point.y, placement.enemy, 1, 0, false,
-                undefined, false, false, undefined, true, undefined, false, true
+                point.x,
+                point.y,
+                placement.enemy,
+                1,
+                0,
+                false,
+                undefined,
+                false,
+                false,
+                undefined,
+                true,
+                undefined,
+                false,
+                true,
             );
             if (Array.isArray(created)) {
-                for (const entity of created) if (entity && !createdMembers.includes(entity)) createdMembers.push(entity);
+                for (const entity of created)
+                    if (entity && !createdMembers.includes(entity)) createdMembers.push(entity);
             }
-            if (!Array.isArray(created) || created.length !== 1
-                || created[0].x !== point.x || created[0].y !== point.y) {
+            if (
+                !Array.isArray(created) ||
+                created.length !== 1 ||
+                created[0].x !== point.x ||
+                created[0].y !== point.y
+            ) {
                 for (let index = createdMembers.length - 1; index >= 0; index -= 1) {
                     KDRemoveEntity(createdMembers[index], false, false, true);
                 }
@@ -811,10 +940,19 @@
     function recordNestNPCAttack(_event, data = {}) {
         const nest = data.enemy;
         const source = data.attacker;
-        if (nest?.Enemy?.name != "NestEntrance" || !(nest.hp > 0) || !data.aggro
-            || !source?.Enemy || source.player || source === nest
-            || typeof KDHostile != "function" || !KDHostile(nest) || !KDHostile(nest, source)
-            || typeof KinkyDungeonSetEnemyFlag != "function") return;
+        if (
+            nest?.Enemy?.name != "NestEntrance" ||
+            !(nest.hp > 0) ||
+            !data.aggro ||
+            !source?.Enemy ||
+            source.player ||
+            source === nest ||
+            typeof KDHostile != "function" ||
+            !KDHostile(nest) ||
+            !KDHostile(nest, source) ||
+            typeof KinkyDungeonSetEnemyFlag != "function"
+        )
+            return;
         // One complete reinforcement interval, plus the current tick's native
         // flag expiry. Repeated hits refresh it; no instant or extra summon.
         KinkyDungeonSetEnemyFlag(nest, NEST_NPC_THREAT_FLAG, api.getNestReinforcementInterval() + 1);
@@ -822,8 +960,15 @@
 
     function runNestReinforcements(_event, data = {}) {
         const delta = Number(data.delta);
-        if (data.allied !== false || !Number.isFinite(delta) || delta <= 0
-            || typeof KDMapData == "undefined" || !KDMapData || !Array.isArray(KDMapData.Entities)) return 0;
+        if (
+            data.allied !== false ||
+            !Number.isFinite(delta) ||
+            delta <= 0 ||
+            typeof KDMapData == "undefined" ||
+            !KDMapData ||
+            !Array.isArray(KDMapData.Entities)
+        )
+            return 0;
 
         const cap = api.getNestReinforcementCap();
         const tunnelerCap = api.getNestTunnelerCap();
@@ -837,8 +982,8 @@
             // once from attributable children still present in the loaded map.
             if (!Number.isSafeInteger(nest[NEST_TUNNELER_COUNT_FIELD]) || nest[NEST_TUNNELER_COUNT_FIELD] < 0)
                 nest[NEST_TUNNELER_COUNT_FIELD] = index.knownTunnelersByParent.get(nest.id) || 0;
-            const eligibleWeights = nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap
-                ? {...weights, Tunneler: 0} : weights;
+            const eligibleWeights =
+                nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
             const totalWeight = Object.values(eligibleWeights).reduce((sum, weight) => sum + weight, 0);
             const livingOffspring = index.livingOffspringByParent.get(nest.id) || 0;
             const decision = advanceNestTimer({
@@ -850,14 +995,21 @@
                 eligible: nestCanReinforce(nest, index.hostileNests),
             });
             nest[NEST_TIMER_FIELD] = decision.timer;
-            if (!decision.attempt || totalWeight <= 0 || availableSpiderlingSlots() === 0
-                || typeof KinkyDungeonSummonEnemy != "function") continue;
+            if (
+                !decision.attempt ||
+                totalWeight <= 0 ||
+                availableSpiderlingSlots() === 0 ||
+                typeof KinkyDungeonSummonEnemy != "function"
+            )
+                continue;
 
             const random = typeof KDRandom == "function" ? KDRandom : Math.random;
             const nearbyNests = countNearbyHostileNests(nest, index.hostileNestBuckets);
             // Nearby contributors need only be alive and hostile; their awareness and LOS do not affect this bonus.
-            const summonChance = Math.min(1, NEST_REINFORCEMENT_BASE_CHANCE
-                + NEST_REINFORCEMENT_NEARBY_BONUS * nearbyNests);
+            const summonChance = Math.min(
+                1,
+                NEST_REINFORCEMENT_BASE_CHANCE + NEST_REINFORCEMENT_NEARBY_BONUS * nearbyNests,
+            );
             if (normalizedRandom(random) >= summonChance) {
                 nest[NEST_TIMER_FIELD] = 0;
                 continue;
@@ -870,8 +1022,20 @@
             let created = [];
             for (const radius of NEST_REINFORCEMENT_SPAWN_RADII) {
                 created = KinkyDungeonSummonEnemy(
-                    nest.x, nest.y, enemyName, 1, radius, true,
-                    undefined, false, false, faction, true, undefined, true, false
+                    nest.x,
+                    nest.y,
+                    enemyName,
+                    1,
+                    radius,
+                    true,
+                    undefined,
+                    false,
+                    false,
+                    faction,
+                    true,
+                    undefined,
+                    true,
+                    false,
                 );
                 if (Array.isArray(created) && created.length > 0) break;
             }
@@ -885,7 +1049,7 @@
     }
 
     api.runNestReinforcements = runNestReinforcements;
-    api.registerEncounterEvents = function() {
+    api.registerEncounterEvents = function () {
         if (typeof KDEventMapGeneric == "undefined") return;
         if (typeof KDAddEvent == "function") {
             KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsGuaranteedSquad", runGuaranteedSpiderlingSquad);
@@ -900,26 +1064,42 @@
     };
 
     // Shared qualification for direct-hit cooperation and native movement preference.
-    api.activeWebCasters = function(player) {
-        if (!player || typeof KDMapData == "undefined" || typeof KDHostile != "function"
-            || typeof KinkyDungeonCheckPath != "function") return [];
-        return (KDMapData.Entities || []).filter((enemy) => enemy.Enemy?.name == "WebCaster"
-            && enemy.hp > 0 && enemy.aware && KDHostile(enemy, player)
-            && !(enemy.stun > 0 || enemy.freeze > 0 || enemy.silence > 0 || enemy.teleporting > 0)
-            && !(typeof KDHelpless == "function" && KDHelpless(enemy))
-            && Math.hypot(enemy.x - player.x, enemy.y - player.y) <= 6
-            && KinkyDungeonCheckPath(enemy.x, enemy.y, player.x, player.y, false, false));
+    api.activeWebCasters = function (player) {
+        if (
+            !player ||
+            typeof KDMapData == "undefined" ||
+            typeof KDHostile != "function" ||
+            typeof KinkyDungeonCheckPath != "function"
+        )
+            return [];
+        return (KDMapData.Entities || []).filter(
+            (enemy) =>
+                enemy.Enemy?.name == "WebCaster" &&
+                enemy.hp > 0 &&
+                enemy.aware &&
+                KDHostile(enemy, player) &&
+                !(enemy.stun > 0 || enemy.freeze > 0 || enemy.silence > 0 || enemy.teleporting > 0) &&
+                !(typeof KDHelpless == "function" && KDHelpless(enemy)) &&
+                Math.hypot(enemy.x - player.x, enemy.y - player.y) <= 6 &&
+                KinkyDungeonCheckPath(enemy.x, enemy.y, player.x, player.y, false, false),
+        );
     };
 
     // KD hunt targets its own tile at melee distance, which can suppress retreat
     // even after the native kite gate succeeds. Keep the normal movement gates.
     if (typeof KDAIType != "undefined" && KDAIType.hunt) {
         const beforemove = KDAIType.hunt.beforemove;
-        KDAIType.hunt.beforemove = function(enemy, player, aiData) {
+        KDAIType.hunt.beforemove = function (enemy, player, aiData) {
             const handled = beforemove.apply(this, arguments);
-            if (!handled && enemy.Enemy.name == "WebCaster" && aiData.kite
-                && enemy.gx == enemy.x && enemy.gy == enemy.y
-                && !KDEnemyHasFlag(enemy, "StayHere") && !KDEnemyHasFlag(enemy, "overrideMove")) {
+            if (
+                !handled &&
+                enemy.Enemy.name == "WebCaster" &&
+                aiData.kite &&
+                enemy.gx == enemy.x &&
+                enemy.gy == enemy.y &&
+                !KDEnemyHasFlag(enemy, "StayHere") &&
+                !KDEnemyHasFlag(enemy, "overrideMove")
+            ) {
                 enemy.gx = enemy.x + Math.sign(enemy.x - player.x);
                 enemy.gy = enemy.y + Math.sign(enemy.y - player.y);
             }
@@ -930,12 +1110,19 @@
     // A direction preference inside KD's existing movement attempt, never an extra action.
     if (typeof KDGetDir == "function") {
         const nativeGetDir = KDGetDir;
-        KDGetDir = function(enemy, target, func) {
+        KDGetDir = function (enemy, target, func) {
             const original = nativeGetDir.apply(this, arguments);
-            if (enemy.Enemy?.name != "WebCaster" || typeof AIData == "undefined" || !AIData.kite
-                || !original || (!original.x && !original.y)
-                || KDEnemyHasFlag(enemy, "StayHere") || KDEnemyHasFlag(enemy, "overrideMove")
-                || KDIsImmobile(enemy)) return original;
+            if (
+                enemy.Enemy?.name != "WebCaster" ||
+                typeof AIData == "undefined" ||
+                !AIData.kite ||
+                !original ||
+                (!original.x && !original.y) ||
+                KDEnemyHasFlag(enemy, "StayHere") ||
+                KDEnemyHasFlag(enemy, "overrideMove") ||
+                KDIsImmobile(enemy)
+            )
+                return original;
             const player = KinkyDungeonPlayerEntity;
             // KD also calls this for NPC rivals and coordinate path goals.
             // Only spread firing angles while retreating from the player itself.
@@ -943,25 +1130,47 @@
             const casters = api.activeWebCasters(player);
             if (!casters.includes(enemy) || casters.length < 2) return original;
             const partners = casters.filter((entry) => entry !== enemy);
-            const separation = (x, y) => Math.min(...partners.map((partner) => {
-                const ax = x - player.x, ay = y - player.y;
-                const bx = partner.x - player.x, by = partner.y - player.y;
-                return 1 - (ax * bx + ay * by) / (Math.hypot(ax, ay) * Math.hypot(bx, by) || 1);
-            }));
+            const separation = (x, y) =>
+                Math.min(
+                    ...partners.map((partner) => {
+                        const ax = x - player.x,
+                            ay = y - player.y;
+                        const bx = partner.x - player.x,
+                            by = partner.y - player.y;
+                        return 1 - (ax * bx + ay * by) / (Math.hypot(ax, ay) * Math.hypot(bx, by) || 1);
+                    }),
+                );
             const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
             let best = original;
-            let score = Math.max(separation(enemy.x, enemy.y), separation(enemy.x + original.x, enemy.y + original.y)) + 0.01;
-            for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-                if (!dx && !dy) continue;
-                const x = enemy.x + dx, y = enemy.y + dy;
-                const range = Math.hypot(x - player.x, y - player.y);
-                const candidate = {x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2};
-                if (range < Math.max(2, distance) || range > 6
-                    || !KinkyDungeonEnemyCanMove(enemy, candidate, AIData.MovableTiles, AIData.AvoidTiles, AIData.ignoreLocks, 0)
-                    || !KinkyDungeonCheckPath(x, y, player.x, player.y, false, false)) continue;
-                const next = separation(x, y);
-                if (next > score) { score = next; best = candidate; }
-            }
+            let score =
+                Math.max(separation(enemy.x, enemy.y), separation(enemy.x + original.x, enemy.y + original.y)) + 0.01;
+            for (let dx = -1; dx <= 1; dx++)
+                for (let dy = -1; dy <= 1; dy++) {
+                    if (!dx && !dy) continue;
+                    const x = enemy.x + dx,
+                        y = enemy.y + dy;
+                    const range = Math.hypot(x - player.x, y - player.y);
+                    const candidate = { x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2 };
+                    if (
+                        range < Math.max(2, distance) ||
+                        range > 6 ||
+                        !KinkyDungeonEnemyCanMove(
+                            enemy,
+                            candidate,
+                            AIData.MovableTiles,
+                            AIData.AvoidTiles,
+                            AIData.ignoreLocks,
+                            0,
+                        ) ||
+                        !KinkyDungeonCheckPath(x, y, player.x, player.y, false, false)
+                    )
+                        continue;
+                    const next = separation(x, y);
+                    if (next > score) {
+                        score = next;
+                        best = candidate;
+                    }
+                }
             return best;
         };
     }
