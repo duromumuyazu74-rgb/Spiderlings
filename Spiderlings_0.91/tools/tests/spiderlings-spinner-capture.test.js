@@ -6,6 +6,66 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { loadLifecycleRuntime, item, modRoot } = require("./helpers/lifecycle-runtime.js");
 
+function drawCapture(runtime) {
+    const c = runtime.c;
+    c.KDCurrentModels = new Map();
+    c.KinkyDungeonPlayer = {};
+    c.PIXI = {
+        Graphics: class {
+            clear() {
+                return this;
+            }
+            lineStyle() {
+                return this;
+            }
+            moveTo() {
+                return this;
+            }
+            lineTo() {
+                return this;
+            }
+            destroy() {}
+        },
+    };
+    c.kdgameboard = { addChild() {} };
+    c.KinkyDungeonGridSizeDisplay = 72;
+    c.DrawTextKD = c.FillRectKD = c.DrawButtonKDEx = () => {};
+    c.kdcanvas = c.kdpixisprites = {};
+    runtime.send("draw", { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+}
+
+test("drawing observes membership without changing saved progress, migration fields or participants", () => {
+    const r = contestRuntime();
+    r.start();
+    r.pull();
+    r.add();
+    const s = r.api.state();
+    delete s.weaveProgress;
+    delete s.escapeProgress;
+    s.remaining = 2;
+    s.successes = 1;
+    const before = JSON.stringify(r.c.KDGameData);
+    drawCapture(r);
+    drawCapture(r);
+    assert.equal(JSON.stringify(r.c.KDGameData), before);
+    r.send("afterLoadGame");
+    assert.equal(r.api.state().weaveProgress, 50);
+    assert.equal(r.api.state().escapeProgress, 25);
+    assert.equal(r.api.state().ids.length, 3);
+    assert.equal(r.api.state().remaining, undefined);
+});
+
+test("drawing an invalid capture cannot cancel it or assign retry state before the native audit event", () => {
+    const r = contestRuntime();
+    r.start();
+    r.c.KDMapData.Entities[0].hp = 0;
+    const before = JSON.stringify(r.c.KDGameData);
+    drawCapture(r);
+    assert.equal(JSON.stringify(r.c.KDGameData), before);
+    r.send("afterEnemyTick");
+    assert.equal(r.api.state(), undefined);
+});
+
 // Reuse the equipment/event fixture; native AI and field geometry have separate browser probes.
 function contestRuntime(count = 2) {
     let stamina = 10,

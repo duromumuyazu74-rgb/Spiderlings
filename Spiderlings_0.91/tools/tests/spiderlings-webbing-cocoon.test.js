@@ -246,9 +246,13 @@ function loadRuntime(options = {}) {
     vm.createContext(context);
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
         "Spiderlings.js",
         "SpiderlingsWebbingModels.js",
         "SpiderlingsCombat.js",
+        "SpiderlingsWebbingData.js",
+        "SpiderlingsWebbingRules.js",
         "SpiderlingsWebbing.js",
     ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });

@@ -351,37 +351,52 @@
     function members() {
         return entities().filter((e) => eligible(e) && api.SpinnerField?.contains(e));
     }
-    function audit() {
+    function restoredCaptureState(saved) {
+        const result = { ...saved };
+        // test.2 stored remaining turns and successful pulls instead of work.
+        if (result.weaveProgress === undefined) {
+            result.weaveProgress = Math.max(0, 4 - (result.remaining ?? 4)) * 25;
+            result.visualProgress = Math.max(0.08, result.weaveProgress / CONFIG.weaveGoal);
+        }
+        if (result.escapeProgress === undefined) result.escapeProgress = (result.successes || 0) * CONFIG.pullAmount;
+        delete result.remaining;
+        delete result.successes;
+        return result;
+    }
+
+    function captureView() {
         const s = state();
-        if (!s) return false;
+        if (!s) return {};
         if (
             !api.SpinnerField?.captureReady() ||
             player().x !== s.x ||
             player().y !== s.y ||
             KinkyDungeonAllRestraintDynamic().some((e) => e.item.name === api.Webbing.COCOON_ID) ||
             (s.itemId !== undefined && item()?.id !== s.itemId)
-        ) {
-            stop("interrupted");
+        )
+            return { reason: "interrupted" };
+        const ids = members()
+            .filter((e) => s.phase === "contest" || s.ids.includes(e.id))
+            .map((e) => e.id);
+        if (ids.length < CONFIG.minSpinners) return { reason: "too-few-spinners", ids };
+        return { capture: { ...restoredCaptureState(s), ids, escapeGoal: escapeGoal(ids.length) } };
+    }
+
+    function audit() {
+        const view = captureView();
+        if (view.reason) {
+            if (view.ids) state().ids = view.ids;
+            stop(view.reason);
             return false;
         }
-        // Arrival/removal changes membership, never earned progress or world time.
-        const available = members();
-        s.ids = available.filter((e) => s.phase === "contest" || s.ids.includes(e.id)).map((e) => e.id);
-        if (s.ids.length < CONFIG.minSpinners) {
-            stop("too-few-spinners");
-            return false;
-        }
-        // Restore test.2 saves without resetting their already earned work.
-        if (s.weaveProgress === undefined) {
-            s.weaveProgress = Math.max(0, 4 - (s.remaining ?? 4)) * 25;
-            s.visualProgress = Math.max(0.08, s.weaveProgress / CONFIG.weaveGoal);
-        }
-        if (s.escapeProgress === undefined) s.escapeProgress = (s.successes || 0) * CONFIG.pullAmount;
-        delete s.remaining;
-        delete s.successes;
-        s.escapeGoal = escapeGoal(s.ids.length);
+        if (!view.capture) return false;
+        // Native events commit membership; draw only observes the same view.
+        const s = state();
+        s.ids = view.capture.ids;
+        s.escapeGoal = view.capture.escapeGoal;
         return true;
     }
+
     function hit(enemy) {
         if (audit()) return true;
         if (api.SpinnerField?.holdsAttack(enemy)) return true;
@@ -541,6 +556,12 @@
             driver = undefined;
             pendingPull = undefined;
             clearLines();
+            const saved = state();
+            if (saved) {
+                Object.assign(saved, restoredCaptureState(saved));
+                delete saved.remaining;
+                delete saved.successes;
+            }
             if (audit()) {
                 const s = state();
                 tween = {
@@ -553,7 +574,8 @@
             refresh();
         });
         event(KDEventMapGeneric, "draw", STATE, (_e, d) => {
-            const admitted = audit();
+            const { capture: s } = captureView();
+            const admitted = !!s;
             if (now() - lastAnimationFrame >= 50 && (admitted || item())) {
                 lastAnimationFrame = now();
                 const mc = KDCurrentModels.get(KinkyDungeonPlayer);
@@ -561,13 +583,16 @@
                     for (const c of mc.Containers.values())
                         if (c.Mesh.parent && c.Mesh.visible && c.Container && !c.Container.destroyed) renderPreview(c);
             }
-            if (!admitted) return;
-            const s = state();
+            if (!admitted) {
+                if (mapLines) mapLines.visible = false;
+                return;
+            }
             if (!mapLines || mapLines.destroyed) {
                 mapLines = new PIXI.Graphics();
                 kdgameboard.addChild(mapLines);
             }
             mapLines.clear().lineStyle(2, CONFIG.lineColor, 1);
+            mapLines.visible = true;
             const size = KinkyDungeonGridSizeDisplay;
             const boardPans = typeof StandalonePatched !== "undefined" && StandalonePatched;
             const point = (e) => [
@@ -641,43 +666,49 @@
         });
     }
     if (typeof KinkyDungeonEnemyLoop === "function") {
-        const native = KinkyDungeonEnemyLoop;
-        KinkyDungeonEnemyLoop = function (enemy, target, delta) {
-            if (enemy[REWARD] > 0) return { idle: true, defeat: false, defeatEnemy: enemy };
-            if (audit() && state().ids.includes(enemy.id)) {
-                if (state().phase === "wrap" || state().phase === "contest") {
-                    // A legal adjacent weaving action is sufficient in a narrow corridor.
-                    // When space permits, use the native move budget for a step around the player.
-                    const ring = [
-                        [-1, -1],
-                        [0, -1],
-                        [1, -1],
-                        [1, 0],
-                        [1, 1],
-                        [0, 1],
-                        [-1, 1],
-                        [-1, 0],
-                    ];
-                    const index = ring.findIndex(([x, y]) => player().x + x === enemy.x && player().y + y === enemy.y);
-                    const next = ring[(index + 1) % ring.length];
-                    const x = player().x + next[0],
-                        y = player().y + next[1];
-                    const dir = { x: x - enemy.x, y: y - enemy.y, delta: 1 };
-                    if (
-                        !KinkyDungeonEnemyAt(x, y) &&
-                        KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
-                    )
-                        KinkyDungeonEnemyTryMove(enemy, dir, delta, x, y, false);
-                }
-                acted.add(enemy.id);
-                return { idle: false, defeat: false, defeatEnemy: enemy };
-            }
-            if (holdsSpiderAttack(enemy, target)) {
-                waitAround(enemy, delta);
-                return { idle: false, defeat: false, defeatEnemy: enemy };
-            }
-            return native.apply(this, arguments);
-        };
+        KinkyDungeonEnemyLoop = api.Hooks.wrap(
+            "Spinner.capture",
+            KinkyDungeonEnemyLoop,
+            (native) =>
+                function (enemy, target, delta) {
+                    if (enemy[REWARD] > 0) return { idle: true, defeat: false, defeatEnemy: enemy };
+                    if (audit() && state().ids.includes(enemy.id)) {
+                        if (state().phase === "wrap" || state().phase === "contest") {
+                            // A legal adjacent weaving action is sufficient in a narrow corridor.
+                            // When space permits, use the native move budget for a step around the player.
+                            const ring = [
+                                [-1, -1],
+                                [0, -1],
+                                [1, -1],
+                                [1, 0],
+                                [1, 1],
+                                [0, 1],
+                                [-1, 1],
+                                [-1, 0],
+                            ];
+                            const index = ring.findIndex(
+                                ([x, y]) => player().x + x === enemy.x && player().y + y === enemy.y,
+                            );
+                            const next = ring[(index + 1) % ring.length];
+                            const x = player().x + next[0],
+                                y = player().y + next[1];
+                            const dir = { x: x - enemy.x, y: y - enemy.y, delta: 1 };
+                            if (
+                                !KinkyDungeonEnemyAt(x, y) &&
+                                KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
+                            )
+                                KinkyDungeonEnemyTryMove(enemy, dir, delta, x, y, false);
+                        }
+                        acted.add(enemy.id);
+                        return { idle: false, defeat: false, defeatEnemy: enemy };
+                    }
+                    if (holdsSpiderAttack(enemy, target)) {
+                        waitAround(enemy, delta);
+                        return { idle: false, defeat: false, defeatEnemy: enemy };
+                    }
+                    return native.apply(this, arguments);
+                },
+        );
     }
     function holdsSpiderAttack(enemy, target) {
         return (
@@ -741,7 +772,7 @@
         for (const type of blocked)
             if (typeof KDInputTypes[type] === "function") {
                 const native = KDInputTypes[type];
-                KDInputTypes[type] = function (data) {
+                KDInputTypes[type] = function (_data) {
                     if (audit() && state().phase === "wrap" && !automatic) return "Blocked";
                     return native.apply(this, arguments);
                 };
@@ -749,7 +780,7 @@
     }
     if (typeof KDProcessInput === "function") {
         const native = KDProcessInput;
-        KDProcessInput = function (type, data) {
+        KDProcessInput = function (type, _data) {
             const previous = inputContext;
             inputContext = { genuine: type !== "tick" && !automatic, counted: false };
             try {

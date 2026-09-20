@@ -156,7 +156,11 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
     if (beforeLoad) beforeLoad(context);
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
         "SpiderlingsCombat.js",
+        "SpiderlingsWebbingData.js",
+        "SpiderlingsWebbingRules.js",
         "SpiderlingsWebbing.js",
         ...(spinner ? ["SpiderlingsSpinnerCapture.js"] : []),
     ]) {

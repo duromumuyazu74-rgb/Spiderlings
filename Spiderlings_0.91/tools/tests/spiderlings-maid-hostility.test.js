@@ -108,7 +108,12 @@ function loadRuntime() {
     );
     const nativeHostile = context.KDHostile;
     const nativeNearest = context.KinkyDungeonNearestPlayer;
-    for (const file of ["SpiderlingsCore.js", "Spiderlings.js"]) {
+    for (const file of [
+        "SpiderlingsCore.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
+        "Spiderlings.js",
+    ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
     }
     let nextId = 1;

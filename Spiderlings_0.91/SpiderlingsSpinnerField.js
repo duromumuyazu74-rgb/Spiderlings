@@ -492,16 +492,21 @@
         return active() && field()?.ids.includes(enemy?.id) && ["preparing", "ready"].includes(field().phase);
     }
     if (typeof KinkyDungeonEnemyLoop === "function") {
-        const native = KinkyDungeonEnemyLoop;
-        KinkyDungeonEnemyLoop = function (enemy, target, delta) {
-            const f = field();
-            if (active() && f && !api.SpinnerCapture.state()) {
-                if (enemy.id === f.jumper && !f.jumperEnabled) return { idle: true, defeat: false, defeatEnemy: enemy };
-                if (build(enemy, delta) || holdsAttack(enemy))
-                    return { idle: false, defeat: false, defeatEnemy: enemy };
-            }
-            return native.apply(this, arguments);
-        };
+        KinkyDungeonEnemyLoop = api.Hooks.wrap(
+            "Spinner.field",
+            KinkyDungeonEnemyLoop,
+            (native) =>
+                function (enemy, target, delta) {
+                    const f = field();
+                    if (active() && f && !api.SpinnerCapture.state()) {
+                        if (enemy.id === f.jumper && !f.jumperEnabled)
+                            return { idle: true, defeat: false, defeatEnemy: enemy };
+                        if (build(enemy, delta) || holdsAttack(enemy))
+                            return { idle: false, defeat: false, defeatEnemy: enemy };
+                    }
+                    return native.apply(this, arguments);
+                },
+        );
     }
     if (typeof KDInputTypes !== "undefined") {
         KDInputTypes.spiderlingsSpinnerAdd = () => (addSpinner() ? "Added" : "Blocked");

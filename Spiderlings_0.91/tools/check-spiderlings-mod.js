@@ -16,12 +16,16 @@ const watcherPath = path.join(modRoot, "tools", "watch-spiderlings-mod.ps1");
 const localeFiles = ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((locale) => `Spiderlings${locale}.csv`);
 const runtimeScripts = [
     "SpiderlingsCore.js",
+    "SpiderlingsEncounters.js",
+    "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
+    "SpiderlingsWebbingData.js",
+    "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",

@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.11 参数说明
+# Spiderlings 0.92.36-test.12 参数说明
 
 正式基线为 `0.92.38`。Spinner 先放四处地面陷阱，再连接已有陷阱拦截玩家退路，按最近移动方向优先封边。四条连接完整、玩家仍在内部、至少两只合法近战 Spinner 才开始对抗。进入对抗即强制并腿，方案 D 的粗蛛丝宽带逐圈缠绕，预览不施加装备。拘束目标 100，两只每世界回合 +12.5（八回合）、额外每只 +4；挣脱目标 75、额外每只 +25，一次有效挣脱 +25。中途增援保留进度，失败后固定五回合实际施加。当前步骤见 [试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)。完整腿袋 hobble 2，Cut 4／Remove 或 Struggle 6；半成品 2／3，原生费用与可达性有效。
 
@@ -217,7 +217,7 @@ NestEntrance 的 `spells` 保持空数组；循环增援由 `afterEnemyTick` 事
 
 ## 素材与发行
 
-当前角色蛛丝素材共 50 张，两色各 25 张：十张 Lv1、五张 Lv2、八张 Lv3，以及 Cocoon 本体和外围网。原色与粉色各 25 张进入各自 atlas，启动时预载两色并保留独立 PNG 回退；源图、无损 atlas 与 direct fallback 规则见 `MAINTENANCE.md`。测试版本 `0.92.36-test.11` 的清单为 104 项，包括 93 项正式运行内容、四张 Spinner 腿袋 PNG、四张粉色敌人 PNG 和三个 Spinner 脚本；CI artifact 是当前测试安装包。五部位 displacement 采用 `DSmap/` 导出：Lv1 无位移，Lv2/Lv3 共用对应部位的图与参数。更高等级覆盖下的内层拘束不显示操作选项，移除外层后恢复。侵扰层启用五巢目标，完成后开放下楼。
+当前角色蛛丝素材共 50 张，两色各 25 张：十张 Lv1、五张 Lv2、八张 Lv3，以及 Cocoon 本体和外围网。原色与粉色各 25 张进入各自 atlas，启动时预载两色并保留独立 PNG 回退；源图、无损 atlas 与 direct fallback 规则见 `MAINTENANCE.md`。测试版本 `0.92.36-test.12` 的清单为 108 项，包括 97 项共用运行内容、四张 Spinner 腿袋 PNG、四张粉色敌人 PNG 和三个 Spinner 脚本；CI artifact 是当前测试安装包。五部位 displacement 采用 `DSmap/` 导出：Lv1 无位移，Lv2/Lv3 共用对应部位的图与参数。更高等级覆盖下的内层拘束不显示操作选项，移除外层后恢复。侵扰层启用五巢目标，完成后开放下楼。
 
 Spiderling Infestation 在楼层选择和旅程地图中使用专属蛛网边框图标，叠加在原版楼层底图上。
 

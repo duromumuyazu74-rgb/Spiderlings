@@ -423,7 +423,16 @@ function loadRuntime(options = {}) {
     context.window = context;
     vm.createContext(context);
     for (const source of options.nativeSources || []) vm.runInContext(stripTypeScriptTypes(source), context);
-    for (const file of ["SpiderlingsCore.js", "Spiderlings.js", "SpiderlingsCombat.js", "SpiderlingsWebbing.js"]) {
+    for (const file of [
+        "SpiderlingsCore.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
+        "Spiderlings.js",
+        "SpiderlingsCombat.js",
+        "SpiderlingsWebbingData.js",
+        "SpiderlingsWebbingRules.js",
+        "SpiderlingsWebbing.js",
+    ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
     }
 
