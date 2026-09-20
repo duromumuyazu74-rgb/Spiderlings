@@ -27,6 +27,8 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 问题反馈、需求规格和实施任务统一使用 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues)。Matt Pocock 技能按[项目任务跟踪配置，英文](docs/agents/issue-tracker.md)操作。
 
+支持的编程语言、代码规范和单人 PR 流程见[贡献规范，英文](CONTRIBUTING.md)。玩家反馈不限语言。
+
 仓库以英语为主要语言，简体中文为辅助语言。安装步骤、分支版本或下载链接变化时，同步更新两版 README。
 
 ## 作者与署名
