@@ -1,0 +1,32 @@
+name: Repository checks
+
+on:
+  pull_request:
+    branches: [main, test]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main, test]
+
+permissions:
+  contents: read
+
+jobs:
+  repository:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+        env:
+          BASE_SHA: ${{ github.event.before }}
+      - run: npm test
+      - run: npm run test:public
