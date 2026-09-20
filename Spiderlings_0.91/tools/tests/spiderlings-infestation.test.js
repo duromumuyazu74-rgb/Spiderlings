@@ -1,6 +1,7 @@
 "use strict";
 
 const test = require("node:test");
+require("../../SpiderlingsCore.js");
 const assert = require("node:assert/strict");
 const { planNestPlacement, reachableCells } = require("../../SpiderlingsInfestation.js");
 const fs = require("node:fs");
@@ -15,7 +16,7 @@ function runtime(overrides = {}, nativeSources = []) {
     const population = [];
     const texts = {};
     const context = {
-        Spiderlings: { EncounterRules: require("../../SpiderlingsCore.js").EncounterRules },
+        Spiderlings: { EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules },
         KDMapMods: {},
         KinkyDungeonEscapeTypes: {},
         KDEventMapGeneric: {},
@@ -341,7 +342,9 @@ function nativePopulationRuntime() {
         [
             native,
             `globalThis.KDTileGen = {${tiles.slice(tiles.indexOf('"ForceSpawn":'), tiles.indexOf('"Prisoner":'))}};`,
-            fs.readFileSync(path.join(__dirname, "../../SpiderlingsCore.js"), "utf8"),
+            ["SpiderlingsCore.js", "SpiderlingsEncounters.js", "SpiderlingsWebCaster.js"]
+                .map((file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8"))
+                .join("\n"),
             fs.readFileSync(path.join(__dirname, "../../Spiderlings.js"), "utf8"),
         ],
     );
@@ -1245,7 +1248,7 @@ test("clearing cannot open a wall around a locked room, including diagonal acces
     const cells = planner(ring, {
         width: 16,
         height: 16,
-        tile: (x, y) => (x === 8 ? "1" : "0"),
+        tile: (x, _y) => (x === 8 ? "1" : "0"),
         meta: () => undefined,
         accessible: new Set(rectangle(7, 14).map((p) => `${p.x},${p.y}`)),
         interactable: "0",

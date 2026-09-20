@@ -44,7 +44,13 @@ function loadDefinitions(options = {}) {
     context.globalThis = context;
     context.window = context;
     vm.createContext(context);
-    const files = ["SpiderlingsCore.js", "Spiderlings.js", "SpiderlingsCombat.js"];
+    const files = [
+        "SpiderlingsCore.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
+        "Spiderlings.js",
+        "SpiderlingsCombat.js",
+    ];
     if (fs.existsSync(path.join(modRoot, "SpiderlingsJumperDash.js"))) files.push("SpiderlingsJumperDash.js");
     for (const file of files) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
