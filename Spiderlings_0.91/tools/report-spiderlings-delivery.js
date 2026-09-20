@@ -135,7 +135,8 @@ function importAcceptance(inputPath, packageHash, output) {
     if (
         supplied.schemaVersion !== 1 ||
         !/^[a-f0-9]{64}$/.test(packageHash || "") ||
-        supplied.packageSha256 !== packageHash
+        typeof supplied.packageSha256 !== "string" ||
+        supplied.packageSha256.toLowerCase() !== packageHash
     ) {
         throw new Error("Game acceptance must use schemaVersion 1 and the exact selected ZIP's packageSha256.");
     }
