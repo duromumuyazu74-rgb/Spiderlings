@@ -7,7 +7,8 @@
   "scripts": {
     "check": "node .github/scripts/check-repository.mjs",
     "test": "node --test .github/scripts/check-repository.test.mjs",
-    "test:public": "node .github/scripts/test-public.mjs"
+    "test:public": "node Spiderlings_0.91/tools/run-spiderlings-tests.js public",
+    "test:local": "node Spiderlings_0.91/tools/run-spiderlings-tests.js all"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

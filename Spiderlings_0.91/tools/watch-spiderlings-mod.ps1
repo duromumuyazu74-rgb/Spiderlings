@@ -7,26 +7,13 @@ $ErrorActionPreference = "Stop"
 $ToolRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModRoot = Split-Path -Parent $ToolRoot
 $CheckScript = Join-Path $ToolRoot "check-spiderlings-mod.js"
-$EncounterTest = Join-Path $ToolRoot "tests\spiderlings-encounters.test.js"
-$CombatTest = Join-Path $ToolRoot "tests\spiderlings-combat.test.js"
-$MaidHostilityTest = Join-Path $ToolRoot "tests\spiderlings-maid-hostility.test.js"
-$InfestationTest = Join-Path $ToolRoot "tests\spiderlings-infestation.test.js"
-$CutoverTest = Join-Path $ToolRoot "tests\spiderlings-webbing-cutover.test.js"
-$WebbingTest = Join-Path $ToolRoot "tests\spiderlings-webbing-lv1.test.js"
-$WebbingLifecycleTest = Join-Path $ToolRoot "tests\spiderlings-webbing-lifecycle.test.js"
-$WebbingEnemyTest = Join-Path $ToolRoot "tests\spiderlings-webbing-enemy.test.js"
-$JumperDashTest = Join-Path $ToolRoot "tests\spiderlings-jumper-dash.test.js"
-$WebbingWebSprayTest = Join-Path $ToolRoot "tests\spiderlings-webbing-webspray.test.js"
-$WebbingCocoonTest = Join-Path $ToolRoot "tests\spiderlings-webbing-cocoon.test.js"
-$WebbingAtlasTest = Join-Path $ToolRoot "tests\spiderlings-webbing-atlas.test.js"
-$SpinnerArtTest = Join-Path $ToolRoot "tests\spiderlings-spinner-art.test.js"
-$NewSaveSmokeTest = Join-Path $ToolRoot "tests\spiderlings-new-save-smoke.test.js"
+$TestRunner = Join-Path $ToolRoot "run-spiderlings-tests.js"
 
 function Invoke-SpiderlingsCheck {
     $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     Write-Host ""
     Write-Host "[$stamp] Running Spiderlings mod check..."
-    & node --test $EncounterTest $CombatTest $MaidHostilityTest $InfestationTest $CutoverTest $WebbingTest $WebbingLifecycleTest $WebbingEnemyTest $JumperDashTest $WebbingWebSprayTest $WebbingCocoonTest $WebbingAtlasTest $SpinnerArtTest $NewSaveSmokeTest
+    & node $TestRunner all
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[$stamp] Spiderlings tests failed with exit code $LASTEXITCODE."
         return
@@ -57,7 +44,7 @@ $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite, Size'
 
 $action = {
     $path = $Event.SourceEventArgs.FullPath
-    if ($path -notmatch '\.(js|json|csv|png|wav|ogg|md)$') { return }
+    if ($path -notmatch '\.(js|json|csv|png|wav|ogg|md|ps1|py|txt)$') { return }
     if ($path -match '\\tools\\watch-spiderlings-mod\.ps1$') { return }
     $global:SpiderlingsModCheckPending = $true
     $global:SpiderlingsModCheckLastEvent = Get-Date
@@ -74,7 +61,7 @@ try {
     $watcher.EnableRaisingEvents = $true
     Write-Host ""
     Write-Host "Watching $ModRoot"
-    Write-Host "Press Ctrl+C to stop. Changes to .js, .json, .csv, .png, .wav, .ogg, and .md files will run the check."
+    Write-Host "Press Ctrl+C to stop. Changes to runtime files, docs, and maintenance scripts will run the check."
     while ($true) {
         Start-Sleep -Milliseconds 250
         if ($global:SpiderlingsModCheckPending) {
