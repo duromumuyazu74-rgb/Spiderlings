@@ -1,13 +1,14 @@
 "use strict";
 
 const test = require("node:test");
+require("../../SpiderlingsCore.js");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const { stripTypeScriptTypes } = require("node:module");
 
-const { EncounterRules, ReinforcementRules } = require("../../SpiderlingsCore.js");
+const { EncounterRules, ReinforcementRules } = require("../../SpiderlingsEncounters.js");
 
 function loadCoreRuntime(overrides = {}, nativeSources = []) {
     const context = {
@@ -27,9 +28,9 @@ function loadCoreRuntime(overrides = {}, nativeSources = []) {
     context.globalThis = context;
     vm.createContext(context);
     for (const source of nativeSources) vm.runInContext(stripTypeScriptTypes(source), context);
-    vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "..", "SpiderlingsCore.js"), "utf8"), context, {
-        filename: "SpiderlingsCore.js",
-    });
+    for (const file of ["SpiderlingsCore.js", "SpiderlingsEncounters.js", "SpiderlingsWebCaster.js"]) {
+        vm.runInContext(fs.readFileSync(path.join(__dirname, "../..", file), "utf8"), context, { filename: file });
+    }
     return context;
 }
 

@@ -103,9 +103,8 @@ for (const [atlasName, frames] of [
     });
 }
 
-test("the 0.92.36-test.11 manifest publishes displacement maps and the atlas before scripts while retaining every direct fallback", () => {
+test("the manifest publishes displacement maps and the atlas before scripts while retaining every direct fallback", () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
-    assert.equal(manifest.modbuild, "0.92.36-test.11");
     assert.equal(
         manifest.author,
         "Art assets: T_Swizzle; Original mod author: anthropocentricity; Reset author: Chlorlne",
