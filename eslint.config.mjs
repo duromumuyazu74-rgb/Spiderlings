@@ -28,7 +28,7 @@ export default [
         languageOptions: { sourceType: "commonjs" },
     },
     {
-        files: ["Spiderlings_0.91/*.js", "Spiderlings_0.91/tools/displacement-prototype/*.js"],
+        files: ["Spiderlings_0.91/*.js"],
         languageOptions: {
             sourceType: "script",
             globals: { ...globals.browser, ...Object.fromEntries(nativeGlobals.map((name) => [name, "writable"])) },
