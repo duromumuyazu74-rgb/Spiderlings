@@ -137,14 +137,14 @@ test("an already dirty file changing during checks invalidates successful comman
     );
 });
 
-test("reported native evidence is copied with its scope and limitations and bound to the ZIP", (t) => {
+test("native evidence accepts uppercase ZIP hashes and retains its scope, limitations and proof", (t) => {
     const f = fixture(t);
     const proof = f.write(".scratch/native/result.json", JSON.stringify({ native: true }));
     const input = f.write(
         ".scratch/native/acceptance.json",
         JSON.stringify({
             schemaVersion: 1,
-            packageSha256: hash("fixture package"),
+            packageSha256: hash("fixture package").toUpperCase(),
             records: [
                 {
                     gameVersion: "5.4.92",
