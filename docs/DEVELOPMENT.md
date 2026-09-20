@@ -20,7 +20,9 @@ powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderli
 
 The builder uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are preserved; replacing one requires an intentional replacement. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
 
-`Repository checks` builds the same allowlisted ZIP on every pull request and maintained-branch push. It verifies every archive entry against that commit, rejects extra or missing files, confirms that atlas generation left no uncommitted difference, and uploads `spiderlings-<commit SHA>` as a GitHub Actions artifact for 14 days. This public-run package does not include the private game and original-art checks, so it is a delivery candidate until the local watcher and required in-game acceptance pass.
+Use `npm run report:delivery -- --base origin/test` to run the existing checks and package verifier while collecting JSON, Markdown and per-check logs. It verifies the existing ZIP by default. See [delivery evidence](DELIVERY-EVIDENCE.md) for public mode, explicit builds and importing game acceptance records bound to the package hash.
+
+`Repository checks` uses the public delivery-evidence mode to build the same allowlisted ZIP on every pull request and maintained-branch push. It verifies every archive entry against that commit, rejects extra or missing files, confirms that atlas generation left no uncommitted difference, and uploads `spiderlings-<commit SHA>` plus a separate `spiderlings-evidence-<commit SHA>` artifact for 14 days. This public-run package does not include the private game and original-art checks, so it is a delivery candidate until the local watcher and required in-game acceptance pass.
 
 To verify an existing package against the checked-out commit without rebuilding it:
 

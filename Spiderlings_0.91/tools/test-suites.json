@@ -7,7 +7,8 @@
     "spiderlings-spinner-capture.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-release-version.test.js",
-    "spiderlings-runtime-boundaries.test.js"
+    "spiderlings-runtime-boundaries.test.js",
+    "spiderlings-delivery-evidence.test.js"
   ],
   "local": [
     "spiderlings-encounters.test.js",
