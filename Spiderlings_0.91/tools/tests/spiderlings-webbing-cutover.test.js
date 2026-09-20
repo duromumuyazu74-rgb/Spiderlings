@@ -370,5 +370,9 @@ test("the release builder regenerates the explicit atlas then packages only mani
     assert.match(checker, /!entry\.toLowerCase\(\)\.endsWith\("\.png"\)/);
     assert.match(builder, /\[switch\]\$Force/);
     assert.match(builder, /already exists[\s\S]*-Force/);
+    assert.match(builder, /\[switch\]\$VerifyOnly/);
+    assert.match(builder, /Test-ReleasePackage/);
+    assert.match(builder, /Release entry differs from source/);
+    assert.match(builder, /\.Spiderlings-package-/);
     assert.doesNotMatch(builder, /Get-ChildItem[^\r\n]*(Models|TextureAtlas)/);
 });
