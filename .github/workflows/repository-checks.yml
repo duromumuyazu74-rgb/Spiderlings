@@ -31,18 +31,20 @@ jobs:
           cache-dependency-path: Spiderlings_0.91/tools/requirements-atlas.txt
       - run: npm ci
       - run: python -m pip install --requirement Spiderlings_0.91/tools/requirements-atlas.txt
-      - run: npm run check
+      - name: Verify delivery and record evidence
+        if: ${{ !cancelled() }}
+        run: npm run report:delivery -- --mode public --build
         env:
           BASE_SHA: ${{ github.event.before }}
-      - run: npm test
-      - run: npm run test:public
-      - name: Build and verify installable package
-        shell: pwsh
-        run: |
-          ./Spiderlings_0.91/tools/build-spiderlings-release.ps1
-          ./Spiderlings_0.91/tools/build-spiderlings-release.ps1 -VerifyOnly
-      - name: Check generated atlas
-        run: git diff --exit-code -- Spiderlings_0.91/TextureAtlas
+      - name: Retain delivery evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: spiderlings-evidence-${{ github.sha }}
+          path: .scratch/delivery/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: spiderlings-${{ github.sha }}
