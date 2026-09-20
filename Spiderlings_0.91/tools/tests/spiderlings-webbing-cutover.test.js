@@ -15,7 +15,7 @@ const scripts = [
   "SpiderlingsCombat.js",
     "SpiderlingsJumperDash.js",
   "SpiderlingsWebbingModels.js",
-  "SpiderlingsWebbing.js",
+  "SpiderlingsWebbing.js", "SpiderlingsSpinnerArt.js", "SpiderlingsSpinnerCapture.js", "SpiderlingsSpinnerField.js",
 ];
 const assets = [
   "UI/MapMod/SpiderlingsInfestation.png",
@@ -32,6 +32,10 @@ const assets = [
   "Enemies/Spinner.png",
   "Enemies/Tunneler.png",
   "Enemies/WebCaster.png",
+  "Enemies/NestEntrancePink.png",
+  "Enemies/SpinnerPink.png",
+  "Enemies/TunnelerPink.png",
+  "Enemies/WebCasterPink.png",
   "Models/SpiderlingsWebbingLv1/ArmWebbing.png",
   "Models/SpiderlingsWebbingLv1/MittenLeft.png",
   "Models/SpiderlingsWebbingLv1/MittenRight.png",
@@ -83,6 +87,10 @@ const assets = [
   "Models/SpiderlingsWebbingLv3Pink/Hood.png",
   "Models/SpiderlingsWebbingCocoonPink/Cocoon.png",
   "Models/SpiderlingsWebbingCocoonPink/OuterWebs.png",
+  "Models/SpiderlingsSpinnerLegbinder/Band.png",
+  "Models/SpiderlingsSpinnerLegbinder/Tail.png",
+  "Models/SpiderlingsSpinnerLegbinder/Finished.png",
+  "Models/SpiderlingsSpinnerLegbinder/Closure.png",
   "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
   "DisplacementMaps/SpiderlingsWebbingLv2BellySquish.png",
   "DisplacementMaps/SpiderlingsWebbingLv2LegsSquish.png",
@@ -200,8 +208,8 @@ test("legacy IDs, five-module exports, upgrade APIs, and the TrapBindings wrappe
   assert.match(webbing, /ENEMY_PROFILES/);
 });
 
-test("seven locale files contain all twenty-four current restraint text triplets", () => {
-  const current = [
+test("seven locale files contain all twenty-five current restraint text triplets", () => {
+  const current = ["SpiderlingsSpinnerLegbinder",
     "SpiderlingsWebbingLv1Arm", "SpiderlingsWebbingLv1MittenLeft", "SpiderlingsWebbingLv1MittenRight", "SpiderlingsWebbingLv1Belly",
     "SpiderlingsWebbingLv1Legs", "SpiderlingsWebbingLv1Ankles", "SpiderlingsWebbingLv1Foot", "SpiderlingsWebbingLv1Blindfold",
     "SpiderlingsWebbingLv1Stuffing", "SpiderlingsWebbingLv1Gag",
@@ -212,7 +220,7 @@ test("seven locale files contain all twenty-four current restraint text triplets
   ];
   for (const csv of csvFiles) {
     const entries = csvMap(csv);
-    assert.equal(entries.size, 155, `${csv}: current release text set including the lifetime Tunneler setting`);
+    assert.equal(entries.size, 188, `${csv}: current release text set including Spinner ground-trap message and its start preset`);
     for (const key of ["KinkyDungeonStatSpiderlingsCocoonStart", "KinkyDungeonStatDescSpiderlingsCocoonStart", "KinkyDungeonSpellCastSpiderlingsJumperDashNPC"]) {
       assert.ok(entries.get(key)?.trim(), `${csv}: ${key}`);
     }

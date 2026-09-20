@@ -13,7 +13,7 @@ Get the installable **Spiderlings_0.92.38.zip** from [the latest formal Release]
 | `main` | `0.92.38` | Formal release / 正式版 |
 | `test` | `0.92.36-test.11` | Development and playtesting / 测试开发版 |
 
-This checkout contains **0.92.38**. Test development retains its `0.92.36` baseline; it also includes the compatibility fixes carried into formal `0.92.38`. Test builds have no GitHub Release at present.
+This checkout contains **0.92.36-test.11**. Test development retains its `0.92.36` baseline; it also includes the compatibility fixes carried into formal `0.92.38`. Test builds have no GitHub Release at present.
 
 ## Development
 

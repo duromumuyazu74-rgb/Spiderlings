@@ -305,19 +305,21 @@
         return api.getSetting && api.getSetting("spiderlingsPinkWebbing") === true ? "pink" : "original";
     }
 
-    // Native bullet drawing derives the texture from the gameplay bullet name.
-    // Select the delivered pink PNG at draw time, preserving spell/trail identity.
-    function registerBulletArtwork() {
-        if (typeof KDDraw != "function" || KDDraw.spiderlingsBulletArtwork) return;
+    // Select delivered colors at draw time so existing sprites follow the setting.
+    // Enemy and spell identities remain unchanged, including saved entities.
+    function registerColoredArtwork() {
+        if (typeof KDDraw != "function" || KDDraw.spiderlingsColoredArtwork) return;
         const nativeDraw = KDDraw;
         const root = typeof KinkyDungeonRootDirectory == "string" ? KinkyDungeonRootDirectory : "";
-        const paths = new Map(["SpiderWeb", "SpiderWebHit", "WebSpray", "WebSprayTrail"]
-            .map((name) => [`${root}Bullets/${name}.png`, `${root}Bullets/${name}Pink.png`]));
+        const paths = new Map([
+            ...["SpiderWeb", "SpiderWebHit", "WebSpray", "WebSprayTrail"].map((name) => `Bullets/${name}`),
+            ...["Spinner", "Tunneler", "WebCaster", "NestEntrance"].map((name) => `Enemies/${name}`),
+        ].map((path) => [`${root}${path}.png`, `${root}${path}Pink.png`]));
         KDDraw = function(...args) {
             if (paths.has(args[3]) && webbingColor() === "pink") args[3] = paths.get(args[3]);
             return nativeDraw.apply(this, args);
         };
-        KDDraw.spiderlingsBulletArtwork = true;
+        KDDraw.spiderlingsColoredArtwork = true;
     }
 
     // Both atlases are preloaded at startup into independent color aliases.
@@ -436,7 +438,7 @@
         DISPLACEMENT_ASSETS,
     });
 
-    registerBulletArtwork();
+    registerColoredArtwork();
     loadTextureAtlases();
     preloadDisplacementTextures();
     registerRefreshEvent();

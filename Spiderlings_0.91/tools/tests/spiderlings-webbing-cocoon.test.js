@@ -728,9 +728,9 @@ test("Cocoon eligibility requires all eight physical Lv3 items, pre-hit five slo
     type: "enemyBind", profile: name, source: {kind: "enemy", name}, random: () => 0, ...extra,
   });
 
-  assert.notEqual(resolve(runtime, all, 4, direct("Spinner")).outcome.selectedId, cocoonId);
-  assert.notEqual(resolve(runtime, lv1, 5, direct("Spinner")).outcome.selectedId, cocoonId);
-  assert.equal(resolve(runtime, all, 5, direct("Spinner")).outcome.selectedId, cocoonId);
+  assert.notEqual(resolve(runtime, all, 4, direct("Jumper")).outcome.selectedId, cocoonId);
+  assert.notEqual(resolve(runtime, lv1, 5, direct("Jumper")).outcome.selectedId, cocoonId);
+  assert.equal(resolve(runtime, all, 5, direct("Jumper")).outcome.selectedId, cocoonId);
   assert.equal(resolve(runtime, all, 5, direct("Jumper")).outcome.selectedId, cocoonId);
   assert.equal(resolve(runtime, all, 5, direct("WebCaster")).outcome.selectedId, cocoonId);
   assert.notEqual(resolve(runtime, all, 5, direct("Tunneler")).outcome.selectedId, cocoonId);
@@ -741,15 +741,15 @@ test("Cocoon eligibility requires all eight physical Lv3 items, pre-hit five slo
   assert.notEqual(resolve(runtime, lv1.slice(1), 5, direct("Spinner", {testOnlyLv2Complete: true})).outcome.selectedId, cocoonId);
   assert.notEqual(resolve(runtime, lv1, 4, direct("Spinner", {testOnlyLv2Complete: true})).outcome.selectedId, cocoonId);
   for (const missing of lv3) {
-    assert.notEqual(resolve(runtime, all.filter((item) => item !== missing), 5, direct("Spinner")).outcome.selectedId, cocoonId,
+    assert.notEqual(resolve(runtime, all.filter((item) => item !== missing), 5, direct("Jumper")).outcome.selectedId, cocoonId,
       `${missing.name} must physically exist before Cocoon`);
   }
-  for (const source of ["Spinner", "Jumper", "WebCaster"]) {
+  for (const source of ["Jumper", "WebCaster"]) {
     assert.equal(resolve(runtime, lv3, 5, direct(source)).outcome.selectedId, cocoonId);
     assert.notEqual(resolve(runtime, lv3, 4, direct(source)).outcome.selectedId, cocoonId);
   }
   for (const missing of [...lv1, ...lv2]) {
-    assert.equal(resolve(runtime, all.filter(item => item !== missing), 5, direct("Spinner")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, all.filter(item => item !== missing), 5, direct("Jumper")).outcome.selectedId, cocoonId);
   }
 });
 
@@ -851,7 +851,7 @@ test("direct and trail WebSpray each add all eight Lv3 items before a later dire
   }
 });
 
-test("a later Spinner hit consumes the same physical and pre-hit slow gates", () => {
+test("a later Jumper hit consumes the same physical and pre-hit slow gates", () => {
   const runtime = loadRuntime();
   runtime.seedPhysical();
   const spell = runtime.context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "WebSpray");
@@ -863,9 +863,9 @@ test("a later Spinner hit consumes the same physical and pre-hit slow gates", ()
   }
   assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.power, 5);
 
-  const spinner = {Enemy: {name: "Spinner", fullBoundBonus: 1}, id: 66};
+  const spinner = {Enemy: {name: "Jumper", fullBoundBonus: 1}, id: 66};
   const result = runtime.context.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
-    runtime.context.KinkyDungeonPlayerEntity, "tickle", {profile: "Spinner"}, undefined, "Enemy", undefined, spinner,
+    runtime.context.KinkyDungeonPlayerEntity, "tickle", {profile: "Jumper"}, undefined, "Enemy", undefined, spinner,
   );
   assert.equal(result.effect, true);
   assert.equal(runtime.equipment.get("ItemDevices").name, cocoonId);

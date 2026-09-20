@@ -1,6 +1,6 @@
 NameSpinner,새끼 거미 방적자
 AttackSpinner,새끼 거미 방적자가 몸에 바짝 붙어 빠르게 기어 다닌다. 가는 다리가 스치며 따끔한 간지러움을 남긴다.
-AttackSpinnerBind,새끼 거미 방적자가 주위를 급히 오가며 질긴 실을 한 바퀴 남긴 뒤 자취를 감춘다.(+RestraintAdded)
+AttackSpinnerBind,거미가 다리에 실을 감고 근처에 남아 계속 움직입니다. (+RestraintAdded)
 KillSpinner,새끼 거미 방적자가 가는 다리를 접고 그림자 속으로 물러나 사라진다.
 NameJumper,새끼 거미 도약자
 AttackJumper,새끼 거미 도약자가 갑자기 덮쳐 온다. 가는 다리가 몸을 스치며 따끔한 간지러움을 일으킨다.
@@ -153,3 +153,36 @@ KinkyDungeonStatSpiderlingsCocoonStart,고치 속에서 깨어나다
 KinkyDungeonStatDescSpiderlingsCocoonStart,부드러운 고치 안에서 깨어나니, 촘촘히 겹쳐진 거미줄이 머리부터 발끝까지 온몸을 감싸고 있습니다. 살짝 몸을 움직일 때마다 몸에 밀착된 실들이 가만히 당겨집니다.
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,도약 새끼거미가 상대의 발밑을 바라보며 몸을 낮추고 뛸 준비를 한다.
 KDModButtonspiderlingsNestTunnelerCap,둥지별 Tunneler 누적 한도 (0: 소환 안 함)
+RestraintSpiderlingsSpinnerLegbinder,거미줄 다리 주머니
+RestraintSpiderlingsSpinnerLegbinderDesc,발바닥부터 허벅지 위쪽까지 감싸는 거미줄. 양팔은 자유롭다.
+RestraintSpiderlingsSpinnerLegbinderDesc2,넓은 거미줄 띠를 나선형으로 감는 데모. 자르기 4회 또는 제거／저항 6회. 미완성이면 절반이며 진행 공유.
+SpiderlingsSpinnerPull,거미줄 떼기 · 체력 10 · 1턴
+SpiderlingsSpinnerContest,참여 Spinner: {count} · 턴당 직조 +{rate}
+SpiderlingsSpinnerStart,온전한 그물이 다리를 붙잡았다. 구속 막대보다 먼저 탈출 막대를 채우자. 합류한 Spinner는 직조 속도와 탈출 목표를 높인다.
+SpiderlingsSpinnerWin,실을 끊었다. 참여한 모든 Spinner가 이후 네 턴 동안 기절한다.
+SpiderlingsSpinnerInterrupt,공동 작업이 중단됐다. 행동할 수 있지만 이미 감긴 거미줄은 남는다.
+SpiderlingsSpinnerTired,체력이 10 필요하다. 기다리거나 물약을 사용할 수 있다.
+SpiderlingsSpinnerWrap,다리를 감싸는 데 세계 턴 다섯 번이 걸립니다. 팔 상태는 유지됩니다.
+SpiderlingsSpinnerDone,주머니가 완성됐다. 공격, 아이템 사용, 느린 이동 또는 제거가 가능하다.
+KinkyDungeonStatSpiderlingsSpinnerDemo,거미줄 짜기 체험
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,평평한 시험장에서 거미가 바닥 덫을 놓고 서로 연결하여 퇴로를 막는다. 대항과 5턴 감싸기를 시험한다.
+NameSpiderlingsSilkAnchor,거미줄 매듭
+KillSpiderlingsSilkAnchor,거미줄 경계가 찢어집니다.
+SpiderlingsFieldPreparing,거미는 덫을 놓은 뒤 연결하여 퇴로를 막는다. 닫히기 전에 나가거나 연결을 끊자.
+SpiderlingsFieldReady,두 덫이 연결되었다. 거미는 다른 퇴로를 막는다.
+SpiderlingsFieldSprung,연결된 덫이 구역을 둘러쌌다. 안에 남으면 포획될 수 있다.
+SpiderlingsFieldBroken,매듭이 끊어져 덫과 구속이 풀립니다.
+SpiderlingsFieldReset,시험 초기화
+SpiderlingsFieldJumper,도약 거미 풀기
+SpiderlingsFieldStatus,거미줄 구역: {phase} · 덫 {count}/4 · 연결 {links}/4
+SpiderlingsFieldPhasepreparing,준비 중
+SpiderlingsFieldPhaseready,연결 준비
+SpiderlingsFieldPhasesprung,폐쇄 완료
+SpiderlingsFieldPhasebroken,파괴됨
+SpiderlingsFieldPhasecomplete,완료
+SpiderlingsSpinnerWeave,구속: {value}/100
+SpiderlingsSpinnerEscape,탈출: {value}/{goal}
+SpiderlingsFieldAddSpinner,Spinner 추가
+SpiderlingsFieldTrap,바닥 거미줄이 발을 붙잡아 잠시 이동을 늦춘다.
+SpiderlingsFieldRebuild,{turns} 월드 턴 후 거미들이 다시 설치를 시작한다.
+SpiderlingsFieldWaiting,함정 준비 완료. 들어올 때까지 서쪽 입구는 열려 있다.

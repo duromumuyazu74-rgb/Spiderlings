@@ -1,6 +1,6 @@
 NameSpinner,Spinnenjunges Spinner
 AttackSpinner,Das Spinnenjunge Spinner huscht über deinen Körper; seine feinen Beine hinterlassen ein prickelndes Jucken.
-AttackSpinnerBind,Das Spinnenjunge Spinner flitzt um dich herum, hinterlässt eine Schlinge klebriger Seide und verschwindet. (+RestraintAdded)
+AttackSpinnerBind,Die Spinne wickelt Seide um deine Beine und bleibt zum Weiterweben in der Nähe. (+RestraintAdded)
 KillSpinner,Das Spinnenjunge Spinner zieht seine feinen Beine an und verschwindet rückwärts in den Schatten.
 NameJumper,Spinnenjunges Springer
 AttackJumper,Das Spinnenjunge Springer schnellt heran; seine feinen Beine streifen deinen Körper und lassen ihn jucken.
@@ -153,3 +153,36 @@ KinkyDungeonStatSpiderlingsCocoonStart,Erwachen im Kokon
 KinkyDungeonStatDescSpiderlingsCocoonStart,Du erwachst in einem weichen Kokon, von Kopf bis Fuß vollständig in dicht gewebte Schichten aus Spinnseide gehüllt. Jede kleine Bewegung zieht an den Fäden, die sich an deinen Körper schmiegen.
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Die Springspinne fixiert den Boden unter ihrem Gegner und duckt sich zum Sprung.
 KDModButtonspiderlingsNestTunnelerCap,Tunneler je Nest insgesamt (0: keine)
+RestraintSpiderlingsSpinnerLegbinder,Seidener Beinbeutel
+RestraintSpiderlingsSpinnerLegbinderDesc,Seide umschließt die Beine von den Sohlen bis zu den Oberschenkeln. Die Arme bleiben frei.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Demo mit breiten spiralförmigen Seidenbändern. Viermal schneiden oder sechsmal lösen; halb fertig dauert halb so lange.
+SpiderlingsSpinnerPull,Losreißen · 10 Ausdauer · 1 Runde
+SpiderlingsSpinnerContest,Spinner: {count} · Weben +{rate}/Runde
+SpiderlingsSpinnerStart,Das intakte Netz hält dich fest. Fülle die Fluchtleiste zuerst; weitere Spinner erhöhen Webtempo und Fluchtziel.
+SpiderlingsSpinnerWin,Du reißt die Fäden auseinander. Alle beteiligten Spinner sind vier Runden betäubt.
+SpiderlingsSpinnerInterrupt,Das Weben bricht ab. Du kannst handeln; bereits gewebte Seide bleibt.
+SpiderlingsSpinnerTired,Du brauchst 10 Ausdauer. Warten oder einen Trank nutzen ist weiter möglich.
+SpiderlingsSpinnerWrap,Die Beine werden fünf Weltrunden lang eingewickelt; Arme bleiben unverändert.
+SpiderlingsSpinnerDone,Fertig. Du kannst angreifen, Gegenstände nutzen, langsam gehen oder den Beutel lösen.
+KinkyDungeonStatSpiderlingsSpinnerDemo,Spinner-Probelauf
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Betritt ein flaches Testfeld. Spinner legen Bodenfallen und verbinden sie über Fluchtwege. Erprobe den Wettstreit und fünf Runden Einwickeln.
+NameSpiderlingsSilkAnchor,Netzknoten
+KillSpiderlingsSilkAnchor,Die Netzgrenze reißt auf.
+SpiderlingsFieldPreparing,Spinner legen Fallen und verbinden sie über deinen Rückweg. Fliehe vor dem Schließen oder zerschneide eine Verbindung.
+SpiderlingsFieldReady,Zwei Fallen sind verbunden. Die Spinner sperren einen weiteren Fluchtweg.
+SpiderlingsFieldSprung,Die Verbindungen umschließen das Gebiet. Wer noch innen steht kann gefangen werden.
+SpiderlingsFieldBroken,Ein Knoten reißt. Die Falle und ihre Fäden lösen sich.
+SpiderlingsFieldReset,Versuch zurücksetzen
+SpiderlingsFieldJumper,Springer freilassen
+SpiderlingsFieldStatus,Netzfeld: {phase} · Fallen {count}/4 · Verbindungen {links}/4
+SpiderlingsFieldPhasepreparing,Aufbau
+SpiderlingsFieldPhaseready,Verbindung bereit
+SpiderlingsFieldPhasesprung,Geschlossen
+SpiderlingsFieldPhasebroken,Zerstört
+SpiderlingsFieldPhasecomplete,Abgeschlossen
+SpiderlingsSpinnerWeave,Fesselung: {value}/100
+SpiderlingsSpinnerEscape,Flucht: {value}/{goal}
+SpiderlingsFieldAddSpinner,Spinner hinzufügen
+SpiderlingsFieldTrap,Bodenseide hält deine Füße kurz auf.
+SpiderlingsFieldRebuild,Spinner beginnen in {turns} Weltrunden erneut zu bauen.
+SpiderlingsFieldWaiting,Fallen bereit. Der Westeingang bleibt bis zu deinem Eintritt offen.

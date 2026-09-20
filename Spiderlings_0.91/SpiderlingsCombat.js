@@ -192,7 +192,7 @@
             args[1] = payload("melee", source);
             const result = nativeDamage.apply(this, args);
             const added = (target.boundLevel || 0) - before;
-            if (added > 0) source.hp = 0;
+            if (added > 0 && source.Enemy.name !== "Spinner") source.hp = 0;
             // Only this native melee caller treats the return as an effect
             // count. Damage events and every other caller retain real HP loss.
             return added > 0 ? added : result + (args[1].spiderlingsDamageDealt || 0);

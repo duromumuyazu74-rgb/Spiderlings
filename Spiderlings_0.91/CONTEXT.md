@@ -38,6 +38,18 @@ _Avoid_: every Spiderling near a nest
 
 ## Spiderlings Webbing
 
+**Spinner leg bag demo**:
+The `0.92.36-test.7` leg bag occupies ItemLegs and uses a broad procedural helical ribbon on the original canvas. The contest forces Closed legs immediately while preserving arms and keeping equipment absent until failure. Four ground traps are placed before their pairwise connections; movement direction prioritizes intercepted escape routes. Only a closed, intact network containing the player and two legal melee Spinners admits capture. Two participants weave 12.5/100 per world turn (eight turns); each extra participant adds 4 rate and 25 escape target above 75. A paid pull adds 25 escape work. Dynamic arrivals retain both counters, and escape wins simultaneous finishes. Failure still applies one item over five automatic turns. Full bags require four Cut or six Remove/Struggle actions; incomplete bags require two or three. Native costs and accessibility remain effective.
+_Avoid_: scaled full-body Cocoon, guaranteed capture, animation frames as world turns
+
+**Spinner training field**:
+The optional `SpiderlingsSpinnerDemo` start perk enters a dedicated flat room. Two Spinners construct a breakable 7×7 web boundary using actual action budgets; the player starts outside while unaware Spinners preplace four traps and connect three sides. Entering closes the remaining western edge and starts their approach. Native obstacle entities retain HP and collision. A broken knot removes this field's boundary and cancels its capture. Surviving builders resume after twenty subsequent world turns; each reinforcement action repairs one knot by 0.1 HP up to 2. During contest and wrap, other hostile spiders reposition without attacking the player. Existing player dash warnings cancel; after capture, new warnings again provide two real input opportunities. Reset and Jumper-release controls make the sequence repeatable. Field AI is confined to this room; ordinary maps keep native navigation. Spinner binding attacks remain persistent in both player and NPC routes, while normal defeat can kill them.
+_Avoid_: decorative-only boundary, teleporting the player into a capture, immortal Spinner
+
+**Spinner demo reaction opportunity**:
+A real player input that advances time while a contest or leg bag is present, counted once even when the native action schedules multiple world turns. Jumper warnings still snapshot their target tile and resolve after two subsequent opportunities. Automatic weaving advances world effects without consuming player opportunities; NPC-targeted dashes retain world-time behavior.
+_Avoid_: every tick is a player action, frozen world during weaving
+
 **Silken Awakening start perk**:
 The optional `SpiderlingsCocoonStart` perk granting two displayed perk points (internal `cost: -1`) in KD's Start category. A selected new game equips all ten Lv1, five Lv2 and eight Lv3 restraints, then Cocoon, retaining all twenty-four physical items. The starting Cocoon has no reinforcing outer webs. Loading the Mod or continuing the run does not equip the set again.
 _Avoid_: three separate level perks, inventory-only reward, reinforced starting Cocoon
@@ -85,7 +97,7 @@ _Avoid_: global removal lock, consumed inner layers, inner-layer escape through 
 ## NPC silk combat
 
 **Temporary silk subdual**:
-Spiderling attacks use shared light tickle damage profiles for players and hostile NPCs: melee 0.05, dash 0.10, direct spray 0.05 and trail 0.01. Players receive eligible Webbing equipment; NPCs receive native Slime binding. Damage and binding have separate native resistance checks. NPC contact amplification is capped at twice its scaled input to prevent flat weakness bonuses overwhelming these tiny amounts. Native immunity, shields and struggling remain effective. Subdual means native helplessness, not permanent capture, recruitment or collection. Successful melee binding consumes the attacking Spinner or Jumper; WebCasters provide repeated support.
+Spiderling attacks use shared light tickle damage profiles for players and hostile NPCs: melee 0.05, dash 0.10, direct spray 0.05 and trail 0.01. Players receive eligible Webbing equipment; NPCs receive native Slime binding. Damage and binding have separate native resistance checks. NPC contact amplification is capped at twice its scaled input to prevent flat weakness bonuses overwhelming these tiny amounts. Native immunity, shields and struggling remain effective. Subdual means native helplessness, not permanent capture, recruitment or collection. Successful melee binding consumes the attacking Jumper; Spinners and WebCasters remain for repeated support.
 _Avoid_: guaranteed capture, player Webbing equipment on NPCs, HP damage as binding
 
 **NPC silk gag**:

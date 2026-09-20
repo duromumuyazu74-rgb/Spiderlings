@@ -115,7 +115,7 @@
             return {sourceId: state.sourceId, outcome: progression && progression.progressed ? "hit-progressed" : "hit-no-progress"};
         }
 
-        function advancePlayerAction() {
+        function advancePlayerAction(countOpportunity = true) {
             const outcomes = auditSources();
             for (const state of Array.from(states.values())) {
                 // The cast event shares the initiating action; skip it so exactly two later actions remain.
@@ -123,6 +123,7 @@
                     state.skipNextAdvance = false;
                     continue;
                 }
+                if (!countOpportunity && state.targetId === undefined) continue;
                 state.opportunities += 1;
                 if (state.opportunities >= CONFIG.reactionActions) outcomes.push(resolve(state));
             }
@@ -211,7 +212,8 @@
 
     const runtimeWorld = {
         isSuppressed: (source, target) => !!api.Webbing?.isCocoonDispersing(source,
-            target?.Enemy && !target.player ? target : KinkyDungeonPlayerEntity),
+            target?.Enemy && !target.player ? target : KinkyDungeonPlayerEntity)
+            || !!api.SpinnerCapture?.holdsSpiderAttack(source,target),
         validNPC: (source, target) => !!api.Combat?.eligible(source, target),
         bindNPC: (source, target) => api.Combat.hitNPC(source, target, "dash"),
         isCooldownReady: (source) => !(Number(source && source.castCooldownSpecial || 0) > 0),
@@ -335,7 +337,7 @@
         });
         addGenericEvent("tickAfter", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !(Number(data.delta) > 0)) return;
-            runtimeController.advancePlayerAction();
+            runtimeController.advancePlayerAction(api.SpinnerCapture?.reactionOpportunity() ?? true);
         });
         addGenericEvent("beforeEnemyLoop", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !data.enemy) return;

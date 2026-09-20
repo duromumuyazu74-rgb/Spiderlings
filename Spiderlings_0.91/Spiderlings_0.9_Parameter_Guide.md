@@ -1,16 +1,20 @@
-# Spiderlings 0.92.36 参数说明
+# Spiderlings 0.92.36-test.7 参数说明
+
+正式基线为 `0.92.36`。Spinner 先放四处地面陷阱，再连接已有陷阱拦截玩家退路，按最近移动方向优先封边。四条连接完整、玩家仍在内部、至少两只合法近战 Spinner 才开始对抗。进入对抗即强制并腿，方案 D 的粗蛛丝宽带逐圈缠绕，预览不施加装备。拘束目标 100，两只每世界回合 +12.5（八回合）、额外每只 +4；挣脱目标 75、额外每只 +25，一次有效挣脱 +25。中途增援保留进度，失败后固定五回合实际施加。 当前步骤见 [试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)。完整腿袋 hobble 2，Cut 4／Remove 或 Struggle 6；半成品 2／3，原生费用与可达性有效。
+
+新游戏 0 点「结网幼蛛试玩」进入 31×21 平坦地图，四个陷阱锚点与四条连接构成外径 7×7 的区域。一次行动预算放一处陷阱或连接一对已有陷阱，地面陷阱可踩中并施加两回合 MoveSpeed -1；连接主体 HP 2、金色弱点 HP 0.5。玩家未离开完整区域才可被捕获，破坏结点撤网。普通地图保持原状。Spinner 命中不自退场，仍能被正常击败。
 
 左右 Lv1 蛛丝手套可绕过束臂袋、紧身衣等造成的手部施加阻挡；同槽仍须通过原生无覆盖链接检查，保留原有装备、锁和脱困进度。此规则只影响施加，脱困操作与丝茧门禁仍沿用原规则。
 
 本文只说明当前 `Spiderlings_0.91/` 运行时。权威实现位于 `SpiderlingsCore.js`、`Spiderlings.js`、`SpiderlingsInfestation.js`、`SpiderlingsCombat.js`、`SpiderlingsJumperDash.js`、`SpiderlingsWebbingModels.js` 和 `SpiderlingsWebbing.js`，资源加载由 `SpiderlingsModelRuntime.js` 负责。
 
-在游戏 Mod 配置 → Spiderlings 中切换“粉色蛛丝（关闭为原色）”。默认使用原色；开启后全部 Webbing 部件采用粉色素材，包括头套、丝茧与外围网。退出设置页面后已穿戴模型刷新，重新加载游戏仍保留选择。该选项只影响外观。
+在游戏 Mod 配置 → Spiderlings 中切换“粉色蛛丝（关闭为原色）”。默认使用原色；开启后全部 Webbing 部件采用粉色素材，包括头套、丝茧与外围网，喷网投射物也随之切色。`0.92.36-test.11` 起，Spinner、Tunneler、WebCaster 和巢穴身上的蛛丝也跟随设置；Jumper 在两种设置下共用新图。退出设置页面后已穿戴模型刷新，地图上已有怪物在下一次绘制时换色，重新加载游戏仍保留选择。该选项只影响外观。
 
 ## Webbing catalog
 
 新游戏的 Perk → 起始场景中可选择返还 2 个界面点数的「丝茧初醒」（`SpiderlingsCocoonStart`，内部 `cost: -1`），开局同时穿齐十件 Lv1、五件 Lv2、八件 Lv3 和 Cocoon，共 24 件。所有物品初始不加锁、不收紧，Cocoon 尚未被外围网加固；之后沿用正常的外层解除顺序与脱困机制。此选项只在新游戏开局施加。
 
-当前源码 `0.92.34` 注册十件 Lv1、五件 Lv2、八件 Lv3 和 Cocoon，全部使用正式交付美术。所有 Spiderlings Webbing 的 `weight` 为 `0`、`enemyTags` 为空、敌方施加 tightness 为 `0` 且 lock 为空；敌人只可通过 shared resolver 选择精确 ID，各部位独立按自身 Lv1 → Lv2 → Lv3 链晋级，眼罩和封口直接从 Lv1 到 Lv3。每次命中在可新增或升级的部位中按原权重随机，满级部位不再入选；不必补齐全身低级层，也不用等下一回合。结茧只要求八件 Lv3 全部真实装备，不要求 Lv1／Lv2 齐全；玩家仍可手动装备。
+当前源码注册十件 Lv1、五件 Lv2、八件 Lv3、Cocoon 和独立腿袋，共 25 件。腿袋采用四张可直接替换的 Image Gen 测试 PNG，代码负责螺旋铺带、尾端变形与阶段切换；其余使用正式交付美术。所有 Spiderlings Webbing 的 `weight` 为 `0`、`enemyTags` 为空、敌方施加 tightness 为 `0` 且 lock 为空；敌人通过 shared resolver 选择精确 ID，各部位独立按自身 Lv1 → Lv2 → Lv3 链晋级，眼罩和封口直接从 Lv1 到 Lv3。每次命中在可新增或升级的部位中按来源权重随机，满级部位不再入选；不必补齐全身低级层，也不用等下一回合。Spinner 仅推进腿、踝、足并可协作形成腿袋。其他合法 direct 来源在八件 Lv3 全部真实装备、命中前五层 slow 时可以结茧，不要求 Lv1／Lv2 齐全；玩家仍可手动装备。
 
 | Family | ID | Group | 关键效果 |
 |---|---|---|---|
@@ -35,7 +39,7 @@ Stuffing 与 Gag 按同一物理链规范化，合计 gag 为 `0.25`，外层 Ga
 
 八个 `SpiderlingsWebbingLv3*` 对应 Arm、Belly、Legs、Ankles、Foot、Blindfold、Gag、Hood，`power: 3`，需两次有效 Cut/Struggle/Remove 行动，方法可混用。前七项沿用对应部位的 Group，Hood 使用 `ItemHead`。身体同部位链按 Lv1 → Lv2 → Lv3 排列；头部链为 Lv1 Blindfold → Lv3 Blindfold → Lv3 Hood，嘴部链为 Lv1 Stuffing → Lv1 Gag → Lv3 Gag。Lv3 阻挡被其覆盖的内层逃脱；五个身体部位的 Lv2 也阻挡对应 Lv1，拦截不消耗回合或资源。
 
-敌方 Lv3 Hood 只在 Lv3 Blindfold 和 Lv3 Gag 已装备后成为候选；身体其余部位继续按权重抽选。Spinner 接触、Jumper 近战/跃击、WebCaster 喷网直击及带来源标记的残留蛛网均可推进 Lv3，残留蛛网每回合最多一次。最后一件 Lv3 装上后，且命中前已累积五层 slow 时，下一次合格 direct 命中才结茧。
+敌方 Lv3 Hood 只在 Lv3 Blindfold 和 Lv3 Gag 已装备后成为候选；身体其余部位继续按来源权重抽选。Spinner 接触只推进下身三族；Jumper 近战/跃击、WebCaster 喷网直击及带来源标记的残留蛛网可推进其他 Lv3，残留蛛网每回合最多一次。最后一件 Lv3 装上后，且命中前已累积五层 slow 时，后续 Jumper 或 WebCaster 合格 direct 命中才新结全身茧；Spinner 仅可修补已有茧。
 
 Lv1/Lv2 保留既有衣物与可见层 displacement。Lv3 使用区域覆盖姿势和 `Pri: 52`，完整素材覆盖处的内层模型停止绘制，物品仍装备；隐藏内层的 displacement 不继续绘制。Arm 使用 `WrappingChest` 并只在可见的 Wristtie 姿势参与 `ChestBinding` 跨层覆盖。Hood 独立覆盖整个头部，并隐藏被罩住的眼罩、口部与头发等图层。
 
@@ -49,7 +53,7 @@ Lv3 Hood 遮住额外兽耳；Lv3 Legs 与 Cocoon 遮住尾巴。解除头套后
 
 Legs 与 Ankles 的 Lv1 位于站立裙层下方；两者的 Lv2/Lv3 使用 `OverSkirtDeco`、`Pri: 51/52`，在裙子上方绘制。四件外层模型均设置 `NoOverride: true`，保留裙子，只由蛛丝图案的不透明部分遮盖。Ankles 的 Lv2/Lv3 共用新导出的位移图，目标为 `Skirts`、强度为 `2000`，裁切原点为 `(383,2085)`。
 
-丝茧是目前最高级的操作门禁。实际装备丝茧期间，全部 23 件 LV1/LV2/LV3 蛛丝物品均不能操作，包括手套、眼罩、口部和头罩；HUD 与右键菜单隐藏其操作入口，剪切、移除、挣扎输入在扣除回合或资源前被拦截，不累计逃脱进度。丝茧本身可以操作，脱茧后恢复各部位原有的外层优先规则。手动穿戴丝茧、内层不齐或尚未加固时同样生效。
+丝茧是目前最高级的操作门禁。实际装备丝茧期间，全部 23 件 LV1/LV2/LV3 蛛丝物品及独立腿袋均不能操作，包括手套、眼罩、口部和头罩；HUD 与右键菜单隐藏其操作入口，剪切、移除、挣扎输入在扣除回合或资源前被拦截，不累计逃脱进度。丝茧本身可以操作，脱茧后恢复各部位原有的外层优先规则。手动穿戴丝茧、内层不齐或尚未加固时同样生效。
 
 ### 丝茧初醒点数依据
 
@@ -123,11 +127,11 @@ KD 以加权不放回抽选补充三个特性候选，再逐一随机分配给�
 
 | 来源 | 十一项权重 |
 |---|---|
-| Spinner | `3/3/3/3/2/1/1/3/3/3/3` |
+| Spinner | `0/0/0/0/2/1/1/0/0/0/0` |
 | Jumper | `1/1/1/2/3/3/3/1/1/1/1` |
 | WebCaster | `2/2/2/2/2/2/2/2/2/2/2` |
 
-Spinner 使用 `MeleeEffectSuicide`，Jumper 使用保留 `Spell/Melee/Effect/Suicide` 四个 KD 攻击 token 的 `SpellMeleeEffectSuicide`：对玩家实际新增或修补丝茧进度才离场；每次有效普通命中均结算基础 `0.05 tickle`，成功与未推进相同，不再追加 `fullBoundBonus`。Tunneler 与 NestEntrance 不进入此表。
+Spinner 使用 `MeleeEffect` 且 `suicideOnEffect: false`，玩家与 NPC 施网后继续存活。Jumper 使用保留 `Spell/Melee/Effect/Suicide` 四个 KD 攻击 token 的 `SpellMeleeEffectSuicide`：对玩家实际新增或修补丝茧进度才离场；每次有效普通命中均结算基础 `0.05 tickle`，成功与未推进相同，不再追加 `fullBoundBonus`。Tunneler 与 NestEntrance 不进入此表。
 
 Jumper 的普通攻击距离为两格，`movePoints: 1.25`；数值低于 Spinner/Tunneler 的 `1.5`，因此行动略快。其独立跃击由 `SpiderlingsJumperDash` 在物理距离严格大于 2、至多 4 格时锁定玩家或敌对 NPC 当时所在格；起手立即进入 5 回合冷却，并留下一个持续紫色预警和一次起手文本。KD 在发送 `enemyCast` 前已写入这次冷却，因此事件提交阶段不会重复执行“冷却必须就绪”的候选检查。起手敌方行动不计入窗口，玩家完整行动两次后才结算。整个蓄力期 Jumper 保持在起手格，不执行主动移动；Dash 结算或被取消后，下一次敌人行动恢复普通移动。
 
@@ -148,7 +152,7 @@ Jumper 的普通攻击距离为两格，`movePoints: 1.25`；数值低于 Spinne
 
 原生 glue 抗性、免疫、护盾、可束缚条件和已减速/失能倍率继续影响束缚；tickle 抗性单独影响伤害。NPC 自有轻触伤害在原生倍率调整后，增幅最多为输入值的两倍，避免弱点固定加 0.5/1 将微量伤害放大；减伤与护盾仍有效。这里是基础量，并非最终扣血量。Slime 材料由原生系统累计并挣脱，保留其他材料。不会自动生成 NPC 实体装备，也不把玩家的 23 件内层和 Cocoon 套到 NPC 身上。
 
-普通近战与跃击实际增加束缚才消耗幼蛛；仅造成伤害时保留。喷网幼蛛不消耗；同来源对同一 NPC 的轨迹每回合最多接触结算一次，束缚被抵抗时也不重复扣伤害；不同来源可叠加，直击独立计数。对 NPC 使用独立的交叉喷网绑定奖励，不追加玩家拘束装备。弹丸仅对实际敌对实体适配原生阵营碰撞过滤，不扩大全局阵营关系。
+Jumper 普通近战与跃击实际增加束缚才消耗来源；仅造成伤害时保留。Spinner 和喷网幼蛛不消耗；同来源对同一 NPC 的轨迹每回合最多接触结算一次，束缚被抵抗时也不重复扣伤害；不同来源可叠加，直击独立计数。对 NPC 使用独立的交叉喷网绑定奖励，不追加玩家拘束装备。弹丸仅对实际敌对实体适配原生阵营碰撞过滤，不扩大全局阵营关系。
 
 NPC 跃击同时锁定实体 ID 与原地格，两次完整玩家行动后结算；原目标移开则落空，不追踪，也不伤及替代占格者。死亡、敌对关系失效、读档或离图清理预警。NPC 起手文本与对玩家文本分开。
 
@@ -216,3 +220,5 @@ NestEntrance 的 `spells` 保持空数组；循环增援由 `afterEnemyTick` 事
 当前角色素材共 50 张，两色各 25 张：十张 Lv1、五张 Lv2、八张 Lv3，以及 Cocoon 本体和外围网。原色与粉色各 25 张进入各自 atlas，启动时预载两色并保留独立 PNG 回退；源图、无损 atlas 与 direct fallback 规则见 `MAINTENANCE.md`。发行版本 `0.92.36` 的清单为 93 项，其中 PNG 71 张，安装包为工作区根目录 `Spiderlings_0.92.36.zip`。五部位 displacement 采用 `DSmap/` 导出：Lv1 无位移，Lv2/Lv3 共用对应部位的图与参数。更高等级覆盖下的内层拘束不显示操作选项，移除外层后恢复。侵扰层启用五巢目标，完成后开放下楼。
 
 Spiderling Infestation 在楼层选择和旅程地图中使用专属蛛网边框图标，叠加在原版楼层底图上。
+
+玩家从区域西侧外部进入；Spinner 在未发现玩家时预放四陷阱、织好三边，进入后封住最后一边。结点被打断或陷阱被拆除后等待二十个后续世界回合，再由存活 Spinner 重新布场，不生成替补。空闲布场动作每次修补一个连接结点 0.1 HP，最高 2；连接显示最薄弱处生命。对抗及五回合包裹期间，其他敌对蜘蛛暂停攻击玩家并调整等候位置；额外 Spinner 仍可加入。已有玩家目标 Jumper 预警撤销，自有在途喷网不造成伤害或施加；结束后重新攻击与预警，NPC 对战保持原流程。

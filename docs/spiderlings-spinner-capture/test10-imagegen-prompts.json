@@ -1,0 +1,30 @@
+{
+  "method": "Built-in image_gen",
+  "date": "2026-09-19",
+  "build": "0.92.36-test.10",
+  "scope": "Four leg-bag test textures; AI test art, not final artist delivery. Original generated PNG bytes preserved.",
+  "parts": [
+    {
+      "file": "Band.png",
+      "prompt": "Use case: stylized-concept. Asset type: production test PNG texture for a 2D fantasy game's broad spider-silk wrapping band. Generate ONE isolated perfectly straight horizontal strip on a genuinely transparent RGBA background, no checkerboard painted in. Landscape canvas, 3:1 aspect if possible. Strip runs all the way from left image edge to right image edge, seamless/repeatable along horizontal length, occupying central 70 percent of image height with transparent margins above and below. Upper and lower edges parallel and gently fibrous, visibly thick rolled silk edges; dense soft ivory-white silk with fine continuous horizontal fibres, subtle shading within the strip, slightly irregular tiny wisps. Neutral ivory monochrome allows later pink tinting. Flat orthographic front view, anime game artwork with clean painterly linework. No body, person, limbs, wrapped object, diagonal wrapping, folds that change width, loose ends, knots, text, labels, watermarks, shadows outside strip or background. This is a texture strip, not a complete bandage roll. Keep left/right joins identical in thickness and illumination.",
+      "generated": "exec-8616cf65-4b87-4efc-874a-70614eb56668.png"
+    },
+    {
+      "file": "Tail.png",
+      "prompt": "Use case: stylized-concept. Asset type: independent moving silk tail PNG for a 2D fantasy wrapping animation. Input image 1 is MATERIAL REFERENCE ONLY. Create one isolated ivory white thick spider-silk ribbon on a genuinely transparent alpha background. Landscape 3:1 canvas. The ribbon runs horizontally left to right with a gentle single shallow curve; left attachment end touches the left canvas edge, right free end stops at 95 percent canvas width and has a softly tapered irregular fibrous tip. Occupies central 60 percent of height. Dense silky horizontal fibres and subtly rolled thick edges matching the reference. No knots, no loops, no object wrapped, no body/person, no words or diagram labels. Do not paint background, checkerboard or drop shadow. Clear separate free end. Even diffuse lighting and pale neutral color suitable for runtime pink tint. This texture will be deformed by code; keep the strip mostly straight with no sharp folds.",
+      "reference": "Band.png",
+      "generated": "exec-846f7ee5-5132-4a25-acfd-68db53652492.png"
+    },
+    {
+      "file": "Finished.png",
+      "prompt": "Create a clean 2D GAME SPRITE, on fully transparent PNG alpha. Not a product photograph. One ivory spider-silk sack shaped for two closed legs together, front view. A soft broad cylindrical leg bag with 8 overlapping diagonal ribbon turns, broad open top, broad rounded sealed bottom, softly waisted sides. Width at top 600 pixels, height 1200 pixels conceptually, width at bottom 510 pixels, width at middle 520 pixels. Drawn anime/cel-painted style, visible delicate horizontal silk fibres, pale cream highlights and cool gray short shadows only inside the silk shape. NO BACKGROUND: no light bloom, no blur, no glow, no soft shadow outside the silhouette, no ground, no studio lighting. Outside every silhouette edge must be empty transparent. No body, person, limbs, mannequin, spider, text, symbols, labels, knot or loose tail. Entire sprite visible with 10 percent clear transparent margin. Tall portrait composition, one object. Crisp game asset silhouette, softly layered dense silk within it.",
+      "generated": "exec-3938e9b2-068f-4ac8-a1b2-3094f9254dc2.png"
+    },
+    {
+      "file": "Closure.png",
+      "prompt": "Use case: stylized-concept. Asset type: separate top closure edge sprite for a 2D silk leg-bag. Use image 1 only for matching ivory silk fibre material. Draw ONE shallow U-shaped front lip of the upper-thigh opening: a broad gently curved horizontal silk ribbon, highest at left/right ends, center dips down slightly. Width 90 percent of a landscape 3:1 canvas, height of strip about 28 percent canvas. This is just the FRONT HALF of an elliptical opening, with a thick rolled upper edge and small overlapping lower edge; NO back half, no full ring, no tube body, no bag, no tails, no knots. Ivory-white closely woven fine fibres, soft internal shading, clean game-art edges. Transparent RGBA around and above/below this isolated ribbon, no cast shadow or glow, no checkerboard, no words, no labels. Entire part has margins and must connect over the top of a separately rendered bag.",
+      "reference": "Band.png",
+      "generated": "exec-af22d551-753b-48b4-870f-55a2210229b3.png"
+    }
+  ]
+}

@@ -856,6 +856,43 @@ test("delivered bullet colors follow settings without changing spell identities 
   }
 });
 
+test("enemy artwork follows restored settings and repeated toggles without changing enemy identities", () => {
+  const calls = [];
+  const receiver = {};
+  const result = {};
+  for (const savedPink of [false, true]) {
+    const {context} = loadWebbingRuntime({
+      KinkyDungeonRootDirectory: "Game/",
+      KDModSettings: {Spiderlings: {spiderlingsPinkWebbing: savedPink}},
+      KDDraw(...args) { calls.push({receiver: this, args}); return result; },
+    });
+    const enemies = JSON.stringify(context.KinkyDungeonEnemies);
+    const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
+    for (const pink of [savedPink, !savedPink, savedPink]) {
+      context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
+      context.KDEventMapGeneric.afterModConfig.Spiderlings();
+      for (const name of ["Spinner", "Tunneler", "WebCaster", "NestEntrance", "Jumper", "Maidforce"]) {
+        const args = [{}, new Map(), `existing-${name}`, `Game/Enemies/${name}.png`, 10, 20, 72, 72, 0.5, {alpha: 0.8}, true];
+        const colored = !["Jumper", "Maidforce"].includes(name);
+        const expected = colored && pink ? `Game/Enemies/${name}Pink.png` : args[3];
+        assert.equal(context.KDDraw.apply(receiver, args), result);
+        assert.equal(calls.at(-1).receiver, receiver);
+        assert.deepEqual(calls.at(-1).args, args.map((arg, i) => i === 3 ? expected : arg));
+        if (name !== "Maidforce") {
+          const index = manifest.fileorder.indexOf(expected.slice(5));
+          assert.ok(index >= 0 && index < manifest.fileorder.indexOf("SpiderlingsModelRuntime.js"), expected);
+        }
+      }
+      for (const path of ["Game/EnemiesBound/Spinner.png", "Game/Enemies/Other/Spinner.png", "Models/Other/Spinner.png"]) {
+        const args = [{}, new Map(), "unrelated", path];
+        context.KDDraw(...args);
+        assert.deepEqual(calls.at(-1).args, args);
+      }
+      assert.equal(JSON.stringify(context.KinkyDungeonEnemies), enemies);
+    }
+  }
+});
+
 test("both color atlases preload before equipment, reuse textures on switching, and fail independently", async () => {
   const original = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
   const pink = JSON.parse(fs.readFileSync(path.join(modRoot, pinkAtlas), "utf8"));

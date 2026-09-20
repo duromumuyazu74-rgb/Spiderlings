@@ -19,13 +19,14 @@ $JumperDashTest = Join-Path $ToolRoot "tests\spiderlings-jumper-dash.test.js"
 $WebbingWebSprayTest = Join-Path $ToolRoot "tests\spiderlings-webbing-webspray.test.js"
 $WebbingCocoonTest = Join-Path $ToolRoot "tests\spiderlings-webbing-cocoon.test.js"
 $WebbingAtlasTest = Join-Path $ToolRoot "tests\spiderlings-webbing-atlas.test.js"
+$SpinnerArtTest = Join-Path $ToolRoot "tests\spiderlings-spinner-art.test.js"
 $NewSaveSmokeTest = Join-Path $ToolRoot "tests\spiderlings-new-save-smoke.test.js"
 
 function Invoke-SpiderlingsCheck {
   $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
   Write-Host ""
   Write-Host "[$stamp] Running Spiderlings mod check..."
-  & node --test $EncounterTest $CombatTest $MaidHostilityTest $InfestationTest $CutoverTest $WebbingTest $WebbingLifecycleTest $WebbingEnemyTest $JumperDashTest $WebbingWebSprayTest $WebbingCocoonTest $WebbingAtlasTest $NewSaveSmokeTest
+  & node --test $EncounterTest $CombatTest $MaidHostilityTest $InfestationTest $CutoverTest $WebbingTest $WebbingLifecycleTest $WebbingEnemyTest $JumperDashTest $WebbingWebSprayTest $WebbingCocoonTest $WebbingAtlasTest $SpinnerArtTest $NewSaveSmokeTest
   if ($LASTEXITCODE -ne 0) {
     Write-Host "[$stamp] Spiderlings tests failed with exit code $LASTEXITCODE."
     return

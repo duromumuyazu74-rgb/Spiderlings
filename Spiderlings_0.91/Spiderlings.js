@@ -148,10 +148,10 @@ const SPIDERLINGS = globalThis.Spiderlings;
 SPIDERLINGS.addEnemies([
 
 //Spinner - Standard spiderling. Weak alone but can overwhelm with numbers
-// 织网幼蛛：基础近战单位，命中后施加蛛丝并自毁。
+// 织网幼蛛：基础近战单位，命中后施加蛛丝并持续参与战斗。
 {name: "Spinner", clusterWith: "spiderlings", color: "#FF00FF", tags: KDMapInit(["Spinner", "ignoretiedup", "doortrap", "spiderlings", "minor", "melee", "fireweakness", "glueresist", "acidweakness", "opendoors"]),
 	squeeze: true, ignorechance: 0.75, followRange: 1, AI: "hunt",  sneakThreshold: 1, disarm: 0.25,
-	visionRadius: 5, maxhp: 2, minLevel: 0, weight: 10, movePoints: 1.5, attackPoints: 2, attack: "MeleeEffectSuicide", suicideOnEffect: true, effect: {damage: "tickle", effect: {name: "SpiderlingsWebbingEnemyBind", profile: "Spinner"}}, attackWidth: 1, attackRange: 1, power: 1, dmgType: "tickle", fullBoundBonus: 0,
+	visionRadius: 5, maxhp: 2, minLevel: 0, weight: 10, movePoints: 1.5, attackPoints: 2, attack: "MeleeEffect", suicideOnEffect: false, effect: {damage: "tickle", effect: {name: "SpiderlingsWebbingEnemyBind", profile: "Spinner"}}, attackWidth: 1, attackRange: 1, power: 1, dmgType: "tickle", fullBoundBonus: 0,
 	terrainTags: {"secondhalf": 5, "lastthird": 5, "doortrap": 10, "trap": 30, "spiderlings": 50}, allFloors: true, shrines: ["Latex"]},
 
 //Jumper - Faster version of Spinner
@@ -198,7 +198,7 @@ SPIDERLINGS.addEnemies([
 //Spinner
 addTextKey("NameSpinner","Spiderling Spinner");
 addTextKey("AttackSpinner","The Spiderling Spinner takes tiny steps across your body, its fine legs brushing you with a faint tickle.");
-addTextKey("AttackSpinnerBind","The Spiderling Spinner steps lightly around you, winding a close-fitting loop of silk before slipping out of sight. (+RestraintAdded)");
+addTextKey("AttackSpinnerBind","The Spiderling Spinner winds a loop of silk around your legs, then stays nearby to keep weaving. (+RestraintAdded)");
 addTextKey("KillSpinner","The Spiderling Spinner folds its fine legs, easing back and out of sight.");
 
 //Jumper
