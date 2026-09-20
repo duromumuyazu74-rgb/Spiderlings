@@ -48,11 +48,11 @@
 
 ## 包与可追溯证据
 
-正式包：[Spiderlings_0.92.38.zip](../Spiderlings_0.92.38.zip)，20,071,527 字节，93 个显式条目。
+正式包：[Spiderlings_0.92.38.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip)，20,071,527 字节，93 个显式条目。
 
 SHA-256：`7e947c8c93d762703753339a9a2e77485c3ee24cddc4d5601f8617e950737162`
 
-试玩包：[Spiderlings_0.92.36-test.9.zip](../Spiderlings_0.92.36-test.9.zip)，20,095,612 字节，95 个显式条目。进入方式见 [试玩说明](spiderlings-spinner-capture/PLAYTEST.zh-CN.md)。两份包择一启用。
+当次审核使用 `Spiderlings_0.92.36-test.9.zip`，20,095,612 字节、95 个显式条目。当前测试版和进入方式见 [试玩说明](spiderlings-spinner-capture/PLAYTEST.zh-CN.md)；正式包与测试包择一启用。
 
 SHA-256：`2fd3a9f5b0e44877ba4b0fd0cc4e7bc6e59f292ccf47c7470d463396c9eb813d`
 
