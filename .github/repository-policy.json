@@ -1,0 +1,35 @@
+{
+  "extensions": [
+    ".js",
+    ".mjs",
+    ".cjs",
+    ".py",
+    ".ps1",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".md",
+    ".html",
+    ".css",
+    ".csv",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".svg",
+    ".ogg",
+    ".wav",
+    ".woff",
+    ".woff2",
+    ".txt"
+  ],
+  "specialFiles": [".gitignore", ".gitattributes", ".prettierignore", ".editorconfig", "LICENSE", "NOTICE"],
+  "legacyFiles": ["Spiderlings_0.91/tools/artist-kit/BUILD-PREVIEW.cmd"],
+  "grandfatheredCommits": [
+    "2ffaaacf0c98af6b04ebd05e0b47d97d83d2897d",
+    "4aac8a8caad828c5bd402f6de243a1408234d636",
+    "a88a7818dc06eb4582dea2a36b37632912dc9466",
+    "f5257c060f1ed18b16b01640d790b8cc69b8100e"
+  ]
+}
