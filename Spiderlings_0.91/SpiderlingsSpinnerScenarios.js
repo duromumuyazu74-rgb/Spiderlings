@@ -129,9 +129,19 @@
         });
     }
 
+    function setupAutonomous(input = {}) {
+        const encounter = api.SpinnerNativeField.ensureMap({ scenario: input.scenario || "autonomous-line" });
+        encounter.autonomous = true;
+        const ai = api.SpinnerAI.beginTurn({ ...input, activate: true });
+        return { started: Object.keys(ai?.groups || {}).length > 0, encounter, ai };
+    }
+
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerDoorway = () =>
             setupFromNearbySpinners().started ? "SpinnerDoorwayStarted" : "SpinnerDoorwayBlocked";
+    if (typeof KDInputTypes !== "undefined")
+        KDInputTypes.spiderlingsSpinnerAutonomous = () =>
+            setupAutonomous().started ? "SpinnerAutonomousStarted" : "SpinnerAutonomousBlocked";
 
     api.SpinnerScenarios = {
         SCENARIO,
@@ -143,5 +153,6 @@
         setupConcave,
         setupNested,
         setupInsufficient,
+        setupAutonomous,
     };
 })();

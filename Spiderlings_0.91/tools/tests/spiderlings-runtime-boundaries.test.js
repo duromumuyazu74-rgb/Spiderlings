@@ -66,7 +66,7 @@ test("shared AI hooks use one Spinner dispatcher and preserve foreign calls", ()
         target = { player: true },
         data = {};
     const describe = (fn) => Array.from(c.Spiderlings.Hooks.describe(fn));
-    assert.deepEqual(describe(c.KDAIType.hunt.beforemove), ["WebCaster.hunt", "Cocoon.hunt"]);
+    assert.deepEqual(describe(c.KDAIType.hunt.beforemove), ["WebCaster.hunt", "Cocoon.hunt", "Spinner.beforemove"]);
     assert.deepEqual(describe(c.KinkyDungeonEnemyLoop), ["Spinner.runtime"]);
     assert.equal(c.KDAIType.hunt.beforemove.call(receiver, enemy, target, data, "extra"), result);
     assert.equal(c.KinkyDungeonEnemyLoop.call(receiver, enemy, target, 1, "extra"), result);

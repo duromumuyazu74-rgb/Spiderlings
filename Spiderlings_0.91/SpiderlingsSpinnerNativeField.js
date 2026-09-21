@@ -12,6 +12,24 @@
     const cellKey = (cell) => `${cell.x},${cell.y}`;
     const result = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
 
+    function fieldById(encounter, fieldId) {
+        const graph = encounter?.topology;
+        if (!graph || !fieldId) return undefined;
+        if (graph.fieldId === fieldId && !graph.lineFields?.[fieldId]) return graph;
+        const line = graph.lineFields?.[fieldId];
+        if (!line || line.retired) return undefined;
+        return {
+            ...graph,
+            fieldId,
+            kind: "line",
+            owners: [...(graph.fieldOwners?.[fieldId] || [])],
+            anchors: graph.anchors.filter((anchor) => anchor.owners.includes(fieldId)),
+            links: graph.links.filter((link) => link.owners.includes(fieldId)),
+            junctions: graph.junctions.filter((junction) => junction.owners.includes(fieldId)),
+            collapsed: false,
+        };
+    }
+
     function isSpiderling(entity) {
         return entity?.Enemy?.tags?.spiderlings === true;
     }
@@ -30,29 +48,27 @@
         KDPathCacheIgnoreLocks = new Map();
     }
 
-    function topologyCell(encounter, cell) {
+    function topologyCell(field, cell) {
         return topology()
-            .solidCells(encounter.topology)
+            .solidCells(field)
             .find((candidate) => candidate.x === cell.x && candidate.y === cell.y);
     }
 
-    function hpAtCell(encounter, cell) {
-        const physical = topologyCell(encounter, cell);
+    function hpAtCell(field, cell) {
+        const physical = topologyCell(field, cell);
         if (!physical) return 0;
-        const anchorHP = physical.anchorIds.map(
-                (id) => encounter.topology.anchors.find((anchor) => anchor.id === id)?.hp || 0,
-            ),
-            linkHP = physical.linkIds.map((id) => encounter.topology.links.find((link) => link.id === id)?.hp || 0);
+        const anchorHP = physical.anchorIds.map((id) => field.anchors.find((anchor) => anchor.id === id)?.hp || 0),
+            linkHP = physical.linkIds.map((id) => field.links.find((link) => link.id === id)?.hp || 0);
         return Math.max(0, ...anchorHP, ...linkHP);
     }
 
-    function createProxy(encounter, physical) {
+    function createProxy(field, physical) {
         const enemy = DialogueCreateEnemy(physical.x, physical.y, PROXY);
         if (!enemy) return undefined;
         enemy.hostile = 999;
         enemy.targetedForAttack = true;
-        enemy.SpiderlingsSpinnerProxy = { fieldId: encounter.topology.fieldId, cell: cellKey(physical) };
-        enemy.hp = hpAtCell(encounter, physical);
+        enemy.SpiderlingsSpinnerProxy = { fieldId: field.fieldId, cell: cellKey(physical) };
+        enemy.hp = hpAtCell(field, physical);
         enemy.maxhp = enemy.hp;
         return enemy;
     }
@@ -60,34 +76,33 @@
     function reconcile(map = KDMapData) {
         const encounter = state(map);
         if (!encounter?.topology || map !== KDMapData) return { created: 0, removed: 0, reused: 0 };
-        const expected = new Map(
-                topology()
-                    .solidCells(encounter.topology)
-                    .map((cell) => [cellKey(cell), cell]),
-            ),
+        const expected = new Map(),
             owned = map.Entities.filter(isOwnedProxy),
             kept = new Map();
+        const field = encounter.topology;
+        for (const cell of topology().solidCells(field)) expected.set(cellKey(cell), cell);
         let removed = 0,
             created = 0,
             reused = 0;
         for (const enemy of owned) {
             const marker = proxyMarker(enemy),
-                physical = expected.get(marker.cell);
-            if (marker.fieldId !== encounter.topology.fieldId || !physical || kept.has(marker.cell)) {
+                expectedKey = marker.cell,
+                physical = marker.fieldId === field.fieldId && expected.get(expectedKey);
+            if (!physical || kept.has(expectedKey)) {
                 map.Entities.splice(map.Entities.indexOf(enemy), 1);
                 removed++;
                 continue;
             }
             enemy.x = physical.x;
             enemy.y = physical.y;
-            enemy.hp = hpAtCell(encounter, physical);
+            enemy.hp = hpAtCell(field, physical);
             enemy.maxhp = enemy.hp;
             enemy.hostile = 999;
             enemy.targetedForAttack = true;
-            kept.set(marker.cell, enemy);
+            kept.set(expectedKey, enemy);
             reused++;
         }
-        for (const [key, physical] of expected) if (!kept.has(key) && createProxy(encounter, physical)) created++;
+        for (const [key, physical] of expected) if (!kept.has(key) && createProxy(field, physical)) created++;
         if (created || removed) invalidateNavigation();
         return { created, removed, reused };
     }
@@ -158,6 +173,52 @@
         return state();
     }
 
+    function ensureMap(input = {}) {
+        if (!state())
+            KDMapData[KEY] = {
+                version: topology().VERSION,
+                scenario: input.scenario || "autonomous-line",
+                topology: undefined,
+                builders: {},
+            };
+        return state();
+    }
+
+    function addLine(input) {
+        const encounter = ensureMap(input),
+            existing = fieldById(encounter, input.fieldId);
+        if (existing) return existing;
+        const owners = input.owners.map((owner) => (typeof owner === "object" ? owner.id : owner)),
+            line = topology().createLine({ fieldId: input.fieldId, owners, anchors: input.anchors });
+        if (!encounter.topology) encounter.topology = line;
+        else
+            encounter.topology = topology().addLine(encounter.topology, {
+                fieldId: input.fieldId,
+                owners,
+                anchors: input.anchors,
+            });
+        reconcile();
+        return fieldById(encounter, input.fieldId);
+    }
+
+    function retireField(fieldId) {
+        const encounter = state(),
+            field = fieldById(encounter, fieldId);
+        if (!field) return false;
+        encounter.topology = topology().retireField(encounter.topology, fieldId);
+        reconcile();
+        invalidateNavigation();
+        return true;
+    }
+
+    function setOwners(fieldId, ownerIds) {
+        const encounter = state(),
+            field = fieldById(encounter, fieldId);
+        if (!field) return false;
+        encounter.topology = topology().setFieldOwners(encounter.topology, fieldId, ownerIds);
+        return true;
+    }
+
     function snapshot(cell) {
         const tile = KinkyDungeonTilesGet(cellKey(cell)),
             occupant = KinkyDungeonEntityAt(cell.x, cell.y),
@@ -166,17 +227,23 @@
             cell: { x: cell.x, y: cell.y },
             inBounds: cell.x > 0 && cell.y > 0 && cell.x < KDMapData.GridWidth - 1 && cell.y < KDMapData.GridHeight - 1,
             floor: KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y)),
-            protected: !!(tile?.OL || tile?.OffLimits || tile?.Jail || tile?.Protected),
+            protected: !!(tile?.OL || tile?.OffLimits || tile?.Jail || tile?.Protected || tile?.Lock),
+            locked: !!tile?.Lock,
             occupied: !!occupant || player,
         };
     }
 
-    function actionCell(encounter, action) {
+    function actionCell(field, action) {
         if (action.type === "placeAnchor") {
-            const anchor = encounter.topology.anchors.find((candidate) => candidate.id === action.anchorId);
+            const anchor = field.anchors.find((candidate) => candidate.id === action.anchorId);
             return anchor && { x: anchor.x, y: anchor.y };
         }
-        const link = encounter.topology.links.find((candidate) => candidate.id === action.linkId);
+        if (action.type === "repairAnchor") {
+            const anchor = field.anchors.find((candidate) => candidate.id === action.anchorId);
+            return anchor && { x: anchor.x, y: anchor.y };
+        }
+        const link = field.links.find((candidate) => candidate.id === action.linkId);
+        if (action.type === "repairLink") return action.cell || link?.builtCells[0] || { x: -1, y: -1 };
         return (
             action.cell ||
             link?.plannedCells.find((cell) => !link.builtCells.some((built) => cellKey(built) === cellKey(cell))) ||
@@ -185,15 +252,18 @@
     }
 
     function applyPaidAction(actor, action) {
-        const encounter = state();
-        if (!encounter?.topology) return { paid: false, applied: false, reason: "inactive" };
-        const cell = actionCell(encounter, action);
+        const encounter = state(),
+            graph = encounter?.topology,
+            field = fieldById(encounter, action.fieldId) || graph;
+        if (!graph || !field) return { paid: false, applied: false, reason: "inactive" };
+        const cell = actionCell(field, action);
         if (
             Math.hypot(cell.x - actor.x, cell.y - actor.y) > 5 ||
-            !KinkyDungeonCheckPath(actor.x, actor.y, cell.x, cell.y, false, true, 1, false)
+            (!action.type.startsWith("repair") &&
+                !KinkyDungeonCheckPath(actor.x, actor.y, cell.x, cell.y, false, true, 1, false))
         )
             return { paid: true, applied: false, reason: "range" };
-        const applied = topology().applyAction(encounter.topology, action, snapshot(cell));
+        const applied = topology().applyAction(graph, action, snapshot(cell));
         encounter.topology = applied.state;
         if (applied.outcome.legal) reconcile();
         return { paid: true, applied: applied.outcome.legal, reason: applied.outcome.reason, effects: applied.effects };
@@ -280,7 +350,7 @@
                     : builder.actions.shift();
             if (action) {
                 encounter.topology.assignmentByMember[enemy.id] = action;
-                const cell = actionCell(encounter, action);
+                const cell = actionCell(encounter.topology, action);
                 if (
                     Math.hypot(cell.x - enemy.x, cell.y - enemy.y) > 5 ||
                     !KinkyDungeonCheckPath(enemy.x, enemy.y, cell.x, cell.y, false, true, 1, false)
@@ -301,11 +371,11 @@
 
     function onNativeDamage(data) {
         const encounter = state(),
-            marker = proxyMarker(data?.enemy);
-        if (!encounter?.topology || !marker || marker.fieldId !== encounter.topology.fieldId || !(data.dmgDealt > 0))
-            return false;
+            marker = proxyMarker(data?.enemy),
+            graph = encounter?.topology;
+        if (!graph || marker?.fieldId !== graph.fieldId || !(data.dmgDealt > 0)) return false;
         const [x, y] = marker.cell.split(",").map(Number),
-            damaged = topology().damageAt(encounter.topology, { cell: { x, y }, damage: data.dmgDealt });
+            damaged = topology().damageAt(graph, { cell: { x, y }, damage: data.dmgDealt });
         encounter.topology = damaged.state;
         reconcile();
         invalidateNavigation();
@@ -328,10 +398,8 @@
         return true;
     }
 
-    function activeOwnerIds() {
-        const encounter = state();
-        if (!encounter?.topology) return [];
-        return encounter.topology.owners.filter((id) => {
+    function activeOwnerIds(field) {
+        return field.owners.filter((id) => {
             const owner = KDMapData.Entities.find((entity) => entity.id === id);
             return owner?.hp > 0 && isSpiderling(owner);
         });
@@ -340,7 +408,10 @@
     function tick(delta) {
         const encounter = state();
         if (!encounter?.topology || !(delta > 0)) return;
-        const settled = topology().tickOwnerless(encounter.topology, { activeOwnerIds: activeOwnerIds(), delta });
+        const settled = topology().tickOwnerless(encounter.topology, {
+            activeOwnerIds: activeOwnerIds(encounter.topology),
+            delta,
+        });
         encounter.topology = settled.state;
         reconcile();
     }
@@ -424,6 +495,12 @@
         PATH,
         SNARE,
         state,
+        snapshot,
+        fieldById,
+        ensureMap,
+        addLine,
+        retireField,
+        setOwners,
         initializeMap,
         initializeEnclosure,
         applyPaidAction,
