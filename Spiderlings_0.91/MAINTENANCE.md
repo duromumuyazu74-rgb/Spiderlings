@@ -10,7 +10,7 @@ Spinner 试玩从新游戏 Perk「结网幼蛛试玩」进入 31×21 平坦场�
 
 对抗使用独立拘束条和挣脱条，不提前装备物品。失败后五个世界回合把同一腿袋从 20% 推进到 100%；中断保留已经形成的实际进度。场地与连接保存在地图数据中；捕获阶段和参与者保存在 KDGameData；实际物品进度保存在物品 data 中。图形对象与计时器句柄不写入存档。绘制只读取捕获状态，旧字段迁移由读档事件处理。
 
-`Models/SpiderlingsSpinnerLegbinder/` 的 Band、Tail、Finished、Closure 是四个直接替换入口，不进入共用蛛丝 atlas。`SpiderlingsSpinnerArt.js` 负责前后层、宽带和活动尾端；`SpiderlingsSpinnerCapture.js` 与 `SpiderlingsSpinnerField.js` 暂时保留旧试玩场的捕获和建造兼容；新门口拦截线、自动预建线、单层围场和同组双层围场共用纯 JSON 的 `SpiderlingsSpinnerTopology.js` 与原生投影 `SpiderlingsSpinnerNativeField.js`。`SpiderlingsSpinnerAI.js` 保存分组与预建计划，`SpiderlingsSpinnerScenarios.js` 提供场景输入，`SpiderlingsSpinnerRuntime.js` 是唯一敌人循环分发器。围场与自动预建仍只在显式调试场景中启用，不会启动捕获或普通楼层生成。`tools/artist-kit/` 生成独立画师交付，不进入安装 ZIP。
+`Models/SpiderlingsSpinnerLegbinder/` 的 Band、Tail、Finished、Closure 是四个直接替换入口，不进入共用蛛丝 atlas。`SpiderlingsSpinnerArt.js` 负责前后层、宽带和活动尾端；`SpiderlingsSpinnerCapture.js` 与 `SpiderlingsSpinnerField.js` 暂时保留旧试玩场的捕获和建造兼容；新门口拦截线、自动预建线、单层围场和同组双层围场共用纯 JSON 的 `SpiderlingsSpinnerTopology.js` 与原生投影 `SpiderlingsSpinnerNativeField.js`。`SpiderlingsSpinnerAI.js` 保存分组、预建计划、稳定诱饵和四回合的最后已知目标信息，并在八回合失去视线后交回原生追击。`SpiderlingsSpinnerScenarios.js` 提供场景输入，`SpiderlingsSpinnerRuntime.js` 是唯一敌人循环分发器及后续攻击/施法门控点。围场、自动预建与诱饵协作仍只在显式调试场景中启用，不会启动捕获或普通楼层生成。`tools/artist-kit/` 生成独立画师交付，不进入安装 ZIP。
 
 `spiderlingsPinkWebbing` 同时选择拘束、投射物和带蛛丝敌人的外观。Spinner、Tunneler、WebCaster、NestEntrance 分别有原色和粉色 PNG；Jumper 两种设置共用同一张交付图。切色不改变实体 ID、存档或玩法。
 

@@ -41,6 +41,18 @@
         );
     }
 
+    for (const phase of ["attack", "spell"])
+        if (typeof KDAIType !== "undefined" && KDAIType.hunt?.[phase])
+            KDAIType.hunt[phase] = api.Hooks.wrap(
+                `Spinner.${phase}`,
+                KDAIType.hunt[phase],
+                (native) =>
+                    function (enemy) {
+                        if (api.SpinnerAI && !api.SpinnerAI.gateNativePhase(enemy, phase)) return false;
+                        return native.apply(this, arguments);
+                    },
+            );
+
     if (typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => api.SpinnerAI?.preparePositiveTurn(data?.delta));
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) =>
@@ -52,7 +64,10 @@
         KDAddEvent(KDEventMapGeneric, "enemyMove", KEY, (_event, data) => {
             if (!data?.cancelmove) api.SpinnerNativeField.onEntry(data.enemy, data.moveX, data.moveY);
         });
-        KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => api.SpinnerNativeField.tick(data?.delta));
+        KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => {
+            api.SpinnerAI?.completePositiveTurn(data?.delta);
+            api.SpinnerNativeField.tick(data?.delta);
+        });
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             api.SpinnerAI?.restoreAfterLoad();
             api.SpinnerNativeField.reconcile();
