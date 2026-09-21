@@ -170,7 +170,7 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
         "SpiderlingsWebbingData.js",
         "SpiderlingsWebbingRules.js",
         "SpiderlingsWebbing.js",
-        ...(spinner ? ["SpiderlingsSpinnerCapture.js"] : []),
+        ...(spinner ? ["SpiderlingsSpinnerCapture.js", "SpiderlingsSpinnerNPCCapture.js"] : []),
     ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
     }
