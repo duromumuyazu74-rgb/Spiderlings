@@ -1,9 +1,81 @@
 {
   "baselineCommit": "27dca6dce33310c016a4f36037ee3a47936233fe",
-  "engineSHA256": "e3dcaa87ff0e65994413fbaa528453761485374861de6e2b2151f26aa6d70fef",
+  "engineSHA256": "5530782357b7b4adb24c032bee26e32c755abdd57e0bbde834102f728ae92dd9",
   "snapshotsSHA256": "c5db1059b1fff7298358a688b608da5fdbe1ad7c814c89b2adbb54f60ee02299",
   "templates": "5/7/9 rectangles; one orientation of a 9x9 concave orthogonal template; short narrow-cut lines",
   "cases": [
+    {
+      "name": "full-connectivity-after-exit-discovery",
+      "maps": [
+        {
+          "id": "tee",
+          "reachable": 72,
+          "farCell": "29,9",
+          "exitPath": [
+            [2, 9],
+            [3, 9],
+            [4, 9],
+            [5, 9],
+            [6, 9],
+            [7, 9],
+            [8, 9],
+            [9, 9],
+            [10, 9],
+            [11, 9],
+            [12, 9],
+            [13, 9],
+            [14, 8],
+            [14, 7],
+            [14, 6],
+            [14, 5],
+            [14, 4],
+            [14, 3],
+            [15, 2]
+          ]
+        },
+        {
+          "id": "door",
+          "reachable": 81,
+          "farCell": "29,10",
+          "exitPath": [
+            [2, 10],
+            [3, 10],
+            [4, 10],
+            [5, 10],
+            [6, 10],
+            [7, 10],
+            [8, 10],
+            [9, 10],
+            [10, 10],
+            [11, 10],
+            [12, 10],
+            [13, 10],
+            [14, 10],
+            [15, 10],
+            [16, 10],
+            [17, 10],
+            [18, 10],
+            [19, 10],
+            [20, 10],
+            [21, 10],
+            [22, 10],
+            [23, 10],
+            [24, 10],
+            [25, 10],
+            [26, 10],
+            [27, 10],
+            [28, 10]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shared-field-survives-one-retired-owner",
+      "phases": ["retired", "sealed"],
+      "geometryReady": true,
+      "physicalCells": 20,
+      "floorExit": false
+    },
     {
       "name": "free-3x3-core",
       "core": [22, 7],
