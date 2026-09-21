@@ -136,12 +136,31 @@
         return { started: Object.keys(ai?.groups || {}).length > 0, encounter, ai };
     }
 
+    function setupCooperative(input = {}) {
+        const ownerIds =
+                input.ownerIds ||
+                KDMapData.Entities.filter(
+                    (entity) => entity.hp > 0 && entity.Enemy?.name === "Spinner" && KDHostile(entity),
+                ).map((entity) => entity.id),
+            setup = input.layers
+                ? setupEnclosure({ ...input, ownerIds, scenario: "SpinnerCooperativeEnclosure" })
+                : setupRegular({ ...input, ownerIds, scenario: "SpinnerCooperativeEnclosure" });
+        if (!setup.started) return setup;
+        setup.encounter.builders = {};
+        setup.encounter.autonomous = true;
+        const ai = api.SpinnerAI.beginTurn({ ...input, activate: true, adoptExisting: true });
+        return { ...setup, ai };
+    }
+
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerDoorway = () =>
             setupFromNearbySpinners().started ? "SpinnerDoorwayStarted" : "SpinnerDoorwayBlocked";
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerAutonomous = () =>
             setupAutonomous().started ? "SpinnerAutonomousStarted" : "SpinnerAutonomousBlocked";
+    if (typeof KDInputTypes !== "undefined")
+        KDInputTypes.spiderlingsSpinnerCooperative = () =>
+            setupCooperative().started ? "SpinnerCooperativeStarted" : "SpinnerCooperativeBlocked";
 
     api.SpinnerScenarios = {
         SCENARIO,
@@ -154,5 +173,6 @@
         setupNested,
         setupInsufficient,
         setupAutonomous,
+        setupCooperative,
     };
 })();

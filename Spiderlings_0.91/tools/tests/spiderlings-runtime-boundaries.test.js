@@ -45,7 +45,10 @@ test("shared AI hooks use one Spinner dispatcher and preserve foreign calls", ()
     };
     const { context: c } = loadLifecycleRuntime(
         {
-            KDAIType: { hunt: { beforemove: native }, wander: { beforemove: native } },
+            KDAIType: {
+                hunt: { beforemove: native, attack: native, spell: native },
+                wander: { beforemove: native },
+            },
             KinkyDungeonEnemyLoop: native,
             KDMapData: { Entities: [] },
         },
@@ -67,13 +70,19 @@ test("shared AI hooks use one Spinner dispatcher and preserve foreign calls", ()
         data = {};
     const describe = (fn) => Array.from(c.Spiderlings.Hooks.describe(fn));
     assert.deepEqual(describe(c.KDAIType.hunt.beforemove), ["WebCaster.hunt", "Cocoon.hunt", "Spinner.beforemove"]);
+    assert.deepEqual(describe(c.KDAIType.hunt.attack), ["Spinner.attack"]);
+    assert.deepEqual(describe(c.KDAIType.hunt.spell), ["Spinner.spell"]);
     assert.deepEqual(describe(c.KinkyDungeonEnemyLoop), ["Spinner.runtime"]);
     assert.equal(c.KDAIType.hunt.beforemove.call(receiver, enemy, target, data, "extra"), result);
+    assert.equal(c.KDAIType.hunt.attack.call(receiver, enemy, target, data, "extra"), result);
+    assert.equal(c.KDAIType.hunt.spell.call(receiver, enemy, target, data, "extra"), result);
     assert.equal(c.KinkyDungeonEnemyLoop.call(receiver, enemy, target, 1, "extra"), result);
-    assert.equal(calls.length, 2);
+    assert.equal(calls.length, 4);
     assert.equal(calls[0].receiver, receiver);
     assert.deepEqual(calls[0].args, [enemy, target, data, "extra"]);
-    assert.deepEqual(calls[1].args, [enemy, target, 1, "extra"]);
+    assert.deepEqual(calls[1].args, [enemy, target, data, "extra"]);
+    assert.deepEqual(calls[2].args, [enemy, target, data, "extra"]);
+    assert.deepEqual(calls[3].args, [enemy, target, 1, "extra"]);
 });
 
 test("reinstalling an inner hook replaces its callback without nesting or reordering the chain", () => {
