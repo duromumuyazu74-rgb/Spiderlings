@@ -3,6 +3,7 @@ package-lock.json
 Spiderlings_0.91/TextureAtlas/*.json
 Spiderlings_0.91/Models/**/*.html
 docs/spiderlings-spinner-capture/*.html
+docs/prototypes/spinner-topology/index.html
 KinkiestDungeon-5.5/
 node_modules/
 .scratch/

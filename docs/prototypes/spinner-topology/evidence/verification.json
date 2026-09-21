@@ -1,0 +1,233 @@
+{
+  "date": "2026-09-21T08:08:23.976Z",
+  "artifactSHA256": "8f0e87f7128ab415798c3c6838c2c8a6ff9d87dbdead6f629bec79d8f1da77dc",
+  "scope": "Topology and disposable browser UI only; no runtime Mod integration",
+  "walkthroughs": [
+    {
+      "id": "door",
+      "kind": "hand-authored",
+      "candidates": 1,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 9,
+      "elapsedMs": 11,
+      "passed": true
+    },
+    {
+      "id": "corridor",
+      "kind": "hand-authored",
+      "candidates": 27,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 24,
+      "elapsedMs": 14,
+      "passed": true
+    },
+    {
+      "id": "tee",
+      "kind": "hand-authored",
+      "candidates": 32,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 11,
+      "elapsedMs": 9,
+      "passed": true
+    },
+    {
+      "id": "cross",
+      "kind": "hand-authored",
+      "candidates": 40,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 20,
+      "elapsedMs": 11,
+      "passed": true
+    },
+    {
+      "id": "room",
+      "kind": "hand-authored",
+      "candidates": 751,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 50,
+      "elapsedMs": 58,
+      "passed": true
+    },
+    {
+      "id": "irregular",
+      "kind": "hand-authored",
+      "candidates": 135,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 45,
+      "elapsedMs": 39,
+      "passed": true
+    },
+    {
+      "id": "exit",
+      "kind": "hand-authored",
+      "candidates": 533,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 90,
+      "elapsedMs": 50,
+      "passed": true
+    },
+    {
+      "id": "tight",
+      "kind": "hand-authored",
+      "candidates": 0,
+      "selected": null,
+      "layers": 0,
+      "sharedLinks": 0,
+      "prebuildTurns": 0,
+      "elapsedMs": 9,
+      "passed": true
+    },
+    {
+      "id": "overlap",
+      "kind": "hand-authored",
+      "candidates": 1311,
+      "selected": "rectangle",
+      "layers": 2,
+      "sharedLinks": 4,
+      "prebuildTurns": 36,
+      "elapsedMs": 81,
+      "passed": true
+    },
+    {
+      "id": "nested",
+      "kind": "hand-authored",
+      "candidates": 1819,
+      "selected": "rectangle",
+      "layers": 2,
+      "sharedLinks": 0,
+      "prebuildTurns": 113,
+      "elapsedMs": 207,
+      "passed": true
+    },
+    {
+      "id": "native-0",
+      "kind": "native-generated",
+      "candidates": 191,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 54,
+      "elapsedMs": 147,
+      "passed": true
+    },
+    {
+      "id": "native-1",
+      "kind": "native-generated",
+      "candidates": 82,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 6,
+      "elapsedMs": 62,
+      "passed": true
+    },
+    {
+      "id": "native-2",
+      "kind": "native-generated",
+      "candidates": 324,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 87,
+      "elapsedMs": 418,
+      "passed": true
+    },
+    {
+      "id": "native-3",
+      "kind": "native-generated",
+      "candidates": 233,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 53,
+      "elapsedMs": 157,
+      "passed": true
+    },
+    {
+      "id": "native-4",
+      "kind": "native-generated",
+      "candidates": 165,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 53,
+      "elapsedMs": 179,
+      "passed": true
+    },
+    {
+      "id": "native-5",
+      "kind": "native-generated",
+      "candidates": 191,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 57,
+      "elapsedMs": 158,
+      "passed": true
+    }
+  ],
+  "experiments": [
+    {
+      "name": "concave-orthogonal-loop",
+      "passed": true,
+      "vertices": [
+        [5, 7],
+        [9, 7],
+        [9, 11],
+        [13, 11],
+        [13, 15],
+        [5, 15]
+      ]
+    },
+    {
+      "name": "per-cell-aoe",
+      "expectedDamage": 1.95,
+      "actualDamage": 1.95,
+      "passed": true
+    },
+    {
+      "name": "shared-anchor-destruction",
+      "physicalLinks": 4,
+      "fields": 2,
+      "passed": true
+    },
+    {
+      "name": "dynamic-terrain-replan",
+      "old": "f1",
+      "new": "f2",
+      "shape": "line",
+      "passed": true
+    },
+    {
+      "name": "ownerless-20-turn-boundary",
+      "passed": true
+    }
+  ],
+  "browser": {
+    "status": "passed",
+    "errors": [],
+    "mobileNoHorizontalOverflow": true,
+    "offline": true,
+    "guidedShared": true,
+    "stateRoundtrip": true,
+    "desktopClosure": true,
+    "roomBreach": true,
+    "nestedClosure": true,
+    "sharedDamage": true
+  },
+  "passed": true
+}
