@@ -25,13 +25,15 @@ The [placement investigation](prototypes/spinner-topology/PLACEMENT.md) and [pac
 The immutable [initial published baseline](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/27dca6dce33310c016a4f36037ee3a47936233fe/docs/prototypes/spinner-topology) preserves ten fixed scenes and six isolated native-map snapshots. Its room and nested prebuild observations were about 50 and 113 prototype world turns. The current engine preserves those normal-case measurements.
 
 - [Artifact verification](prototypes/spinner-topology/evidence/verification.json): 16 map walks, five additional experiments, offline controls, nested/shared flows, state restoration, 390px layout, and the new occupancy/interior-change walkthroughs.
-- [Placement evidence](prototypes/spinner-topology/evidence/placement.json): 13 bounded cases, six-map mask comparisons and eight isolated native-accessibility probes against exactly KD 5.4.92 and KD 5.5.0.
+- [Placement evidence](prototypes/spinner-topology/evidence/placement.json): 15 bounded cases, six-map mask comparisons and eight isolated native-accessibility probes against exactly KD 5.4.92 and KD 5.5.0.
 - [Immutable pacing baseline](prototypes/spinner-topology/evidence/pacing-baseline/summary.json): all 34 cases, including three failing historical contract observations.
 - [Corrected pacing](prototypes/spinner-topology/evidence/pacing/summary.json): all 34 replays and all ten contract checks pass. The separate [current-results note](prototypes/spinner-topology/CURRENT-PACING.md) explains the differences.
 
 Adding actors does not necessarily accelerate work. On the pinned room candidate, two/four/eight actors take 98/42/42 prototype turns. Four/eight actors take 113/81 turns on the two-layer candidate. These are deterministic fixture results with a stationary lure and fixed spawn choices, not measured native encounter balance.
 
 Three historical defects are corrected: premature outer construction after early target entry, repairs to retired-only structures, and shared collapse timed from an earlier lost owner instead of the final owner. The early nested-entry case now takes 120 further turns after entry at turn five, rather than the flawed baseline's 91. No candidate action costs or HP values changed to obtain that result.
+
+Independent review found and corrected two further defects. Reachable-area shading now shows the full connected region instead of stopping its search at the exit. A retired owner no longer vetoes another live owner's intact shared field. Both cases have bounded model checks and offline browser assertions; neither changes the measured construction cadence.
 
 The old five-line/one-rectangle sample result becomes six lines after free-core checks account for a foreign actor in the former sole rectangle. The original five maps still lack a current enclosure template even when protection/occupancy masks are relaxed. Neither result is a floor-frequency estimate; frozen original actors and the restricted template family matter.
 
