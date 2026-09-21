@@ -56,7 +56,7 @@ The original 5.5 extraction reported a missing `Logo.png` and an untyped browser
 ## Evidence and next investigations
 
 - [Placement investigation #22](PLACEMENT.md) records corrected native masks, free-core and terrain counterexamples, nested entrances, partial-overlap limits and an explicit fixed-lure stall. Run `node docs/prototypes/spinner-topology/probe-placement.mjs` to replay its bounded fixtures.
-
+- [Pacing investigation #23](PACING.md) preserves the original action-cost measurements in `evidence/pacing-baseline/`; [integrated results](evidence/pacing/summary.json) rerun the same 34 cases after the placement corrections, with all ten contract checks passing. Run `node docs/prototypes/spinner-topology/measure-pacing.mjs` to regenerate the integrated results.
 - [Original verification](evidence/original-verification.json) retains all 16 previous passing walkthroughs and five extra experiments.
 - [Portable verification](evidence/verification.json) identifies the current artifact and repeat checks after packaging changes.
 - [Findings](FINDINGS.md), [desktop](evidence/desktop.png) and [mobile](evidence/mobile.png) explain observations and remaining limits. Trace files record every construction turn; no large exported browser save is committed.
