@@ -34,28 +34,18 @@ function drawCapture(runtime) {
     runtime.send("draw", { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
 }
 
-test("drawing observes membership without changing saved progress, migration fields or participants", () => {
+test("drawing observes schema-2 membership without mutating capture authority", () => {
     const r = contestRuntime();
     r.start();
-    r.pull();
-    r.add();
-    const s = r.api.state();
-    delete s.weaveProgress;
-    delete s.escapeProgress;
-    s.remaining = 2;
-    s.successes = 1;
+    r.operate(r.c.KDMapData.Entities[1]);
     const before = JSON.stringify(r.c.KDGameData);
     drawCapture(r);
     drawCapture(r);
     assert.equal(JSON.stringify(r.c.KDGameData), before);
-    r.send("afterLoadGame");
-    assert.equal(r.api.state().weaveProgress, 50);
-    assert.equal(r.api.state().escapeProgress, 25);
-    assert.equal(r.api.state().ids.length, 3);
-    assert.equal(r.api.state().remaining, undefined);
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1, 2]);
 });
 
-test("drawing an invalid capture cannot cancel it or assign retry state before the native audit event", () => {
+test("drawing an invalid source cannot mutate capture before a native audit", () => {
     const r = contestRuntime();
     r.start();
     r.c.KDMapData.Entities[0].hp = 0;
@@ -64,24 +54,46 @@ test("drawing an invalid capture cannot cancel it or assign retry state before t
     assert.equal(JSON.stringify(r.c.KDGameData), before);
     r.send("afterEnemyTick");
     assert.equal(r.api.state(), undefined);
+    assert.equal(r.c.KDGameData.SpiderlingsSpinnerRetries, undefined);
 });
 
 // Reuse the equipment/event fixture; native AI and field geometry have separate browser probes.
 function contestRuntime(count = 2) {
     let stamina = 10,
-        ready = true;
+        ready = true,
+        physicalPath = true;
+    const nativeCalls = new Map();
+    const actionCalls = [];
     const r = loadLifecycleRuntime(
         {
             KDGameData: {},
             KDMapData: { Entities: [] },
+            KDPlayerEffects: {},
+            KDInputTypes: {
+                doattack() {
+                    actionCalls.push("attack");
+                    return "NativeAttack";
+                },
+                tryCastSpell() {
+                    actionCalls.push("spell");
+                    return "NativeSpell";
+                },
+                consumable() {
+                    actionCalls.push("item");
+                    return "NativeItem";
+                },
+            },
             KinkyDungeonLastAction: "",
             KinkyDungeonPlayerEntity: { x: 6, y: 6, player: true },
             KDGetBlockersToAddRestraint: () => [],
             KDHostile: (e) => !e.friendly,
             KDHelpless: (e) => !!e.helpless,
             KinkyDungeonIsDisabled: (e) => !!e.disabled,
-            KinkyDungeonCheckLOS: (e, p, d, range) => d <= range,
-            KinkyDungeonEnemyLoop: () => ({}),
+            KinkyDungeonCheckPath: () => physicalPath,
+            KinkyDungeonEnemyLoop: (enemy) => {
+                nativeCalls.set(enemy.id, (nativeCalls.get(enemy.id) || 0) + 1);
+                return {};
+            },
             KinkyDungeonEnemyAt: () => true,
             KinkyDungeonHasStamina: () => stamina >= 1,
             KDChangeStamina: (_a, _b, _c, n) => {
@@ -107,6 +119,8 @@ function contestRuntime(count = 2) {
         onEntry() {},
         tick() {},
         reconcile() {},
+        containingComposite: () => (ready ? { id: "composite-1" } : undefined),
+        captureGeometryReady: () => ready,
     };
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerRuntime.js"), "utf8"), c, {
         filename: "SpiderlingsSpinnerRuntime.js",
@@ -138,14 +152,23 @@ function contestRuntime(count = 2) {
         ready: (v) => {
             ready = v;
         },
+        path: (v) => {
+            physicalPath = v;
+        },
         start: () => api.hit(c.KDMapData.Entities[0]),
+        operate: (enemy) => c.KinkyDungeonEnemyLoop(enemy, c.KinkyDungeonPlayerEntity, 1),
         wait: () => c.KinkyDungeonAdvanceTime(1),
         pull: () => c.KDInputTypes.spiderlingsSpinnerPull(),
         stamina: () => stamina,
+        setStamina: (value) => {
+            stamina = value;
+        },
+        nativeCalls,
+        actionCalls,
     };
 }
 
-test("Spinner contest requires a ready field and at least two legal participants", () => {
+test("native admission requires a closed containing composite and two legal sources", () => {
     const r = contestRuntime(1);
     assert.equal(r.start(), false);
     r.add();
@@ -153,85 +176,163 @@ test("Spinner contest requires a ready field and at least two legal participants
     assert.equal(r.start(), false);
     assert.equal(r.api.item(), undefined);
     r.ready(true);
+    r.path(false);
+    assert.equal(r.start(), false);
+    r.path(true);
+    r.c.KDMapData.Entities[1].x = 20;
+    assert.equal(r.start(), false);
+    r.c.KDMapData.Entities[1].x = 5;
     r.c.KDMapData.Entities[1].stun = 2;
     assert.equal(r.start(), false);
     r.c.KDMapData.Entities[1].stun = 0;
     assert.equal(r.start(), true);
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1]);
+    assert.equal(r.api.state().admittedCompositeId, "composite-1");
     r.ready(false);
     r.send("afterEnemyTick");
-    assert.equal(r.api.state(), undefined);
+    assert.ok(r.api.state(), "field breach after admission must not cancel strands");
 });
 
-test("additional Spinners accelerate weaving and require more paid escape work", () => {
-    const two = contestRuntime(2),
-        three = contestRuntime(3);
-    two.start();
-    three.start();
-    for (let n = 0; n < 2; n++) {
-        two.pull();
-        three.pull();
+test("only the native Spinner bind-effect callback admits capture", () => {
+    const r = contestRuntime();
+    assert.equal(r.api.state(), undefined, "a miss or block never reaches the effect callback");
+    const outcome = r.c.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
+        r.c.KinkyDungeonPlayerEntity,
+        0,
+        { profile: "Spinner" },
+        undefined,
+        "Enemy",
+        undefined,
+        r.c.KDMapData.Entities[0],
+    );
+    assert.equal(outcome.effect, false);
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1]);
+});
+
+test("sources join through paid enemy operations and never weave on the join operation", () => {
+    const r = contestRuntime(9);
+    r.start();
+    const second = r.c.KDMapData.Entities[1];
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1]);
+    r.operate(second);
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1, 2]);
+    assert.equal(r.api.state().weaveProgress, 0);
+    assert.equal(r.api.joinSource(second), false, "duplicate joins are rejected");
+    for (const enemy of r.c.KDMapData.Entities.slice(2, 8)) r.operate(enemy);
+    assert.equal(r.api.state().sourceIds.length, 8);
+    assert.equal(r.api.joinSource(r.c.KDMapData.Entities[8]), false, "a ninth source is rejected");
+});
+
+test("formula table covers zero through eight effective sources", () => {
+    const r = contestRuntime();
+    const rates = [0, 6.25, 12.5, 16.5, 20.5, 24.5, 28.5, 32.5, 36.5];
+    const goals = [0, 50, 75, 100, 125, 150, 175, 200, 225];
+    for (let count = 0; count <= 8; count++) {
+        assert.equal(r.api.weaveRate(count), rates[count]);
+        assert.equal(r.api.escapeGoal(count), goals[count]);
     }
-    assert.equal(two.api.state().weaveProgress, 25);
-    assert.equal(three.api.state().weaveProgress, 33);
-    assert.equal(two.api.state().escapeProgress, 50);
-    assert.equal(three.api.state().escapeGoal, 100);
-    two.pull();
-    three.pull();
-    assert.equal(two.api.state(), undefined);
-    assert.ok(three.api.state());
-    three.pull();
-    assert.equal(three.api.state(), undefined);
-    assert.equal(three.stamina(), 6);
-    assert.equal(three.api.item(), undefined);
 });
 
-test("mid-contest arrivals preserve earned work and do not advance on a zero-time audit", () => {
+test("paid pull costs ten displayed stamina, advances one turn and escape wins ties", () => {
+    const r = contestRuntime(2);
+    r.start();
+    r.wait();
+    assert.equal(r.api.state().weaveProgress, 6.25, "only the hitter acted while source two joined");
+    for (let n = 0; n < 2; n++) r.pull();
+    assert.equal(r.api.state().escapeProgress, 50);
+    assert.equal(r.stamina(), 8);
+    r.api.state().weaveProgress = 87.5;
+    r.pull();
+    assert.equal(r.api.state(), undefined, "escape settles before simultaneous weave completion");
+    assert.equal(r.api.item(), undefined);
+});
+
+test("temporary strands pin translation but delegate attacks, spells and items to native inputs", () => {
     const r = contestRuntime();
     r.start();
-    r.pull();
-    const e = r.add();
-    r.send("afterEnemyTick");
-    assert.ok(r.api.state().ids.includes(e.id));
-    assert.equal(r.api.state().escapeProgress, 25);
-    assert.equal(r.api.state().escapeGoal, 100);
-    assert.equal(r.api.state().weaveProgress, 12.5);
+    r.c.KinkyDungeonNoMoveFlag = false;
+    r.send("beforeMove");
+    assert.equal(r.c.KinkyDungeonNoMoveFlag, true);
+    assert.equal(r.c.KDInputTypes.doattack({}), "NativeAttack");
+    assert.equal(r.c.KDInputTypes.tryCastSpell({}), "NativeSpell");
+    assert.equal(r.c.KDInputTypes.consumable({}), "NativeItem");
+    assert.deepEqual(r.actionCalls, ["attack", "spell", "item"]);
+    r.setStamina(0);
+    const before = JSON.stringify(r.api.state());
+    assert.equal(r.pull(), "NoStamina");
+    assert.equal(JSON.stringify(r.api.state()), before);
+    assert.equal(r.stamina(), 0);
+});
+
+test("source audits preserve counters, lower goals and resolve at one or zero sources", () => {
+    const r = contestRuntime(3);
+    r.start();
     r.wait();
-    assert.equal(r.api.state().weaveProgress, 29);
-    assert.equal(r.api.item(), undefined);
-    e.hp = 0;
+    const s = r.api.state();
+    s.weaveProgress = 40;
+    s.escapeProgress = 49;
+    r.c.KDMapData.Entities[2].hp = 0;
     r.send("afterEnemyTick");
-    assert.equal(r.api.state().escapeGoal, 75);
-    assert.equal(r.api.state().escapeProgress, 25);
+    assert.equal(s.sourceIds.length, 2);
+    assert.equal(s.weaveProgress, 40);
+    r.c.KDMapData.Entities[1].hp = 0;
+    r.send("afterEnemyTick");
+    assert.equal(s.sourceIds.length, 1);
+    assert.equal(r.api.escapeGoal(1), 50);
     r.c.KDMapData.Entities[0].hp = 0;
     r.send("afterEnemyTick");
     assert.equal(r.api.state(), undefined);
+
+    const reduced = contestRuntime(3);
+    reduced.start();
+    reduced.wait();
+    reduced.api.state().escapeProgress = 60;
+    reduced.c.KDMapData.Entities[1].hp = 0;
+    reduced.c.KDMapData.Entities[2].hp = 0;
+    reduced.send("afterEnemyTick");
+    assert.equal(reduced.api.state(), undefined, "an already-satisfied reduced goal resolves immediately");
 });
 
-test("weaving completion keeps the contest visual-only and deposits silk only on the following world turn", () => {
-    const r = contestRuntime(4);
+test("same-map load audits saved IDs without free work and transitions clear only capture state", () => {
+    const r = contestRuntime(3);
     r.start();
-    r.wait();
-    for (let n = 0; n < 4; n++) r.pull();
-    assert.equal(r.api.state().phase, "wrap");
-    assert.equal(r.api.state().escapeProgress, 100);
-    assert.equal(r.api.item(), undefined);
-    r.wait();
-    assert.equal(r.api.item().data.wrapProgress, 0.2);
-});
-
-test("loading a legacy contest converts both progress counters without granting progress", () => {
-    const r = contestRuntime();
-    r.start();
-    const s = r.api.state();
-    delete s.weaveProgress;
-    delete s.escapeProgress;
-    s.remaining = 2;
-    s.successes = 1;
+    r.operate(r.c.KDMapData.Entities[1]);
+    r.api.state().weaveProgress = 18.75;
+    r.api.state().escapeProgress = 25;
+    r.api.state().sourceIds.push(2);
+    r.c.KDGameData.SpiderlingsSpinnerCapture = JSON.parse(JSON.stringify(r.api.state()));
     r.send("afterLoadGame");
-    assert.equal(r.api.state().weaveProgress, 50);
+    assert.equal(r.api.state().weaveProgress, 18.75);
     assert.equal(r.api.state().escapeProgress, 25);
-    assert.equal(r.api.state().remaining, undefined);
-    assert.equal(r.api.item(), undefined);
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1, 2]);
+    const stable = JSON.stringify(r.c.KDGameData);
+    r.send("afterLoadGame");
+    drawCapture(r);
+    assert.equal(JSON.stringify(r.c.KDGameData), stable);
+    r.send("postMapgen");
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.c.KDMapData.Entities.length, 3);
+});
+
+test("successful escape holds only effective sources for six later hostile operations", () => {
+    const r = contestRuntime(2);
+    r.start();
+    r.wait();
+    r.api.state().escapeProgress = 50;
+    r.pull();
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.c.KDMapData.Entities[0].SpiderlingsSpinnerStunTurns, 6);
+    for (let turn = 0; turn < 6; turn++) r.wait();
+    assert.equal(r.nativeCalls.get(1) || 0, 0);
+    r.wait();
+    assert.equal(r.nativeCalls.get(1), 1, "the held source acts on the seventh later turn");
+    assert.equal(r.c.KDGameData.SpiderlingsSpinnerRetries, undefined);
+
+    const third = r.add();
+    const fourth = r.add();
+    assert.equal(r.api.hit(third), true, "a nonparticipant may start another legal capture immediately");
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [third.id]);
+    assert.ok(fourth);
 });
 
 test("field admission rejects unfinished, untriggered, damaged and outside geometry", () => {
@@ -285,21 +386,15 @@ test("field admission rejects unfinished, untriggered, damaged and outside geome
     assert.equal(f.captureReady(), false);
 });
 
-test("two Spinners need eight world turns and a simultaneous escape wins", () => {
+test("the paid second-source join delays full two-source weaving until the next world turn", () => {
     const r = contestRuntime();
     r.start();
-    for (let n = 0; n < 7; n++) r.wait();
-    assert.equal(r.api.state().weaveProgress, 87.5);
+    for (let n = 0; n < 8; n++) r.wait();
+    assert.equal(r.api.state().weaveProgress, 93.75);
     assert.equal(r.api.state().phase, "contest");
     r.wait();
     assert.equal(r.api.state().phase, "wrap");
     assert.equal(r.api.item(), undefined);
-    const tie = contestRuntime();
-    tie.start();
-    for (let n = 0; n < 5; n++) tie.wait();
-    for (let n = 0; n < 3; n++) tie.pull();
-    assert.equal(tie.api.state(), undefined);
-    assert.equal(tie.api.item(), undefined);
 });
 
 test("capture holds hostile spider attacks on the player through wrapping and releases on interruption", () => {
@@ -325,7 +420,7 @@ test("capture holds hostile spider attacks on the player through wrapping and re
     r.c.KinkyDungeonEnemyLoop(spider, p, 1);
     assert.equal(spider.attackPoints, 0);
     assert.equal(spider.warningTiles.length, 0);
-    for (let n = 0; n < 8; n++) r.wait();
+    for (let n = 0; n < 9; n++) r.wait();
     assert.equal(r.api.state().phase, "wrap");
     assert.equal(r.api.holdsSpiderAttack(spider, p), true);
     r.api.cancel();

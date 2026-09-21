@@ -113,7 +113,6 @@
         const bag = api.SpinnerCapture.item();
         if (bag) KinkyDungeonRemoveRestraintSpecific(bag, true);
         KDGameData.DelayedActions = [];
-        KDGameData.SpiderlingsSpinnerRetries = {};
         KDGameData.RoomType = ROOM;
         KDGameData.MapMod = "";
         KDGameData.MovePoints = 0;

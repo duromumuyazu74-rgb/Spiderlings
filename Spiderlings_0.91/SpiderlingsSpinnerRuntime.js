@@ -1,6 +1,6 @@
 "use strict";
 
-// One Spinner enemy-loop owner delegates to construction, legacy training capture, then the native loop.
+// One Spinner enemy-loop owner delegates to capture, construction, then the native loop.
 (() => {
     const api = globalThis.Spiderlings,
         KEY = "SpiderlingsSpinnerRuntime";
@@ -13,12 +13,12 @@
                 function (enemy, target, delta) {
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
+                    const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
+                    if (capture) return capture;
                     const nativeField = api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
                     if (nativeField) return nativeField;
                     const legacyField = api.SpinnerField.handleEnemyTurn(enemy, target, delta);
                     if (legacyField) return legacyField;
-                    const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
-                    if (capture) return capture;
                     enemy.SpiderlingsSpinnerRuntimeDelta = delta;
                     try {
                         return native.apply(this, arguments);

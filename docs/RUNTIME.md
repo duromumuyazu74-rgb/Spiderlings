@@ -17,7 +17,7 @@ The manifest owns script loading order. Runtime scripts remain plain JavaScript 
 | `SpiderlingsSpinnerNativeField.js`                          | Projects topology cells into attackable KD entities, validates paid movement and work, routes final native damage, reconciles saves and refreshes navigation caches.                                       |
 | `SpiderlingsSpinnerAI.js`                                   | Forms saved hostile Spinner groups, plans target-independent fields, assigns one stable lure after native perception, ages shared last-known data and schedules one paid action per actor pass.            |
 | `SpiderlingsSpinnerScenarios.js`                            | Supplies doorway, autonomous-line, cooperative-lure, regular, concave, nested and insufficient-space inputs to the native field runtime. It does not implement an alternate simulation.                    |
-| `SpiderlingsSpinnerCapture.js`                              | Capture admission, contest/wrap actions, native input and capture state. Rendering consumes a read-only capture view. The old training-room handler remains a compatibility delegate.                      |
+| `SpiderlingsSpinnerCapture.js`                              | Native composite-field admission, temporary Capture strands, contest/wrap actions and native input. Rendering consumes a read-only capture view.                                                           |
 | `SpiderlingsSpinnerField.js`, `SpiderlingsSpinnerArt.js`    | Legacy training-room geometry/construction compatibility and character artwork.                                                                                                                            |
 | `SpiderlingsSpinnerRuntime.js`                              | Owns the single Spinner enemy-loop wrapper, composes native `hunt` perception/action gates and dispatches field damage, movement, load and positive-turn events.                                           |
 
@@ -41,8 +41,8 @@ Each callback forwards the original receiver, arguments and result on its unhand
 
 | State                                                                                                     | Owner and persistence                                                                          |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Capture phase, participant IDs, contest work and wrap progress                                            | `KDGameData.SpiderlingsSpinnerCapture`; restored through `afterLoadGame`.                      |
-| Capture retry timers                                                                                      | `KDGameData.SpiderlingsSpinnerRetries`.                                                        |
+| Capture phase, target cell, admitted composite ID, participant IDs, contest work and wrap progress        | `KDGameData.SpiderlingsSpinnerCapture`; schema 2 is audited through `afterLoadGame`.           |
+| Six-turn post-escape participant hold                                                                     | `entity.SpiderlingsSpinnerStunTurns`; decremented on later positive world turns.               |
 | Field phase, traps, connections and builder IDs                                                           | `KDMapData.SpiderlingsSpinnerField`.                                                           |
 | Native physical graph, declared fields, line metadata, composite layers, HP, cooldowns, snare IDs and age | `KDMapData.SpiderlingsSpinnerEncounter`; plain JSON saved with the active map.                 |
 | Spinner group IDs, members, plan, assignments, stable target/lure, last-known age and action counts       | `KDMapData.SpiderlingsSpinnerEncounter.ai`; plain JSON saved with the active map.              |
@@ -50,7 +50,7 @@ Each callback forwards the original receiver, arguments and result on its unhand
 | Deposited silk and leg-bag escape work                                                                    | The equipped item's `data`, including `wrapProgress` and `SpiderlingsLegbinderEscapeProgress`. |
 | Graphics, texture promises, animation interpolation and timer handles                                     | Runtime-only values; not serialized.                                                           |
 
-Capture admission is inspected without changing saved state. Native tick, movement, enemy and load events commit participant changes or interruption. Drawing can hide invalid previews, but cannot cancel capture, create retry timers, migrate fields or advance work. The load handler converts legacy `remaining`/`successes` fields to work counters without granting progress. Saved equipment and state keys remain compatible with the previous test package.
+Capture admission is inspected without changing saved state. Native tick, movement, enemy and load events commit participant changes or interruption. Drawing can hide invalid previews, but cannot cancel capture, create retry timers, migrate fields or advance work. The load handler audits schema-2 sources and clears older capture state instead of inferring work. Saved equipment keys remain compatible with the previous test package.
 
 The public runtime-boundary tests cover rule-only execution, shared hook composition and rendering without state writes. The complete watcher adds native-source compatibility tests. Final ZIP loading still requires the applicable in-game checks in the [verification matrix](../CONTRIBUTING.md#verification).
 
@@ -76,7 +76,7 @@ Live owners may spend one action to restore 10 percent of a damaged structure's 
 
 The pinned 31-by-21 regular-room test keeps start `(2,10)`, exit `(28,10)`, worker starts `(11,9)` and `(12,11)`, boundary `(20,5)-(24,5)-(24,13)-(20,13)`, core `(22,9)` and gate `(20,9)`. Arrival-inclusive 2/4/8-worker results are 25/19/15 native world turns; legal-worksite starts take 15/6/4. The prototype references are 27/20/18 and 12/6/4. Native occupancy avoidance and movement to remaining work account for the differences. The test retains blocked and unfinished measurements instead of discarding them.
 
-These enclosures remain explicit debug scenarios. They do not start Capture strands, activate ordinary-floor generation or produce a versioned delivery ZIP.
+These enclosures remain explicit debug scenarios. They admit Capture strands only after a qualifying native Spinner hit; field damage after admission does not cancel those strands. They do not activate ordinary-floor generation or produce a versioned delivery ZIP.
 
 ## Native lure-coordination slice
 
