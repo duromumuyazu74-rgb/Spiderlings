@@ -17,6 +17,8 @@
                     if (recovery) return recovery;
                     const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
                     if (capture) return capture;
+                    const npcCapture = api.SpinnerNPCCapture?.handleEnemyTurn(enemy, target, delta);
+                    if (npcCapture) return npcCapture;
                     const nativeField = api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
                     if (nativeField) return nativeField;
                     const legacyField = api.SpinnerField.handleEnemyTurn(enemy, target, delta);
@@ -56,7 +58,10 @@
             );
 
     if (typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => api.SpinnerAI?.preparePositiveTurn(data?.delta));
+        KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => {
+            api.SpinnerAI?.preparePositiveTurn(data?.delta);
+            api.SpinnerNPCCapture?.prepareTurn(data?.delta);
+        });
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) =>
             api.SpinnerNativeField.onNativeDamage(data),
         );
@@ -73,15 +78,24 @@
             api.SpinnerAI?.completePositiveTurn(data?.delta);
             api.SpinnerNativeField.tick(data?.delta);
             api.SpinnerRecovery?.audit();
+            api.SpinnerNPCCapture?.settleTurn(data?.delta);
         });
-        KDAddEvent(KDEventMapGeneric, "postRemoval", KEY, () => api.SpinnerRecovery?.audit());
+        KDAddEvent(KDEventMapGeneric, "postRemoval", KEY, () => {
+            api.SpinnerRecovery?.audit();
+            api.SpinnerNPCCapture?.auditSources();
+        });
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             api.SpinnerAI?.restoreAfterLoad();
             api.SpinnerNativeField.reconcile();
             api.SpinnerRecovery?.afterLoad();
+            api.SpinnerNPCCapture?.afterLoad();
         });
+        KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => api.SpinnerNPCCapture?.draw(data));
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
-            KDAddEvent(KDEventMapGeneric, trigger, KEY, () => api.SpinnerRecovery?.clearControl());
+            KDAddEvent(KDEventMapGeneric, trigger, KEY, () => {
+                api.SpinnerRecovery?.clearControl();
+                api.SpinnerNPCCapture?.clearTemporary();
+            });
     }
 
     api.SpinnerRuntime = { KEY };
