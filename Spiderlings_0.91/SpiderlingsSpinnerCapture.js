@@ -665,50 +665,41 @@
             }
         });
     }
-    if (typeof KinkyDungeonEnemyLoop === "function") {
-        KinkyDungeonEnemyLoop = api.Hooks.wrap(
-            "Spinner.capture",
-            KinkyDungeonEnemyLoop,
-            (native) =>
-                function (enemy, target, delta) {
-                    if (enemy[REWARD] > 0) return { idle: true, defeat: false, defeatEnemy: enemy };
-                    if (audit() && state().ids.includes(enemy.id)) {
-                        if (state().phase === "wrap" || state().phase === "contest") {
-                            // A legal adjacent weaving action is sufficient in a narrow corridor.
-                            // When space permits, use the native move budget for a step around the player.
-                            const ring = [
-                                [-1, -1],
-                                [0, -1],
-                                [1, -1],
-                                [1, 0],
-                                [1, 1],
-                                [0, 1],
-                                [-1, 1],
-                                [-1, 0],
-                            ];
-                            const index = ring.findIndex(
-                                ([x, y]) => player().x + x === enemy.x && player().y + y === enemy.y,
-                            );
-                            const next = ring[(index + 1) % ring.length];
-                            const x = player().x + next[0],
-                                y = player().y + next[1];
-                            const dir = { x: x - enemy.x, y: y - enemy.y, delta: 1 };
-                            if (
-                                !KinkyDungeonEnemyAt(x, y) &&
-                                KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
-                            )
-                                KinkyDungeonEnemyTryMove(enemy, dir, delta, x, y, false);
-                        }
-                        acted.add(enemy.id);
-                        return { idle: false, defeat: false, defeatEnemy: enemy };
-                    }
-                    if (holdsSpiderAttack(enemy, target)) {
-                        waitAround(enemy, delta);
-                        return { idle: false, defeat: false, defeatEnemy: enemy };
-                    }
-                    return native.apply(this, arguments);
-                },
-        );
+    function handleEnemyTurn(enemy, target, delta) {
+        if (enemy[REWARD] > 0) return { idle: true, defeat: false, defeatEnemy: enemy };
+        if (audit() && state().ids.includes(enemy.id)) {
+            if (state().phase === "wrap" || state().phase === "contest") {
+                // A legal adjacent weaving action is sufficient in a narrow corridor.
+                // When space permits, use the native move budget for a step around the player.
+                const ring = [
+                    [-1, -1],
+                    [0, -1],
+                    [1, -1],
+                    [1, 0],
+                    [1, 1],
+                    [0, 1],
+                    [-1, 1],
+                    [-1, 0],
+                ];
+                const index = ring.findIndex(([x, y]) => player().x + x === enemy.x && player().y + y === enemy.y);
+                const next = ring[(index + 1) % ring.length];
+                const x = player().x + next[0],
+                    y = player().y + next[1];
+                const dir = { x: x - enemy.x, y: y - enemy.y, delta: 1 };
+                if (
+                    !KinkyDungeonEnemyAt(x, y) &&
+                    KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
+                )
+                    KinkyDungeonEnemyTryMove(enemy, dir, delta, x, y, false);
+            }
+            acted.add(enemy.id);
+            return { idle: false, defeat: false, defeatEnemy: enemy };
+        }
+        if (holdsSpiderAttack(enemy, target)) {
+            waitAround(enemy, delta);
+            return { idle: false, defeat: false, defeatEnemy: enemy };
+        }
+        return undefined;
     }
     function holdsSpiderAttack(enemy, target) {
         return (
@@ -840,6 +831,7 @@
         texturesReady,
         hit,
         state,
+        handleEnemyTurn,
         holdsSpiderAttack,
         isAutomaticTurn: () => automatic,
         reactionOpportunity,

@@ -10,13 +10,13 @@ Spinner 试玩从新游戏 Perk「结网幼蛛试玩」进入 31×21 平坦场�
 
 对抗使用独立拘束条和挣脱条，不提前装备物品。失败后五个世界回合把同一腿袋从 20% 推进到 100%；中断保留已经形成的实际进度。场地与连接保存在地图数据中；捕获阶段和参与者保存在 KDGameData；实际物品进度保存在物品 data 中。图形对象与计时器句柄不写入存档。绘制只读取捕获状态，旧字段迁移由读档事件处理。
 
-`Models/SpiderlingsSpinnerLegbinder/` 的 Band、Tail、Finished、Closure 是四个直接替换入口，不进入共用蛛丝 atlas。`SpiderlingsSpinnerArt.js` 负责前后层、宽带和活动尾端，`SpiderlingsSpinnerCapture.js` 负责阶段与腿袋状态，`SpiderlingsSpinnerField.js` 负责场地和结点。`tools/artist-kit/` 生成独立画师交付，不进入安装 ZIP。
+`Models/SpiderlingsSpinnerLegbinder/` 的 Band、Tail、Finished、Closure 是四个直接替换入口，不进入共用蛛丝 atlas。`SpiderlingsSpinnerArt.js` 负责前后层、宽带和活动尾端；`SpiderlingsSpinnerCapture.js` 与 `SpiderlingsSpinnerField.js` 暂时保留旧试玩场的捕获和建造兼容；新门口拦截线由纯 JSON 的 `SpiderlingsSpinnerTopology.js`、原生投影 `SpiderlingsSpinnerNativeField.js`、场景供给 `SpiderlingsSpinnerScenarios.js` 和唯一敌人循环分发器 `SpiderlingsSpinnerRuntime.js` 负责。`tools/artist-kit/` 生成独立画师交付，不进入安装 ZIP。
 
 `spiderlingsPinkWebbing` 同时选择拘束、投射物和带蛛丝敌人的外观。Spinner、Tunneler、WebCaster、NestEntrance 分别有原色和粉色 PNG；Jumper 两种设置共用同一张交付图。切色不改变实体 ID、存档或玩法。
 
 ## 运行时与状态
 
-Manifest 按依赖顺序加载十五个脚本。模块职责、共享 hook 的安装与调用顺序、存档字段归属见 [运行时架构](../docs/RUNTIME.md)。`SpiderlingsCore.js` 负责共享注册；遭遇与 WebCaster 移动分别由 `SpiderlingsEncounters.js`、`SpiderlingsWebCaster.js` 管理。`SpiderlingsWebbingData.js` 和 `SpiderlingsWebbingRules.js` 提供定义与纯规则，`SpiderlingsWebbing.js` 负责 KD 接入。
+Manifest 按依赖顺序加载十九个脚本。模块职责、共享 hook 的安装与调用顺序、存档字段归属见 [运行时架构](../docs/RUNTIME.md)。`SpiderlingsCore.js` 负责共享注册；遭遇与 WebCaster 移动分别由 `SpiderlingsEncounters.js`、`SpiderlingsWebCaster.js` 管理。`SpiderlingsWebbingData.js` 和 `SpiderlingsWebbingRules.js` 提供定义与纯规则，`SpiderlingsWebbing.js` 负责 KD 接入。#28 的拦截线只在显式供应两只 Spinner 的门口调试场景启用，不会在普通楼层自动编组，也不形成捕获区域。
 
 共享状态保存在现有 Spiderlings 命名空间、实体字段和地图数据中。旧存档缺少新字段时按当前默认值恢复，不推断无法证明的历史来源。兼容包装只在对应 KD 原生函数存在时安装，并把不属于 Spiderlings 的参数完整交回原函数。
 
@@ -50,7 +50,7 @@ Lv1 没有 displacement。Lv2/Lv3 共用对应部位配置：
 
 英文 fallback 与七份 CSV 覆盖 25 件拘束以及当前敌人、技能、设置、门禁、侵扰、试玩和脱困文案。日语中的 Spiderling 统一称为「幼蛛」。中文和英文属于界面排版验收范围，其余语言保留现有翻译。
 
-测试包由 manifest、100 个 `fileorder` 条目和七份 CSV 组成，共 108 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
+测试包由 manifest、104 个 `fileorder` 条目和七份 CSV 组成，共 112 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
 
 按 [CONTRIBUTING.md 的验证矩阵](../CONTRIBUTING.md#verification)选择检查范围。仅修改文档不需要游戏输入、版本升级或本地 ZIP。运行时交付在 Spiderlings 仓库根目录构建最终 ZIP 后执行完整本地检查：
 

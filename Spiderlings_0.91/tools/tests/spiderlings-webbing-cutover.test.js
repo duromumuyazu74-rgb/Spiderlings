@@ -20,9 +20,13 @@ const scripts = [
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
     "SpiderlingsSpinnerField.js",
+    "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRuntime.js",
 ];
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",

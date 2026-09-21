@@ -98,7 +98,19 @@ function contestRuntime(count = 2) {
         contains: () => true,
         holdsAttack: () => false,
         onCaptureEnd: () => {},
+        handleEnemyTurn: () => undefined,
     };
+    c.Spiderlings.SpinnerNativeField = {
+        isOwnedProxy: () => false,
+        handleEnemyTurn: () => undefined,
+        onNativeDamage() {},
+        onEntry() {},
+        tick() {},
+        reconcile() {},
+    };
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerRuntime.js"), "utf8"), c, {
+        filename: "SpiderlingsSpinnerRuntime.js",
+    });
     const send = (event, data = {}) => c.KDEventMapGeneric[event]?.SpiderlingsSpinnerCapture?.({}, data);
     const add = () => {
         const id = c.KDMapData.Entities.length + 1;

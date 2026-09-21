@@ -491,22 +491,13 @@
     function holdsAttack(enemy) {
         return active() && field()?.ids.includes(enemy?.id) && ["preparing", "ready"].includes(field().phase);
     }
-    if (typeof KinkyDungeonEnemyLoop === "function") {
-        KinkyDungeonEnemyLoop = api.Hooks.wrap(
-            "Spinner.field",
-            KinkyDungeonEnemyLoop,
-            (native) =>
-                function (enemy, target, delta) {
-                    const f = field();
-                    if (active() && f && !api.SpinnerCapture.state()) {
-                        if (enemy.id === f.jumper && !f.jumperEnabled)
-                            return { idle: true, defeat: false, defeatEnemy: enemy };
-                        if (build(enemy, delta) || holdsAttack(enemy))
-                            return { idle: false, defeat: false, defeatEnemy: enemy };
-                    }
-                    return native.apply(this, arguments);
-                },
-        );
+    function handleEnemyTurn(enemy, _target, delta) {
+        const f = field();
+        if (active() && f && !api.SpinnerCapture.state()) {
+            if (enemy.id === f.jumper && !f.jumperEnabled) return { idle: true, defeat: false, defeatEnemy: enemy };
+            if (build(enemy, delta) || holdsAttack(enemy)) return { idle: false, defeat: false, defeatEnemy: enemy };
+        }
+        return undefined;
     }
     if (typeof KDInputTypes !== "undefined") {
         KDInputTypes.spiderlingsSpinnerAdd = () => (addSpinner() ? "Added" : "Blocked");
@@ -667,6 +658,7 @@
         WALL,
         field,
         enter,
+        handleEnemyTurn,
         holdsAttack,
         onCaptureEnd,
         contains,

@@ -35,7 +35,7 @@ test("Webbing rules resolve frozen input without registering any native objects"
     assert.deepEqual(Object.keys(context.Spiderlings).sort(), ["WebbingData", "WebbingRules"]);
 });
 
-test("shared AI hooks compose in manifest order and preserve foreign calls", () => {
+test("shared AI hooks use one Spinner dispatcher and preserve foreign calls", () => {
     const calls = [],
         receiver = {},
         result = { native: true };
@@ -53,12 +53,21 @@ test("shared AI hooks compose in manifest order and preserve foreign calls", () 
         true,
     );
     load(c, "SpiderlingsSpinnerField.js");
+    c.Spiderlings.SpinnerNativeField = {
+        isOwnedProxy: () => false,
+        handleEnemyTurn: () => undefined,
+        onNativeDamage() {},
+        onEntry() {},
+        tick() {},
+        reconcile() {},
+    };
+    load(c, "SpiderlingsSpinnerRuntime.js");
     const enemy = { Enemy: { name: "Bandit" } },
         target = { player: true },
         data = {};
     const describe = (fn) => Array.from(c.Spiderlings.Hooks.describe(fn));
     assert.deepEqual(describe(c.KDAIType.hunt.beforemove), ["WebCaster.hunt", "Cocoon.hunt"]);
-    assert.deepEqual(describe(c.KinkyDungeonEnemyLoop), ["Spinner.capture", "Spinner.field"]);
+    assert.deepEqual(describe(c.KinkyDungeonEnemyLoop), ["Spinner.runtime"]);
     assert.equal(c.KDAIType.hunt.beforemove.call(receiver, enemy, target, data, "extra"), result);
     assert.equal(c.KinkyDungeonEnemyLoop.call(receiver, enemy, target, 1, "extra"), result);
     assert.equal(calls.length, 2);
