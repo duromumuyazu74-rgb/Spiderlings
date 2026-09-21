@@ -303,7 +303,8 @@ globalThis.SpinnerTopology = (() => {
             chokes,
             selected: selected || shortlist[0],
             shortlist: shortlist.map((c) => c.id),
-            fallback: eligible[0]?.type === "line" ? "拦截线" : eligible.length ? "围场" : "无合法地点",
+            fallback:
+                eligible[0]?.type === "line" ? "Interception line" : eligible.length ? "Enclosure" : "No legal site",
             policy: "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented.",
         };
     }
@@ -336,8 +337,8 @@ globalThis.SpinnerTopology = (() => {
         }
         make(
             "door",
-            "单格门口",
-            "门格受保护，连接应选门旁走廊。狭窄处降级为拦截线。",
+            "Single-cell doorway",
+            "The door is protected. Select the adjoining corridor and fall back to an interception line.",
             [
                 [1, 9, 29, 11],
                 [14, 9, 16, 9],
@@ -364,8 +365,8 @@ globalThis.SpinnerTopology = (() => {
         });
         make(
             "corridor",
-            "双格走廊",
-            "两格横截面可布置短连接；不强行生成房间围场。",
+            "Two-cell corridor",
+            "A two-cell cut supports a short link without forcing a room enclosure.",
             [[1, 9, 29, 10]],
             [2, 9],
             [28, 10],
@@ -376,8 +377,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "tee",
-            "T 形路口",
-            "堵住一个分支仍可能有绕行路线，查看出口路径变化。",
+            "T junction",
+            "Blocking one branch may leave a detour. Inspect the route to the exit.",
             [
                 [1, 9, 29, 10],
                 [14, 2, 15, 10],
@@ -391,8 +392,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "cross",
-            "十字路口",
-            "四向通路；单条拦截线不构成捕获区。",
+            "Crossroads",
+            "Four branches. A single interception line is not a capture region.",
             [
                 [1, 9, 29, 10],
                 [14, 2, 15, 18],
@@ -406,8 +407,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "room",
-            "规则房间",
-            "预布主体后保留入口；进入核心才逐格封闭。",
+            "Regular room",
+            "Prebuild the body and retain an entrance. Core entry starts incremental sealing.",
             [
                 [1, 10, 8, 10],
                 [8, 4, 24, 16],
@@ -423,8 +424,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "irregular",
-            "不规则房间",
-            "L 形空间可选择凹正交闭环；可对比矩形候选。",
+            "Irregular room",
+            "Compare a concave orthogonal loop with rectangle candidates in an L-shaped room.",
             [
                 [1, 7, 5, 7],
                 [5, 3, 10, 16],
@@ -441,8 +442,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "exit",
-            "出口附近",
-            "出口和相邻交互格不可覆盖；允许堵住必经路线。",
+            "Near the exit",
+            "Preserve exit and interaction cells while allowing a blockade of the only route.",
             [
                 [1, 10, 7, 10],
                 [7, 5, 24, 15],
@@ -459,8 +460,8 @@ globalThis.SpinnerTopology = (() => {
         maps.at(-1).protected.push("23,10");
         make(
             "tight",
-            "空间不足",
-            "连通的 2×2 小室被入口、出口与两只 Spinner 占用，没有合法双锚点位置。",
+            "Insufficient space",
+            "A connected 2×2 room holds the entry, exit and two Spinners. No legal anchor pair fits.",
             [[14, 10, 15, 11]],
             [14, 10],
             [15, 11],
@@ -471,8 +472,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "overlap",
-            "两群重叠",
-            "第二组复用同一几何，验证一个物理连接、多个所有者和共同破坏。",
+            "Overlapping groups",
+            "Two groups reuse one layout with shared physical links, owners and destruction.",
             [
                 [1, 10, 5, 10],
                 [5, 3, 25, 17],
@@ -490,8 +491,8 @@ globalThis.SpinnerTopology = (() => {
         );
         make(
             "nested",
-            "双层围场",
-            "四只才可规划第二层；内外圈共用核心，两格空隙。",
+            "Nested enclosure",
+            "Four actors can plan a second layer around a common core with two free cells between boundaries.",
             [
                 [1, 10, 4, 10],
                 [4, 2, 26, 18],
@@ -521,8 +522,8 @@ globalThis.SpinnerTopology = (() => {
         const occupied = [...new Set(snapshot.entities.map((p) => key(p.x, p.y)))];
         const map = {
             id: `native-${i}`,
-            name: `KD ${snapshot.version} · 样本 ${(i % 3) + 1}`,
-            desc: "原生生成快照，保留原实体占位。所有带元数据的地格保守保护。调试 Spinner 在空格额外放置。",
+            name: `KD ${snapshot.version} · sample ${(i % 3) + 1}`,
+            desc: "Native-generated snapshot with static original occupancy. Metadata cells are conservatively protected; debug Spinners occupy additional free cells.",
             kind: "native-generated",
             grid: snapshot.grid,
             walk,
@@ -562,6 +563,7 @@ globalThis.SpinnerTopology = (() => {
             map: clone(map),
             seed,
             turn: 0,
+            aware: false,
             target: { pos: [...map.start], kind: "player" },
             groups: [],
             fields: [],
@@ -588,12 +590,12 @@ globalThis.SpinnerTopology = (() => {
         for (const p of available) {
             if (used.has(key(...p))) continue;
             used.add(key(...p));
-            actors.push({ id: `s${actors.length + 1}`, pos: [...p], active: true, budget: 0, last: "待命", path: [] });
+            actors.push({ id: `s${actors.length + 1}`, pos: [...p], active: true, budget: 0, last: "Idle", path: [] });
             if (actors.length >= count) break;
         }
         s.groups.push({ id: "g1", actors, fieldIds: [], active: true });
         s.analysis = analyze(map, actors[0]?.pos || map.start, seed, "g1", map.nested && count >= 4);
-        log(s, `发现 ${s.analysis.candidates.length} 个候选；推荐 ${s.analysis.fallback}。`);
+        log(s, `Found ${s.analysis.candidates.length} candidates; selected ${s.analysis.fallback}.`);
         return s;
     }
     function addField(s, c, g, layer = 0) {
@@ -627,7 +629,7 @@ globalThis.SpinnerTopology = (() => {
                 b = cells.at(-1),
                 lid = [a, b].sort().join("|");
             const max = 2 + 0.5 * (cells.length - 1);
-            s.links[lid] ||= { id: lid, a, b, cells, built: [], hp: max, max, owners: [], cooldown: 0 };
+            s.links[lid] ||= { id: lid, a, b, cells, built: [], started: false, hp: max, max, owners: [], cooldown: 0 };
             if (!s.links[lid].owners.includes(id)) s.links[lid].owners.push(id);
             f.links.push(lid);
         });
@@ -636,11 +638,11 @@ globalThis.SpinnerTopology = (() => {
         return f;
     }
     function plan(s, id) {
-        if (s.fields.length) return log(s, "已有活动计划；重置后可重新选址。");
+        if (s.fields.length) return log(s, "An active plan exists. Reset before selecting another site.");
         const g = s.groups[0];
-        if (g.actors.filter((a) => a.active).length < 2) return log(s, "不足两只 Spinner，不能启动施工。");
+        if (g.actors.filter((a) => a.active).length < 2) return log(s, "Construction requires at least two Spinners.");
         const c = s.analysis.candidates.find((c) => c.id === id) || s.analysis.selected;
-        if (!c) return log(s, "没有合法锚点对或围场，放弃施工。");
+        if (!c) return log(s, "No legal anchor pair or enclosure; abandon construction.");
         s.candidate = c.id;
         addField(s, c, g);
         if (c.outer && g.actors.filter((a) => a.active).length >= 4) {
@@ -648,7 +650,24 @@ globalThis.SpinnerTopology = (() => {
             outer.core = c.core;
             addField(s, outer, g, 1);
         }
-        log(s, `已保存计划 ${c.type}，评分 ${c.score.toFixed(1)}；${g.fieldIds.length} 层。`);
+        const worksites = c.interior
+            .map(point)
+            .filter((p) => usableCell(s, key(...p)) && key(...p) !== key(...s.target.pos));
+        const reservedSites = new Set();
+        for (const actor of g.actors) {
+            const choices = worksites.filter((p) => !reservedSites.has(key(...p)));
+            choices.sort(
+                (a, b) =>
+                    distance(a, actor.pos) +
+                    c.boundary.filter((k) => !workReach(s, a, point(k))).length * 2 -
+                    (distance(b, actor.pos) + c.boundary.filter((k) => !workReach(s, b, point(k))).length * 2),
+            );
+            if (choices[0]) {
+                actor.worksite = choices[0];
+                reservedSites.add(key(...choices[0]));
+            }
+        }
+        log(s, `Saved plan ${c.type}, score ${c.score.toFixed(1)}; ${g.fieldIds.length} layers.`);
     }
     function overlap(s) {
         if (!s.fields.length) plan(s);
@@ -664,7 +683,7 @@ globalThis.SpinnerTopology = (() => {
             .filter((k) => !used.has(k) && !s.map.protected.includes(k) && distance(point(k), source.core) < 4)
             .slice(0, 2)
             .map(point);
-        if (positions.length < 2) return log(s, "第二组没有合法出生格。");
+        if (positions.length < 2) return log(s, "No legal cells for the second group.");
         const g = {
             id: "g2",
             actors: positions.map((p, i) => ({
@@ -672,7 +691,7 @@ globalThis.SpinnerTopology = (() => {
                 pos: p,
                 active: true,
                 budget: 0,
-                last: "待命",
+                last: "Idle",
                 path: [],
             })),
             fieldIds: [],
@@ -680,12 +699,12 @@ globalThis.SpinnerTopology = (() => {
         };
         s.groups.push(g);
         addField(s, c, g);
-        log(s, "第二组复用几何；共享锚点和连接仅存一份 HP。");
+        log(s, "The second group reuses one HP record per shared anchor and link.");
     }
     function solids(s) {
         return new Set(
             Object.values(s.links)
-                .filter((l) => l.hp > 0)
+                .filter((l) => l.hp > 0 && l.started !== false)
                 .flatMap((l) => l.built),
         );
     }
@@ -697,8 +716,12 @@ globalThis.SpinnerTopology = (() => {
                 continue;
             }
             const links = f.links.map((id) => s.links[id]);
-            const complete = links.every((l) => l.hp > 0 && l.cells.every((k) => l.built.includes(k)));
-            const ready = links.every((l) => l.hp > 0 && l.cells.every((k) => k === f.gate || l.built.includes(k)));
+            const complete = links.every(
+                (l) => l.hp > 0 && l.started !== false && l.cells.every((k) => l.built.includes(k)),
+            );
+            const ready = links.every(
+                (l) => l.hp > 0 && l.started !== false && l.cells.every((k) => k === f.gate || l.built.includes(k)),
+            );
             const was = f.phase;
             f.phase = complete
                 ? f.type === "line"
@@ -710,7 +733,7 @@ globalThis.SpinnerTopology = (() => {
                     ? "ready"
                     : "preparing";
             if (links.some((l) => l.cooldown > 0)) f.phase = "breached";
-            if (f.phase !== was) log(s, `${f.id}：${phaseName(f.phase)}`);
+            if (f.phase !== was) log(s, `${f.id}: ${phaseName(f.phase)}`);
         }
     }
     function gateAllowed(s, f) {
@@ -729,6 +752,8 @@ globalThis.SpinnerTopology = (() => {
             for (const id of f.links) {
                 const l = s.links[id];
                 if (l.cooldown > 0 || !s.anchors[l.a].placed || !s.anchors[l.b].placed) continue;
+                if (l.started === false && l.cells.every((k) => l.built.includes(k)))
+                    results.push({ type: "extend", k: l.b, id, f: f.id });
                 for (const k of l.cells) {
                     if (l.built.includes(k) || (k === f.gate && !gateAllowed(s, f))) continue;
                     const idx = l.cells.indexOf(k),
@@ -746,6 +771,16 @@ globalThis.SpinnerTopology = (() => {
     }
     function usableCell(s, k) {
         return floor(s.map, ...point(k)) && !s.map.protected.includes(k) && !s.map.occupied.includes(k);
+    }
+    function workReach(s, from, to) {
+        if (Math.hypot(from[0] - to[0], from[1] - to[1]) > 5) return false;
+        const steps = distance(from, to);
+        for (let i = 1; i <= steps; i++) {
+            const x = Math.round(from[0] + ((to[0] - from[0]) * i) / steps);
+            const y = Math.round(from[1] + ((to[1] - from[1]) * i) / steps);
+            if (!floor(s.map, x, y) || s.map.grid[y][x] === "D" || s.map.occupied.includes(key(x, y))) return false;
+        }
+        return true;
     }
     function validFootprint(s, f) {
         return (
@@ -781,7 +816,7 @@ globalThis.SpinnerTopology = (() => {
             }
         if (wasFloor && s.anchors[k]) s.anchors[k].placed = false;
         s.analysis = analyze(s.map, s.groups[0].actors[0]?.pos || s.map.start, s.seed, "g1", s.map.nested);
-        log(s, "地形变化；下一次施工重新验证边界、内部和核心。");
+        log(s, "Terrain changed. The next action revalidates boundary, interior and core.");
         update(s);
         return true;
     }
@@ -801,15 +836,30 @@ globalThis.SpinnerTopology = (() => {
             if (next && g.actors.filter((a) => a.active).length >= 2) {
                 addField(s, next, g);
                 s.candidate = next.id;
-                log(s, `${g.id} 原计划失效，降级 / 换址至 ${next.type}。`);
-            } else log(s, `${g.id} 地形变化后无合法替代，放弃施工。`);
+                log(s, `${g.id} invalid plan; fallback / relocation to ${next.type}.`);
+            } else log(s, `${g.id} has no legal replacement after terrain change; abandon construction.`);
         }
         for (const a of Object.values(s.anchors)) a.cooldown = Math.max(0, a.cooldown - 1);
         for (const l of Object.values(s.links)) l.cooldown = Math.max(0, l.cooldown - 1);
+        for (const l of Object.values(s.links))
+            if (l.started === false && l.cooldown === 0)
+                for (const k of [l.a, l.b]) if (s.anchors[k]?.placed && !l.built.includes(k)) l.built.push(k);
         for (const g of s.groups) {
             const inner = s.fields.find((f) => f.group === g.id && f.layer === 0 && !f.retired);
-            if (inner?.type !== "line" && inner && inCore(inner, s.target.pos))
+            if (inner?.type !== "line" && inner && inCore(inner, s.target.pos)) {
+                if (!g.actors.some((a) => a.active && a.id === g.lureId)) {
+                    // Do not freeze a worker on the entrance when assigning the stationary lure.
+                    const builders = g.actors.filter((a) => a.active);
+                    const workCells = new Set(
+                        g.fieldIds.flatMap((id) =>
+                            s.fields.find((f) => f.id === id).links.flatMap((id) => s.links[id].cells),
+                        ),
+                    );
+                    g.lureId = (builders.find((a) => !workCells.has(key(...a.pos))) || builders[0])?.id;
+                }
+                s.aware = true;
                 for (const id of g.fieldIds) s.fields.find((f) => f.id === id).triggered = true;
+            }
             for (const id of g.fieldIds) {
                 const f = s.fields.find((f) => f.id === id);
                 const anyInside = g.fieldIds.some((fid) =>
@@ -848,7 +898,7 @@ globalThis.SpinnerTopology = (() => {
                         f.retired = true;
                         f.phase = "retired";
                     }
-                    log(s, `${g.id} 无主满 20 回合，独占结构坍塌。`);
+                    log(s, `${g.id} has been ownerless for 20 turns; unshared structures collapse.`);
                 }
                 continue;
             }
@@ -857,27 +907,60 @@ globalThis.SpinnerTopology = (() => {
                 const a = actors[i];
                 a.budget += 1;
                 a.path = [];
-                if (a.budget < 1.5) {
-                    a.last = "积累行动预算";
+                if (a.budget < 1) {
+                    a.last = "Awaiting budget";
                     continue;
                 }
-                a.budget -= 1.5;
-                if (i === 0 && actors.length > 1) {
-                    a.last = "诱饵岗位 · 原型固定待命";
+                a.budget -= 1;
+                if (
+                    s.aware &&
+                    a.id === (actors.find((actor) => actor.id === g.lureId) || actors[0]).id &&
+                    actors.length > 1
+                ) {
+                    delete a.assignment;
+                    a.last = "Lure duty (stationary model)";
                     continue;
                 }
                 const f = g.fieldIds.map((id) => s.fields.find((f) => f.id === id)).find((f) => f.reopen);
                 if (f) {
                     for (const id of f.links) s.links[id].built = s.links[id].built.filter((k) => k !== f.gate);
                     f.reopen = false;
-                    a.last = "重开入口";
+                    a.last = "Reopen gate";
                     continue;
                 }
-                const options =
-                    actors.length < 2 ? [] : tasks(s, g).filter((t) => !reservations.has(t.k) && usableCell(s, t.k));
-                options.sort(
-                    (a1, b) => distance(point(a1.k), a.pos) - distance(point(b.k), a.pos) || a1.k.localeCompare(b.k),
+                const pending = actors.length < 2 ? [] : tasks(s, g);
+                const claimed = new Set(
+                    s.groups
+                        .flatMap((group) => group.actors)
+                        .filter(
+                            (actor) =>
+                                actor.active &&
+                                actor.id !== a.id &&
+                                actor.assignment &&
+                                pending.some(
+                                    (t) =>
+                                        t.k === actor.assignment.k &&
+                                        t.id === actor.assignment.id &&
+                                        (workReach(s, actor.pos, point(t.k)) || !workReach(s, a.pos, point(t.k))),
+                                ),
+                        )
+                        .map((actor) => actor.assignment.k),
                 );
+                const options = pending.filter(
+                    (t) => !reservations.has(t.k) && !claimed.has(t.k) && usableCell(s, t.k),
+                );
+                options.sort(
+                    (a1, b) =>
+                        Number(!workReach(s, a.pos, point(a1.k))) - Number(!workReach(s, a.pos, point(b.k))) ||
+                        distance(point(a1.k), a.pos) - distance(point(b.k), a.pos) ||
+                        a1.k.localeCompare(b.k),
+                );
+                if (a.assignment && !options.some((t) => workReach(s, a.pos, point(t.k))))
+                    options.sort(
+                        (x, y) =>
+                            Number(y.k === a.assignment.k && y.id === a.assignment.id) -
+                            Number(x.k === a.assignment.k && x.id === a.assignment.id),
+                    );
                 const occupied = new Set([
                     ...s.map.occupied,
                     key(...s.target.pos),
@@ -885,11 +968,28 @@ globalThis.SpinnerTopology = (() => {
                         v.actors.filter((v) => v.active && v.id !== a.id).map((v) => key(...v.pos)),
                     ),
                 ]);
+                if (a.worksite && key(...a.pos) === key(...a.worksite)) a.worksiteReached = true;
+                if (
+                    options.length &&
+                    a.worksite &&
+                    !a.worksiteReached &&
+                    !options.some((t) => !occupied.has(t.k) && workReach(s, a.pos, point(t.k)))
+                ) {
+                    const approach = flood(s.map, a.pos, occupied, (p) => key(...p) === key(...a.worksite)).path;
+                    if (approach.length > 1) {
+                        if (payExtraHalf(a)) {
+                            a.pos = approach[1];
+                            a.path = approach;
+                            a.last = "Move to worksite";
+                        }
+                        continue;
+                    }
+                }
                 let chosen, path;
                 for (const t of options) {
                     if (occupied.has(t.k)) continue;
                     const p = point(t.k),
-                        r = flood(s.map, a.pos, occupied, (q) => distance(q, p) <= 1 && !occupied.has(key(...q)));
+                        r = flood(s.map, a.pos, occupied, (q) => workReach(s, q, p) && !occupied.has(key(...q)));
                     if (r.path.length) {
                         chosen = t;
                         path = r.path;
@@ -897,6 +997,21 @@ globalThis.SpinnerTopology = (() => {
                     }
                 }
                 if (!chosen) {
+                    delete a.assignment;
+                    // Idle workers yield cells that another paid construction action needs.
+                    if (pending.some((t) => t.k === key(...a.pos))) {
+                        const blockedWork = new Set(pending.map((t) => t.k));
+                        const free = dirs
+                            .map(([dx, dy]) => [a.pos[0] + dx, a.pos[1] + dy])
+                            .find((p) => floor(s.map, ...p) && !occupied.has(key(...p)) && !blockedWork.has(key(...p)));
+                        if (free) {
+                            if (payExtraHalf(a)) {
+                                a.pos = free;
+                                a.last = "Move to worksite";
+                            }
+                            continue;
+                        }
+                    }
                     const anchorRepair = Object.values(s.anchors).find(
                         (v) =>
                             v.placed &&
@@ -908,8 +1023,9 @@ globalThis.SpinnerTopology = (() => {
                             distance(point(v.k), a.pos) <= 1,
                     );
                     if (anchorRepair) {
+                        if (!payExtraHalf(a)) continue;
                         anchorRepair.hp = Math.min(anchorRepair.max, anchorRepair.hp + anchorRepair.max * 0.1);
-                        a.last = "修复锚点 10%";
+                        a.last = "Repair anchor 10%";
                         continue;
                     }
                     const repair = Object.values(s.links).find(
@@ -922,34 +1038,53 @@ globalThis.SpinnerTopology = (() => {
                             l.cells.some((k) => distance(point(k), a.pos) <= 1),
                     );
                     if (repair) {
+                        if (!payExtraHalf(a)) continue;
                         repair.hp = Math.min(repair.max, repair.hp + repair.max * 0.1);
-                        a.last = "修复连接 10%";
-                    } else a.last = options.length ? "等待占位解除 / 暂无可达施工位" : "守候";
+                        a.last = "Repair link 10%";
+                    } else a.last = options.length ? "Waiting for a free work position" : "Idle";
                     continue;
                 }
                 reservations.add(chosen.k);
                 a.task = chosen;
                 a.path = path;
                 if (path.length > 1) {
+                    if (!payExtraHalf(a)) continue;
+                    a.assignment = chosen;
                     a.pos = path[1];
-                    a.last = "移动至施工位";
+                    a.last = "Move to worksite";
                     continue;
                 }
+                delete a.assignment;
                 if (chosen.type === "anchor") {
                     const anchor = s.anchors[chosen.id];
                     anchor.placed = true;
                     anchor.hp = anchor.max;
-                    a.last = "放置锚点";
+                    // A placed anchor already supplies the endpoint cell of each attached link.
+                    for (const l of Object.values(s.links))
+                        if ((l.a === chosen.k || l.b === chosen.k) && !l.built.includes(chosen.k))
+                            l.built.push(chosen.k);
+                    a.last = "Place anchor";
                 } else {
                     const l = s.links[chosen.id];
                     if (l.hp <= 0) l.hp = l.max;
-                    l.built.push(chosen.k);
-                    a.last = "延伸连接一格";
+                    l.started = true;
+                    if (!l.built.includes(chosen.k)) l.built.push(chosen.k);
+                    a.last = "Extend one cell";
                 }
             }
         }
         update(s);
         return s;
+    }
+    function payExtraHalf(actor) {
+        // The base action already spent one point. Movement and repair retain a 1.5-point cost.
+        if (actor.budget < 0.5) {
+            actor.budget += 1;
+            actor.last = "Awaiting budget";
+            return false;
+        }
+        actor.budget -= 0.5;
+        return true;
     }
     function settle(s, limit = 400) {
         if (!s.fields.length) return s;
@@ -967,7 +1102,10 @@ globalThis.SpinnerTopology = (() => {
             idle = sig === prev ? idle + 1 : 0;
             prev = sig;
             if (idle >= 12) {
-                log(s, "施工连续 12 回合无进展；检查占位或换候选。没有强制生成障碍。");
+                log(
+                    s,
+                    "No construction progress for 12 turns. Inspect occupancy or choose another site; no obstacle was forced into place.",
+                );
                 break;
             }
         }
@@ -1006,19 +1144,20 @@ globalThis.SpinnerTopology = (() => {
             if (destroyed.includes(l.a) || destroyed.includes(l.b)) l.hp = 0;
             if (l.hp <= 0 && l.built.length) {
                 l.built = [];
+                l.started = false;
                 l.cooldown = 4;
             }
         }
         log(
             s,
-            `调试伤害 ${aoe ? "3×3 范围" : "单格"}：${s.lastDamage.map((v) => v.damage.toFixed(2)).join(" / ") || "未命中结构"}。`,
+            `Debug damage ${aoe ? "3×3 area" : "Single cell"}: ${s.lastDamage.map((v) => v.damage.toFixed(2)).join(" / ") || "No structure hit"}.`,
         );
         update(s);
         return s;
     }
     function enterCore(s) {
         const f = s.fields.find((f) => f.type !== "line" && !f.retired);
-        if (!f) return log(s, "拦截线没有捕获核心。");
+        if (!f) return log(s, "Interception lines have no capture core.");
         const blocked = new Set([
             ...s.map.occupied,
             ...solids(s),
@@ -1028,13 +1167,15 @@ globalThis.SpinnerTopology = (() => {
             .map(point)
             .filter((p) => !blocked.has(key(...p)))
             .sort((a, b) => distance(a, f.core) - distance(b, f.core))[0];
-        if (!target) return log(s, "核心没有合法目标格。");
+        if (!target) return log(s, "No legal target cell in the core.");
         s.target.pos = target;
-        log(s, "调试放置目标到最内层；后续封口仍逐格施工。");
+        log(s, "Debug target placement in the inner core; gates still close one cell per action.");
         update(s);
     }
     function vacateLure(s) {
-        const lure = s.groups[0]?.actors[0];
+        const group = s.groups[0];
+        const lure =
+            group?.actors.find((a) => a.active && a.id === group.lureId) || group?.actors.find((a) => a.active);
         if (!lure) return false;
         const occupied = new Set([
             ...s.map.occupied,
@@ -1047,7 +1188,7 @@ globalThis.SpinnerTopology = (() => {
         );
         if (!free) return false;
         lure.pos = point(free);
-        log(s, "调试移开固定诱饵；这不是原生 AI 行动或寻路模拟。");
+        log(s, "Debug relocation of the stationary lure; this is not native bait AI or pathfinding.");
         return true;
     }
     function move(s, goal) {
@@ -1060,7 +1201,7 @@ globalThis.SpinnerTopology = (() => {
         if (p.length > 1) {
             s.target.pos = p[1];
             step(s);
-        } else log(s, "无法沿当前可走路径移动。");
+        } else log(s, "No walkable route to that cell.");
     }
     function inspect(s) {
         const solid = solids(s),
@@ -1115,13 +1256,13 @@ globalThis.SpinnerTopology = (() => {
     function phaseName(p) {
         return (
             {
-                preparing: "准备施工",
-                ready: "预布完成 · 留入口",
-                sealing: "逐格封口",
-                sealed: "闭合围场",
-                barrier: "拦截线完成",
-                breached: "连接破损 · 重建等待",
-                retired: "退役路障",
+                preparing: "Preparing",
+                ready: "Ready with entrance",
+                sealing: "Sealing",
+                sealed: "Sealed enclosure",
+                barrier: "Interception complete",
+                breached: "Breached; rebuilding delay",
+                retired: "Retired roadblock",
             }[p] || p
         );
     }

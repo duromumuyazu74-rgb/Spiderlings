@@ -22,16 +22,6 @@
   {
     "label": "build",
     "turn": 2,
-    "phases": ["preparing"],
-    "target": [1, 11],
-    "blocked": 0,
-    "reachableCells": 266,
-    "exitReachable": false,
-    "geometryReady": false
-  },
-  {
-    "label": "build",
-    "turn": 3,
     "phases": ["barrier"],
     "target": [1, 11],
     "blocked": 2,

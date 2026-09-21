@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Spinner 蛛网场 · 拓扑调试原型</title>
+    <title>Spinner web fields · Topology prototype</title>
     <style>
         :root {
             color-scheme: dark;
@@ -382,48 +382,51 @@
     <header>
         <div>
             <div class="eyebrow">SPINNER / FIELD STUDIES / 01</div>
-            <h1>蛛网场拓扑实验台</h1>
-            <p>在门口、路口和房间中选址，观察 Spinner 逐格结网、封口与破网后的可走路径。</p>
-            <small>可丢弃原型。此页验证几何与施工状态，捕获战斗、原生拖拽和最终数值尚未接入。</small>
+            <h1>Web field laboratory</h1>
+            <p>Choose sites at doors, junctions and rooms. Watch incremental construction, closure and breach paths.</p>
+            <small
+                >Disposable topology prototype. Native capture combat, recovery dragging and final balance are not
+                integrated.</small
+            >
             <p class="callout" lang="en">
                 Model limits: fixed lure, supplied groups, static original occupants, simplified eight-way movement,
                 conservative protected cells and injected debug damage. No native combat or multi-source leash
                 simulation.
             </p>
         </div>
-        <div class="badge">离线单文件 · 2026.09.21</div>
+        <div class="badge">Offline single file · 2026.09.21</div>
     </header>
     <main>
         <aside>
             <div class="panel">
-                <h2>01 / 场景</h2>
+                <h2>01 / Scenarios</h2>
                 <div id="scenes" class="scene-list"></div>
                 <details>
-                    <summary>真实 KD 快照</summary>
+                    <summary>Native KD snapshots</summary>
                     <div id="nativeScenes" class="scene-list"></div>
                 </details>
-                <label>选址种子<input id="seed" value="spinner-01" /></label
-                ><label>Spinner 数量<input id="count" type="number" value="4" min="2" max="8" /></label>
+                <label>Planning seed<input id="seed" value="spinner-01" /></label
+                ><label>Spinner count<input id="count" type="number" value="4" min="2" max="8" /></label>
                 <div class="controls">
-                    <button id="reset">重新分析</button><button id="importMap">导入地图快照</button>
+                    <button id="reset">Reanalyze</button><button id="importMap">Import map snapshot</button>
                 </div>
                 <input class="file" id="mapFile" type="file" accept=".json" /><small
-                    >群体额外放置在合法空格。已有原生实体按静态占位保留。</small
+                    >Debug actors occupy legal cells. Original native actors remain static obstacles.</small
                 >
             </div>
             <div class="panel">
-                <h2>02 / 候选地点</h2>
+                <h2>02 / Candidate sites</h2>
                 <p id="candidateSummary"></p>
-                <select id="candidateSelect" aria-label="预览候选"></select>
-                <div class="controls"><button class="primary" id="plan">采用候选并施工</button></div>
+                <select id="candidateSelect" aria-label="Preview candidate"></select>
+                <div class="controls"><button class="primary" id="plan">Adopt candidate</button></div>
                 <div id="score" class="muted"></div>
                 <div class="scroll">
                     <table>
                         <thead>
                             <tr>
-                                <th>形状</th>
-                                <th>核心</th>
-                                <th>评分</th>
+                                <th>Shape</th>
+                                <th>Core</th>
+                                <th>Score</th>
                             </tr>
                         </thead>
                         <tbody id="candidates"></tbody>
@@ -444,87 +447,103 @@
                 width="930"
                 height="630"
                 tabindex="0"
-                aria-label="场地图，点击选格；可切换移动、单格伤害或范围伤害"
+                aria-label="Field map. Select a cell, walk a step, or inject single-cell or area damage."
             ></canvas>
             <div class="legend">
-                <span style="--c: #43584b">地面</span><span style="--c: #d7d78a">锚点 / 候选</span
-                ><span style="--c: #f0eddf">已织连接</span><span style="--c: #7dbaa0">Spinner</span
-                ><span style="--c: #eda585">目标</span><span style="--c: #b48191">保护格</span
-                ><span style="--c: #61a4a8">出口路径</span>
+                <span style="--c: #43584b">Floor</span><span style="--c: #d7d78a">Anchors / candidates</span
+                ><span style="--c: #f0eddf">Built links</span><span style="--c: #7dbaa0">Spinner</span
+                ><span style="--c: #eda585">Target</span><span style="--c: #b48191">Protected cells</span
+                ><span style="--c: #61a4a8">Exit route</span>
             </div>
             <div class="controls">
-                <button class="primary" id="step">推进一回合</button><button id="settle">推进到等待 / 闭合</button
-                ><button id="enter">放置目标到核心</button><button id="overlap">加入共享计划</button
-                ><button id="removeActor">移除一只施工者</button><button id="vacateLure">调试移开固定诱饵</button>
+                <button class="primary" id="step">Advance one turn</button
+                ><button id="settle">Advance to ready / sealed</button><button id="enter">Place target in core</button
+                ><button id="overlap">Add shared plan</button><button id="removeActor">Remove one builder</button
+                ><button id="vacateLure">Vacate lure (debug)</button>
             </div>
             <div class="controls">
-                <select id="mode" aria-label="地图操作">
-                    <option value="inspect">点击查看</option>
-                    <option value="move">沿路径走一步</option>
-                    <option value="attack">施加单格伤害</option>
-                    <option value="aoe">施加 3×3 范围伤害</option>
-                    <option value="obstacle">切换普通墙体</option></select
+                <select id="mode" aria-label="Map action">
+                    <option value="inspect">Inspect cell</option>
+                    <option value="move">Walk one step</option>
+                    <option value="attack">Inject single-cell damage</option>
+                    <option value="aoe">Inject 3×3 area damage</option>
+                    <option value="obstacle">Toggle wall</option></select
                 ><label class="inline"
-                    >伤害<input id="damage" type="number" min="0.1" step="0.5" value="1" style="width: 66px" /></label
-                ><label class="inline"><input id="showReach" type="checkbox" checked />可达区域</label
-                ><label class="inline"><input id="showPaths" type="checkbox" checked />施工路径</label>
+                    >Damage<input id="damage" type="number" min="0.1" step="0.5" value="1" style="width: 66px" /></label
+                ><label class="inline"><input id="showReach" type="checkbox" checked />Reachable area</label
+                ><label class="inline"><input id="showPaths" type="checkbox" checked />Builder routes</label>
+                <label class="inline"><input id="aware" type="checkbox" />Alerted (debug)</label>
             </div>
             <div id="notice" role="status" aria-live="polite"></div>
             <div class="panel">
-                <h2>03 / 引导走查</h2>
+                <h2>03 / Guided walkthroughs</h2>
+                <div class="callout">
+                    <strong>Reference room timing</strong>
+                    <div id="timingComparison"></div>
+                    <small
+                        >Same layout. On-site runs start workers at legal work positions; arrival-inclusive runs retain
+                        the original spawns.</small
+                    >
+                </div>
                 <div class="tabs" id="guideTabs"></div>
                 <p id="guideDesc"></p>
                 <div class="steps" id="guideSteps"></div>
             </div>
             <div class="panel">
-                <h2>施工者</h2>
+                <h2>Builders</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>群体 / 角色</th>
-                            <th>位置</th>
-                            <th>本回合行动</th>
-                            <th>施工目标</th>
+                            <th>Group / role</th>
+                            <th>Position</th>
+                            <th>Action this turn</th>
+                            <th>Work target</th>
                         </tr>
                     </thead>
                     <tbody id="actors"></tbody>
                 </table>
                 <small
-                    >此阶段把诱饵固定在岗位，施工行动预算使用 1.5
-                    作为候选。没有模拟视线发现、自卫、原生战斗或自动诱导。</small
+                    >All unaware actors build. Once alerted, one actor waits as the lure. Construction costs 1 budget
+                    point; movement and repair retain 1.5. At most one operation occurs per actor per turn. Perception,
+                    self-defense, native combat and bait movement remain outside this experiment.</small
                 >
             </div>
         </section>
         <aside class="right">
             <div class="panel">
-                <h2>场地状态</h2>
+                <h2>Field state</h2>
                 <div id="status"></div>
                 <div id="checks"></div>
                 <div class="callout" id="admission"></div>
-                <h2 style="margin-top: 18px">选中格</h2>
-                <div id="selection">点击地图查看连接生命和共享归属。</div>
-                <div class="controls"><button id="export">导出状态</button><button id="restore">读取状态</button></div>
+                <h2 style="margin-top: 18px">Selected cell</h2>
+                <div id="selection">Select a cell to inspect link HP and ownership.</div>
+                <div class="controls">
+                    <button id="export">Export state</button><button id="restore">Restore state</button>
+                </div>
                 <input class="file" id="stateFile" type="file" accept=".json" />
                 <details>
-                    <summary>完整状态 / 来源证据</summary>
+                    <summary>Full state / provenance</summary>
                     <pre id="raw"></pre>
                 </details>
             </div>
             <div class="panel">
-                <h2>行动记录</h2>
+                <h2>Action log</h2>
                 <ol id="log"></ol>
             </div>
         </aside>
     </main>
     <footer>
-        几何准入不等于已经捕获。Capture strands 定身对抗、独立腿袋、真实多来源 leash 与 NPC Slime 加固将在原型审核后进入
-        KD 实机阶段。伤害按钮是调试注入，不代表角色射程、工具或精力校验。
+        Geometry only grants admission. Capture contests, independent leg bags, multi-source leashes and NPC
+        reinforcement require a later native KD stage. Damage controls bypass native range, tools and stamina checks.
     </footer>
     <script id="native-data" type="application/json">
         __SNAPSHOTS__
     </script>
     <script id="topology-engine">
         __ENGINE__;
+    </script>
+    <script id="pacing-data" type="application/json">
+        __PACING__
     </script>
     <script>
         __UI__;

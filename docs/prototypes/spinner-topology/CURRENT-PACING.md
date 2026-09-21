@@ -1,24 +1,41 @@
-# Corrected-engine pacing results
+# Current construction pacing
 
-This supplements [PACING.md](PACING.md), which intentionally preserves the immutable #21 baseline. [Current summary](evidence/pacing/summary.json) identifies the engine hash and all 34 replayable cases. [Historical summary](evidence/pacing-baseline/summary.json) remains unchanged.
+The regular-room fixture now finishes within the requested 30-turn limit for two Spinners. More workers reduce construction time. Travel limits the improvement in total elapsed time.
 
-| Observation                        | Initial #21 engine                                  | Corrected placement/lifecycle engine                         |
-| ---------------------------------- | --------------------------------------------------- | ------------------------------------------------------------ |
-| Default three-actor room prebuild  | 50 turns                                            | 50 turns                                                     |
-| Default four-actor nested prebuild | 113 turns                                           | 113 turns                                                    |
-| Early nested entry at turn 5       | 91 further turns; outer work starts with inner work | 120 further turns; inner ready at 53, first outer work at 59 |
-| Retired-only damaged roadblock     | Incorrectly repairs from 3.65 to 4 HP               | Remains at 3.65 HP                                           |
-| Shared owners lost ten turns apart | Collapses ten turns after final owner loss          | Present at final-owner turn 19, gone at 20                   |
-| Contract observations              | 7 pass, 3 known model defects                       | All 10 pass                                                  |
+The [current summary](evidence/pacing/summary.json) identifies the engine hash and all 37 replayable cases. [PACING.md](PACING.md) and the unchanged [historical summary](evidence/pacing-baseline/summary.json) retain the original results.
 
-These changes correct state rules rather than speed or damage parameters. The same pinned room 2/4/8-actor prebuilds remain 98/42/42 turns. Nested 4/8-actor prebuilds remain 113/81; the two-actor 87-turn case is inner-only and must not be treated as a faster completion of the two-layer job.
+## Same room, different worker counts
 
-The review fixes to full-region reachability and surviving shared-field eligibility were followed by another run of all 34 pacing cases. Outcomes and replay states are unchanged; the current summary records the corrected engine hash. Their additional geometry regressions are recorded in [PLACEMENT.md](PLACEMENT.md).
+The arrival-inclusive runs keep the original 5-by-9 boundary, seed `spinner-01`, target position and spawn order. The footprint was not reduced to meet the timing target. Separate on-site fixtures start actors at distinct legal worksites chosen by the planner. This changes their initial condition; gameplay does not teleport workers there.
 
-Occupancy stalls and unfinished cases remain included. A target blocking an anchor and a survivor unable to finish new construction are expected incomplete scenarios, not discarded observations. The additional native-map fixed-lure stall is documented separately in [PLACEMENT.md](PLACEMENT.md).
+| Spinners | Previous arrival-inclusive turns | Current arrival-inclusive turns | Current on-site turns |
+| -------- | -------------------------------- | ------------------------------- | --------------------- |
+| 2        | 98                               | 27                              | 12                    |
+| 4        | 42                               | 20                              | 6                     |
+| 8        | 42                               | 18                              | 4                     |
 
-Reproduce the current cases with `node docs/prototypes/spinner-topology/measure-pacing.mjs`. Replay a saved current case with its `--replay` option against the matching engine revision. Historical replays must use their historical engine; a different final state hash fails explicitly.
+On site, doubling two workers to four halves the duration. Eight finish in four turns, three times as fast as two. Anchor prerequisites, per-cell extension and the last available tasks prevent perfect linear scaling. Travel and construction can interleave in the arrival-inclusive runs, so subtracting the on-site result does not measure exact travel time.
 
-All times are abstract prototype world turns. Injected damage is not a paid native attack. Actual construction cadence, movement coordination, resistances, tools, player resources and native capture/leash behavior still require game integration and measurement.
+The original three-actor room fixture falls from 50 to 22 turns. Two-layer construction falls from 113 to 42 turns with four actors and from 81 to 37 with eight. The two-actor nested fixture takes 23 turns but builds only the inner layer. It is not the same job.
 
-简体中文：这是修正后的测量，原始报告不被覆盖。正常预布时间未变；提前入场的双层施工、退役后不修复、最后所有者失效满二十回合才坍塌均已通过检查。结果不代表原生战斗平衡。
+The narrow-corridor fixture takes 16/16/18 turns with 2/4/8 actors. Crowding and few available tasks can erase the benefit of more workers. The room result is not a universal claim that every added actor accelerates every site, or that every full-floor journey finishes within 30 turns.
+
+## Changes and costs
+
+- All unaware actors build. Core entry or the explicit Alerted control reserves one stationary lure. Native perception and moving lure AI remain unimplemented.
+- Workers retain task assignments, prefer reachable work and use distinct worksites ranked by travel and boundary coverage. Idle workers can yield a pending work cell through a paid move.
+- Construction reaches up to five clear tiles. The model checks intervening terrain, closed doors and frozen foreign occupants; this is not a native line-of-sight implementation.
+- Placed anchors supply endpoint cells. An adjacent-anchor link still requires a separate paid connection before it blocks movement.
+- Construction costs one budget point. Movement and repair retain 1.5. Each actor earns one point per world turn and performs at most one operation in that turn.
+
+Link/anchor HP, distance-based damage, repair amount of 10% and the four-turn rebuilding cooldown are unchanged. Retired-only repair exclusion, inner-before-outer construction and last-owner collapse rules remain covered.
+
+## Verification and limits
+
+All 37 cases replay to matching observations and final states. All twelve contract checks pass. They cover the two-worker deadline, on-site scaling, arrival-inclusive improvement for the pinned room and the existing lifecycle rules. The scaling checks use fixture regression bounds, not native balance thresholds.
+
+Early nested entry occurs at turn five. The inner layer is ready at turn 19 and the first outer action occurs at turn 20; closure takes 52 further turns after entry. A destroyed room link begins rebuilding after four turns and returns to readiness after five. Blocked-target, withdrawal and insufficient-survivor cases remain recorded as incomplete when appropriate.
+
+Reproduce with `node docs/prototypes/spinner-topology/measure-pacing.mjs`, then build the offline page. The page displays measured arrival-inclusive and on-site timings and rejects evidence from another engine hash. Replay an individual current trace using the runner's `--replay` option. Historical traces require their historical revision.
+
+These are abstract prototype world turns. Injected damage is not a paid native attack. Actual travel, perception, construction reach, combat resources, capture and leash behavior still require game integration and measurement.

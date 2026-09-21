@@ -1,12 +1,12 @@
 {
-  "id": "ownerless-shared",
-  "note": "Observe 19/20 active-map turns; stagger shared-owner loss by ten turns.",
+  "id": "room-8-onsite",
+  "note": "Separate initial-position fixture: actors start at distinct legal worksites. No gameplay teleport or travel time is included.",
   "initial": {
     "schema": 1,
     "map": {
       "id": "room",
-      "name": "规则房间",
-      "desc": "预布主体后保留入口；进入核心才逐格封闭。",
+      "name": "Regular room",
+      "desc": "Prebuild the body and retain an entrance. Core entry starts incremental sealing.",
       "grid": [
         "###############################",
         "###############################",
@@ -306,7 +306,8 @@
       ]
     },
     "seed": "spinner-01",
-    "turn": 50,
+    "turn": 0,
+    "aware": false,
     "target": {
       "pos": [2, 10],
       "kind": "player"
@@ -317,44 +318,87 @@
         "actors": [
           {
             "id": "s1",
-            "pos": [11, 9],
+            "pos": [21, 9],
             "active": true,
-            "budget": 0.5,
-            "last": "诱饵岗位 · 原型固定待命",
-            "path": []
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [21, 9],
+            "worksiteReached": true
           },
           {
             "id": "s2",
-            "pos": [23, 10],
+            "pos": [22, 9],
             "active": true,
-            "budget": 0.5,
-            "last": "延伸连接一格",
-            "path": [[23, 10]],
-            "task": {
-              "type": "extend",
-              "k": "24,9",
-              "id": "24,13|24,5",
-              "f": "f1"
-            }
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [22, 9],
+            "worksiteReached": true
           },
           {
             "id": "s3",
+            "pos": [23, 9],
+            "active": true,
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [23, 9],
+            "worksiteReached": true
+          },
+          {
+            "id": "s4",
+            "pos": [21, 8],
+            "active": true,
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [21, 8],
+            "worksiteReached": true
+          },
+          {
+            "id": "s5",
+            "pos": [21, 10],
+            "active": true,
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [21, 10],
+            "worksiteReached": true
+          },
+          {
+            "id": "s6",
+            "pos": [22, 8],
+            "active": true,
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [22, 8],
+            "worksiteReached": true
+          },
+          {
+            "id": "s7",
+            "pos": [22, 10],
+            "active": true,
+            "budget": 0,
+            "last": "Idle",
+            "path": [],
+            "worksite": [22, 10],
+            "worksiteReached": true
+          },
+          {
+            "id": "s8",
             "pos": [23, 8],
             "active": true,
-            "budget": 0.5,
-            "last": "守候",
+            "budget": 0,
+            "last": "Idle",
             "path": [],
-            "task": {
-              "type": "extend",
-              "k": "24,9",
-              "id": "24,13|24,5",
-              "f": "f1"
-            }
+            "worksite": [23, 8],
+            "worksiteReached": true
           }
         ],
         "fieldIds": ["f1"],
-        "active": true,
-        "ownerless": 0
+        "active": true
       }
     ],
     "fields": [
@@ -388,10 +432,16 @@
           "23,12"
         ],
         "bounds": [20, 5, 24, 13],
+        "vertices": [
+          [20, 5],
+          [24, 5],
+          [24, 13],
+          [20, 13]
+        ],
         "anchors": ["20,5", "24,5", "24,13", "20,13"],
         "links": ["20,5|24,5", "24,13|24,5", "20,13|24,13", "20,13|20,5"],
         "gate": "20,9",
-        "phase": "ready",
+        "phase": "preparing",
         "triggered": false,
         "retired": false
       }
@@ -399,7 +449,7 @@
     "anchors": {
       "20,5": {
         "k": "20,5",
-        "placed": true,
+        "placed": false,
         "hp": 2,
         "max": 2,
         "owners": ["f1"],
@@ -407,7 +457,7 @@
       },
       "24,5": {
         "k": "24,5",
-        "placed": true,
+        "placed": false,
         "hp": 2,
         "max": 2,
         "owners": ["f1"],
@@ -415,7 +465,7 @@
       },
       "24,13": {
         "k": "24,13",
-        "placed": true,
+        "placed": false,
         "hp": 2,
         "max": 2,
         "owners": ["f1"],
@@ -423,7 +473,7 @@
       },
       "20,13": {
         "k": "20,13",
-        "placed": true,
+        "placed": false,
         "hp": 2,
         "max": 2,
         "owners": ["f1"],
@@ -436,7 +486,8 @@
         "a": "20,5",
         "b": "24,5",
         "cells": ["20,5", "21,5", "22,5", "23,5", "24,5"],
-        "built": ["23,5", "22,5", "24,5", "21,5", "20,5"],
+        "built": [],
+        "started": false,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -447,7 +498,8 @@
         "a": "24,5",
         "b": "24,13",
         "cells": ["24,5", "24,6", "24,7", "24,8", "24,9", "24,10", "24,11", "24,12", "24,13"],
-        "built": ["24,12", "24,5", "24,11", "24,6", "24,13", "24,7", "24,8", "24,10", "24,9"],
+        "built": [],
+        "started": false,
         "hp": 6,
         "max": 6,
         "owners": ["f1"],
@@ -458,7 +510,8 @@
         "a": "24,13",
         "b": "20,13",
         "cells": ["24,13", "23,13", "22,13", "21,13", "20,13"],
-        "built": ["23,13", "22,13", "24,13", "21,13", "20,13"],
+        "built": [],
+        "started": false,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -469,7 +522,8 @@
         "a": "20,13",
         "b": "20,5",
         "cells": ["20,13", "20,12", "20,11", "20,10", "20,9", "20,8", "20,7", "20,6", "20,5"],
-        "built": ["20,5", "20,12", "20,6", "20,11", "20,7", "20,13", "20,8", "20,10"],
+        "built": [],
+        "started": false,
         "hp": 6,
         "max": 6,
         "owners": ["f1"],
@@ -479,15 +533,11 @@
     "log": [
       {
         "turn": 0,
-        "message": "发现 751 个候选；推荐 围场。"
+        "message": "Found 751 candidates; selected Enclosure."
       },
       {
         "turn": 0,
-        "message": "已保存计划 rectangle，评分 42.7；1 层。"
-      },
-      {
-        "turn": 50,
-        "message": "f1：预布完成 · 留入口"
+        "message": "Saved plan rectangle, score 43.3; 1 layers."
       }
     ],
     "selection": null,
@@ -562,16 +612,18 @@
           ],
           "core": [22, 9],
           "id": "rectangle:20,5;24,5;24,13;20,13",
-          "score": 42.7,
+          "score": 43.3,
           "reasons": {
             "exit": 14,
             "choke": 6,
             "route": 18,
             "nest": 0,
-            "travel": -3.3,
+            "travel": -2.6999999999999997,
             "space": 8,
             "shape": 0
           },
+          "context": "free room footprint",
+          "approachSteps": 9,
           "gate": "20,9",
           "gateEdge": 3
         }
@@ -656,16 +708,18 @@
         ],
         "core": [22, 9],
         "id": "rectangle:20,5;24,5;24,13;20,13",
-        "score": 42.7,
+        "score": 43.3,
         "reasons": {
           "exit": 14,
           "choke": 6,
           "route": 18,
           "nest": 0,
-          "travel": -3.3,
+          "travel": -2.6999999999999997,
           "space": 8,
           "shape": 0
         },
+        "context": "free room footprint",
+        "approachSteps": 9,
         "gate": "20,9",
         "gateEdge": 3
       },
@@ -679,116 +733,11 @@
         "rectangle:20,6;24,6;24,10;20,10",
         "rectangle:20,6;24,6;24,12;20,12"
       ],
-      "fallback": "围场"
+      "fallback": "Enclosure",
+      "policy": "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented."
     }
   },
   "actions": [
-    {
-      "type": "overlap"
-    },
-    {
-      "type": "active",
-      "id": "s1",
-      "value": false
-    },
-    {
-      "type": "active",
-      "id": "s2",
-      "value": false
-    },
-    {
-      "type": "active",
-      "id": "s3",
-      "value": false
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "active",
-      "id": "sB0",
-      "value": false
-    },
-    {
-      "type": "active",
-      "id": "sB1",
-      "value": false
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
     {
       "type": "step"
     },
@@ -804,18 +753,11 @@
   ],
   "trace": [
     {
-      "turn": 50,
+      "turn": 1,
       "target": [2, 10],
       "fields": [
         {
           "id": "f1",
-          "layer": 0,
-          "phase": "ready",
-          "triggered": false,
-          "retired": false
-        },
-        {
-          "id": "f2",
           "layer": 0,
           "phase": "preparing",
           "triggered": false,
@@ -826,497 +768,357 @@
         {
           "id": "s1",
           "active": true,
-          "pos": [11, 9],
-          "budget": 0.5,
-          "category": "lure"
+          "pos": [21, 9],
+          "budget": 0,
+          "category": "placement",
+          "task": {
+            "type": "anchor",
+            "k": "20,13",
+            "id": "20,13",
+            "f": "f1"
+          }
         },
         {
           "id": "s2",
           "active": true,
-          "pos": [23, 10],
-          "budget": 0.5,
-          "category": "extension",
+          "pos": [22, 9],
+          "budget": 0,
+          "category": "placement",
           "task": {
-            "type": "extend",
-            "k": "24,9",
-            "id": "24,13|24,5",
+            "type": "anchor",
+            "k": "20,5",
+            "id": "20,5",
             "f": "f1"
           }
         },
         {
           "id": "s3",
           "active": true,
-          "pos": [23, 8],
-          "budget": 0.5,
-          "category": "idle",
+          "pos": [23, 9],
+          "budget": 0,
+          "category": "extension",
           "task": {
             "type": "extend",
-            "k": "24,9",
-            "id": "24,13|24,5",
+            "k": "20,12",
+            "id": "20,13|20,5",
             "f": "f1"
           }
         },
         {
-          "id": "sB0",
+          "id": "s4",
           "active": true,
-          "pos": [19, 6],
+          "pos": [21, 8],
           "budget": 0,
-          "category": "待命"
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "20,6",
+            "id": "20,13|20,5",
+            "f": "f1"
+          }
         },
         {
-          "id": "sB1",
+          "id": "s5",
           "active": true,
-          "pos": [20, 6],
+          "pos": [21, 10],
           "budget": 0,
-          "category": "待命"
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "20,11",
+            "id": "20,13|20,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s6",
+          "active": true,
+          "pos": [22, 8],
+          "budget": 0,
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "20,10",
+            "id": "20,13|20,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s7",
+          "active": true,
+          "pos": [22, 10],
+          "budget": 0,
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "20,7",
+            "id": "20,13|20,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s8",
+          "active": true,
+          "pos": [23, 8],
+          "budget": 0,
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "20,8",
+            "id": "20,13|20,5",
+            "f": "f1"
+          }
         }
       ],
       "anchors": [
         ["20,5", true, 2, 0],
-        ["24,5", true, 2, 0],
-        ["24,13", true, 2, 0],
+        ["24,5", false, 2, 0],
+        ["24,13", false, 2, 0],
         ["20,13", true, 2, 0]
       ],
       "links": [
-        ["20,5|24,5", 4, 0, ["23,5", "22,5", "24,5", "21,5", "20,5"]],
-        ["24,13|24,5", 6, 0, ["24,12", "24,5", "24,11", "24,6", "24,13", "24,7", "24,8", "24,10", "24,9"]],
-        ["20,13|24,13", 4, 0, ["23,13", "22,13", "24,13", "21,13", "20,13"]],
-        ["20,13|20,5", 6, 0, ["20,5", "20,12", "20,6", "20,11", "20,7", "20,13", "20,8", "20,10"]]
+        ["20,5|24,5", 4, 0, ["20,5"]],
+        ["24,13|24,5", 6, 0, []],
+        ["20,13|24,13", 4, 0, ["20,13"]],
+        ["20,13|20,5", 6, 0, ["20,13", "20,5", "20,12", "20,6", "20,11", "20,10", "20,7", "20,8"]]
       ],
-      "ownerless": [
-        ["g1", 0],
-        ["g2", 0]
-      ],
-      "physicalCells": 23,
-      "exitReachable": false,
+      "ownerless": [["g1", 0]],
+      "physicalCells": 8,
+      "exitReachable": true,
       "geometryReady": false,
       "violations": [],
       "damage": []
     },
     {
-      "turn": 50,
+      "turn": 2,
       "actors": [
         {
           "id": "s1",
-          "active": false,
-          "category": "inactive"
-        }
-      ]
-    },
-    {
-      "turn": 50,
-      "actors": [
+          "task": {
+            "type": "anchor",
+            "k": "24,13",
+            "id": "24,13",
+            "f": "f1"
+          }
+        },
         {
           "id": "s2",
-          "active": false,
-          "category": "inactive"
-        }
-      ]
-    },
-    {
-      "turn": 50,
-      "actors": [
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "21,13",
+            "id": "20,13|24,13",
+            "f": "f1"
+          }
+        },
         {
           "id": "s3",
-          "active": false,
-          "category": "inactive"
+          "task": {
+            "type": "extend",
+            "k": "22,13",
+            "id": "20,13|24,13",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s4",
+          "category": "placement",
+          "task": {
+            "type": "anchor",
+            "k": "24,5",
+            "id": "24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s5",
+          "task": {
+            "type": "extend",
+            "k": "23,13",
+            "id": "20,13|24,13",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s6",
+          "task": {
+            "type": "extend",
+            "k": "24,6",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s7",
+          "task": {
+            "type": "extend",
+            "k": "24,12",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s8",
+          "task": {
+            "type": "extend",
+            "k": "24,7",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
         }
-      ]
+      ],
+      "anchors": [
+        ["24,5", true, 2, 0],
+        ["24,13", true, 2, 0]
+      ],
+      "links": [
+        ["20,5|24,5", 4, 0, ["20,5", "24,5"]],
+        ["24,13|24,5", 6, 0, ["24,13", "24,5", "24,6", "24,12", "24,7"]],
+        ["20,13|24,13", 4, 0, ["20,13", "24,13", "21,13", "22,13", "23,13"]]
+      ],
+      "physicalCells": 16
     },
     {
-      "turn": 51,
+      "turn": 3,
+      "actors": [
+        {
+          "id": "s1",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "24,11",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s2",
+          "task": {
+            "type": "extend",
+            "k": "24,10",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s3",
+          "task": {
+            "type": "extend",
+            "k": "24,8",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s4",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "21,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s5",
+          "task": {
+            "type": "extend",
+            "k": "24,9",
+            "id": "24,13|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s6",
+          "task": {
+            "type": "extend",
+            "k": "22,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s7",
+          "budget": 1,
+          "category": "budget-delay",
+          "task": {
+            "type": "extend",
+            "k": "23,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s8",
+          "category": "idle"
+        }
+      ],
+      "links": [
+        ["20,5|24,5", 4, 0, ["20,5", "24,5", "21,5", "22,5"]],
+        ["24,13|24,5", 6, 0, ["24,13", "24,5", "24,6", "24,12", "24,7", "24,11", "24,10", "24,8", "24,9"]]
+      ],
+      "physicalCells": 22,
+      "exitReachable": false
+    },
+    {
+      "turn": 4,
       "fields": [
         {
-          "id": "f2",
+          "id": "f1",
           "phase": "ready"
         }
       ],
       "actors": [
         {
-          "id": "sB0",
-          "budget": 1,
-          "category": "budget-delay"
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "23,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
         },
         {
-          "id": "sB1",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ],
-      "ownerless": [
-        ["g1", 1],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 52,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 0.5,
-          "category": "lure"
+          "id": "s2",
+          "category": "idle"
         },
         {
-          "id": "sB1",
-          "budget": 0.5,
+          "id": "s3",
+          "category": "idle"
+        },
+        {
+          "id": "s4",
+          "category": "idle"
+        },
+        {
+          "id": "s5",
+          "category": "idle"
+        },
+        {
+          "id": "s6",
+          "category": "idle"
+        },
+        {
+          "id": "s7",
           "category": "idle"
         }
       ],
-      "ownerless": [
-        ["g1", 2],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 53,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 0
-        },
-        {
-          "id": "sB1",
-          "budget": 0
-        }
-      ],
-      "ownerless": [
-        ["g1", 3],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 54,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "sB1",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ],
-      "ownerless": [
-        ["g1", 4],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 55,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "sB1",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ],
-      "ownerless": [
-        ["g1", 5],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 56,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 0
-        },
-        {
-          "id": "sB1",
-          "budget": 0
-        }
-      ],
-      "ownerless": [
-        ["g1", 6],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 57,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "sB1",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ],
-      "ownerless": [
-        ["g1", 7],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 58,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "sB1",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ],
-      "ownerless": [
-        ["g1", 8],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 59,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 0
-        },
-        {
-          "id": "sB1",
-          "budget": 0
-        }
-      ],
-      "ownerless": [
-        ["g1", 9],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 60,
-      "actors": [
-        {
-          "id": "sB0",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "sB1",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ],
-      "ownerless": [
-        ["g1", 10],
-        ["g2", 0]
-      ]
-    },
-    {
-      "turn": 60,
-      "actors": [
-        {
-          "id": "sB0",
-          "active": false,
-          "category": "inactive"
-        }
-      ]
-    },
-    {
-      "turn": 60,
-      "actors": [
-        {
-          "id": "sB1",
-          "active": false,
-          "category": "inactive"
-        }
-      ]
-    },
-    {
-      "turn": 61,
-      "ownerless": [
-        ["g1", 11],
-        ["g2", 1]
-      ]
-    },
-    {
-      "turn": 62,
-      "ownerless": [
-        ["g1", 12],
-        ["g2", 2]
-      ]
-    },
-    {
-      "turn": 63,
-      "ownerless": [
-        ["g1", 13],
-        ["g2", 3]
-      ]
-    },
-    {
-      "turn": 64,
-      "ownerless": [
-        ["g1", 14],
-        ["g2", 4]
-      ]
-    },
-    {
-      "turn": 65,
-      "ownerless": [
-        ["g1", 15],
-        ["g2", 5]
-      ]
-    },
-    {
-      "turn": 66,
-      "ownerless": [
-        ["g1", 16],
-        ["g2", 6]
-      ]
-    },
-    {
-      "turn": 67,
-      "ownerless": [
-        ["g1", 17],
-        ["g2", 7]
-      ]
-    },
-    {
-      "turn": 68,
-      "ownerless": [
-        ["g1", 18],
-        ["g2", 8]
-      ]
-    },
-    {
-      "turn": 69,
-      "ownerless": [
-        ["g1", 19],
-        ["g2", 9]
-      ]
-    },
-    {
-      "turn": 70,
-      "fields": [
-        {
-          "id": "f1",
-          "phase": "retired",
-          "retired": true
-        },
-        {
-          "id": "f2",
-          "phase": "preparing"
-        }
-      ],
-      "anchors": [
-        ["20,5", false, 2, 0],
-        ["24,5", false, 2, 0],
-        ["24,13", false, 2, 0],
-        ["20,13", false, 2, 0]
-      ],
-      "links": [
-        ["20,5|24,5", 0, 0, []],
-        ["24,13|24,5", 0, 0, []],
-        ["20,13|24,13", 0, 0, []],
-        ["20,13|20,5", 0, 0, []]
-      ],
-      "ownerless": [
-        ["g1", 20],
-        ["g2", 10]
-      ],
-      "physicalCells": 0,
-      "exitReachable": true
-    },
-    {
-      "turn": 71,
-      "ownerless": [
-        ["g1", 21],
-        ["g2", 11]
-      ]
-    },
-    {
-      "turn": 72,
-      "ownerless": [
-        ["g1", 22],
-        ["g2", 12]
-      ]
-    },
-    {
-      "turn": 73,
-      "ownerless": [
-        ["g1", 23],
-        ["g2", 13]
-      ]
-    },
-    {
-      "turn": 74,
-      "ownerless": [
-        ["g1", 24],
-        ["g2", 14]
-      ]
-    },
-    {
-      "turn": 75,
-      "ownerless": [
-        ["g1", 25],
-        ["g2", 15]
-      ]
-    },
-    {
-      "turn": 76,
-      "ownerless": [
-        ["g1", 26],
-        ["g2", 16]
-      ]
-    },
-    {
-      "turn": 77,
-      "ownerless": [
-        ["g1", 27],
-        ["g2", 17]
-      ]
-    },
-    {
-      "turn": 78,
-      "ownerless": [
-        ["g1", 28],
-        ["g2", 18]
-      ]
-    },
-    {
-      "turn": 79,
-      "ownerless": [
-        ["g1", 29],
-        ["g2", 19]
-      ]
-    },
-    {
-      "turn": 80,
-      "fields": [
-        {
-          "id": "f2",
-          "phase": "retired",
-          "retired": true
-        }
-      ],
-      "ownerless": [
-        ["g1", 30],
-        ["g2", 20]
-      ]
+      "links": [["20,5|24,5", 4, 0, ["20,5", "24,5", "21,5", "22,5", "23,5"]]],
+      "physicalCells": 23
     }
   ],
   "outcome": {
-    "lastOwnerLostAt": 60,
-    "cellsAt19": 0,
-    "cellsAt20": 0
+    "completed": true,
+    "turns": 4,
+    "limit": 450,
+    "layers": 1
   },
-  "finalHash": "db80a730e42e5570e9890979066b74190c1502bf737a9fd052da75ac36fc5f58",
+  "finalHash": "febbf909322c9953c52eabfc22aa489fe59d651e651dcff15b941527e7463db0",
   "costs": {
-    "inactive": 130,
-    "budget-delay": 8,
-    "lure": 6,
-    "idle": 6
+    "placement": 4,
+    "extension": 19,
+    "budget-delay": 1,
+    "idle": 8
   },
   "traceFormat": "Per-action deltas; actor/field records merge by id, anchor/link tuples replace by first element. Initial observation is complete."
 }

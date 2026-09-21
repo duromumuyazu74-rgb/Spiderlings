@@ -514,8 +514,8 @@
     "turn": 51,
     "phases": ["preparing"],
     "target": [1, 11],
-    "blocked": 1,
-    "reachableCells": 471,
+    "blocked": 0,
+    "reachableCells": 472,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -524,24 +524,14 @@
     "turn": 52,
     "phases": ["preparing"],
     "target": [1, 11],
-    "blocked": 1,
-    "reachableCells": 471,
+    "blocked": 0,
+    "reachableCells": 472,
     "exitReachable": true,
     "geometryReady": false
   },
   {
     "label": "build",
     "turn": 53,
-    "phases": ["preparing"],
-    "target": [1, 11],
-    "blocked": 2,
-    "reachableCells": 470,
-    "exitReachable": true,
-    "geometryReady": false
-  },
-  {
-    "label": "build",
-    "turn": 54,
     "phases": ["barrier"],
     "target": [1, 11],
     "blocked": 3,
