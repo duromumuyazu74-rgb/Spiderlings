@@ -106,8 +106,12 @@
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
-    "SpiderlingsSpinnerField.js"
+    "SpiderlingsSpinnerField.js",
+    "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRuntime.js"
   ]
 }
