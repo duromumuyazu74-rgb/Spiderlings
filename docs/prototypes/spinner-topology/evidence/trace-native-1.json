@@ -1,0 +1,65 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [1, 11],
+    "blocked": 0,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 1,
+    "phases": ["preparing"],
+    "target": [1, 11],
+    "blocked": 0,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 2,
+    "phases": ["preparing"],
+    "target": [1, 11],
+    "blocked": 0,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 3,
+    "phases": ["preparing"],
+    "target": [1, 11],
+    "blocked": 1,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 4,
+    "phases": ["preparing"],
+    "target": [1, 11],
+    "blocked": 1,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 5,
+    "phases": ["preparing"],
+    "target": [1, 11],
+    "blocked": 2,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 6,
+    "phases": ["barrier"],
+    "target": [1, 11],
+    "blocked": 3,
+    "exitReachable": false,
+    "geometryReady": false
+  }
+]

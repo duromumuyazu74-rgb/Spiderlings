@@ -1,0 +1,551 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 1,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 2,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 3,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 4,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 5,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 6,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 7,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 8,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 9,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 10,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 11,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 12,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 13,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 14,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 15,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 16,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 17,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 18,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 19,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 20,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 21,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 22,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 23,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 24,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 25,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 26,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 27,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 28,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 29,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 0,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 30,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 1,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 31,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 1,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 32,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 2,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 33,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 2,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 34,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 2,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 35,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 4,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 36,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 4,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 37,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 4,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 38,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 5,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 39,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 6,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 40,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 6,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 41,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 8,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 42,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 8,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 43,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 8,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 44,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 8,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 45,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 8,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 46,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 8,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 47,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 11,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 48,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 13,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 49,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 13,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 50,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 14,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 51,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 52,
+    "phases": ["preparing"],
+    "target": [1, 25],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 53,
+    "phases": ["ready"],
+    "target": [1, 25],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "target-in-core",
+    "turn": 54,
+    "phases": ["ready"],
+    "target": [15, 18],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 55,
+    "phases": ["sealing"],
+    "target": [15, 18],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 56,
+    "phases": ["sealing"],
+    "target": [15, 18],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 57,
+    "phases": ["sealing"],
+    "target": [15, 18],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 58,
+    "phases": ["sealing"],
+    "target": [15, 18],
+    "blocked": 15,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 59,
+    "phases": ["sealed"],
+    "target": [15, 18],
+    "blocked": 16,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "inner-edge-broken",
+    "turn": 59,
+    "phases": ["breached"],
+    "target": [15, 18],
+    "blocked": 13,
+    "exitReachable": true,
+    "geometryReady": false
+  }
+]
