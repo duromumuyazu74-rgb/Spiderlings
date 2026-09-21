@@ -111,6 +111,7 @@
     "SpiderlingsSpinnerCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerRecovery.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRuntime.js"

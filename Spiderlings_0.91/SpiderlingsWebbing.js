@@ -685,9 +685,13 @@
         if (typeof KDPlayerEffects == "undefined" || !KDPlayerEffects) return false;
         KDPlayerEffects[ENEMY_BIND_EFFECT] = (_target, _damage, playerEffect, _spell, faction, _bullet, entity) => {
             const profile = playerEffect && playerEffect.profile;
+            const captureWasControlling = profile === "Spinner" && api.SpinnerCapture?.isControllingPlayer?.();
             if (
                 profile === "Spinner" &&
-                (api.SpinnerCapture?.hit(entity) || api.SpinnerField?.suppressesBinding(entity))
+                (api.SpinnerCapture?.hit(entity) ||
+                    captureWasControlling ||
+                    api.SpinnerRecovery?.hit(entity) ||
+                    api.SpinnerField?.suppressesBinding(entity))
             )
                 return { effect: false };
             if (_target?.player && api.SpinnerCapture?.state()) return { effect: false };
