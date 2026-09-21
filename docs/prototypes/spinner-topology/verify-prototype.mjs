@@ -38,6 +38,7 @@ function record(s, label, trace) {
         phases: s.fields.map((f) => f.phase),
         target: s.target.pos,
         blocked: v.physicalCells,
+        reachableCells: v.reachable.length,
         exitReachable: !!v.exitPath.length,
         geometryReady: v.geometryReady,
     });
@@ -47,6 +48,11 @@ for (const m of [...T.fixedMaps(), ...snapshots.map(T.nativeMap)]) {
         s = T.create(m, "spinner-01"),
         trace = [];
     record(s, "initial", trace);
+    if (m.id === "tee" || m.id === "door")
+        requireFact(
+            T.inspect(s).reachable.length === m.walk.length && m.walk.every((k) => T.inspect(s).reachable.includes(k)),
+            `${m.id}: reachability stopped at the floor exit`,
+        );
     T.plan(s);
     if (m.overlap) T.overlap(s);
     // Record individual turns to expose invalid intermediate states.
@@ -92,6 +98,22 @@ for (const m of [...T.fixedMaps(), ...snapshots.map(T.nativeMap)]) {
             `${m.id}: failed to close`,
         );
         requireFact(T.inspect(s).geometryReady && !T.inspect(s).exitPath.length, `${m.id}: closed field leaked`);
+        if (m.overlap) {
+            const physicalCells = T.inspect(s).physicalCells;
+            s.groups[0].actors.forEach((a) => (a.active = false));
+            for (let i = 0; i < 20; i++) {
+                T.step(s);
+                record(s, "shared-owner-retirement", trace);
+            }
+            requireFact(
+                s.fields[0].retired &&
+                    s.fields[1].phase === "sealed" &&
+                    T.inspect(s).geometryReady &&
+                    T.inspect(s).physicalCells === physicalCells &&
+                    !T.inspect(s).exitPath.length,
+                "Retiring one shared owner invalidated the surviving closed field",
+            );
+        }
         const f = s.fields[0],
             l =
                 s.links[
@@ -242,6 +264,19 @@ if (process.env.PLAYWRIGHT_MODULE) {
         const page = await browser.newPage({ viewport: { width: 1500, height: 1050 } });
         page.on("pageerror", (err) => report.browser.errors.push(err.message));
         await page.goto(file("index.html").href);
+        requireFact(
+            await page.evaluate(() =>
+                SpinnerTopology.fixedMaps()
+                    .filter((m) => ["tee", "door"].includes(m.id))
+                    .every((m) => {
+                        const view = SpinnerTopology.inspect(SpinnerTopology.create(m));
+                        return (
+                            view.reachable.length === m.walk.length && m.walk.every((k) => view.reachable.includes(k))
+                        );
+                    }),
+            ),
+            "Offline artifact omitted reachable branches beyond the exit",
+        );
         await page.locator("#plan").click();
         await page.locator("#settle").click();
         await page.locator("#enter").click();
@@ -312,6 +347,25 @@ if (process.env.PLAYWRIGHT_MODULE) {
             (await page.evaluate(() => JSON.stringify(prototypeState))) === before,
             "Browser restore changed state",
         );
+        await page.getByRole("button", { name: "3. 入核心并封口", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => {
+                const t = SpinnerTopology,
+                    s = prototypeState,
+                    cells = t.inspect(s).physicalCells;
+                s.groups[0].actors.forEach((a) => (a.active = false));
+                for (let i = 0; i < 20; i++) t.step(s);
+                const view = t.inspect(s);
+                return (
+                    s.fields[0].retired &&
+                    s.fields[1].phase === "sealed" &&
+                    view.geometryReady &&
+                    view.physicalCells === cells &&
+                    !view.exitPath.length
+                );
+            }),
+            "Offline artifact let a retired owner invalidate surviving shared geometry",
+        );
         await page.getByRole("button", { name: "4. 破坏共享锚点", exact: true }).click();
         requireFact(
             await page.evaluate(() => {
@@ -361,6 +415,8 @@ if (process.env.PLAYWRIGHT_MODULE) {
             roomBreach: true,
             nestedClosure: true,
             sharedDamage: true,
+            sharedOwnerRetirement: true,
+            fullReachableRegion: true,
             fixedLureVacancy: true,
             interiorInvalidation: true,
         };

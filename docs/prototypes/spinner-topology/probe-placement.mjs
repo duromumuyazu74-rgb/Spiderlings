@@ -39,6 +39,54 @@ function prebuilt(s, c, group = s.groups[0]) {
     T.update(s);
     return f;
 }
+{
+    const maps = [];
+    for (const [id, count, farCell, pathLength] of [
+        ["tee", 72, "29,9", 19],
+        ["door", 81, "29,10", 27],
+    ]) {
+        const s = T.create(scene(id)),
+            view = T.inspect(s);
+        fact(
+            view.reachable.length === count && view.reachable.includes(farCell),
+            "Exit discovery hid reachable branch",
+        );
+        fact(
+            s.map.walk.every((k) => view.reachable.includes(k)),
+            "Open fixture does not report its entire connected floor",
+        );
+        fact(
+            view.exitPath.length === pathLength &&
+                T.key(...view.exitPath[0]) === T.key(...s.target.pos) &&
+                T.key(...view.exitPath.at(-1)) === T.key(...s.map.end),
+            "Floor-exit path changed while measuring full connectivity",
+        );
+        maps.push({ id, reachable: view.reachable.length, farCell, exitPath: view.exitPath });
+    }
+    record("full-connectivity-after-exit-discovery", { maps });
+}
+{
+    const s = T.create(scene("overlap"));
+    T.plan(s);
+    T.overlap(s);
+    finish(s);
+    const solidBefore = [...T.solids(s)].sort();
+    s.groups[0].actors.forEach((a) => (a.active = false));
+    for (let i = 0; i < 20; i++) T.step(s);
+    const view = T.inspect(s);
+    fact(s.fields[0].retired && s.fields[1].phase === "sealed", "Expected only the first owner to retire");
+    fact(
+        JSON.stringify([...T.solids(s)].sort()) === JSON.stringify(solidBefore),
+        "Retiring one owner removed live shared silk",
+    );
+    fact(view.geometryReady && !view.exitPath.length, "Retired owner vetoed surviving closed field");
+    record("shared-field-survives-one-retired-owner", {
+        phases: s.fields.map((f) => f.phase),
+        geometryReady: view.geometryReady,
+        physicalCells: view.physicalCells,
+        floorExit: false,
+    });
+}
 for (const [i, snapshot] of snapshots.entries()) {
     const base = T.nativeMap(snapshot, i),
         origin = base.spawns[0] || base.start;

@@ -5,6 +5,7 @@
     "phases": [],
     "target": [1, 11],
     "blocked": 0,
+    "reachableCells": 266,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -14,6 +15,7 @@
     "phases": ["preparing"],
     "target": [1, 11],
     "blocked": 0,
+    "reachableCells": 266,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -23,6 +25,7 @@
     "phases": ["preparing"],
     "target": [1, 11],
     "blocked": 0,
+    "reachableCells": 266,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -32,6 +35,7 @@
     "phases": ["barrier"],
     "target": [1, 11],
     "blocked": 2,
+    "reachableCells": 264,
     "exitReachable": false,
     "geometryReady": false
   }
