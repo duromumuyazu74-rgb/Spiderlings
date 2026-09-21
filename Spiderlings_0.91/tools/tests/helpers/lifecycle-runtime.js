@@ -6,6 +6,7 @@ const vm = require("node:vm");
 const modRoot = path.resolve(__dirname, "../../..");
 
 function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
+    let nextItemId = 10000;
     const equipment = new Map();
     const loose = new Map();
     const inventoryEvents = {};
@@ -81,12 +82,19 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
         KinkyDungeonInventoryRemove(item) {
             loose.delete(item.name);
         },
+        KinkyDungeonGetItemID() {
+            return nextItemId++;
+        },
+        KDGetBlockersToAddRestraint() {
+            return [];
+        },
         KDCanAddRestraint() {
             return true;
         },
         KinkyDungeonAddRestraint(restraint, tightness, bypass, lock) {
             const item = {
                 name: restraint.name,
+                id: context.KinkyDungeonGetItemID(),
                 group: restraint.Group,
                 restraint,
                 tightness,
