@@ -310,6 +310,14 @@
             collapsed: false,
             fieldOwners: Object.fromEntries((input.fieldSpecs || []).map((field) => [field.id, owners])),
             fields: {},
+            lineFields: Object.fromEntries(
+                (input.fieldSpecs || [])
+                    .filter((field) => field.type === "line")
+                    .map((field) => [
+                        field.id,
+                        { id: field.id, kind: "line", vertices: clone(field.vertices), retired: false },
+                    ]),
+            ),
             composites: {},
             workCreditByMember: {},
             assignmentByMember: {},
@@ -353,6 +361,64 @@
         link.hp = link.maxHp;
         state.fieldOwners = { [input.fieldId]: clone(input.owners) };
         return state;
+    }
+
+    function addLine(state, input) {
+        if (state?.lineFields?.[input?.fieldId] && !state.lineFields[input.fieldId].retired) return clone(state);
+        const next = clone(state),
+            line = createLine(input);
+        next.version = VERSION;
+        next.kind = "graph";
+        next.lineFields = next.lineFields || {};
+        next.lineFields[input.fieldId] = line.lineFields[input.fieldId];
+        next.fieldOwners = next.fieldOwners || {};
+        next.fieldOwners[input.fieldId] = clone(line.fieldOwners[input.fieldId]);
+        next.owners = unique([...next.owners, ...line.owners]);
+        next.anchors.push(...line.anchors);
+        next.links.push(...line.links);
+        next.junctions.push(...line.junctions);
+        next.collapsed = false;
+        return next;
+    }
+
+    function fieldRetired(state, fieldId) {
+        return !!(state.fields?.[fieldId]?.retired || state.lineFields?.[fieldId]?.retired);
+    }
+
+    function retireField(state, fieldId) {
+        const next = clone(state);
+        if (!next.lineFields?.[fieldId] && !next.fields?.[fieldId]) return next;
+        if (next.lineFields?.[fieldId]) next.lineFields[fieldId].retired = true;
+        if (next.fields?.[fieldId]) next.fields[fieldId].retired = true;
+        const retiredOnly = (structure) => structure.owners.every((owner) => fieldRetired(next, owner));
+        next.anchors = next.anchors.filter((anchor) => !retiredOnly(anchor));
+        next.links = next.links.filter((link) => !retiredOnly(link));
+        const linkIds = new Set(next.links.map((link) => link.id));
+        next.junctions = next.junctions
+            .map((junction) => ({ ...junction, linkIds: junction.linkIds.filter((id) => linkIds.has(id)) }))
+            .filter((junction) => junction.linkIds.length > 1);
+        next.assignmentByMember = Object.fromEntries(
+            Object.entries(next.assignmentByMember || {}).filter(([, action]) => action.fieldId !== fieldId),
+        );
+        next.owners = unique(
+            Object.entries(next.fieldOwners || {})
+                .filter(([id]) => !fieldRetired(next, id))
+                .flatMap(([, owners]) => owners),
+        );
+        refresh(next);
+        return next;
+    }
+
+    function setFieldOwners(state, fieldId, ownerIds) {
+        const next = clone(state);
+        if (!next.fieldOwners?.[fieldId]) return next;
+        next.fieldOwners[fieldId] = unique(ownerIds || []);
+        next.owners = unique(
+            Object.entries(next.fieldOwners)
+                .filter(([id]) => !fieldRetired(next, id))
+                .flatMap(([, owners]) => owners),
+        );
+        return next;
     }
 
     function abandonedState(input, owners, reason) {
@@ -525,7 +591,8 @@
 
     function legalAction(state, action, snapshot) {
         if (!state || state.collapsed) return { legal: false, reason: "collapsed" };
-        if (!state.owners.includes(action?.ownerId)) return { legal: false, reason: "owner" };
+        const fieldOwners = state.fieldOwners?.[action?.fieldId] || state.owners;
+        if (!fieldOwners.includes(action?.ownerId)) return { legal: false, reason: "owner" };
         if (action.type === "placeAnchor") {
             const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
             if (!anchor || anchor.built || anchor.hp <= 0) return { legal: false, reason: "anchor" };
@@ -565,6 +632,23 @@
                 reason: structure ? "health" : "structure",
             };
         }
+        if (action.type === "repairAnchor") {
+            const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
+            return {
+                legal: !!anchor?.built && anchor.hp > 0 && anchor.hp < anchor.maxHp,
+                reason: !anchor?.built || anchor.hp <= 0 || anchor.hp >= anchor.maxHp ? "anchor" : "",
+            };
+        }
+        if (action.type === "repairLink") {
+            const link = state.links.find((candidate) => candidate.id === action.linkId);
+            return {
+                legal: !!link && link.hp > 0 && link.hp < link.maxHp && (link.builtCells.length > 0 || link.connected),
+                reason:
+                    !link || link.hp <= 0 || link.hp >= link.maxHp || (!link.builtCells.length && !link.connected)
+                        ? "link"
+                        : "",
+            };
+        }
         return { legal: false, reason: "action" };
     }
 
@@ -598,11 +682,12 @@
             const field = next.fields[action.fieldId];
             if (field) field.reopenPending = false;
             effects.push({ type: "removeProxy", cell });
-        } else if (action.type === "repair") {
+        } else if (["repair", "repairAnchor", "repairLink"].includes(action.type)) {
             const structure =
                 next.links.find((candidate) => candidate.id === action.linkId) ||
                 next.anchors.find((candidate) => candidate.id === action.anchorId);
             structure.hp = Math.min(structure.maxHp, Math.round((structure.hp + structure.maxHp * 0.1) * 1000) / 1000);
+            effects.push({ type: "synchronizeProxies" });
         }
         next.actionLog = next.actionLog || [];
         next.actionLog.push({
@@ -860,7 +945,7 @@
     function structureHasOwner(state, structure, active) {
         return structure.owners.some(
             (fieldId) =>
-                !state.fields[fieldId]?.retired &&
+                !fieldRetired(state, fieldId) &&
                 (state.fieldOwners[fieldId] || []).some((ownerId) => active.has(ownerId)),
         );
     }
@@ -965,6 +1050,9 @@
         OWNERLESS_TURNS,
         REBUILD_TURNS,
         createLine,
+        addLine,
+        retireField,
+        setFieldOwners,
         createPhysicalGraph,
         createEnclosure,
         validatePolygon,

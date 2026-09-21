@@ -65,3 +65,15 @@ test("pinned KD 5.5.0 target selection can choose an attackable hostile web prox
     assert.match(enemies, /nearestVisible = e/);
     assert.match(vision, /blockOnlyLOSBlock/);
 });
+
+test("pinned KD 5.5.0 computes sensing and awareness before hunt beforemove", () => {
+    const enemies = read("Game/src/enemy/KinkyDungeonEnemies.ts"),
+        sensing = enemies.indexOf("AIData.canSensePlayer ="),
+        tracking = enemies.indexOf("KinkyDungeonTrackSneak(enemy, delta"),
+        awareness = enemies.indexOf("enemy.aware = true;", tracking),
+        beforeMove = enemies.indexOf("AIType.beforemove(enemy, player, AIData)");
+    assert.ok(sensing > 0);
+    assert.ok(tracking > sensing);
+    assert.ok(awareness > tracking);
+    assert.ok(beforeMove > awareness);
+});
