@@ -48,9 +48,13 @@ const scripts = [
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
     "SpiderlingsSpinnerField.js",
+    "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRuntime.js",
 ];
 const lv1Id = (family) => `SpiderlingsWebbingLv1${family}`;
 const lv2Id = (family) => `SpiderlingsWebbingLv2${family}`;
