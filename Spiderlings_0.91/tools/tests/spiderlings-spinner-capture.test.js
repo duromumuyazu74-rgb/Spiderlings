@@ -8,8 +8,12 @@ const { loadLifecycleRuntime, item, modRoot } = require("./helpers/lifecycle-run
 
 function drawCapture(runtime) {
     const c = runtime.c;
-    c.KDCurrentModels = new Map();
+    const rendered = [];
+    const container = { Mesh: { parent: {}, visible: true }, Container: { destroyed: false }, Zoom: 1 };
     c.KinkyDungeonPlayer = {};
+    c.MODEL_SCALE = 1;
+    c.KDCurrentModels = new Map([[c.KinkyDungeonPlayer, { Containers: new Map([["Body", container]]) }]]);
+    c.Spiderlings.SpinnerArt = { render: (_container, data) => rendered.push(data.amount), clear() {} };
     c.PIXI = {
         Graphics: class {
             clear() {
@@ -32,9 +36,10 @@ function drawCapture(runtime) {
     c.DrawTextKD = c.FillRectKD = c.DrawButtonKDEx = () => {};
     c.kdcanvas = c.kdpixisprites = {};
     runtime.send("draw", { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    return rendered;
 }
 
-test("drawing observes schema-2 membership without mutating capture authority", () => {
+test("drawing observes schema-3 membership without mutating capture authority", () => {
     const r = contestRuntime();
     r.start();
     r.operate(r.c.KDMapData.Entities[1]);
@@ -58,7 +63,7 @@ test("drawing an invalid source cannot mutate capture before a native audit", ()
 });
 
 // Reuse the equipment/event fixture; native AI and field geometry have separate browser probes.
-function contestRuntime(count = 2) {
+function contestRuntime(count = 2, overrides = {}) {
     let stamina = 10,
         ready = true,
         physicalPath = true;
@@ -99,6 +104,7 @@ function contestRuntime(count = 2) {
             KDChangeStamina: (_a, _b, _c, n) => {
                 stamina += n;
             },
+            ...overrides,
         },
         undefined,
         true,
@@ -165,7 +171,16 @@ function contestRuntime(count = 2) {
         },
         nativeCalls,
         actionCalls,
+        equipment: r.equipment,
+        inventoryEvents: r.inventoryEvents,
+        refreshCalls: r.refreshCalls,
     };
+}
+
+function loseContest(runtime) {
+    runtime.api.state().weaveProgress = 100;
+    runtime.wait();
+    assert.equal(runtime.api.state()?.phase, "wrap");
 }
 
 test("native admission requires a closed containing composite and two legal sources", () => {
@@ -397,6 +412,350 @@ test("the paid second-source join delays full two-source weaving until the next 
     assert.equal(r.api.item(), undefined);
 });
 
+test("a lost contest creates no item and five paid wrap turns deposit one fifth each", () => {
+    const r = contestRuntime(3);
+    r.start();
+    assert.equal(r.api.item(), undefined);
+    loseContest(r);
+    assert.equal(r.api.item(), undefined);
+    assert.equal("wrapProgress" in r.api.state(), false, "temporary state cannot own deposited progress");
+
+    for (const expected of [0.2, 0.4, 0.6, 0.8, 1]) {
+        r.wait();
+        assert.equal(r.api.item().data.wrapProgress, expected);
+        assert.equal(r.c.KinkyDungeonAllRestraintDynamic().filter((entry) => entry.item.name === r.api.ID).length, 1);
+    }
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.api.item().data.wrapProgress, 1);
+});
+
+test("wrapping waits for a paid source operation and zero sources interrupt before the first deposit", () => {
+    const r = contestRuntime();
+    r.start();
+    loseContest(r);
+    r.send("tick", { delta: 1 });
+    r.send("tickAfter", { delta: 1 });
+    assert.equal(r.api.state().phase, "wrap");
+    assert.equal(r.api.item(), undefined, "an idle tick deposits no silk but keeps wrapping pending");
+
+    for (const enemy of r.c.KDMapData.Entities) enemy.hp = 0;
+    r.send("afterEnemyTick");
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.api.item(), undefined);
+});
+
+test("source loss preserves the exact partial bag and a later contest resumes its deposited progress", () => {
+    const r = contestRuntime();
+    r.start();
+    loseContest(r);
+    r.wait();
+    r.wait();
+    const bag = r.api.item();
+    bag.lock = "Purple";
+    bag.cutProgress = 0.31;
+    bag.struggleProgress = 0.27;
+    bag.events = [{ trigger: "sentinel" }];
+    bag.data.SpiderlingsLegbinderEscapeProgress = 0.25;
+    bag.data.sentinel = "keep";
+    const snapshot = JSON.stringify(bag);
+
+    for (const enemy of r.c.KDMapData.Entities) enemy.hp = 0;
+    r.send("afterEnemyTick");
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.api.item(), bag);
+    assert.equal(JSON.stringify(bag), snapshot);
+
+    for (const enemy of r.c.KDMapData.Entities) enemy.hp = 2;
+    assert.equal(r.start(), true);
+    loseContest(r);
+    assert.equal(r.api.state().itemId, bag.id);
+    assert.equal(bag.data.wrapProgress, 0.4);
+    for (const expected of [0.6, 0.8, 1]) {
+        r.wait();
+        assert.equal(bag.data.wrapProgress, expected);
+    }
+    assert.equal(r.api.item(), bag);
+    assert.equal(bag.lock, "Purple");
+    assert.equal(bag.cutProgress, 0.31);
+    assert.equal(bag.struggleProgress, 0.27);
+    assert.equal(bag.data.SpiderlingsLegbinderEscapeProgress, 0.25);
+    assert.equal(bag.data.sentinel, "keep");
+});
+
+test("one surviving source completes wrapping and field loss does not interrupt it", () => {
+    const r = contestRuntime();
+    r.start();
+    loseContest(r);
+    r.ready(false);
+    r.send("afterEnemyTick");
+    assert.equal(r.api.state().phase, "wrap");
+    r.c.KDMapData.Entities[1].hp = 0;
+    r.send("afterEnemyTick");
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1]);
+    for (let turn = 0; turn < 5; turn++) r.wait();
+    assert.equal(r.api.item().data.wrapProgress, 1);
+    assert.equal(r.api.state(), undefined);
+});
+
+test("death, incapacity, range, and physical LOS each interrupt wrapping at zero effective sources", () => {
+    for (const invalidate of [
+        (r) => {
+            for (const enemy of r.c.KDMapData.Entities) enemy.hp = 0;
+        },
+        (r) => {
+            for (const enemy of r.c.KDMapData.Entities) enemy.helpless = true;
+        },
+        (r) => {
+            for (const enemy of r.c.KDMapData.Entities) enemy.x = 20;
+        },
+        (r) => r.path(false),
+    ]) {
+        const r = contestRuntime();
+        r.start();
+        loseContest(r);
+        r.wait();
+        const bag = r.api.item();
+        invalidate(r);
+        r.send("afterEnemyTick");
+        assert.equal(r.api.state(), undefined);
+        assert.equal(r.api.item(), bag);
+        assert.equal(bag.data.wrapProgress, 0.2);
+    }
+});
+
+test("native-compatible ItemLegs linking preserves an external instance and normal unlink restores it", () => {
+    const r = contestRuntime();
+    const external = item("ExternalLegCuffs", {
+        id: 7001,
+        group: "ItemLegs",
+        lock: "Gold",
+        cutProgress: 0.33,
+        struggleProgress: 0.44,
+        data: { sentinel: "external" },
+        events: [{ trigger: "external" }],
+        dynamicLink: item("ExternalLegRope", { id: 7002, group: "ItemLegs", data: { inner: true } }),
+    });
+    r.equipment.set("ItemLegs", external);
+    const snapshot = JSON.stringify(external);
+    r.start();
+    loseContest(r);
+    for (let turn = 0; turn < 5; turn++) r.wait();
+    const bag = r.api.item();
+    assert.equal(bag.dynamicLink, external);
+    assert.equal(JSON.stringify(external), snapshot);
+    assert.deepEqual(r.c.KinkyDungeonRemoveRestraintSpecific(bag, true), [bag]);
+    assert.equal(r.equipment.get("ItemLegs"), external);
+    assert.equal(JSON.stringify(external), snapshot);
+});
+
+test("blockers and a zero native-add result stop wrapping without fake equipment or mutation", () => {
+    let addCalls = 0;
+    const blocked = contestRuntime(2, {
+        KDGetBlockersToAddRestraint: () => [blockedItem],
+        KinkyDungeonAddRestraint: () => {
+            addCalls += 1;
+            return 1;
+        },
+    });
+    const blockedItem = item("ExternalRigidLegs", {
+        id: 7100,
+        group: "ItemLegs",
+        lock: "Blue",
+        data: { sentinel: true },
+    });
+    blocked.equipment.set("ItemLegs", blockedItem);
+    const blockedSnapshot = JSON.stringify(blockedItem);
+    blocked.start();
+    loseContest(blocked);
+    blocked.wait();
+    assert.equal(addCalls, 0);
+    assert.equal(blocked.api.state(), undefined);
+    assert.equal(blocked.equipment.get("ItemLegs"), blockedItem);
+    assert.equal(JSON.stringify(blockedItem), blockedSnapshot);
+
+    let preflightCalls = 0;
+    const rejected = contestRuntime(2, {
+        KDCanAddRestraint: () => {
+            preflightCalls += 1;
+            return true;
+        },
+        KinkyDungeonAddRestraint: () => 0,
+    });
+    rejected.start();
+    loseContest(rejected);
+    rejected.wait();
+    assert.equal(preflightCalls, 1);
+    assert.equal(rejected.api.state(), undefined);
+    assert.equal(rejected.api.item(), undefined);
+});
+
+test("the first deposit uses deep no-overpower preflight and the same acting source for native addition", () => {
+    let equipment;
+    let checked;
+    let addedSource;
+    const r = contestRuntime(2, {
+        KDCanAddRestraint(...args) {
+            checked = args;
+            return true;
+        },
+        KinkyDungeonAddRestraint(...args) {
+            addedSource = args[13];
+            equipment.set("ItemLegs", {
+                name: args[0].name,
+                id: 7150,
+                group: "ItemLegs",
+                restraint: args[0],
+                data: {},
+            });
+            return 1;
+        },
+    });
+    equipment = r.equipment;
+    r.start();
+    loseContest(r);
+    r.wait();
+    assert.equal(checked[4], undefined, "the empty ItemLegs root is checked");
+    assert.equal(checked[5], true, "deep native linking is enabled");
+    assert.equal(checked[6], true, "native overpower replacement is disabled");
+    assert.equal(checked[7], r.c.KDMapData.Entities[0]);
+    assert.equal(addedSource, checked[7]);
+    assert.equal(r.api.item().data.wrapProgress, 0.2);
+});
+
+test("wrapping never mutates arms, leash carrier, tether ownership, or leash controller state", () => {
+    const r = contestRuntime();
+    const arms = item("ExternalArmbinder", { id: 7200, group: "ItemArms", data: { sentinel: "arms" } });
+    const leash = item("ExternalSilkLeash", {
+        id: 7201,
+        group: "ItemNeckRestraints",
+        lock: "Red",
+        data: { sentinel: "leash" },
+    });
+    r.equipment.set("ItemArms", arms);
+    r.equipment.set("ItemNeckRestraints", leash);
+    r.c.KinkyDungeonPlayerEntity.leash = { entity: 999, reason: "external" };
+    r.c.KDGameData.SpiderlingsSilkLeash = { sourceIds: [999], pullerId: 999, sentinel: true };
+    const before = JSON.stringify({
+        arms,
+        leash,
+        tether: r.c.KinkyDungeonPlayerEntity.leash,
+        control: r.c.KDGameData.SpiderlingsSilkLeash,
+    });
+    r.start();
+    assert.equal(r.api.isControllingPlayer(), true);
+    assert.equal(r.api.phase(), "contest");
+    loseContest(r);
+    assert.equal(r.api.phase(), "wrap");
+    for (let turn = 0; turn < 5; turn++) r.wait();
+    assert.equal(r.api.isControllingPlayer(), false);
+    assert.equal(
+        JSON.stringify({
+            arms,
+            leash,
+            tether: r.c.KinkyDungeonPlayerEntity.leash,
+            control: r.c.KDGameData.SpiderlingsSilkLeash,
+        }),
+        before,
+    );
+});
+
+test("active partial wrapping survives JSON load without a free deposit and transition cleanup leaves the item intact", () => {
+    const r = contestRuntime();
+    r.start();
+    loseContest(r);
+    r.wait();
+    r.wait();
+    const savedId = r.api.item().id;
+    r.equipment.set("ItemLegs", JSON.parse(JSON.stringify(r.api.item())));
+    r.c.KDGameData = JSON.parse(JSON.stringify(r.c.KDGameData));
+    r.send("afterLoadGame");
+    assert.equal(r.api.item().id, savedId);
+    assert.equal(r.api.item().data.wrapProgress, 0.4);
+    assert.equal(r.api.state().itemId, savedId);
+    const loaded = JSON.stringify({ state: r.api.state(), item: r.api.item() });
+    r.send("afterLoadGame");
+    drawCapture(r);
+    assert.equal(JSON.stringify({ state: r.api.state(), item: r.api.item() }), loaded);
+
+    for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterNewGame"]) {
+        const branch = contestRuntime();
+        branch.start();
+        loseContest(branch);
+        branch.wait();
+        const bag = branch.api.item();
+        bag.data.sentinel = trigger;
+        const snapshot = JSON.stringify(bag);
+        branch.send(trigger);
+        assert.equal(branch.api.state(), undefined, trigger);
+        assert.equal(branch.api.item(), bag, trigger);
+        assert.equal(JSON.stringify(bag), snapshot, trigger);
+    }
+});
+
+test("load rejects a missing or replaced active bag and keeps complete and interrupted items stable", () => {
+    for (const replacement of [undefined, item("SpiderlingsSpinnerLegbinder", { id: 9999, group: "ItemLegs" })]) {
+        const active = contestRuntime();
+        active.start();
+        loseContest(active);
+        active.wait();
+        if (replacement) active.equipment.set("ItemLegs", replacement);
+        else active.equipment.delete("ItemLegs");
+        const snapshot = replacement && JSON.stringify(replacement);
+        active.send("afterLoadGame");
+        assert.equal(active.api.state(), undefined);
+        assert.equal(active.api.item(), replacement);
+        if (replacement) assert.equal(JSON.stringify(replacement), snapshot);
+    }
+
+    const complete = contestRuntime();
+    complete.start();
+    loseContest(complete);
+    for (let turn = 0; turn < 5; turn++) complete.wait();
+    complete.equipment.set("ItemLegs", JSON.parse(JSON.stringify(complete.api.item())));
+    const completed = complete.api.item();
+    complete.send("afterLoadGame");
+    complete.send("afterLoadGame");
+    assert.equal(complete.api.state(), undefined);
+    assert.equal(complete.api.item(), completed);
+    assert.equal(completed.data.wrapProgress, 1);
+    assert.equal(complete.start(), false, "a complete bag blocks another contest");
+
+    const interrupted = contestRuntime();
+    interrupted.start();
+    loseContest(interrupted);
+    interrupted.wait();
+    for (const enemy of interrupted.c.KDMapData.Entities) enemy.hp = 0;
+    interrupted.send("afterEnemyTick");
+    interrupted.equipment.set("ItemLegs", JSON.parse(JSON.stringify(interrupted.api.item())));
+    interrupted.c.KDGameData = JSON.parse(JSON.stringify(interrupted.c.KDGameData));
+    interrupted.send("afterLoadGame");
+    assert.equal(interrupted.api.state(), undefined);
+    assert.equal(interrupted.api.item().data.wrapProgress, 0.2);
+    for (const enemy of interrupted.c.KDMapData.Entities) enemy.hp = 2;
+    interrupted.start();
+    loseContest(interrupted);
+    assert.equal(interrupted.api.state().itemId, interrupted.api.item().id);
+    for (let turn = 0; turn < 4; turn++) interrupted.wait();
+    assert.equal(interrupted.api.item().data.wrapProgress, 1);
+});
+
+test("rendering a resumed contest reads the deposited item and never changes saved authority", () => {
+    const r = contestRuntime();
+    const bag = item("SpiderlingsSpinnerLegbinder", {
+        id: 7300,
+        group: "ItemLegs",
+        data: { wrapProgress: 0.4, sentinel: true },
+    });
+    r.equipment.set("ItemLegs", bag);
+    r.start();
+    r.api.state().weaveProgress = 90;
+    const before = JSON.stringify({ state: r.api.state(), item: bag });
+    const amounts = [...drawCapture(r), ...drawCapture(r)];
+    assert.ok(amounts.length > 0);
+    assert.ok(amounts.every((amount) => amount >= 0.4));
+    assert.equal(JSON.stringify({ state: r.api.state(), item: bag }), before);
+});
+
 test("capture holds hostile spider attacks on the player through wrapping and releases on interruption", () => {
     const r = contestRuntime(),
         p = r.c.KinkyDungeonPlayerEntity;
@@ -476,4 +835,72 @@ test("leg-bag escape counts a legal cutting affinity even when the weapon canCut
     finish({}, target, final);
     assert.equal(final.destroyChance, 0);
     finish({}, target, { ...final, struggleType: "Cut" });
+});
+
+test("full and incomplete bags require the specified effective Cut, Remove, and Struggle counts", () => {
+    for (const [wrapProgress, method, steps] of [
+        [1, "Cut", 4],
+        [1, "Remove", 6],
+        [1, "Struggle", 6],
+        [0.8, "Cut", 2],
+        [0.8, "Remove", 3],
+        [0.8, "Struggle", 3],
+    ]) {
+        let stamina = true;
+        let blocked = false;
+        const r = loadLifecycleRuntime(
+            {
+                KDGroupBlocked: () => blocked,
+                KinkyDungeonHasStamina: () => stamina,
+            },
+            undefined,
+            true,
+        );
+        const target = item("SpiderlingsSpinnerLegbinder", {
+            id: 7400,
+            group: "ItemLegs",
+            data: { wrapProgress },
+        });
+        r.equipment.set("ItemLegs", target);
+        const before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsLegbinderEscape"];
+        const after = r.inventoryEvents["struggle:SpiderlingsLegbinderEscape"];
+        const attempt = (extra = {}) => ({
+            restraint: target,
+            struggleType: method,
+            struggleGroup: "ItemLegs",
+            cost: -0.2,
+            canCut: true,
+            escapeChance: 100,
+            ...extra,
+        });
+
+        for (const invalid of [{ query: true }, ...(method === "Cut" ? [{ canCut: false, hasAffinity: false }] : [])]) {
+            const data = attempt(invalid);
+            before({}, target, data);
+            after({}, target, { ...data, result: "Fail" });
+        }
+        stamina = false;
+        let data = attempt();
+        before({}, target, data);
+        after({}, target, { ...data, result: "Fail" });
+        stamina = true;
+        blocked = true;
+        data = attempt();
+        before({}, target, data);
+        after({}, target, { ...data, result: "Fail" });
+        blocked = false;
+        assert.equal(target.data.SpiderlingsLegbinderEscapeProgress, undefined);
+
+        for (let action = 1; action < steps; action++) {
+            data = attempt();
+            before({}, target, data);
+            after({}, target, { ...data, result: "Fail" });
+            after({}, target, { ...data, result: "Fail" });
+            assert.ok(Math.abs(target.data.SpiderlingsLegbinderEscapeProgress - action / steps) < 1e-8);
+        }
+        data = attempt();
+        before({}, target, data);
+        assert.equal(data.escapeChance, 1, `${wrapProgress}:${method}`);
+        assert.equal(data.escapePenalty, -100, `${wrapProgress}:${method}`);
+    }
 });
