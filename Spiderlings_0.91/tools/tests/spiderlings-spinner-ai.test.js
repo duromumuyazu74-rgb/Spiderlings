@@ -1,0 +1,480 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+const { modRoot } = require("./helpers/lifecycle-runtime.js");
+
+const load = (context, file) =>
+    vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
+const plain = (value) => JSON.parse(JSON.stringify(value));
+
+function mapSnapshot(candidateLines) {
+    const cells = [];
+    for (let y = 1; y < 11; y++)
+        for (let x = 1; x < 17; x++) cells.push({ x, y, floor: true, protected: false, locked: false });
+    return {
+        width: 18,
+        height: 12,
+        cells,
+        entrances: [{ x: 1, y: 6 }],
+        exits: [{ x: 16, y: 6 }],
+        chokes: [{ x: 8, y: 6 }],
+        nests: [{ id: 90, x: 3, y: 3 }],
+        candidateLines: candidateLines || [
+            [
+                { x: 8, y: 4 },
+                { x: 8, y: 8 },
+            ],
+            [
+                { x: 13, y: 4 },
+                { x: 13, y: 8 },
+            ],
+            [
+                { x: 3, y: 2 },
+                { x: 3, y: 5 },
+            ],
+        ],
+    };
+}
+
+function spinner(id, x, y, extra = {}) {
+    return {
+        id,
+        x,
+        y,
+        hp: 2,
+        Enemy: { name: "Spinner", movePoints: 1.5, tags: { spiderlings: true } },
+        ...extra,
+    };
+}
+
+function runtime(entities = []) {
+    let nextId = 1000;
+    const tiles = new Map(),
+        movement = [],
+        nativeCalls = [],
+        context = {
+            console,
+            Spiderlings: {},
+            KinkyDungeonEnemies: [{ name: "IceWall", tags: {}, dropTable: [], events: [] }],
+            KDMapData: {
+                GridWidth: 18,
+                GridHeight: 12,
+                Entities: entities,
+                StartPosition: { x: 1, y: 6 },
+                EndPosition: { x: 16, y: 6 },
+                ShortcutPositions: {},
+                RoomType: "SpinnerAITest",
+            },
+            KDGameData: { SleepTurns: 0, LastMapSeed: "ai-seed" },
+            KinkyDungeonPlayerEntity: { player: true, x: 16, y: 10 },
+            KinkyDungeonMovableTilesEnemy: ".0",
+            KinkyDungeonMovableTilesSmartEnemy: ".0",
+            KinkyDungeonCurrentTick: 1,
+            KinkyDungeonRootDirectory: "Game/",
+            KinkyDungeonFlags: new Map(),
+            KDModFiles: { "Bullets/WebSprayTrail.png": {} },
+            KDPathConditions: {},
+            KDInputTypes: {},
+            KDEventMapGeneric: {},
+            KDPathCache: new Map(),
+            KDPathCacheIgnoreLocks: new Map(),
+            KDUpdateEnemyCache: false,
+            KDAIType: { hunt: { beforemove: () => false } },
+            KDMapInit: (values) => Object.fromEntries(values.map((value) => [value, true])),
+            KinkyDungeonMapGet: (x, y) => (x > 0 && y > 0 && x < 17 && y < 11 ? "." : "1"),
+            KinkyDungeonTilesGet: (key) => tiles.get(key),
+            KinkyDungeonEntityAt(x, y) {
+                if (context.KinkyDungeonPlayerEntity.x === x && context.KinkyDungeonPlayerEntity.y === y)
+                    return context.KinkyDungeonPlayerEntity;
+                return context.KDMapData.Entities.find((entity) => entity.hp > 0 && entity.x === x && entity.y === y);
+            },
+            DialogueCreateEnemy(x, y, name) {
+                if (context.KinkyDungeonEntityAt(x, y)) return undefined;
+                const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
+                const entity = { id: nextId++, x, y, hp: definition.maxhp, Enemy: definition };
+                context.KDMapData.Entities.push(entity);
+                return entity;
+            },
+            KDHostile: (entity) => !entity.allied && !entity.party && !entity.imprisoned,
+            KDAllied: (entity) => !!entity.allied,
+            KDIsInParty: (entity) => !!entity.party,
+            KDIsImprisoned: (entity) => !!entity.imprisoned,
+            KinkyDungeonIsDisabled: (entity) => !!entity.disabled,
+            KDHelpless: (entity) => !!entity.helpless,
+            KinkyDungeonCheckPath: () => true,
+            KinkyDungeonGetBuffedStat: () => 0,
+            KinkyDungeonMultiplicativeStat: () => 1,
+            KDBoundEffects: () => 0,
+            KinkyDungeonApplyBuffToEntity() {},
+            KDMoveEntity(entity, x, y) {
+                if (context.KinkyDungeonEntityAt(x, y)) return false;
+                entity.x = x;
+                entity.y = y;
+                return true;
+            },
+            KinkyDungeonFindPath(fromX, fromY, toX, toY) {
+                return context.Spiderlings.SpinnerAI.routeOnSnapshot(
+                    mapSnapshot(),
+                    { x: fromX, y: fromY },
+                    { x: toX, y: toY },
+                ).slice(1);
+            },
+            KinkyDungeonEnemyTryMove(enemy, direction, _delta, x, y) {
+                if (!(_delta > 0) || context.KinkyDungeonEntityAt(x, y)) return false;
+                movement.push({ id: enemy.id, direction: plain(direction), x, y });
+                enemy.x = x;
+                enemy.y = y;
+                return true;
+            },
+            KinkyDungeonEnemyLoop(enemy, target, _delta) {
+                nativeCalls.push(enemy.id);
+                const handled = context.KDAIType.hunt.beforemove(enemy, target, {
+                    canSensePlayer: !!enemy.testSense,
+                    canSeePlayer: !!enemy.testSense,
+                });
+                return { idle: !handled, defeat: false, defeatEnemy: enemy };
+            },
+            KDAddEvent(map, trigger, name, handler) {
+                map[trigger] ||= {};
+                map[trigger][name] = handler;
+            },
+        };
+    context.globalThis = context;
+    context.window = context;
+    vm.createContext(context);
+    load(context, "SpiderlingsCore.js");
+    load(context, "SpiderlingsSpinnerTopology.js");
+    load(context, "SpiderlingsSpinnerNativeField.js");
+    load(context, "SpiderlingsSpinnerAI.js");
+    load(context, "SpiderlingsSpinnerScenarios.js");
+    context.Spiderlings.SpinnerField = { handleEnemyTurn: () => undefined };
+    context.Spiderlings.SpinnerCapture = { handleEnemyTurn: () => undefined };
+    load(context, "SpiderlingsSpinnerRuntime.js");
+    return { context, tiles, movement, nativeCalls };
+}
+
+function start(r, snapshot = mapSnapshot()) {
+    return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+}
+
+test("groups require eligible hostile Spinners within ten path steps and keep stable identity", () => {
+    const actors = [
+            spinner(1, 1, 2, { SpiderlingsSquadProvenance: "guaranteed" }),
+            spinner(2, 11, 2, { SpiderlingsSquadProvenance: "natural" }),
+            spinner(3, 16, 10, { allied: true }),
+            spinner(4, 16, 9, { party: true }),
+            spinner(5, 16, 8, { imprisoned: true }),
+            spinner(6, 16, 7, { helpless: true }),
+            { id: 7, x: 2, y: 2, hp: 2, Enemy: { name: "Jumper" } },
+        ],
+        provenance = actors.slice(0, 2).map((actor) => actor.SpiderlingsSquadProvenance),
+        r = runtime(actors),
+        state = start(r);
+    assert.deepEqual(Object.keys(plain(state.groups)), ["spinner-group-1"]);
+    assert.deepEqual(plain(state.groups["spinner-group-1"].memberIds), [1, 2]);
+    assert.deepEqual(
+        actors.slice(0, 2).map((actor) => actor.SpiderlingsSquadProvenance),
+        provenance,
+    );
+
+    const savedId = state.groups["spinner-group-1"].id;
+    actors[0].x = 6;
+    actors.push(spinner(8, 12, 3, { SpiderlingsNestParentID: 90 }));
+    start(r);
+    assert.equal(state.groups[savedId].id, savedId);
+    assert.deepEqual(plain(state.groups[savedId].memberIds), [1, 2, 8]);
+    assert.equal(actors.at(-1).SpiderlingsNestParentID, 90);
+});
+
+test("saved deterministic selection uses topology and provenance without target position", () => {
+    const r = runtime([spinner(1, 2, 2), spinner(2, 3, 2)]),
+        api = r.context.Spiderlings.SpinnerAI,
+        ordinary = { id: "g1", source: { type: "ordinary" }, members: [{ x: 2, y: 2 }] },
+        nest = { id: "g2", source: { type: "nest", nestId: 90 }, members: [{ x: 2, y: 2 }] },
+        firstSnapshot = { ...mapSnapshot(), hiddenTarget: { x: 2, y: 9 } },
+        secondSnapshot = { ...mapSnapshot(), hiddenTarget: { x: 15, y: 2 } },
+        first = api.analyzeLineCandidates(firstSnapshot, ordinary),
+        second = api.analyzeLineCandidates(secondSnapshot, ordinary),
+        nearNest = api.analyzeLineCandidates(firstSnapshot, nest);
+    assert.deepEqual(plain(first), plain(second));
+    assert.ok(first[0].anchors[0].x >= 8, "ordinary groups prefer route, choke, and exit lines");
+    assert.equal(nearNest[0].anchors[0].x, 3, "nest groups rank the nest-defense line first");
+
+    const encounter = r.context.Spiderlings.SpinnerNativeField.ensureMap(),
+        state = api.ensureAI(encounter, { mapSeed: "fixed", mapIdentity: "room" }),
+        group = { id: "saved", selectionOrdinal: 0, planId: null };
+    state.groups.saved = group;
+    const chosen = api.selectSavedPlan(state, group, first),
+        restored = plain(state),
+        again = api.selectSavedPlan(restored, restored.groups.saved, first);
+    assert.equal(again.id, chosen.id);
+    assert.equal(again.candidateId, chosen.candidateId);
+    assert.equal(restored.groups.saved.selectionOrdinal, 0);
+});
+
+test("corridor, T, cross, and exit fixtures use the same legal line analyzer", () => {
+    const r = runtime([spinner(1, 2, 2), spinner(2, 3, 2)]),
+        api = r.context.Spiderlings.SpinnerAI,
+        group = { id: "fixture", source: { type: "ordinary" }, members: [{ x: 2, y: 2 }] },
+        fixtures = [
+            { name: "corridor", chokes: [{ x: 8, y: 6 }], exits: [{ x: 16, y: 6 }], expectedX: 8 },
+            { name: "T", chokes: [{ x: 3, y: 4 }], exits: [{ x: 16, y: 6 }], expectedX: 3 },
+            { name: "cross", chokes: [{ x: 8, y: 6 }], exits: [{ x: 16, y: 6 }], expectedX: 8 },
+            { name: "exit", chokes: [], exits: [{ x: 16, y: 6 }], expectedX: 13 },
+        ];
+    for (const fixture of fixtures) {
+        const snapshot = { ...mapSnapshot(), chokes: fixture.chokes, exits: fixture.exits },
+            candidates = api.analyzeLineCandidates(snapshot, group);
+        assert.ok(candidates.length > 0, `${fixture.name} has a legal line`);
+        assert.equal(candidates[0].anchors[0].x, fixture.expectedX, `${fixture.name} priority`);
+        assert.ok(
+            candidates[0].cells.every(
+                (cell) => !snapshot.entrances.some((point) => cellKeyForTest(point) === cellKeyForTest(cell)),
+            ),
+            `${fixture.name} preserves entrances`,
+        );
+    }
+});
+
+test("separate groups activate separate saved lines and never merge after meeting", () => {
+    const actors = [spinner(1, 1, 2), spinner(2, 2, 2), spinner(3, 15, 9), spinner(4, 16, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        encounter = r.context.Spiderlings.SpinnerNativeField.state();
+    assert.equal(Object.keys(ai.groups).length, 2);
+    assert.equal(Object.keys(ai.plans).length, 2);
+    assert.equal(encounter.topology.version, 2);
+    assert.equal(
+        Object.values(encounter.topology.lineFields).filter((field) => !field.retired).length,
+        2,
+        "both plans share one schema-2 physical graph",
+    );
+    actors[2].x = 3;
+    actors[2].y = 2;
+    actors[3].x = 4;
+    actors[3].y = 2;
+    start(r);
+    assert.equal(Object.keys(ai.groups).length, 2, "saved groups do not merge when their members meet");
+});
+
+test("the schema-2 graph accepts independently owned lines without a global field cap", () => {
+    const r = runtime(),
+        nativeField = r.context.Spiderlings.SpinnerNativeField,
+        encounter = nativeField.ensureMap();
+    for (let index = 0; index < 6; index++)
+        nativeField.addLine({
+            fieldId: `uncapped-${index}`,
+            owners: [index * 2 + 1, index * 2 + 2],
+            anchors: [
+                { x: 2, y: index + 2 },
+                { x: 4, y: index + 2 },
+            ],
+        });
+    assert.equal(encounter.topology.version, 2);
+    assert.equal(Object.values(encounter.topology.lineFields).filter((field) => !field.retired).length, 6);
+    assert.equal(encounter.topology.anchors.length, 12);
+});
+
+test("dynamic occupancy waits without reroll while static invalidation saves one replacement", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        originalPlan = ai.plans[group.planId],
+        assignment = group.assignments[1] || group.assignments[2],
+        blocker = { id: 70, x: assignment.target.x, y: assignment.target.y, hp: 3, Enemy: { name: "Bandit" } };
+    r.context.KDMapData.Entities.push(blocker);
+    const worker = actors.find((actor) => group.assignments[actor.id]);
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.lastAction, "wait");
+    assert.equal(group.planId, originalPlan.id);
+    r.context.KDMapData.Entities.splice(r.context.KDMapData.Entities.indexOf(blocker), 1);
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.notEqual(group.lastAction, undefined);
+    assert.equal(group.planId, originalPlan.id);
+
+    const invalid = plain(snapshot),
+        invalidCell = invalid.cells.find((cell) => cellKeyForTest(cell) === originalPlan.cells[0]);
+    invalidCell.protected = true;
+    start(r, invalid);
+    assert.notEqual(group.planId, originalPlan.id);
+    assert.equal(group.selectionOrdinal, 1);
+    assert.equal(ai.plans[originalPlan.id].status, "invalid");
+});
+
+test("a statically blocked approach abandons instead of waiting forever", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        blocked = plain(snapshot);
+    for (const actor of actors)
+        for (const direction of [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 1 },
+            { x: 1, y: -1 },
+            { x: -1, y: 1 },
+            { x: -1, y: -1 },
+        ]) {
+            const cell = blocked.cells.find(
+                (candidate) => candidate.x === actor.x + direction.x && candidate.y === actor.y + direction.y,
+            );
+            if (cell) cell.floor = false;
+        }
+    start(r, blocked);
+    assert.equal(ai.plans[plan.id].status, "invalid");
+    assert.equal(ai.plans[plan.id].invalidReason, "approach");
+    assert.equal(group.planId, null);
+});
+
+function cellKeyForTest(cell) {
+    return `${cell.x},${cell.y}`;
+}
+
+test("live native perception delegates before any construction action", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]);
+    worker.testSense = true;
+    const before = plain(group.metrics);
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(plain(group.metrics), before);
+    assert.deepEqual(r.nativeCalls, [worker.id]);
+});
+
+test("one survivor keeps repair work but receives no new construction or replacement plan", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            plan.fieldId,
+        );
+    field.anchors[0].built = true;
+    field.anchors[0].hp = 1;
+    actors[1].hp = 0;
+    start(r, snapshot);
+    assert.deepEqual(
+        Object.values(plain(group.assignments)).map((assignment) => assignment.type),
+        ["repairAnchor"],
+    );
+
+    const invalid = plain(snapshot),
+        invalidCell = invalid.cells.find((cell) => cellKeyForTest(cell) === plan.cells[0]);
+    invalidCell.locked = true;
+    start(r, invalid);
+    assert.equal(group.planId, null, "a lone survivor cannot select a replacement plan");
+});
+
+test("save/load and revisit retain groups, choices, progress, and unique proxies", () => {
+    const actors = [spinner(1, 7, 3), spinner(2, 9, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        planId = group.planId;
+    for (let turn = 0; turn < 8; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const before = plain(r.context.KDMapData),
+        progress = {
+            lineFields: plain(r.context.Spiderlings.SpinnerNativeField.state().topology.lineFields),
+            solidCells: plain(
+                r.context.Spiderlings.SpinnerTopology.solidCells(
+                    r.context.Spiderlings.SpinnerNativeField.state().topology,
+                ),
+            ),
+        };
+    r.context.KDMapData = plain(before);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    r.context.Spiderlings.SpinnerNativeField.reconcile();
+    start(r, snapshot);
+    const restored = r.context.Spiderlings.SpinnerAI.inspect(),
+        proxies = r.context.KDMapData.Entities.filter(r.context.Spiderlings.SpinnerNativeField.isOwnedProxy);
+    assert.equal(restored.groups[group.id].planId, planId);
+    assert.deepEqual(plain(r.context.Spiderlings.SpinnerNativeField.state().topology.lineFields), progress.lineFields);
+    assert.deepEqual(
+        plain(
+            r.context.Spiderlings.SpinnerTopology.solidCells(r.context.Spiderlings.SpinnerNativeField.state().topology),
+        ),
+        progress.solidCells,
+    );
+    assert.equal(
+        new Set(proxies.map((proxy) => `${proxy.SpiderlingsSpinnerProxy.fieldId}|${proxy.x},${proxy.y}`)).size,
+        proxies.length,
+    );
+});
+
+test("paired 2/4/8 traces separate travel, construction, wait, and repair accounting", () => {
+    const observations = [];
+    for (const count of [2, 4, 8]) {
+        const starts = [
+                { x: 2, y: 4 },
+                { x: 2, y: 8 },
+                { x: 1, y: 1 },
+                { x: 1, y: 10 },
+                { x: 3, y: 1 },
+                { x: 3, y: 10 },
+                { x: 4, y: 1 },
+                { x: 4, y: 10 },
+            ],
+            actors = starts.slice(0, count).map((position, index) => spinner(index + 1, position.x, position.y)),
+            r = runtime(actors),
+            snapshot = mapSnapshot([
+                [
+                    { x: 12, y: 4 },
+                    { x: 12, y: 8 },
+                ],
+            ]),
+            ai = start(r, snapshot),
+            group = Object.values(ai.groups)[0];
+        for (let turn = 0; turn < 30; turn++) {
+            start(r, snapshot);
+            for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+            r.context.KinkyDungeonCurrentTick++;
+        }
+        const field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            ai.plans[group.planId].fieldId,
+        );
+        if (field.anchors[0].built) field.anchors[0].hp = Math.max(0.5, field.anchors[0].hp - 0.5);
+        for (let turn = 0; turn < 8; turn++) {
+            start(r, snapshot);
+            for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+            r.context.KinkyDungeonCurrentTick++;
+        }
+        observations.push({ count, ...plain(group.metrics) });
+    }
+    for (const observation of observations) {
+        assert.ok(observation.travel > 0);
+        assert.ok(observation.construction > 0, JSON.stringify(observations));
+        assert.ok(observation.wait >= 0);
+        assert.ok(observation.repair > 0, JSON.stringify(observations));
+    }
+    assert.deepEqual(
+        observations.map(({ count }) => count),
+        [2, 4, 8],
+    );
+    assert.deepEqual(observations, [
+        { count: 2, travel: 22, construction: 5, wait: 46, yield: 0, repair: 3 },
+        { count: 4, travel: 22, construction: 5, wait: 122, yield: 0, repair: 3 },
+        { count: 8, travel: 22, construction: 5, wait: 274, yield: 0, repair: 3 },
+    ]);
+});

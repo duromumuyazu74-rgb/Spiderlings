@@ -32,6 +32,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRuntime.js",
 ];
