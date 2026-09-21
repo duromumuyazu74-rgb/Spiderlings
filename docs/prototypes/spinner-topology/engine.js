@@ -26,7 +26,12 @@ globalThis.SpinnerTopology = (() => {
         };
     }
     const floor = (map, x, y) =>
-        y >= 0 && x >= 0 && y < map.grid.length && x < map.grid[0].length && map.walk.includes(key(x, y));
+        y >= 0 &&
+        x >= 0 &&
+        y < map.grid.length &&
+        x < map.grid[0].length &&
+        map.walk.includes(key(x, y)) &&
+        !map.locked?.includes(key(x, y));
     function flood(map, start, blocked = new Set(), goal) {
         const initial = key(...start),
             queue = [initial],
@@ -69,7 +74,7 @@ globalThis.SpinnerTopology = (() => {
         for (let i = 0; i < (closed ? vertices.length : vertices.length - 1); i++)
             edges.push(segment(vertices[i], vertices[(i + 1) % vertices.length]));
         const boundary = [...new Set(edges.flat())];
-        if (boundary.some((k) => !map.walk.includes(k) || map.protected.includes(k) || map.occupied.includes(k)))
+        if (boundary.some((k) => !floor(map, ...point(k)) || map.protected.includes(k) || map.occupied.includes(k)))
             return;
         const xs = vertices.map((p) => p[0]),
             ys = vertices.map((p) => p[1]);
@@ -90,10 +95,17 @@ globalThis.SpinnerTopology = (() => {
             };
             for (let y = bounds[1] + 1; y < bounds[3]; y++)
                 for (let x = bounds[0] + 1; x < bounds[2]; x++) if (within([x, y])) interior.push(key(x, y));
-            if (interior.some((k) => !map.walk.includes(k))) return;
+            if (interior.some((k) => !floor(map, ...point(k)))) return;
+            const freeCore = (x, y) =>
+                [-1, 0, 1].every((dx) =>
+                    [-1, 0, 1].every((dy) => {
+                        const k = key(x + dx, y + dy);
+                        return interior.includes(k) && !map.occupied.includes(k) && !map.protected.includes(k);
+                    }),
+                );
             for (const k of interior) {
                 const [x, y] = point(k);
-                if ([-1, 0, 1].every((dx) => [-1, 0, 1].every((dy) => interior.includes(key(x + dx, y + dy))))) {
+                if (freeCore(x, y)) {
                     core = [x, y];
                     break;
                 }
@@ -101,11 +113,7 @@ globalThis.SpinnerTopology = (() => {
             if (!core) return;
             const cx = (bounds[0] + bounds[2]) / 2,
                 cy = (bounds[1] + bounds[3]) / 2;
-            const centers = interior
-                .map(point)
-                .filter(([x, y]) =>
-                    [-1, 0, 1].every((dx) => [-1, 0, 1].every((dy) => interior.includes(key(x + dx, y + dy)))),
-                );
+            const centers = interior.map(point).filter(([x, y]) => freeCore(x, y));
             centers.sort((a, b) => distance(a, [cx, cy]) - distance(b, [cx, cy]));
             core = centers[0];
         } else core = point(boundary[Math.floor(boundary.length / 2)]);
@@ -133,7 +141,8 @@ globalThis.SpinnerTopology = (() => {
             if (candidateKeys.has(geometryKey)) return;
             candidateKeys.add(geometryKey);
             const nearExit = map.end ? distance(s.core, map.end) : 20;
-            const nearGroup = distance(s.core, origin);
+            const approach = flood(map, origin, new Set(map.occupied), (p) => s.boundary.includes(key(...p))).path;
+            const nearGroup = Math.max(0, approach.length - 1);
             const choke = chokes.length ? Math.min(...chokes.map((c) => distance(c, s.core))) : 20;
             const nest = map.nest ? Math.max(0, 30 - 3 * distance(s.core, map.nest)) : 0;
             const routeBonus = map.route?.some((k) => s.boundary.includes(k)) ? 18 : 0;
@@ -160,6 +169,8 @@ globalThis.SpinnerTopology = (() => {
                 id: `${s.type}:${s.vertices.map((p) => key(...p)).join(";")}`,
                 score,
                 reasons,
+                context: s.type === "line" ? "narrow corridor / intersection branch" : "free room footprint",
+                approachSteps: nearGroup,
                 gate: gate?.k,
                 gateEdge: gate?.i,
             });
@@ -252,7 +263,23 @@ globalThis.SpinnerTopology = (() => {
                     );
                     if (outer) {
                         delete outer.outside;
-                        c.outer = outer;
+                        const innerGate = point(c.gate);
+                        outer.gate =
+                            innerGate[0] === l
+                                ? key(l - 3, innerGate[1])
+                                : innerGate[0] === r
+                                  ? key(r + 3, innerGate[1])
+                                  : innerGate[1] === t
+                                    ? key(innerGate[0], t - 3)
+                                    : key(innerGate[0], b + 3);
+                        const blocked = new Set([...map.occupied, ...c.boundary, ...outer.boundary]);
+                        blocked.delete(c.gate);
+                        blocked.delete(outer.gate);
+                        const entrancePath = flood(map, map.start, blocked, (p) => key(...p) === key(...c.core)).path;
+                        if (entrancePath.length) {
+                            c.outer = outer;
+                            c.entrancePath = entrancePath;
+                        }
                     }
                 }
             }
@@ -277,6 +304,7 @@ globalThis.SpinnerTopology = (() => {
             selected: selected || shortlist[0],
             shortlist: shortlist.map((c) => c.id),
             fallback: eligible[0]?.type === "line" ? "拦截线" : eligible.length ? "围场" : "无合法地点",
+            policy: "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented.",
         };
     }
     function fixedMaps() {
@@ -482,7 +510,13 @@ globalThis.SpinnerTopology = (() => {
         return maps;
     }
     function nativeMap(snapshot, i) {
-        const walk = snapshot.movable.map((p) => key(...p));
+        // Spinner can open unlocked D doors. Placement protection remains independent.
+        const walk = [
+            ...new Set([
+                ...snapshot.movable.map((p) => key(...p)),
+                ...snapshot.grid.flatMap((row, y) => [...row].flatMap((tile, x) => (tile === "D" ? [key(x, y)] : []))),
+            ]),
+        ];
         const protectedCells = [...new Set(snapshot.protectedCells.map((p) => key(p.x, p.y)))];
         const occupied = [...new Set(snapshot.entities.map((p) => key(p.x, p.y)))];
         const map = {
@@ -494,6 +528,9 @@ globalThis.SpinnerTopology = (() => {
             walk,
             protected: protectedCells,
             occupied,
+            locked: Object.entries(snapshot.tiles || {})
+                .filter(([, v]) => v.Lock)
+                .map(([k]) => k),
             start: [snapshot.start.x, snapshot.start.y],
             end: [snapshot.end.x, snapshot.end.y],
             snapshot,
@@ -569,6 +606,7 @@ globalThis.SpinnerTopology = (() => {
                 core: [...c.core],
                 interior: [...c.interior],
                 bounds: [...c.bounds],
+                vertices: clone(c.vertices),
                 anchors: [],
                 links: [],
                 gate: c.gate,
@@ -576,7 +614,7 @@ globalThis.SpinnerTopology = (() => {
                 triggered: false,
                 retired: false,
             };
-        // Expanded outer template receives an aligned west-facing gate.
+        // Custom debug shapes without a selected gate default to the west edge.
         if (!f.gate && c.type !== "line") f.gate = key(c.bounds[0], c.core[1]);
         for (const p of c.vertices) {
             const k = key(...p);
@@ -608,7 +646,6 @@ globalThis.SpinnerTopology = (() => {
         if (c.outer && g.actors.filter((a) => a.active).length >= 4) {
             const outer = clone(c.outer);
             outer.core = c.core;
-            outer.gate = key(outer.bounds[0], c.core[1]);
             addField(s, outer, g, 1);
         }
         log(s, `已保存计划 ${c.type}，评分 ${c.score.toFixed(1)}；${g.fieldIds.length} 层。`);
@@ -685,7 +722,7 @@ globalThis.SpinnerTopology = (() => {
         const fields = g.fieldIds.map((id) => s.fields.find((f) => f.id === id)).filter((f) => !f.retired);
         const layer = fields.find((f) => !["ready", "sealed", "barrier"].includes(f.phase))?.layer ?? 0;
         for (const f of fields) {
-            if (f.layer > layer && !f.triggered) continue;
+            if (f.layer > layer) continue;
             for (const k of f.anchors)
                 if (!s.anchors[k].placed && s.anchors[k].cooldown <= 0)
                     results.push({ type: "anchor", k, id: k, f: f.id });
@@ -708,7 +745,45 @@ globalThis.SpinnerTopology = (() => {
         return results;
     }
     function usableCell(s, k) {
-        return s.map.walk.includes(k) && !s.map.protected.includes(k) && !s.map.occupied.includes(k);
+        return floor(s.map, ...point(k)) && !s.map.protected.includes(k) && !s.map.occupied.includes(k);
+    }
+    function validFootprint(s, f) {
+        return (
+            f.links.every((id) => s.links[id].cells.every((k) => usableCell(s, k))) &&
+            f.interior.every((k) => floor(s.map, ...point(k))) &&
+            (f.type === "line" ||
+                [-1, 0, 1].every((dx) => [-1, 0, 1].every((dy) => usableCell(s, key(f.core[0] + dx, f.core[1] + dy)))))
+        );
+    }
+    function editTerrain(s, k) {
+        const [x, y] = point(k);
+        if (
+            x < 0 ||
+            y < 0 ||
+            y >= s.map.grid.length ||
+            x >= s.map.grid[0].length ||
+            s.map.protected.includes(k) ||
+            s.map.occupied.includes(k) ||
+            key(...s.target.pos) === k ||
+            s.groups.some((g) => g.actors.some((a) => a.active && key(...a.pos) === k))
+        )
+            return false;
+        const wasFloor = s.map.walk.includes(k);
+        s.map.walk = wasFloor ? s.map.walk.filter((v) => v !== k) : [...s.map.walk, k];
+        const row = [...s.map.grid[y]];
+        row[x] = wasFloor ? "#" : ".";
+        s.map.grid[y] = row.join("");
+        for (const l of Object.values(s.links))
+            if (wasFloor && l.cells.includes(k)) {
+                l.hp = 0;
+                l.built = [];
+                l.cooldown = 4;
+            }
+        if (wasFloor && s.anchors[k]) s.anchors[k].placed = false;
+        s.analysis = analyze(s.map, s.groups[0].actors[0]?.pos || s.map.start, s.seed, "g1", s.map.nested);
+        log(s, "地形变化；下一次施工重新验证边界、内部和核心。");
+        update(s);
+        return true;
     }
     function step(s) {
         s.turn++;
@@ -716,7 +791,7 @@ globalThis.SpinnerTopology = (() => {
         // Revalidate the entire active footprint. Keep legal old silk as retired obstacles.
         for (const g of s.groups) {
             const active = s.fields.filter((f) => f.group === g.id && !f.retired);
-            if (!active.some((f) => f.links.some((id) => s.links[id].cells.some((k) => !usableCell(s, k))))) continue;
+            if (!active.some((f) => !validFootprint(s, f))) continue;
             for (const f of active) f.retired = true;
             g.fieldIds = [];
             const origin = g.actors.find((a) => a.active)?.pos;
@@ -750,6 +825,20 @@ globalThis.SpinnerTopology = (() => {
             }
         }
         const reservations = new Set();
+        // Count from the last live owner, independently of each group's earlier losses.
+        for (const structure of [...Object.values(s.links), ...Object.values(s.anchors)]) {
+            const owned = structure.owners.some((id) => {
+                const field = s.fields.find((f) => f.id === id);
+                return s.groups.find((g) => g.id === field?.group)?.actors.some((a) => a.active);
+            });
+            structure.ownerless = owned ? 0 : (structure.ownerless || 0) + 1;
+            if (structure.ownerless === 20) {
+                if (structure.cells) {
+                    structure.hp = 0;
+                    structure.built = [];
+                } else structure.placed = false;
+            }
+        }
         for (const g of s.groups) {
             const actors = g.actors.filter((a) => a.active);
             if (!actors.length) {
@@ -759,28 +848,6 @@ globalThis.SpinnerTopology = (() => {
                         f.retired = true;
                         f.phase = "retired";
                     }
-                    for (const l of Object.values(s.links))
-                        if (
-                            l.owners.every(
-                                (id) =>
-                                    !s.groups
-                                        .find((v) => v.id === s.fields.find((f) => f.id === id).group)
-                                        ?.actors.some((a) => a.active),
-                            )
-                        ) {
-                            l.hp = 0;
-                            l.built = [];
-                        }
-                    for (const a of Object.values(s.anchors))
-                        if (
-                            a.owners.every(
-                                (id) =>
-                                    !s.groups
-                                        .find((v) => v.id === s.fields.find((f) => f.id === id).group)
-                                        ?.actors.some((a) => a.active),
-                            )
-                        )
-                            a.placed = false;
                     log(s, `${g.id} 无主满 20 回合，独占结构坍塌。`);
                 }
                 continue;
@@ -835,7 +902,9 @@ globalThis.SpinnerTopology = (() => {
                             v.placed &&
                             v.hp > 0 &&
                             v.hp < v.max &&
-                            v.owners.some((id) => g.fieldIds.includes(id)) &&
+                            v.owners.some(
+                                (id) => g.fieldIds.includes(id) && !s.fields.find((f) => f.id === id).retired,
+                            ) &&
                             distance(point(v.k), a.pos) <= 1,
                     );
                     if (anchorRepair) {
@@ -847,7 +916,9 @@ globalThis.SpinnerTopology = (() => {
                         (l) =>
                             l.hp > 0 &&
                             l.hp < l.max &&
-                            l.owners.some((id) => g.fieldIds.includes(id)) &&
+                            l.owners.some(
+                                (id) => g.fieldIds.includes(id) && !s.fields.find((f) => f.id === id).retired,
+                            ) &&
                             l.cells.some((k) => distance(point(k), a.pos) <= 1),
                     );
                     if (repair) {
@@ -962,6 +1033,23 @@ globalThis.SpinnerTopology = (() => {
         log(s, "调试放置目标到最内层；后续封口仍逐格施工。");
         update(s);
     }
+    function vacateLure(s) {
+        const lure = s.groups[0]?.actors[0];
+        if (!lure) return false;
+        const occupied = new Set([
+            ...s.map.occupied,
+            key(...s.target.pos),
+            ...s.groups.flatMap((g) => g.actors.filter((a) => a.active).map((a) => key(...a.pos))),
+        ]);
+        const boundary = new Set(s.fields.flatMap((f) => f.links.flatMap((id) => s.links[id].cells)));
+        const free = [...flood(s.map, lure.pos).cells].find(
+            (k) => !occupied.has(k) && !boundary.has(k) && !s.map.protected.includes(k),
+        );
+        if (!free) return false;
+        lure.pos = point(free);
+        log(s, "调试移开固定诱饵；这不是原生 AI 行动或寻路模拟。");
+        return true;
+    }
     function move(s, goal) {
         const blocked = new Set([
             ...solids(s),
@@ -979,14 +1067,28 @@ globalThis.SpinnerTopology = (() => {
             blocked = new Set([...solid, ...s.map.occupied]);
         const r = flood(s.map, s.target.pos, blocked, (p) => key(...p) === key(...s.map.end));
         const fields = s.fields.map((f) => {
-            const beyond = (p) => p[0] < f.bounds[0] || p[0] > f.bounds[2] || p[1] < f.bounds[1] || p[1] > f.bounds[3];
+            const boundary = new Set(f.links.flatMap((id) => s.links[id].cells));
+            const beyond = (p) => !f.interior.includes(key(...p)) && !boundary.has(key(...p));
             const escape = flood(s.map, s.target.pos, blocked, beyond).path;
             const inside = inCore(f, s.target.pos);
+            const captureEligible =
+                f.type !== "line" &&
+                !f.retired &&
+                !s.fields.some(
+                    (other) =>
+                        other.id !== f.id &&
+                        !other.retired &&
+                        other.type !== "line" &&
+                        f.interior.some((k) => other.interior.includes(k)) &&
+                        !f.interior.every((k) => other.interior.includes(k)) &&
+                        !other.interior.every((k) => f.interior.includes(k)),
+                );
             return {
                 id: f.id,
                 phase: f.phase,
                 inside,
-                closed: f.type !== "line" && f.phase === "sealed",
+                captureEligible,
+                closed: f.type !== "line" && f.phase === "sealed" && validFootprint(s, f),
                 escapePath: escape,
             };
         });
@@ -996,7 +1098,7 @@ globalThis.SpinnerTopology = (() => {
             exitPath: r.path,
             fields,
             geometryReady:
-                fields.some((f) => f.closed && f.inside) &&
+                fields.some((f) => f.closed && f.inside && f.captureEligible) &&
                 !fields.some((f) => f.inside && !f.closed && s.fields.find((v) => v.id === f.id).type !== "line"),
             violations: [...solid].filter(
                 (k) => s.map.protected.includes(k) || !s.map.walk.includes(k) || s.map.occupied.includes(k),
@@ -1034,11 +1136,14 @@ globalThis.SpinnerTopology = (() => {
         nativeMap,
         create,
         plan,
+        addField,
+        editTerrain,
         overlap,
         step,
         settle,
         attack,
         enterCore,
+        vacateLure,
         move,
         inspect,
         phaseName,

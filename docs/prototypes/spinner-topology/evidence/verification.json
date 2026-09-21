@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-21T08:08:23.976Z",
-  "artifactSHA256": "8f0e87f7128ab415798c3c6838c2c8a6ff9d87dbdead6f629bec79d8f1da77dc",
+  "date": "2026-09-21T08:27:48.383Z",
+  "artifactSHA256": "1353bd788306e19f3232252c0c9145a09bd03ba70548036853ead5f3b4dcfd28",
   "scope": "Topology and disposable browser UI only; no runtime Mod integration",
   "walkthroughs": [
     {
@@ -11,7 +11,8 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 9,
-      "elapsedMs": 11,
+      "debugLureVacated": false,
+      "elapsedMs": 13,
       "passed": true
     },
     {
@@ -22,7 +23,8 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 24,
-      "elapsedMs": 14,
+      "debugLureVacated": false,
+      "elapsedMs": 16,
       "passed": true
     },
     {
@@ -33,7 +35,8 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 11,
-      "elapsedMs": 9,
+      "debugLureVacated": false,
+      "elapsedMs": 11,
       "passed": true
     },
     {
@@ -44,7 +47,8 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 20,
-      "elapsedMs": 11,
+      "debugLureVacated": false,
+      "elapsedMs": 13,
       "passed": true
     },
     {
@@ -55,7 +59,8 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 50,
-      "elapsedMs": 58,
+      "debugLureVacated": false,
+      "elapsedMs": 89,
       "passed": true
     },
     {
@@ -66,18 +71,20 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 45,
-      "elapsedMs": 39,
+      "debugLureVacated": false,
+      "elapsedMs": 48,
       "passed": true
     },
     {
       "id": "exit",
       "kind": "hand-authored",
-      "candidates": 533,
+      "candidates": 529,
       "selected": "rectangle",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 90,
-      "elapsedMs": 50,
+      "prebuildTurns": 99,
+      "debugLureVacated": false,
+      "elapsedMs": 77,
       "passed": true
     },
     {
@@ -88,7 +95,8 @@
       "layers": 0,
       "sharedLinks": 0,
       "prebuildTurns": 0,
-      "elapsedMs": 9,
+      "debugLureVacated": false,
+      "elapsedMs": 8,
       "passed": true
     },
     {
@@ -99,7 +107,8 @@
       "layers": 2,
       "sharedLinks": 4,
       "prebuildTurns": 36,
-      "elapsedMs": 81,
+      "debugLureVacated": false,
+      "elapsedMs": 189,
       "passed": true
     },
     {
@@ -110,7 +119,8 @@
       "layers": 2,
       "sharedLinks": 0,
       "prebuildTurns": 113,
-      "elapsedMs": 207,
+      "debugLureVacated": false,
+      "elapsedMs": 421,
       "passed": true
     },
     {
@@ -121,7 +131,8 @@
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 54,
-      "elapsedMs": 147,
+      "debugLureVacated": false,
+      "elapsedMs": 264,
       "passed": true
     },
     {
@@ -131,52 +142,57 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 6,
-      "elapsedMs": 62,
+      "prebuildTurns": 3,
+      "debugLureVacated": false,
+      "elapsedMs": 88,
       "passed": true
     },
     {
       "id": "native-2",
       "kind": "native-generated",
-      "candidates": 324,
+      "candidates": 381,
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 87,
-      "elapsedMs": 418,
+      "prebuildTurns": 86,
+      "debugLureVacated": false,
+      "elapsedMs": 946,
       "passed": true
     },
     {
       "id": "native-3",
       "kind": "native-generated",
-      "candidates": 233,
-      "selected": "rectangle",
+      "candidates": 230,
+      "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 53,
-      "elapsedMs": 157,
+      "prebuildTurns": 80,
+      "debugLureVacated": false,
+      "elapsedMs": 555,
       "passed": true
     },
     {
       "id": "native-4",
       "kind": "native-generated",
-      "candidates": 165,
+      "candidates": 208,
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
       "prebuildTurns": 53,
-      "elapsedMs": 179,
+      "debugLureVacated": false,
+      "elapsedMs": 381,
       "passed": true
     },
     {
       "id": "native-5",
       "kind": "native-generated",
-      "candidates": 191,
+      "candidates": 202,
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 57,
-      "elapsedMs": 158,
+      "prebuildTurns": 453,
+      "debugLureVacated": true,
+      "elapsedMs": 833,
       "passed": true
     }
   ],
@@ -227,7 +243,9 @@
     "desktopClosure": true,
     "roomBreach": true,
     "nestedClosure": true,
-    "sharedDamage": true
+    "sharedDamage": true,
+    "fixedLureVacancy": true,
+    "interiorInvalidation": true
   },
   "passed": true
 }
