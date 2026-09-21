@@ -5,6 +5,7 @@
     "spiderlings-webbing-enemy.test.js",
     "spiderlings-spinner-art.test.js",
     "spiderlings-spinner-capture.test.js",
+    "spiderlings-spinner-enclosure.test.js",
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-release-version.test.js",
