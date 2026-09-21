@@ -11,36 +11,37 @@ let current = "room",
     guide = "build";
 const guides = {
     blocked: {
-        label: "真实地图占位等待",
-        desc: "KD 5.5.0 样本 3 的固定诱饵占住预定锚点，施工等待。调试移开后才继续；原型没有模拟诱饵移动 AI。",
+        label: "Native occupancy wait",
+        desc: "An alerted, stationary lure blocks a planned anchor in KD 5.5.0 sample 3. Explicit debug relocation resumes work; native bait movement is not simulated.",
         scene: "native-5",
         steps: [
-            ["重置样本 3", () => load("native-5")],
+            ["Reset sample 3", () => load("native-5")],
             [
-                "施工到占位等待",
+                "Build until blocked",
                 () => {
+                    state.aware = true;
                     T.plan(state);
                     T.settle(state);
                 },
             ],
-            ["调试移开固定诱饵", () => T.vacateLure(state)],
-            ["继续合法施工", () => T.settle(state)],
+            ["Vacate lure (debug)", () => T.vacateLure(state)],
+            ["Resume legal work", () => T.settle(state)],
         ],
     },
     terrain: {
-        label: "内部地形变化",
-        desc: "候选选定后，在未占用的内部格改墙。下一行动会让旧围场退役，并降级或换址；不会清除外部对象。",
+        label: "Interior terrain change",
+        desc: "Turn an unoccupied interior cell into a wall after planning. The next action retires and replaces the invalid plan without clearing foreign objects.",
         scene: "room",
         steps: [
             [
-                "重置并规划",
+                "Reset and plan",
                 () => {
                     load("room");
                     T.plan(state);
                 },
             ],
             [
-                "内部空格改墙",
+                "Block interior cell",
                 () => {
                     const cell = state.fields[0]?.interior.find(
                         (k) => !state.groups.some((g) => g.actors.some((a) => T.key(...a.pos) === k)),
@@ -48,48 +49,48 @@ const guides = {
                     if (cell) T.editTerrain(state, cell);
                 },
             ],
-            ["下一施工行动验证", () => T.step(state)],
+            ["Validate next action", () => T.step(state)],
         ],
     },
     build: {
-        label: "预布与封口",
-        desc: "从规则房间开始。预布完成时入口仍开放；将目标放入核心，再观察封闭与出口路径消失。",
+        label: "Prebuild and seal",
+        desc: "Start in the regular room. Prebuild leaves an entrance; place the target in the core and observe closure and route changes.",
         scene: "room",
         steps: [
-            ["重置房间", () => load("room")],
+            ["Reset room", () => load("room")],
             [
-                "选择并预布",
+                "Plan and prebuild",
                 () => {
                     T.plan(state);
                     T.settle(state);
                 },
             ],
-            ["目标进入核心", () => T.enterCore(state)],
-            ["逐格闭合", () => T.settle(state)],
+            ["Enter the core", () => T.enterCore(state)],
+            ["Seal incrementally", () => T.settle(state)],
         ],
     },
     nested: {
-        label: "内外双层",
-        desc: "四只 Spinner 才有第二层。先织内层，再织外层；进入共同核心后从内向外封口。",
+        label: "Nested fields",
+        desc: "Four Spinners are required for a second layer. Build inner before outer, then seal in that order after core entry.",
         scene: "nested",
         steps: [
-            ["重置双层", () => load("nested")],
+            ["Reset nested fields", () => load("nested")],
             [
-                "完成预布",
+                "Complete prebuild",
                 () => {
                     T.plan(state);
                     T.settle(state);
                 },
             ],
             [
-                "入核心并封口",
+                "Enter and seal",
                 () => {
                     T.enterCore(state);
                     T.settle(state);
                 },
             ],
             [
-                "破坏内层一边",
+                "Breach inner edge",
                 () => {
                     const f = state.fields[0],
                         l = state.links[f.links[0]];
@@ -99,13 +100,13 @@ const guides = {
         ],
     },
     shared: {
-        label: "重叠与破网",
-        desc: "第二群复用物理结构。点击范围伤害可见同一连接的逐格累加；摧毁共享锚点会影响所有关联场地。",
+        label: "Shared fields and breach",
+        desc: "A second group reuses the same structures. Area damage accumulates per cell; destroying a shared anchor affects every owner.",
         scene: "overlap",
         steps: [
-            ["重置重叠", () => load("overlap")],
+            ["Reset shared fields", () => load("overlap")],
             [
-                "建立共享计划",
+                "Build shared plan",
                 () => {
                     T.plan(state);
                     T.overlap(state);
@@ -113,13 +114,13 @@ const guides = {
                 },
             ],
             [
-                "入核心并封口",
+                "Enter and seal",
                 () => {
                     T.enterCore(state);
                     T.settle(state);
                 },
             ],
-            ["破坏共享锚点", () => T.attack(state, state.fields[0].anchors[0], 2, true)],
+            ["Break shared anchor", () => T.attack(state, state.fields[0].anchors[0], 2, true)],
         ],
     },
 };
@@ -135,12 +136,12 @@ function element(tag, value, cls) {
 function load(id = current) {
     current = id;
     const m = maps.find((m) => m.id === id);
-    $("count").value = m.nested || m.overlap ? 4 : m.spawns.length || 2;
+    $("count").value = m.nested || m.overlap ? 4 : m.id === "room" ? 2 : m.spawns.length || 2;
     const started = performance.now();
     state = T.create(m, $("seed").value, Number($("count").value));
     preview = state.analysis.selected;
     selected = null;
-    text("notice", `候选分析 ${(performance.now() - started).toFixed(0)} ms。`);
+    text("notice", `Candidate analysis ${(performance.now() - started).toFixed(0)} ms.`);
     render();
 }
 function candidateList() {
@@ -151,7 +152,7 @@ function candidateList() {
     for (const c of ranked.slice(0, 100)) {
         const option = element(
             "option",
-            `${c.outer ? "双层 / " : ""}${c.type} · ${c.core.join(",")} · ${c.score.toFixed(1)}`,
+            `${c.outer ? "Nested / " : ""}${c.type} · ${c.core.join(",")} · ${c.score.toFixed(1)}`,
         );
         option.value = c.id;
         option.selected = c.id === preview?.id;
@@ -170,7 +171,7 @@ function candidateList() {
     }
     text(
         "candidateSummary",
-        `${state.analysis.candidates.length} 个候选 · ${state.analysis.fallback} · 当前原型先选围场，再按评分选址；无围场才选拦截线。`,
+        `${state.analysis.candidates.length} candidates · ${state.analysis.fallback} · This prototype prefers enclosures, then ranks sites; it falls back to lines when no enclosure fits.`,
     );
     text(
         "score",
@@ -178,10 +179,10 @@ function candidateList() {
             ? Object.entries(preview.reasons)
                   .map(
                       ([k, v]) =>
-                          `${{ exit: "出口", choke: "窄口", route: "主路线", nest: "巢穴", travel: "距离", space: "空间", shape: "正交适配" }[k]} ${v.toFixed(1)}`,
+                          `${{ exit: "Exit", choke: "Choke", route: "Main route", nest: "Nest", travel: "Distance", space: "Space", shape: "Orthogonal fit" }[k]} ${v.toFixed(1)}`,
                   )
                   .join(" · ")
-            : "没有合法地点，保持放弃状态。",
+            : "No legal site; planning is abandoned.",
     );
 }
 function draw(view) {
@@ -238,19 +239,19 @@ function draw(view) {
                 const [x, y] = T.point(f.gate);
                 ctx.fillStyle = "#d7d78a";
                 ctx.font = "11px sans-serif";
-                ctx.fillText("入口", x * cell + 3, y * cell + 19);
+                ctx.fillText("Gate", x * cell + 3, y * cell + 19);
             }
         }
     }
     for (const l of Object.values(state.links))
-        if (l.hp > 0)
+        if (l.hp > 0 && l.started !== false)
             for (const k of l.built) {
                 const [x, y] = T.point(k);
                 ctx.fillStyle = "#cbd1b7";
                 ctx.fillRect(x * cell + 9, y * cell + 9, 12, 12);
             }
     for (const l of Object.values(state.links))
-        if (l.hp > 0) {
+        if (l.hp > 0 && l.started !== false) {
             for (let i = 1; i < l.cells.length; i++)
                 if (l.built.includes(l.cells[i - 1]) && l.built.includes(l.cells[i]))
                     line([T.point(l.cells[i - 1]), T.point(l.cells[i])], "#eeeedd", 3);
@@ -280,7 +281,18 @@ function draw(view) {
             ctx.fillStyle = "#13221a";
             ctx.font = "bold 12px sans-serif";
             ctx.textAlign = "center";
-            ctx.fillText(i === 0 ? "诱" : String(i), (a.pos[0] + 0.5) * cell, (a.pos[1] + 0.5) * cell + 4);
+            ctx.fillText(
+                state.aware &&
+                    a.id ===
+                        (
+                            g.actors.find((actor) => actor.active && actor.id === g.lureId) ||
+                            g.actors.find((actor) => actor.active)
+                        )?.id
+                    ? "L"
+                    : String(i + 1),
+                (a.pos[0] + 0.5) * cell,
+                (a.pos[1] + 0.5) * cell + 4,
+            );
             ctx.textAlign = "left";
         }
     const [x, y] = state.target.pos;
@@ -304,6 +316,7 @@ function draw(view) {
     }
 }
 function render() {
+    $("aware").checked = !!state.aware;
     const view = T.inspect(state);
     candidateList();
     draw(view);
@@ -321,13 +334,13 @@ function render() {
     $("status").replaceChildren();
     const dl = element("dl");
     for (const [k, v] of [
-        ["数据来源", state.map.kind === "native-generated" ? "KD 原生地图" : "手工边界场景"],
-        ["场地 / 群体", `${state.fields.length} / ${state.groups.length}`],
-        ["已放锚点", view.anchorCount],
-        ["实际阻挡格", view.physicalCells],
-        ["共享连接", view.sharedLinks],
-        ["目标到出口", view.exitPath.length ? `${view.exitPath.length - 1} 步` : "无路径"],
-        ["几何捕获准入", view.geometryReady ? "具备闭合条件" : "不成立"],
+        ["Input source", state.map.kind === "native-generated" ? "Native KD map" : "Authored edge case"],
+        ["Fields / groups", `${state.fields.length} / ${state.groups.length}`],
+        ["Placed anchors", view.anchorCount],
+        ["Blocked cells", view.physicalCells],
+        ["Shared links", view.sharedLinks],
+        ["Target to exit", view.exitPath.length ? `${view.exitPath.length - 1} steps` : "No path"],
+        ["Geometry admission", view.geometryReady ? "Closed geometry" : "Not eligible"],
     ]) {
         dl.append(element("dt", k), element("dd", v));
     }
@@ -337,7 +350,7 @@ function render() {
         $("status").append(
             element(
                 "p",
-                `${f.id} · ${f.group} · 层 ${f.layer + 1} · ${T.phaseName(f.phase)}${v.inside ? ` · 场外路径 ${v.escapePath.length ? "已打通" : "未打通"}` : ""}`,
+                `${f.id} · ${f.group} · Layer ${f.layer + 1} · ${T.phaseName(f.phase)}${v.inside ? ` · Outside-field path ${v.escapePath.length ? "Open" : "Blocked"}` : ""}`,
                 "muted",
             ),
         );
@@ -345,15 +358,17 @@ function render() {
     $("checks").replaceChildren(
         element(
             "div",
-            view.violations.length ? `非法占格 ${view.violations.join(" ")}` : "施工未覆盖保护格 / 墙体 / 原生实体",
+            view.violations.length
+                ? `Illegal placement ${view.violations.join(" ")}`
+                : "No protected, wall or foreign-entity cells overwritten",
             `check ${view.violations.length ? "warning" : "ok"}`,
         ),
     );
     text(
         "admission",
         view.geometryReady
-            ? "场地已提供准入。还需要至少两只合法 Spinner 与原生近战命中，才能进入被捕获状态。"
-            : "几何仅用于捕获准入。既有 Capture strands 不因破网自动解除。",
+            ? "Geometry is ready. Capture still requires two legal Spinners and a native melee hit."
+            : "Geometry only controls admission. Breaking webs does not cancel existing Capture strands.",
     );
     const table = $("actors");
     table.replaceChildren();
@@ -362,7 +377,7 @@ function render() {
             const a = g.actors[i],
                 row = element("tr");
             for (const v of [
-                `${g.id} / ${i === 0 ? "诱饵" : "施工"}${a.active ? "" : "（移除）"}`,
+                `${g.id} / ${state.aware && a.id === (g.actors.find((actor) => actor.active && actor.id === g.lureId) || g.actors.find((actor) => actor.active))?.id ? "Lure" : "Builder"}${a.active ? "" : " (removed)"}`,
                 a.pos.join(","),
                 a.last,
                 a.task?.k || "—",
@@ -380,13 +395,18 @@ function render() {
     const pane = $("selection");
     pane.replaceChildren();
     if (selected) {
-        pane.append(element("p", `格 ${selected}`));
+        pane.append(element("p", `Cell ${selected}`));
         const metadata = state.map.snapshot?.protectedCells.find((p) => T.key(p.x, p.y) === selected);
-        if (metadata) pane.append(element("p", `保护原因：${metadata.reasons.join(" / ")}`));
+        if (metadata) pane.append(element("p", `Protection reasons: ${metadata.reasons.join(" / ")}`));
         if (state.map.locked?.includes(selected))
-            pane.append(element("p", "锁定地格：原型不允许通行，阵营特定开锁仍待实机验证。"));
+            pane.append(
+                element(
+                    "p",
+                    "Locked cell: blocked in this model. Faction-specific lock access needs native verification.",
+                ),
+            );
         const a = state.anchors[selected];
-        if (a) pane.append(element("p", `锚点 HP ${a.hp.toFixed(2)} / ${a.max} · ${a.owners.join(" / ")}`));
+        if (a) pane.append(element("p", `Anchor HP ${a.hp.toFixed(2)} / ${a.max} · ${a.owners.join(" / ")}`));
         for (const l of Object.values(state.links).filter((l) => l.cells.includes(selected))) {
             const d = Math.min(
                 T.distance(T.point(selected), T.point(l.a)),
@@ -395,11 +415,11 @@ function render() {
             pane.append(
                 element(
                     "p",
-                    `连接 HP ${l.hp.toFixed(2)} / ${l.max} · 伤害倍率 ${Math.max(0.25, 1 - 0.15 * d).toFixed(2)} · ${l.owners.join(" / ")}`,
+                    `Link HP ${l.hp.toFixed(2)} / ${l.max} · Damage multiplier ${Math.max(0.25, 1 - 0.15 * d).toFixed(2)} · ${l.owners.join(" / ")}`,
                 ),
             );
         }
-    } else text("selection", "点击地图查看连接生命和共享归属。");
+    } else text("selection", "Select a cell to inspect link HP and ownership.");
     text(
         "raw",
         JSON.stringify(
@@ -461,7 +481,7 @@ action("removeActor", () => {
         .at(-1);
     if (a) {
         a.active = false;
-        state.log.push({ turn: state.turn, message: `移除 ${a.id}，检查施工和无主计时。` });
+        state.log.push({ turn: state.turn, message: `Remove ${a.id}, inspecting construction and ownership timers.` });
     }
 });
 $("reset").onclick = () => {
@@ -479,6 +499,10 @@ $("candidateSelect").onchange = () => {
     render();
 };
 $("showReach").onchange = render;
+$("aware").onchange = () => {
+    state.aware = $("aware").checked;
+    render();
+};
 $("showPaths").onchange = render;
 $("map").onclick = (event) => {
     const rect = $("map").getBoundingClientRect(),
@@ -490,7 +514,7 @@ $("map").onclick = (event) => {
         T.attack(state, selected, Math.max(0.1, Number($("damage").value) || 1), mode === "aoe");
     if (mode === "move") T.move(state, [x, y]);
     if (mode === "obstacle") {
-        if (!T.editTerrain(state, selected)) text("notice", "保护格或实体占用，拒绝改墙。");
+        if (!T.editTerrain(state, selected)) text("notice", "Protected or occupied cell; terrain edit rejected.");
         else preview = state.analysis.selected;
     }
     render();
@@ -509,13 +533,13 @@ $("stateFile").onchange = async () => {
     try {
         const saved = JSON.parse(await $("stateFile").files[0].text());
         if (saved.schema !== 1 || !saved.map?.walk || !saved.groups?.length || !saved.links)
-            throw Error("不是本原型的状态文件");
+            throw Error("Not a valid prototype state file");
         state = saved;
         current = saved.map.id;
         preview = state.analysis.selected;
         selected = null;
         render();
-        text("notice", "已恢复原型状态。此操作不是 KD 存档兼容测试。");
+        text("notice", "Restored prototype state. This does not test KD save compatibility.");
     } catch (e) {
         text("notice", e.message);
     }
@@ -527,7 +551,7 @@ $("mapFile").onchange = async () => {
         const rows = Array.isArray(input) ? input : [input];
         for (const r of rows) {
             if (!r.grid?.length || !r.movable || !r.protectedCells || !r.start || !r.end || !r.entities)
-                throw Error("需要 extract-native.mjs 格式的快照");
+                throw Error("Expected an extract-native.mjs snapshot");
             const m = T.nativeMap(r, maps.length);
             maps.push(m);
         }
@@ -536,4 +560,9 @@ $("mapFile").onchange = async () => {
         text("notice", e.message);
     }
 };
+const timing = JSON.parse($("pacing-data").textContent);
+text(
+    "timingComparison",
+    timing.map((r) => `${r.count} actors: ${r.travel} turns including arrival / ${r.onsite} turns on site`).join(" · "),
+);
 load();

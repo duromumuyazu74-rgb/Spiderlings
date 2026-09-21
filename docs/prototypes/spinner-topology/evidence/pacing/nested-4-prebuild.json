@@ -1,12 +1,12 @@
 {
   "id": "nested-4-prebuild",
-  "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+  "note": "Same candidate across counts. All unaware actors build; alerting assigns one lure. Two actors cannot add the outer layer. Includes travel from original spawn positions.",
   "initial": {
     "schema": 1,
     "map": {
       "id": "nested",
-      "name": "双层围场",
-      "desc": "四只才可规划第二层；内外圈共用核心，两格空隙。",
+      "name": "Nested enclosure",
+      "desc": "Four actors can plan a second layer around a common core with two free cells between boundaries.",
       "grid": [
         "###############################",
         "###############################",
@@ -473,6 +473,7 @@
     },
     "seed": "spinner-01",
     "turn": 0,
+    "aware": false,
     "target": {
       "pos": [2, 10],
       "kind": "player"
@@ -486,32 +487,36 @@
             "pos": [10, 8],
             "active": true,
             "budget": 0,
-            "last": "待命",
-            "path": []
+            "last": "Idle",
+            "path": [],
+            "worksite": [20, 9]
           },
           {
             "id": "s2",
             "pos": [12, 8],
             "active": true,
             "budget": 0,
-            "last": "待命",
-            "path": []
+            "last": "Idle",
+            "path": [],
+            "worksite": [20, 10]
           },
           {
             "id": "s3",
             "pos": [10, 12],
             "active": true,
             "budget": 0,
-            "last": "待命",
-            "path": []
+            "last": "Idle",
+            "path": [],
+            "worksite": [20, 11]
           },
           {
             "id": "s4",
             "pos": [12, 12],
             "active": true,
             "budget": 0,
-            "last": "待命",
-            "path": []
+            "last": "Idle",
+            "path": [],
+            "worksite": [21, 9]
           }
         ],
         "fieldIds": ["f1", "f2"],
@@ -751,6 +756,7 @@
         "b": "23,7",
         "cells": ["19,7", "20,7", "21,7", "22,7", "23,7"],
         "built": [],
+        "started": false,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -762,6 +768,7 @@
         "b": "23,13",
         "cells": ["23,7", "23,8", "23,9", "23,10", "23,11", "23,12", "23,13"],
         "built": [],
+        "started": false,
         "hp": 5,
         "max": 5,
         "owners": ["f1"],
@@ -773,6 +780,7 @@
         "b": "19,13",
         "cells": ["23,13", "22,13", "21,13", "20,13", "19,13"],
         "built": [],
+        "started": false,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -784,6 +792,7 @@
         "b": "19,7",
         "cells": ["19,13", "19,12", "19,11", "19,10", "19,9", "19,8", "19,7"],
         "built": [],
+        "started": false,
         "hp": 5,
         "max": 5,
         "owners": ["f1"],
@@ -795,6 +804,7 @@
         "b": "26,4",
         "cells": ["16,4", "17,4", "18,4", "19,4", "20,4", "21,4", "22,4", "23,4", "24,4", "25,4", "26,4"],
         "built": [],
+        "started": false,
         "hp": 7,
         "max": 7,
         "owners": ["f2"],
@@ -820,6 +830,7 @@
           "26,16"
         ],
         "built": [],
+        "started": false,
         "hp": 8,
         "max": 8,
         "owners": ["f2"],
@@ -831,6 +842,7 @@
         "b": "16,16",
         "cells": ["26,16", "25,16", "24,16", "23,16", "22,16", "21,16", "20,16", "19,16", "18,16", "17,16", "16,16"],
         "built": [],
+        "started": false,
         "hp": 7,
         "max": 7,
         "owners": ["f2"],
@@ -856,6 +868,7 @@
           "16,4"
         ],
         "built": [],
+        "started": false,
         "hp": 8,
         "max": 8,
         "owners": ["f2"],
@@ -865,11 +878,11 @@
     "log": [
       {
         "turn": 0,
-        "message": "发现 1819 个候选；推荐 围场。"
+        "message": "Found 1819 candidates; selected Enclosure."
       },
       {
         "turn": 0,
-        "message": "已保存计划 rectangle，评分 36.3；2 层。"
+        "message": "Saved plan rectangle, score 36.3; 2 layers."
       }
     ],
     "selection": null,
@@ -1469,224 +1482,11 @@
         "rectangle:19,8;23,8;23,12;19,12",
         "rectangle:19,8;23,8;23,14;19,14"
       ],
-      "fallback": "围场",
+      "fallback": "Enclosure",
       "policy": "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented."
     }
   },
   "actions": [
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
     {
       "type": "step"
     },
@@ -1896,44 +1696,27 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [11, 8],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
           "pos": [13, 8],
           "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "19,13",
-            "id": "19,13",
-            "f": "f1"
-          }
+          "category": "movement"
         },
         {
           "id": "s3",
           "pos": [11, 12],
           "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "19,7",
-            "id": "19,7",
-            "f": "f1"
-          }
+          "category": "movement"
         },
         {
           "id": "s4",
           "pos": [13, 12],
           "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "23,13",
-            "id": "23,13",
-            "f": "f1"
-          }
+          "category": "movement"
         }
       ]
     },
@@ -1942,6 +1725,7 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [12, 8],
           "budget": 0
         },
         {
@@ -1991,12 +1775,13 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [13, 8],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
-          "pos": [15, 9],
+          "pos": [15, 8],
           "budget": 0.5,
           "category": "movement"
         },
@@ -2019,23 +1804,43 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [14, 8],
           "budget": 0
         },
         {
           "id": "s2",
-          "pos": [16, 10],
-          "budget": 0
+          "category": "placement",
+          "task": {
+            "type": "anchor",
+            "k": "19,7",
+            "id": "19,7",
+            "f": "f1"
+          }
         },
         {
           "id": "s3",
-          "pos": [14, 11],
+          "pos": [14, 12],
           "budget": 0
         },
         {
           "id": "s4",
-          "pos": [16, 12],
-          "budget": 0
+          "category": "placement",
+          "task": {
+            "type": "anchor",
+            "k": "19,13",
+            "id": "19,13",
+            "f": "f1"
+          }
         }
+      ],
+      "anchors": [
+        ["19,7", true, 2, 0],
+        ["19,13", true, 2, 0]
+      ],
+      "links": [
+        ["19,7|23,7", 4, 0, ["19,7"]],
+        ["19,13|23,13", 4, 0, ["19,13"]],
+        ["19,13|19,7", 5, 0, ["19,7", "19,13"]]
       ]
     },
     {
@@ -2043,8 +1848,83 @@
       "actors": [
         {
           "id": "s1",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "19,8",
+            "id": "19,13|19,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s2",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "19,9",
+            "id": "19,13|19,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s3",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "19,12",
+            "id": "19,13|19,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s4",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "19,11",
+            "id": "19,13|19,7",
+            "f": "f1"
+          }
+        }
+      ],
+      "links": [["19,13|19,7", 5, 0, ["19,7", "19,13", "19,8", "19,9", "19,12", "19,11"]]],
+      "physicalCells": 6
+    },
+    {
+      "turn": 8,
+      "actors": [
+        {
+          "id": "s1",
           "budget": 1,
           "category": "budget-delay"
+        },
+        {
+          "id": "s2",
+          "pos": [16, 8],
+          "budget": 0,
+          "category": "movement"
+        },
+        {
+          "id": "s3",
+          "budget": 1,
+          "category": "budget-delay"
+        },
+        {
+          "id": "s4",
+          "pos": [16, 12],
+          "budget": 0,
+          "category": "movement"
+        }
+      ]
+    },
+    {
+      "turn": 9,
+      "actors": [
+        {
+          "id": "s1",
+          "pos": [15, 8],
+          "budget": 0.5,
+          "category": "movement"
         },
         {
           "id": "s2",
@@ -2053,8 +1933,9 @@
         },
         {
           "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
+          "pos": [15, 12],
+          "budget": 0.5,
+          "category": "movement"
         },
         {
           "id": "s4",
@@ -2064,24 +1945,23 @@
       ]
     },
     {
-      "turn": 8,
+      "turn": 10,
       "actors": [
         {
           "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
+          "pos": [16, 9],
+          "budget": 0
         },
         {
           "id": "s2",
-          "pos": [17, 11],
+          "pos": [17, 8],
           "budget": 0.5,
           "category": "movement"
         },
         {
           "id": "s3",
-          "pos": [15, 11],
-          "budget": 0.5,
-          "category": "movement"
+          "pos": [16, 13],
+          "budget": 0
         },
         {
           "id": "s4",
@@ -2092,122 +1972,54 @@
       ]
     },
     {
-      "turn": 9,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [18, 12],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [16, 10],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [18, 13],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 10,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
       "turn": 11,
       "actors": [
         {
           "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
+          "budget": 1,
+          "category": "budget-delay"
         },
         {
           "id": "s2",
-          "budget": 0.5,
-          "category": "placement"
+          "pos": [18, 8],
+          "budget": 0
         },
         {
           "id": "s3",
-          "pos": [17, 9],
-          "budget": 0.5,
-          "category": "movement"
+          "budget": 1,
+          "category": "budget-delay"
         },
         {
           "id": "s4",
-          "pos": [19, 13],
-          "budget": 0.5,
-          "category": "movement"
+          "pos": [18, 12],
+          "budget": 0
         }
-      ],
-      "anchors": [["19,13", true, 2, 0]]
+      ]
     },
     {
       "turn": 12,
       "actors": [
         {
           "id": "s1",
-          "budget": 0
+          "pos": [17, 9],
+          "budget": 0.5,
+          "category": "movement"
         },
         {
           "id": "s2",
-          "pos": [18, 11],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "19,7",
-            "id": "19,7",
-            "f": "f1"
-          }
+          "budget": 1,
+          "category": "budget-delay"
         },
         {
           "id": "s3",
-          "pos": [18, 9],
-          "budget": 0,
-          "task": {
-            "type": "anchor",
-            "k": "23,13",
-            "id": "23,13",
-            "f": "f1"
-          }
+          "pos": [17, 13],
+          "budget": 0.5,
+          "category": "movement"
         },
         {
           "id": "s4",
-          "pos": [19, 12],
-          "budget": 0,
-          "task": {
-            "type": "anchor",
-            "k": "23,7",
-            "id": "23,7",
-            "f": "f1"
-          }
+          "budget": 1,
+          "category": "budget-delay"
         }
       ]
     },
@@ -2216,45 +2028,19 @@
       "actors": [
         {
           "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
+          "pos": [18, 9],
+          "budget": 0
         },
         {
           "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 14,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [18, 10],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
           "pos": [19, 9],
           "budget": 0.5,
           "category": "movement"
+        },
+        {
+          "id": "s3",
+          "pos": [18, 13],
+          "budget": 0
         },
         {
           "id": "s4",
@@ -2265,31 +2051,7 @@
       ]
     },
     {
-      "turn": 15,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [18, 9],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [20, 10],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [20, 11],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 16,
+      "turn": 14,
       "actors": [
         {
           "id": "s1",
@@ -2298,237 +2060,17 @@
         },
         {
           "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 17,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [18, 8],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [21, 11],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [20, 10],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 18,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "placement"
-        },
-        {
-          "id": "s3",
-          "pos": [20, 11],
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "19,12",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [20, 9],
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "19,8",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        }
-      ],
-      "anchors": [["19,7", true, 2, 0]]
-    },
-    {
-      "turn": 19,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 20,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "19,7",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension"
-        }
-      ],
-      "links": [["19,13|19,7", 5, 0, ["19,7", "19,12", "19,8"]]],
-      "physicalCells": 3
-    },
-    {
-      "turn": 21,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "19,9",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "19,11",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [21, 9],
-          "budget": 0,
-          "category": "movement",
+          "category": "placement",
           "task": {
             "type": "anchor",
             "k": "23,7",
             "id": "23,7",
             "f": "f1"
           }
-        }
-      ],
-      "links": [["19,13|19,7", 5, 0, ["19,7", "19,12", "19,8", "19,9", "19,11"]]],
-      "physicalCells": 5
-    },
-    {
-      "turn": 22,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
         },
         {
           "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 23,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [18, 9],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "19,13",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [21, 11],
-          "budget": 0.5,
-          "category": "movement",
+          "category": "placement",
           "task": {
             "type": "anchor",
             "k": "23,13",
@@ -2538,142 +2080,549 @@
         },
         {
           "id": "s4",
-          "pos": [22, 8],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 24,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [18, 10],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [22, 12],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "placement"
-        }
-      ],
-      "anchors": [["23,7", true, 2, 0]]
-    },
-    {
-      "turn": 25,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 26,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [18, 11],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "placement"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
           "category": "extension",
           "task": {
             "type": "extend",
-            "k": "22,7",
+            "k": "20,13",
+            "id": "19,13|23,13",
+            "f": "f1"
+          }
+        }
+      ],
+      "anchors": [
+        ["23,7", true, 2, 0],
+        ["23,13", true, 2, 0]
+      ],
+      "links": [
+        ["19,7|23,7", 4, 0, ["19,7", "23,7"]],
+        ["23,13|23,7", 5, 0, ["23,7", "23,13"]],
+        ["19,13|23,13", 4, 0, ["19,13", "23,13", "20,13"]]
+      ],
+      "physicalCells": 8
+    },
+    {
+      "turn": 15,
+      "actors": [
+        {
+          "id": "s1",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "20,7",
             "id": "19,7|23,7",
             "f": "f1"
           }
-        }
-      ],
-      "anchors": [["23,13", true, 2, 0]],
-      "links": [["19,7|23,7", 4, 0, ["22,7"]]],
-      "physicalCells": 6
-    },
-    {
-      "turn": 27,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
         },
         {
           "id": "s2",
-          "pos": [18, 12],
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "19,13",
-            "id": "19,13|23,13",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
           "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "22,13",
-            "id": "19,13|23,13",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
           "task": {
             "type": "extend",
             "k": "21,7",
             "id": "19,7|23,7",
             "f": "f1"
           }
+        },
+        {
+          "id": "s3",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "21,13",
+            "id": "19,13|23,13",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s4",
+          "task": {
+            "type": "extend",
+            "k": "22,13",
+            "id": "19,13|23,13",
+            "f": "f1"
+          }
         }
       ],
       "links": [
-        ["19,7|23,7", 4, 0, ["22,7", "21,7"]],
-        ["19,13|23,13", 4, 0, ["22,13"]]
+        ["19,7|23,7", 4, 0, ["19,7", "23,7", "20,7", "21,7"]],
+        ["19,13|23,13", 4, 0, ["19,13", "23,13", "20,13", "21,13", "22,13"]]
       ],
-      "physicalCells": 8
+      "physicalCells": 13
+    },
+    {
+      "turn": 16,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "22,7",
+            "id": "19,7|23,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s2",
+          "task": {
+            "type": "extend",
+            "k": "23,12",
+            "id": "23,13|23,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s3",
+          "budget": 1,
+          "category": "budget-delay"
+        },
+        {
+          "id": "s4",
+          "task": {
+            "type": "extend",
+            "k": "23,11",
+            "id": "23,13|23,7",
+            "f": "f1"
+          }
+        }
+      ],
+      "links": [
+        ["19,7|23,7", 4, 0, ["19,7", "23,7", "20,7", "21,7", "22,7"]],
+        ["23,13|23,7", 5, 0, ["23,7", "23,13", "23,12", "23,11"]]
+      ],
+      "physicalCells": 16
+    },
+    {
+      "turn": 17,
+      "actors": [
+        {
+          "id": "s1",
+          "pos": [19, 10],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s2",
+          "task": {
+            "type": "extend",
+            "k": "23,10",
+            "id": "23,13|23,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s3",
+          "pos": [19, 12],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s4",
+          "task": {
+            "type": "extend",
+            "k": "23,8",
+            "id": "23,13|23,7",
+            "f": "f1"
+          }
+        }
+      ],
+      "links": [["23,13|23,7", 5, 0, ["23,7", "23,13", "23,12", "23,11", "23,10", "23,8"]]],
+      "physicalCells": 18
+    },
+    {
+      "turn": 18,
+      "fields": [
+        {
+          "id": "f1",
+          "phase": "ready"
+        }
+      ],
+      "actors": [
+        {
+          "id": "s1",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "23,9",
+            "id": "23,13|23,7",
+            "f": "f1"
+          }
+        },
+        {
+          "id": "s2",
+          "category": "idle"
+        },
+        {
+          "id": "s3",
+          "category": "idle"
+        },
+        {
+          "id": "s4",
+          "category": "idle"
+        }
+      ],
+      "links": [["23,13|23,7", 5, 0, ["23,7", "23,13", "23,12", "23,11", "23,10", "23,8", "23,9"]]],
+      "physicalCells": 19
+    },
+    {
+      "turn": 19,
+      "actors": [
+        {
+          "id": "s1",
+          "pos": [20, 9],
+          "budget": 0,
+          "category": "movement"
+        },
+        {
+          "id": "s2",
+          "pos": [20, 10],
+          "budget": 0,
+          "category": "movement"
+        },
+        {
+          "id": "s3",
+          "category": "placement",
+          "task": {
+            "type": "anchor",
+            "k": "16,16",
+            "id": "16,16",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "pos": [20, 11],
+          "budget": 0,
+          "category": "movement"
+        }
+      ],
+      "anchors": [["16,16", true, 2, 0]],
+      "links": [
+        ["16,16|26,16", 7, 0, ["16,16"]],
+        ["16,16|16,4", 8, 0, ["16,16"]]
+      ]
+    },
+    {
+      "turn": 20,
+      "actors": [
+        {
+          "id": "s1",
+          "budget": 1,
+          "category": "budget-delay",
+          "task": {
+            "type": "anchor",
+            "k": "16,4",
+            "id": "16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "budget": 1,
+          "category": "budget-delay",
+          "task": {
+            "type": "anchor",
+            "k": "26,16",
+            "id": "26,16",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s3",
+          "pos": [20, 12],
+          "budget": 0,
+          "category": "movement",
+          "task": {
+            "type": "anchor",
+            "k": "26,4",
+            "id": "26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "category": "idle"
+        }
+      ]
+    },
+    {
+      "turn": 21,
+      "actors": [
+        {
+          "id": "s1",
+          "pos": [19, 8],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s2",
+          "pos": [21, 10],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s3",
+          "budget": 1,
+          "category": "budget-delay"
+        }
+      ]
+    },
+    {
+      "turn": 22,
+      "actors": [
+        {
+          "id": "s1",
+          "category": "placement"
+        },
+        {
+          "id": "s2",
+          "pos": [22, 11],
+          "budget": 0
+        },
+        {
+          "id": "s3",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "16,15",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "16,14",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        }
+      ],
+      "anchors": [["16,4", true, 2, 0]],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4"]],
+        ["16,16|16,4", 8, 0, ["16,16", "16,4", "16,15", "16,14"]]
+      ],
+      "physicalCells": 23
+    },
+    {
+      "turn": 23,
+      "actors": [
+        {
+          "id": "s1",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "16,5",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "budget": 1,
+          "category": "budget-delay"
+        },
+        {
+          "id": "s3",
+          "task": {
+            "type": "extend",
+            "k": "16,13",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "task": {
+            "type": "extend",
+            "k": "16,12",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        }
+      ],
+      "links": [["16,16|16,4", 8, 0, ["16,16", "16,4", "16,15", "16,14", "16,5", "16,13", "16,12"]]],
+      "physicalCells": 26
+    },
+    {
+      "turn": 24,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "16,11",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "pos": [23, 12],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s3",
+          "pos": [19, 11],
+          "budget": 0.5,
+          "category": "movement",
+          "task": {
+            "type": "extend",
+            "k": "16,6",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "budget": 1,
+          "category": "budget-delay"
+        }
+      ],
+      "links": [["16,16|16,4", 8, 0, ["16,16", "16,4", "16,15", "16,14", "16,5", "16,13", "16,12", "16,11"]]],
+      "physicalCells": 27
+    },
+    {
+      "turn": 25,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "16,6",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "category": "placement"
+        },
+        {
+          "id": "s3",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "16,7",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "16,8",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        }
+      ],
+      "anchors": [["26,16", true, 2, 0]],
+      "links": [
+        ["26,16|26,4", 8, 0, ["26,16"]],
+        ["16,16|26,16", 7, 0, ["16,16", "26,16"]],
+        [
+          "16,16|16,4",
+          8,
+          0,
+          ["16,16", "16,4", "16,15", "16,14", "16,5", "16,13", "16,12", "16,11", "16,6", "16,7", "16,8"]
+        ]
+      ],
+      "physicalCells": 30
+    },
+    {
+      "turn": 26,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "16,9",
+            "id": "16,16|16,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "25,16",
+            "id": "16,16|26,16",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s3",
+          "pos": [19, 12],
+          "budget": 0,
+          "category": "movement",
+          "task": {
+            "type": "extend",
+            "k": "17,16",
+            "id": "16,16|26,16",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "pos": [20, 10],
+          "budget": 0.5,
+          "category": "movement"
+        }
+      ],
+      "links": [
+        ["16,16|26,16", 7, 0, ["16,16", "26,16", "25,16"]],
+        [
+          "16,16|16,4",
+          8,
+          0,
+          ["16,16", "16,4", "16,15", "16,14", "16,5", "16,13", "16,12", "16,11", "16,6", "16,7", "16,8", "16,9"]
+        ]
+      ],
+      "physicalCells": 33
+    },
+    {
+      "turn": 27,
+      "actors": [
+        {
+          "id": "s1",
+          "pos": [20, 8],
+          "budget": 0,
+          "category": "movement",
+          "task": {
+            "type": "anchor",
+            "k": "26,4",
+            "id": "26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "task": {
+            "type": "extend",
+            "k": "24,16",
+            "id": "16,16|26,16",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s3",
+          "category": "extension"
+        },
+        {
+          "id": "s4",
+          "pos": [21, 9],
+          "budget": 0
+        }
+      ],
+      "links": [["16,16|26,16", 7, 0, ["16,16", "26,16", "25,16", "24,16", "17,16"]]],
+      "physicalCells": 35
     },
     {
       "turn": 28,
@@ -2685,1544 +2634,15 @@
         },
         {
           "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 29,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "21,13",
-            "id": "19,13|23,13",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "23,7",
-            "id": "19,7|23,7",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [
-        ["19,7|23,7", 4, 0, ["22,7", "21,7", "23,7"]],
-        ["19,13|23,13", 4, 0, ["22,13", "19,13", "21,13"]]
-      ],
-      "physicalCells": 11
-    },
-    {
-      "turn": 30,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "19,13",
-            "id": "19,13|19,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "23,12",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "23,7",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [
-        ["23,13|23,7", 5, 0, ["23,12", "23,7"]],
-        ["19,13|19,7", 5, 0, ["19,7", "19,12", "19,8", "19,9", "19,11", "19,13"]]
-      ],
-      "physicalCells": 12
-    },
-    {
-      "turn": 31,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 32,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [19, 12],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "20,13",
-            "id": "19,13|23,13",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "23,11",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "23,8",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [["23,13|23,7", 5, 0, ["23,12", "23,7", "23,11", "23,8"]]],
-      "physicalCells": 14
-    },
-    {
-      "turn": 33,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "23,13",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "23,9",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [
-        ["23,13|23,7", 5, 0, ["23,12", "23,7", "23,11", "23,8", "23,13", "23,9"]],
-        ["19,13|23,13", 4, 0, ["22,13", "19,13", "21,13", "20,13"]]
-      ],
-      "physicalCells": 17
-    },
-    {
-      "turn": 34,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 35,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [20, 12],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "23,10",
-            "id": "23,13|23,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "23,13",
-            "id": "19,13|23,13",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [21, 8],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "20,7",
-            "id": "19,7|23,7",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [["19,13|23,13", 4, 0, ["22,13", "19,13", "21,13", "20,13", "23,13"]]]
-    },
-    {
-      "turn": 36,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [21, 12],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [22, 11],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "19,7",
-            "id": "19,7|23,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "extension"
-        }
-      ],
-      "links": [["19,7|23,7", 4, 0, ["22,7", "21,7", "23,7", "20,7"]]],
-      "physicalCells": 18
-    },
-    {
-      "turn": 37,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 38,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [22, 12],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [22, 10],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
-    },
-    {
-      "turn": 39,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [22, 11],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [21, 9],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 40,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 41,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "pos": [20, 8],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ],
-      "links": [["23,13|23,7", 5, 0, ["23,12", "23,7", "23,11", "23,8", "23,13", "23,9", "23,10"]]],
-      "physicalCells": 19
-    },
-    {
-      "turn": 42,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [21, 10],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "19,7",
-            "id": "19,7|23,7",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "category": "idle"
-        },
-        {
-          "id": "s4",
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 43,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 44,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [20, 9],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "idle"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
-    },
-    {
-      "turn": 45,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [19, 8],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 46,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 47,
-      "fields": [
-        {
-          "id": "f1",
-          "phase": "ready"
-        }
-      ],
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "idle"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ],
-      "links": [["19,7|23,7", 4, 0, ["22,7", "21,7", "23,7", "20,7", "19,7"]]]
-    },
-    {
-      "turn": 48,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [19, 7],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "16,4",
-            "id": "16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [21, 9],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "26,4",
-            "id": "26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [22, 9],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "16,16",
-            "id": "16,16",
-            "f": "f2"
-          }
-        }
-      ]
-    },
-    {
-      "turn": 49,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 50,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [18, 6],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [22, 8],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [22, 10],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 51,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [17, 5],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [23, 7],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [21, 11],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 52,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 53,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "placement"
-        },
-        {
-          "id": "s3",
-          "pos": [24, 6],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [20, 12],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ],
-      "anchors": [["16,4", true, 2, 0]]
-    },
-    {
-      "turn": 54,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [18, 5],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "26,4",
-            "id": "26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [24, 7],
-          "budget": 0,
-          "task": {
-            "type": "anchor",
-            "k": "16,16",
-            "id": "16,16",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [21, 12],
-          "budget": 0,
-          "task": {
-            "type": "anchor",
-            "k": "26,16",
-            "id": "26,16",
-            "f": "f2"
-          }
-        }
-      ]
-    },
-    {
-      "turn": 55,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 56,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [19, 5],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [24, 8],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [22, 12],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 57,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [20, 5],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [23, 9],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [23, 13],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 58,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 59,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [21, 5],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [22, 10],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [24, 14],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 60,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [22, 5],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [21, 11],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [25, 15],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 61,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 62,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [23, 5],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [20, 12],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "placement"
-        }
-      ],
-      "anchors": [["26,16", true, 2, 0]]
-    },
-    {
-      "turn": 63,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [24, 5],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "pos": [19, 13],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "idle"
-        }
-      ]
-    },
-    {
-      "turn": 64,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 65,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [25, 5],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [18, 14],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
-    },
-    {
-      "turn": 66,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "placement"
-        },
-        {
-          "id": "s3",
-          "pos": [17, 15],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "26,15",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        }
-      ],
-      "anchors": [["26,4", true, 2, 0]],
-      "links": [["26,16|26,4", 8, 0, ["26,15"]]],
-      "physicalCells": 20
-    },
-    {
-      "turn": 67,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 68,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "25,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "placement"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "25,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        }
-      ],
-      "anchors": [["16,16", true, 2, 0]],
-      "links": [
-        ["16,4|26,4", 7, 0, ["25,4"]],
-        ["16,16|26,16", 7, 0, ["25,16"]]
-      ],
-      "physicalCells": 22
-    },
-    {
-      "turn": 69,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "24,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "16,15",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "24,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [
-        ["16,4|26,4", 7, 0, ["25,4", "24,4"]],
-        ["16,16|26,16", 7, 0, ["25,16", "24,16"]],
-        ["16,16|16,4", 8, 0, ["16,15"]]
-      ],
-      "physicalCells": 25
-    },
-    {
-      "turn": 70,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 71,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "26,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "16,14",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "26,14",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [
-        ["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4"]],
-        ["26,16|26,4", 8, 0, ["26,15", "26,14"]],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14"]]
-      ],
-      "physicalCells": 28
-    },
-    {
-      "turn": 72,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "26,4",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "16,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "26,16",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [
-        ["26,16|26,4", 8, 0, ["26,15", "26,14", "26,4", "26,16"]],
-        ["16,16|26,16", 7, 0, ["25,16", "24,16", "16,16"]]
-      ],
-      "physicalCells": 30
-    },
-    {
-      "turn": 73,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 74,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "26,5",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "16,16",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "26,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [
-        ["26,16|26,4", 8, 0, ["26,15", "26,14", "26,4", "26,16", "26,5"]],
-        ["16,16|26,16", 7, 0, ["25,16", "24,16", "16,16", "26,16"]],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16"]]
-      ],
-      "physicalCells": 31
-    },
-    {
-      "turn": 75,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "26,6",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "17,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [24, 15],
-          "budget": 0,
-          "category": "movement",
           "task": {
             "type": "extend",
             "k": "23,16",
             "id": "16,16|26,16",
             "f": "f2"
           }
-        }
-      ],
-      "links": [
-        ["26,16|26,4", 8, 0, ["26,15", "26,14", "26,4", "26,16", "26,5", "26,6"]],
-        ["16,16|26,16", 7, 0, ["25,16", "24,16", "16,16", "26,16", "17,16"]]
-      ],
-      "physicalCells": 33
-    },
-    {
-      "turn": 76,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
         },
         {
           "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 77,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [24, 5],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "23,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension",
           "task": {
             "type": "extend",
             "k": "18,16",
@@ -4232,341 +2652,39 @@
         },
         {
           "id": "s4",
-          "budget": 0.5,
-          "category": "extension"
+          "budget": 1,
+          "category": "budget-delay",
+          "task": {
+            "type": "extend",
+            "k": "19,16",
+            "id": "16,16|26,16",
+            "f": "f2"
+          }
         }
       ],
-      "links": [["16,16|26,16", 7, 0, ["25,16", "24,16", "16,16", "26,16", "17,16", "18,16", "23,16"]]],
-      "physicalCells": 35
+      "links": [["16,16|26,16", 7, 0, ["16,16", "26,16", "25,16", "24,16", "17,16", "23,16", "18,16"]]],
+      "physicalCells": 37
     },
     {
-      "turn": 78,
+      "turn": 29,
       "actors": [
         {
           "id": "s1",
-          "budget": 0
+          "pos": [21, 8],
+          "budget": 0.5,
+          "category": "movement"
         },
         {
           "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "pos": [17, 14],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "16,13",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [23, 15],
-          "budget": 0,
-          "category": "movement",
           "task": {
             "type": "extend",
             "k": "22,16",
             "id": "16,16|26,16",
             "f": "f2"
           }
-        }
-      ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4"]]],
-      "physicalCells": 36
-    },
-    {
-      "turn": 79,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
         },
         {
           "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 80,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [23, 5],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "22,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension"
-        }
-      ],
-      "links": [
-        ["16,16|26,16", 7, 0, ["25,16", "24,16", "16,16", "26,16", "17,16", "18,16", "23,16", "22,16"]],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13"]]
-      ],
-      "physicalCells": 38
-    },
-    {
-      "turn": 81,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "pos": [17, 13],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "16,12",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [22, 15],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "21,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4"]]],
-      "physicalCells": 39
-    },
-    {
-      "turn": 82,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 83,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [22, 5],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "21,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension"
-        }
-      ],
-      "links": [
-        ["16,16|26,16", 7, 0, ["25,16", "24,16", "16,16", "26,16", "17,16", "18,16", "23,16", "22,16", "21,16"]],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13", "16,12"]]
-      ],
-      "physicalCells": 41
-    },
-    {
-      "turn": 84,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "pos": [17, 12],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "16,11",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "pos": [21, 15],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "20,16",
-            "id": "16,16|26,16",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4", "21,4"]]],
-      "physicalCells": 42
-    },
-    {
-      "turn": 85,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 86,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [21, 5],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "20,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension"
-        }
-      ],
-      "links": [
-        [
-          "16,16|26,16",
-          7,
-          0,
-          ["25,16", "24,16", "16,16", "26,16", "17,16", "18,16", "23,16", "22,16", "21,16", "20,16"]
-        ],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11"]]
-      ],
-      "physicalCells": 44
-    },
-    {
-      "turn": 87,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "pos": [17, 13],
-          "budget": 0,
-          "category": "movement",
           "task": {
             "type": "extend",
             "k": "19,16",
@@ -4576,160 +2694,51 @@
         },
         {
           "id": "s4",
-          "pos": [22, 15],
-          "budget": 0,
+          "pos": [21, 10],
+          "budget": 0.5,
           "category": "movement",
           "task": {
             "type": "extend",
-            "k": "26,13",
-            "id": "26,16|26,4",
+            "k": "20,16",
+            "id": "16,16|26,16",
             "f": "f2"
           }
         }
       ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4", "21,4", "20,4"]]],
-      "physicalCells": 45
-    },
-    {
-      "turn": 88,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 89,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [20, 5],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "19,4",
-            "id": "16,4|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [17, 14],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [23, 15],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 90,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "pos": [18, 15],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [24, 15],
-          "budget": 0
-        }
+      "links": [
+        ["16,16|26,16", 7, 0, ["16,16", "26,16", "25,16", "24,16", "17,16", "23,16", "18,16", "22,16", "19,16"]]
       ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4", "21,4", "20,4", "19,4"]]],
-      "physicalCells": 46
+      "physicalCells": 39
     },
     {
-      "turn": 91,
+      "turn": 30,
       "actors": [
         {
           "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
+          "pos": [22, 7],
+          "budget": 0
         },
         {
           "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 92,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [19, 5],
-          "budget": 0.5,
-          "category": "movement",
           "task": {
             "type": "extend",
-            "k": "18,4",
-            "id": "16,4|26,4",
+            "k": "20,16",
+            "id": "16,16|26,16",
             "f": "f2"
           }
         },
         {
           "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
+          "task": {
+            "type": "extend",
+            "k": "21,16",
+            "id": "16,16|26,16",
+            "f": "f2"
+          }
         },
         {
           "id": "s4",
-          "pos": [25, 14],
-          "budget": 0.5,
-          "category": "movement"
+          "category": "idle"
         }
       ],
       "links": [
@@ -4737,28 +2746,109 @@
           "16,16|26,16",
           7,
           0,
-          ["25,16", "24,16", "16,16", "26,16", "17,16", "18,16", "23,16", "22,16", "21,16", "20,16", "19,16"]
+          ["16,16", "26,16", "25,16", "24,16", "17,16", "23,16", "18,16", "22,16", "19,16", "20,16", "21,16"]
         ]
       ],
-      "physicalCells": 47
+      "physicalCells": 41
     },
     {
-      "turn": 93,
+      "turn": 31,
       "actors": [
         {
           "id": "s1",
-          "budget": 0
+          "category": "placement"
         },
         {
           "id": "s2",
-          "budget": 0,
-          "category": "extension"
+          "task": {
+            "type": "extend",
+            "k": "26,15",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
         },
         {
           "id": "s3",
-          "pos": [19, 15],
+          "budget": 1,
+          "category": "budget-delay"
+        },
+        {
+          "id": "s4",
+          "pos": [22, 11],
           "budget": 0,
           "category": "movement",
+          "task": {
+            "type": "extend",
+            "k": "26,14",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        }
+      ],
+      "anchors": [["26,4", true, 2, 0]],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4"]],
+        ["26,16|26,4", 8, 0, ["26,16", "26,4", "26,15"]]
+      ],
+      "physicalCells": 43
+    },
+    {
+      "turn": 32,
+      "actors": [
+        {
+          "id": "s1",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "25,4",
+            "id": "16,4|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "pos": [24, 12],
+          "budget": 0,
+          "category": "movement",
+          "task": {
+            "type": "extend",
+            "k": "26,5",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s3",
+          "pos": [20, 11],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s4",
+          "category": "extension"
+        }
+      ],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4"]],
+        ["26,16|26,4", 8, 0, ["26,16", "26,4", "26,15", "26,14"]]
+      ],
+      "physicalCells": 45
+    },
+    {
+      "turn": 33,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "24,4",
+            "id": "16,4|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "category": "extension",
           "task": {
             "type": "extend",
             "k": "26,13",
@@ -4767,56 +2857,191 @@
           }
         },
         {
-          "id": "s4",
-          "pos": [25, 13],
+          "id": "s3",
+          "pos": [21, 12],
           "budget": 0,
           "task": {
             "type": "extend",
-            "k": "26,7",
+            "k": "26,12",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "budget": 1,
+          "category": "budget-delay",
+          "task": {
+            "type": "extend",
+            "k": "26,5",
             "id": "26,16|26,4",
             "f": "f2"
           }
         }
       ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4", "21,4", "20,4", "19,4", "18,4"]]],
-      "physicalCells": 48
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4"]],
+        ["26,16|26,4", 8, 0, ["26,16", "26,4", "26,15", "26,14", "26,13"]]
+      ],
+      "physicalCells": 47
     },
     {
-      "turn": 94,
+      "turn": 34,
       "actors": [
         {
           "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
+          "task": {
+            "type": "extend",
+            "k": "23,4",
+            "id": "16,4|26,4",
+            "f": "f2"
+          }
         },
         {
           "id": "s2",
           "budget": 1,
-          "category": "budget-delay"
+          "category": "budget-delay",
+          "task": {
+            "type": "extend",
+            "k": "26,5",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s3",
+          "category": "extension"
+        },
+        {
+          "id": "s4",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "26,11",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        }
+      ],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4"]],
+        ["26,16|26,4", 8, 0, ["26,16", "26,4", "26,15", "26,14", "26,13", "26,12", "26,11"]]
+      ],
+      "physicalCells": 50
+    },
+    {
+      "turn": 35,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "22,4",
+            "id": "16,4|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "26,10",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
         },
         {
           "id": "s3",
           "budget": 1,
-          "category": "budget-delay"
+          "category": "budget-delay",
+          "task": {
+            "type": "extend",
+            "k": "26,9",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
         },
         {
           "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
+          "pos": [22, 10],
+          "budget": 0.5,
+          "category": "movement",
+          "task": {
+            "type": "extend",
+            "k": "26,5",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
         }
-      ]
+      ],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4", "22,4"]],
+        ["26,16|26,4", 8, 0, ["26,16", "26,4", "26,15", "26,14", "26,13", "26,12", "26,11", "26,10"]]
+      ],
+      "physicalCells": 52
     },
     {
-      "turn": 95,
+      "turn": 36,
       "actors": [
         {
           "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
+          "task": {
+            "type": "extend",
+            "k": "21,4",
+            "id": "16,4|26,4",
+            "f": "f2"
+          }
         },
         {
           "id": "s2",
-          "pos": [18, 5],
+          "task": {
+            "type": "extend",
+            "k": "26,9",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s3",
+          "pos": [22, 11],
+          "budget": 0.5,
+          "category": "movement",
+          "task": {
+            "type": "extend",
+            "k": "26,8",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s4",
+          "pos": [23, 9],
+          "budget": 0
+        }
+      ],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4", "22,4", "21,4"]],
+        ["26,16|26,4", 8, 0, ["26,16", "26,4", "26,15", "26,14", "26,13", "26,12", "26,11", "26,10", "26,9"]]
+      ],
+      "physicalCells": 54,
+      "exitReachable": false
+    },
+    {
+      "turn": 37,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "20,4",
+            "id": "16,4|26,4",
+            "f": "f2"
+          }
+        },
+        {
+          "id": "s2",
+          "pos": [23, 11],
           "budget": 0.5,
           "category": "movement",
           "task": {
@@ -4828,597 +3053,162 @@
         },
         {
           "id": "s3",
-          "pos": [20, 15],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [25, 12],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 96,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
           "category": "extension"
         },
         {
-          "id": "s3",
-          "pos": [21, 15],
-          "budget": 0
-        },
-        {
           "id": "s4",
-          "pos": [25, 11],
-          "budget": 0
-        }
-      ],
-      "links": [["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4", "21,4", "20,4", "19,4", "18,4", "17,4"]]],
-      "physicalCells": 49
-    },
-    {
-      "turn": 97,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 98,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [17, 5],
-          "budget": 0.5,
-          "category": "movement",
+          "category": "extension",
           "task": {
             "type": "extend",
-            "k": "16,4",
+            "k": "26,7",
+            "id": "26,16|26,4",
+            "f": "f2"
+          }
+        }
+      ],
+      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4", "22,4", "21,4", "20,4"]],
+        [
+          "26,16|26,4",
+          8,
+          0,
+          ["26,16", "26,4", "26,15", "26,14", "26,13", "26,12", "26,11", "26,10", "26,9", "26,8", "26,7"]
+        ]
+      ],
+      "physicalCells": 57
+    },
+    {
+      "turn": 38,
+      "actors": [
+        {
+          "id": "s1",
+          "task": {
+            "type": "extend",
+            "k": "19,4",
             "id": "16,4|26,4",
             "f": "f2"
           }
         },
         {
-          "id": "s3",
-          "pos": [22, 15],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [25, 10],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 99,
-      "actors": [
-        {
-          "id": "s1",
+          "id": "s2",
+          "pos": [22, 10],
           "budget": 0
         },
         {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
           "id": "s3",
-          "pos": [23, 15],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "pos": [25, 9],
-          "budget": 0
-        }
-      ],
-      "links": [
-        ["16,4|26,4", 7, 0, ["25,4", "24,4", "26,4", "23,4", "22,4", "21,4", "20,4", "19,4", "18,4", "17,4", "16,4"]]
-      ],
-      "physicalCells": 50
-    },
-    {
-      "turn": 100,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 101,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "16,4",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [24, 15],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s4",
-          "pos": [25, 8],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ],
-      "links": [["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11", "16,4"]]]
-    },
-    {
-      "turn": 102,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "16,5",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [25, 14],
-          "budget": 0
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "extension"
-        }
-      ],
-      "links": [
-        ["26,16|26,4", 8, 0, ["26,15", "26,14", "26,4", "26,16", "26,5", "26,6", "26,7"]],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11", "16,4", "16,5"]]
-      ],
-      "physicalCells": 52
-    },
-    {
-      "turn": 103,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 104,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "16,6",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "26,8",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [
-        ["26,16|26,4", 8, 0, ["26,15", "26,14", "26,4", "26,16", "26,5", "26,6", "26,7", "26,13", "26,8"]],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11", "16,4", "16,5", "16,6"]]
-      ],
-      "physicalCells": 55
-    },
-    {
-      "turn": 105,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [17, 6],
+          "pos": [23, 10],
           "budget": 0,
           "category": "movement",
           "task": {
             "type": "extend",
-            "k": "16,7",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [25, 13],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "26,12",
+            "k": "26,6",
             "id": "26,16|26,4",
             "f": "f2"
           }
         },
         {
           "id": "s4",
-          "budget": 0,
           "task": {
             "type": "extend",
-            "k": "26,9",
+            "k": "26,5",
             "id": "26,16|26,4",
             "f": "f2"
           }
         }
       ],
       "links": [
-        ["26,16|26,4", 8, 0, ["26,15", "26,14", "26,4", "26,16", "26,5", "26,6", "26,7", "26,13", "26,8", "26,9"]]
-      ],
-      "physicalCells": 56
-    },
-    {
-      "turn": 106,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 107,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "pos": [25, 9],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "26,10",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        }
-      ],
-      "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4", "22,4", "21,4", "20,4", "19,4"]],
         [
           "26,16|26,4",
           8,
           0,
-          ["26,15", "26,14", "26,4", "26,16", "26,5", "26,6", "26,7", "26,13", "26,8", "26,9", "26,12"]
-        ],
-        ["16,16|16,4", 8, 0, ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11", "16,4", "16,5", "16,6", "16,7"]]
-      ],
-      "physicalCells": 58
-    },
-    {
-      "turn": 108,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [17, 7],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "16,8",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [25, 12],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "26,11",
-            "id": "26,16|26,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "extension"
-        }
-      ],
-      "links": [
-        [
-          "26,16|26,4",
-          8,
-          0,
-          ["26,15", "26,14", "26,4", "26,16", "26,5", "26,6", "26,7", "26,13", "26,8", "26,9", "26,12", "26,10"]
+          ["26,16", "26,4", "26,15", "26,14", "26,13", "26,12", "26,11", "26,10", "26,9", "26,8", "26,7", "26,5"]
         ]
       ],
       "physicalCells": 59
     },
     {
-      "turn": 109,
+      "turn": 39,
       "actors": [
         {
           "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 110,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "extension"
-        },
-        {
-          "id": "s4",
-          "pos": [24, 9],
-          "budget": 0.5,
-          "category": "movement",
           "task": {
             "type": "extend",
-            "k": "16,9",
-            "id": "16,16|16,4",
+            "k": "18,4",
+            "id": "16,4|26,4",
             "f": "f2"
           }
+        },
+        {
+          "id": "s2",
+          "budget": 1,
+          "category": "budget-delay"
+        },
+        {
+          "id": "s3",
+          "category": "extension"
+        },
+        {
+          "id": "s4",
+          "category": "idle"
         }
       ],
       "links": [
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4", "22,4", "21,4", "20,4", "19,4", "18,4"]],
         [
           "26,16|26,4",
           8,
           0,
           [
+            "26,16",
+            "26,4",
             "26,15",
             "26,14",
-            "26,4",
-            "26,16",
-            "26,5",
-            "26,6",
-            "26,7",
             "26,13",
-            "26,8",
-            "26,9",
             "26,12",
+            "26,11",
             "26,10",
-            "26,11"
+            "26,9",
+            "26,8",
+            "26,7",
+            "26,5",
+            "26,6"
           ]
-        ],
-        [
-          "16,16|16,4",
-          8,
-          0,
-          ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11", "16,4", "16,5", "16,6", "16,7", "16,8"]
         ]
       ],
-      "physicalCells": 61,
-      "exitReachable": false
+      "physicalCells": 61
     },
     {
-      "turn": 111,
+      "turn": 40,
       "actors": [
         {
           "id": "s1",
+          "category": "idle"
+        },
+        {
+          "id": "s2",
+          "pos": [21, 9],
+          "budget": 0.5,
+          "category": "movement"
+        },
+        {
+          "id": "s3",
+          "category": "idle"
+        }
+      ]
+    },
+    {
+      "turn": 41,
+      "actors": [
+        {
+          "id": "s2",
+          "pos": [20, 8],
           "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [17, 8],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "16,9",
-            "id": "16,16|16,4",
-            "f": "f2"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "category": "idle"
-        },
-        {
-          "id": "s4",
-          "budget": 0,
-          "category": "idle"
         }
       ]
     },
     {
-      "turn": 112,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s4",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 113,
+      "turn": 42,
       "fields": [
         {
           "id": "f2",
@@ -5427,51 +3217,29 @@
       ],
       "actors": [
         {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
           "id": "s2",
-          "budget": 0.5,
           "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "idle"
-        },
-        {
-          "id": "s4",
-          "budget": 0.5,
-          "category": "idle"
         }
       ],
       "links": [
-        [
-          "16,16|16,4",
-          8,
-          0,
-          ["16,15", "16,14", "16,16", "16,13", "16,12", "16,11", "16,4", "16,5", "16,6", "16,7", "16,8", "16,9"]
-        ]
+        ["16,4|26,4", 7, 0, ["16,4", "26,4", "25,4", "24,4", "23,4", "22,4", "21,4", "20,4", "19,4", "18,4", "17,4"]]
       ],
       "physicalCells": 62
     }
   ],
   "outcome": {
     "completed": true,
-    "turns": 113,
+    "turns": 42,
     "limit": 450,
     "layers": 2
   },
-  "finalHash": "f40b3b57168077bc901829fc58be956abcdcf3b4268d418c37e01c638588b4ce",
+  "finalHash": "f78993943121fb741fbfb7be6c2f152a1fd2633b77423726f9653110b38f8463",
   "costs": {
-    "budget-delay": 152,
-    "lure": 75,
-    "movement": 130,
+    "budget-delay": 30,
+    "movement": 60,
     "placement": 8,
-    "extension": 70,
-    "idle": 17
+    "extension": 54,
+    "idle": 16
   },
   "traceFormat": "Per-action deltas; actor/field records merge by id, anchor/link tuples replace by first element. Initial observation is complete."
 }

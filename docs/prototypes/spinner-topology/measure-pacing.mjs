@@ -18,16 +18,16 @@ if (process.argv[2] === "--replay") {
 const output = new URL(process.argv[2] || "evidence/pacing/", import.meta.url);
 await mkdir(output, { recursive: true });
 const categories = {
-    积累行动预算: "budget-delay",
-    "诱饵岗位 · 原型固定待命": "lure",
-    移动至施工位: "movement",
-    放置锚点: "placement",
-    延伸连接一格: "extension",
-    "修复锚点 10%": "repair-anchor",
-    "修复连接 10%": "repair-link",
-    重开入口: "reopen",
-    "等待占位解除 / 暂无可达施工位": "occupancy-delay",
-    守候: "idle",
+    "Awaiting budget": "budget-delay",
+    "Lure duty (stationary model)": "lure",
+    "Move to worksite": "movement",
+    "Place anchor": "placement",
+    "Extend one cell": "extension",
+    "Repair anchor 10%": "repair-anchor",
+    "Repair link 10%": "repair-link",
+    "Reopen gate": "reopen",
+    "Waiting for a free work position": "occupancy-delay",
+    Idle: "idle",
 };
 const maps = T.fixedMaps();
 const cases = [];
@@ -163,7 +163,7 @@ for (const [id, count] of [
     const e = start(
         `baseline-${id}`,
         fresh(id, count),
-        "Original fixture actor count and selected geometry; 1.5 budget per paid action.",
+        "Original fixture actor count and selected geometry; one paid action per actor per world turn.",
     );
     const result = e.until(ready);
     baseline[id] = e.finish(result);
@@ -175,10 +175,23 @@ for (const id of ["room", "nested", "corridor"])
         const e = start(
             `${id}-${count}-prebuild`,
             fresh(id, count, id === "room" ? roomCandidate : id === "nested" ? nestedCandidate : undefined),
-            "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+            "Same candidate across counts. All unaware actors build; alerting assigns one lure. Two actors cannot add the outer layer. Includes travel from original spawn positions.",
         );
         e.finish({ ...e.until(ready), layers: e.s.fields.length });
     }
+for (const count of [2, 4, 8]) {
+    const s = fresh("room", count, roomCandidate);
+    for (const actor of s.groups[0].actors) {
+        actor.pos = [...actor.worksite];
+        actor.worksiteReached = true;
+    }
+    const e = start(
+        `room-${count}-onsite`,
+        s,
+        "Separate initial-position fixture: actors start at distinct legal worksites. No gameplay teleport or travel time is included.",
+    );
+    e.finish({ ...e.until(ready), layers: e.s.fields.length });
+}
 for (const id of ["room", "nested"])
     for (const timing of ["early", "late", "withdraw"]) {
         const e = start(
@@ -375,7 +388,8 @@ const summary = {
     assumptions: {
         seed: "spinner-01",
         budgetPerWorldTurn: 1,
-        costPerPaidAction: 1.5,
+        costPerPaidAction: 1,
+        movementAndRepairCost: 1.5,
         membership: "fixture",
         movement: "eight-way prototype flood",
         target: "explicit debug placement",
@@ -398,8 +412,28 @@ const firstInnerReady = early.trace.find((t) =>
 )?.turn;
 const nested = result("baseline-nested").initial.fields;
 summary.contractChecks = [
-    { id: "baseline-room-50", passed: result("baseline-room").outcome.turns === 50 },
-    { id: "baseline-nested-113", passed: result("baseline-nested").outcome.turns === 113 },
+    {
+        id: "two-spinner-room-within-30",
+        passed: result("room-2-prebuild").outcome.completed && result("room-2-prebuild").outcome.turns <= 30,
+    },
+    {
+        id: "four-spinner-onsite-scales",
+        passed:
+            result("room-4-onsite").outcome.completed &&
+            result("room-4-onsite").outcome.turns <= result("room-2-onsite").outcome.turns * 0.65,
+    },
+    {
+        id: "eight-spinner-onsite-scales",
+        passed:
+            result("room-8-onsite").outcome.completed &&
+            result("room-8-onsite").outcome.turns <= result("room-4-onsite").outcome.turns * 0.75,
+    },
+    {
+        id: "arrival-inclusive-more-workers-faster",
+        passed:
+            result("room-8-prebuild").outcome.turns < result("room-4-prebuild").outcome.turns &&
+            result("room-4-prebuild").outcome.turns < result("room-2-prebuild").outcome.turns,
+    },
     {
         id: "early-inner-before-outer",
         passed: early.outcome.firstOuterAction >= firstInnerReady,

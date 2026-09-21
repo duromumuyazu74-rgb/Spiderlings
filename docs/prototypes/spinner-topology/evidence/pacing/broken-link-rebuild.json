@@ -5,8 +5,8 @@
     "schema": 1,
     "map": {
       "id": "room",
-      "name": "规则房间",
-      "desc": "预布主体后保留入口；进入核心才逐格封闭。",
+      "name": "Regular room",
+      "desc": "Prebuild the body and retain an entrance. Core entry starts incremental sealing.",
       "grid": [
         "###############################",
         "###############################",
@@ -306,7 +306,8 @@
       ]
     },
     "seed": "spinner-01",
-    "turn": 50,
+    "turn": 22,
+    "aware": false,
     "target": {
       "pos": [2, 10],
       "kind": "player"
@@ -317,37 +318,46 @@
         "actors": [
           {
             "id": "s1",
-            "pos": [11, 9],
+            "pos": [20, 9],
             "active": true,
-            "budget": 0.5,
-            "last": "诱饵岗位 · 原型固定待命",
-            "path": []
+            "budget": 0,
+            "last": "Extend one cell",
+            "path": [[20, 9]],
+            "worksite": [21, 9],
+            "task": {
+              "type": "extend",
+              "k": "22,5",
+              "id": "20,5|24,5",
+              "f": "f1"
+            }
           },
           {
             "id": "s2",
-            "pos": [23, 10],
+            "pos": [21, 10],
             "active": true,
             "budget": 0.5,
-            "last": "延伸连接一格",
-            "path": [[23, 10]],
+            "last": "Idle",
+            "path": [],
+            "worksite": [22, 9],
             "task": {
               "type": "extend",
-              "k": "24,9",
+              "k": "24,8",
               "id": "24,13|24,5",
               "f": "f1"
             }
           },
           {
             "id": "s3",
-            "pos": [23, 8],
+            "pos": [21, 9],
             "active": true,
-            "budget": 0.5,
-            "last": "守候",
+            "budget": 0,
+            "last": "Idle",
             "path": [],
+            "worksite": [23, 9],
             "task": {
               "type": "extend",
-              "k": "24,9",
-              "id": "24,13|24,5",
+              "k": "23,5",
+              "id": "20,5|24,5",
               "f": "f1"
             }
           }
@@ -446,7 +456,8 @@
         "a": "20,5",
         "b": "24,5",
         "cells": ["20,5", "21,5", "22,5", "23,5", "24,5"],
-        "built": ["23,5", "22,5", "24,5", "21,5", "20,5"],
+        "built": ["20,5", "24,5", "21,5", "23,5", "22,5"],
+        "started": true,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -458,7 +469,8 @@
         "a": "24,5",
         "b": "24,13",
         "cells": ["24,5", "24,6", "24,7", "24,8", "24,9", "24,10", "24,11", "24,12", "24,13"],
-        "built": ["24,12", "24,5", "24,11", "24,6", "24,13", "24,7", "24,8", "24,10", "24,9"],
+        "built": ["24,5", "24,13", "24,12", "24,11", "24,10", "24,9", "24,6", "24,7", "24,8"],
+        "started": true,
         "hp": 6,
         "max": 6,
         "owners": ["f1"],
@@ -470,7 +482,8 @@
         "a": "24,13",
         "b": "20,13",
         "cells": ["24,13", "23,13", "22,13", "21,13", "20,13"],
-        "built": ["23,13", "22,13", "24,13", "21,13", "20,13"],
+        "built": ["20,13", "24,13", "21,13", "22,13", "23,13"],
+        "started": true,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -482,7 +495,8 @@
         "a": "20,13",
         "b": "20,5",
         "cells": ["20,13", "20,12", "20,11", "20,10", "20,9", "20,8", "20,7", "20,6", "20,5"],
-        "built": ["20,5", "20,12", "20,6", "20,11", "20,7", "20,13", "20,8", "20,10"],
+        "built": ["20,13", "20,5", "20,12", "20,11", "20,10", "20,6", "20,7", "20,8"],
+        "started": true,
         "hp": 6,
         "max": 6,
         "owners": ["f1"],
@@ -493,15 +507,15 @@
     "log": [
       {
         "turn": 0,
-        "message": "发现 751 个候选；推荐 围场。"
+        "message": "Found 751 candidates; selected Enclosure."
       },
       {
         "turn": 0,
-        "message": "已保存计划 rectangle，评分 43.3；1 层。"
+        "message": "Saved plan rectangle, score 43.3; 1 layers."
       },
       {
-        "turn": 50,
-        "message": "f1：预布完成 · 留入口"
+        "turn": 22,
+        "message": "f1: Ready with entrance"
       }
     ],
     "selection": null,
@@ -697,7 +711,7 @@
         "rectangle:20,6;24,6;24,10;20,10",
         "rectangle:20,6;24,6;24,12;20,12"
       ],
-      "fallback": "围场",
+      "fallback": "Enclosure",
       "policy": "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented."
     }
   },
@@ -722,41 +736,11 @@
     },
     {
       "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
     }
   ],
   "trace": [
     {
-      "turn": 50,
+      "turn": 22,
       "target": [2, 10],
       "fields": [
         {
@@ -771,19 +755,25 @@
         {
           "id": "s1",
           "active": true,
-          "pos": [11, 9],
-          "budget": 0.5,
-          "category": "lure"
+          "pos": [20, 9],
+          "budget": 0,
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "22,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
         },
         {
           "id": "s2",
           "active": true,
-          "pos": [23, 10],
+          "pos": [21, 10],
           "budget": 0.5,
-          "category": "extension",
+          "category": "idle",
           "task": {
             "type": "extend",
-            "k": "24,9",
+            "k": "24,8",
             "id": "24,13|24,5",
             "f": "f1"
           }
@@ -791,13 +781,13 @@
         {
           "id": "s3",
           "active": true,
-          "pos": [23, 8],
-          "budget": 0.5,
+          "pos": [21, 9],
+          "budget": 0,
           "category": "idle",
           "task": {
             "type": "extend",
-            "k": "24,9",
-            "id": "24,13|24,5",
+            "k": "23,5",
+            "id": "20,5|24,5",
             "f": "f1"
           }
         }
@@ -810,9 +800,9 @@
       ],
       "links": [
         ["20,5|24,5", 0, 4, []],
-        ["24,13|24,5", 6, 0, ["24,12", "24,5", "24,11", "24,6", "24,13", "24,7", "24,8", "24,10", "24,9"]],
-        ["20,13|24,13", 4, 0, ["23,13", "22,13", "24,13", "21,13", "20,13"]],
-        ["20,13|20,5", 6, 0, ["20,5", "20,12", "20,6", "20,11", "20,7", "20,13", "20,8", "20,10"]]
+        ["24,13|24,5", 6, 0, ["24,5", "24,13", "24,12", "24,11", "24,10", "24,9", "24,6", "24,7", "24,8"]],
+        ["20,13|24,13", 4, 0, ["20,13", "24,13", "21,13", "22,13", "23,13"]],
+        ["20,13|20,5", 6, 0, ["20,13", "20,5", "20,12", "20,11", "20,10", "20,6", "20,7", "20,8"]]
       ],
       "ownerless": [["g1", 0]],
       "physicalCells": 20,
@@ -827,69 +817,26 @@
       ]
     },
     {
-      "turn": 51,
+      "turn": 23,
       "actors": [
         {
           "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
           "category": "idle"
-        },
-        {
-          "id": "s3",
-          "budget": 0
         }
       ],
       "links": [["20,5|24,5", 0, 3, []]],
       "damage": []
     },
     {
-      "turn": 52,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ],
+      "turn": 24,
       "links": [["20,5|24,5", 0, 2, []]]
     },
     {
-      "turn": 53,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ],
+      "turn": 25,
       "links": [["20,5|24,5", 0, 1, []]]
     },
     {
-      "turn": 54,
+      "turn": 26,
       "fields": [
         {
           "id": "f1",
@@ -899,135 +846,22 @@
       "actors": [
         {
           "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [23, 9],
-          "budget": 0,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "20,5",
-            "id": "20,5|24,5",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "pos": [23, 7],
-          "budget": 0,
-          "category": "movement",
+          "category": "extension",
           "task": {
             "type": "extend",
             "k": "21,5",
             "id": "20,5|24,5",
             "f": "f1"
           }
-        }
-      ],
-      "links": [["20,5|24,5", 0, 0, []]]
-    },
-    {
-      "turn": 55,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
         },
         {
           "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 56,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [23, 8],
-          "budget": 0.5,
-          "category": "movement"
-        },
-        {
-          "id": "s3",
-          "pos": [22, 6],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 57,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [22, 7],
-          "budget": 0
-        },
-        {
-          "id": "s3",
+          "pos": [22, 9],
           "budget": 0,
-          "category": "extension"
-        }
-      ],
-      "links": [["20,5|24,5", 4, 0, ["21,5"]]],
-      "physicalCells": 21
-    },
-    {
-      "turn": 58,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 59,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [21, 6],
-          "budget": 0.5,
           "category": "movement"
         },
         {
           "id": "s3",
-          "budget": 0.5,
           "category": "extension",
           "task": {
             "type": "extend",
@@ -1037,122 +871,11 @@
           }
         }
       ],
-      "links": [["20,5|24,5", 4, 0, ["21,5", "22,5"]]],
+      "links": [["20,5|24,5", 4, 0, ["20,5", "24,5", "21,5", "22,5"]]],
       "physicalCells": 22
     },
     {
-      "turn": 60,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "extension"
-        },
-        {
-          "id": "s3",
-          "budget": 0,
-          "task": {
-            "type": "extend",
-            "k": "23,5",
-            "id": "20,5|24,5",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [["20,5|24,5", 4, 0, ["21,5", "22,5", "20,5", "23,5"]]],
-      "physicalCells": 23
-    },
-    {
-      "turn": 61,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 62,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [22, 7],
-          "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "extend",
-            "k": "24,5",
-            "id": "20,5|24,5",
-            "f": "f1"
-          }
-        },
-        {
-          "id": "s3",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
-    },
-    {
-      "turn": 63,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [23, 6],
-          "budget": 0
-        },
-        {
-          "id": "s3",
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 64,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s3",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 65,
+      "turn": 27,
       "fields": [
         {
           "id": "f1",
@@ -1162,37 +885,38 @@
       "actors": [
         {
           "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
+          "task": {
+            "type": "extend",
+            "k": "23,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
         },
         {
           "id": "s2",
-          "budget": 0.5,
-          "category": "extension"
+          "category": "idle"
         },
         {
           "id": "s3",
-          "budget": 0.5,
           "category": "idle"
         }
       ],
-      "links": [["20,5|24,5", 4, 0, ["21,5", "22,5", "20,5", "23,5", "24,5"]]]
+      "links": [["20,5|24,5", 4, 0, ["20,5", "24,5", "21,5", "22,5", "23,5"]]],
+      "physicalCells": 23
     }
   ],
   "outcome": {
     "completed": true,
-    "turns": 15,
+    "turns": 5,
     "limit": 120,
-    "brokenAt": 50,
-    "firstRebuildAfter": 7
+    "brokenAt": 22,
+    "firstRebuildAfter": 4
   },
-  "finalHash": "533a89011606c15363d9898b3eee711dd2faba00ec1659ccefa5146b978fd515",
+  "finalHash": "5b4f903f57a093e40370488208eb779064bc408eaa14c4640d972781879535eb",
   "costs": {
-    "lure": 10,
-    "idle": 7,
-    "budget-delay": 15,
-    "movement": 8,
-    "extension": 5
+    "idle": 11,
+    "extension": 3,
+    "movement": 1
   },
   "traceFormat": "Per-action deltas; actor/field records merge by id, anchor/link tuples replace by first element. Initial observation is complete."
 }

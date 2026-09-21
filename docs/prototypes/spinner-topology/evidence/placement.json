@@ -1,6 +1,6 @@
 {
   "baselineCommit": "27dca6dce33310c016a4f36037ee3a47936233fe",
-  "engineSHA256": "5530782357b7b4adb24c032bee26e32c755abdd57e0bbde834102f728ae92dd9",
+  "engineSHA256": "6d9783814f0a0b502d6ca0a56fa325cc04121ac02a17eb32be59bf4b9b5337ac",
   "snapshotsSHA256": "c5db1059b1fff7298358a688b608da5fdbe1ad7c814c89b2adbb54f60ee02299",
   "templates": "5/7/9 rectangles; one orientation of a 9x9 concave orthogonal template; short narrow-cut lines",
   "cases": [
@@ -90,15 +90,15 @@
       "logs": [
         {
           "turn": 0,
-          "message": "已保存计划 rectangle，评分 43.3；1 层。"
+          "message": "Saved plan rectangle, score 43.3; 1 layers."
         },
         {
           "turn": 0,
-          "message": "地形变化；下一次施工重新验证边界、内部和核心。"
+          "message": "Terrain changed. The next action revalidates boundary, interior and core."
         },
         {
           "turn": 1,
-          "message": "g1 原计划失效，降级 / 换址至 line。"
+          "message": "g1 invalid plan; fallback / relocation to line."
         }
       ]
     },
@@ -112,7 +112,7 @@
     {
       "name": "unreachable-builder-waits",
       "position": [11, 10],
-      "action": "等待占位解除 / 暂无可达施工位"
+      "action": "Waiting for a free work position"
     },
     {
       "name": "nested-gates-and-inner-only-breach",
@@ -243,7 +243,7 @@
     },
     {
       "name": "early-entry-preserves-inner-first",
-      "turn": 59
+      "turn": 20
     },
     {
       "name": "retired-roadblock-not-repaired",
@@ -269,6 +269,16 @@
       "lastOwnerLost": 10,
       "stillSolidAt": 29,
       "goneAt": 30
+    },
+    {
+      "name": "awareness-controls-division-of-work",
+      "unawareBuilders": 2,
+      "alertedLures": 1
+    },
+    {
+      "name": "anchors-do-not-grant-free-short-link",
+      "anchorTurn": 1,
+      "connectionTurn": 2
     }
   ],
   "nativeMasks": [

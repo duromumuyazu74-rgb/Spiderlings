@@ -11,9 +11,9 @@ node docs/prototypes/spinner-topology/measure-pacing.mjs
 node docs/prototypes/spinner-topology/measure-pacing.mjs --replay docs/prototypes/spinner-topology/evidence/pacing/baseline-room.json
 ```
 
-The first command writes 34 complete scenario replays plus a summary into `evidence/pacing/`. Each file contains the starting state, every debug or world-turn action, per-action observation deltas and a final state hash. The first observation is complete. Later actor/field entries merge by ID; anchor/link tuples replace the entry with the same first element. Unchanged values carry forward. The runner replays each generated case and compares all observations and the final state. The second command replays any one saved case using the checked-out engine. Historical replays require their recorded engine revision; a mismatch fails explicitly.
+The current runner writes 37 complete scenario replays plus a summary into `evidence/pacing/`. Each file contains the starting state, every debug or world-turn action, per-action observation deltas and a final state hash. The first observation is complete. Later actor/field entries merge by ID; anchor/link tuples replace the entry with the same first element. Unchanged values carry forward. The runner replays each generated case and compares all observations and the final state. The second command replays any one saved current case. See [CURRENT-PACING.md](CURRENT-PACING.md) for current results; the measurements below remain historical.
 
-To reproduce the immutable historical set, run the same runner against the #21 engine and pass `evidence/pacing-baseline/` as its output argument. [Baseline summary](evidence/pacing-baseline/summary.json) records the engine SHA-256. Its `contractChecks` deliberately expose known baseline defects. A false contract check is an observed model gap, not a failed replay or an omitted run.
+The original runner and all 34 historical traces remain available at [immutable commit 04055de](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/04055de8cdf4049be52c7d8a68b5977903a82b59/docs/prototypes/spinner-topology). Use that revision's runner and matching engine to replay them. The retained [baseline summary](evidence/pacing-baseline/summary.json) records their engine SHA-256. Its contract checks expose three historical defects. Do not replay historical states with the current engine or overwrite the historical summary.
 
 All cases use seed `spinner-01`. Group membership and actor spawn order are fixtures. The first active actor is an idle lure while there is another actor. Each actor earns one budget unit per world turn and spends 1.5 units on a move, placement, extension, repair, reopening, lure duty or paid wait. Budget accumulation is recorded separately. The runner reads the model's action labels and positions; it does not substitute a faster scheduler. No moving, placing or extending happens for free in the same action.
 
@@ -88,5 +88,3 @@ Native KD still needs measurements of:
 - Capture entry, one-source continuation, zero-source release, six-turn stun and five-turn leg-binder wrapping.
 - NPC binding resistance, ordinary struggle, reinforcement target and source attribution.
 - Leash attachment, external-item reuse, eight-source recovery, crossing closed webs and interaction with native pulls.
-
-简体中文：50/113 回合已按原始人数复现。更多施工者不一定更快；移动与占位会吞掉收益。已保留所有卡住的样本，并暴露提前入场、退役修复和共享无主计时三处模型问题。本报告不代表实机平衡结论。

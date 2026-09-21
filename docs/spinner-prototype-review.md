@@ -4,12 +4,12 @@ This package implements the prototype stage of [Spec #20](https://github.com/dur
 
 ## Delivery state
 
-| Ticket                                                             | Delivered                                                                                       | State                                                       |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| [#21](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/21) | Portable source, offline HTML, sanitized native snapshots and artifact-bound browser evidence.  | Implemented in PR #25.                                      |
-| [#22](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/22) | Native geometry comparison, corrected placement/lifecycle behavior and bounded counterexamples. | Investigation implemented; limitations explicitly retained. |
-| [#23](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/23) | 34 replayable construction/breach cases with immutable baseline and corrected-engine results.   | Implemented; no final balance claim.                        |
-| [#24](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/24) | This review package, remaining gaps and ordered integration handoff.                            | Maintainer verdict pending.                                 |
+| Ticket                                                             | Delivered                                                                                        | State                                                       |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| [#21](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/21) | Portable source, offline HTML, sanitized native snapshots and artifact-bound browser evidence.   | Implemented in PR #25.                                      |
+| [#22](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/22) | Native geometry comparison, corrected placement/lifecycle behavior and bounded counterexamples.  | Investigation implemented; limitations explicitly retained. |
+| [#23](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/23) | 37 replayable construction/breach cases, including arrival-inclusive and on-site worker scaling. | Implemented; no final balance claim.                        |
+| [#24](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/24) | This review package, remaining gaps and ordered integration handoff.                             | Maintainer verdict pending.                                 |
 
 ## Review four sequences
 
@@ -22,18 +22,20 @@ The [placement investigation](prototypes/spinner-topology/PLACEMENT.md) and [pac
 
 ## Evidence and observed changes
 
-The immutable [initial published baseline](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/27dca6dce33310c016a4f36037ee3a47936233fe/docs/prototypes/spinner-topology) preserves ten fixed scenes and six isolated native-map snapshots. Its room and nested prebuild observations were about 50 and 113 prototype world turns. The current engine preserves those normal-case measurements.
+The immutable [initial published baseline](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/27dca6dce33310c016a4f36037ee3a47936233fe/docs/prototypes/spinner-topology) preserves ten fixed scenes and six isolated native-map snapshots. Its room and nested prebuild observations were about 50 and 113 prototype world turns. The current engine completes those original three-actor room and four-actor nested fixtures in 22 and 42 turns.
 
 - [Artifact verification](prototypes/spinner-topology/evidence/verification.json): 16 map walks, five additional experiments, offline controls, nested/shared flows, state restoration, 390px layout, and the new occupancy/interior-change walkthroughs.
-- [Placement evidence](prototypes/spinner-topology/evidence/placement.json): 15 bounded cases, six-map mask comparisons and eight isolated native-accessibility probes against exactly KD 5.4.92 and KD 5.5.0.
+- [Placement evidence](prototypes/spinner-topology/evidence/placement.json): 17 bounded cases, six-map mask comparisons and eight isolated native-accessibility probes against exactly KD 5.4.92 and KD 5.5.0.
 - [Immutable pacing baseline](prototypes/spinner-topology/evidence/pacing-baseline/summary.json): all 34 cases, including three failing historical contract observations.
-- [Corrected pacing](prototypes/spinner-topology/evidence/pacing/summary.json): all 34 replays and all ten contract checks pass. The separate [current-results note](prototypes/spinner-topology/CURRENT-PACING.md) explains the differences.
+- [Corrected pacing](prototypes/spinner-topology/evidence/pacing/summary.json): all 37 replays and all twelve contract checks pass. The separate [current-results note](prototypes/spinner-topology/CURRENT-PACING.md) explains the differences.
 
-Adding actors does not necessarily accelerate work. On the pinned room candidate, two/four/eight actors take 98/42/42 prototype turns. Four/eight actors take 113/81 turns on the two-layer candidate. These are deterministic fixture results with a stationary lure and fixed spawn choices, not measured native encounter balance.
+On the same pinned room candidate, two/four/eight actors now take 27/20/18 turns including travel, down from 98/42/42. Separate fixtures starting at legal worksites take 12/6/4 turns. All unaware members build; workers coordinate assignments, construct within five clear tiles and reuse anchor endpoints. Construction costs one budget point while movement and repair retain 1.5. A short link still needs a paid connection. The two-worker result meets the requested 30-turn deadline. The offline page displays both timing conditions.
 
-Three historical defects are corrected: premature outer construction after early target entry, repairs to retired-only structures, and shared collapse timed from an earlier lost owner instead of the final owner. The early nested-entry case now takes 120 further turns after entry at turn five, rather than the flawed baseline's 91. No candidate action costs or HP values changed to obtain that result.
+Travel limits the total-time improvement. The narrow-corridor fixture takes 16/16/18 turns with two/four/eight actors, so crowding can still make a larger group slower. Four/eight actors complete the two-layer candidate in 42/37 turns. These are deterministic model results, not measured native encounter balance.
 
-Independent review found and corrected two further defects. Reachable-area shading now shows the full connected region instead of stopping its search at the exit. A retired owner no longer vetoes another live owner's intact shared field. Both cases have bounded model checks and offline browser assertions; neither changes the measured construction cadence.
+Three historical defects are corrected: premature outer construction after early target entry, repairs to retired-only structures, and shared collapse timed from an earlier lost owner instead of the final owner. In the current early-entry fixture, the inner layer is ready at turn 19 and outer work starts at turn 20. Closure takes 52 further turns after entry at turn five. Damage and HP parameters remain unchanged.
+
+Independent review previously found and corrected two further defects. Reachable-area shading now shows the full connected region instead of stopping its search at the exit. A retired owner no longer vetoes another live owner's intact shared field. Both cases have bounded model checks and offline browser assertions.
 
 The old five-line/one-rectangle sample result becomes six lines after free-core checks account for a foreign actor in the former sole rectangle. The original five maps still lack a current enclosure template even when protection/occupancy masks are relaxed. Neither result is a floor-frequency estimate; frozen original actors and the restricted template family matter.
 
@@ -63,5 +65,3 @@ Keep one-source continuation/wrapping, zero-source release, six-turn participant
 ## Maintainer verdict
 
 **Pending.** [#24](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/24) stays open for an explicit accepted / accepted-with-revisions / revise-prototype decision on these results. The parent Spec #20 stays open. Publishing this PR and passing automatic checks do not supply that verdict or authorize runtime integration.
-
-简体中文：原型和证据已可审核。正常预布仍为 50/113 回合，已修正提前入场、退役修复和共享无主计时。请重点查看不同端点的部分重叠连接尚未合并 HP、固定诱饵可能堵施工位这两个限制。审核结论记录在 #24，随后才安排运行时接入。
