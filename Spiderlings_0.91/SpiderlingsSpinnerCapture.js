@@ -25,11 +25,13 @@
     const EVENT = "SpiderlingsLegbinderEscape";
     const PROGRESS = "SpiderlingsLegbinderEscapeProgress";
     const armed = new WeakMap();
-    const item = () =>
+    const item = (itemId) =>
         typeof KinkyDungeonAllRestraintDynamic == "function"
-            ? KinkyDungeonAllRestraintDynamic().find((e) => e.item.name === ID)?.item
+            ? KinkyDungeonAllRestraintDynamic().find(
+                  (e) => e.item.name === ID && (itemId === undefined || e.item.id === itemId),
+              )?.item
             : undefined;
-    const progress = () => item()?.data?.wrapProgress ?? 1;
+    const progress = (bag = item()) => Math.max(0, Math.min(1, Number(bag?.data?.wrapProgress) || 0));
     function event(map, trigger, type, handler) {
         if (typeof KDAddEvent === "function") KDAddEvent(map, trigger, type, handler);
         else {
@@ -71,6 +73,11 @@
             false,
             undefined,
             "Enemy",
+            false,
+            undefined,
+            undefined,
+            true,
+            entity,
         );
         const applied = item();
         if (!(result > 0) || !applied) return false;
@@ -361,7 +368,7 @@
         if (!s) return {};
         if (KinkyDungeonAllRestraintDynamic().some((e) => e.item.name === api.Webbing.COCOON_ID))
             return { reason: "interrupted" };
-        if (s.itemId !== undefined && item()?.id !== s.itemId) return { reason: "interrupted" };
+        if (s.itemId !== undefined && !item(s.itemId)) return { reason: "interrupted" };
         const ids = effectiveSources(s).map((enemy) => enemy.id);
         return { capture: { ...s, sourceIds: ids, ids, escapeGoal: escapeGoal(ids.length) } };
     }
@@ -383,12 +390,14 @@
         if (!view.capture) return false;
         const s = state();
         s.sourceIds = view.capture.sourceIds;
-        if (s.phase === "contest") {
-            if (s.sourceIds.length === 0) {
+        if (s.sourceIds.length === 0) {
+            if (s.phase === "contest") {
                 s.escapeProgress = 0;
                 rewardEscape([]);
-                return false;
-            }
+            } else clearTemporary("sources-lost");
+            return false;
+        }
+        if (s.phase === "contest") {
             if (s.escapeProgress >= view.capture.escapeGoal) {
                 rewardEscape(effectiveSources(s));
                 return false;
@@ -410,7 +419,7 @@
         )
             return false;
         KDGameData[STATE] = {
-            version: 2,
+            version: 3,
             phase: "contest",
             target: { kind: "player", x: player().x, y: player().y },
             admittedCompositeId: composite.id,
@@ -476,24 +485,27 @@
             schedule();
         }, 650);
     }
-    function wrapTurn(s, delta) {
-        if (s.sourceIds.filter((id) => acted.has(id)).length < 1) {
-            clearTemporary("no-weaving-action");
-            return;
-        }
-        let bag = item();
+    function wrapTurn(s) {
+        const actingSourceId = s.sourceIds.find((id) => acted.has(id));
+        if (actingSourceId === undefined) return;
+        let bag = s.itemId === undefined ? item() : item(s.itemId);
+        let deposited = false;
         if (!bag) {
-            bag = equip(1 / CONFIG.wrapTurns, source(s.sourceIds[0]));
+            bag = equip(1 / CONFIG.wrapTurns, source(actingSourceId));
             if (!bag) {
                 clearTemporary("equipment-failed");
                 return;
             }
             s.itemId = bag.id;
+            deposited = true;
+        } else if (s.itemId === undefined) {
+            s.itemId = bag.id;
         }
-        s.wrapProgress = Math.min(1, Math.round((s.wrapProgress + delta / CONFIG.wrapTurns) * 1000) / 1000);
-        bag.data.wrapProgress = s.wrapProgress;
-        animate(s.wrapProgress);
-        if (s.wrapProgress >= 1) clearTemporary("complete");
+        bag.data ||= {};
+        if (!deposited)
+            bag.data.wrapProgress = Math.min(1, Math.round((progress(bag) + 1 / CONFIG.wrapTurns) * 1000) / 1000);
+        animate(bag.data.wrapProgress);
+        if (bag.data.wrapProgress >= 1) clearTemporary("complete");
         else refresh();
     }
     function finishTurn(delta) {
@@ -514,8 +526,12 @@
                 rewardEscape(effectiveSources(s));
             } else if (s.weaveProgress >= CONFIG.weaveGoal) {
                 s.phase = "wrap";
-                s.wrapProgress = 0;
-                animate(0);
+                delete s.weaveProgress;
+                delete s.escapeProgress;
+                const bag = item();
+                if (bag) s.itemId = bag.id;
+                const deposited = progress(bag);
+                tween = { from: deposited, to: deposited, start: now() };
                 say("SpiderlingsSpinnerWrap");
                 refresh();
                 schedule();
@@ -556,17 +572,32 @@
             if (driver) clearTimeout(driver);
             driver = undefined;
             pendingPull = undefined;
+            turnState = undefined;
+            acted = new Set();
+            inputContext = undefined;
+            automatic = false;
+            tween = { from: 0, to: 0, start: now() };
+            lastAnimationFrame = 0;
             clearLines();
             delete KDGameData.SpiderlingsSpinnerRetries;
-            if (state() && state().version !== 2) clearTemporary("legacy-save", false);
+            if (state() && state().version !== 3) clearTemporary("legacy-save", false);
             if (auditSources()) {
                 const s = state();
+                const deposited = progress(s.itemId === undefined ? item() : item(s.itemId));
+                if (s.phase === "wrap" && deposited >= 1) {
+                    clearTemporary("complete", false);
+                    refresh();
+                    return;
+                }
                 tween = {
-                    from: s.phase === "contest" ? Math.max(0.08, s.weaveProgress / CONFIG.weaveGoal) : s.wrapProgress,
-                    to: s.phase === "contest" ? Math.max(0.08, s.weaveProgress / CONFIG.weaveGoal) : s.wrapProgress,
+                    from: deposited,
+                    to: deposited,
                     start: now(),
                 };
-                schedule();
+                if (s.phase === "wrap") schedule();
+            } else {
+                const deposited = progress();
+                tween = { from: deposited, to: deposited, start: now() };
             }
             refresh();
         });
@@ -798,12 +829,13 @@
             api.SpinnerArt?.clear();
             return;
         }
-        const saved = progress();
-        const amount = state() || tween.to === saved ? visualProgress() : saved;
+        const s = state();
+        const saved = progress(s?.itemId === undefined ? item() : item(s.itemId));
+        const amount = s?.phase === "wrap" && tween.to === saved ? visualProgress() : saved;
         api.SpinnerArt?.render(c, {
             amount,
-            active: !!state(),
-            contest: state()?.phase === "contest",
+            active: !!s,
+            contest: s?.phase === "contest",
             pink: api.getSetting?.("spiderlingsPinkWebbing") === true,
             scale: c.Zoom * MODEL_SCALE,
         });
@@ -842,6 +874,8 @@
         pullFree: pull,
         handleEnemyTurn,
         holdsSpiderAttack,
+        phase: () => state()?.phase,
+        isControllingPlayer: () => !!state(),
         isAutomaticTurn: () => automatic,
         reactionOpportunity,
         visualProgress,

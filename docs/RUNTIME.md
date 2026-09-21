@@ -41,7 +41,7 @@ Each callback forwards the original receiver, arguments and result on its unhand
 
 | State                                                                                                     | Owner and persistence                                                                          |
 | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Capture phase, target cell, admitted composite ID, participant IDs, contest work and wrap progress        | `KDGameData.SpiderlingsSpinnerCapture`; schema 2 is audited through `afterLoadGame`.           |
+| Capture phase, target cell, admitted composite ID, participant IDs, contest work and active bag ID        | `KDGameData.SpiderlingsSpinnerCapture`; schema 3 is audited through `afterLoadGame`.           |
 | Six-turn post-escape participant hold                                                                     | `entity.SpiderlingsSpinnerStunTurns`; decremented on later positive world turns.               |
 | Field phase, traps, connections and builder IDs                                                           | `KDMapData.SpiderlingsSpinnerField`.                                                           |
 | Native physical graph, declared fields, line metadata, composite layers, HP, cooldowns, snare IDs and age | `KDMapData.SpiderlingsSpinnerEncounter`; plain JSON saved with the active map.                 |
@@ -50,7 +50,7 @@ Each callback forwards the original receiver, arguments and result on its unhand
 | Deposited silk and leg-bag escape work                                                                    | The equipped item's `data`, including `wrapProgress` and `SpiderlingsLegbinderEscapeProgress`. |
 | Graphics, texture promises, animation interpolation and timer handles                                     | Runtime-only values; not serialized.                                                           |
 
-Capture admission is inspected without changing saved state. Native tick, movement, enemy and load events commit participant changes or interruption. Drawing can hide invalid previews, but cannot cancel capture, create retry timers, migrate fields or advance work. The load handler audits schema-2 sources and clears older capture state instead of inferring work. Saved equipment keys remain compatible with the previous test package.
+Capture admission is inspected without changing saved state. Native tick, movement, enemy and load events commit participant changes or interruption. Drawing can hide invalid previews, but cannot cancel capture, create retry timers, migrate fields or advance work. A lost contest creates no equipment. Each paid wrapping turn deposits 0.2 into the exact equipped item, and a source audit ends temporary control at zero sources without changing that item. The load handler audits schema-3 sources and the saved bag ID, reads deposited progress from the item and clears older capture state instead of inferring work. `phase()` and `isControllingPlayer()` expose read-only control state so recovery can pause without sharing source or leash ownership.
 
 The public runtime-boundary tests cover rule-only execution, shared hook composition and rendering without state writes. The complete watcher adds native-source compatibility tests. Final ZIP loading still requires the applicable in-game checks in the [verification matrix](../CONTRIBUTING.md#verification).
 

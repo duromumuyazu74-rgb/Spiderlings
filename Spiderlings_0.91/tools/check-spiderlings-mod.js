@@ -819,6 +819,24 @@ function checkRuntime(state) {
         fail(
             "Spinner leg bag must remain an independent mobile ItemLegs restraint with white tethers and five wrapping turns.",
         );
+    let blockers = [];
+    let preflight;
+    state.context.KDGetBlockersToAddRestraint = () => blockers;
+    state.context.KDCanAddRestraint = (...args) => {
+        preflight = args;
+        return true;
+    };
+    const securityEnemy = { id: 1 };
+    if (
+        !capture.canEquip(securityEnemy) ||
+        preflight?.[4] !== undefined ||
+        preflight?.[5] !== true ||
+        preflight?.[6] !== true ||
+        preflight?.[7] !== securityEnemy
+    )
+        fail("Spinner leg bag must use native deep/no-overpower compatibility with the acting source.");
+    blockers = [{}];
+    if (capture.canEquip(securityEnemy)) fail("Spinner leg bag must reject native ItemLegs blockers before addition.");
     const forbiddenImageFields = ["MorphPoses"];
     const displacementContracts = new Map([
         [
