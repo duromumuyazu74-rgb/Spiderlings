@@ -1,0 +1,845 @@
+{
+  "baselineCommit": "27dca6dce33310c016a4f36037ee3a47936233fe",
+  "engineSHA256": "e3dcaa87ff0e65994413fbaa528453761485374861de6e2b2151f26aa6d70fef",
+  "snapshotsSHA256": "c5db1059b1fff7298358a688b608da5fdbe1ad7c814c89b2adbb54f60ee02299",
+  "templates": "5/7/9 rectangles; one orientation of a 9x9 concave orthogonal template; short narrow-cut lines",
+  "cases": [
+    {
+      "name": "free-3x3-core",
+      "core": [22, 7],
+      "foreignOccupantRejected": true,
+      "protectedInteractionRejected": true
+    },
+    {
+      "name": "interior-terrain-invalidation",
+      "cell": "21,6",
+      "oldPhase": "retired",
+      "replacement": "line",
+      "logs": [
+        {
+          "turn": 0,
+          "message": "已保存计划 rectangle，评分 43.3；1 层。"
+        },
+        {
+          "turn": 0,
+          "message": "地形变化；下一次施工重新验证边界、内部和核心。"
+        },
+        {
+          "turn": 1,
+          "message": "g1 原计划失效，降级 / 换址至 line。"
+        }
+      ]
+    },
+    {
+      "name": "target-waits-foreign-occupancy-invalidates",
+      "targetCell": "13,10",
+      "foreignCell": "14,10",
+      "retired": true,
+      "replacement": "line"
+    },
+    {
+      "name": "unreachable-builder-waits",
+      "position": [11, 10],
+      "action": "等待占位解除 / 暂无可达施工位"
+    },
+    {
+      "name": "nested-gates-and-inner-only-breach",
+      "routes": [
+        {
+          "start": [4, 10],
+          "innerGate": "19,10",
+          "outerGate": "16,10",
+          "path": [
+            [4, 10],
+            [5, 10],
+            [6, 10],
+            [7, 10],
+            [8, 10],
+            [9, 10],
+            [10, 10],
+            [11, 10],
+            [12, 10],
+            [13, 10],
+            [14, 10],
+            [15, 10],
+            [16, 10],
+            [17, 10],
+            [18, 10],
+            [19, 10],
+            [20, 10],
+            [21, 10]
+          ]
+        },
+        {
+          "start": [26, 10],
+          "innerGate": "22,12",
+          "outerGate": "25,12",
+          "path": [
+            [26, 10],
+            [26, 11],
+            [25, 12],
+            [24, 12],
+            [23, 12],
+            [22, 12],
+            [21, 12],
+            [20, 12]
+          ]
+        },
+        {
+          "start": [15, 2],
+          "innerGate": "21,8",
+          "outerGate": "21,5",
+          "path": [
+            [15, 2],
+            [16, 2],
+            [17, 2],
+            [18, 2],
+            [19, 3],
+            [20, 4],
+            [21, 5],
+            [21, 6],
+            [21, 7],
+            [21, 8],
+            [21, 9],
+            [21, 10]
+          ]
+        },
+        {
+          "start": [15, 18],
+          "innerGate": "21,13",
+          "outerGate": "21,16",
+          "path": [
+            [15, 18],
+            [16, 18],
+            [17, 18],
+            [18, 18],
+            [19, 18],
+            [20, 17],
+            [21, 16],
+            [21, 15],
+            [21, 14],
+            [21, 13],
+            [21, 12],
+            [21, 11],
+            [21, 10]
+          ]
+        }
+      ],
+      "innerEscape": true,
+      "outerEscape": false,
+      "floorExit": false
+    },
+    {
+      "name": "concave-notch-is-outside-not-floor-exit",
+      "escapePath": [
+        [13, 7],
+        [14, 7],
+        [15, 7]
+      ],
+      "floorExit": false
+    },
+    {
+      "name": "partial-shared-edge",
+      "physicalCellInstances": 1,
+      "captureEligible": false,
+      "damage": [
+        {
+          "id": "10,5|16,5",
+          "damage": 0.7
+        },
+        {
+          "id": "13,5|19,5",
+          "damage": 0.85
+        }
+      ],
+      "limitation": "Distinct endpoint links retain separate HP. One physical cell is deduplicated and hit forwards to both links; arbitrary partial segments are not normalized into shared HP pieces."
+    },
+    {
+      "name": "crossing-lines",
+      "geometryReady": false,
+      "physicalCrossingInstances": 1,
+      "damage": [
+        {
+          "id": "10,8|18,8",
+          "damage": 0.4
+        },
+        {
+          "id": "14,12|14,5",
+          "damage": 0.55
+        }
+      ]
+    },
+    {
+      "name": "early-entry-preserves-inner-first",
+      "turn": 59
+    },
+    {
+      "name": "retired-roadblock-not-repaired",
+      "hpBefore": 3.65,
+      "hpAfter": 3.65
+    },
+    {
+      "name": "full-floor-reachability-and-unknown-target",
+      "far": "line:27,9;27,10",
+      "approachSteps": 25,
+      "lockedBarrierRejected": true,
+      "targetIndependent": true
+    },
+    {
+      "name": "sole-exit-blockade-and-insufficient-space",
+      "fullBlockadeAllowed": true,
+      "breachReachesFloorExit": true,
+      "noPlanInTight": true
+    },
+    {
+      "name": "shared-owner-countdown",
+      "firstOwnerLost": 0,
+      "lastOwnerLost": 10,
+      "stillSolidAt": 29,
+      "goneAt": 30
+    }
+  ],
+  "nativeMasks": [
+    {
+      "version": "5.4.92",
+      "seed": "spinner-topology-20260921-0",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "rows": {
+        "conservative": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 191,
+          "selected": "line:32,13;32,15",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOnly": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 198,
+          "selected": "line:32,13;32,15",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 263,
+          "selected": "line:32,13;32,15",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOrOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 275,
+          "selected": "line:32,13;32,15",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "allPlacementMasksRemoved": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 299,
+          "selected": "line:32,13;32,14",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "upperBoundDoorsUnlocked": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 299,
+          "selected": "line:32,13;32,14",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -9,
+            "space": 0,
+            "shape": 0
+          }
+        }
+      }
+    },
+    {
+      "version": "5.4.92",
+      "seed": "spinner-topology-20260921-1",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "rows": {
+        "conservative": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 82,
+          "selected": "line:2,13;3,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 0,
+            "nest": 0,
+            "travel": -0.6,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOnly": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 89,
+          "selected": "line:2,13;3,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 0,
+            "nest": 0,
+            "travel": -0.6,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 338,
+          "selected": "line:2,13;3,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 0,
+            "nest": 0,
+            "travel": -0.6,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOrOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 377,
+          "selected": "line:2,13;3,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 0,
+            "nest": 0,
+            "travel": -0.6,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "allPlacementMasksRemoved": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 447,
+          "selected": "line:2,13;3,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 0,
+            "nest": 0,
+            "travel": -0.6,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "upperBoundDoorsUnlocked": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 447,
+          "selected": "line:2,13;3,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 0,
+            "nest": 0,
+            "travel": -0.6,
+            "space": 0,
+            "shape": 0
+          }
+        }
+      }
+    },
+    {
+      "version": "5.4.92",
+      "seed": "spinner-topology-20260921-2",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "rows": {
+        "conservative": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 381,
+          "selected": "line:46,21;46,23",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -15.299999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOnly": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 390,
+          "selected": "line:46,21;46,23",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -15.299999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 406,
+          "selected": "line:42,25;43,25",
+          "reasons": {
+            "exit": 13,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -12.299999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOrOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 434,
+          "selected": "line:42,25;43,25",
+          "reasons": {
+            "exit": 13,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -12.299999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "allPlacementMasksRemoved": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 447,
+          "selected": "line:42,25;43,25",
+          "reasons": {
+            "exit": 13,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -12.299999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "upperBoundDoorsUnlocked": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 447,
+          "selected": "line:42,25;43,25",
+          "reasons": {
+            "exit": 13,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -12.299999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        }
+      }
+    },
+    {
+      "version": "5.5.0",
+      "seed": "spinner-topology-20260921-0",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "rows": {
+        "conservative": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 230,
+          "selected": "line:32,27;32,28",
+          "reasons": {
+            "exit": 17,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -15,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOnly": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 251,
+          "selected": "line:32,27;32,28",
+          "reasons": {
+            "exit": 17,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -15,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noOccupancy": {
+          "rectangle": 2,
+          "orthogonal": 0,
+          "line": 253,
+          "selected": "rectangle:13,16;17,16;17,20;13,20",
+          "reasons": {
+            "exit": 0,
+            "choke": 6,
+            "route": 0,
+            "nest": 0,
+            "travel": -3.9,
+            "space": 8,
+            "shape": 0
+          }
+        },
+        "noMetadataOrOccupancy": {
+          "rectangle": 2,
+          "orthogonal": 0,
+          "line": 282,
+          "selected": "rectangle:13,16;17,16;17,20;13,20",
+          "reasons": {
+            "exit": 0,
+            "choke": 6,
+            "route": 0,
+            "nest": 0,
+            "travel": -3.9,
+            "space": 8,
+            "shape": 0
+          }
+        },
+        "allPlacementMasksRemoved": {
+          "rectangle": 2,
+          "orthogonal": 0,
+          "line": 304,
+          "selected": "rectangle:13,16;17,16;17,20;13,20",
+          "reasons": {
+            "exit": 0,
+            "choke": 6,
+            "route": 0,
+            "nest": 0,
+            "travel": -3.9,
+            "space": 8,
+            "shape": 0
+          }
+        },
+        "upperBoundDoorsUnlocked": {
+          "rectangle": 2,
+          "orthogonal": 0,
+          "line": 304,
+          "selected": "rectangle:13,16;17,16;17,20;13,20",
+          "reasons": {
+            "exit": 0,
+            "choke": 6,
+            "route": 0,
+            "nest": 0,
+            "travel": -3.9,
+            "space": 8,
+            "shape": 0
+          }
+        }
+      }
+    },
+    {
+      "version": "5.5.0",
+      "seed": "spinner-topology-20260921-1",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "rows": {
+        "conservative": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 208,
+          "selected": "line:31,14;32,14",
+          "reasons": {
+            "exit": 17,
+            "choke": 10,
+            "route": 18,
+            "nest": 0,
+            "travel": -9.9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOnly": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 235,
+          "selected": "line:31,14;32,14",
+          "reasons": {
+            "exit": 17,
+            "choke": 10,
+            "route": 18,
+            "nest": 0,
+            "travel": -9.9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 228,
+          "selected": "line:31,14;32,14",
+          "reasons": {
+            "exit": 17,
+            "choke": 10,
+            "route": 18,
+            "nest": 0,
+            "travel": -9.9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOrOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 272,
+          "selected": "line:31,14;32,14",
+          "reasons": {
+            "exit": 17,
+            "choke": 10,
+            "route": 18,
+            "nest": 0,
+            "travel": -9.9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "allPlacementMasksRemoved": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 300,
+          "selected": "line:31,14;32,14",
+          "reasons": {
+            "exit": 17,
+            "choke": 10,
+            "route": 18,
+            "nest": 0,
+            "travel": -9.9,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "upperBoundDoorsUnlocked": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 300,
+          "selected": "line:31,14;32,14",
+          "reasons": {
+            "exit": 17,
+            "choke": 10,
+            "route": 18,
+            "nest": 0,
+            "travel": -9.9,
+            "space": 0,
+            "shape": 0
+          }
+        }
+      }
+    },
+    {
+      "version": "5.5.0",
+      "seed": "spinner-topology-20260921-2",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "rows": {
+        "conservative": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 202,
+          "selected": "line:2,11;2,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": 0,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOnly": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 232,
+          "selected": "line:32,27;32,28",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -10.799999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 270,
+          "selected": "line:2,11;2,13",
+          "reasons": {
+            "exit": 0,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": 0,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "noMetadataOrOccupancy": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 304,
+          "selected": "line:32,27;32,28",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -10.799999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "allPlacementMasksRemoved": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 315,
+          "selected": "line:32,27;32,28",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -10.799999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        },
+        "upperBoundDoorsUnlocked": {
+          "rectangle": 0,
+          "orthogonal": 0,
+          "line": 319,
+          "selected": "line:32,27;32,28",
+          "reasons": {
+            "exit": 16,
+            "choke": 12,
+            "route": 18,
+            "nest": 0,
+            "travel": -10.799999999999999,
+            "space": 0,
+            "shape": 0
+          }
+        }
+      }
+    }
+  ],
+  "nativeAccessibility": [
+    {
+      "version": "5.4.92",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "name": "diagonal",
+      "native": true,
+      "model": true
+    },
+    {
+      "version": "5.4.92",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "name": "unlocked-door",
+      "native": true,
+      "model": true
+    },
+    {
+      "version": "5.4.92",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "name": "locked-open-door",
+      "native": false,
+      "model": false
+    },
+    {
+      "version": "5.4.92",
+      "bundleSHA256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "name": "chest-not-transit",
+      "native": false,
+      "model": false
+    },
+    {
+      "version": "5.5.0",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "name": "diagonal",
+      "native": true,
+      "model": true
+    },
+    {
+      "version": "5.5.0",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "name": "unlocked-door",
+      "native": true,
+      "model": true
+    },
+    {
+      "version": "5.5.0",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "name": "locked-open-door",
+      "native": false,
+      "model": false
+    },
+    {
+      "version": "5.5.0",
+      "bundleSHA256": "5b5c99689a6b009530fdeee75c76859feaf56629add6463930bf1585fa93fafe",
+      "name": "chest-not-transit",
+      "native": false,
+      "model": false
+    }
+  ],
+  "nativeReplay": "executed-isolated-accessibility"
+}

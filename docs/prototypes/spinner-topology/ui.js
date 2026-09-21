@@ -10,6 +10,47 @@ let current = "room",
     selected,
     guide = "build";
 const guides = {
+    blocked: {
+        label: "真实地图占位等待",
+        desc: "KD 5.5.0 样本 3 的固定诱饵占住预定锚点，施工等待。调试移开后才继续；原型没有模拟诱饵移动 AI。",
+        scene: "native-5",
+        steps: [
+            ["重置样本 3", () => load("native-5")],
+            [
+                "施工到占位等待",
+                () => {
+                    T.plan(state);
+                    T.settle(state);
+                },
+            ],
+            ["调试移开固定诱饵", () => T.vacateLure(state)],
+            ["继续合法施工", () => T.settle(state)],
+        ],
+    },
+    terrain: {
+        label: "内部地形变化",
+        desc: "候选选定后，在未占用的内部格改墙。下一行动会让旧围场退役，并降级或换址；不会清除外部对象。",
+        scene: "room",
+        steps: [
+            [
+                "重置并规划",
+                () => {
+                    load("room");
+                    T.plan(state);
+                },
+            ],
+            [
+                "内部空格改墙",
+                () => {
+                    const cell = state.fields[0]?.interior.find(
+                        (k) => !state.groups.some((g) => g.actors.some((a) => T.key(...a.pos) === k)),
+                    );
+                    if (cell) T.editTerrain(state, cell);
+                },
+            ],
+            ["下一施工行动验证", () => T.step(state)],
+        ],
+    },
     build: {
         label: "预布与封口",
         desc: "从规则房间开始。预布完成时入口仍开放；将目标放入核心，再观察封闭与出口路径消失。",
@@ -127,7 +168,10 @@ function candidateList() {
         };
         body.append(row);
     }
-    text("candidateSummary", `${state.analysis.candidates.length} 个候选 · ${state.analysis.fallback}`);
+    text(
+        "candidateSummary",
+        `${state.analysis.candidates.length} 个候选 · ${state.analysis.fallback} · 当前原型先选围场，再按评分选址；无围场才选拦截线。`,
+    );
     text(
         "score",
         preview
@@ -337,6 +381,10 @@ function render() {
     pane.replaceChildren();
     if (selected) {
         pane.append(element("p", `格 ${selected}`));
+        const metadata = state.map.snapshot?.protectedCells.find((p) => T.key(p.x, p.y) === selected);
+        if (metadata) pane.append(element("p", `保护原因：${metadata.reasons.join(" / ")}`));
+        if (state.map.locked?.includes(selected))
+            pane.append(element("p", "锁定地格：原型不允许通行，阵营特定开锁仍待实机验证。"));
         const a = state.anchors[selected];
         if (a) pane.append(element("p", `锚点 HP ${a.hp.toFixed(2)} / ${a.max} · ${a.owners.join(" / ")}`));
         for (const l of Object.values(state.links).filter((l) => l.cells.includes(selected))) {
@@ -405,6 +453,7 @@ action("step", () => T.step(state));
 action("settle", () => T.settle(state));
 action("enter", () => T.enterCore(state));
 action("overlap", () => T.overlap(state));
+action("vacateLure", () => T.vacateLure(state));
 action("removeActor", () => {
     const a = state.groups
         .flatMap((g) => g.actors)
@@ -441,38 +490,8 @@ $("map").onclick = (event) => {
         T.attack(state, selected, Math.max(0.1, Number($("damage").value) || 1), mode === "aoe");
     if (mode === "move") T.move(state, [x, y]);
     if (mode === "obstacle") {
-        const actor = state.groups.flatMap((g) => g.actors).some((a) => a.active && T.key(...a.pos) === selected);
-        if (
-            state.map.protected.includes(selected) ||
-            state.map.occupied.includes(selected) ||
-            actor ||
-            T.key(...state.target.pos) === selected
-        )
-            text("notice", "保护格或实体占用，拒绝改墙。");
-        else {
-            if (state.map.walk.includes(selected)) state.map.walk = state.map.walk.filter((k) => k !== selected);
-            else state.map.walk.push(selected);
-            const rows = state.map.grid.map((r) => [...r]);
-            rows[y][x] = state.map.walk.includes(selected) ? "." : "#";
-            state.map.grid = rows.map((r) => r.join(""));
-            for (const l of Object.values(state.links))
-                if (l.cells.includes(selected) && !state.map.walk.includes(selected)) {
-                    l.hp = 0;
-                    l.built = [];
-                    l.cooldown = 4;
-                }
-            if (state.anchors[selected] && !state.map.walk.includes(selected)) state.anchors[selected].placed = false;
-            state.analysis = T.analyze(
-                state.map,
-                state.groups[0].actors[0]?.pos || state.map.start,
-                state.seed,
-                "g1",
-                state.map.nested,
-            );
-            preview = state.analysis.selected;
-            state.log.push({ turn: state.turn, message: "地形变化，候选重新分析；施工会重新验证目标格。" });
-            T.update(state);
-        }
+        if (!T.editTerrain(state, selected)) text("notice", "保护格或实体占用，拒绝改墙。");
+        else preview = state.analysis.selected;
     }
     render();
 };
