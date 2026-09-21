@@ -100,10 +100,59 @@
                 anchors: input.anchors,
             });
         KDMapData[KEY] = {
-            version: 1,
+            version: topology().VERSION,
             scenario: input.scenario || "doorway",
             topology: line,
             builders: input.builders || {},
+        };
+        reconcile();
+        return state();
+    }
+
+    function mapSnapshot() {
+        const floor = [],
+            protectedCells = [];
+        for (let y = 0; y < KDMapData.GridHeight; y++)
+            for (let x = 0; x < KDMapData.GridWidth; x++) {
+                const cell = { x, y },
+                    key = cellKey(cell),
+                    tile = KinkyDungeonTilesGet(key);
+                if (KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y))) floor.push(key);
+                if (
+                    tile?.OL ||
+                    tile?.OffLimits ||
+                    tile?.Jail ||
+                    tile?.Protected ||
+                    tile?.Priority ||
+                    ["Shrine", "Chest", "Door", "JailPoint", "Stairs"].includes(tile?.Type) ||
+                    [
+                        KDMapData.StartPosition,
+                        KDMapData.EndPosition,
+                        ...Object.values(KDMapData.ShortcutPositions || {}),
+                        ...(KDMapData.JailPoints || []),
+                    ].some((candidate) => candidate?.x === x && candidate?.y === y)
+                )
+                    protectedCells.push(key);
+            }
+        return {
+            width: KDMapData.GridWidth,
+            height: KDMapData.GridHeight,
+            floor,
+            protected: protectedCells,
+            occupied: KDMapData.Entities.filter((entity) => !isOwnedProxy(entity)).map(cellKey),
+            exit: KDMapData.EndPosition,
+        };
+    }
+
+    function initializeEnclosure(input) {
+        const owners = input.owners.map((owner) => (typeof owner === "object" ? owner.id : owner)),
+            graph = topology().createEnclosure({ ...input, owners, map: input.map || mapSnapshot() });
+        KDMapData[KEY] = {
+            version: topology().VERSION,
+            scenario: input.scenario || "enclosure",
+            topology: graph,
+            builders: Object.fromEntries(owners.map((id) => [id, { auto: true }])),
+            timing: { started: KinkyDungeonCurrentTick || 0, operations: 0, moves: 0, blocked: [] },
         };
         reconcile();
         return state();
@@ -128,7 +177,11 @@
             return anchor && { x: anchor.x, y: anchor.y };
         }
         const link = encounter.topology.links.find((candidate) => candidate.id === action.linkId);
-        return link?.plannedCells[link.builtCells.length] || action.cell || { x: -1, y: -1 };
+        return (
+            action.cell ||
+            link?.plannedCells.find((cell) => !link.builtCells.some((built) => cellKey(built) === cellKey(cell))) ||
+            link?.cells?.[0] || { x: -1, y: -1 }
+        );
     }
 
     function applyPaidAction(actor, action) {
@@ -144,6 +197,39 @@
         encounter.topology = applied.state;
         if (applied.outcome.legal) reconcile();
         return { paid: true, applied: applied.outcome.legal, reason: applied.outcome.reason, effects: applied.effects };
+    }
+
+    function moveTowardAction(enemy, cell) {
+        const options = [];
+        for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) if (x || y) options.push({ x, y });
+        options.sort(
+            (a, b) =>
+                Math.hypot(cell.x - enemy.x - a.x, cell.y - enemy.y - a.y) -
+                    Math.hypot(cell.x - enemy.x - b.x, cell.y - enemy.y - b.y) ||
+                Math.abs(a.x) + Math.abs(a.y) - Math.abs(b.x) - Math.abs(b.y),
+        );
+        for (const direction of options) {
+            const x = enemy.x + direction.x,
+                y = enemy.y + direction.y;
+            if (KinkyDungeonEntityAt(x, y)) continue;
+            if (
+                typeof KinkyDungeonEnemyCanMove === "function" &&
+                !KinkyDungeonEnemyCanMove(
+                    enemy,
+                    { ...direction, delta: 1 },
+                    KinkyDungeonMovableTilesSmartEnemy,
+                    "",
+                    false,
+                    0,
+                )
+            )
+                continue;
+            if (typeof KinkyDungeonEnemyTryMove === "function")
+                KinkyDungeonEnemyTryMove(enemy, { ...direction, delta: 1 }, enemy.Enemy.movePoints, x, y, false);
+            else KDMoveEntity(enemy, x, y, true, undefined, true, false);
+            return enemy.x === x && enemy.y === y;
+        }
+        return false;
     }
 
     // This mirrors KinkyDungeonEnemyTryMove's pinned 5.5.0 movement accumulator and threshold.
@@ -173,12 +259,42 @@
     function handleEnemyTurn(enemy, _target, delta) {
         const encounter = state(),
             builder = encounter?.builders?.[enemy?.id];
-        if (!builder || !Array.isArray(builder.actions) || builder.actions.length === 0) return undefined;
+        if (!builder || (!builder.auto && (!Array.isArray(builder.actions) || builder.actions.length === 0)))
+            return undefined;
         if (!isSpiderling(enemy) || enemy.hp <= 0 || KinkyDungeonIsDisabled(enemy) || KDHelpless(enemy))
             return result(enemy);
         if (accrueConstructionAction(enemy, delta)) {
-            const action = builder.actions.shift();
-            builder.lastResult = applyPaidAction(enemy, { ...action, ownerId: enemy.id });
+            encounter.timing = encounter.timing || {
+                started: KinkyDungeonCurrentTick || 0,
+                operations: 0,
+                moves: 0,
+                blocked: [],
+            };
+            encounter.topology.workCreditByMember[enemy.id] = enemy.SpinnerConstructionPoints || 0;
+            const assigned = encounter.topology.assignmentByMember[enemy.id],
+                reserved = Object.entries(encounter.topology.assignmentByMember)
+                    .filter(([ownerId]) => String(ownerId) !== String(enemy.id))
+                    .map(([, action]) => topology().workKey(action)),
+                action = builder.auto
+                    ? assigned || topology().nextWorkAction(encounter.topology, enemy.id, enemy, reserved)
+                    : builder.actions.shift();
+            if (action) {
+                encounter.topology.assignmentByMember[enemy.id] = action;
+                const cell = actionCell(encounter, action);
+                if (
+                    Math.hypot(cell.x - enemy.x, cell.y - enemy.y) > 5 ||
+                    !KinkyDungeonCheckPath(enemy.x, enemy.y, cell.x, cell.y, false, true, 1, false)
+                ) {
+                    const moved = moveTowardAction(enemy, cell);
+                    builder.lastResult = { paid: true, applied: false, reason: moved ? "moved" : "blocked" };
+                    if (moved) encounter.timing.moves++;
+                    else encounter.timing.blocked.push({ turn: KinkyDungeonCurrentTick, actor: enemy.id, cell });
+                } else {
+                    builder.lastResult = applyPaidAction(enemy, { ...action, ownerId: enemy.id });
+                    if (builder.lastResult.applied) encounter.timing.operations++;
+                    delete encounter.topology.assignmentByMember[enemy.id];
+                }
+            }
         }
         return result(enemy);
     }
@@ -204,6 +320,7 @@
         const encounter = state(),
             id = targetId(entity);
         if (!encounter?.topology || id === undefined) return false;
+        topology().updateTarget(encounter.topology, { id, x, y });
         const consumed = topology().consumeSnare(encounter.topology, id, { x, y });
         encounter.topology = consumed.state;
         if (!consumed.outcome.snared) return false;
@@ -225,7 +342,7 @@
         if (!encounter?.topology || !(delta > 0)) return;
         const settled = topology().tickOwnerless(encounter.topology, { activeOwnerIds: activeOwnerIds(), delta });
         encounter.topology = settled.state;
-        if (settled.effects.length) reconcile();
+        reconcile();
     }
 
     function canTraverse(mover, proxy) {
@@ -247,6 +364,26 @@
         if (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y) return 0;
         KDMoveEntity(mover, x, y, true, undefined, true, false);
         return 2;
+    }
+
+    function nativeReachability(compositeId, target) {
+        const encounter = state();
+        if (!encounter?.topology?.composites?.[compositeId]) return undefined;
+        return topology().inspectReachability(encounter.topology, compositeId, target, mapSnapshot());
+    }
+
+    function containingComposite(target) {
+        const encounter = state();
+        if (!encounter?.topology) return undefined;
+        return Object.values(encounter.topology.composites || {}).find((composite) =>
+            topology().containsDeclaredField(encounter.topology, composite.layerIds[0], target),
+        );
+    }
+
+    function captureGeometryReady(target) {
+        const composite = containingComposite(target),
+            encounter = state();
+        return !!composite && topology().captureGeometryReady(encounter.topology, composite.id, target);
     }
 
     if (typeof KinkyDungeonEnemies !== "undefined" && !KinkyDungeonEnemies.some((enemy) => enemy.name === PROXY)) {
@@ -288,6 +425,7 @@
         SNARE,
         state,
         initializeMap,
+        initializeEnclosure,
         applyPaidAction,
         accrueConstructionAction,
         handleEnemyTurn,
@@ -299,5 +437,9 @@
         canTraverse,
         passThrough,
         isOwnedProxy,
+        mapSnapshot,
+        nativeReachability,
+        containingComposite,
+        captureGeometryReady,
     };
 })();
