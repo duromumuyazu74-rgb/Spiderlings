@@ -10,16 +10,16 @@ The first deliverable was a disposable topology prototype with a single offline 
 
 ## Vocabulary
 
-| Term                     | Meaning                                                                                       |
-| ------------------------ | --------------------------------------------------------------------------------------------- |
-| Web anchor / 蛛网锚点    | Structural endpoint with its own HP.                                                          |
-| Web link / 蛛网连接      | Axis-aligned connection with shared HP, attacked through its occupied cells.                  |
-| Snaring silk / 绊足蛛丝  | One-use movement penalty per target on an anchor cell.                                        |
-| Web field / 蛛网场       | Independent interception line or simple orthogonal enclosure.                                 |
-| Composite field          | Nested enclosures with a common innermost capture core.                                       |
-| Capture strands / 捕获丝 | Temporary multi-source control and visual relationship; no equipment.                         |
-| Leg binder / 蛛丝腿袋    | Independent real ItemLegs restraint produced after player capture defeat.                     |
-| Silk leash / 蛛丝牵绳    | Real player neck-restraint carrier for recovery dragging, independent of capture and leg bag. |
+| Term            | Meaning                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| Web anchor      | Structural endpoint with its own HP.                                                          |
+| Web link        | Axis-aligned connection with shared HP, attacked through its occupied cells.                  |
+| Snaring silk    | One-use movement penalty per target on an anchor cell.                                        |
+| Web field       | Independent interception line or simple orthogonal enclosure.                                 |
+| Composite field | Nested enclosures with a common innermost capture core.                                       |
+| Capture strands | Temporary multi-source control and visual relationship; no equipment.                         |
+| Leg binder      | Independent real ItemLegs restraint produced after player capture defeat.                     |
+| Silk leash      | Real player neck-restraint carrier for recovery dragging, independent of capture and leg bag. |
 
 ## Planning and groups
 
@@ -35,7 +35,8 @@ The first deliverable was a disposable topology prototype with a single offline 
 ## Construction and structures
 
 - Each action chooses movement OR anchor placement OR extension of one cell OR repair OR an active drag. No free construction during movement. A group queue reserves distinct tasks for builders.
-- One lure, all other group members build; stable roles with replacement on death, incapacity or prolonged loss of sight. Lure remains visible, avoids melee, retreats toward the planned area. Lost sight for eight world turns restores ordinary pursuit; last-known target information expires after four. Builders defend for an action against adjacent threats.
+- Before discovery, all group members build. After discovery, one lure and all other group members build; stable roles with replacement on death, incapacity or prolonged loss of sight. Lure remains visible, avoids melee, retreats toward the planned area. Lost sight for eight world turns restores ordinary pursuit; last-known target information expires after four. Builders defend for an action against adjacent threats.
+- Prototype review target: two Spinners prebuild the pinned regular room within 30 world turns including travel; additional workers should reduce construction time. The current candidate uses one budget point per construction action, 1.5 for movement or repair, and at most one operation per actor per turn. Workers can construct within five clear tiles, reserve distinct tasks and reuse placed anchor endpoints. A short link still needs a paid connection action. These are abstract prototype candidates; native timing and sight rules need runtime validation. [Current measurements](CURRENT-PACING.md) separate arrival-inclusive runs from fixtures that start at legal worksites.
 - Before discovery, complete bodies of enclosures but leave a coherent entrance route. Only entry into the innermost core triggers inner-to-outer incremental gate closure. If target exits before sealing, reopen designated entrances using actions. Closed capture needs real topology, not proximity to a fixed rectangle.
 - Candidate link HP: `2 + 0.5 * (length - 1)`; length unit must be explicitly exposed by the prototype. Anchor HP candidate: 2. Repair candidate: 10% max HP per action. Broken link cooldown: four world turns before rebuilding cell by cell.
 - Attack on a link cell: multiply damage by `max(0.25, 1 - 0.15 * distanceToNearestAnchor)`; link HP is shared. Anchor hits deal full damage to every attached link as well as the anchor. Destroying an anchor destroys its attached links.

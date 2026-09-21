@@ -34,7 +34,10 @@ function finish(s) {
 }
 function prebuilt(s, c, group = s.groups[0]) {
     const f = T.addField(s, c, group);
-    for (const id of f.links) s.links[id].built = [...s.links[id].cells];
+    for (const id of f.links) {
+        s.links[id].built = [...s.links[id].cells];
+        s.links[id].started = true;
+    }
     for (const k of f.anchors) s.anchors[k].placed = true;
     T.update(s);
     return f;
@@ -425,6 +428,46 @@ for (const [i, snapshot] of snapshots.entries()) {
     T.step(s);
     fact(!T.solids(s).size, "Shared structure survived last-owner +20");
     record("shared-owner-countdown", { firstOwnerLost: 0, lastOwnerLost: 10, stillSolidAt: 29, goneAt: 30 });
+}
+{
+    const s = T.create(scene("room"), "spinner-01", 2);
+    T.plan(s);
+    T.step(s);
+    fact(
+        s.groups[0].actors.every((a) => a.last !== "Lure duty (stationary model)"),
+        "Unaware actor wasted a turn as lure",
+    );
+    s.aware = true;
+    const before = [...s.groups[0].actors[0].pos];
+    for (let i = 0; i < 5; i++) T.step(s);
+    fact(
+        JSON.stringify(before) === JSON.stringify(s.groups[0].actors[0].pos) &&
+            s.groups[0].actors[0].last === "Lure duty (stationary model)",
+        "Alerted lure did not retain its role",
+    );
+    record("awareness-controls-division-of-work", { unawareBuilders: 2, alertedLures: 1 });
+}
+{
+    const s = T.create(scene("corridor"), "spinner-01", 2);
+    const c = T.shape(
+        s.map,
+        [
+            [14, 9],
+            [14, 10],
+        ],
+        "line",
+    );
+    T.addField(s, c, s.groups[0]);
+    s.groups[0].actors[0].pos = [13, 9];
+    s.groups[0].actors[1].pos = [13, 10];
+    T.step(s);
+    fact(
+        Object.values(s.anchors).every((a) => a.placed) && !T.solids(s).size,
+        "Placing endpoint anchors granted a free connection",
+    );
+    T.step(s);
+    fact(s.fields[0].phase === "barrier" && T.solids(s).size === 2, "Paid short-link connection failed");
+    record("anchors-do-not-grant-free-short-link", { anchorTurn: 1, connectionTurn: 2 });
 }
 // Optional isolated native accessibility replay. Supply [{version,path}] through KD_NATIVE_BUNDLES.
 // The report keeps hashes and exact versions, never input filesystem paths.

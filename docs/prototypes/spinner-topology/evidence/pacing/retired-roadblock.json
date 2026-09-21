@@ -5,8 +5,8 @@
     "schema": 1,
     "map": {
       "id": "room",
-      "name": "规则房间",
-      "desc": "预布主体后保留入口；进入核心才逐格封闭。",
+      "name": "Regular room",
+      "desc": "Prebuild the body and retain an entrance. Core entry starts incremental sealing.",
       "grid": [
         "###############################",
         "###############################",
@@ -306,7 +306,8 @@
       ]
     },
     "seed": "spinner-01",
-    "turn": 50,
+    "turn": 22,
+    "aware": false,
     "target": {
       "pos": [2, 10],
       "kind": "player"
@@ -317,37 +318,46 @@
         "actors": [
           {
             "id": "s1",
-            "pos": [11, 9],
+            "pos": [20, 9],
             "active": true,
-            "budget": 0.5,
-            "last": "诱饵岗位 · 原型固定待命",
-            "path": []
+            "budget": 0,
+            "last": "Extend one cell",
+            "path": [[20, 9]],
+            "worksite": [21, 9],
+            "task": {
+              "type": "extend",
+              "k": "22,5",
+              "id": "20,5|24,5",
+              "f": "f1"
+            }
           },
           {
             "id": "s2",
-            "pos": [23, 10],
+            "pos": [21, 10],
             "active": true,
             "budget": 0.5,
-            "last": "延伸连接一格",
-            "path": [[23, 10]],
+            "last": "Idle",
+            "path": [],
+            "worksite": [22, 9],
             "task": {
               "type": "extend",
-              "k": "24,9",
+              "k": "24,8",
               "id": "24,13|24,5",
               "f": "f1"
             }
           },
           {
             "id": "s3",
-            "pos": [23, 8],
+            "pos": [21, 9],
             "active": true,
-            "budget": 0.5,
-            "last": "守候",
+            "budget": 0,
+            "last": "Idle",
             "path": [],
+            "worksite": [23, 9],
             "task": {
               "type": "extend",
-              "k": "24,9",
-              "id": "24,13|24,5",
+              "k": "23,5",
+              "id": "20,5|24,5",
               "f": "f1"
             }
           }
@@ -446,7 +456,8 @@
         "a": "20,5",
         "b": "24,5",
         "cells": ["20,5", "21,5", "22,5", "23,5", "24,5"],
-        "built": ["23,5", "22,5", "24,5", "21,5", "20,5"],
+        "built": ["20,5", "24,5", "21,5", "23,5", "22,5"],
+        "started": true,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -458,7 +469,8 @@
         "a": "24,5",
         "b": "24,13",
         "cells": ["24,5", "24,6", "24,7", "24,8", "24,9", "24,10", "24,11", "24,12", "24,13"],
-        "built": ["24,12", "24,5", "24,11", "24,6", "24,13", "24,7", "24,8", "24,10", "24,9"],
+        "built": ["24,5", "24,13", "24,12", "24,11", "24,10", "24,9", "24,6", "24,7", "24,8"],
+        "started": true,
         "hp": 6,
         "max": 6,
         "owners": ["f1"],
@@ -470,7 +482,8 @@
         "a": "24,13",
         "b": "20,13",
         "cells": ["24,13", "23,13", "22,13", "21,13", "20,13"],
-        "built": ["23,13", "22,13", "24,13", "21,13", "20,13"],
+        "built": ["20,13", "24,13", "21,13", "22,13", "23,13"],
+        "started": true,
         "hp": 4,
         "max": 4,
         "owners": ["f1"],
@@ -482,7 +495,8 @@
         "a": "20,13",
         "b": "20,5",
         "cells": ["20,13", "20,12", "20,11", "20,10", "20,9", "20,8", "20,7", "20,6", "20,5"],
-        "built": ["20,5", "20,12", "20,6", "20,11", "20,7", "20,13", "20,8", "20,10"],
+        "built": ["20,13", "20,5", "20,12", "20,11", "20,10", "20,6", "20,7", "20,8"],
+        "started": true,
         "hp": 6,
         "max": 6,
         "owners": ["f1"],
@@ -493,15 +507,15 @@
     "log": [
       {
         "turn": 0,
-        "message": "发现 751 个候选；推荐 围场。"
+        "message": "Found 751 candidates; selected Enclosure."
       },
       {
         "turn": 0,
-        "message": "已保存计划 rectangle，评分 43.3；1 层。"
+        "message": "Saved plan rectangle, score 43.3; 1 layers."
       },
       {
-        "turn": 50,
-        "message": "f1：预布完成 · 留入口"
+        "turn": 22,
+        "message": "f1: Ready with entrance"
       }
     ],
     "selection": null,
@@ -697,7 +711,7 @@
         "rectangle:20,6;24,6;24,10;20,10",
         "rectangle:20,6;24,6;24,12;20,12"
       ],
-      "fallback": "围场",
+      "fallback": "Enclosure",
       "policy": "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented."
     }
   },
@@ -794,7 +808,7 @@
   ],
   "trace": [
     {
-      "turn": 50,
+      "turn": 22,
       "target": [2, 10],
       "fields": [
         {
@@ -809,19 +823,25 @@
         {
           "id": "s1",
           "active": true,
-          "pos": [11, 9],
-          "budget": 0.5,
-          "category": "lure"
+          "pos": [20, 9],
+          "budget": 0,
+          "category": "extension",
+          "task": {
+            "type": "extend",
+            "k": "22,5",
+            "id": "20,5|24,5",
+            "f": "f1"
+          }
         },
         {
           "id": "s2",
           "active": true,
-          "pos": [23, 10],
+          "pos": [21, 10],
           "budget": 0.5,
-          "category": "extension",
+          "category": "idle",
           "task": {
             "type": "extend",
-            "k": "24,9",
+            "k": "24,8",
             "id": "24,13|24,5",
             "f": "f1"
           }
@@ -829,13 +849,13 @@
         {
           "id": "s3",
           "active": true,
-          "pos": [23, 8],
-          "budget": 0.5,
+          "pos": [21, 9],
+          "budget": 0,
           "category": "idle",
           "task": {
             "type": "extend",
-            "k": "24,9",
-            "id": "24,13|24,5",
+            "k": "23,5",
+            "id": "20,5|24,5",
             "f": "f1"
           }
         }
@@ -847,10 +867,10 @@
         ["20,13", true, 2, 0]
       ],
       "links": [
-        ["20,5|24,5", 4, 0, ["23,5", "22,5", "24,5", "21,5", "20,5"]],
-        ["24,13|24,5", 6, 0, ["24,12", "24,5", "24,11", "24,6", "24,13", "24,7", "24,8", "24,10", "24,9"]],
-        ["20,13|24,13", 4, 0, ["23,13", "22,13", "24,13", "21,13", "20,13"]],
-        ["20,13|20,5", 6, 0, ["20,5", "20,12", "20,6", "20,11", "20,7", "20,13", "20,8", "20,10"]]
+        ["20,5|24,5", 4, 0, ["20,5", "24,5", "21,5", "23,5", "22,5"]],
+        ["24,13|24,5", 6, 0, ["24,5", "24,13", "24,12", "24,11", "24,10", "24,9", "24,6", "24,7", "24,8"]],
+        ["20,13|24,13", 4, 0, ["20,13", "24,13", "21,13", "22,13", "23,13"]],
+        ["20,13|20,5", 6, 0, ["20,13", "20,5", "20,12", "20,11", "20,10", "20,6", "20,7", "20,8"]]
       ],
       "ownerless": [["g1", 0]],
       "physicalCells": 23,
@@ -860,7 +880,7 @@
       "damage": []
     },
     {
-      "turn": 50,
+      "turn": 22,
       "actors": [
         {
           "id": "s1",
@@ -870,10 +890,10 @@
       ]
     },
     {
-      "turn": 50
+      "turn": 22
     },
     {
-      "turn": 50,
+      "turn": 22,
       "actors": [
         {
           "id": "s3",
@@ -883,7 +903,7 @@
       ]
     },
     {
-      "turn": 50,
+      "turn": 22,
       "actors": [
         {
           "id": "s2",
@@ -892,14 +912,14 @@
       ]
     },
     {
-      "turn": 50,
+      "turn": 22,
       "fields": [
         {
           "id": "f1",
           "phase": "retired"
         }
       ],
-      "links": [["20,5|24,5", 3.65, 0, ["23,5", "22,5", "24,5", "21,5", "20,5"]]],
+      "links": [["20,5|24,5", 3.65, 0, ["20,5", "24,5", "21,5", "23,5", "22,5"]]],
       "damage": [
         {
           "id": "20,5|24,5",
@@ -908,199 +928,65 @@
       ]
     },
     {
-      "turn": 51,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0,
-          "category": "idle"
-        }
-      ],
+      "turn": 23,
       "damage": []
     },
     {
-      "turn": 52,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 24
     },
     {
-      "turn": 53,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
+      "turn": 25
     },
     {
-      "turn": 54,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0
-        }
-      ]
+      "turn": 26
     },
     {
-      "turn": 55,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 27
     },
     {
-      "turn": 56,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
+      "turn": 28
     },
     {
-      "turn": 57,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0
-        }
-      ]
+      "turn": 29
     },
     {
-      "turn": 58,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 30
     },
     {
-      "turn": 59,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
+      "turn": 31
     },
     {
-      "turn": 60,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0
-        }
-      ]
+      "turn": 32
     },
     {
-      "turn": 61,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 33
     },
     {
-      "turn": 62,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
+      "turn": 34
     },
     {
-      "turn": 63,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0
-        }
-      ]
+      "turn": 35
     },
     {
-      "turn": 64,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 36
     },
     {
-      "turn": 65,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
+      "turn": 37
     },
     {
-      "turn": 66,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0
-        }
-      ]
+      "turn": 38
     },
     {
-      "turn": 67,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 39
     },
     {
-      "turn": 68,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "idle"
-        }
-      ]
+      "turn": 40
     },
     {
-      "turn": 69,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 0
-        }
-      ]
+      "turn": 41
     },
     {
-      "turn": 70,
-      "actors": [
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
+      "turn": 42
     }
   ],
   "outcome": {
@@ -1108,11 +994,10 @@
     "damagedHP": 3.65,
     "finalHP": 3.65
   },
-  "finalHash": "281c5de5dc83f139abdd951554c2ba30d9ed2116fc8d112bffa19c6ffe5bc448",
+  "finalHash": "6175b81688c800489733407bcaa206290e162da9556fb9cc74b3a0819b421a75",
   "costs": {
     "inactive": 40,
-    "idle": 13,
-    "budget-delay": 7
+    "idle": 20
   },
   "traceFormat": "Per-action deltas; actor/field records merge by id, anchor/link tuples replace by first element. Initial observation is complete."
 }

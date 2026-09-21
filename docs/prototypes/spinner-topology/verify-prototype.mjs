@@ -313,23 +313,23 @@ if (process.env.PLAYWRIGHT_MODULE) {
             ),
             "Browser single-cell damage did not open room boundary",
         );
-        await page.getByRole("button", { name: "内外双层", exact: true }).click();
-        await page.getByRole("button", { name: "2. 完成预布", exact: true }).click();
-        await page.getByRole("button", { name: "3. 入核心并封口", exact: true }).click();
+        await page.getByRole("button", { name: "Nested fields", exact: true }).click();
+        await page.getByRole("button", { name: "2. Complete prebuild", exact: true }).click();
+        await page.getByRole("button", { name: "3. Enter and seal", exact: true }).click();
         requireFact(
             await page.evaluate(
                 () => SpinnerTopology.inspect(prototypeState).geometryReady && prototypeState.fields.length === 2,
             ),
             "Guided nested closure failed",
         );
-        await page.getByRole("button", { name: "4. 破坏内层一边", exact: true }).click();
+        await page.getByRole("button", { name: "4. Breach inner edge", exact: true }).click();
         requireFact(
             await page.evaluate(() => !SpinnerTopology.inspect(prototypeState).exitPath.length),
             "Inner breach unexpectedly opened intact outer field",
         );
         // Exercise a guided reset, shared ownership and file save/restore without a server.
-        await page.getByRole("button", { name: "重叠与破网", exact: true }).click();
-        await page.getByRole("button", { name: "2. 建立共享计划", exact: true }).click();
+        await page.getByRole("button", { name: "Shared fields and breach", exact: true }).click();
+        await page.getByRole("button", { name: "2. Build shared plan", exact: true }).click();
         requireFact(
             await page.evaluate(() => SpinnerTopology.inspect(prototypeState).sharedLinks > 0),
             "Guided shared plan failed",
@@ -342,12 +342,12 @@ if (process.env.PLAYWRIGHT_MODULE) {
         const before = await page.evaluate(() => JSON.stringify(prototypeState));
         await page.locator("#step").click();
         await page.locator("#stateFile").setInputFiles(stateFile);
-        await page.waitForFunction(() => document.getElementById("notice").textContent.includes("已恢复"));
+        await page.waitForFunction(() => document.getElementById("notice").textContent.includes("Restored"));
         requireFact(
             (await page.evaluate(() => JSON.stringify(prototypeState))) === before,
             "Browser restore changed state",
         );
-        await page.getByRole("button", { name: "3. 入核心并封口", exact: true }).click();
+        await page.getByRole("button", { name: "3. Enter and seal", exact: true }).click();
         requireFact(
             await page.evaluate(() => {
                 const t = SpinnerTopology,
@@ -366,7 +366,7 @@ if (process.env.PLAYWRIGHT_MODULE) {
             }),
             "Offline artifact let a retired owner invalidate surviving shared geometry",
         );
-        await page.getByRole("button", { name: "4. 破坏共享锚点", exact: true }).click();
+        await page.getByRole("button", { name: "4. Break shared anchor", exact: true }).click();
         requireFact(
             await page.evaluate(() => {
                 const s = prototypeState,
@@ -377,22 +377,22 @@ if (process.env.PLAYWRIGHT_MODULE) {
             }),
             "Browser shared-anchor damage failed",
         );
-        await page.getByRole("button", { name: "真实地图占位等待", exact: true }).click();
-        await page.getByRole("button", { name: "2. 施工到占位等待", exact: true }).click();
+        await page.getByRole("button", { name: "Native occupancy wait", exact: true }).click();
+        await page.getByRole("button", { name: "2. Build until blocked", exact: true }).click();
         requireFact(
             await page.evaluate(() => prototypeState.fields[0].phase === "preparing"),
             "Fixed lure fixture did not wait",
         );
-        await page.getByRole("button", { name: "3. 调试移开固定诱饵", exact: true }).click();
-        await page.getByRole("button", { name: "4. 继续合法施工", exact: true }).click();
+        await page.getByRole("button", { name: "3. Vacate lure (debug)", exact: true }).click();
+        await page.getByRole("button", { name: "4. Resume legal work", exact: true }).click();
         requireFact(
             await page.evaluate(() => prototypeState.fields[0].phase === "barrier"),
             "Vacating lure did not resume construction",
         );
-        await page.getByRole("button", { name: "内部地形变化", exact: true }).click();
-        await page.getByRole("button", { name: "1. 重置并规划", exact: true }).click();
-        await page.getByRole("button", { name: "2. 内部空格改墙", exact: true }).click();
-        await page.getByRole("button", { name: "3. 下一施工行动验证", exact: true }).click();
+        await page.getByRole("button", { name: "Interior terrain change", exact: true }).click();
+        await page.getByRole("button", { name: "1. Reset and plan", exact: true }).click();
+        await page.getByRole("button", { name: "2. Block interior cell", exact: true }).click();
+        await page.getByRole("button", { name: "3. Validate next action", exact: true }).click();
         requireFact(
             await page.evaluate(() => prototypeState.fields[0].retired && prototypeState.fields.at(-1).type === "line"),
             "Interior edit did not retire invalid field",

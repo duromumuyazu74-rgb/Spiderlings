@@ -1,12 +1,12 @@
 {
   "id": "corridor-2-prebuild",
-  "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+  "note": "Same candidate across counts. All unaware actors build; alerting assigns one lure. Two actors cannot add the outer layer. Includes travel from original spawn positions.",
   "initial": {
     "schema": 1,
     "map": {
       "id": "corridor",
-      "name": "双格走廊",
-      "desc": "两格横截面可布置短连接；不强行生成房间围场。",
+      "name": "Two-cell corridor",
+      "desc": "A two-cell cut supports a short link without forcing a room enclosure.",
       "grid": [
         "###############################",
         "###############################",
@@ -131,6 +131,7 @@
     },
     "seed": "spinner-01",
     "turn": 0,
+    "aware": false,
     "target": {
       "pos": [2, 9],
       "kind": "player"
@@ -144,7 +145,7 @@
             "pos": [9, 9],
             "active": true,
             "budget": 0,
-            "last": "待命",
+            "last": "Idle",
             "path": []
           },
           {
@@ -152,7 +153,7 @@
             "pos": [10, 10],
             "active": true,
             "budget": 0,
-            "last": "待命",
+            "last": "Idle",
             "path": []
           }
         ],
@@ -205,6 +206,7 @@
         "b": "23,10",
         "cells": ["23,9", "23,10"],
         "built": [],
+        "started": false,
         "hp": 2.5,
         "max": 2.5,
         "owners": ["f1"],
@@ -214,11 +216,11 @@
     "log": [
       {
         "turn": 0,
-        "message": "发现 27 个候选；推荐 拦截线。"
+        "message": "Found 27 candidates; selected Interception line."
       },
       {
         "turn": 0,
-        "message": "已保存计划 line，评分 28.8；1 层。"
+        "message": "Saved plan line, score 28.8; 1 layers."
       }
     ],
     "selection": null,
@@ -289,35 +291,11 @@
         "line:21,9;21,10",
         "line:20,9;20,10"
       ],
-      "fallback": "拦截线",
+      "fallback": "Interception line",
       "policy": "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented."
     }
   },
   "actions": [
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
-    {
-      "type": "step"
-    },
     {
       "type": "step"
     },
@@ -386,14 +364,26 @@
           "active": true,
           "pos": [9, 9],
           "budget": 1,
-          "category": "budget-delay"
+          "category": "budget-delay",
+          "task": {
+            "type": "anchor",
+            "k": "23,10",
+            "id": "23,10",
+            "f": "f1"
+          }
         },
         {
           "id": "s2",
           "active": true,
           "pos": [10, 10],
           "budget": 1,
-          "category": "budget-delay"
+          "category": "budget-delay",
+          "task": {
+            "type": "anchor",
+            "k": "23,9",
+            "id": "23,9",
+            "f": "f1"
+          }
         }
       ],
       "anchors": [
@@ -413,20 +403,15 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [10, 9],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
           "pos": [11, 10],
           "budget": 0.5,
-          "category": "movement",
-          "task": {
-            "type": "anchor",
-            "k": "23,10",
-            "id": "23,10",
-            "f": "f1"
-          }
+          "category": "movement"
         }
       ]
     },
@@ -435,6 +420,7 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [11, 9],
           "budget": 0
         },
         {
@@ -464,8 +450,9 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [12, 9],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
@@ -480,6 +467,7 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [13, 9],
           "budget": 0
         },
         {
@@ -509,8 +497,9 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [14, 9],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
@@ -525,6 +514,7 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [15, 9],
           "budget": 0
         },
         {
@@ -554,8 +544,9 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [16, 9],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
@@ -570,11 +561,12 @@
       "actors": [
         {
           "id": "s1",
+          "pos": [17, 9],
           "budget": 0
         },
         {
           "id": "s2",
-          "pos": [18, 10],
+          "pos": [18, 9],
           "budget": 0
         }
       ]
@@ -589,24 +581,24 @@
         },
         {
           "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
+          "category": "placement"
         }
-      ]
+      ],
+      "anchors": [["23,9", true, 2, 0]],
+      "links": [["23,10|23,9", 2.5, 0, ["23,9"]]]
     },
     {
       "turn": 14,
       "actors": [
         {
           "id": "s1",
+          "pos": [18, 10],
           "budget": 0.5,
-          "category": "lure"
+          "category": "movement"
         },
         {
           "id": "s2",
-          "pos": [19, 10],
-          "budget": 0.5,
-          "category": "movement"
+          "category": "idle"
         }
       ]
     },
@@ -615,151 +607,14 @@
       "actors": [
         {
           "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [20, 10],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 16,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 17,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "pos": [21, 10],
-          "budget": 0.5,
-          "category": "movement"
-        }
-      ]
-    },
-    {
-      "turn": 18,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "pos": [22, 10],
-          "budget": 0
-        }
-      ]
-    },
-    {
-      "turn": 19,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 20,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
           "category": "placement"
         }
       ],
-      "anchors": [["23,10", true, 2, 0]]
+      "anchors": [["23,10", true, 2, 0]],
+      "links": [["23,10|23,9", 2.5, 0, ["23,9", "23,10"]]]
     },
     {
-      "turn": 21,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
-          "task": {
-            "type": "anchor",
-            "k": "23,9",
-            "id": "23,9",
-            "f": "f1"
-          }
-        }
-      ],
-      "anchors": [["23,9", true, 2, 0]]
-    },
-    {
-      "turn": 22,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 1,
-          "category": "budget-delay"
-        },
-        {
-          "id": "s2",
-          "budget": 1,
-          "category": "budget-delay"
-        }
-      ]
-    },
-    {
-      "turn": 23,
-      "actors": [
-        {
-          "id": "s1",
-          "budget": 0.5,
-          "category": "lure"
-        },
-        {
-          "id": "s2",
-          "budget": 0.5,
-          "category": "extension",
-          "task": {
-            "type": "extend",
-            "k": "23,10",
-            "id": "23,10|23,9",
-            "f": "f1"
-          }
-        }
-      ],
-      "links": [["23,10|23,9", 2.5, 0, ["23,10"]]],
-      "physicalCells": 1
-    },
-    {
-      "turn": 24,
+      "turn": 16,
       "fields": [
         {
           "id": "f1",
@@ -769,37 +624,32 @@
       "actors": [
         {
           "id": "s1",
-          "budget": 0
-        },
-        {
-          "id": "s2",
-          "budget": 0,
+          "category": "extension",
           "task": {
             "type": "extend",
-            "k": "23,9",
+            "k": "23,10",
             "id": "23,10|23,9",
             "f": "f1"
           }
         }
       ],
-      "links": [["23,10|23,9", 2.5, 0, ["23,10", "23,9"]]],
       "physicalCells": 2,
       "exitReachable": false
     }
   ],
   "outcome": {
     "completed": true,
-    "turns": 24,
+    "turns": 16,
     "limit": 450,
     "layers": 1
   },
-  "finalHash": "b2a45491de4d6132a3ce9117523958f2291b7e49484b2df6c32165dd4fbf855c",
+  "finalHash": "ba508a3f664a765e127ff3ea852670c2c7a1502b8d60d88d3314e3c3c203b7b4",
   "costs": {
-    "budget-delay": 16,
-    "lure": 16,
-    "movement": 12,
+    "budget-delay": 9,
+    "movement": 17,
     "placement": 2,
-    "extension": 2
+    "idle": 3,
+    "extension": 1
   },
   "traceFormat": "Per-action deltas; actor/field records merge by id, anchor/link tuples replace by first element. Initial observation is complete."
 }

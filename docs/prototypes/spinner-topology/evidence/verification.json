@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-21T08:40:50.682Z",
-  "artifactSHA256": "7c86787b4d2b0aa3b05d36615daa3e843454d097f61303b16c8bb7e04ee93203",
+  "date": "2026-09-21T10:35:36.744Z",
+  "artifactSHA256": "e7495776ecd94c70a1b7b04a4c2b2ade9706fe3c6994cb8d6d993d011a6cf87c",
   "scope": "Topology and disposable browser UI only; no runtime Mod integration",
   "walkthroughs": [
     {
@@ -10,9 +10,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 9,
+      "prebuildTurns": 2,
       "debugLureVacated": false,
-      "elapsedMs": 25,
+      "elapsedMs": 24,
       "passed": true
     },
     {
@@ -22,9 +22,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 24,
+      "prebuildTurns": 16,
       "debugLureVacated": false,
-      "elapsedMs": 17,
+      "elapsedMs": 16,
       "passed": true
     },
     {
@@ -34,9 +34,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 11,
+      "prebuildTurns": 4,
       "debugLureVacated": false,
-      "elapsedMs": 19,
+      "elapsedMs": 18,
       "passed": true
     },
     {
@@ -46,9 +46,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 20,
+      "prebuildTurns": 11,
       "debugLureVacated": false,
-      "elapsedMs": 17,
+      "elapsedMs": 13,
       "passed": true
     },
     {
@@ -58,9 +58,9 @@
       "selected": "rectangle",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 50,
+      "prebuildTurns": 22,
       "debugLureVacated": false,
-      "elapsedMs": 106,
+      "elapsedMs": 97,
       "passed": true
     },
     {
@@ -70,9 +70,9 @@
       "selected": "rectangle",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 45,
+      "prebuildTurns": 20,
       "debugLureVacated": false,
-      "elapsedMs": 59,
+      "elapsedMs": 53,
       "passed": true
     },
     {
@@ -82,9 +82,9 @@
       "selected": "rectangle",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 99,
+      "prebuildTurns": 27,
       "debugLureVacated": false,
-      "elapsedMs": 96,
+      "elapsedMs": 92,
       "passed": true
     },
     {
@@ -96,7 +96,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 0,
       "debugLureVacated": false,
-      "elapsedMs": 8,
+      "elapsedMs": 10,
       "passed": true
     },
     {
@@ -106,9 +106,9 @@
       "selected": "rectangle",
       "layers": 2,
       "sharedLinks": 4,
-      "prebuildTurns": 36,
+      "prebuildTurns": 13,
       "debugLureVacated": false,
-      "elapsedMs": 199,
+      "elapsedMs": 191,
       "passed": true
     },
     {
@@ -118,9 +118,9 @@
       "selected": "rectangle",
       "layers": 2,
       "sharedLinks": 0,
-      "prebuildTurns": 113,
+      "prebuildTurns": 42,
       "debugLureVacated": false,
-      "elapsedMs": 462,
+      "elapsedMs": 427,
       "passed": true
     },
     {
@@ -130,9 +130,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 54,
+      "prebuildTurns": 53,
       "debugLureVacated": false,
-      "elapsedMs": 332,
+      "elapsedMs": 378,
       "passed": true
     },
     {
@@ -142,9 +142,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 3,
+      "prebuildTurns": 2,
       "debugLureVacated": false,
-      "elapsedMs": 91,
+      "elapsedMs": 97,
       "passed": true
     },
     {
@@ -154,9 +154,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 86,
+      "prebuildTurns": 97,
       "debugLureVacated": false,
-      "elapsedMs": 1156,
+      "elapsedMs": 1272,
       "passed": true
     },
     {
@@ -166,9 +166,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 80,
+      "prebuildTurns": 139,
       "debugLureVacated": false,
-      "elapsedMs": 690,
+      "elapsedMs": 1062,
       "passed": true
     },
     {
@@ -178,9 +178,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 53,
+      "prebuildTurns": 96,
       "debugLureVacated": false,
-      "elapsedMs": 467,
+      "elapsedMs": 670,
       "passed": true
     },
     {
@@ -190,9 +190,9 @@
       "selected": "line",
       "layers": 1,
       "sharedLinks": 0,
-      "prebuildTurns": 453,
-      "debugLureVacated": true,
-      "elapsedMs": 1427,
+      "prebuildTurns": 2,
+      "debugLureVacated": false,
+      "elapsedMs": 193,
       "passed": true
     }
   ],

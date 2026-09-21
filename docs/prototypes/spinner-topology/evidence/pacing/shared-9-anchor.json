@@ -5,8 +5,8 @@
     "schema": 1,
     "map": {
       "id": "overlap",
-      "name": "两群重叠",
-      "desc": "第二组复用同一几何，验证一个物理连接、多个所有者和共同破坏。",
+      "name": "Overlapping groups",
+      "desc": "Two groups reuse one layout with shared physical links, owners and destruction.",
       "grid": [
         "###############################",
         "###############################",
@@ -399,6 +399,7 @@
     },
     "seed": "spinner-01",
     "turn": 0,
+    "aware": false,
     "target": {
       "pos": [2, 10],
       "kind": "player"
@@ -500,11 +501,11 @@
     "log": [
       {
         "turn": 0,
-        "message": "发现 1311 个候选；推荐 围场。"
+        "message": "Found 1311 candidates; selected Enclosure."
       },
       {
         "turn": 0,
-        "message": "已保存计划 rectangle，评分 43.7；1 层。"
+        "message": "Saved plan rectangle, score 43.7; 1 layers."
       }
     ],
     "selection": null,
@@ -676,7 +677,7 @@
         "rectangle:21,5;25,5;25,13;21,13",
         "rectangle:21,6;25,6;25,10;21,10"
       ],
-      "fallback": "围场",
+      "fallback": "Enclosure",
       "policy": "Eligible enclosure templates first; otherwise interception lines. Weighted top-eight shortlist within that class. Travel uses reachable path length; strategic AI remains unimplemented."
     }
   },
@@ -778,7 +779,7 @@
     ],
     "owners": ["f1", "f2"]
   },
-  "finalHash": "19e34352370153d2e12daa435f90fdd4fee97c45a69b0adcd02c8657685c2a84",
+  "finalHash": "36147a9b85f66faad5373402942428e48214bc0153405e21f7dff6ef1f795360",
   "costs": {},
   "traceFormat": "Per-action deltas; actor/field records merge by id, anchor/link tuples replace by first element. Initial observation is complete."
 }
