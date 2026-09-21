@@ -7,8 +7,11 @@ const [template, engine, ui, snapshots] = await Promise.all(
 );
 const safe = (value) => value.replace(/<\/script/gi, "<\\/script");
 const pacing = JSON.parse(await readFile(file("evidence/pacing/summary.json"), "utf8"));
-if (pacing.engineSHA256 !== createHash("sha256").update(engine).digest("hex"))
-    throw Error("Run measure-pacing.mjs after changing the engine, then build.");
+const durability = JSON.parse(await readFile(file("evidence/durability/summary.json"), "utf8"));
+const engineSHA256 = createHash("sha256").update(engine).digest("hex");
+if (pacing.engineSHA256 !== engineSHA256) throw Error("Run measure-pacing.mjs after changing the engine, then build.");
+if (durability.engineSHA256 !== engineSHA256)
+    throw Error("Run replay-durability.mjs after changing the engine, then build.");
 const timing = [2, 4, 8].map((count) => ({
     count,
     travel: pacing.cases.find((c) => c.id === `room-${count}-prebuild`).outcome.turns,

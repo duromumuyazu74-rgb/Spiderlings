@@ -25,6 +25,14 @@ The high-level degradation path is necessary: the conservative current templates
 
 Breaking a boundary and reaching the level exit are different properties. A ring built across a room's only exit may require a specific exit-facing breach, even after the target can leave the ring on another side. The UI now displays both paths separately.
 
+## Shared durability resolution
+
+Issue #27 resolves the original experiment's partial-collinear mismatch. The current engine merges field paths into unit edges, combines owner sets and coalesces only consecutive collinear edges with the same owners. A partial overlap is therefore one shared physical span between exclusive spans, not two HP records forwarding damage to each other.
+
+Only original field endpoints are anchors. Crossings and ownership splits are graph junctions without anchor HP, full damage propagation or snaring effects. Ordinary damage measures graph distance to the nearest real anchor. The accepted segment maximum remains `2 + 0.5 * (occupied cells - 1)` after coalescing.
+
+The [decision record](DURABILITY.md) separates this gameplay contract from storage choices and remaining native checks. The [focused summary](evidence/durability/summary.json) covers identical, partial-collinear, crossing and nested structures under direct-anchor, single-cell and per-covered-cell area damage. It also records a shared-boundary escape route and staggered final-owner collapse.
+
 ## Costs still to evaluate
 
 At the current 1.5-action-budget approximation, the default regular room takes about 50 world turns to prebuild; the nested fixture takes about 113. These include relocation and one-cell construction, with the lure idle. This does not establish native timing. It does show that late-arriving groups may not finish a large arena during a short fight. Smaller templates, prebuilding before awareness and native movement cadence should be evaluated before changing approved rules.

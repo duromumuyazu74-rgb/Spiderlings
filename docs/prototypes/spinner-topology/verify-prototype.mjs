@@ -377,6 +377,44 @@ if (process.env.PLAYWRIGHT_MODULE) {
             }),
             "Browser shared-anchor damage failed",
         );
+        await page.getByRole("button", { name: "Partial overlap durability", exact: true }).click();
+        await page.getByRole("button", { name: "1. Load physical graph", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => {
+                const s = prototypeState,
+                    shared = Object.values(s.links).filter((link) => link.owners.length === 2);
+                return shared.length === 1 && Object.keys(s.junctions).length === 0 && !s.anchors["15,10"];
+            }),
+            "Offline partial overlap did not normalize to one shared span",
+        );
+        await page.getByRole("button", { name: "2. Hit shared cell", exact: true }).click();
+        await page.getByRole("button", { name: "3. Cover three cells", exact: true }).click();
+        await page.getByRole("button", { name: "4. Break real anchor", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => {
+                const t = SpinnerTopology,
+                    s = prototypeState,
+                    shared = Object.values(s.links).find((link) => link.owners.length === 2);
+                return shared.hp === 0 && t.inspect(s).fields.find((field) => field.id === "f1").escapePath.length > 0;
+            }),
+            "Offline partial overlap breach did not open the recorded boundary route",
+        );
+        await page.getByRole("button", { name: "5. Remove first owner", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => {
+                const links = Object.values(prototypeState.links);
+                return (
+                    links.some((link) => link.owners.length === 1 && link.owners[0] === "f1" && link.hp === 0) &&
+                    links.some((link) => link.owners.length === 2 && link.hp > 0)
+                );
+            }),
+            "Offline partial overlap removed the surviving owner's shared span",
+        );
+        await page.getByRole("button", { name: "6. Remove final owner", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => SpinnerTopology.inspect(prototypeState).physicalCells === 0),
+            "Offline partial overlap survived the final-owner collapse deadline",
+        );
         await page.getByRole("button", { name: "Native occupancy wait", exact: true }).click();
         await page.getByRole("button", { name: "2. Build until blocked", exact: true }).click();
         requireFact(
@@ -416,6 +454,9 @@ if (process.env.PLAYWRIGHT_MODULE) {
             nestedClosure: true,
             sharedDamage: true,
             sharedOwnerRetirement: true,
+            partialSharedDurability: true,
+            partialBoundaryBreach: true,
+            partialFinalOwnerCollapse: true,
             fullReachableRegion: true,
             fixedLureVacancy: true,
             interiorInvalidation: true,

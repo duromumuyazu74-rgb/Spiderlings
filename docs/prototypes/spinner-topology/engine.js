@@ -68,6 +68,92 @@ globalThis.SpinnerTopology = (() => {
             result.push(key(a[0] + Math.sign(b[0] - a[0]) * i, a[1] + Math.sign(b[1] - a[1]) * i));
         return result;
     }
+    const edgeKey = (a, b) => [a, b].sort().join("|");
+    const ownerKey = (owners) => [...owners].sort().join("+");
+    function physicalGraph(fieldSpecs) {
+        const unitEdges = new Map(),
+            adjacency = new Map(),
+            originalAnchors = new Map();
+        const addAdjacent = (node, edge) => {
+            if (!adjacency.has(node)) adjacency.set(node, []);
+            adjacency.get(node).push(edge);
+        };
+        for (const field of fieldSpecs) {
+            for (const vertex of field.vertices) {
+                const cell = key(...vertex);
+                if (!originalAnchors.has(cell)) originalAnchors.set(cell, new Set());
+                originalAnchors.get(cell).add(field.id);
+            }
+            const closed = field.type !== "line";
+            for (let i = 0; i < (closed ? field.vertices.length : field.vertices.length - 1); i++) {
+                const cells = segment(field.vertices[i], field.vertices[(i + 1) % field.vertices.length]);
+                for (let j = 1; j < cells.length; j++) {
+                    const id = edgeKey(cells[j - 1], cells[j]);
+                    if (!unitEdges.has(id))
+                        unitEdges.set(id, { id, nodes: [cells[j - 1], cells[j]], owners: new Set() });
+                    unitEdges.get(id).owners.add(field.id);
+                }
+            }
+        }
+        for (const edge of unitEdges.values()) {
+            addAdjacent(edge.nodes[0], edge);
+            addAdjacent(edge.nodes[1], edge);
+        }
+        const breakpoints = new Set(originalAnchors.keys());
+        for (const [node, edges] of adjacency) {
+            const directions = edges.map((edge) => {
+                const other = edge.nodes.find((cell) => cell !== node),
+                    [x, y] = point(node),
+                    [ox, oy] = point(other);
+                return [Math.abs(ox - x), Math.abs(oy - y)].join(",");
+            });
+            const owners = new Set(edges.map((edge) => ownerKey(edge.owners)));
+            if (edges.length !== 2 || new Set(directions).size !== 1 || owners.size !== 1) breakpoints.add(node);
+        }
+        const visited = new Set(),
+            links = {};
+        for (const first of unitEdges.values()) {
+            if (visited.has(first.id)) continue;
+            let current = breakpoints.has(first.nodes[0]) ? first.nodes[0] : first.nodes[1],
+                edge = first;
+            const cells = [current],
+                owners = [...first.owners].sort();
+            while (edge) {
+                visited.add(edge.id);
+                const next = edge.nodes[0] === current ? edge.nodes[1] : edge.nodes[0];
+                cells.push(next);
+                if (breakpoints.has(next)) break;
+                edge = adjacency
+                    .get(next)
+                    .find((candidate) => !visited.has(candidate.id) && ownerKey(candidate.owners) === owners.join("+"));
+                current = next;
+            }
+            const a = cells[0],
+                b = cells.at(-1),
+                id = `${edgeKey(a, b)}#${owners.join("+")}`,
+                max = 2 + 0.5 * (cells.length - 1);
+            links[id] = { id, a, b, cells, built: [...cells], started: true, hp: max, max, owners, cooldown: 0 };
+        }
+        const anchors = {};
+        for (const [cell, initialOwners] of originalAnchors) {
+            const owners = new Set(initialOwners);
+            for (const link of Object.values(links))
+                if (link.a === cell || link.b === cell) for (const owner of link.owners) owners.add(owner);
+            anchors[cell] = { k: cell, placed: true, hp: 2, max: 2, owners: [...owners].sort(), cooldown: 0 };
+        }
+        const junctions = {};
+        for (const cell of breakpoints) {
+            if (anchors[cell]) continue;
+            const incident = Object.values(links).filter((link) => link.a === cell || link.b === cell);
+            junctions[cell] = {
+                k: cell,
+                kind: incident.length >= 4 ? "crossing" : "junction",
+                links: incident.map((link) => link.id),
+                owners: [...new Set(incident.flatMap((link) => link.owners))].sort(),
+            };
+        }
+        return { anchors, links, junctions };
+    }
     function shape(map, vertices, type) {
         const closed = type !== "line",
             edges = [];
@@ -701,6 +787,154 @@ globalThis.SpinnerTopology = (() => {
         addField(s, c, g);
         log(s, "The second group reuses one HP record per shared anchor and link.");
     }
+    function durabilityFixture(kind) {
+        const specs = {
+            identical: [
+                {
+                    id: "f1",
+                    group: "g1",
+                    type: "rectangle",
+                    vertices: [
+                        [9, 5],
+                        [17, 5],
+                        [17, 13],
+                        [9, 13],
+                    ],
+                },
+                {
+                    id: "f2",
+                    group: "g2",
+                    type: "rectangle",
+                    vertices: [
+                        [9, 5],
+                        [17, 5],
+                        [17, 13],
+                        [9, 13],
+                    ],
+                },
+            ],
+            partial: [
+                {
+                    id: "f1",
+                    group: "g1",
+                    type: "rectangle",
+                    vertices: [
+                        [9, 5],
+                        [17, 5],
+                        [17, 10],
+                        [9, 10],
+                    ],
+                },
+                {
+                    id: "f2",
+                    group: "g2",
+                    type: "rectangle",
+                    vertices: [
+                        [13, 10],
+                        [21, 10],
+                        [21, 15],
+                        [13, 15],
+                    ],
+                },
+            ],
+            crossing: [
+                {
+                    id: "f1",
+                    group: "g1",
+                    type: "line",
+                    vertices: [
+                        [9, 10],
+                        [21, 10],
+                    ],
+                },
+                {
+                    id: "f2",
+                    group: "g2",
+                    type: "line",
+                    vertices: [
+                        [15, 5],
+                        [15, 15],
+                    ],
+                },
+            ],
+            nested: [
+                {
+                    id: "f1",
+                    group: "g1",
+                    type: "rectangle",
+                    vertices: [
+                        [9, 5],
+                        [21, 5],
+                        [21, 15],
+                        [9, 15],
+                    ],
+                },
+                {
+                    id: "f2",
+                    group: "g2",
+                    type: "rectangle",
+                    vertices: [
+                        [12, 8],
+                        [18, 8],
+                        [18, 12],
+                        [12, 12],
+                    ],
+                },
+            ],
+        }[kind];
+        if (!specs) throw Error(`Unknown durability fixture: ${kind}`);
+        const map = clone(fixedMaps().find((candidate) => candidate.id === "room")),
+            s = create(map, `durability-${kind}`, 2),
+            graph = physicalGraph(specs);
+        s.map.id = `durability-${kind}`;
+        s.map.name = `${kind[0].toUpperCase()}${kind.slice(1)} physical graph`;
+        s.map.desc = "Settled shared-durability fixture. Damage is injected and does not model native combat.";
+        s.physicalGraph = true;
+        s.candidate = `durability-${kind}`;
+        s.anchors = graph.anchors;
+        s.links = graph.links;
+        s.junctions = graph.junctions;
+        s.groups = specs.map((spec, index) => ({
+            id: spec.group,
+            actors: [
+                {
+                    id: `owner-${index + 1}`,
+                    pos: index ? [20, 14] : [10, 6],
+                    active: true,
+                    budget: 0,
+                    last: "Idle",
+                    path: [],
+                },
+            ],
+            fieldIds: [spec.id],
+            active: true,
+        }));
+        s.fields = specs.map((spec, index) => {
+            const geometry = shape(s.map, spec.vertices, spec.type);
+            return {
+                id: spec.id,
+                group: spec.group,
+                layer: index,
+                type: spec.type,
+                core: [...geometry.core],
+                interior: [...geometry.interior],
+                bounds: [...geometry.bounds],
+                vertices: clone(spec.vertices),
+                anchors: spec.vertices.map((vertex) => key(...vertex)),
+                links: Object.values(s.links)
+                    .filter((link) => link.owners.includes(spec.id))
+                    .map((link) => link.id),
+                phase: spec.type === "line" ? "barrier" : "sealed",
+                triggered: spec.type !== "line",
+                retired: false,
+            };
+        });
+        if (kind === "nested") s.target.pos = [...s.fields[1].core];
+        else if (kind !== "crossing") s.target.pos = [...s.fields[0].core];
+        s.analysis = { candidates: [], selected: null, fallback: null };
+        s.log = [{ turn: 0, message: `Loaded the ${kind} shared-durability fixture.` }];
+        return s;
+    }
     function solids(s) {
         return new Set(
             Object.values(s.links)
@@ -1111,9 +1345,47 @@ globalThis.SpinnerTopology = (() => {
         }
         return s;
     }
+    function graphAnchorDistances(s) {
+        const adjacency = new Map(),
+            queue = [],
+            distances = new Map();
+        const connect = (a, b) => {
+            if (!adjacency.has(a)) adjacency.set(a, new Set());
+            if (!adjacency.has(b)) adjacency.set(b, new Set());
+            adjacency.get(a).add(b);
+            adjacency.get(b).add(a);
+        };
+        for (const link of Object.values(s.links))
+            if (link.hp > 0 && link.started !== false)
+                for (let i = 1; i < link.cells.length; i++)
+                    if (link.built.includes(link.cells[i - 1]) && link.built.includes(link.cells[i]))
+                        connect(link.cells[i - 1], link.cells[i]);
+        for (const anchor of Object.values(s.anchors))
+            if (anchor.placed && anchor.hp > 0) {
+                distances.set(anchor.k, 0);
+                queue.push(anchor.k);
+            }
+        for (let i = 0; i < queue.length; i++) {
+            const cell = queue[i],
+                nextDistance = distances.get(cell) + 1;
+            for (const next of adjacency.get(cell) || [])
+                if (!distances.has(next)) {
+                    distances.set(next, nextDistance);
+                    queue.push(next);
+                }
+        }
+        return distances;
+    }
+    function damageMultiplier(s, link, cell, anchorDistances) {
+        const d = s.physicalGraph
+            ? ((anchorDistances || graphAnchorDistances(s)).get(cell) ?? Infinity)
+            : Math.min(distance(point(cell), point(link.a)), distance(point(cell), point(link.b)));
+        return Math.max(0.25, 1 - 0.15 * d);
+    }
     function attack(s, cell, amount = 1, aoe = false) {
         const p = point(cell),
-            cells = aoe ? [-1, 0, 1].flatMap((dx) => [-1, 0, 1].map((dy) => key(p[0] + dx, p[1] + dy))) : [cell];
+            cells = aoe ? [-1, 0, 1].flatMap((dx) => [-1, 0, 1].map((dy) => key(p[0] + dx, p[1] + dy))) : [cell],
+            anchorDistances = graphAnchorDistances(s);
         const damaged = new Map(),
             destroyed = [];
         for (const k of cells) {
@@ -1130,8 +1402,10 @@ globalThis.SpinnerTopology = (() => {
             } else
                 for (const l of Object.values(s.links))
                     if (l.hp > 0 && l.built.includes(k)) {
-                        const d = Math.min(distance(point(k), point(l.a)), distance(point(k), point(l.b)));
-                        damaged.set(l.id, (damaged.get(l.id) || 0) + amount * Math.max(0.25, 1 - 0.15 * d));
+                        damaged.set(
+                            l.id,
+                            (damaged.get(l.id) || 0) + amount * damageMultiplier(s, l, k, anchorDistances),
+                        );
                     }
         }
         s.lastDamage = [];
@@ -1250,6 +1524,7 @@ globalThis.SpinnerTopology = (() => {
             ),
             physicalCells: solid.size,
             anchorCount: Object.values(s.anchors).filter((a) => a.placed).length,
+            junctionCount: Object.keys(s.junctions || {}).length,
             sharedLinks: Object.values(s.links).filter((l) => l.owners.length > 1).length,
         };
     }
@@ -1275,6 +1550,7 @@ globalThis.SpinnerTopology = (() => {
         floor,
         flood,
         segment,
+        physicalGraph,
         shape,
         analyze,
         fixedMaps,
@@ -1284,8 +1560,11 @@ globalThis.SpinnerTopology = (() => {
         addField,
         editTerrain,
         overlap,
+        durabilityFixture,
         step,
         settle,
+        graphAnchorDistances,
+        damageMultiplier,
         attack,
         enterCore,
         vacateLure,
