@@ -1,0 +1,567 @@
+{
+  "scope": "Settled physical-segment durability model only. Damage is injected; native attacks, resources and balance are not tested.",
+  "immutableBaselineCommit": "cf9d152ecf986296ba6815a15b2f0c0cefcb93e9",
+  "engineSHA256": "3cd509975fac96d4d4da535232148ec2f653a8f983a7aa44c0a58e210352a833",
+  "rule": {
+    "graph": "Coalesce consecutive collinear unit edges only while their owner sets match.",
+    "anchors": "Only original field endpoints have anchor HP and full incident-segment propagation.",
+    "junctions": "Overlap splits and crossings are graph nodes; non-anchor nodes use ordinary per-cell damage.",
+    "segmentHP": "Each coalesced physical segment uses max HP 2 + 0.5 * (occupied cells - 1).",
+    "distance": "Ordinary cell damage uses graph distance to the nearest placed real anchor.",
+    "ownership": "Each physical segment and real anchor remains while any recorded owner is live; the 20-turn clock starts after final-owner loss."
+  },
+  "fixtures": {
+    "identical": {
+      "anchors": 4,
+      "junctions": 0,
+      "segments": [
+        {
+          "id": "17,5|9,5#f1+f2",
+          "endpoints": ["9,5", "17,5"],
+          "owners": ["f1", "f2"],
+          "cells": 9,
+          "maxHP": 6
+        },
+        {
+          "id": "17,13|17,5#f1+f2",
+          "endpoints": ["17,5", "17,13"],
+          "owners": ["f1", "f2"],
+          "cells": 9,
+          "maxHP": 6
+        },
+        {
+          "id": "17,13|9,13#f1+f2",
+          "endpoints": ["17,13", "9,13"],
+          "owners": ["f1", "f2"],
+          "cells": 9,
+          "maxHP": 6
+        },
+        {
+          "id": "9,13|9,5#f1+f2",
+          "endpoints": ["9,13", "9,5"],
+          "owners": ["f1", "f2"],
+          "cells": 9,
+          "maxHP": 6
+        }
+      ],
+      "captureEligible": true
+    },
+    "partial": {
+      "anchors": 8,
+      "junctions": 0,
+      "segments": [
+        {
+          "id": "17,5|9,5#f1",
+          "endpoints": ["9,5", "17,5"],
+          "owners": ["f1"],
+          "cells": 9,
+          "maxHP": 6
+        },
+        {
+          "id": "17,10|17,5#f1",
+          "endpoints": ["17,5", "17,10"],
+          "owners": ["f1"],
+          "cells": 6,
+          "maxHP": 4.5
+        },
+        {
+          "id": "13,10|17,10#f1+f2",
+          "endpoints": ["17,10", "13,10"],
+          "owners": ["f1", "f2"],
+          "cells": 5,
+          "maxHP": 4
+        },
+        {
+          "id": "13,10|9,10#f1",
+          "endpoints": ["13,10", "9,10"],
+          "owners": ["f1"],
+          "cells": 5,
+          "maxHP": 4
+        },
+        {
+          "id": "9,10|9,5#f1",
+          "endpoints": ["9,10", "9,5"],
+          "owners": ["f1"],
+          "cells": 6,
+          "maxHP": 4.5
+        },
+        {
+          "id": "17,10|21,10#f2",
+          "endpoints": ["17,10", "21,10"],
+          "owners": ["f2"],
+          "cells": 5,
+          "maxHP": 4
+        },
+        {
+          "id": "21,10|21,15#f2",
+          "endpoints": ["21,10", "21,15"],
+          "owners": ["f2"],
+          "cells": 6,
+          "maxHP": 4.5
+        },
+        {
+          "id": "13,15|21,15#f2",
+          "endpoints": ["21,15", "13,15"],
+          "owners": ["f2"],
+          "cells": 9,
+          "maxHP": 6
+        },
+        {
+          "id": "13,10|13,15#f2",
+          "endpoints": ["13,15", "13,10"],
+          "owners": ["f2"],
+          "cells": 6,
+          "maxHP": 4.5
+        }
+      ],
+      "captureEligible": true
+    },
+    "crossing": {
+      "anchors": 4,
+      "junctions": 1,
+      "segments": [
+        {
+          "id": "15,10|9,10#f1",
+          "endpoints": ["9,10", "15,10"],
+          "owners": ["f1"],
+          "cells": 7,
+          "maxHP": 5
+        },
+        {
+          "id": "15,10|21,10#f1",
+          "endpoints": ["15,10", "21,10"],
+          "owners": ["f1"],
+          "cells": 7,
+          "maxHP": 5
+        },
+        {
+          "id": "15,10|15,5#f2",
+          "endpoints": ["15,5", "15,10"],
+          "owners": ["f2"],
+          "cells": 6,
+          "maxHP": 4.5
+        },
+        {
+          "id": "15,10|15,15#f2",
+          "endpoints": ["15,10", "15,15"],
+          "owners": ["f2"],
+          "cells": 6,
+          "maxHP": 4.5
+        }
+      ],
+      "captureEligible": false
+    },
+    "nested": {
+      "anchors": 8,
+      "junctions": 0,
+      "segments": [
+        {
+          "id": "21,5|9,5#f1",
+          "endpoints": ["9,5", "21,5"],
+          "owners": ["f1"],
+          "cells": 13,
+          "maxHP": 8
+        },
+        {
+          "id": "21,15|21,5#f1",
+          "endpoints": ["21,5", "21,15"],
+          "owners": ["f1"],
+          "cells": 11,
+          "maxHP": 7
+        },
+        {
+          "id": "21,15|9,15#f1",
+          "endpoints": ["21,15", "9,15"],
+          "owners": ["f1"],
+          "cells": 13,
+          "maxHP": 8
+        },
+        {
+          "id": "9,15|9,5#f1",
+          "endpoints": ["9,15", "9,5"],
+          "owners": ["f1"],
+          "cells": 11,
+          "maxHP": 7
+        },
+        {
+          "id": "12,8|18,8#f2",
+          "endpoints": ["12,8", "18,8"],
+          "owners": ["f2"],
+          "cells": 7,
+          "maxHP": 5
+        },
+        {
+          "id": "18,12|18,8#f2",
+          "endpoints": ["18,8", "18,12"],
+          "owners": ["f2"],
+          "cells": 5,
+          "maxHP": 4
+        },
+        {
+          "id": "12,12|18,12#f2",
+          "endpoints": ["18,12", "12,12"],
+          "owners": ["f2"],
+          "cells": 7,
+          "maxHP": 5
+        },
+        {
+          "id": "12,12|12,8#f2",
+          "endpoints": ["12,12", "12,8"],
+          "owners": ["f2"],
+          "cells": 5,
+          "maxHP": 4
+        }
+      ],
+      "captureEligible": true
+    }
+  },
+  "checks": [
+    {
+      "id": "twelve-damage-replays",
+      "passed": true
+    },
+    {
+      "id": "partial-one-shared-segment",
+      "passed": true
+    },
+    {
+      "id": "partial-breach-opens-boundary-route",
+      "passed": true
+    },
+    {
+      "id": "crossing-no-invented-anchor",
+      "passed": true
+    },
+    {
+      "id": "crossing-no-capture",
+      "passed": true
+    },
+    {
+      "id": "nested-remains-capture-eligible",
+      "passed": true
+    },
+    {
+      "id": "final-owner-collapse-boundary",
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "identical-direct-anchor",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "identical",
+        "mode": "direct-anchor",
+        "target": "9,5",
+        "damagedLinks": [
+          {
+            "id": "17,5|9,5#f1+f2",
+            "damage": 1
+          },
+          {
+            "id": "9,13|9,5#f1+f2",
+            "damage": 1
+          }
+        ],
+        "anchorHP": 1,
+        "physicalSegments": 4,
+        "physicalAnchors": 4,
+        "graphJunctions": 0
+      },
+      "replay": "identical-direct-anchor.json",
+      "finalHash": "f9f7cc3006e7de2e232c3f10ea1629a93b12e6f3b372941b800be24a41a5f7a8"
+    },
+    {
+      "id": "identical-single-cell",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "identical",
+        "mode": "single-cell",
+        "target": "13,5",
+        "damagedLinks": [
+          {
+            "id": "17,5|9,5#f1+f2",
+            "damage": 0.4
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 4,
+        "physicalAnchors": 4,
+        "graphJunctions": 0
+      },
+      "replay": "identical-single-cell.json",
+      "finalHash": "fd6a3f1f9a1a6ed0aae1da90e6fee0b068de390bb64c14653137333aa9acc058"
+    },
+    {
+      "id": "identical-area",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "identical",
+        "mode": "area",
+        "target": "13,5",
+        "damagedLinks": [
+          {
+            "id": "17,5|9,5#f1+f2",
+            "damage": 1.5
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 4,
+        "physicalAnchors": 4,
+        "graphJunctions": 0
+      },
+      "replay": "identical-area.json",
+      "finalHash": "c4200bb5cfe3fa114c706fee7c41789f02e8d467a345a6e34db27f197f0cada5"
+    },
+    {
+      "id": "partial-direct-anchor",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "partial",
+        "mode": "direct-anchor",
+        "target": "13,10",
+        "damagedLinks": [
+          {
+            "id": "13,10|17,10#f1+f2",
+            "damage": 1
+          },
+          {
+            "id": "13,10|9,10#f1",
+            "damage": 1
+          },
+          {
+            "id": "13,10|13,15#f2",
+            "damage": 1
+          }
+        ],
+        "anchorHP": 1,
+        "physicalSegments": 9,
+        "physicalAnchors": 8,
+        "graphJunctions": 0
+      },
+      "replay": "partial-direct-anchor.json",
+      "finalHash": "3c837e0a0c9bb62ba6b9e6ba02d53ddf1106d26e188cf0337b030f955f4752bf"
+    },
+    {
+      "id": "partial-single-cell",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "partial",
+        "mode": "single-cell",
+        "target": "15,10",
+        "damagedLinks": [
+          {
+            "id": "13,10|17,10#f1+f2",
+            "damage": 0.7
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 9,
+        "physicalAnchors": 8,
+        "graphJunctions": 0
+      },
+      "replay": "partial-single-cell.json",
+      "finalHash": "269cdb1ac838c501f23bc2655aa58dd0b4e131a3bcd94a5fabb250950f093e40"
+    },
+    {
+      "id": "partial-area",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "partial",
+        "mode": "area",
+        "target": "15,10",
+        "damagedLinks": [
+          {
+            "id": "13,10|17,10#f1+f2",
+            "damage": 2.4
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 9,
+        "physicalAnchors": 8,
+        "graphJunctions": 0
+      },
+      "replay": "partial-area.json",
+      "finalHash": "09cb6083998406ca43a951882dbe01afb365da00c36dc5aa63fc15d9bcf83352"
+    },
+    {
+      "id": "crossing-direct-anchor",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "crossing",
+        "mode": "direct-anchor",
+        "target": "9,10",
+        "damagedLinks": [
+          {
+            "id": "15,10|9,10#f1",
+            "damage": 1
+          }
+        ],
+        "anchorHP": 1,
+        "physicalSegments": 4,
+        "physicalAnchors": 4,
+        "graphJunctions": 1
+      },
+      "replay": "crossing-direct-anchor.json",
+      "finalHash": "619e4ec19ddccc909e53b32e359ed7ab4555a5ef0e7f1ee3c9378de39c0ec79c"
+    },
+    {
+      "id": "crossing-single-cell",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "crossing",
+        "mode": "single-cell",
+        "target": "15,10",
+        "damagedLinks": [
+          {
+            "id": "15,10|9,10#f1",
+            "damage": 0.25
+          },
+          {
+            "id": "15,10|21,10#f1",
+            "damage": 0.25
+          },
+          {
+            "id": "15,10|15,5#f2",
+            "damage": 0.25
+          },
+          {
+            "id": "15,10|15,15#f2",
+            "damage": 0.25
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 4,
+        "physicalAnchors": 4,
+        "graphJunctions": 1
+      },
+      "replay": "crossing-single-cell.json",
+      "finalHash": "f9398c9a70f4dd537d4776922df061e66315da9dfa3f24a88f69d4edd085f5c6"
+    },
+    {
+      "id": "crossing-area",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "crossing",
+        "mode": "area",
+        "target": "15,10",
+        "damagedLinks": [
+          {
+            "id": "15,10|9,10#f1",
+            "damage": 0.5
+          },
+          {
+            "id": "15,10|15,5#f2",
+            "damage": 0.65
+          },
+          {
+            "id": "15,10|21,10#f1",
+            "damage": 0.5
+          },
+          {
+            "id": "15,10|15,15#f2",
+            "damage": 0.65
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 4,
+        "physicalAnchors": 4,
+        "graphJunctions": 1
+      },
+      "replay": "crossing-area.json",
+      "finalHash": "6e6ff8a3d2ef19c4ab93bc9936bb63fca77412f3070c31fadd954f7972777831"
+    },
+    {
+      "id": "nested-direct-anchor",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "nested",
+        "mode": "direct-anchor",
+        "target": "12,8",
+        "damagedLinks": [
+          {
+            "id": "12,8|18,8#f2",
+            "damage": 1
+          },
+          {
+            "id": "12,12|12,8#f2",
+            "damage": 1
+          }
+        ],
+        "anchorHP": 1,
+        "physicalSegments": 8,
+        "physicalAnchors": 8,
+        "graphJunctions": 0
+      },
+      "replay": "nested-direct-anchor.json",
+      "finalHash": "c4d01eeff00ff3ff9730ecd7c3387a40f0f1b342f5faf2a1fadf7aeda302b30d"
+    },
+    {
+      "id": "nested-single-cell",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "nested",
+        "mode": "single-cell",
+        "target": "15,8",
+        "damagedLinks": [
+          {
+            "id": "12,8|18,8#f2",
+            "damage": 0.55
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 8,
+        "physicalAnchors": 8,
+        "graphJunctions": 0
+      },
+      "replay": "nested-single-cell.json",
+      "finalHash": "59487f9f1b1b9aaf153c33b2bfa3270b70e2fbde2779c6855616c24421677605"
+    },
+    {
+      "id": "nested-area",
+      "note": "One injected damage unit. Area mode covers each cell in a 3x3 square; direct-anchor mode uses a real original endpoint.",
+      "outcome": {
+        "topology": "nested",
+        "mode": "area",
+        "target": "15,8",
+        "damagedLinks": [
+          {
+            "id": "12,8|18,8#f2",
+            "damage": 1.95
+          }
+        ],
+        "anchorHP": null,
+        "physicalSegments": 8,
+        "physicalAnchors": 8,
+        "graphJunctions": 0
+      },
+      "replay": "nested-area.json",
+      "finalHash": "d163a71b97df9dffe06fc467d58d1e7219cdf0b86992b06fa3ab693a443b71e7"
+    },
+    {
+      "id": "partial-boundary-breach",
+      "note": "The target starts inside the first closed boundary. Breaking the one shared physical span opens an outside-boundary route for both owners.",
+      "outcome": {
+        "sharedSegmentDestroyed": true,
+        "firstOwnerEscapeSteps": 4,
+        "floorExitStillBlocked": true
+      },
+      "replay": "partial-boundary-breach.json",
+      "finalHash": "55925e642a0109fe9b7b88f8cecc72dfab7833c1fb3faf012bb92aca6b4da9b8"
+    },
+    {
+      "id": "partial-owner-collapse",
+      "note": "Owner loss is staggered. The shared middle span remains through one owner's collapse and survives for 19 turns after final-owner loss.",
+      "outcome": {
+        "initialCells": 47,
+        "sharedId": "13,10|17,10#f1+f2",
+        "firstOnlyId": "17,5|9,5#f1",
+        "firstOwnerExclusiveCollapsedAt": 20,
+        "sharedCollapsedAfterFinalOwnerLoss": 20,
+        "finalCells": 0
+      },
+      "replay": "partial-owner-collapse.json",
+      "finalHash": "8154ac6886b7f4c9775aab1a93d7ff34765896e9fb6bca25d349f3230d9531ca"
+    }
+  ]
+}
