@@ -25,7 +25,14 @@ function runtime() {
                     events: [],
                 },
             ],
-            KDMapData: { GridWidth: 20, GridHeight: 20, Entities: [] },
+            KDMapData: {
+                GridWidth: 31,
+                GridHeight: 21,
+                Entities: [],
+                StartPosition: { x: 2, y: 10 },
+                EndPosition: { x: 28, y: 10 },
+                ShortcutPositions: [],
+            },
             KDGameData: { SleepTurns: 0 },
             KinkyDungeonPlayerEntity: { player: true, x: 1, y: 1 },
             KinkyDungeonMovableTilesEnemy: ".0",
@@ -73,6 +80,10 @@ function runtime() {
                 entity.x = x;
                 entity.y = y;
                 return true;
+            },
+            KinkyDungeonEnemyCanMove: () => true,
+            KinkyDungeonEnemyTryMove(enemy, _direction, _points, x, y) {
+                return context.KDMoveEntity(enemy, x, y);
             },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] = map[trigger] || {};
@@ -204,6 +215,18 @@ test("native pathcondition lets only Spiderlings cross without moving or duplica
     assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 1);
 });
 
+test("native planning snapshot protects object shortcuts, jail points, and required interaction tiles", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.ShortcutPositions = { side: { x: 7, y: 8 } };
+    c.KDMapData.JailPoints = [{ x: 8, y: 8, type: "jail", radius: 1 }];
+    r.tiles.set("10,8", { Type: "Shrine" });
+    r.tiles.set("11,8", { Type: "Door", Priority: true });
+    const snapshot = c.Spiderlings.SpinnerNativeField.mapSnapshot();
+    for (const cell of ["2,10", "28,10", "7,8", "8,8", "10,8", "11,8"])
+        assert.ok(snapshot.protected.includes(cell), cell);
+});
+
 test("final native damage updates shared durability once and invalidates both path caches", () => {
     const r = runtime();
     buildAll(r);
@@ -329,4 +352,146 @@ test("one surviving owner retains the line and final-owner collapse occurs on ac
     field.tick(1);
     assert.equal(built.encounter.topology.collapsed, true);
     assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 0);
+});
+
+function regularTiming(workerCount, onSite = false) {
+    const r = runtime(),
+        c = r.context,
+        starts = onSite
+            ? [
+                  [19, 6],
+                  [25, 12],
+                  [25, 6],
+                  [19, 12],
+                  [22, 4],
+                  [22, 14],
+                  [18, 9],
+                  [26, 9],
+              ]
+            : [
+                  [11, 9],
+                  [12, 11],
+                  [11, 11],
+                  [12, 9],
+                  [10, 8],
+                  [10, 12],
+                  [13, 8],
+                  [13, 12],
+              ],
+        workers = starts.slice(0, workerCount).map(([x, y], index) => ({
+            id: index + 1,
+            x,
+            y,
+            hp: 10,
+            buffs: {},
+            Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+        }));
+    c.KDMapData.Entities.push(...workers);
+    const started = c.Spiderlings.SpinnerScenarios.setupRegular({ ownerIds: workers.map((worker) => worker.id) });
+    assert.equal(started.started, true);
+    let turn = 0;
+    while (turn < 60 && started.encounter.topology.fields.inner.phase === "preparing") {
+        turn++;
+        c.KinkyDungeonCurrentTick = turn;
+        for (const worker of workers)
+            c.Spiderlings.SpinnerNativeField.handleEnemyTurn(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerNativeField.tick(1);
+    }
+    return { turn, ...started.encounter.timing, phase: started.encounter.topology.fields.inner.phase };
+}
+
+test("pinned regular room meets the two-worker native target and keeps useful scaling", () => {
+    const arrival = [2, 4, 8].map((count) => regularTiming(count)),
+        onSite = [2, 4, 8].map((count) => regularTiming(count, true));
+    assert.ok(arrival.every((measurement) => measurement.phase === "ready"));
+    assert.ok(onSite.every((measurement) => measurement.phase === "ready"));
+    assert.ok(arrival[0].turn <= 30);
+    assert.ok(arrival[1].turn < arrival[0].turn);
+    assert.ok(arrival[2].turn <= arrival[1].turn);
+    assert.ok(onSite[1].turn < onSite[0].turn);
+    assert.ok(onSite[2].turn <= onSite[1].turn);
+    assert.deepEqual(
+        arrival.map((measurement) => measurement.turn),
+        [25, 19, 15],
+    );
+    assert.deepEqual(
+        onSite.map((measurement) => measurement.turn),
+        [15, 6, 4],
+    );
+    assert.ok(arrival.every((measurement) => measurement.blocked.length === 0));
+});
+
+test("native enclosure reload deduplicates partial, sealed, and breached projections", () => {
+    const r = runtime(),
+        c = r.context,
+        workers = [
+            {
+                id: 1,
+                x: 11,
+                y: 9,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+            {
+                id: 2,
+                x: 12,
+                y: 11,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+            {
+                id: 3,
+                x: 11,
+                y: 11,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+            {
+                id: 4,
+                x: 12,
+                y: 9,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+        ];
+    c.KDMapData.Entities.push(...workers);
+    const encounter = c.Spiderlings.SpinnerScenarios.setupNested({
+        ownerIds: workers.map((worker) => worker.id),
+    }).encounter;
+    for (const worker of workers)
+        c.Spiderlings.SpinnerNativeField.handleEnemyTurn(worker, c.KinkyDungeonPlayerEntity, 1);
+    const partial = JSON.parse(JSON.stringify(encounter.topology));
+    assert.equal(partial.fields.inner.phase, "preparing");
+
+    for (const anchor of encounter.topology.anchors) anchor.built = true;
+    for (const link of encounter.topology.links) {
+        link.builtCells = JSON.parse(JSON.stringify(link.plannedCells));
+        link.connected = true;
+    }
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    const sealed = JSON.parse(JSON.stringify(encounter.topology));
+    assert.ok(Object.values(sealed.fields).every((field) => field.phase === "sealed"));
+    encounter.topology.links[0].hp = 0;
+    encounter.topology.links[0].builtCells = [];
+    encounter.topology.links[0].connected = false;
+    encounter.topology.links[0].cooldown = 3;
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    const breached = JSON.parse(JSON.stringify(encounter.topology));
+    assert.ok(Object.values(breached.fields).some((field) => field.phase === "breached"));
+
+    for (const saved of [partial, sealed, breached]) {
+        encounter.topology = JSON.parse(JSON.stringify(saved));
+        c.Spiderlings.SpinnerNativeField.reconcile();
+        const proxy = c.KDMapData.Entities.find(c.Spiderlings.SpinnerNativeField.isOwnedProxy);
+        if (proxy) c.KDMapData.Entities.push({ ...proxy, id: 9999 });
+        c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+        c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+        const solids = c.Spiderlings.SpinnerTopology.solidCells(encounter.topology);
+        assert.equal(c.KDMapData.Entities.filter(c.Spiderlings.SpinnerNativeField.isOwnedProxy).length, solids.length);
+        assert.equal(JSON.stringify(encounter.topology), JSON.stringify(saved));
+    }
 });
