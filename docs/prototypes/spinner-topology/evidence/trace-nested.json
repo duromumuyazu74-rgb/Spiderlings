@@ -5,6 +5,7 @@
     "phases": [],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -14,6 +15,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -23,6 +25,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -32,6 +35,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -41,6 +45,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -50,6 +55,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -59,6 +65,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -68,6 +75,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -77,6 +85,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -86,6 +95,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -95,6 +105,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -104,6 +115,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -113,6 +125,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -122,6 +135,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -131,6 +145,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -140,6 +155,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -149,6 +165,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -158,6 +175,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -167,6 +185,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -176,6 +195,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 0,
+    "reachableCells": 397,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -185,6 +205,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 3,
+    "reachableCells": 394,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -194,6 +215,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 5,
+    "reachableCells": 392,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -203,6 +225,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 5,
+    "reachableCells": 392,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -212,6 +235,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 5,
+    "reachableCells": 392,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -221,6 +245,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 5,
+    "reachableCells": 392,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -230,6 +255,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 5,
+    "reachableCells": 392,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -239,6 +265,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 6,
+    "reachableCells": 391,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -248,6 +275,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 8,
+    "reachableCells": 389,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -257,6 +285,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 8,
+    "reachableCells": 389,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -266,6 +295,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 11,
+    "reachableCells": 386,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -275,6 +305,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 12,
+    "reachableCells": 385,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -284,6 +315,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 12,
+    "reachableCells": 385,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -293,6 +325,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 14,
+    "reachableCells": 383,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -302,6 +335,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 17,
+    "reachableCells": 380,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -311,6 +345,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 17,
+    "reachableCells": 380,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -320,6 +355,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 17,
+    "reachableCells": 380,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -329,6 +365,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 18,
+    "reachableCells": 379,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -338,6 +375,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 18,
+    "reachableCells": 379,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -347,6 +385,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 18,
+    "reachableCells": 379,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -356,6 +395,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 18,
+    "reachableCells": 379,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -365,6 +405,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 18,
+    "reachableCells": 379,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -374,6 +415,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -383,6 +425,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -392,6 +435,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -401,6 +445,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -410,6 +455,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -419,6 +465,7 @@
     "phases": ["preparing", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -428,6 +475,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -437,6 +485,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -446,6 +495,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -455,6 +505,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -464,6 +515,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -473,6 +525,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -482,6 +535,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -491,6 +545,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -500,6 +555,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -509,6 +565,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -518,6 +575,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -527,6 +585,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -536,6 +595,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -545,6 +605,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -554,6 +615,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -563,6 +625,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -572,6 +635,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -581,6 +645,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -590,6 +655,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 19,
+    "reachableCells": 378,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -599,6 +665,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 20,
+    "reachableCells": 377,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -608,6 +675,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 20,
+    "reachableCells": 377,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -617,6 +685,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 22,
+    "reachableCells": 375,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -626,6 +695,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 25,
+    "reachableCells": 372,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -635,6 +705,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 25,
+    "reachableCells": 372,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -644,6 +715,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 28,
+    "reachableCells": 369,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -653,6 +725,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 30,
+    "reachableCells": 367,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -662,6 +735,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 30,
+    "reachableCells": 367,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -671,6 +745,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 31,
+    "reachableCells": 366,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -680,6 +755,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 33,
+    "reachableCells": 364,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -689,6 +765,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 33,
+    "reachableCells": 364,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -698,6 +775,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 35,
+    "reachableCells": 362,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -707,6 +785,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 36,
+    "reachableCells": 361,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -716,6 +795,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 36,
+    "reachableCells": 361,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -725,6 +805,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 38,
+    "reachableCells": 359,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -734,6 +815,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 39,
+    "reachableCells": 358,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -743,6 +825,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 39,
+    "reachableCells": 358,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -752,6 +835,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 41,
+    "reachableCells": 356,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -761,6 +845,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 42,
+    "reachableCells": 355,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -770,6 +855,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 42,
+    "reachableCells": 355,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -779,6 +865,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 44,
+    "reachableCells": 353,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -788,6 +875,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 45,
+    "reachableCells": 352,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -797,6 +885,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 45,
+    "reachableCells": 352,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -806,6 +895,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 45,
+    "reachableCells": 352,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -815,6 +905,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 46,
+    "reachableCells": 351,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -824,6 +915,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 46,
+    "reachableCells": 351,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -833,6 +925,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 47,
+    "reachableCells": 350,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -842,6 +935,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 48,
+    "reachableCells": 349,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -851,6 +945,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 48,
+    "reachableCells": 349,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -860,6 +955,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 48,
+    "reachableCells": 349,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -869,6 +965,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 49,
+    "reachableCells": 348,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -878,6 +975,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 49,
+    "reachableCells": 348,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -887,6 +985,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 49,
+    "reachableCells": 348,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -896,6 +995,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 50,
+    "reachableCells": 347,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -905,6 +1005,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 50,
+    "reachableCells": 347,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -914,6 +1015,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 50,
+    "reachableCells": 347,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -923,6 +1025,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 52,
+    "reachableCells": 345,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -932,6 +1035,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 52,
+    "reachableCells": 345,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -941,6 +1045,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 55,
+    "reachableCells": 342,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -950,6 +1055,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 56,
+    "reachableCells": 341,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -959,6 +1065,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 56,
+    "reachableCells": 341,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -968,6 +1075,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 58,
+    "reachableCells": 339,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -977,6 +1085,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 59,
+    "reachableCells": 338,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -986,6 +1095,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 59,
+    "reachableCells": 338,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -995,6 +1105,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 61,
+    "reachableCells": 333,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1004,6 +1115,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 61,
+    "reachableCells": 333,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1013,6 +1125,7 @@
     "phases": ["ready", "preparing"],
     "target": [2, 10],
     "blocked": 61,
+    "reachableCells": 333,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1022,6 +1135,7 @@
     "phases": ["ready", "ready"],
     "target": [2, 10],
     "blocked": 62,
+    "reachableCells": 332,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1031,6 +1145,7 @@
     "phases": ["ready", "ready"],
     "target": [21, 10],
     "blocked": 62,
+    "reachableCells": 332,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1040,6 +1155,7 @@
     "phases": ["sealing", "sealing"],
     "target": [21, 10],
     "blocked": 62,
+    "reachableCells": 332,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1049,6 +1165,7 @@
     "phases": ["sealing", "sealing"],
     "target": [21, 10],
     "blocked": 62,
+    "reachableCells": 332,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1058,6 +1175,7 @@
     "phases": ["sealed", "sealing"],
     "target": [21, 10],
     "blocked": 63,
+    "reachableCells": 15,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1067,6 +1185,7 @@
     "phases": ["sealed", "sealing"],
     "target": [21, 10],
     "blocked": 63,
+    "reachableCells": 15,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1076,6 +1195,7 @@
     "phases": ["sealed", "sealing"],
     "target": [21, 10],
     "blocked": 63,
+    "reachableCells": 15,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1085,6 +1205,7 @@
     "phases": ["sealed", "sealed"],
     "target": [21, 10],
     "blocked": 64,
+    "reachableCells": 15,
     "exitReachable": false,
     "geometryReady": true
   },
@@ -1094,6 +1215,7 @@
     "phases": ["breached", "sealed"],
     "target": [21, 10],
     "blocked": 61,
+    "reachableCells": 82,
     "exitReachable": false,
     "geometryReady": false
   },
@@ -1103,6 +1225,7 @@
     "phases": ["breached", "breached"],
     "target": [21, 10],
     "blocked": 52,
+    "reachableCells": 342,
     "exitReachable": false,
     "geometryReady": false
   }

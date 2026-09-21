@@ -13,6 +13,8 @@ This supplements [PACING.md](PACING.md), which intentionally preserves the immut
 
 These changes correct state rules rather than speed or damage parameters. The same pinned room 2/4/8-actor prebuilds remain 98/42/42 turns. Nested 4/8-actor prebuilds remain 113/81; the two-actor 87-turn case is inner-only and must not be treated as a faster completion of the two-layer job.
 
+The review fixes to full-region reachability and surviving shared-field eligibility were followed by another run of all 34 pacing cases. Outcomes and replay states are unchanged; the current summary records the corrected engine hash. Their additional geometry regressions are recorded in [PLACEMENT.md](PLACEMENT.md).
+
 Occupancy stalls and unfinished cases remain included. A target blocking an anchor and a survivor unable to finish new construction are expected incomplete scenarios, not discarded observations. The additional native-map fixed-lure stall is documented separately in [PLACEMENT.md](PLACEMENT.md).
 
 Reproduce the current cases with `node docs/prototypes/spinner-topology/measure-pacing.mjs`. Replay a saved current case with its `--replay` option against the matching engine revision. Historical replays must use their historical engine; a different final state hash fails explicitly.

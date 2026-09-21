@@ -1,7 +1,7 @@
 {
   "scope": "Abstract geometry and paid construction actions only. No native combat, lure AI, capture, NPC binding or leash simulation.",
   "baselineCommit": "27dca6dce33310c016a4f36037ee3a47936233fe",
-  "engineSHA256": "e3dcaa87ff0e65994413fbaa528453761485374861de6e2b2151f26aa6d70fef",
+  "engineSHA256": "5530782357b7b4adb24c032bee26e32c755abdd57e0bbde834102f728ae92dd9",
   "assumptions": {
     "seed": "spinner-01",
     "budgetPerWorldTurn": 1,

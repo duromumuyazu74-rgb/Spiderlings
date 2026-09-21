@@ -1094,12 +1094,16 @@ globalThis.SpinnerTopology = (() => {
         });
         return {
             solid: [...solid],
-            reachable: [...r.cells],
+            // Goal-directed flood stops at the exit; the overlay needs the entire connected region.
+            reachable: [...flood(s.map, s.target.pos, blocked).cells],
             exitPath: r.path,
             fields,
             geometryReady:
                 fields.some((f) => f.closed && f.inside && f.captureEligible) &&
-                !fields.some((f) => f.inside && !f.closed && s.fields.find((v) => v.id === f.id).type !== "line"),
+                !fields.some((f) => {
+                    const source = s.fields.find((v) => v.id === f.id);
+                    return f.inside && !f.closed && !source.retired && source.type !== "line";
+                }),
             violations: [...solid].filter(
                 (k) => s.map.protected.includes(k) || !s.map.walk.includes(k) || s.map.occupied.includes(k),
             ),

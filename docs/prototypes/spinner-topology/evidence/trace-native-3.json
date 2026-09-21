@@ -5,6 +5,7 @@
     "phases": [],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -14,6 +15,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -23,6 +25,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -32,6 +35,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -41,6 +45,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -50,6 +55,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -59,6 +65,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -68,6 +75,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -77,6 +85,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -86,6 +95,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -95,6 +105,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -104,6 +115,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -113,6 +125,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -122,6 +135,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -131,6 +145,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -140,6 +155,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -149,6 +165,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -158,6 +175,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -167,6 +185,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -176,6 +195,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -185,6 +205,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -194,6 +215,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -203,6 +225,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -212,6 +235,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -221,6 +245,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -230,6 +255,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -239,6 +265,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -248,6 +275,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -257,6 +285,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -266,6 +295,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -275,6 +305,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -284,6 +315,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -293,6 +325,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -302,6 +335,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -311,6 +345,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -320,6 +355,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -329,6 +365,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -338,6 +375,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -347,6 +385,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -356,6 +395,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -365,6 +405,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -374,6 +415,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -383,6 +425,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -392,6 +435,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -401,6 +445,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -410,6 +455,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -419,6 +465,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -428,6 +475,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -437,6 +485,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -446,6 +495,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -455,6 +505,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -464,6 +515,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -473,6 +525,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -482,6 +535,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -491,6 +545,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -500,6 +555,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -509,6 +565,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -518,6 +575,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -527,6 +585,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -536,6 +595,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -545,6 +605,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -554,6 +615,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -563,6 +625,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -572,6 +635,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -581,6 +645,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -590,6 +655,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -599,6 +665,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -608,6 +675,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -617,6 +685,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -626,6 +695,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -635,6 +705,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -644,6 +715,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -653,6 +725,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -662,6 +735,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -671,6 +745,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -680,6 +755,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -689,6 +765,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -698,6 +775,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 0,
+    "reachableCells": 691,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -707,6 +785,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 1,
+    "reachableCells": 690,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -716,6 +795,7 @@
     "phases": ["preparing"],
     "target": [1, 25],
     "blocked": 1,
+    "reachableCells": 690,
     "exitReachable": true,
     "geometryReady": false
   },
@@ -725,6 +805,7 @@
     "phases": ["barrier"],
     "target": [1, 25],
     "blocked": 2,
+    "reachableCells": 685,
     "exitReachable": false,
     "geometryReady": false
   }
