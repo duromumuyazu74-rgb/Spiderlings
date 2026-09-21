@@ -1,6 +1,6 @@
 {
-  "date": "2026-09-21T10:35:36.744Z",
-  "artifactSHA256": "e7495776ecd94c70a1b7b04a4c2b2ade9706fe3c6994cb8d6d993d011a6cf87c",
+  "date": "2026-09-21T12:33:16.383Z",
+  "artifactSHA256": "8ee5452f206da098fc07d5c59f654f859e408c94f7d526218c7adb62819656c8",
   "scope": "Topology and disposable browser UI only; no runtime Mod integration",
   "walkthroughs": [
     {
@@ -36,7 +36,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 4,
       "debugLureVacated": false,
-      "elapsedMs": 18,
+      "elapsedMs": 17,
       "passed": true
     },
     {
@@ -72,7 +72,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 20,
       "debugLureVacated": false,
-      "elapsedMs": 53,
+      "elapsedMs": 49,
       "passed": true
     },
     {
@@ -84,7 +84,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 27,
       "debugLureVacated": false,
-      "elapsedMs": 92,
+      "elapsedMs": 71,
       "passed": true
     },
     {
@@ -96,7 +96,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 0,
       "debugLureVacated": false,
-      "elapsedMs": 10,
+      "elapsedMs": 8,
       "passed": true
     },
     {
@@ -108,7 +108,7 @@
       "sharedLinks": 4,
       "prebuildTurns": 13,
       "debugLureVacated": false,
-      "elapsedMs": 191,
+      "elapsedMs": 168,
       "passed": true
     },
     {
@@ -120,7 +120,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 42,
       "debugLureVacated": false,
-      "elapsedMs": 427,
+      "elapsedMs": 403,
       "passed": true
     },
     {
@@ -132,7 +132,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 53,
       "debugLureVacated": false,
-      "elapsedMs": 378,
+      "elapsedMs": 355,
       "passed": true
     },
     {
@@ -144,7 +144,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 2,
       "debugLureVacated": false,
-      "elapsedMs": 97,
+      "elapsedMs": 89,
       "passed": true
     },
     {
@@ -156,7 +156,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 97,
       "debugLureVacated": false,
-      "elapsedMs": 1272,
+      "elapsedMs": 1258,
       "passed": true
     },
     {
@@ -168,7 +168,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 139,
       "debugLureVacated": false,
-      "elapsedMs": 1062,
+      "elapsedMs": 1038,
       "passed": true
     },
     {
@@ -180,7 +180,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 96,
       "debugLureVacated": false,
-      "elapsedMs": 670,
+      "elapsedMs": 706,
       "passed": true
     },
     {
@@ -192,7 +192,7 @@
       "sharedLinks": 0,
       "prebuildTurns": 2,
       "debugLureVacated": false,
-      "elapsedMs": 193,
+      "elapsedMs": 194,
       "passed": true
     }
   ],
@@ -245,6 +245,9 @@
     "nestedClosure": true,
     "sharedDamage": true,
     "sharedOwnerRetirement": true,
+    "partialSharedDurability": true,
+    "partialBoundaryBreach": true,
+    "partialFinalOwnerCollapse": true,
     "fullReachableRegion": true,
     "fixedLureVacancy": true,
     "interiorInvalidation": true

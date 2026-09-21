@@ -99,6 +99,32 @@ const guides = {
             ],
         ],
     },
+    durability: {
+        label: "Partial overlap durability",
+        desc: "Two adjacent closed boundaries partially share one collinear span. The shared span has one HP pool; graph splits are not anchors unless an original endpoint placed one there.",
+        scene: "durability-partial",
+        steps: [
+            ["Load physical graph", () => loadDurability("partial")],
+            ["Hit shared cell", () => T.attack(state, "15,10", 1, false)],
+            ["Cover three cells", () => T.attack(state, "15,10", 1, true)],
+            ["Break real anchor", () => T.attack(state, "13,10", 1, false)],
+            [
+                "Remove first owner",
+                () => {
+                    loadDurability("partial");
+                    state.groups[0].actors.forEach((actor) => (actor.active = false));
+                    for (let i = 0; i < 20; i++) T.step(state);
+                },
+            ],
+            [
+                "Remove final owner",
+                () => {
+                    state.groups[1].actors.forEach((actor) => (actor.active = false));
+                    for (let i = 0; i < 20; i++) T.step(state);
+                },
+            ],
+        ],
+    },
     shared: {
         label: "Shared fields and breach",
         desc: "A second group reuses the same structures. Area damage accumulates per cell; destroying a shared anchor affects every owner.",
@@ -142,6 +168,15 @@ function load(id = current) {
     preview = state.analysis.selected;
     selected = null;
     text("notice", `Candidate analysis ${(performance.now() - started).toFixed(0)} ms.`);
+    render();
+}
+function loadDurability(kind) {
+    current = `durability-${kind}`;
+    state = T.durabilityFixture(kind);
+    preview = null;
+    selected = kind === "partial" ? "15,10" : null;
+    $("count").value = 2;
+    text("notice", "Loaded the settled physical-segment graph. Damage remains a debug injection.");
     render();
 }
 function candidateList() {
@@ -267,6 +302,12 @@ function draw(view) {
             ctx.lineTo(x * cell + 5, (y + 0.5) * cell);
             ctx.fill();
         }
+    for (const junction of Object.values(state.junctions || {})) {
+        const [x, y] = T.point(junction.k);
+        ctx.strokeStyle = "#efb995";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x * cell + 10, y * cell + 10, 10, 10);
+    }
     line(view.exitPath, "#69a8b0", 2);
     for (const f of view.fields.filter((f) => f.inside)) line(f.escapePath, "#ebbc87", 2, [4, 4]);
     for (const g of state.groups)
@@ -337,6 +378,7 @@ function render() {
         ["Input source", state.map.kind === "native-generated" ? "Native KD map" : "Authored edge case"],
         ["Fields / groups", `${state.fields.length} / ${state.groups.length}`],
         ["Placed anchors", view.anchorCount],
+        ["Graph junctions", view.junctionCount],
         ["Blocked cells", view.physicalCells],
         ["Shared links", view.sharedLinks],
         ["Target to exit", view.exitPath.length ? `${view.exitPath.length - 1} steps` : "No path"],
@@ -407,15 +449,19 @@ function render() {
             );
         const a = state.anchors[selected];
         if (a) pane.append(element("p", `Anchor HP ${a.hp.toFixed(2)} / ${a.max} · ${a.owners.join(" / ")}`));
-        for (const l of Object.values(state.links).filter((l) => l.cells.includes(selected))) {
-            const d = Math.min(
-                T.distance(T.point(selected), T.point(l.a)),
-                T.distance(T.point(selected), T.point(l.b)),
-            );
+        const junction = state.junctions?.[selected];
+        if (junction)
             pane.append(
                 element(
                     "p",
-                    `Link HP ${l.hp.toFixed(2)} / ${l.max} · Damage multiplier ${Math.max(0.25, 1 - 0.15 * d).toFixed(2)} · ${l.owners.join(" / ")}`,
+                    `Graph ${junction.kind}; no anchor HP or anchor propagation · ${junction.owners.join(" / ")}`,
+                ),
+            );
+        for (const l of Object.values(state.links).filter((l) => l.cells.includes(selected))) {
+            pane.append(
+                element(
+                    "p",
+                    `Link HP ${l.hp.toFixed(2)} / ${l.max} · Damage multiplier ${T.damageMultiplier(state, l, selected).toFixed(2)} · ${l.owners.join(" / ")}`,
                 ),
             );
         }
@@ -434,6 +480,7 @@ function render() {
                 seed: state.seed,
                 fields: state.fields,
                 anchors: state.anchors,
+                junctions: state.junctions,
                 links: state.links,
                 lastDamage: state.lastDamage,
             },
@@ -446,7 +493,8 @@ function render() {
         const b = element("button", g.label, k === guide ? "active" : "");
         b.onclick = () => {
             guide = k;
-            load(g.scene);
+            if (g.scene.startsWith("durability-")) loadDurability(g.scene.slice("durability-".length));
+            else load(g.scene);
         };
         $("guideTabs").append(b);
     }
@@ -485,6 +533,10 @@ action("removeActor", () => {
     }
 });
 $("reset").onclick = () => {
+    if (current.startsWith("durability-")) {
+        loadDurability(current.slice("durability-".length));
+        return;
+    }
     state = T.create(
         maps.find((m) => m.id === current),
         $("seed").value,
