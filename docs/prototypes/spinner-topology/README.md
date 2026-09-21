@@ -24,7 +24,7 @@ node docs/prototypes/spinner-topology/build.mjs
 node docs/prototypes/spinner-topology/verify-prototype.mjs
 ```
 
-The builder only embeds adjacent inputs into `index.html`. The verifier replays all 16 map walks, concave closure, shared destruction, per-cell AoE, dynamic invalidation and the 19/20-turn ownerless boundary. It writes traces and `evidence/verification.json` with the HTML hash. A Node-only run marks browser checks `not-run`; it does not imply UI verification. Generated JSON can be formatted with the repository's Prettier command before committing.
+The builder only embeds adjacent inputs into `index.html`. The verifier replays all 16 map walks, concave closure, shared destruction, per-cell AoE, dynamic invalidation and the 19/20-turn ownerless boundary. The map walks also check complete reachable regions beyond the floor exit and surviving shared geometry when one owner retires. It writes traces and `evidence/verification.json` with the HTML hash. A Node-only run marks browser checks `not-run`; it does not imply UI verification. Generated JSON can be formatted with the repository's Prettier command before committing.
 
 Optional browser checks require an externally installed Playwright Core module and its matching Chromium binary. Set `PLAYWRIGHT_MODULE` to the absolute path of that installation's `index.mjs`, then run the same verifier. It opens the local file, checks room closure/breach and shared/nested walkthroughs, exercises a real downloaded state roundtrip and checks the 390px layout. Browser downloads go to an OS temporary directory and are removed after the check. There is no Playwright dependency in the project lockfile.
 
