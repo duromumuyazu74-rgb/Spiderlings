@@ -457,6 +457,68 @@
         return !!composite && topology().captureGeometryReady(encounter.topology, composite.id, target);
     }
 
+    function compositeById(compositeId) {
+        const composite = state()?.topology?.composites?.[compositeId];
+        return composite ? { ...composite, layerIds: [...composite.layerIds] } : undefined;
+    }
+
+    function fieldOwners(fieldOrCompositeId) {
+        const graph = state()?.topology,
+            composite = graph?.composites?.[fieldOrCompositeId],
+            fieldIds = composite?.layerIds || [fieldOrCompositeId];
+        if (!graph) return [];
+        return [
+            ...new Set(
+                fieldIds.flatMap((fieldId) => graph.fieldOwners?.[fieldId] || graph.fields?.[fieldId]?.owners || []),
+            ),
+        ];
+    }
+
+    function containsComposite(compositeId, target) {
+        const graph = state()?.topology,
+            composite = graph?.composites?.[compositeId],
+            outer = composite?.layerIds?.at(-1);
+        return !!outer && topology().containsDeclaredField(graph, outer, target);
+    }
+
+    function commonCore(compositeId) {
+        const core = state()?.topology?.composites?.[compositeId]?.core;
+        return core ? { x: core.x, y: core.y } : undefined;
+    }
+
+    function isSpiderlingsWebCell(cell) {
+        const graph = state()?.topology;
+        return (
+            !!graph &&
+            topology()
+                .solidCells(graph)
+                .some((candidate) => cellKey(candidate) === cellKey(cell))
+        );
+    }
+
+    function breachedDeparture(from, to) {
+        const graph = state()?.topology;
+        if (!graph || !from || !to) return undefined;
+        const candidate = Object.values(graph.composites || {})
+            .filter((composite) => {
+                const outerId = composite.layerIds.at(-1),
+                    outer = graph.fields?.[outerId];
+                return (
+                    outer?.phase === "breached" &&
+                    topology().containsDeclaredField(graph, outerId, from) &&
+                    !topology().containsDeclaredField(graph, outerId, to)
+                );
+            })
+            .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
+        return (
+            candidate && {
+                compositeId: candidate.id,
+                groupId: candidate.groupId,
+                eligibleSourceIds: fieldOwners(candidate.id),
+            }
+        );
+    }
+
     if (typeof KinkyDungeonEnemies !== "undefined" && !KinkyDungeonEnemies.some((enemy) => enemy.name === PROXY)) {
         const base = KinkyDungeonEnemies.find((enemy) => enemy.name === "IceWall") || {};
         KinkyDungeonEnemies.push({
@@ -518,5 +580,11 @@
         nativeReachability,
         containingComposite,
         captureGeometryReady,
+        compositeById,
+        fieldOwners,
+        containsComposite,
+        commonCore,
+        isSpiderlingsWebCell,
+        breachedDeparture,
     };
 })();

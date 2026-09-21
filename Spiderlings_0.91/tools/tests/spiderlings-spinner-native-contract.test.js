@@ -77,3 +77,25 @@ test("pinned KD 5.5.0 computes sensing and awareness before hunt beforemove", ()
     assert.ok(awareness > tracking);
     assert.ok(beforeMove > awareness);
 });
+
+test("pinned KD 5.5.0 exposes the real leash carrier and one-move recovery guards", () => {
+    const restraints = read("Game/src/restraint/KinkyDungeonRestraintsList.ts"),
+        restraintRuntime = read("Game/src/restraint/KinkyDungeonRestraints.ts"),
+        tethers = read("Game/src/restraint/KDTethers.ts"),
+        tiles = read("Game/src/map/KinkyDungeonTiles.ts"),
+        enemies = read("Game/src/enemy/KinkyDungeonEnemies.ts");
+    const basicLeash = restraints.match(/name: "BasicLeash"[\s\S]*?shrine: \["Leashes", "Leashable"\]\}/)?.[0] || "";
+    assert.match(basicLeash, /Group: "ItemNeckRestraints"/);
+    assert.match(basicLeash, /tether: 2\.9/);
+    assert.match(basicLeash, /leash: true, power: 1/);
+    assert.match(basicLeash, /requireAllTagsToEquip: \["Collars"\]/);
+    assert.match(basicLeash, /struggleMinSpeed: \{\s*Cut: 0\.05/);
+    assert.match(basicLeash, /limitChance: \{Struggle: 0\.3\}/);
+    assert.match(basicLeash, /escapeChance: \{"Struggle": 0\.0, "Cut": 0\.2, "Remove": 0\.5, "Pick": 1\.25\}/);
+    assert.match(restraintRuntime, /Deep\?:\s+boolean/);
+    assert.match(restraintRuntime, /noOverpower\?:\s+boolean/);
+    assert.match(tethers, /if \(Entity\.player && KinkyDungeonFlags\.get\("pulled"\)\) return false/);
+    assert.match(tiles, /KinkyDungeonSetFlag\("forceMoved", 1\)/);
+    assert.match(tiles, /KinkyDungeonSendEvent\("playerMove", data\)/);
+    assert.match(enemies, /else if \(!\(player\?\.player && KinkyDungeonFlags\.get\("forceMoved"\)\)\)/);
+});

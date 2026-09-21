@@ -53,6 +53,7 @@ const scripts = [
     "SpiderlingsSpinnerCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerRecovery.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRuntime.js",
@@ -308,7 +309,7 @@ function resolve(runtime, state, action, catalog) {
     return runtime.context.Spiderlings.Webbing.resolveWebbingAction(request);
 }
 
-test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Cocoon and their models", async () => {
+test("fresh manifest VM exposes Webbing, Leg binder, and Silk leash restraints plus owned models", async () => {
     const runtime = freshNewSaveRuntime();
     const restraintIds = runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort();
     const modelIds = runtime.models.map((entry) => entry.Name).sort();
@@ -320,6 +321,7 @@ test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Coc
             ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}`),
             cocoonId,
             "SpiderlingsSpinnerLegbinder",
+            "SpiderlingsSilkLeash",
         ].sort(),
     );
     assert.deepEqual(
