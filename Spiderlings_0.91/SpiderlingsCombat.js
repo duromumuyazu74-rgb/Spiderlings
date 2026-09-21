@@ -29,7 +29,7 @@
             target?.hp > 0 &&
             !target.player &&
             target.Enemy &&
-            typeof KDHostile == "function" &&
+            typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
     }
@@ -39,29 +39,34 @@
     }
 
     function damagePlayer(kind) {
-        if (typeof KinkyDungeonDealDamage == "function") return KinkyDungeonDealDamage(damageInfo(kind));
+        if (typeof KinkyDungeonDealDamage === "function") return KinkyDungeonDealDamage(damageInfo(kind));
     }
 
-    function payload(kind, source) {
+    function silkPayload(source, bind, attack, contact = true) {
         return {
             damage: 0,
             type: "glue",
-            bind: CONFIG[kind].bind,
+            bind,
             bindType: "Slime",
             time: 0,
             flags: [FLAG],
-            spiderlingsAttack: kind,
+            spiderlingsAttack: attack,
             spiderlingsSource: source,
+            spiderlingsSuppressContact: !contact,
         };
+    }
+
+    function payload(kind, source) {
+        return silkPayload(source, CONFIG[kind].bind, kind);
     }
 
     function spraySource(bullet) {
         const data = bullet?.bullet;
         const effect = data?.playerEffect || data?.spell?.playerEffect;
-        if (effect?.provenance != "WebCaster.WebSpray" || !["direct", "trail"].includes(effect.triggerSource)) return;
+        if (effect?.provenance !== "WebCaster.WebSpray" || !["direct", "trail"].includes(effect.triggerSource)) return;
         const source =
-            typeof KDMapData != "undefined" ? KDMapData.Entities.find((e) => e.id == data.source) : undefined;
-        return source?.Enemy?.name == "WebCaster" ? { source, effect } : undefined;
+            typeof KDMapData !== "undefined" ? KDMapData.Entities.find((e) => e.id === data.source) : undefined;
+        return source?.Enemy?.name === "WebCaster" ? { source, effect } : undefined;
     }
 
     // Native faction favorability can disagree with our entity-pair hostility
@@ -81,11 +86,11 @@
             }
         };
     }
-    if (typeof KDBulletCanHitEntity == "function") KDBulletCanHitEntity = collision(KDBulletCanHitEntity);
-    if (typeof KDBulletAoECanHitEntity == "function") KDBulletAoECanHitEntity = collision(KDBulletAoECanHitEntity);
+    if (typeof KDBulletCanHitEntity === "function") KDBulletCanHitEntity = collision(KDBulletCanHitEntity);
+    if (typeof KDBulletAoECanHitEntity === "function") KDBulletAoECanHitEntity = collision(KDBulletAoECanHitEntity);
 
     function event(trigger, name, handler) {
-        if (typeof KDAddEvent == "function" && typeof KDEventMapGeneric != "undefined")
+        if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined")
             KDAddEvent(KDEventMapGeneric, trigger, name, handler);
     }
 
@@ -110,13 +115,13 @@
         }
         return KDHelpless(enemy);
     }
-    if (typeof KDEnemyCanTalk == "function") {
+    if (typeof KDEnemyCanTalk === "function") {
         const nativeTalk = KDEnemyCanTalk;
         KDEnemyCanTalk = function (enemy) {
             return !silkGagged(enemy) && nativeTalk.apply(this, arguments);
         };
     }
-    if (typeof KDEnemyCanSignal == "function") {
+    if (typeof KDEnemyCanSignal === "function") {
         const nativeSignal = KDEnemyCanSignal;
         KDEnemyCanSignal = function (enemy) {
             return !silkGagged(enemy) && nativeSignal.apply(this, arguments);
@@ -124,7 +129,7 @@
     }
     // Commander flee calls MakeNoiseSignal through CanTalk, while ordinary
     // aggro uses CanSignalOthers. Cover direct signal callers as well.
-    if (typeof KinkyDungeonMakeNoiseSignal == "function") {
+    if (typeof KinkyDungeonMakeNoiseSignal === "function") {
         const nativeNoise = KinkyDungeonMakeNoiseSignal;
         KinkyDungeonMakeNoiseSignal = function (enemy) {
             if (silkGagged(enemy)) return [];
@@ -132,7 +137,7 @@
             // KD 5.5.3 updates the sender's entity goal inside the listener
             // loop. Refresh the actual recipients, keeping native perception
             // and any goal redirected by an afterSignal handler intact.
-            if (typeof KDUpdateMoveToEntity == "function") {
+            if (typeof KDUpdateMoveToEntity === "function") {
                 for (const listener of heard) {
                     if (listener !== enemy && listener.gx === enemy.x && listener.gy === enemy.y)
                         KDUpdateMoveToEntity(listener);
@@ -154,7 +159,12 @@
 
     event("afterDamageEnemy", "SpiderlingsContactDamage", (_event, data) => {
         const incoming = data.incomingDamage;
-        if (!incoming?.flags?.includes(FLAG) || incoming.spiderlingsContactApplied || incoming.spiderlingsCrossfire)
+        if (
+            !incoming?.flags?.includes(FLAG) ||
+            incoming.spiderlingsContactApplied ||
+            incoming.spiderlingsCrossfire ||
+            incoming.spiderlingsSuppressContact
+        )
             return;
         incoming.spiderlingsContactApplied = true;
         if (data.blocked || !(data.enemy?.hp > 0)) return;
@@ -179,6 +189,24 @@
         const before = target.boundLevel || 0;
         KinkyDungeonDamageEnemy(target, payload(kind, source), false, true, undefined, undefined, source);
         return { progressed: (target.boundLevel || 0) > before };
+    }
+
+    function applySilkBinding(source, target, amount, options = {}) {
+        if (!eligible(source, target) || !(amount > 0)) return { progressed: false, boundAdded: 0, slimeAdded: 0 };
+        const boundBefore = target.boundLevel || 0,
+            slimeBefore = target.specialBoundLevel?.Slime || 0;
+        KinkyDungeonDamageEnemy(
+            target,
+            silkPayload(source, amount, options.attack || "capture", options.contact === true),
+            false,
+            true,
+            undefined,
+            undefined,
+            source,
+        );
+        const boundAdded = Math.max(0, (target.boundLevel || 0) - boundBefore),
+            slimeAdded = Math.max(0, (target.specialBoundLevel?.Slime || 0) - slimeBefore);
+        return { progressed: slimeAdded > 0, boundAdded, slimeAdded };
     }
 
     function cooperate(source, target) {
@@ -216,7 +244,7 @@
 
     // The event immediately preceding the native NPC melee damage call arms
     // one conversion. A stack frame limits it to that enemy's synchronous turn.
-    if (typeof KinkyDungeonEnemyLoop == "function" && typeof KinkyDungeonDamageEnemy == "function") {
+    if (typeof KinkyDungeonEnemyLoop === "function" && typeof KinkyDungeonDamageEnemy === "function") {
         const nativeLoop = KinkyDungeonEnemyLoop;
         KinkyDungeonEnemyLoop = function (source, target) {
             const previous = meleeFrame;
@@ -240,11 +268,16 @@
                 return nativeDamage.apply(this, arguments);
             frame.armed = false;
             if (!eligible(source, target)) return 0;
-            const before = target.boundLevel || 0;
+            const before = target.boundLevel || 0,
+                slimeBefore = target.specialBoundLevel?.Slime || 0,
+                helplessBefore = KDHelpless(target);
             const args = Array.from(arguments);
             args[1] = payload("melee", source);
             const result = nativeDamage.apply(this, args);
             const added = (target.boundLevel || 0) - before;
+            const slimeAdded = (target.specialBoundLevel?.Slime || 0) - slimeBefore;
+            if (slimeAdded > 0 && source.Enemy.name === "Spinner")
+                api.SpinnerNPCCapture?.onSuccessfulNativeSpinnerHit(source, target, slimeAdded, { helplessBefore });
             if (added > 0 && source.Enemy.name !== "Spinner") source.hp = 0;
             // Only this native melee caller treats the return as an effect
             // count. Damage events and every other caller retain real HP loss.
@@ -252,7 +285,7 @@
         };
     }
 
-    if (typeof KDBulletHitEnemy == "function") {
+    if (typeof KDBulletHitEnemy === "function") {
         const nativeHit = KDBulletHitEnemy;
         KDBulletHitEnemy = function (bullet, target) {
             const original = bullet?.bullet;
@@ -260,7 +293,7 @@
             if (!shot) return nativeHit.apply(this, arguments);
             const { source, effect } = shot;
             if (!eligible(source, target)) return;
-            const trail = effect.triggerSource == "trail";
+            const trail = effect.triggerSource === "trail";
             const key = `${source.id}:${target.id}`;
             if (trail && trailHits.has(key)) return;
             const contact = payload(trail ? "trail" : "direct", source);
@@ -293,7 +326,7 @@
         if (data?.delta > 0) {
             trailHits.clear();
             cooperationClock += data.delta;
-            for (const target of typeof KDMapData != "undefined" ? KDMapData.Entities || [] : []) {
+            for (const target of typeof KDMapData !== "undefined" ? KDMapData.Entities || [] : []) {
                 silkGagged(target);
                 if (target[COOLDOWN] > 0) {
                     target[COOLDOWN] = Math.max(0, target[COOLDOWN] - data.delta);
@@ -309,5 +342,5 @@
             cooperationClock = 0;
         });
 
-    api.Combat = Object.freeze({ CONFIG, CROSSFIRE, damageInfo, damagePlayer, hitNPC, eligible });
+    api.Combat = Object.freeze({ CONFIG, CROSSFIRE, damageInfo, damagePlayer, hitNPC, applySilkBinding, eligible });
 })();

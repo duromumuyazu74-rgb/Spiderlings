@@ -4,6 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const { modRoot } = require("./helpers/lifecycle-runtime.js");
 
 function findGameRoot() {
@@ -98,4 +99,28 @@ test("pinned KD 5.5.0 exposes the real leash carrier and one-move recovery guard
     assert.match(tiles, /KinkyDungeonSetFlag\("forceMoved", 1\)/);
     assert.match(tiles, /KinkyDungeonSendEvent\("playerMove", data\)/);
     assert.match(enemies, /else if \(!\(player\?\.player && KinkyDungeonFlags\.get\("forceMoved"\)\)\)/);
+});
+
+test("pinned KD 5.5.0 preserves NPC Slime binding, ordinary struggle, and completion thresholds", () => {
+    const enemyPath = path.join(gameRoot, "Game/src/enemy/KinkyDungeonEnemies.ts"),
+        enemies = fs.readFileSync(enemyPath, "utf8"),
+        fight = read("Game/src/fight/KinkyDungeonFight.ts"),
+        npcRestraint = read("Game/src/collection/NPCRestrain.ts"),
+        factions = read("Game/src/faction/KinkyDungeonFactions.ts");
+    assert.equal(
+        crypto.createHash("sha256").update(fs.readFileSync(enemyPath)).digest("hex").toUpperCase(),
+        "9281E8A60FBC48FA5177FCB87F2ABBE0178C56E2B581796C4BB5DD26DA9E5242",
+    );
+    assert.match(factions, /function KDHostile\(enemy: entity, enemy2\?: entity\): boolean/);
+    assert.match(fight, /if \(!Enemy\.shield \|\| predata\.ignoreshield \|\| predata\.shield_bind\)/);
+    assert.match(fight, /if \(resistDamage == 1\) \{\s*predata\.bindEff \*= 0\.75/);
+    assert.match(fight, /KDTieUpEnemy\(Enemy, amt, predata\.bindType/);
+    assert.match(enemies, /function KDIsImmobile\(enemy: entity, strict\?: boolean\): boolean/);
+    assert.match(enemies, /KDEnemyStruggleTurn\(enemy, delta, KDNPCStruggleThreshMult\(enemy\), false, false\)/);
+    assert.match(enemies, /enemy\.boundLevel = newBound\.boundLevel/);
+    assert.match(enemies, /enemy\.specialBoundLevel = newBound\.specialBoundLevel/);
+    assert.match(
+        npcRestraint,
+        /return 1 \+ KDEnemyRank\(enemy\) \+ \(enemy\.Enemy\.tags\.unstoppable \? 2 : \(enemy\.Enemy\.tags\.unflinching \? 1 : 0\)\)/,
+    );
 });
