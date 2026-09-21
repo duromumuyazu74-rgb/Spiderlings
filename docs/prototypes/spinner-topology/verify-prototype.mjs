@@ -55,6 +55,18 @@ for (const m of [...T.fixedMaps(), ...snapshots.map(T.nativeMap)]) {
         record(s, "build", trace);
         if (s.fields.every((f) => ["ready", "barrier"].includes(f.phase))) break;
     }
+    let debugLureVacated = false;
+    if (m.kind === "native-generated" && s.fields.some((f) => !["ready", "barrier"].includes(f.phase))) {
+        record(s, "waiting-for-fixed-lure", trace);
+        requireFact(T.vacateLure(s), `${m.id}: no debug vacancy for fixed lure`);
+        debugLureVacated = true;
+        record(s, "debug-vacate-lure-no-ai-simulated", trace);
+        for (let i = 0; i < 450; i++) {
+            T.step(s);
+            record(s, "build-after-vacancy", trace);
+            if (s.fields.every((f) => ["ready", "barrier"].includes(f.phase))) break;
+        }
+    }
     if (m.id === "tight") requireFact(!s.fields.length, "Insufficient-space scene must decline a plan");
     else
         requireFact(
@@ -123,6 +135,7 @@ for (const m of [...T.fixedMaps(), ...snapshots.map(T.nativeMap)]) {
         layers: s.fields.length,
         sharedLinks: T.inspect(s).sharedLinks,
         prebuildTurns: prepTurns,
+        debugLureVacated,
         elapsedMs: Math.round(performance.now() - start),
         passed: true,
     };
@@ -310,6 +323,26 @@ if (process.env.PLAYWRIGHT_MODULE) {
             }),
             "Browser shared-anchor damage failed",
         );
+        await page.getByRole("button", { name: "真实地图占位等待", exact: true }).click();
+        await page.getByRole("button", { name: "2. 施工到占位等待", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => prototypeState.fields[0].phase === "preparing"),
+            "Fixed lure fixture did not wait",
+        );
+        await page.getByRole("button", { name: "3. 调试移开固定诱饵", exact: true }).click();
+        await page.getByRole("button", { name: "4. 继续合法施工", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => prototypeState.fields[0].phase === "barrier"),
+            "Vacating lure did not resume construction",
+        );
+        await page.getByRole("button", { name: "内部地形变化", exact: true }).click();
+        await page.getByRole("button", { name: "1. 重置并规划", exact: true }).click();
+        await page.getByRole("button", { name: "2. 内部空格改墙", exact: true }).click();
+        await page.getByRole("button", { name: "3. 下一施工行动验证", exact: true }).click();
+        requireFact(
+            await page.evaluate(() => prototypeState.fields[0].retired && prototypeState.fields.at(-1).type === "line"),
+            "Interior edit did not retire invalid field",
+        );
         await page.setViewportSize({ width: 390, height: 844 });
         await page.screenshot({ path: fileURLToPath(file("evidence/mobile.png")), fullPage: true });
         report.browser.mobileNoHorizontalOverflow = await page.evaluate(
@@ -328,6 +361,8 @@ if (process.env.PLAYWRIGHT_MODULE) {
             roomBreach: true,
             nestedClosure: true,
             sharedDamage: true,
+            fixedLureVacancy: true,
+            interiorInvalidation: true,
         };
     } finally {
         await browser.close();

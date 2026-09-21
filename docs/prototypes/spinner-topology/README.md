@@ -55,11 +55,13 @@ The original 5.5 extraction reported a missing `Logo.png` and an untyped browser
 
 ## Evidence and next investigations
 
+- [Placement investigation #22](PLACEMENT.md) records corrected native masks, free-core and terrain counterexamples, nested entrances, partial-overlap limits and an explicit fixed-lure stall. Run `node docs/prototypes/spinner-topology/probe-placement.mjs` to replay its bounded fixtures.
+
 - [Original verification](evidence/original-verification.json) retains all 16 previous passing walkthroughs and five extra experiments.
 - [Portable verification](evidence/verification.json) identifies the current artifact and repeat checks after packaging changes.
 - [Findings](FINDINGS.md), [desktop](evidence/desktop.png) and [mobile](evidence/mobile.png) explain observations and remaining limits. Trace files record every construction turn; no large exported browser save is committed.
 - [engine.js](engine.js) exposes the DOM-free `globalThis.SpinnerTopology` boundary. `create`, `analyze`, `plan`, `step`, `attack`, `inspect` and JSON state restoration are reusable by #22 geometry and #23 pacing investigations. `fixedMaps` and `nativeMap` provide fixture inputs; `page.html` and `ui.js` provide the disposable display.
 
-Public packaging changes format sources, replace private path labels, add explicit extraction inputs and optional browser dependency resolution. The model is otherwise the archived experiment. The current tests show what that experiment does; #22 still needs to compare geometry against the full specification and #23 must assess action costs. Runtime implementation waits for the review decision in #24.
+Public packaging changes format sources, replace private path labels, add explicit extraction inputs and optional browser dependency resolution. The #22 model corrections and remaining limits are recorded in the placement report; #23 assesses action costs. Runtime implementation waits for the review decision in #24.
 
 简体中文：直接下载并打开 `index.html` 即可审核。十类固定场景、六张原生快照和原有走查已保留；这次整理补充可移植运行方式与来源证据。场地几何和施工的模拟结果不代表原生战斗或平衡已验证。

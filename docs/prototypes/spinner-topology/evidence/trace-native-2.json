@@ -751,8 +751,8 @@
     "turn": 83,
     "phases": ["preparing"],
     "target": [1, 11],
-    "blocked": 0,
-    "exitReachable": true,
+    "blocked": 1,
+    "exitReachable": false,
     "geometryReady": false
   },
   {
@@ -760,8 +760,8 @@
     "turn": 84,
     "phases": ["preparing"],
     "target": [1, 11],
-    "blocked": 0,
-    "exitReachable": true,
+    "blocked": 2,
+    "exitReachable": false,
     "geometryReady": false
   },
   {
@@ -769,25 +769,16 @@
     "turn": 85,
     "phases": ["preparing"],
     "target": [1, 11],
-    "blocked": 0,
-    "exitReachable": true,
+    "blocked": 2,
+    "exitReachable": false,
     "geometryReady": false
   },
   {
     "label": "build",
     "turn": 86,
-    "phases": ["preparing"],
-    "target": [1, 11],
-    "blocked": 1,
-    "exitReachable": true,
-    "geometryReady": false
-  },
-  {
-    "label": "build",
-    "turn": 87,
     "phases": ["barrier"],
     "target": [1, 11],
-    "blocked": 2,
+    "blocked": 3,
     "exitReachable": false,
     "geometryReady": false
   }
