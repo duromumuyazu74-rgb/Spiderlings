@@ -1,0 +1,4 @@
+[
+  "[Loader.load] Failed to load http://127.0.0.1:29631/Logo.png.\nError: [WorkerManager.loadImageBitmap] Failed to fetch http://127.0.0.1:29631/Logo.png: 404 Not Found",
+  "Event"
+]
