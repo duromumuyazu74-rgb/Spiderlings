@@ -875,7 +875,7 @@
         handleEnemyTurn,
         holdsSpiderAttack,
         phase: () => state()?.phase,
-        isControllingPlayer: () => !!state(),
+        isControllingPlayer: () => ["contest", "wrap"].includes(state()?.phase),
         isAutomaticTurn: () => automatic,
         reactionOpportunity,
         visualProgress,

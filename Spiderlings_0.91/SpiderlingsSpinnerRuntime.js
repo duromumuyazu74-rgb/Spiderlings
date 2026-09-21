@@ -13,6 +13,8 @@
                 function (enemy, target, delta) {
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
+                    const recovery = api.SpinnerRecovery?.handleEnemyTurn(enemy, target, delta);
+                    if (recovery) return recovery;
                     const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
                     if (capture) return capture;
                     const nativeField = api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
@@ -59,7 +61,10 @@
             api.SpinnerNativeField.onNativeDamage(data),
         );
         KDAddEvent(KDEventMapGeneric, "playerMove", KEY, (_event, data) => {
-            if (!data?.cancelmove) api.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity, data.moveX, data.moveY);
+            if (!data?.cancelmove) {
+                api.SpinnerRecovery?.onPlayerMove(data);
+                api.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity, data.moveX, data.moveY);
+            }
         });
         KDAddEvent(KDEventMapGeneric, "enemyMove", KEY, (_event, data) => {
             if (!data?.cancelmove) api.SpinnerNativeField.onEntry(data.enemy, data.moveX, data.moveY);
@@ -67,11 +72,16 @@
         KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => {
             api.SpinnerAI?.completePositiveTurn(data?.delta);
             api.SpinnerNativeField.tick(data?.delta);
+            api.SpinnerRecovery?.audit();
         });
+        KDAddEvent(KDEventMapGeneric, "postRemoval", KEY, () => api.SpinnerRecovery?.audit());
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             api.SpinnerAI?.restoreAfterLoad();
             api.SpinnerNativeField.reconcile();
+            api.SpinnerRecovery?.afterLoad();
         });
+        for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
+            KDAddEvent(KDEventMapGeneric, trigger, KEY, () => api.SpinnerRecovery?.clearControl());
     }
 
     api.SpinnerRuntime = { KEY };

@@ -32,6 +32,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsSpinnerRecovery.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRuntime.js",
@@ -738,7 +739,7 @@ function checkRuntime(state) {
     }
     const expectedIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder")
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash")
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)
@@ -772,7 +773,8 @@ function checkRuntime(state) {
         fail(`runtime atlas list is not exact: ${runtimeAtlases.join(", ")}`);
     if (JSON.stringify(runtimeDisplacements) !== JSON.stringify(displacementAssets))
         fail(`runtime displacement list is not exact: ${runtimeDisplacements.join(", ")}`);
-    if (state.restraintCacheRefreshes < 1) fail("restraint cache is not refreshed after the new catalog registers.");
+    if (state.restraintCacheRefreshes < 2)
+        fail("restraint cache is not refreshed after both Webbing and the late-loaded Silk leash register.");
     if (state.context.KDPlayerEffects.TrapBindings !== state.nativeTrapBindings)
         fail("Spiderlings replaced KD's native TrapBindings handler.");
     for (const apiName of [
@@ -795,14 +797,24 @@ function checkRuntime(state) {
         )
     ) {
         pass(
-            "mock runtime registers exactly ten Lv1 items, five Lv2 items, eight Lv3 items, Cocoon, two Webbing atlases, five displacement textures, and preserves native TrapBindings.",
+            "mock runtime registers the exact Webbing, Leg binder, and Silk leash catalog with two atlases and five displacement textures, and preserves native TrapBindings.",
         );
     }
 
     const byId = new Map(state.restraints.map((entry) => [entry.name, entry]));
     const byModel = new Map(state.models.map((entry) => [entry.Name, entry]));
     const bag = byId.get("SpiderlingsSpinnerLegbinder");
+    const leash = byId.get("SpiderlingsSilkLeash");
     const capture = state.context.Spiderlings.SpinnerCapture;
+    if (
+        !leash ||
+        leash.Group !== "ItemNeckRestraints" ||
+        leash.leash !== true ||
+        leash.tether !== 2.9 ||
+        leash.power !== 1 ||
+        JSON.stringify(leash.requireAllTagsToEquip) !== JSON.stringify(["Collars"])
+    )
+        fail("Spiderlings Silk leash does not preserve the BasicLeash carrier contract.");
     if (
         !bag ||
         bag.Group !== "ItemLegs" ||
