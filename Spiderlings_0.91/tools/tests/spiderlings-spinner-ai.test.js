@@ -56,6 +56,7 @@ function runtime(entities = []) {
     const tiles = new Map(),
         movement = [],
         nativeCalls = [],
+        phaseCalls = [],
         context = {
             console,
             Spiderlings: {},
@@ -70,7 +71,7 @@ function runtime(entities = []) {
                 RoomType: "SpinnerAITest",
             },
             KDGameData: { SleepTurns: 0, LastMapSeed: "ai-seed" },
-            KinkyDungeonPlayerEntity: { player: true, x: 16, y: 10 },
+            KinkyDungeonPlayerEntity: { id: 0, player: true, x: 16, y: 10 },
             KinkyDungeonMovableTilesEnemy: ".0",
             KinkyDungeonMovableTilesSmartEnemy: ".0",
             KinkyDungeonCurrentTick: 1,
@@ -83,7 +84,19 @@ function runtime(entities = []) {
             KDPathCache: new Map(),
             KDPathCacheIgnoreLocks: new Map(),
             KDUpdateEnemyCache: false,
-            KDAIType: { hunt: { beforemove: () => false } },
+            KDAIType: {
+                hunt: {
+                    beforemove: () => false,
+                    attack(enemy) {
+                        phaseCalls.push({ phase: "attack", id: enemy.id });
+                        return true;
+                    },
+                    spell(enemy) {
+                        phaseCalls.push({ phase: "spell", id: enemy.id });
+                        return true;
+                    },
+                },
+            },
             KDMapInit: (values) => Object.fromEntries(values.map((value) => [value, true])),
             KinkyDungeonMapGet: (x, y) => (x > 0 && y > 0 && x < 17 && y < 11 ? "." : "1"),
             KinkyDungeonTilesGet: (key) => tiles.get(key),
@@ -99,13 +112,15 @@ function runtime(entities = []) {
                 context.KDMapData.Entities.push(entity);
                 return entity;
             },
-            KDHostile: (entity) => !entity.allied && !entity.party && !entity.imprisoned,
+            KDHostile: (entity, target) =>
+                target ? target.hostileToSpinner !== false : !entity.allied && !entity.party && !entity.imprisoned,
             KDAllied: (entity) => !!entity.allied,
             KDIsInParty: (entity) => !!entity.party,
             KDIsImprisoned: (entity) => !!entity.imprisoned,
             KinkyDungeonIsDisabled: (entity) => !!entity.disabled,
             KDHelpless: (entity) => !!entity.helpless,
             KinkyDungeonCheckPath: () => true,
+            KinkyDungeonCheckLOS: () => true,
             KinkyDungeonGetBuffedStat: () => 0,
             KinkyDungeonMultiplicativeStat: () => 1,
             KDBoundEffects: () => 0,
@@ -132,11 +147,17 @@ function runtime(entities = []) {
             },
             KinkyDungeonEnemyLoop(enemy, target, _delta) {
                 nativeCalls.push(enemy.id);
-                const handled = context.KDAIType.hunt.beforemove(enemy, target, {
-                    canSensePlayer: !!enemy.testSense,
-                    canSeePlayer: !!enemy.testSense,
-                });
-                return { idle: !handled, defeat: false, defeatEnemy: enemy };
+                const aiData = {
+                        canSensePlayer: !!enemy.testSense,
+                        canSeePlayer: !!enemy.testSense,
+                        hostile: true,
+                        aggressive: true,
+                        ...(enemy.testAIData || {}),
+                    },
+                    handled = context.KDAIType.hunt.beforemove(enemy, target, aiData),
+                    attacked = context.KDAIType.hunt.attack(enemy, target, aiData),
+                    cast = context.KDAIType.hunt.spell(enemy, target, aiData);
+                return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
             },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] ||= {};
@@ -154,7 +175,7 @@ function runtime(entities = []) {
     context.Spiderlings.SpinnerField = { handleEnemyTurn: () => undefined };
     context.Spiderlings.SpinnerCapture = { handleEnemyTurn: () => undefined };
     load(context, "SpiderlingsSpinnerRuntime.js");
-    return { context, tiles, movement, nativeCalls };
+    return { context, tiles, movement, nativeCalls, phaseCalls };
 }
 
 function start(r, snapshot = mapSnapshot()) {
@@ -341,17 +362,261 @@ function cellKeyForTest(cell) {
     return `${cell.x},${cell.y}`;
 }
 
-test("live native perception delegates before any construction action", () => {
+test("live native perception establishes one lure without a construction action", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
         r = runtime(actors),
         ai = start(r),
         group = Object.values(ai.groups)[0],
         worker = actors.find((actor) => group.assignments[actor.id]);
     worker.testSense = true;
+    worker.aware = true;
     const before = plain(group.metrics);
     r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
-    assert.deepEqual(plain(group.metrics), before);
+    assert.equal(group.engagement.target.kind, "player");
+    assert.equal(group.engagement.lureId, worker.id);
+    assert.equal(group.metrics.construction, before.construction);
+    assert.equal(group.metrics.repair, before.repair);
+    assert.equal(
+        r.phaseCalls.some((entry) => entry.id === worker.id),
+        false,
+    );
     assert.deepEqual(r.nativeCalls, [worker.id]);
+});
+
+test("native player and hostile NPC targets establish one stable target without player priority", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
+        npc = { id: 50, x: 6, y: 4, hp: 4, hostileToSpinner: true, Enemy: { name: "Escort" } },
+        r = runtime([...actors, npc]),
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    r.context.KinkyDungeonEnemyLoop(actors[0], npc, 1);
+    assert.deepEqual(plain(group.engagement.target), { kind: "npc", id: 50 });
+    assert.equal(group.engagement.lureId, actors[0].id);
+
+    actors[1].aware = true;
+    actors[1].testSense = true;
+    r.context.KinkyDungeonEnemyLoop(actors[1], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(
+        plain(group.engagement.target),
+        { kind: "npc", id: 50 },
+        "native retargeting does not rotate the saved target",
+    );
+
+    const unseen = runtime([spinner(3, 4, 4), spinner(4, 4, 8)]),
+        unseenAI = start(unseen),
+        unseenGroup = Object.values(unseenAI.groups)[0];
+    unseen.context.KDMapData.Entities[0].aware = true;
+    unseen.context.KinkyDungeonEnemyLoop(
+        unseen.context.KDMapData.Entities[0],
+        unseen.context.KinkyDungeonPlayerEntity,
+        1,
+    );
+    assert.equal(unseenGroup.engagement, undefined, "awareness without computed sensing is not an observation");
+});
+
+test("last-known data expires at age four and native pursuit resumes after eight turns without sight", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    target.x = 10;
+    target.y = 5;
+    r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    assert.deepEqual(plain(group.engagement.lastKnown), { x: 10, y: 5, dx: 0, dy: 0, age: 0, source: "native" });
+    r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.lastKnown.age, 1);
+
+    actors[0].testSense = false;
+    target.x = 15;
+    target.y = 9;
+    for (let turn = 0; turn < 3; turn++) r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.lastKnown, undefined, "age four clears the saved coordinate and direction");
+    assert.equal(group.engagement.noSightTurns, 3);
+    for (let turn = 0; turn < 4; turn++) r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.noSightTurns, 7);
+    assert.equal(group.engagement.mode, "search");
+    r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.noSightTurns, 8);
+    assert.equal(group.engagement.mode, "pursuit");
+
+    r.context.KinkyDungeonCurrentTick++;
+    const phases = r.phaseCalls.length,
+        result = r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    assert.equal(result.idle, true, "pursuit delegates movement to the native AI");
+    assert.equal(r.phaseCalls.length, phases + 2, "native attack and spell gates reopen for delegated pursuit");
+});
+
+test("a builder uses native adjacent defense and resumes its retained assignment", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 6, 6)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    target.x = 10;
+    target.y = 4;
+    r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    const assignment = plain(group.assignments[actors[1].id]);
+    assert.ok(assignment);
+
+    actors[1].x = 9;
+    actors[1].y = 4;
+    actors[1].aware = true;
+    actors[1].testSense = true;
+    r.phaseCalls.length = 0;
+    const construction = group.metrics.construction;
+    r.context.KinkyDungeonEnemyLoop(actors[1], target, 1);
+    assert.deepEqual(plain(r.phaseCalls), [
+        { phase: "attack", id: actors[1].id },
+        { phase: "spell", id: actors[1].id },
+    ]);
+    assert.equal(group.metrics.construction, construction);
+    assert.deepEqual(plain(group.assignments[actors[1].id]), assignment, "defense retains the builder job");
+
+    r.context.KinkyDungeonCurrentTick++;
+    target.x = 15;
+    target.y = 9;
+    actors[1].testSense = false;
+    r.phaseCalls.length = 0;
+    r.context.KinkyDungeonEnemyLoop(actors[1], target, 1);
+    assert.equal(r.phaseCalls.length, 0, "resumed work gates later native attack and spell phases");
+});
+
+test("load audit replaces an invalid lure and removes stale or duplicate saved assignments", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        assignments = Object.values(group.assignments);
+    group.engagement = {
+        target: { kind: "player", id: 0 },
+        lureId: 999,
+        mode: "search",
+        lastKnown: { x: 12, y: 8, dx: 1, dy: 0, age: 4, source: "native" },
+        noSightTurns: 4,
+        lureNoContactTurns: 4,
+        compositeId: null,
+    };
+    if (assignments[0]) {
+        group.assignments[actors[0].id] = plain(assignments[0]);
+        group.assignments[actors[1].id] = plain(assignments[0]);
+    }
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    const once = plain(group);
+    assert.ok(group.memberIds.includes(group.engagement.lureId));
+    assert.equal(group.engagement.lastKnown, undefined);
+    assert.ok(Object.keys(group.assignments).length <= 1);
+    assert.equal(group.assignments[group.engagement.lureId], undefined);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.deepEqual(plain(group), once, "repeated audit is idempotent");
+    r.context.Spiderlings.SpinnerAI.completePositiveTurn(0);
+    assert.deepEqual(plain(group), once, "a zero-time load update advances no engagement state");
+
+    r.context.KDMapData.Entities.push({
+        id: 77,
+        x: 12,
+        y: 8,
+        hp: 2,
+        hostileToSpinner: false,
+        Enemy: { name: "FormerEnemy" },
+    });
+    group.engagement.target = { kind: "npc", id: 77 };
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.equal(group.engagement, undefined, "changed native hostility invalidates the saved target");
+});
+
+test("stable lure survives JSON restore and is replaced after death, incapacity, or lost contact", () => {
+    const actors = [spinner(1, 3, 3), spinner(2, 3, 6), spinner(3, 3, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        initialGroup = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    target.x = 10;
+    target.y = 5;
+    r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    const stableLure = initialGroup.engagement.lureId;
+
+    r.context.KDMapData = plain(r.context.KDMapData);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    let group = Object.values(r.context.KDMapData.SpiderlingsSpinnerEncounter.ai.groups)[0];
+    assert.equal(group.engagement.lureId, stableLure);
+
+    let entities = r.context.KDMapData.Entities;
+    entities.find((entity) => entity.id === stableLure).hp = 0;
+    start(r);
+    group = Object.values(r.context.KDMapData.SpiderlingsSpinnerEncounter.ai.groups)[0];
+    const deathReplacement = group.engagement.lureId;
+    assert.notEqual(deathReplacement, stableLure);
+
+    entities = r.context.KDMapData.Entities;
+    entities.find((entity) => entity.id === deathReplacement).disabled = true;
+    start(r);
+    const incapacityReplacement = group.engagement.lureId;
+    assert.notEqual(incapacityReplacement, deathReplacement);
+
+    const observingBuilder = entities.find((entity) => entity.id === deathReplacement);
+    if (observingBuilder) {
+        observingBuilder.disabled = false;
+        group.engagement.lureNoContactTurns = 8;
+        observingBuilder.aware = true;
+        observingBuilder.testSense = true;
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(observingBuilder, target, 1);
+        assert.equal(group.engagement.lureId, observingBuilder.id);
+    }
+});
+
+test("cooperative enclosure reuses the saved group and topology work scheduler", () => {
+    const actors = [spinner(1, 5, 4), spinner(2, 5, 8)],
+        r = runtime(actors),
+        map = {
+            width: 18,
+            height: 12,
+            floor: mapSnapshot().cells.map(cellKeyForTest),
+            protected: [],
+            occupied: [],
+            exit: { x: 16, y: 6 },
+        },
+        setup = r.context.Spiderlings.SpinnerScenarios.setupCooperative({
+            ownerIds: actors.map((actor) => actor.id),
+            compositeId: "cooperative",
+            layers: [
+                {
+                    id: "inner",
+                    vertices: [
+                        { x: 8, y: 2 },
+                        { x: 12, y: 2 },
+                        { x: 12, y: 10 },
+                        { x: 8, y: 10 },
+                    ],
+                    core: { x: 10, y: 6 },
+                    gate: { x: 8, y: 6 },
+                },
+            ],
+            map,
+            mapSnapshot: mapSnapshot(),
+        }),
+        group = Object.values(setup.ai.groups)[0],
+        plan = setup.ai.plans[group.planId];
+    assert.equal(setup.started, true);
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.compositeId, "cooperative");
+    assert.equal(Object.keys(group.assignments).length, 2);
+    assert.ok(Object.values(group.assignments).every((assignment) => assignment.fieldId === "inner"));
+    const before = setup.encounter.topology.actionLog.length;
+    for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.ok(
+        setup.encounter.topology.actionLog.length >= before,
+        "the production paid-action path owns enclosure work",
+    );
 });
 
 test("one survivor keeps repair work but receives no new construction or replacement plan", () => {

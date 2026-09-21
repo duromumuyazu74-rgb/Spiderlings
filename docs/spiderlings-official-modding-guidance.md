@@ -472,3 +472,9 @@ Native `ForceRefreshModels` clears both model update caches. An unchanged owned 
 独立腿袋以四张直接 PNG 为源；manifest 必须在 `SpiderlingsSpinnerArt.js` 前列入原图，Art 在 Capture 前执行。不要沿用旧运行时 Cocoon 裁剪别名，或将相同路径加入 Webbing 图集后造成旧纹理优先。测试 `spiderlings-spinner-art.test.js` 检查此顺序和直接加载。
 
 原生 `DrawCharacter` 为每个 ContainerInfo 保存 `Zoom`，`DrawCharacterModels` 使用 `Zoom × MODEL_SCALE` 绘制源坐标。覆盖层必须使用这组缩放；不能从任意 SpriteList 元素反推，因为独立精灵可能缩放不同。自有前后渲染纹理作为 `ContainerInfo.Mesh` 子项与原生 Submeshes 排序，并复制 Container 的位置、旋转、缩放和轴点。重建容器时销毁自有渲染纹理，保留共享 PNG BaseTexture。
+
+## Spinner native perception and action boundary
+
+KD 5.5 selects the current player or hostile-NPC target and computes sensing before `KDAIType.beforemove`. `enemy.target`, `tx` and `ty` are written earlier and are not proof that the enemy perceived the target. Spinner coordination accepts a position only from the actual enemy-loop target when the Spinner is aware, `AIData.hostile` is true and `AIData.canSensePlayer` is true. Actual sight uses the native sight/shoot booleans separately from hearing.
+
+Returning true from `beforemove` skips the movement loop but does not skip the later attack or spell phases. A handled field, lure, yield or wait pass therefore needs matching `KDAIType.attack` and `KDAIType.spell` gates keyed to the same actor and world turn. Native defense and fully delegated pursuit leave both phases available. Advance shared perception age once at positive `tickAfter`; do not use either of the two `afterEnemyTick` passes. Saved state contains identities and observations only, while per-turn decisions, paths and observer sets remain runtime data.
