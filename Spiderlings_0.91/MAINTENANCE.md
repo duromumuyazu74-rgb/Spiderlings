@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.12 维护说明
+# Spiderlings 0.92.36-test.13 维护说明
 
 `Spiderlings_0.91/` 是当前开发 Mod 根目录，名称为迁移前历史路径。正式基线是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，当前测试安装包由 `test` 分支成功 CI 运行提供。兼容验收覆盖本地只读 `KinkiestDungeon-5.5/` 的 KD 5.5.3 与安装版 KD 5.4.92；不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
