@@ -26,6 +26,8 @@ Public mode marks the private watcher as `not-run`. `--build` calls the establis
 
 CI uses `--mode public --build`, also requiring generated atlases to match the committed files. It keeps the required `Repository checks` name, uploads the installable ZIP as `spiderlings-<commit SHA>`, and retains a separate `spiderlings-evidence-<commit SHA>` artifact for 14 days. Evidence is retained on verification failure when checkout/setup allow the collector to run. JSON records identify the CI run and, for a PR, both its checked-out commit and PR head.
 
+The final `Repository checks` job always evaluates the Windows safety and delivery jobs and succeeds only when both succeeded. A failed, cancelled or skipped prerequisite cannot satisfy the required gate.
+
 ## Game acceptance records
 
 Supply a JSON record for the exact tested ZIP. Paths in `evidence` resolve relative to this JSON file:

@@ -26,11 +26,13 @@ powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderli
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
-The builder uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are preserved; replacing one requires an intentional replacement. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
+The builder validates `modbuild`, then uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are refused before atlas generation; replacing one requires an intentional replacement. `-RunCheck` runs the complete local watcher after writing and verifying the final ZIP. With `-NoPackage`, it checks the available source and any existing package. The watcher uses the same archive verifier as `-VerifyOnly`, including PNG bytes and duplicate entries. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
 
 Use `npm run report:delivery -- --base origin/test` to run the existing checks and package verifier while collecting JSON, Markdown and per-check logs. It verifies the existing ZIP by default. See [delivery evidence](DELIVERY-EVIDENCE.md) for public mode, explicit builds and importing game acceptance records bound to the package hash.
 
 `Repository checks` uses the public delivery-evidence mode to build the same allowlisted ZIP on every pull request and maintained-branch push. It verifies every archive entry against that commit, rejects extra or missing files, confirms that atlas generation left no uncommitted difference, and uploads `spiderlings-<commit SHA>` plus a separate `spiderlings-evidence-<commit SHA>` artifact for 14 days. This public-run package does not include the private game and original-art checks, so it is a delivery candidate until the local watcher and required in-game acceptance pass.
+
+The required `Repository checks` job always evaluates both `Windows worktree safety` and `Delivery checks`. Failure, cancellation or a skipped prerequisite fails this gate. The two prerequisite jobs can run independently.
 
 To verify an existing package against the checked-out commit without rebuilding it:
 
@@ -56,6 +58,8 @@ The first invocation is a read-only preflight. The second repeats the checks and
 For an existing junction, validate its exact path and target, preserve and verify the target contents, and detach only the link with nonrecursive link semantics. Never test deletion against real reference inputs. The public safety suite uses disposable repositories, real Windows junctions and external sentinel files; a dedicated Windows CI job exercises the deletion path.
 
 ## Issues and branches
+
+The [2026-09-22 repository audit](REPOSITORY-AUDIT-2026-09-22.zh-CN.md) records delivery fixes, verification scope and follow-up priorities.
 
 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues) holds new specs, tickets and triage. See [tracker operations](agents/issue-tracker.md) and [labels](agents/triage-labels.md). Old scratch records remain in the original KD workspace; historical links in imported maintenance records refer to that workspace and are not new acceptance evidence.
 
