@@ -259,12 +259,23 @@
     }
 
     function doorwayTerrainSnapshot() {
-        const doorX = KinkyDungeonPlayerEntity.x + 4,
-            centerY = KinkyDungeonPlayerEntity.y,
+        const width = KDMapData.GridWidth || 31,
+            height = KDMapData.GridHeight || 21,
+            doorX = Math.max(4, Math.min(width - 5, KinkyDungeonPlayerEntity.x + 4)),
+            centerY = Math.max(3, Math.min(height - 4, KinkyDungeonPlayerEntity.y)),
             cells = [];
-        for (let y = centerY - 2; y <= centerY + 2; y++)
-            for (let x = doorX - 3; x <= doorX + 3; x++) cells.push({ x, y, floor: y === centerY, protected: false });
-        return { cells };
+        for (let y = centerY - 3; y <= centerY + 3; y++)
+            for (let x = doorX - 3; x <= doorX + 3; x++)
+                cells.push({ x, y, floor: x !== doorX || y === centerY, protected: false });
+        return {
+            x: doorX,
+            y: centerY,
+            anchors: [
+                { x: doorX - 2, y: centerY },
+                { x: doorX + 2, y: centerY },
+            ],
+            cells,
+        };
     }
 
     function restoreOwnedState(control) {
@@ -368,6 +379,11 @@
                       ? sceneMapSnapshot(sceneId)
                       : enclosureTerrainSnapshot(),
             terrainOriginals = [];
+        if (sceneId === "single-door") {
+            options.x = terrainSnapshot.x;
+            options.y = terrainSnapshot.y;
+            options.anchors = terrainSnapshot.anchors;
+        }
         if (terrainSnapshot && typeof KinkyDungeonMapSet === "function")
             for (const cell of terrainSnapshot.cells) {
                 const key = `${cell.x},${cell.y}`,
@@ -411,6 +427,15 @@
                                 mapSnapshot: input.mapSnapshot || sceneMapSnapshot(sceneId),
                             });
         if (setup?.started && setup.encounter) {
+            if (!setup.ai) {
+                setup.encounter.autonomous = true;
+                setup.ai = api.SpinnerAI.beginTurn({
+                    ...options,
+                    activate: true,
+                    adoptExisting: true,
+                    mapSnapshot: input.mapSnapshot || sceneMapSnapshot(sceneId),
+                });
+            }
             actorOriginals = new Map();
             for (const id of options.ownerIds) {
                 const actor = KDMapData.Entities.find((entity) => entity.id === id);
