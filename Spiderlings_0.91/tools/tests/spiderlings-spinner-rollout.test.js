@@ -217,6 +217,7 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
         assert.equal(decision.g1.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
         assert.equal(decision.g2.kind, kind === "line" ? "line-fallback" : "enclosure");
         assert.equal(context.KDMapData.Encounter.ai, ai);
+        assert.deepEqual(context.KDMapData.Encounter.builders, {});
         assert.equal(context.lastInput.layers[0].core.x, 8);
         assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
         if (kind === "line") {
@@ -368,6 +369,8 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
     assert.equal(snapshots[3].cells.find((cell) => cell.x === 16 && cell.y === 6).protected, true);
     assert.equal(sent.filter(([type]) => type === "line").length, 2, "overlap creates two live field plans");
     api.setupScene("regular-room", { ownerIds: actors.map((actor) => actor.id), actorCount: 2 });
+    assert.equal(api.setupScene("missing-scene", {}).reason, "unknown-scene");
+    assert.equal(api.inspectScene().scene.sceneId, "regular-room");
     assert.equal(api.stepScene(), "Tick");
     assert.equal(api.damageStructure({ amount: 2 }).debugInjected, true);
     const exported = JSON.parse(api.exportScene());
@@ -407,4 +410,21 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
     );
     assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
     context.Spiderlings.SpinnerNativeField.initializeEnclosure = originalInitialize;
+    context.KDMapData.GridWidth = 8;
+    context.KDMapData.GridHeight = 8;
+    const beforeSmall = JSON.stringify({ ids: context.KDMapData.Entities.map((entity) => entity.id), grid: [...grid] });
+    assert.equal(
+        context.Spiderlings.SpinnerScenarios.setupScene("regular-room", { ownerIds: [1, 2], actorCount: 2 }).reason,
+        "map-size",
+    );
+    assert.equal(
+        JSON.stringify({ ids: context.KDMapData.Entities.map((entity) => entity.id), grid: [...grid] }),
+        beforeSmall,
+    );
+    context.KDMapData.GridWidth = 31;
+    context.KDMapData.GridHeight = 21;
+    context.Spiderlings.SpinnerScenarios.setupScene("single-door", { ownerIds: [1, 2], actorCount: 2 });
+    assert.equal(context.KDEventMapGeneric.beforeStairCancel?.SpiderlingsSpinnerScenarioControl, undefined);
+    context.KDEventMapGeneric.beforeHandleStairs.SpiderlingsSpinnerScenarioControl({}, {});
+    assert.equal(context.Spiderlings.SpinnerScenarios.inspectScene().scene, undefined);
 });
