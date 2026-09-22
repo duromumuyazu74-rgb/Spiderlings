@@ -43,6 +43,11 @@
     "docs/spiderlings-spinner-capture/TEST10-PIPELINE.md",
     "Spiderlings_0.91/tools/build-spinner-artist-kit.py",
     "Spiderlings_0.91/tools/artist-kit/BUILD-PREVIEW.cmd",
-    "Spiderlings_0.91/tools/artist-kit/Build-Preview.ps1"
+    "Spiderlings_0.91/tools/artist-kit/Build-Preview.ps1",
+    "KinkyDungeon-Spiderlings/Models/SpiderlingsSpinnerLegbinder/README.en.html",
+    "KinkyDungeon-Spiderlings/Models/SpiderlingsSpinnerLegbinder/README.zh-CN.html",
+    "KinkyDungeon-Spiderlings/tools/build-spinner-artist-kit.py",
+    "KinkyDungeon-Spiderlings/tools/artist-kit/BUILD-PREVIEW.cmd",
+    "KinkyDungeon-Spiderlings/tools/artist-kit/Build-Preview.ps1"
   ]
 }

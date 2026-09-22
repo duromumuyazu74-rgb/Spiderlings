@@ -15,7 +15,7 @@ Every formal or test Spiderlings delivery must include a versioned installable Z
 After the final package change and ZIP build, run from the workspace root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
 Fix task-caused failures. After the check passes, create a focused git commit for the authorized package changes, preserving unrelated working and staged edits. Package-only documentation still follows this gate; unrelated tool/docs changes do not.

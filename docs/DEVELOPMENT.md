@@ -4,9 +4,11 @@ Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for code conventions, formatting, c
 
 ## Setup
 
-Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The source path stays `Spiderlings_0.91/` so existing tools retain their paths.
+See [source and history migration](SOURCE-MIGRATION.md) for the directory rename and cleanup of private authoring paths.
 
-Use Node.js 24, PowerShell, and Python with the versions pinned in `Spiderlings_0.91/tools/requirements-atlas.txt`. The atlas builder imports `PIL` and `oxipng`. The regression tests need these separately supplied directories under an external input root:
+Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The active source directory is `KinkyDungeon-Spiderlings/`; the previous `Spiderlings_0.91/` directory name is retained only in historical records and private-path exclusions.
+
+Use Node.js 24, PowerShell, and Python with the versions pinned in `KinkyDungeon-Spiderlings/tools/requirements-atlas.txt`. The atlas builder imports `PIL` and `oxipng`. The regression tests need these separately supplied directories under an external input root:
 
 - `KinkiestDungeon-5.5/`: official KD 5.5 source tree, used read-only.
 - `T‘s NEW Webbing LV1/` and `T‘s NEW Webbing LV2/`: original artwork reference folders used by existing provenance checks. Keep the curly apostrophe in these folder names.
@@ -16,7 +18,7 @@ These inputs are not downloaded or redistributed by the repository. Configure th
 Run commands from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -RunCheck
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -RunCheck
 ```
 
 The builder validates `modbuild`, then uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are refused before atlas generation; replacing one requires an intentional replacement. `-RunCheck` checks the final ZIP after writing it and uses the active PowerShell edition. With `-NoPackage`, it checks the available source and any existing package. The watcher uses the same archive verifier as `-VerifyOnly`, including PNG bytes and duplicate entries. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
@@ -26,7 +28,7 @@ The builder validates `modbuild`, then uses the manifest allowlist plus seven lo
 To verify an existing package against the checked-out commit without rebuilding it:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
 ```
 
 ## Issues and branches
@@ -48,3 +50,5 @@ Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create t
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
 
 Follow [dependency maintenance](DEPENDENCIES.md) for scheduled update PRs and [third-party notices](../THIRD-PARTY-NOTICES.md) for licensing boundaries. Personal authoring paths are ignored and may not be reintroduced into the public repository.
+
+For a manual verification after repository maintenance, run the `Repository checks` workflow on the selected maintained branch. Manual runs compare against their own checked-out commit and still run policy/public tests and package verification. An unchanged root-directory move is exempt from retroactive content formatting/linting; modified files and all path, manifest and delivery checks remain enforced.

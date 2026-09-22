@@ -1,6 +1,6 @@
 # Spiderlings 0.92.38 维护说明
 
-`Spiderlings_0.91/` 是当前正式 Mod 根目录，名称为迁移前历史路径。正式安装包是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38) 中的 `Spiderlings_0.92.38.zip`。当前兼容验收覆盖本地只读 `KinkiestDungeon-5.5/` 的 KD 5.5.3 与安装版 KD 5.4.92；不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
+`KinkyDungeon-Spiderlings/` 是当前正式 Mod 根目录，名称为迁移前历史路径。正式安装包是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38) 中的 `Spiderlings_0.92.38.zip`。当前兼容验收覆盖本地只读 `KinkiestDungeon-5.5/` 的 KD 5.5.3 与安装版 KD 5.4.92；不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，实现范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)，正式包结果见 [0.92.38 审核](../docs/spiderlings-full-review-0.92.38.zh-CN.md)。
 
@@ -62,9 +62,9 @@ Legs/Ankles 的 Lv1 位于站立裙层下，Lv2/Lv3 位于裙层上。Lv1/Lv2 �
 在仓库根目录执行完整本地检查：
 
 ```powershell
-python -m pip install -r .\Spiderlings_0.91\tools\requirements-atlas.txt
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -RunCheck
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
+python -m pip install -r .\KinkyDungeon-Spiderlings\tools\requirements-atlas.txt
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -RunCheck
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
 `Repository checks` 在每个 PR 和维护分支推送上重建 atlas、构建 ZIP、逐项比对包内容，并保存以提交 SHA 命名的 14 天 workflow artifact。该 artifact 仍需本地游戏验收。正式发布将通过验收的同一 ZIP 附加到 `v<modbuild>` GitHub Release；自动 Source code ZIP 不是可安装 Mod。

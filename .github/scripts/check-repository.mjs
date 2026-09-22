@@ -4,7 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ESLint } from "eslint";
 import * as prettier from "prettier";
-import referenceInputs from "../../Spiderlings_0.91/tools/reference-inputs.js";
+import { firstPrivateCommit, unchangedPackageMoves } from "./migration-checks.mjs";
+import referenceInputs from "../../KinkyDungeon-Spiderlings/tools/reference-inputs.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const policy = JSON.parse(readFileSync(new URL("../repository-policy.json", import.meta.url), "utf8"));
@@ -21,7 +22,7 @@ export function validateFile(file) {
     if (!legacy && !policy.extensions.includes(extension) && !policy.specialFiles.includes(path.posix.basename(file))) {
         return `${file}: unsupported file type; update the documented language policy before adding it`;
     }
-    if (/^Spiderlings_0\.91\/(?!tools\/)/.test(file) && [".mjs", ".cjs", ".py", ".ps1"].includes(extension)) {
+    if (/^KinkyDungeon-Spiderlings\/(?!tools\/)/.test(file) && [".mjs", ".cjs", ".py", ".ps1"].includes(extension)) {
         return `${file}: executable Mod code must be a plain .js script; maintenance code belongs in tools/`;
     }
     return null;
@@ -57,8 +58,9 @@ export function validatePullRequest(pr, files = []) {
         files.length > 0 &&
         files.every(
             (file) =>
-                ["package.json", "package-lock.json", "Spiderlings_0.91/tools/requirements-atlas.txt"].includes(file) ||
-                /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file),
+                ["package.json", "package-lock.json", "KinkyDungeon-Spiderlings/tools/requirements-atlas.txt"].includes(
+                    file,
+                ) || /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file),
         );
     if (
         !dependencyUpdate &&
@@ -94,6 +96,13 @@ async function main() {
     const present = new Set(git("ls-files", "--cached", "--others", "--exclude-standard", "-z").split("\0"));
     const files = changed.filter((file) => present.has(file) && existsSync(file));
     const errors = files.map(validateFile).filter(Boolean);
+    const unchangedMoves = unchangedPackageMoves(base, root);
+    const contentFiles = files.filter((file) => !unchangedMoves.has(file));
+    if (policy.historySanitized && firstPrivateCommit(root, policy.privateFiles)) {
+        errors.push(
+            "This branch still contains private authoring history; do not merge or push an old unfiltered clone.",
+        );
+    }
     if (event.pull_request) errors.push(...validatePullRequest(event.pull_request, changed));
     const head = event.pull_request?.head.sha ?? "HEAD";
     const commits = git("log", "--format=%H%x00%s", "-z", `${base}..${head}`).split("\0").filter(Boolean);
@@ -118,7 +127,7 @@ async function main() {
     }
 
     const linter = new ESLint();
-    const lintFiles = files.filter((file) => javascript.has(path.extname(file)));
+    const lintFiles = contentFiles.filter((file) => javascript.has(path.extname(file)));
     if (lintFiles.length) {
         const results = await linter.lintFiles(lintFiles);
         const report = (await linter.loadFormatter("stylish")).format(results);
@@ -126,7 +135,7 @@ async function main() {
         if (results.some((result) => result.errorCount || result.warningCount))
             errors.push("Changed JavaScript must pass ESLint without warnings");
     }
-    for (const file of files) {
+    for (const file of contentFiles) {
         const info = await prettier.getFileInfo(file, { ignorePath: ".prettierignore" });
         if (!info.ignored && info.inferredParser) {
             const options = await prettier.resolveConfig(file);
@@ -148,7 +157,7 @@ async function main() {
             );
         }
     }
-    const powershellFiles = files.filter((file) => file.endsWith(".ps1"));
+    const powershellFiles = contentFiles.filter((file) => file.endsWith(".ps1"));
     if (powershellFiles.length) {
         execFileSync("pwsh", ["-NoProfile", "-File", ".github/scripts/check-powershell.ps1", ...powershellFiles], {
             stdio: "inherit",
@@ -160,9 +169,9 @@ async function main() {
         errors.push("English README must link to Chinese at the top");
     if (!chinese.split("\n").slice(0, 6).join("\n").includes("](README.md)"))
         errors.push("Chinese README must link to English at the top");
-    const manifest = JSON.parse(readFileSync("Spiderlings_0.91/mod.json", "utf8").replace(/^\uFEFF/, ""));
+    const manifest = JSON.parse(readFileSync("KinkyDungeon-Spiderlings/mod.json", "utf8").replace(/^\uFEFF/, ""));
     for (const file of manifest.fileorder) {
-        if (file.includes("..") || path.isAbsolute(file) || !existsSync(path.join("Spiderlings_0.91", file))) {
+        if (file.includes("..") || path.isAbsolute(file) || !existsSync(path.join("KinkyDungeon-Spiderlings", file))) {
             errors.push(`Manifest entry is unsafe or missing: ${file}`);
         }
     }
