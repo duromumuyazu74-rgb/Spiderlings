@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 const { stripTypeScriptTypes } = require("node:module");
 
 const modRoot = path.join(__dirname, "..", "..");
@@ -199,10 +200,7 @@ test("WebCasters prefer separated firing directions through the native direction
 });
 
 test("WebCaster angle preference preserves native retreat from NPC rivals and path goals", () => {
-    const source = fs.readFileSync(
-        path.join(modRoot, "../KinkiestDungeon-5.5/Game/src/enemy/KinkyDungeonEnemies.ts"),
-        "utf8",
-    );
+    const source = fs.readFileSync(gamePath("Game/src/enemy/KinkyDungeonEnemies.ts"), "utf8");
     const start = source.indexOf("function KDGetDir(");
     const end = source.indexOf("function KDPullResistance(", start);
     assert.ok(start >= 0 && end > start);
@@ -259,10 +257,7 @@ test("losing sight for a player action discards the old mark even after sight re
 });
 
 test("KD 5.5 native player effects preserve projectile source identity for crossfire", () => {
-    const source = fs.readFileSync(
-        path.join(modRoot, "../KinkiestDungeon-5.5/Game/src/magic/KinkyDungeonPlayerEffects.ts"),
-        "utf8",
-    );
+    const source = fs.readFileSync(gamePath("Game/src/magic/KinkyDungeonPlayerEffects.ts"), "utf8");
     const start = source.indexOf("function KinkyDungeonPlayerEffect(");
     const end = source.indexOf("function KDTripleBuffKill", start);
     assert.ok(start >= 0 && end > start);
@@ -469,10 +464,7 @@ test("WebSpray passes KD 5.5's native minimum range gates at adjacent and ranged
     const { context } = loadRuntime();
     const enemy = { Enemy: context.KinkyDungeonEnemies.find((entry) => entry.name === "WebCaster") };
     const spray = context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "WebSpray");
-    const source = fs.readFileSync(
-        path.join(modRoot, "..", "KinkiestDungeon-5.5/Game/src/enemy/KinkyDungeonEnemies.ts"),
-        "utf8",
-    );
+    const source = fs.readFileSync(gamePath("Game/src/enemy/KinkyDungeonEnemies.ts"), "utf8");
     const start = source.indexOf("let minSpellRange = enemy.Enemy.minSpellRange");
     const end = source.indexOf("if (spell) break;", start);
     assert.ok(start >= 0 && end > start, "pinned native spell selection must be discoverable");

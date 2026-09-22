@@ -6,6 +6,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 
 const modRoot = path.join(__dirname, "..", "..");
 const families = [
@@ -196,10 +197,7 @@ function freshNewSaveRuntime() {
 
 test("native perk initialization equips all 24 physical layers only when selected", () => {
     const { context, equipment } = freshNewSaveRuntime();
-    const source = fs.readFileSync(
-        path.join(modRoot, "..", "KinkiestDungeon-5.5", "Game/src/player/KinkyDungeonPerks.ts"),
-        "utf8",
-    );
+    const source = fs.readFileSync(gamePath("Game/src/player/KinkyDungeonPerks.ts"), "utf8");
     const start = source.indexOf("function KDInitPerks() {");
     const end = source.indexOf("let KDPerkStart =", start);
     assert.ok(start >= 0 && end > start);

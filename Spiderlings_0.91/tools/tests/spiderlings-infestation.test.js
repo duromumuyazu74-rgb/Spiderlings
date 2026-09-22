@@ -6,6 +6,7 @@ const { planNestPlacement, reachableCells } = require("../../SpiderlingsInfestat
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 const { stripTypeScriptTypes } = require("node:module");
 const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsInfestation.js"), "utf8");
 
@@ -119,7 +120,7 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
 });
 
 function nativeJourneyRuntime(overrides = {}) {
-    const game = path.resolve(__dirname, "../../../KinkiestDungeon-5.5/Game/src/map");
+    const game = gamePath("Game/src/map");
     return runtime(
         {
             PIXI: { Graphics: class {} },
@@ -266,7 +267,7 @@ test("maid floors have no infestation objective; infestation floors place five n
 });
 
 function nativePopulationRuntime() {
-    const game = path.resolve(__dirname, "../../../KinkiestDungeon-5.5/Game/src");
+    const game = gamePath("Game/src");
     const definitions = fs.readFileSync(path.join(game, "enemy/KinkyDungeonEnemiesList.ts"), "utf8");
     const spawns = fs.readFileSync(path.join(game, "enemy/KinkyDungeonSpawns.ts"), "utf8");
     const tiles = fs.readFileSync(path.join(game, "map/KinkyDungeonEditorGen.ts"), "utf8");
@@ -1245,7 +1246,7 @@ test("clearing cannot open a wall around a locked room, including diagonal acces
     const cells = planner(ring, {
         width: 16,
         height: 16,
-        tile: (x, y) => (x === 8 ? "1" : "0"),
+        tile: (x) => (x === 8 ? "1" : "0"),
         meta: () => undefined,
         accessible: new Set(rectangle(7, 14).map((p) => `${p.x},${p.y}`)),
         interactable: "0",

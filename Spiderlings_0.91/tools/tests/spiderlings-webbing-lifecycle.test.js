@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 const { stripTypeScriptTypes } = require("node:module");
 
 const modRoot = path.join(__dirname, "..", "..");
@@ -414,10 +415,7 @@ function loadArmourUnlinkRuntime() {
             },
         },
         (context) => {
-            const source = fs.readFileSync(
-                path.join(modRoot, "../KinkiestDungeon-5.5/Game/src/restraint/KinkyDungeonRestraints.ts"),
-                "utf8",
-            );
+            const source = fs.readFileSync(gamePath("Game/src/restraint/KinkyDungeonRestraints.ts"), "utf8");
             const unlink = source.slice(
                 source.indexOf("function KinkyDungeonUnLinkItem("),
                 source.indexOf("function KDCreateDebris "),
@@ -963,10 +961,7 @@ test("Lv3 blocks player removal of covered same-group layers until the outer lay
 });
 
 test("native HUD and context-menu lists hide covered actions and restore them as each outer layer is removed", () => {
-    const nativeSource = fs.readFileSync(
-        path.join(modRoot, "..", "KinkiestDungeon-5.5/Game/src/restraint/KDStruggleGroups.ts"),
-        "utf8",
-    );
+    const nativeSource = fs.readFileSync(gamePath("Game/src/restraint/KDStruggleGroups.ts"), "utf8");
     const selectors = ["KDGetStruggleButtons", "KDGetStruggleContextMenu"]
         .map((name) => nativeSource.match(new RegExp(`function ${name}\\([^]*?\\n\\}`))[0])
         .join("\n");
@@ -1081,10 +1076,7 @@ test("Cocoon blocks all twenty-three inner restraints before native costs, even 
 });
 
 test("Cocoon hides every inner HUD/context action and removing it restores the original per-layer menus", () => {
-    const nativeSource = fs.readFileSync(
-        path.join(modRoot, "..", "KinkiestDungeon-5.5/Game/src/restraint/KDStruggleGroups.ts"),
-        "utf8",
-    );
+    const nativeSource = fs.readFileSync(gamePath("Game/src/restraint/KDStruggleGroups.ts"), "utf8");
     const selectors = ["KDGetStruggleButtons", "KDGetStruggleContextMenu"]
         .map((name) => nativeSource.match(new RegExp(`function ${name}\\([^]*?\\n\\}`))[0])
         .join("\n");

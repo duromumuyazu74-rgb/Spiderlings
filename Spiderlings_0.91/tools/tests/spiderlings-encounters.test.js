@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 const { stripTypeScriptTypes } = require("node:module");
 
 const { EncounterRules, ReinforcementRules } = require("../../SpiderlingsCore.js");
@@ -41,10 +42,7 @@ const native553Subbier = `function KDIsSubbier(player, enemy) {
 }`;
 
 test("summon messages accept player fallback in KD 5.5.3 without losing summons or NPC dialogue", () => {
-    const fight = fs.readFileSync(
-        path.join(__dirname, "../../..", "KinkiestDungeon-5.5/Game/src/fight/KinkyDungeonFight.ts"),
-        "utf8",
-    );
+    const fight = fs.readFileSync(gamePath("Game/src/fight/KinkyDungeonFight.ts"), "utf8");
     const hit = fight.slice(
         fight.indexOf("function KinkyDungeonBulletHit("),
         fight.indexOf("function KinkyDungeonSummonEnemy ("),
@@ -1369,7 +1367,7 @@ test("every Spiderlings translation CSV includes squad and controlled reinforcem
 });
 
 function nativePopulationRuntime(overrides = {}) {
-    const game = path.resolve(__dirname, "../../../KinkiestDungeon-5.5/Game/src");
+    const game = gamePath("Game/src");
     const fight = fs.readFileSync(path.join(game, "fight/KinkyDungeonFight.ts"), "utf8");
     const spawns = fs.readFileSync(path.join(game, "enemy/KinkyDungeonSpawns.ts"), "utf8");
     let nextID = 1;
@@ -1620,10 +1618,7 @@ test("native nest death bursts use only remaining slots across all three summon 
         KDGetFaction: () => "Enemy",
     });
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../../Spiderlings.js"), "utf8"), kd);
-    const list = fs.readFileSync(
-        path.join(__dirname, "../../../KinkiestDungeon-5.5/Game/src/enemy/KinkyDungeonEnemiesList.ts"),
-        "utf8",
-    );
+    const list = fs.readFileSync(gamePath("Game/src/enemy/KinkyDungeonEnemiesList.ts"), "utf8");
     const start = list.indexOf('"summon":', list.indexOf("let KDOndeath:"));
     const handler = list.slice(start, list.indexOf('"dialogue":', start));
     vm.runInContext(stripTypeScriptTypes(`globalThis.nativeDeath = {${handler}};`), kd);

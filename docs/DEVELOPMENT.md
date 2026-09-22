@@ -6,20 +6,20 @@ Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for code conventions, formatting, c
 
 Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The source path stays `Spiderlings_0.91/` so existing tools retain their paths.
 
-Use Node.js with its built-in test runner, PowerShell, and Python with `Pillow` and `pyoxipng`. The atlas builder imports `PIL` and `oxipng`. The regression tests also need these separately supplied local inputs at the repository root:
+Use Node.js 24, PowerShell, and Python with the versions pinned in `Spiderlings_0.91/tools/requirements-atlas.txt`. The atlas builder imports `PIL` and `oxipng`. The regression tests need these separately supplied directories under an external input root:
 
 - `KinkiestDungeon-5.5/`: official KD 5.5 source tree, used read-only.
 - `T‘s NEW Webbing LV1/` and `T‘s NEW Webbing LV2/`: original artwork reference folders used by existing provenance checks. Keep the curly apostrophe in these folder names.
 
-These inputs are not downloaded or redistributed by the repository. The formal branch's local checks require independent read-only copies at these paths. Keep shared inputs outside disposable worktrees; do not use directory junctions. Ongoing development on `test` uses its external input configuration. Run commands from the repository root:
+These inputs are not downloaded or redistributed by the repository. Configure the absolute path to their parent directory using `git config --local spiderlings.referenceRoot 'D:/KD-reference-inputs'`. `SPIDERLINGS_REFERENCE_ROOT` overrides this value for a process and its children. The setting is shared by linked worktrees. Inputs must resolve outside the checkout, and the checks reject game, artwork and dependency junctions. Install each checkout's dependencies locally with `npm ci`; keep worktrees containing packages or ongoing work locked.
+
+Run commands from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -RunCheck
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
-The builder uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are preserved; replacing one requires an intentional replacement. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
+The builder validates `modbuild`, then uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are refused before atlas generation; replacing one requires an intentional replacement. `-RunCheck` checks the final ZIP after writing it and uses the active PowerShell edition. With `-NoPackage`, it checks the available source and any existing package. The watcher uses the same archive verifier as `-VerifyOnly`, including PNG bytes and duplicate entries. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
 
 `Repository checks` builds the same allowlisted ZIP on every pull request and maintained-branch push. It verifies every archive entry against that commit, rejects extra or missing files, confirms that atlas generation left no uncommitted difference, and uploads `spiderlings-<commit SHA>` as a GitHub Actions artifact for 14 days. This public-run package does not include the private game and original-art checks, so it is a delivery candidate until the local watcher and required in-game acceptance pass.
 
@@ -30,6 +30,8 @@ powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderli
 ```
 
 ## Issues and branches
+
+The [2026-09-22 repository audit](REPOSITORY-AUDIT-2026-09-22.zh-CN.md) records delivery fixes, verification scope and follow-up priorities.
 
 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues) holds new specs, tickets and triage. See [tracker operations](agents/issue-tracker.md) and [labels](agents/triage-labels.md). Old scratch records remain in the original KD workspace; historical links in imported maintenance records refer to that workspace and are not new acceptance evidence.
 
