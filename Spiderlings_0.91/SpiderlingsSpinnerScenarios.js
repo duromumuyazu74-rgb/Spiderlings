@@ -335,7 +335,6 @@
     }
 
     function setupScene(sceneId, input = {}) {
-        if (activeScene) teardownScene();
         const definition = REGISTRY[sceneId];
         if (!definition) return { started: false, reason: "unknown-scene" };
         const actorCount = definition.actorCounts.includes(input.actorCount)
@@ -368,13 +367,29 @@
                 sceneConditions: { geometry: definition.geometry, ...(input.sceneConditions || {}) },
                 map: input.map || sceneEnclosureMap(),
                 hostile: (entity) => selectedActors.includes(entity) && KDHostile(entity),
-            },
-            priorEncounter = KDMapData[api.SpinnerNativeField.KEY]
-                ? JSON.parse(JSON.stringify(KDMapData[api.SpinnerNativeField.KEY]))
-                : undefined;
+            };
         if (selectedActors.length !== actorCount) return { started: false, reason: "actors" };
         if (input.targetKind === "npc" && !target) return { started: false, reason: "target" };
-        const terrainSnapshot =
+        const width = KDMapData.GridWidth || 31,
+            height = KDMapData.GridHeight || 21,
+            required =
+                sceneId === "single-door"
+                    ? { width: 9, height: 9 }
+                    : definition.setup === "autonomous"
+                      ? { width: 18, height: 12 }
+                      : { width: 31, height: 21 };
+        if (width < required.width || height < required.height) return { started: false, reason: "map-size" };
+        const selectedIds = selectedActors.map((actor) => actor.id),
+            targetId = target?.id;
+        if (activeScene) teardownScene();
+        options.ownerIds = selectedIds.filter((id) => KDMapData.Entities.some((entity) => entity.id === id));
+        if (options.ownerIds.length !== actorCount) return { started: false, reason: "actors-changed" };
+        if (input.targetKind === "npc" && !KDMapData.Entities.some((entity) => String(entity.id) === String(targetId)))
+            return { started: false, reason: "target-changed" };
+        const priorEncounter = KDMapData[api.SpinnerNativeField.KEY]
+                ? JSON.parse(JSON.stringify(KDMapData[api.SpinnerNativeField.KEY]))
+                : undefined,
+            terrainSnapshot =
                 sceneId === "single-door"
                     ? doorwayTerrainSnapshot()
                     : definition.setup === "autonomous"
@@ -589,7 +604,7 @@
     if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function")
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", CONTROL, restoreScenarioControl);
     if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        for (const trigger of ["beforeStairCancel", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
+        for (const trigger of ["beforeHandleStairs", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
             KDAddEvent(KDEventMapGeneric, trigger, CONTROL, () => activeScene && teardownScene());
         KDAddEvent(KDEventMapGeneric, "postMapgen", CONTROL, () => {
             activeScene = undefined;
