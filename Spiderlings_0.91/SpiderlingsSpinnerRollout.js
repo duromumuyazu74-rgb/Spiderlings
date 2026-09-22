@@ -61,7 +61,22 @@
         const snapshot = KDMapData?.[FIELD],
             encounter = api.SpinnerNativeField.state(),
             ai = encounter?.ai;
-        if (!snapshot?.enabled || snapshot.enclosureDecision || !ai) return snapshot?.enclosureDecision;
+        if (!snapshot?.enabled || !ai) return snapshot?.enclosureDecisions;
+        if (snapshot.enclosureDecisions) {
+            for (const group of Object.values(ai.groups || {})) {
+                if (snapshot.enclosureDecisions[group.id]) continue;
+                const plan = ai.plans?.[group.planId];
+                if (!plan) continue;
+                plan.kind = "line";
+                plan.fieldIds = [plan.fieldId];
+                snapshot.enclosureDecisions[group.id] = {
+                    groupId: group.id,
+                    planId: plan.id,
+                    kind: "late-line-fallback",
+                };
+            }
+            return snapshot.enclosureDecisions;
+        }
         const group = Object.values(ai.groups || {})
             .filter((candidate) => candidate.memberIds?.length >= 2 && ai.plans?.[candidate.planId])
             .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
@@ -98,27 +113,87 @@
         next.ai = priorAI;
         const enclosure = next.topology.kind === "enclosure";
         plan.kind = enclosure ? "enclosure" : "line";
+        plan.fieldIds = enclosure ? [...(next.topology.composites?.[compositeId]?.layerIds || [])] : [plan.fieldId];
         if (enclosure) plan.compositeId = compositeId;
+        const decisions = {
+            [group.id]: {
+                groupId: group.id,
+                planId: plan.id,
+                kind: enclosure ? "enclosure" : "line-fallback",
+                core: center,
+                vertices,
+            },
+        };
         for (const otherGroup of Object.values(priorAI.groups || {})) {
             if (otherGroup.id === group.id) continue;
             const otherPlan = priorAI.plans?.[otherGroup.planId];
             if (!otherPlan?.anchors?.length) continue;
-            api.SpinnerNativeField.addLine({
-                fieldId: otherPlan.fieldId,
-                owners: otherGroup.memberIds,
-                anchors: otherPlan.anchors,
-                scenario: "ordinary-rollout",
-            });
-            api.SpinnerNativeField.setOwners?.(otherPlan.fieldId, otherGroup.memberIds);
+            const otherCenter = {
+                    x: Math.round((otherPlan.anchors[0].x + otherPlan.anchors.at(-1).x) / 2),
+                    y: Math.round((otherPlan.anchors[0].y + otherPlan.anchors.at(-1).y) / 2),
+                },
+                otherComposite = `rollout-${otherGroup.id}`,
+                otherVertices = [
+                    { x: otherCenter.x - 3, y: otherCenter.y - 3 },
+                    { x: otherCenter.x + 3, y: otherCenter.y - 3 },
+                    { x: otherCenter.x + 3, y: otherCenter.y + 3 },
+                    { x: otherCenter.x - 3, y: otherCenter.y + 3 },
+                ],
+                partial = api.SpinnerTopology.createEnclosure({
+                    compositeId: otherComposite,
+                    owners: otherGroup.memberIds,
+                    layers: [
+                        {
+                            id: `${otherComposite}-inner`,
+                            vertices: otherVertices,
+                            core: otherCenter,
+                            gate: { x: otherCenter.x - 3, y: otherCenter.y },
+                        },
+                    ],
+                    fallbackLine: { fieldId: otherPlan.fieldId, anchors: otherPlan.anchors },
+                    map: api.SpinnerNativeField.mapSnapshot(),
+                });
+            if (partial.kind === "enclosure") {
+                const existing = next.topology,
+                    fields = [...Object.values(existing.fields || {}), ...Object.values(partial.fields || {})].map(
+                        (field) => ({ id: field.id, type: field.type, vertices: field.vertices }),
+                    ),
+                    combined = api.SpinnerTopology.createPhysicalGraph({
+                        fields,
+                        owners: [...existing.owners, ...partial.owners],
+                    });
+                Object.assign(combined, {
+                    kind: "graph",
+                    fields: { ...(existing.fields || {}), ...(partial.fields || {}) },
+                    composites: { ...(existing.composites || {}), ...(partial.composites || {}) },
+                    fieldOwners: { ...(existing.fieldOwners || {}), ...(partial.fieldOwners || {}) },
+                    lineFields: { ...(existing.lineFields || {}) },
+                });
+                next.topology = combined;
+                otherPlan.kind = "enclosure";
+                otherPlan.compositeId = otherComposite;
+                otherPlan.fieldIds = [...(partial.composites?.[otherComposite]?.layerIds || [])];
+            } else {
+                api.SpinnerNativeField.addLine({
+                    fieldId: otherPlan.fieldId,
+                    owners: otherGroup.memberIds,
+                    anchors: otherPlan.anchors,
+                    scenario: "ordinary-rollout",
+                });
+                otherPlan.kind = "line";
+                otherPlan.fieldIds = [otherPlan.fieldId];
+            }
+            decisions[otherGroup.id] = {
+                groupId: otherGroup.id,
+                planId: otherPlan.id,
+                kind: partial.kind === "enclosure" ? "enclosure" : "line-fallback",
+                core: otherCenter,
+                vertices: otherVertices,
+            };
         }
-        snapshot.enclosureDecision = {
-            groupId: group.id,
-            planId: plan.id,
-            kind: enclosure ? "enclosure" : "line-fallback",
-            core: center,
-            vertices,
-        };
-        return snapshot.enclosureDecision;
+        api.SpinnerNativeField.reconcile();
+        snapshot.enclosureDecisions = decisions;
+        return decisions;
     }
 
     if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {

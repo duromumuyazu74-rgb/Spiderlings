@@ -706,7 +706,9 @@
         }
         for (const group of Object.values(ai.groups)) {
             const plan = ai.plans[group.planId];
-            if (plan) api.SpinnerNativeField.setOwners(plan.fieldId, group.memberIds);
+            if (plan)
+                for (const fieldId of plan.fieldIds || [plan.fieldId])
+                    api.SpinnerNativeField.setOwners(fieldId, group.memberIds);
             auditEngagement(encounter, group);
         }
         reserveActions(encounter, snapshot);

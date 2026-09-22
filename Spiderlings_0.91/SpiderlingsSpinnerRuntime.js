@@ -11,6 +11,8 @@
             KinkyDungeonEnemyLoop,
             (native) =>
                 function (enemy, target, delta) {
+                    target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
+                    arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
                     const recovery = api.SpinnerRecovery?.handleEnemyTurn(enemy, target, delta);
