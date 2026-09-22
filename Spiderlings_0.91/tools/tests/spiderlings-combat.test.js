@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const vm = require("node:vm");
 const fs = require("node:fs");
 const path = require("node:path");
+const { gamePath } = require("../reference-inputs.js");
 
 function fixture(overrides = {}) {
     const c = { Spiderlings: {}, KDEventMapGeneric: {}, KDMapData: { Entities: [] } };
@@ -75,10 +76,7 @@ function fixture(overrides = {}) {
     vm.createContext(c);
     // Exercise KD's actual predicates, including the geometry and unique-hit
     // gates that the scoped entity-hostility adapter must retain.
-    const fight = fs.readFileSync(
-        path.join(__dirname, "../../..", "KinkiestDungeon-5.5/Game/src/fight/KinkyDungeonFight.ts"),
-        "utf8",
-    );
+    const fight = fs.readFileSync(gamePath("Game/src/fight/KinkyDungeonFight.ts"), "utf8");
     for (const name of ["KDBulletCanHitEntity", "KDBulletAoECanHitEntity"]) {
         const start = fight.indexOf(`function ${name}(`);
         const end = fight.indexOf("\nfunction ", start + 1);
@@ -99,10 +97,7 @@ function fixture(overrides = {}) {
 
 test("native alarm recipients refresh entity goals on KD 5.5.3 while silk-gagged callers remain silent", () => {
     const { stripTypeScriptTypes } = require("node:module");
-    const source = fs.readFileSync(
-        path.join(__dirname, "../../..", "KinkiestDungeon-5.5/Game/src/magic/KinkyDungeonMagic.ts"),
-        "utf8",
-    );
+    const source = fs.readFileSync(gamePath("Game/src/magic/KinkyDungeonMagic.ts"), "utf8");
     const start = source.indexOf("function KinkyDungeonMakeNoiseSignal(");
     // The pinned 5.5.0 function predates goal tracking. Reproduce the exact
     // 5.5.3 addition (Magic.ts:703) that mistakenly updates the sender.

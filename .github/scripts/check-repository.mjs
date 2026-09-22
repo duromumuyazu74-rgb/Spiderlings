@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ESLint } from "eslint";
 import * as prettier from "prettier";
+import referenceInputs from "../../Spiderlings_0.91/tools/reference-inputs.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const policy = JSON.parse(readFileSync(new URL("../repository-policy.json", import.meta.url), "utf8"));
@@ -68,6 +69,7 @@ export function changedFiles(base) {
 
 async function main() {
     process.chdir(root);
+    referenceInputs.assertNoSharedInputLinks(root);
     const args = process.argv.slice(2);
     if (args.length && (args.length !== 2 || args[0] !== "--base")) {
         throw new Error("Usage: npm run check -- --base <commit-or-ref>");
