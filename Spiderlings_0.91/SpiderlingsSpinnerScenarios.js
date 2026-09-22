@@ -377,7 +377,7 @@
                     ? { width: 9, height: 9 }
                     : definition.setup === "autonomous"
                       ? { width: 18, height: 12 }
-                      : { width: 31, height: 21 };
+                      : { width: 30, height: 20 };
         if (width < required.width || height < required.height) return { started: false, reason: "map-size" };
         const selectedIds = selectedActors.map((actor) => actor.id),
             targetId = target?.id;
