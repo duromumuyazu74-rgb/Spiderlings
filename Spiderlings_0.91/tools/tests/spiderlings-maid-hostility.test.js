@@ -8,7 +8,7 @@ const vm = require("node:vm");
 const { stripTypeScriptTypes } = require("node:module");
 
 const modRoot = path.resolve(__dirname, "../..");
-const gameSource = path.resolve(modRoot, "../KinkiestDungeon-5.5/Game/src");
+const gameSource = require("../reference-inputs.js").gamePath("Game/src");
 const names = ["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance"];
 
 function loadRuntime() {

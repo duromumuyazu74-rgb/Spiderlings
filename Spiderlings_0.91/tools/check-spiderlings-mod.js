@@ -8,7 +8,7 @@ const { parseReleaseVersion } = require("./release-version.js");
 
 const modRoot = path.resolve(__dirname, "..");
 const workspaceRoot = path.resolve(modRoot, "..");
-const gameRoot = path.join(workspaceRoot, "KinkiestDungeon-5.5");
+const gameRoot = require("./reference-inputs.js").gamePath();
 const agentsPath = path.join(workspaceRoot, "AGENTS.md");
 const modAgentsPath = path.join(modRoot, "AGENTS.md");
 const maintenancePath = path.join(modRoot, "MAINTENANCE.md");

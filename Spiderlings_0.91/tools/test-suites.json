@@ -1,5 +1,6 @@
 {
   "public": [
+    "spiderlings-worktree-safety.test.js",
     "spiderlings-webbing-cutover.test.js",
     "spiderlings-webbing-cocoon.test.js",
     "spiderlings-webbing-enemy.test.js",

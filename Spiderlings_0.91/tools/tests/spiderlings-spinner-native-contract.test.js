@@ -5,18 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const { modRoot } = require("./helpers/lifecycle-runtime.js");
-
-function findGameRoot() {
-    let current = modRoot;
-    for (let depth = 0; depth < 6; depth++) {
-        const candidate = path.join(current, "KinkiestDungeon-5.5");
-        if (fs.existsSync(candidate)) return candidate;
-        current = path.dirname(current);
-    }
-    throw new Error("KinkiestDungeon-5.5 read-only reference is required.");
-}
-const gameRoot = findGameRoot();
+const gameRoot = require("../reference-inputs.js").gamePath();
 const read = (relative) => fs.readFileSync(path.join(gameRoot, relative), "utf8");
 
 test("pinned KD 5.5.0 preserves the native Spinner traversal projection contract", () => {
