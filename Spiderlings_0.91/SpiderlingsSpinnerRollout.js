@@ -57,10 +57,70 @@
         return false;
     }
 
+    function preparePositiveTurn() {
+        const snapshot = KDMapData?.[FIELD],
+            encounter = api.SpinnerNativeField.state(),
+            ai = encounter?.ai;
+        if (!snapshot?.enabled || snapshot.enclosureDecision || !ai) return snapshot?.enclosureDecision;
+        const group = Object.values(ai.groups || {})
+            .filter((candidate) => candidate.memberIds?.length >= 2 && ai.plans?.[candidate.planId])
+            .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
+        if (!group) return undefined;
+        const plan = ai.plans[group.planId],
+            center = plan.anchors?.length
+                ? {
+                      x: Math.round((plan.anchors[0].x + plan.anchors.at(-1).x) / 2),
+                      y: Math.round((plan.anchors[0].y + plan.anchors.at(-1).y) / 2),
+                  }
+                : undefined;
+        if (!center) return undefined;
+        const vertices = [
+                { x: center.x - 3, y: center.y - 3 },
+                { x: center.x + 3, y: center.y - 3 },
+                { x: center.x + 3, y: center.y + 3 },
+                { x: center.x - 3, y: center.y + 3 },
+            ],
+            compositeId = `rollout-${group.id}`,
+            priorAI = ai,
+            next = api.SpinnerNativeField.initializeEnclosure({
+                compositeId,
+                groupId: group.id,
+                owners: group.memberIds,
+                layers: [
+                    { id: `${compositeId}-inner`, vertices, core: center, gate: { x: center.x - 3, y: center.y } },
+                ],
+                fallbackLine: { fieldId: plan.fieldId, anchors: plan.anchors },
+                scenario: "ordinary-rollout",
+                map: api.SpinnerNativeField.mapSnapshot(),
+            });
+        next.autonomous = true;
+        next.rolloutKind = snapshot.kind;
+        next.ai = priorAI;
+        const enclosure = next.topology.kind === "enclosure";
+        plan.kind = enclosure ? "enclosure" : "line";
+        if (enclosure) plan.compositeId = compositeId;
+        snapshot.enclosureDecision = {
+            groupId: group.id,
+            planId: plan.id,
+            kind: enclosure ? "enclosure" : "line-fallback",
+            core: center,
+            vertices,
+        };
+        return snapshot.enclosureDecision;
+    }
+
     if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
         KDAddEvent(KDEventMapGeneric, "postMapgen", FIELD, () => snapshotMap());
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", FIELD, restore);
     }
 
-    api.SpinnerRollout = Object.freeze({ FIELD, VERSION, eligibility, snapshotMap, activate, restore });
+    api.SpinnerRollout = Object.freeze({
+        FIELD,
+        VERSION,
+        eligibility,
+        snapshotMap,
+        activate,
+        restore,
+        preparePositiveTurn,
+    });
 })();
