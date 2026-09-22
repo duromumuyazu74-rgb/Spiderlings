@@ -1,6 +1,6 @@
 # Spiderlings 0.92 设计基线
 
-`0.92` 是玩法设计基线，当前正式版为 `0.92.38`。源码位于 `Spiderlings_0.91/`，安装包从 [GitHub Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38) 下载；已验证游戏环境为 KD 5.4.92 和 KD 5.5.3。详细数值以 [参数说明](../Spiderlings_0.91/Spiderlings_0.9_Parameter_Guide.md) 为当前参考；模型、加载和发行约束见 [维护说明](../Spiderlings_0.91/MAINTENANCE.md)。
+`0.92` 是玩法设计基线，当前正式版为 `0.92.38`。源码位于 `KinkyDungeon-Spiderlings/`，安装包从 [GitHub Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38) 下载；已验证游戏环境为 KD 5.4.92 和 KD 5.5.3。详细数值以 [参数说明](../KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md) 为当前参考；模型、加载和发行约束见 [维护说明](../KinkyDungeon-Spiderlings/MAINTENANCE.md)。
 
 0.92.36 补齐丝茧玩家的安静驻守条件：在丝茧中停止反抗且没有待完成加固时，玩家不再阻止据点十五回合后留五只，任务巢穴采用同一判定；不额外等待二十五回合散开警戒。玩家恢复攻击、挣扎、施法、尝试移动或附近可反抗 NPC 出现时重新计时。旧侵扰地图直接生效。
 

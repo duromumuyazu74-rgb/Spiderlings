@@ -1,6 +1,6 @@
 # Spiderlings repository
 
-Read `Spiderlings_0.91/AGENTS.md` before changing the Mod and its documentation. Its `tools/AGENTS.md` governs private maintenance scripts.
+Read `KinkyDungeon-Spiderlings/AGENTS.md` before changing the Mod and its documentation. Its `tools/AGENTS.md` governs private maintenance scripts.
 
 For implementation, formatting, commits, PRs or publication, read `CONTRIBUTING.md`. It defines the JavaScript runtime and JavaScript/Python/PowerShell tool language policy, incremental code conventions, single-maintainer PR gates and verification scope. Changes to `main` and `test` go through PRs; no second-person approval is required. Keep formatting cleanup in separate commits.
 

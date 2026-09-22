@@ -23,7 +23,7 @@ The test branch retains its `0.92.36` baseline and includes the compatibility fi
 
 ## Development
 
-Source, runtime artwork and build/check scripts live in `Spiderlings_0.91/`. See [development and publishing](docs/DEVELOPMENT.md), [maintenance notes](Spiderlings_0.91/MAINTENANCE.md), and [game design](docs/spiderlings-0.92-game-design.zh-CN.md).
+Source, runtime artwork and build/check scripts live in `KinkyDungeon-Spiderlings/`. See [development and publishing](docs/DEVELOPMENT.md), [maintenance notes](KinkyDungeon-Spiderlings/MAINTENANCE.md), and [game design](docs/spiderlings-0.92-game-design.zh-CN.md).
 
 Report bugs and track planned work in [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues).
 

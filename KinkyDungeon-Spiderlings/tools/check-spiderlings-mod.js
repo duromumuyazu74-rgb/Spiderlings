@@ -298,17 +298,18 @@ function checkProjectRules() {
     else pass("KinkiestDungeon-5.5 and Spiderlings package boundaries are separate.");
 
     const agents = fs.existsSync(agentsPath) ? readText(agentsPath) : "";
-    for (const token of ["KinkiestDungeon-5.5/", "read-only", "Spiderlings_0.91/AGENTS.md"]) {
+    for (const token of ["KinkiestDungeon-5.5/", "read-only", "KinkyDungeon-Spiderlings/AGENTS.md"]) {
         if (!agents.includes(token)) fail(`AGENTS.md is missing required rule text: ${token}`);
     }
     const modAgents = readText(modAgentsPath);
     for (const token of ["watch-spiderlings-mod.ps1 -Once", "focused git commit"]) {
-        if (!modAgents.includes(token)) fail(`Spiderlings_0.91/AGENTS.md is missing required rule text: ${token}`);
+        if (!modAgents.includes(token))
+            fail(`KinkyDungeon-Spiderlings/AGENTS.md is missing required rule text: ${token}`);
     }
     const maintenance = fs.existsSync(maintenancePath) ? readText(maintenancePath) : "";
     for (const token of [
         "KinkiestDungeon-5.5/",
-        "Spiderlings_0.91/",
+        "KinkyDungeon-Spiderlings/",
         "watch-spiderlings-mod.ps1 -Once",
         "atlas-first",
         "direct fallback",
