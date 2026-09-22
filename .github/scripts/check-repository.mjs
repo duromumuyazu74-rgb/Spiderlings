@@ -27,8 +27,9 @@ export function validateFile(file) {
 }
 
 export function validSubject(subject) {
-    return /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [A-Za-z][^\r\n]+$/.test(
-        subject,
+    return (
+        !/[\r\n]/.test(subject) &&
+        /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: \S[^\r\n]*$/.test(subject)
     );
 }
 
@@ -38,7 +39,7 @@ export function isDocumentationOnly(files) {
 
 export function validateCommitSubject(sha, subject, files) {
     if (policy.grandfatheredCommits.includes(sha) || validSubject(subject) || isDocumentationOnly(files)) return [];
-    return [`${sha}: commit subject must use type(scope): English summary`];
+    return [`${sha}: commit subject must use type(scope): summary`];
 }
 
 export function validatePullRequest(pr, files = []) {
@@ -46,7 +47,7 @@ export function validatePullRequest(pr, files = []) {
     const errors = [];
     if (!validSubject(pr.title)) {
         errors.push(
-            "PR title must use an English Conventional Commit subject, for example: fix(webbing): preserve escape progress",
+            "PR title must use a Conventional Commit subject, for example: fix(webbing): preserve escape progress",
         );
     }
     if (

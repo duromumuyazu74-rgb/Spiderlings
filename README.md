@@ -23,13 +23,11 @@ The test branch retains its `0.92.36` baseline and includes the compatibility fi
 
 ## Development
 
-Source, runtime artwork and build/check scripts live in `Spiderlings_0.91/`; the directory name is historical. See [development and publishing](docs/DEVELOPMENT.md), [maintenance notes in Chinese](Spiderlings_0.91/MAINTENANCE.md), and [game design in Chinese](docs/spiderlings-0.92-game-design.zh-CN.md).
+Source, runtime artwork and build/check scripts live in `Spiderlings_0.91/`. See [development and publishing](docs/DEVELOPMENT.md), [maintenance notes](Spiderlings_0.91/MAINTENANCE.md), and [game design](docs/spiderlings-0.92-game-design.zh-CN.md).
 
-Report bugs and track specs/tickets in [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues). Matt Pocock skills use the [project tracker configuration](docs/agents/issue-tracker.md).
+Report bugs and track planned work in [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues).
 
-See [contribution rules](CONTRIBUTING.md) for supported languages, code conventions and the single-maintainer PR workflow. Player feedback is welcome in any language.
-
-English is the primary repository language; Simplified Chinese is also supported. Keep both README versions in sync when installation steps, branch versions or download links change.
+See [contribution rules](CONTRIBUTING.md) for code conventions and the PR workflow.
 
 ## Credits
 
