@@ -176,6 +176,8 @@ NPC 跃击同时锁定实体 ID 与原地格，两次完整玩家行动后结算
 
 外部 leash 只作为 carrier 使用，不改变其 power、锁、逃脱进度、动态链接或原生 tether owner。来源变为无效会立即降低强度；仅恢复距离或行动能力不会自动接回，必须重新命中。
 
+敌对 NPC 离开破损外边界后也可被回收，但不装备 leash。NPC departure 与玩家相同，必须由实际移动产生，并等待新的 Spinner 近战增加 Slime 才建立来源。最多八个来源共享一个 executor 和相同的共同核心／无关 field 仲裁；拖过实体蛛网同样按每格两个付费动作计数。NPC 返回修复后的围场不会自动被捕获，后续真实命中仍须满足正常 Capture 准入。原生绑定、临时 helpless 和挣扎恢复不由 Recovery 改写。
+
 ## WebSpray
 
 只有带 `provenance: "WebCaster.WebSpray"` 的 direct 与 lingering trail 能进入 resolver。普通 `SpiderWeb` 仍调用 KD 原生 `TrapBindings`，但不会推进 Spiderlings Webbing。
