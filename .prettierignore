@@ -1,7 +1,7 @@
 # Generated files are validated by their builders and package checks.
 package-lock.json
-Spiderlings_0.91/TextureAtlas/*.json
-Spiderlings_0.91/Models/**/*.html
+KinkyDungeon-Spiderlings/TextureAtlas/*.json
+KinkyDungeon-Spiderlings/Models/**/*.html
 docs/spiderlings-spinner-capture/*.html
 docs/prototypes/spinner-topology/index.html
 KinkiestDungeon-5.5/

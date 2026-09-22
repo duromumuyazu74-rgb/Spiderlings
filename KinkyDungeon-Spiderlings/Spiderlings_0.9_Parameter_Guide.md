@@ -6,7 +6,7 @@
 
 左右 Lv1 蛛丝手套可绕过束臂袋、紧身衣等造成的手部施加阻挡；同槽仍须通过原生无覆盖链接检查，保留原有装备、锁和脱困进度。此规则只影响施加，脱困操作与丝茧门禁仍沿用原规则。
 
-本文只说明当前 `Spiderlings_0.91/` 运行时。权威实现位于 `SpiderlingsCore.js`、`Spiderlings.js`、`SpiderlingsInfestation.js`、`SpiderlingsCombat.js`、`SpiderlingsJumperDash.js`、`SpiderlingsWebbingModels.js` 和 `SpiderlingsWebbing.js`，资源加载由 `SpiderlingsModelRuntime.js` 负责。
+本文只说明当前 `KinkyDungeon-Spiderlings/` 运行时。权威实现位于 `SpiderlingsCore.js`、`Spiderlings.js`、`SpiderlingsInfestation.js`、`SpiderlingsCombat.js`、`SpiderlingsJumperDash.js`、`SpiderlingsWebbingModels.js` 和 `SpiderlingsWebbing.js`，资源加载由 `SpiderlingsModelRuntime.js` 负责。
 
 在游戏 Mod 配置 → Spiderlings 中切换“粉色蛛丝（关闭为原色）”。默认使用原色；开启后全部 Webbing 部件采用粉色素材，包括头套、丝茧与外围网，喷网投射物也随之切色。`0.92.36-test.11` 起，Spinner、Tunneler、WebCaster 和巢穴身上的蛛丝也跟随设置；Jumper 在两种设置下共用新图。退出设置页面后已穿戴模型刷新，地图上已有怪物在下一次绘制时换色，重新加载游戏仍保留选择。该选项只影响外观。
 

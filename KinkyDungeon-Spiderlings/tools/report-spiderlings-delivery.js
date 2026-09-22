@@ -56,7 +56,7 @@ function versionOf(command, args) {
 }
 
 function checkPlan(root, options, base, packagePath) {
-    const tool = (name) => path.join(root, "Spiderlings_0.91/tools", name);
+    const tool = (name) => path.join(root, "KinkyDungeon-Spiderlings/tools", name);
     const ps = (script, ...args) => [
         powershell,
         "-NoProfile",
@@ -97,7 +97,7 @@ function checkPlan(root, options, base, packagePath) {
         },
         {
             id: "committed-atlas",
-            command: ["git", "diff", "--exit-code", "HEAD", "--", "Spiderlings_0.91/TextureAtlas"],
+            command: ["git", "diff", "--exit-code", "HEAD", "--", "KinkyDungeon-Spiderlings/TextureAtlas"],
             run: options.build && options.mode === "public",
             reason: "CI public builds require generated atlas bytes to match the commit.",
         },
@@ -289,7 +289,7 @@ function collectDelivery(options = {}) {
         const baseRef = options.base || event.pull_request?.base.sha || process.env.BASE_SHA || "origin/test";
         const baseSha = git(root, "rev-parse", "--verify", "--end-of-options", `${baseRef}^{commit}`).trim();
         report.base = { ref: baseRef, sha: baseSha };
-        report.release = parseReleaseVersion(readJson(path.join(root, "Spiderlings_0.91/mod.json")).modbuild);
+        report.release = parseReleaseVersion(readJson(path.join(root, "KinkyDungeon-Spiderlings/mod.json")).modbuild);
         const packagePath = path.resolve(root, options.packagePath || report.release.packageName);
         report.package = { path: packagePath, verification: "not-run" };
         if (options.build && packagePath !== path.join(root, report.release.packageName)) {

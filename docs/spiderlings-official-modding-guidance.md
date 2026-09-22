@@ -225,16 +225,16 @@ KD 5.5 `Scripts/KDMods.ts` saves `KDModSettings` when leaving the configuration 
 - Layer preview should resolve model layers by KD layer order plus `Pri`, account for pose fields (`AddPose`, `RemovePoses`, `AddPoseConditional`, `AddPoseIf`, `Poses`, `MorphPoses`, `Invariant`), and report `HideWhenOverridden`, `NoOverride`, `GlobalDefaultOverride`, missing PNGs, and unsupported poses as diagnostics.
 - The KD Artwork Fit Workbench uses an authorized, checksummed KD 5.5 snapshot containing only the front-facing `Body`, `BodySmooth`, and `BodyDoll` layers required by `ModelListBase.ts`. Its manifest must preserve the explicit UI-to-folder mapping and official layer provenance; it must not infer a body folder from the UI name.
 - The workbench pose controls come directly from `KDWardrobe_PoseArms` and `KDWardrobe_PoseLegs`: seven arm poses by five leg poses. It does not add ad hoc pose names or treat unrelated runtime pose flags as selectable mannequin poses.
-- Bundled mannequin layers remain editor references. They must never be written into `Spiderlings_0.91/`, listed in Spiderlings `mod.json` `fileorder`, included in Spiderlings release zips, or baked into formal user-art exports.
+- Bundled mannequin layers remain editor references. They must never be written into `KinkyDungeon-Spiderlings/`, listed in Spiderlings `mod.json` `fileorder`, included in Spiderlings release zips, or baked into formal user-art exports.
 - `ModelsBack/`, KD `Back` rendering, facial expressions, and displacement-driven mouth deformation remain outside the first artwork-fit workbench scope.
 
 ## Recommended Workflow For A New Or Adapted Spiderlings Restraint
 
 1. Pick the closest official analog in `KinkyDungeonRestraintsList.ts`.
-2. Copy the idea, not the official file. Create or update a Spiderlings-owned restraint in `Spiderlings_0.91/`.
+2. Copy the idea, not the official file. Create or update a Spiderlings-owned restraint in `KinkyDungeon-Spiderlings/`.
 3. Use `SPIDERLINGS.createRestraint(...)` for Spiderlings restraint data when possible.
 4. Register any Spiderlings-owned visual model with `AddModel(...)` in Spiderlings-owned model files.
-5. Put new or adapted PNGs under `Spiderlings_0.91/Models/<SpiderlingsFolder>/`.
+5. Put new or adapted PNGs under `KinkyDungeon-Spiderlings/Models/<SpiderlingsFolder>/`.
 6. Use Spiderlings-owned model names, folder names, layer names, and asset names where practical.
 7. Add or update `KinkyDungeonAddRestraintText(...)` English fallback text.
 8. Add or update all `Spiderlings*.csv` translation keys:
@@ -255,7 +255,7 @@ KD 5.5 `Scripts/KDMods.ts` saves `KDModSettings` when leaving the configuration 
 - Never edit `KinkiestDungeon-5.5/Models` or `KinkiestDungeon-5.5/Data`.
 - Do not override official model names unless the goal is deliberate compatibility binding. Prefer Spiderlings-owned model names.
 - Root mod zip layout matters. Files should be directly in the zip root; do not package everything inside a nested `Spiderlings/` folder.
-- Standard custom model assets should be in `Spiderlings_0.91/Models/...` so they land in `Models/...` in the mod zip.
+- Standard custom model assets should be in `KinkyDungeon-Spiderlings/Models/...` so they land in `Models/...` in the mod zip.
 - Release `mod.json` should preload custom `Models/`, `Enemies/`, and `Bullets/` image files before script files in `fileorder`.
 - `fileorder` only ensures KD has a `KDModFiles` URL for custom assets before scripts run; it does not guarantee Pixi has decoded them. For the ten Webbing Lv1 files, five Lv2 files, eight Lv3 files, and Cocoon, `SpiderlingsModelRuntime.js` first loads and validates all twenty-five frames of each color in its own derived Webbing atlas before caching their exact KD-facing `Models/...png` aliases. Failure in one sheet falls back to direct PNG preload for that color while preserving the other sheet. The release builder alone may alpha-bound trim those explicit inputs into the derived page; it must not resize, rotate, resample, recolor, recursively collect assets, or turn packing into visual/pixel/hash acceptance.
 - If a layer can render in `Back`, account for `ModelsBack/...` resolution or deliberately prevent the back pose from selecting that layer.
@@ -409,10 +409,10 @@ Capture admission now requires the owned triggered field with all twenty-four li
 
 Visual animation updates its owned preview render texture directly. Calling the entire `RenderModelContainer` on each animation frame also invokes native `RenderMCSubmeshes` and marks the character for update; reserve that route for native model refreshes. KD 5.5 source-checkout browser evidence lacks the shipped native atlases, so direct-image fixture preparation may additionally invalidate native submesh hashes after decoding. That fixture preparation is outside the Mod and does not alter game files or game-turn counters.
 
-After changing `Spiderlings_0.91/`, run:
+After changing `KinkyDungeon-Spiderlings/`, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
 The check should catch common issues:
@@ -435,7 +435,7 @@ MTE-side validation also guards editor-only compatibility data:
 - `kd-preview-cache.json` drift against the read-only KD 5.5 wardrobe/model/pose sources;
 - release zip exclusion for `MTE/editor-assets/kd-mannequin/`.
 
-If the check does not cover a newly discovered KD compatibility rule, add that validation to `Spiderlings_0.91/tools/check-spiderlings-mod.js`.
+If the check does not cover a newly discovered KD compatibility rule, add that validation to `KinkyDungeon-Spiderlings/tools/check-spiderlings-mod.js`.
 
 ### Lv3-only Cocoon equipment prerequisite (unpublished 0.92.34)
 

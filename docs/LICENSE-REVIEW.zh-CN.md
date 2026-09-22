@@ -12,13 +12,13 @@ README 后半段的 Kinky Contributor License 是向 Ada18980／其公司授予�
 
 ## 仓库中与原版代码的关系
 
-| 位置                                                                                | 可以确认的关系                                                           | 交付范围                                       |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------- |
-| `Spiderlings_0.91/tools/tests/spiderlings-encounters.test.js` 的 `native553Subbier` | 注明 KD 5.5.3 来源的 `KDIsSubbier` 原生回归片段                          | 仓库内测试代码，不进入安装 ZIP                 |
-| 多个 `tools/tests/*.test.js`                                                        | 从外部 `gamePath(...)` 读取原版函数，去除 TypeScript 类型后验证契约      | 原版文件未复制进仓库或 ZIP                     |
-| `SpiderlingsSpinnerNativeField.js` 的 IceWall 定义扩展                              | 从运行中的 `KinkyDungeonEnemies` 取得原生模板并扩展成 Mod 拥有的蛛网代理 | Mod 适配代码进入测试 ZIP；不是打包整个原生文件 |
-| `SpiderlingsSpinnerRecovery.js` 的 BasicLeash 载体                                  | 使用原生拘束定义和添加／牵引接口                                         | Mod 适配代码进入测试 ZIP                       |
-| `SpiderlingsCore.js`、`Spiderlings.js` 等包装器                                     | 调用并包装游戏提供的函数，未把所调用函数的完整实现随接口引用打包         | Mod 自己的包装代码进入 ZIP                     |
+| 位置                                                                                        | 可以确认的关系                                                           | 交付范围                                       |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------- |
+| `KinkyDungeon-Spiderlings/tools/tests/spiderlings-encounters.test.js` 的 `native553Subbier` | 注明 KD 5.5.3 来源的 `KDIsSubbier` 原生回归片段                          | 仓库内测试代码，不进入安装 ZIP                 |
+| 多个 `tools/tests/*.test.js`                                                                | 从外部 `gamePath(...)` 读取原版函数，去除 TypeScript 类型后验证契约      | 原版文件未复制进仓库或 ZIP                     |
+| `SpiderlingsSpinnerNativeField.js` 的 IceWall 定义扩展                                      | 从运行中的 `KinkyDungeonEnemies` 取得原生模板并扩展成 Mod 拥有的蛛网代理 | Mod 适配代码进入测试 ZIP；不是打包整个原生文件 |
+| `SpiderlingsSpinnerRecovery.js` 的 BasicLeash 载体                                          | 使用原生拘束定义和添加／牵引接口                                         | Mod 适配代码进入测试 ZIP                       |
+| `SpiderlingsCore.js`、`Spiderlings.js` 等包装器                                             | 调用并包装游戏提供的函数，未把所调用函数的完整实现随接口引用打包         | Mod 自己的包装代码进入 ZIP                     |
 
 所以，仓库确实使用原版代码，并包含明确标注来源的原生片段。“调用接口”“运行时读取模板”“复制实现”是不同情况，不能仅凭函数名相同认定整份文件都是复制，也不能因安装 ZIP 未带官方文件就宣称全仓库纯原创。本次没有完成每一行历史代码的版权溯源。
 
@@ -33,6 +33,15 @@ README 后半段的 Kinky Contributor License 是向 Ada18980／其公司授予�
 | 整仓库 MIT 或 GPL                                  | 已有权利人的完整兼容授权，或已经移除／重写不兼容部分       | 目前不建议。原版限制收费的条件不能被一个通用开源许可证覆盖 |
 
 本次新增 `THIRD-PARTY-NOTICES.md` 并补充原版游戏署名，未擅自添加 blanket LICENSE。下一步需要确认原 Mod 作者和美术作者的实际授权范围，以及维护者希望对自己的原创代码允许哪些用途。
+
+## 建议的实际处理顺序
+
+1. 现在保留 `THIRD-PARTY-NOTICES.md` 和 README 中的完整署名，不给整仓添加 MIT／GPL，也不把 Kinky Contributor License 原样当成 Mod 的许可证。GitHub 暂时显示没有标准 LICENSE，准确反映了尚未统一的授权状态。
+2. 向原 Mod 作者确认是否允许修改、公开源码、再分发，以及是否明确允许将其贡献按 MIT 再许可。只有“可以继续维护”或“记得署名”不足以推出可改成 MIT。
+3. 向美术作者确认免费 Mod 安装包、公开 Git 仓库中的 PNG、适配／改色、独立素材再分发各自的许可范围。美术可以保留权利或另用作者指定条款，不必随代码采用 MIT。原版游戏素材如有实际采用，也须有原版权利人的许可。
+4. 核清后，给你拥有权利或已取得明确再许可授权的原创代码采用 MIT，并在根许可说明中列出不适用 MIT 的路径和来源。包含原生摘录的测试文件、继承但授权未明的旧代码、第三方美术不能因目录归类而自动变成 MIT。
+
+可向代码作者明确询问：“是否允许我将您在 Spiderlings 中的代码及我的后续修改，以 MIT 许可证公开分发，保留您的版权和署名，并单独遵守 Kinky Dungeon 原版代码的条款？”美术授权应另行确认，不与这句话合并。本次未联系任何作者，也未替任何作者作出授权决定。
 
 ## 一手依据
 

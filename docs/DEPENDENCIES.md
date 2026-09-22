@@ -1,6 +1,6 @@
 # Dependency updates
 
-`.github/dependabot.yml` monitors npm at the repository root, the Python atlas requirements in `Spiderlings_0.91/tools`, and GitHub Actions. It proposes weekly updates on Mondays at 09:00 Asia/Shanghai for the default `main` branch and at 09:30 for `test`. Updates are grouped by ecosystem, with at most two ordinary open PRs per ecosystem and branch.
+`.github/dependabot.yml` monitors npm at the repository root, the Python atlas requirements in `KinkyDungeon-Spiderlings/tools`, and GitHub Actions. It proposes weekly updates on Mondays at 09:00 Asia/Shanghai for the default `main` branch and at 09:30 for `test`. Updates are grouped by ecosystem, with at most two ordinary open PRs per ecosystem and branch.
 
 Dependency alerts and Dependabot security-update PRs use the default branch. The `test` entries schedule version updates; they do not provide security-update coverage for that branch. When a security fix lands on `main`, review the matching dependency versions on `test` and carry the dependency-only fix promptly instead of waiting for the weekly check. Do not merge either branch wholesale to synchronize dependencies.
 
