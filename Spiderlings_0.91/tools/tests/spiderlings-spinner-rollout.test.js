@@ -270,8 +270,13 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
         if (id === "regular-room") assert.equal(grid.get("20,5"), ".");
         if (id === "nested-fields") assert.equal(grid.get("10,7"), ".");
         if (id === "single-door") {
-            assert.equal(grid.get("5,1"), ".");
-            assert.equal(grid.get("5,0"), "1");
+            assert.equal(grid.get("5,3"), ".");
+            assert.equal(grid.get("5,2"), "1");
+        }
+        if (["regular-room", "nested-fields"].includes(id)) {
+            const group = Object.values(result.ai.groups)[0];
+            assert.equal(group.engagement.target.id, 90);
+            assert.equal(group.memberIds.length, result.actorCount);
         }
         assert.equal(api.teardownScene(), true);
         assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
