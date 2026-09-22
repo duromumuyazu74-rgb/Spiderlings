@@ -12,6 +12,7 @@ const load = (context, file) =>
 
 function fixture() {
     const damageCalls = [];
+    const recoverySourceIds = new Set();
     let nativeLoops = 0;
     const context = {
         console,
@@ -98,6 +99,7 @@ function fixture() {
     load(context, "SpiderlingsCombat.js");
     context.Spiderlings.SpinnerCapture = { state: () => undefined, handleEnemyTurn: () => undefined };
     context.Spiderlings.SpinnerRecovery = {
+        sourceIds: () => [...recoverySourceIds],
         handleEnemyTurn: () => undefined,
         audit() {},
         afterLoad() {},
@@ -148,6 +150,10 @@ function fixture() {
         tick,
         tickAfter,
         nativeLoops: () => nativeLoops,
+        setRecoverySources: (ids) => {
+            recoverySourceIds.clear();
+            for (const id of ids) recoverySourceIds.add(id);
+        },
         setGeometryReady: (value) => (geometryReady = value),
     };
 }
@@ -219,6 +225,24 @@ test("only a successful native Spinner hit in ready geometry admits the hitter",
         assert.equal(runtime.context.Spiderlings.SpinnerNPCCapture.records()[String(candidate.id)], undefined);
         runtime.context.KDMapData.Entities.pop();
     }
+});
+
+test("a player Recovery source cannot cross into NPC Capture", () => {
+    const runtime = fixture();
+    const first = runtime.spinner(1, 0, 1);
+    const second = runtime.spinner(2, 1, 0);
+    const target = runtime.target();
+    runtime.context.KDMapData.Entities.push(first, second, target);
+    runtime.setRecoverySources([first.id]);
+
+    runtime.context.KinkyDungeonEnemyLoop(first, target, 1);
+    assert.equal(runtime.context.Spiderlings.SpinnerNPCCapture.state(), undefined);
+
+    runtime.setRecoverySources([]);
+    runtime.context.KinkyDungeonEnemyLoop(first, target, 1);
+    assert.deepEqual(Array.from(runtime.context.Spiderlings.SpinnerNPCCapture.records()[String(target.id)].sourceIds), [
+        first.id,
+    ]);
 });
 
 test("paid joins aggregate acted sources while field breach, one source, and target actions remain native", () => {
