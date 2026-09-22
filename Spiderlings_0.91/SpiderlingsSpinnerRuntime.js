@@ -62,6 +62,7 @@
     if (typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => {
             api.SpinnerAI?.preparePositiveTurn(data?.delta);
+            if (data?.delta > 0) api.SpinnerRollout?.preparePositiveTurn();
             api.SpinnerNPCCapture?.prepareTurn(data?.delta);
         });
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) =>

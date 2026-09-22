@@ -3,7 +3,8 @@
 // Disposable native scenarios supply actors and plans to the same runtime used by later floor activation.
 (() => {
     const api = globalThis.Spiderlings,
-        SCENARIO = "SpiderlingsSpinnerDoorway";
+        SCENARIO = "SpiderlingsSpinnerDoorway",
+        CONTROL = "SpiderlingsSpinnerScenarioControl";
 
     function plan(fieldId, ownerIds, anchors) {
         const preview = api.SpinnerTopology.createLine({ fieldId, owners: ownerIds, anchors }),
@@ -268,32 +269,68 @@
         const actorCount = definition.actorCounts.includes(input.actorCount)
                 ? input.actorCount
                 : definition.actorCounts[0],
+            selectedActors = (input.ownerIds || [])
+                .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                .filter((entity) => entity?.hp > 0 && entity.Enemy?.name === "Spinner" && KDHostile(entity))
+                .slice(0, actorCount),
+            target =
+                input.targetKind === "npc"
+                    ? input.target ||
+                      KDMapData.Entities.find(
+                          (entity) =>
+                              entity.id === input.targetId ||
+                              (input.targetId === undefined &&
+                                  entity.hp > 0 &&
+                                  !entity.player &&
+                                  entity.Enemy &&
+                                  !selectedActors.includes(entity) &&
+                                  KDHostile(selectedActors[0], entity)),
+                      )
+                    : KinkyDungeonPlayerEntity,
             options = {
                 ...input,
                 sceneId,
                 actorCount,
-                ownerIds: (input.ownerIds || []).slice(0, actorCount),
+                ownerIds: selectedActors.map((actor) => actor.id),
                 scenario: `SpinnerScenario:${sceneId}`,
                 sceneConditions: { geometry: definition.geometry, ...(input.sceneConditions || {}) },
                 map: input.map || sceneEnclosureMap(),
+                hostile: (entity) => selectedActors.includes(entity) && KDHostile(entity),
             },
-            setup =
-                definition.setup === "doorway"
-                    ? setupDoorway(options)
-                    : definition.setup === "regular"
-                      ? setupRegular(options)
-                      : definition.setup === "concave"
-                        ? setupConcave(options)
-                        : definition.setup === "nested"
-                          ? setupNested(options)
-                          : definition.setup === "insufficient"
-                            ? setupInsufficient(options)
-                            : definition.setup === "cooperative"
-                              ? setupOverlap(options)
-                              : setupAutonomous({
-                                    ...options,
-                                    mapSnapshot: input.mapSnapshot || sceneMapSnapshot(sceneId),
-                                });
+            priorEncounter = KDMapData[api.SpinnerNativeField.KEY]
+                ? JSON.parse(JSON.stringify(KDMapData[api.SpinnerNativeField.KEY]))
+                : undefined;
+        if (selectedActors.length !== actorCount) return { started: false, reason: "actors" };
+        if (input.targetKind === "npc" && !target) return { started: false, reason: "target" };
+        KDGameData[CONTROL] = {
+            version: 1,
+            sceneId,
+            actorCount,
+            ownerIds: options.ownerIds,
+            targetKind: input.targetKind === "npc" ? "npc" : "player",
+            targetId: target?.id,
+            awareness: input.awareness || "unaware",
+            geometry: definition.geometry,
+            priorEncounter,
+            actorOriginals: selectedActors.map((actor) => ({ id: actor.id, aware: actor.aware, vp: actor.vp })),
+        };
+        const setup =
+            definition.setup === "doorway"
+                ? setupDoorway(options)
+                : definition.setup === "regular"
+                  ? setupRegular(options)
+                  : definition.setup === "concave"
+                    ? setupConcave(options)
+                    : definition.setup === "nested"
+                      ? setupNested(options)
+                      : definition.setup === "insufficient"
+                        ? setupInsufficient(options)
+                        : definition.setup === "cooperative"
+                          ? setupOverlap(options)
+                          : setupAutonomous({
+                                ...options,
+                                mapSnapshot: input.mapSnapshot || sceneMapSnapshot(sceneId),
+                            });
         if (setup?.encounter) {
             actorOriginals = new Map();
             for (const id of options.ownerIds) {
@@ -310,9 +347,17 @@
                 targetKind: input.targetKind === "npc" ? "npc" : "player",
                 awareness: input.awareness || "unaware",
                 geometry: definition.geometry,
+                ownerIds: [...options.ownerIds],
+                targetId: target?.id,
             };
+            if (setup.ai)
+                for (const group of Object.values(setup.ai.groups || {}))
+                    group.engagement = {
+                        ...(group.engagement || {}),
+                        target: { kind: input.targetKind === "npc" ? "npc" : "player", id: target?.id },
+                    };
             activeScene = setup.encounter.debugScenario;
-        }
+        } else delete KDGameData[CONTROL];
         return {
             ...setup,
             sceneId,
@@ -384,15 +429,33 @@
         for (const entity of [...KDMapData.Entities])
             if (api.SpinnerNativeField.isOwnedProxy?.(entity) && typeof KDRemoveEntity === "function")
                 KDRemoveEntity(entity, false, false, true);
+        const control = KDGameData?.[CONTROL];
         for (const [id, original] of actorOriginals) {
             const actor = KDMapData.Entities.find((entity) => entity.id === id);
             if (actor) Object.assign(actor, original);
         }
-        delete KDMapData[api.SpinnerNativeField.KEY];
+        if (control?.priorEncounter) KDMapData[api.SpinnerNativeField.KEY] = control.priorEncounter;
+        else delete KDMapData[api.SpinnerNativeField.KEY];
+        api.SpinnerNativeField.reconcile?.();
+        delete KDGameData[CONTROL];
         activeScene = undefined;
         actorOriginals = new Map();
         return true;
     }
+
+    function restoreScenarioControl() {
+        const control = KDGameData?.[CONTROL],
+            encounter = api.SpinnerNativeField.state();
+        if (!control || !encounter?.debugScenario) return false;
+        activeScene = encounter.debugScenario;
+        actorOriginals = new Map(
+            (control.actorOriginals || []).map((entry) => [entry.id, { aware: entry.aware, vp: entry.vp }]),
+        );
+        return true;
+    }
+
+    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function")
+        KDAddEvent(KDEventMapGeneric, "afterLoadGame", CONTROL, restoreScenarioControl);
 
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerDoorway = () =>
@@ -425,5 +488,6 @@
         teardownScene,
         sceneMapSnapshot,
         sceneEnclosureMap,
+        restoreScenarioControl,
     };
 })();
