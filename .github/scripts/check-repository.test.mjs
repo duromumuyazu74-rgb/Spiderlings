@@ -45,6 +45,19 @@ test("commit subjects use Conventional Commits without multiline metadata", () =
     assert.equal(validSubject("fix: first line\nsecond line"), false);
 });
 
+test("commit and PR summaries accept natural languages without an English prefix", () => {
+    for (const title of ["fix: 修正文档链接", "docs: ドキュメントを更新", "fix: إصلاح الرابط", "fix: 修"]) {
+        assert.deepEqual(validateCommitSubject("new-code", title, [".github/scripts/check-repository.mjs"]), []);
+        assert.deepEqual(
+            validatePullRequest({ title, body: "Refs #12" }, [".github/scripts/check-repository.mjs"]),
+            [],
+        );
+    }
+    for (const title of ["fix: ", "fix:    ", "fix: 修复\n", "fix: 修复\r\n", "fix: 修复\n更多内容"]) {
+        assert.equal(validSubject(title), false, title);
+    }
+});
+
 test("runtime code is JavaScript and tools retain the approved languages", () => {
     for (const file of [
         "Spiderlings_0.91/New.js",

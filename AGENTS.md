@@ -14,8 +14,8 @@ For issues, specs, implementation tickets, triage and wayfinding, read `docs/age
 
 `main` holds formal releases; `test` holds test development. Only formal versions receive GitHub Releases. Read `docs/DEVELOPMENT.md` for setup, validation, version promotion and publishing. Use project-local skills in `.agents/skills/` before same-name global skills.
 
-Preserve unrelated working and staged changes. Complete authorized local work and relevant checks without repeated approval. Commit only the task changes after required checks. Repository development records use English primarily; communicate with the user in their preferred language. Player feedback is accepted in any language.
+Preserve unrelated working and staged changes. Complete authorized local work and relevant checks without repeated approval. Commit only the task changes after required checks. Communicate with the user in their preferred language.
 
-Public repository text is English first, with Simplified Chinese as the secondary language. Keep `README.md` in English and `README.zh-CN.md` in Chinese, with reciprocal language links at the top and matching installation, version and download information. New release notes and public workflow documents lead with English; preserve the language of historical evidence.
+Maintain `README.md` in English and `README.zh-CN.md` in Simplified Chinese as equivalent versions, with reciprocal links at the top and matching installation, version and download information.
 
 For library, SDK, API or CLI usage questions, fetch current documentation through Context7 first; if unavailable use the official source. Ordinary business-logic work does not require a documentation lookup.
