@@ -166,6 +166,16 @@ NPC 跃击同时锁定实体 ID 与原地格，两次完整玩家行动后结算
 
 每目标成功追加后冷却 4 回合；冷却内不积累下一对来源。冷却字段随 NPC 保存，加载会清除未完成的配对窗口。玩家的交叉额外拘束沿用原规则。WebCaster 原型新增 `glueresist`，无额外修正的重武女仆机枪单弹伤害由 1 降为 0.5；这同样会影响玩家的胶类攻击。
 
+## Spinner 多来源回收
+
+玩家离开破损复合围场后，合格 Spinner 的新命中可把来源接到一条真实 leash；同一来源重复命中只刷新，最多记录八个。只有一个 executor 支付拖拽动作，其他来源只提高控制强度，因此同一世界回合不会按来源数重复移动。
+
+自有 leash 在 Cut、Remove、Struggle 的原生计算中，每个额外来源增加 `0.05` escape penalty。1／2／8 个来源分别增加 `0／0.05／0.35`；这是参照 KD 5.5 原生加固绳事件选出的首个候选，尚未完成实机平衡校准。Stand firm 的显示体力费用为 1／2／8 来源 `5／7／19`，会抵消下一次合法的自有拖拽。Cut 一次可解除一个指定来源；Remove 与 Struggle 共用两次有效原生动作。解除整条 carrier 仍完全采用原生规则。
+
+同一复合围场始终拉向共同核心。极少数无关 field 同时连接时，按有效来源多数决定；同票取原生路径最近的有效核心，再以 composite ID 稳定决胜。没有有效 field 时拉向 executor。实体 Spiderlings web 可被强制回收跨越，每个连续蛛网格需要两个付费拖拽动作；中间动作不移动，远端落点被占用、锁定、变墙、蛛网破损或目的地变化会取消进度。普通墙、锁门、外部障碍和玩家自愿移动没有穿网例外。
+
+外部 leash 只作为 carrier 使用，不改变其 power、锁、逃脱进度、动态链接或原生 tether owner。来源变为无效会立即降低强度；仅恢复距离或行动能力不会自动接回，必须重新命中。
+
 ## WebSpray
 
 只有带 `provenance: "WebCaster.WebSpray"` 的 direct 与 lingering trail 能进入 resolver。普通 `SpiderWeb` 仍调用 KD 原生 `TrapBindings`，但不会推进 Spiderlings Webbing。
