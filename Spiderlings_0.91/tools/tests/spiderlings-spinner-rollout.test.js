@@ -94,19 +94,80 @@ test("load restores enabled snapshots only and never activates absent or disable
     assert.equal(r.reconcileCalls(), 1);
 });
 
+test("rollout deterministically promotes a saved group to an enclosure or its line fallback", () => {
+    for (const kind of ["enclosure", "line"]) {
+        const ai = {
+                groups: { g1: { id: "g1", memberIds: [1, 2], planId: "p1" } },
+                plans: {
+                    p1: {
+                        id: "p1",
+                        fieldId: "line-1",
+                        anchors: [
+                            { x: 8, y: 4 },
+                            { x: 8, y: 8 },
+                        ],
+                    },
+                },
+            },
+            oldEncounter = { ai, autonomous: true },
+            context = {
+                Spiderlings: {
+                    getSetting: () => true,
+                    SpinnerNativeField: {
+                        state: () => context.KDMapData.Encounter,
+                        ensureMap: () => (context.KDMapData.Encounter ||= oldEncounter),
+                        mapSnapshot: () => ({ width: 18, height: 12, floor: [], protected: [], occupied: [] }),
+                        initializeEnclosure(input) {
+                            context.lastInput = input;
+                            return (context.KDMapData.Encounter = { topology: { kind }, builders: {} });
+                        },
+                        reconcile() {},
+                    },
+                },
+                KDMapData: {
+                    Encounter: oldEncounter,
+                    SpiderlingsSpinnerRollout: { version: 1, enabled: true, kind: "ordinary" },
+                },
+                KDEventMapGeneric: {},
+                KDAddEvent(map, trigger, id, handler) {
+                    (map[trigger] ||= {})[id] = handler;
+                },
+            };
+        context.globalThis = context;
+        vm.createContext(context);
+        load(context, "SpiderlingsSpinnerRollout.js");
+        const decision = context.Spiderlings.SpinnerRollout.preparePositiveTurn();
+        assert.equal(decision.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
+        assert.equal(context.KDMapData.Encounter.ai, ai);
+        assert.equal(context.lastInput.layers[0].core.x, 8);
+        assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
+    }
+});
+
 test("scenario registry exposes all ten same-runtime classes and real controls", () => {
     const sent = [],
         encounter = { topology: { kind: "enclosure" }, builders: {} },
+        actors = Array.from({ length: 8 }, (_, index) => ({
+            id: index + 1,
+            hp: 10,
+            aware: false,
+            vp: 0,
+            Enemy: { name: "Spinner" },
+        })),
+        npcTarget = { id: 90, hp: 10, Enemy: { name: "Maid" } },
+        prior = { topology: { kind: "line", fieldId: "prior" }, builders: {} },
         context = {
             Spiderlings: {
                 SpinnerTopology: {
                     createLine: () => ({ anchors: [{ id: "a" }, { id: "b" }], links: [{ id: "l", plannedCells: [] }] }),
                 },
                 SpinnerNativeField: {
-                    initializeMap: () => encounter,
-                    initializeEnclosure: () => encounter,
-                    ensureMap: () => encounter,
-                    state: () => encounter,
+                    KEY: "Encounter",
+                    initializeMap: () => (context.KDMapData.Encounter = encounter),
+                    initializeEnclosure: () => (context.KDMapData.Encounter = encounter),
+                    ensureMap: () => (context.KDMapData.Encounter = encounter),
+                    state: () => context.KDMapData.Encounter,
+                    reconcile() {},
                     onNativeDamage(data) {
                         sent.push(["damage", data]);
                     },
@@ -121,11 +182,18 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
                 SpinnerRecovery: { state: () => undefined },
                 SpinnerNPCRecovery: { state: () => undefined },
             },
-            KDMapData: { Entities: [], RandomPathablePointsSeed: 123 },
+            KDMapData: { Entities: [...actors, npcTarget], RandomPathablePointsSeed: 123, Encounter: prior },
             KDGameData: {},
+            KDEventMapGeneric: {},
+            KDAddEvent(map, trigger, id, handler) {
+                (map[trigger] ||= {})[id] = handler;
+            },
             KinkyDungeonPlayerEntity: { x: 1, y: 1 },
             KinkyDungeonCurrentTick: 5,
             KDHostile: () => true,
+            KDRemoveEntity(entity) {
+                context.KDMapData.Entities = context.KDMapData.Entities.filter((candidate) => candidate !== entity);
+            },
             KDSendInput(type, data) {
                 sent.push([type, data]);
                 return "Tick";
@@ -154,10 +222,16 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
             ownerIds: [1, 2, 3, 4, 5, 6, 7, 8],
             actorCount: 8,
             targetKind: "npc",
+            targetId: 90,
             awareness: "engaged",
         });
         assert.equal(result.sceneId, id);
         assert.equal(result.targetKind, "npc");
+        assert.equal(result.started, true);
+        assert.equal(api.inspectScene().scene.targetId, 90);
+        assert.equal(api.inspectScene().scene.ownerIds.length, result.actorCount);
+        assert.equal(api.teardownScene(), true);
+        assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
     }
     const snapshots = ["two-cell-corridor", "t-junction", "cross-junction", "exit-vicinity"].map((id) =>
         api.sceneMapSnapshot(id),
@@ -165,9 +239,17 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
     assert.equal(new Set(snapshots.map((snapshot) => JSON.stringify(snapshot.candidateLines))).size, 4);
     assert.equal(snapshots[3].cells.find((cell) => cell.x === 16 && cell.y === 6).protected, true);
     assert.equal(sent.filter(([type]) => type === "line").length, 2, "overlap creates two live field plans");
+    api.setupScene("regular-room", { ownerIds: actors.map((actor) => actor.id), actorCount: 2 });
     assert.equal(api.stepScene(), "Tick");
     assert.equal(api.damageStructure({ amount: 2 }).debugInjected, true);
     const exported = JSON.parse(api.exportScene());
     assert.equal(exported.gameVersion, "5.5.0");
     assert.ok(exported.state.encounter);
+    const savedControl = JSON.stringify(context.KDGameData.SpiderlingsSpinnerScenarioControl);
+    load(context, "SpiderlingsSpinnerScenarios.js");
+    context.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerScenarioControl({}, {});
+    assert.equal(JSON.stringify(context.KDGameData.SpiderlingsSpinnerScenarioControl), savedControl);
+    assert.equal(JSON.parse(context.Spiderlings.SpinnerScenarios.exportScene()).scene.sceneId, "regular-room");
+    assert.equal(context.Spiderlings.SpinnerScenarios.teardownScene(), true);
+    assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
 });
