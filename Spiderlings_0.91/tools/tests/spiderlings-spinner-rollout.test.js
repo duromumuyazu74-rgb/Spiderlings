@@ -124,13 +124,62 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
             context = {
                 Spiderlings: {
                     getSetting: () => true,
+                    SpinnerTopology: {
+                        createEnclosure(input) {
+                            if (kind !== "enclosure") return { kind: "line", owners: input.owners };
+                            const fieldId = input.layers[0].id;
+                            return {
+                                kind: "enclosure",
+                                owners: input.owners,
+                                fields: {
+                                    [fieldId]: { id: fieldId, type: "enclosure", vertices: input.layers[0].vertices },
+                                },
+                                composites: { [input.compositeId]: { id: input.compositeId, layerIds: [fieldId] } },
+                                fieldOwners: { [fieldId]: input.owners },
+                            };
+                        },
+                        createPhysicalGraph: ({ fields, owners }) => ({
+                            fields: Object.fromEntries(fields.map((field) => [field.id, field])),
+                            owners,
+                            anchors: [],
+                            links: [],
+                            junctions: [],
+                        }),
+                    },
                     SpinnerNativeField: {
                         state: () => context.KDMapData.Encounter,
                         ensureMap: () => (context.KDMapData.Encounter ||= oldEncounter),
                         mapSnapshot: () => ({ width: 18, height: 12, floor: [], protected: [], occupied: [] }),
                         initializeEnclosure(input) {
                             context.lastInput = input;
-                            return (context.KDMapData.Encounter = { topology: { kind }, builders: {} });
+                            const fieldId = input.layers[0].id;
+                            return (context.KDMapData.Encounter = {
+                                topology:
+                                    kind === "enclosure"
+                                        ? {
+                                              kind,
+                                              owners: input.owners,
+                                              fields: {
+                                                  [fieldId]: {
+                                                      id: fieldId,
+                                                      type: "enclosure",
+                                                      vertices: input.layers[0].vertices,
+                                                  },
+                                              },
+                                              composites: {
+                                                  [input.compositeId]: { id: input.compositeId, layerIds: [fieldId] },
+                                              },
+                                              fieldOwners: { [fieldId]: input.owners },
+                                          }
+                                        : {
+                                              kind: "line",
+                                              owners: input.owners,
+                                              fields: {},
+                                              composites: {},
+                                              fieldOwners: {},
+                                          },
+                                builders: {},
+                            });
                         },
                         addLine(input) {
                             (context.lines ||= []).push(input);
@@ -152,12 +201,15 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
         vm.createContext(context);
         load(context, "SpiderlingsSpinnerRollout.js");
         const decision = context.Spiderlings.SpinnerRollout.preparePositiveTurn();
-        assert.equal(decision.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
+        assert.equal(decision.g1.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
+        assert.equal(decision.g2.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
         assert.equal(context.KDMapData.Encounter.ai, ai);
         assert.equal(context.lastInput.layers[0].core.x, 8);
         assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
-        assert.equal(context.lines[0].fieldId, "line-2");
-        assert.deepEqual(Array.from(context.lines[0].owners), [3, 4]);
+        if (kind === "line") {
+            assert.equal(context.lines[0].fieldId, "line-2");
+            assert.deepEqual(Array.from(context.lines[0].owners), [3, 4]);
+        } else assert.equal(context.KDMapData.Encounter.topology.composites["rollout-g2"].layerIds.length, 1);
     }
 });
 
@@ -262,6 +314,8 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
         assert.equal(result.started, true);
         assert.equal(api.inspectScene().scene.targetId, 90);
         assert.equal(api.inspectScene().scene.ownerIds.length, result.actorCount);
+        assert.equal(api.resolveTarget(actors[0], { id: "native" }), npcTarget);
+        assert.equal(api.resolveTarget({ id: 999 }, { id: "native" }).id, "native");
         if (api.REGISTRY[id].setup === "autonomous") {
             const group = Object.values(result.ai.groups)[0];
             assert.equal(group.engagement.target.id, 90);

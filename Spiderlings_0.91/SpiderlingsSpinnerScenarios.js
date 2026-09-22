@@ -306,6 +306,7 @@
             if (actor) Object.assign(actor, { aware: original.aware, vp: original.vp });
         }
         api.SpinnerNativeField.reconcile?.();
+        api.SpinnerNativeField.invalidateNavigation?.();
     }
 
     function setupOverlap(input = {}) {
@@ -334,6 +335,7 @@
     }
 
     function setupScene(sceneId, input = {}) {
+        if (activeScene) teardownScene();
         const definition = REGISTRY[sceneId];
         if (!definition) return { started: false, reason: "unknown-scene" };
         const actorCount = definition.actorCounts.includes(input.actorCount)
@@ -393,6 +395,7 @@
                 if (cell.protected && typeof KinkyDungeonTilesSet === "function")
                     KinkyDungeonTilesSet(key, { ...(tileData || {}), Protected: true });
             }
+        api.SpinnerNativeField.invalidateNavigation?.();
         priorProxyEntities = KDMapData.Entities.filter((entity) => api.SpinnerNativeField.isOwnedProxy?.(entity));
         KDMapData.Entities = KDMapData.Entities.filter((entity) => !priorProxyEntities.includes(entity));
         KDGameData[CONTROL] = {
@@ -560,8 +563,41 @@
         return true;
     }
 
+    function resolveTarget(enemy, nativeTarget) {
+        const control = KDGameData?.[CONTROL];
+        if (!control?.ownerIds?.some((id) => String(id) === String(enemy?.id))) return nativeTarget;
+        const target =
+            control.targetKind === "player"
+                ? KinkyDungeonPlayerEntity
+                : KDMapData.Entities.find((entity) => String(entity.id) === String(control.targetId));
+        if (
+            !target ||
+            !(target.player || (target.hp > 0 && target.Enemy)) ||
+            control.ownerIds.some((id) => String(id) === String(target.id)) ||
+            !KDHostile(enemy, target)
+        )
+            return nativeTarget;
+        const distance = Math.hypot(enemy.x - target.x, enemy.y - target.y);
+        if (
+            typeof KinkyDungeonCheckLOS === "function" &&
+            !KinkyDungeonCheckLOS(enemy, target, distance, enemy.Enemy?.visionRadius || 99, false, false)
+        )
+            return nativeTarget;
+        return target;
+    }
+
     if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function")
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", CONTROL, restoreScenarioControl);
+    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
+        for (const trigger of ["beforeStairCancel", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
+            KDAddEvent(KDEventMapGeneric, trigger, CONTROL, () => activeScene && teardownScene());
+        KDAddEvent(KDEventMapGeneric, "postMapgen", CONTROL, () => {
+            activeScene = undefined;
+            actorOriginals = new Map();
+            priorProxyEntities = [];
+            delete KDGameData[CONTROL];
+        });
+    }
 
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerDoorway = () =>
@@ -595,5 +631,6 @@
         sceneMapSnapshot,
         sceneEnclosureMap,
         restoreScenarioControl,
+        resolveTarget,
     };
 })();
