@@ -175,6 +175,7 @@
     });
     let activeScene;
     let actorOriginals = new Map();
+    let priorProxyEntities = [];
 
     function sceneMapSnapshot(sceneId) {
         const cells = [];
@@ -183,7 +184,16 @@
                 cells.push({
                     x,
                     y,
-                    floor: true,
+                    floor:
+                        sceneId === "two-cell-corridor"
+                            ? [5, 6].includes(y)
+                            : sceneId === "t-junction"
+                              ? x === 3 || y === 6
+                              : sceneId === "cross-junction"
+                                ? x === 8 || y === 6
+                                : sceneId === "exit-vicinity"
+                                  ? y === 6 || (x === 13 && y >= 4 && y <= 8)
+                                  : true,
                     protected: sceneId === "exit-vicinity" && x === 16 && y === 6,
                     locked: false,
                 });
@@ -194,8 +204,8 @@
                     { x: 8, y: 6 },
                 ],
                 line: [
-                    { x: 8, y: 4 },
-                    { x: 8, y: 8 },
+                    { x: 8, y: 5 },
+                    { x: 8, y: 6 },
                 ],
             },
             "t-junction": {
@@ -236,6 +246,38 @@
         const floor = [];
         for (let y = 1; y < 20; y++) for (let x = 1; x < 30; x++) floor.push(`${x},${y}`);
         return { width: 31, height: 21, floor, protected: [], occupied: [], exit: { x: 29, y: 10 } };
+    }
+
+    function enclosureTerrainSnapshot() {
+        const map = sceneEnclosureMap();
+        return {
+            cells: map.floor.map((key) => {
+                const [x, y] = key.split(",").map(Number);
+                return { x, y, floor: true, protected: false };
+            }),
+        };
+    }
+
+    function restoreOwnedState(control) {
+        if (!control) return;
+        for (const original of control.terrainOriginals || []) {
+            if (typeof KinkyDungeonMapSet === "function") KinkyDungeonMapSet(original.x, original.y, original.tile);
+            if (typeof KinkyDungeonTilesSet === "function") {
+                const key = `${original.x},${original.y}`;
+                if (original.tileData === undefined && typeof KinkyDungeonTilesDelete === "function")
+                    KinkyDungeonTilesDelete(key);
+                else KinkyDungeonTilesSet(key, original.tileData);
+            }
+        }
+        if (control.priorEncounter) KDMapData[api.SpinnerNativeField.KEY] = control.priorEncounter;
+        else delete KDMapData[api.SpinnerNativeField.KEY];
+        for (const proxy of priorProxyEntities.length ? priorProxyEntities : control.priorProxies || [])
+            if (!KDMapData.Entities.some((entity) => entity.id === proxy.id)) KDMapData.Entities.push(proxy);
+        for (const original of control.actorOriginals || []) {
+            const actor = KDMapData.Entities.find((entity) => entity.id === original.id);
+            if (actor) Object.assign(actor, { aware: original.aware, vp: original.vp });
+        }
+        api.SpinnerNativeField.reconcile?.();
     }
 
     function setupOverlap(input = {}) {
@@ -302,6 +344,20 @@
                 : undefined;
         if (selectedActors.length !== actorCount) return { started: false, reason: "actors" };
         if (input.targetKind === "npc" && !target) return { started: false, reason: "target" };
+        const terrainSnapshot =
+                definition.setup === "autonomous" ? sceneMapSnapshot(sceneId) : enclosureTerrainSnapshot(),
+            terrainOriginals = [];
+        if (terrainSnapshot && typeof KinkyDungeonMapSet === "function")
+            for (const cell of terrainSnapshot.cells) {
+                const key = `${cell.x},${cell.y}`,
+                    tileData = typeof KinkyDungeonTilesGet === "function" ? KinkyDungeonTilesGet(key) : undefined;
+                terrainOriginals.push({ x: cell.x, y: cell.y, tile: KinkyDungeonMapGet(cell.x, cell.y), tileData });
+                KinkyDungeonMapSet(cell.x, cell.y, cell.floor ? "." : "1");
+                if (cell.protected && typeof KinkyDungeonTilesSet === "function")
+                    KinkyDungeonTilesSet(key, { ...(tileData || {}), Protected: true });
+            }
+        priorProxyEntities = KDMapData.Entities.filter((entity) => api.SpinnerNativeField.isOwnedProxy?.(entity));
+        KDMapData.Entities = KDMapData.Entities.filter((entity) => !priorProxyEntities.includes(entity));
         KDGameData[CONTROL] = {
             version: 1,
             sceneId,
@@ -312,6 +368,8 @@
             awareness: input.awareness || "unaware",
             geometry: definition.geometry,
             priorEncounter,
+            priorProxies: priorProxyEntities.map((entity) => JSON.parse(JSON.stringify(entity))),
+            terrainOriginals,
             actorOriginals: selectedActors.map((actor) => ({ id: actor.id, aware: actor.aware, vp: actor.vp })),
         };
         const setup =
@@ -357,7 +415,10 @@
                         target: { kind: input.targetKind === "npc" ? "npc" : "player", id: target?.id },
                     };
             activeScene = setup.encounter.debugScenario;
-        } else delete KDGameData[CONTROL];
+        } else {
+            restoreOwnedState(KDGameData[CONTROL]);
+            delete KDGameData[CONTROL];
+        }
         return {
             ...setup,
             sceneId,
@@ -434,9 +495,7 @@
             const actor = KDMapData.Entities.find((entity) => entity.id === id);
             if (actor) Object.assign(actor, original);
         }
-        if (control?.priorEncounter) KDMapData[api.SpinnerNativeField.KEY] = control.priorEncounter;
-        else delete KDMapData[api.SpinnerNativeField.KEY];
-        api.SpinnerNativeField.reconcile?.();
+        restoreOwnedState(control);
         delete KDGameData[CONTROL];
         activeScene = undefined;
         actorOriginals = new Map();
@@ -451,6 +510,7 @@
         actorOriginals = new Map(
             (control.actorOriginals || []).map((entry) => [entry.id, { aware: entry.aware, vp: entry.vp }]),
         );
+        priorProxyEntities = control.priorProxies || [];
         return true;
     }
 

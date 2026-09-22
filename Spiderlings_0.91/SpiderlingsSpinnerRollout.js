@@ -99,6 +99,18 @@
         const enclosure = next.topology.kind === "enclosure";
         plan.kind = enclosure ? "enclosure" : "line";
         if (enclosure) plan.compositeId = compositeId;
+        for (const otherGroup of Object.values(priorAI.groups || {})) {
+            if (otherGroup.id === group.id) continue;
+            const otherPlan = priorAI.plans?.[otherGroup.planId];
+            if (!otherPlan?.anchors?.length) continue;
+            api.SpinnerNativeField.addLine({
+                fieldId: otherPlan.fieldId,
+                owners: otherGroup.memberIds,
+                anchors: otherPlan.anchors,
+                scenario: "ordinary-rollout",
+            });
+            api.SpinnerNativeField.setOwners?.(otherPlan.fieldId, otherGroup.memberIds);
+        }
         snapshot.enclosureDecision = {
             groupId: group.id,
             planId: plan.id,
