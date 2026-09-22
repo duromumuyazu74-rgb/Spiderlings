@@ -120,7 +120,7 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
 });
 
 function nativeJourneyRuntime(overrides = {}) {
-    const game = path.resolve(__dirname, "../../../KinkiestDungeon-5.5/Game/src/map");
+    const game = require("../reference-inputs.js").gamePath("Game/src/map");
     return runtime(
         {
             PIXI: { Graphics: class {} },
@@ -267,7 +267,7 @@ test("maid floors have no infestation objective; infestation floors place five n
 });
 
 function nativePopulationRuntime() {
-    const game = path.resolve(__dirname, "../../../KinkiestDungeon-5.5/Game/src");
+    const game = require("../reference-inputs.js").gamePath("Game/src");
     const definitions = fs.readFileSync(path.join(game, "enemy/KinkyDungeonEnemiesList.ts"), "utf8");
     const spawns = fs.readFileSync(path.join(game, "enemy/KinkyDungeonSpawns.ts"), "utf8");
     const tiles = fs.readFileSync(path.join(game, "map/KinkyDungeonEditorGen.ts"), "utf8");

@@ -215,7 +215,7 @@ function freshNewSaveRuntime() {
 test("native perk initialization equips all 24 physical layers only when selected", () => {
     const { context, equipment } = freshNewSaveRuntime();
     const source = fs.readFileSync(
-        path.join(modRoot, "..", "KinkiestDungeon-5.5", "Game/src/player/KinkyDungeonPerks.ts"),
+        require("../reference-inputs.js").gamePath("Game/src/player/KinkyDungeonPerks.ts"),
         "utf8",
     );
     const start = source.indexOf("function KDInitPerks() {");

@@ -7,15 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const modRoot = path.join(__dirname, "..", "..");
-const kdEnemyLoopPath = path.join(
-    modRoot,
-    "..",
-    "KinkiestDungeon-5.5",
-    "Game",
-    "src",
-    "enemy",
-    "KinkyDungeonEnemies.ts",
-);
+const kdEnemyLoopPath = require("../reference-inputs.js").gamePath("Game/src/enemy/KinkyDungeonEnemies.ts");
 
 function plain(value) {
     return JSON.parse(JSON.stringify(value));

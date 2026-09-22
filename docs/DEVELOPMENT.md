@@ -6,12 +6,20 @@ Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for language restrictions, incremen
 
 Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The source path stays `Spiderlings_0.91/` so existing tools retain their paths.
 
-Use Node.js with its built-in test runner, PowerShell, and Python with `Pillow` and `pyoxipng`. The atlas builder imports `PIL` and `oxipng`. The regression tests also need these separately supplied local inputs at the repository root:
+Use Node.js with its built-in test runner, PowerShell, and Python with `Pillow` and `pyoxipng`. The atlas builder imports `PIL` and `oxipng`. The local regression tests need these separately supplied directories under an external input root:
 
 - `KinkiestDungeon-5.5/`: official KD 5.5 source tree, used read-only.
 - `T‘s NEW Webbing LV1/` and `T‘s NEW Webbing LV2/`: original artwork reference folders used by existing provenance checks. Keep the curly apostrophe in these folder names.
 
-These inputs are not downloaded or redistributed by the repository. An existing KD workspace can supply them through local directory junctions; all generated files remain outside those targets. Run commands from the repository root:
+These inputs are not downloaded or redistributed by the repository. Configure the absolute path to their parent directory once per clone. Git's local configuration is shared by its linked worktrees:
+
+```powershell
+git config --local spiderlings.referenceRoot 'D:/KD-reference-inputs'
+```
+
+`SPIDERLINGS_REFERENCE_ROOT` overrides that setting for a process and its children. Inputs must resolve outside the checkout. Public tests do not require the private inputs. The checker and native tests use `tools/reference-inputs.js`; they fail with setup instructions when the setting is missing instead of searching unrelated ancestor directories. Repository checks reject junctions or symlinks at the game, artwork and `node_modules` paths.
+
+Run commands from the repository root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1
@@ -29,6 +37,23 @@ To verify an existing package against the checked-out commit without rebuilding 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
 ```
+
+## Worktrees and cleanup
+
+Create worktrees without game, artwork or dependency junctions. Install locked maintenance dependencies with `npm ci` in each checkout. Lock any checkout that retains packages, evidence or ongoing work using `git worktree lock --reason <reason> <absolute-path>`; this makes ordinary Git removal refuse the directory.
+
+Windows worktree removal previously traversed shared-input junctions and erased their targets twice. A clean Git status and omission of `--force` did not prevent it. The input resolver now removes the need for those links, and the supported cleanup entry point rejects every reparse point before descending into it.
+
+Run the cleanup script from a retained checkout, with an explicit target and a branch or tag that contains its HEAD:
+
+```powershell
+powershell -NoProfile -File .\Spiderlings_0.91\tools\remove-safe-worktree.ps1 -Worktree 'D:/work/spinner-ticket'
+powershell -NoProfile -File .\Spiderlings_0.91\tools\remove-safe-worktree.ps1 -Worktree 'D:/work/spinner-ticket' -KeepRef refs/remotes/origin/test -Execute
+```
+
+The first invocation is a read-only preflight. The second repeats the checks and removes only a registered, non-primary, clean worktree with no ignored files, no reparse points and a retained HEAD. Preserve packages, logs and dependencies before cleanup. The script never unlocks a checkout, uses force, removes branches, or falls back to recursive filesystem deletion. If it refuses, retain the directory until the reported condition is resolved. Do not change the checkout concurrently with cleanup.
+
+For an existing junction, validate its exact path and target, preserve and verify the target contents, and detach only the link with nonrecursive link semantics. Never test deletion against real reference inputs. The public safety suite uses disposable repositories, real Windows junctions and external sentinel files; a dedicated Windows CI job exercises the deletion path.
 
 ## Issues and branches
 

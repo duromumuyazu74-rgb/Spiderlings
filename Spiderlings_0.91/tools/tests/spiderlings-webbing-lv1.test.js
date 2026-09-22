@@ -7,7 +7,8 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const modRoot = path.join(__dirname, "..", "..");
-const referenceRoot = path.join(modRoot, "..", "KinkiestDungeon-5.5");
+const { gamePath, artworkPath } = require("../reference-inputs.js");
+const referenceRoot = gamePath();
 const translationFiles = [
     "SpiderlingsCN.csv",
     "SpiderlingsDE.csv",
@@ -321,7 +322,7 @@ test("all five real Lv2 items render their delivered art and require two effecti
         assert.equal(layers[0].Pri, 51);
         assert.equal(layers[0].NoOverride, true);
         assert.equal(
-            fs.existsSync(path.join(modRoot, "..", "T‘s NEW Webbing LV2", family.source)),
+            fs.existsSync(artworkPath(2, family.source)),
             true,
             `${family.source} must be present in the authoritative Lv2 source directory`,
         );
@@ -691,7 +692,7 @@ test("the canonical ten-family Lv1 catalogue resolves ten direct runtime assets 
 
     for (const family of families) {
         assert.equal(
-            fs.existsSync(path.join(modRoot, "..", "T‘s NEW Webbing LV1", family.source)),
+            fs.existsSync(artworkPath(1, family.source)),
             true,
             `${family.source} must be present in the authoritative source directory`,
         );
