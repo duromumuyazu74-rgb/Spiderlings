@@ -5,17 +5,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 
 const modRoot = path.join(__dirname, "..", "..");
-const kdEnemyLoopPath = path.join(
-    modRoot,
-    "..",
-    "KinkiestDungeon-5.5",
-    "Game",
-    "src",
-    "enemy",
-    "KinkyDungeonEnemies.ts",
-);
+const kdEnemyLoopPath = gamePath("Game", "src", "enemy", "KinkyDungeonEnemies.ts");
 
 function plain(value) {
     return JSON.parse(JSON.stringify(value));

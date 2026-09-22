@@ -2,6 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const vm = require("node:vm");
+const { gamePath } = require("../reference-inputs.js");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -69,16 +70,13 @@ function fixture(overrides = {}) {
         b.alreadyHit.push(target.id);
         if (b.bullet.spell.playerEffect || b.bullet.playerEffect) target.equipment++;
         if (target.throw) throw Error("native hit failed");
-        if (b.bullet.damage.type != "inert") c.KinkyDungeonDamageEnemy(target, b.bullet.damage);
+        if (b.bullet.damage.type !== "inert") c.KinkyDungeonDamageEnemy(target, b.bullet.damage);
     };
     Object.assign(c, overrides);
     vm.createContext(c);
     // Exercise KD's actual predicates, including the geometry and unique-hit
     // gates that the scoped entity-hostility adapter must retain.
-    const fight = fs.readFileSync(
-        path.join(__dirname, "../../..", "KinkiestDungeon-5.5/Game/src/fight/KinkyDungeonFight.ts"),
-        "utf8",
-    );
+    const fight = fs.readFileSync(gamePath("Game/src/fight/KinkyDungeonFight.ts"), "utf8");
     for (const name of ["KDBulletCanHitEntity", "KDBulletAoECanHitEntity"]) {
         const start = fight.indexOf(`function ${name}(`);
         const end = fight.indexOf("\nfunction ", start + 1);
@@ -99,10 +97,7 @@ function fixture(overrides = {}) {
 
 test("native alarm recipients refresh entity goals on KD 5.5.3 while silk-gagged callers remain silent", () => {
     const { stripTypeScriptTypes } = require("node:module");
-    const source = fs.readFileSync(
-        path.join(__dirname, "../../..", "KinkiestDungeon-5.5/Game/src/magic/KinkyDungeonMagic.ts"),
-        "utf8",
-    );
+    const source = fs.readFileSync(gamePath("Game/src/magic/KinkyDungeonMagic.ts"), "utf8");
     const start = source.indexOf("function KinkyDungeonMakeNoiseSignal(");
     // The pinned 5.5.0 function predates goal tracking. Reproduce the exact
     // 5.5.3 addition (Magic.ts:703) that mistakenly updates the sender.
@@ -235,8 +230,8 @@ test("unrelated slime, resisted silk and native silence keep their own speech ru
 
 test("native spray collision honors entity hostility without bypassing positions, noEnemyCollision or unique hits", () => {
     const { c, spawn } = fixture();
-    const source = spawn(1, "WebCaster", "Enemy"),
-        target = spawn(2, "Maidforce", "Maidforce");
+    spawn(1, "WebCaster", "Enemy");
+    const target = spawn(2, "Maidforce", "Maidforce");
     const b = {
         x: 0,
         y: 0,
