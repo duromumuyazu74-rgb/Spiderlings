@@ -17,7 +17,7 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 | 分支                                                                  | 版本              | 用途       |
 | --------------------------------------------------------------------- | ----------------- | ---------- |
 | [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main) | `0.92.38`         | 正式版     |
-| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.11` | 测试开发版 |
+| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.13` | 测试开发版 |
 
 测试分支沿用 `0.92.36` 正式基线，并已包含正式版 `0.92.38` 的兼容修复。它增加了实验性的 Spinner 捕获玩法和素材。目前只有正式版发布 GitHub Release；测试包按[开发说明](docs/DEVELOPMENT.md)在本地构建。
 
