@@ -155,9 +155,12 @@
                 });
             if (partial.kind === "enclosure") {
                 const existing = next.topology,
-                    fields = [...Object.values(existing.fields || {}), ...Object.values(partial.fields || {})].map(
-                        (field) => ({ id: field.id, type: field.type, vertices: field.vertices }),
-                    ),
+                    fields = [
+                        ...Object.values(existing.fields || {}),
+                        ...Object.values(existing.lineFields || {}),
+                        ...Object.values(partial.fields || {}),
+                        ...Object.values(partial.lineFields || {}),
+                    ].map((field) => ({ id: field.id, type: field.type || "line", vertices: field.vertices })),
                     combined = api.SpinnerTopology.createPhysicalGraph({
                         fields,
                         owners: [...existing.owners, ...partial.owners],
@@ -167,7 +170,7 @@
                     fields: { ...(existing.fields || {}), ...(partial.fields || {}) },
                     composites: { ...(existing.composites || {}), ...(partial.composites || {}) },
                     fieldOwners: { ...(existing.fieldOwners || {}), ...(partial.fieldOwners || {}) },
-                    lineFields: { ...(existing.lineFields || {}) },
+                    lineFields: { ...(existing.lineFields || {}), ...(partial.lineFields || {}) },
                 });
                 next.topology = combined;
                 otherPlan.kind = "enclosure";
