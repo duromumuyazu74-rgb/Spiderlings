@@ -71,11 +71,15 @@
     }
 
     function setupRegular(input = {}) {
+        const right = Math.min(24, (KDMapData.GridWidth || 31) - 2),
+            bottom = Math.min(13, (KDMapData.GridHeight || 21) - 2),
+            left = right - 4,
+            top = bottom - 8;
         return setupEnclosure({
             ...input,
             scenario: "SpinnerRegularEnclosure",
             compositeId: input.compositeId || "spinner-regular",
-            layers: [{ id: "inner", vertices: rectangle(20, 5, 24, 13), gate: { x: 20, y: 9 } }],
+            layers: [{ id: "inner", vertices: rectangle(left, top, right, bottom), gate: { x: left, y: top + 4 } }],
         });
     }
 
@@ -103,13 +107,25 @@
     }
 
     function setupNested(input = {}) {
+        const width = KDMapData.GridWidth || 31,
+            height = KDMapData.GridHeight || 21,
+            centerX = Math.max(7, Math.min(13, width - 8)),
+            centerY = Math.max(7, Math.min(10, height - 8));
         return setupEnclosure({
             ...input,
             scenario: "SpinnerNestedEnclosure",
             compositeId: input.compositeId || "spinner-nested",
             layers: [
-                { id: "inner", vertices: rectangle(10, 7, 16, 13), gate: { x: 10, y: 10 } },
-                { id: "outer", vertices: rectangle(7, 4, 19, 16), gate: { x: 7, y: 10 } },
+                {
+                    id: "inner",
+                    vertices: rectangle(centerX - 3, centerY - 3, centerX + 3, centerY + 3),
+                    gate: { x: centerX - 3, y: centerY },
+                },
+                {
+                    id: "outer",
+                    vertices: rectangle(centerX - 6, centerY - 6, centerX + 6, centerY + 6),
+                    gate: { x: centerX - 6, y: centerY },
+                },
             ],
         });
     }
@@ -378,11 +394,11 @@
                     : definition.setup === "autonomous"
                       ? { width: 18, height: 12 }
                       : {
-                            "regular-room": { width: 25, height: 14 },
+                            "regular-room": { width: 7, height: 11 },
                             "irregular-concave-room": { width: 23, height: 13 },
                             "insufficient-space": { width: 13, height: 13 },
                             "overlapping-groups": { width: 13, height: 9 },
-                            "nested-fields": { width: 20, height: 17 },
+                            "nested-fields": { width: 15, height: 15 },
                         }[sceneId] || { width: 30, height: 20 };
         if (width < required.width || height < required.height) return { started: false, reason: "map-size" };
         const selectedIds = selectedActors.map((actor) => actor.id),
