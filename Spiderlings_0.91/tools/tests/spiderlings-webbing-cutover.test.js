@@ -31,6 +31,7 @@ const scripts = [
     "SpiderlingsSpinnerNPCRecovery.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
 ];
 const assets = [
@@ -326,7 +327,7 @@ test("seven locale files contain all twenty-five current restraint text triplets
         const entries = csvMap(csv);
         assert.equal(
             entries.size,
-            188,
+            189,
             `${csv}: current release text set including Spinner ground-trap message and its start preset`,
         );
         for (const key of [

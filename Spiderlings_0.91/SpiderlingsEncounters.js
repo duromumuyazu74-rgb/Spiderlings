@@ -13,6 +13,13 @@
             block: undefined,
         },
         { type: "boolean", name: "spiderlingsSquad", refvar: "spiderlingsSquad", default: true, block: undefined },
+        {
+            type: "boolean",
+            name: "spiderlingsSpinnerEncounters",
+            refvar: "spiderlingsSpinnerEncounters",
+            default: true,
+            block: undefined,
+        },
         { type: "text", refvar: "spiderlingsMapPopulationCap" },
         {
             type: "string",
@@ -667,6 +674,7 @@
         addTextKey("KDModButtonSpiderlings", "Spiderlings");
         addTextKey("KDModButtonspiderlingsPinkWebbing", "Pink webbing (off: original)");
         addTextKey("KDModButtonspiderlingsSquad", "Fixed spiderling squad");
+        addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Autonomous Spinner encounters");
         addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiders per map (0: unlimited)");
         addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement type weights");
         addTextKey("KDModButtonspiderlingsNestSpinnerWeight", "Spinner weight");

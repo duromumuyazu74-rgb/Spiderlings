@@ -38,6 +38,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerNPCRecovery.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
 ];
 const atlasAssets = [
