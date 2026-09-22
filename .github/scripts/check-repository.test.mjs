@@ -93,6 +93,12 @@ test("runtime code is JavaScript and tools retain the approved languages", () =>
     }
 });
 
+test("personal authoring files cannot be reintroduced while runtime artwork stays public", () => {
+    assert.match(validateFile("docs/spiderlings-spinner-capture/ARTIST-HANDOFF.html"), /stay untracked/);
+    assert.match(validateFile("Spiderlings_0.91/tools/build-spinner-artist-kit.py"), /stay untracked/);
+    assert.equal(validateFile("Spiderlings_0.91/Models/SpiderlingsSpinnerLegbinder/Band.png"), null);
+});
+
 test("PR metadata accepts issue-backed changes and explained maintenance exceptions", () => {
     assert.deepEqual(
         validatePullRequest({
@@ -110,6 +116,27 @@ test("PR metadata accepts issue-backed changes and explained maintenance excepti
     );
     assert.equal(validatePullRequest({ title: "misc", body: "Refs #" }).length, 2);
     assert.equal(validatePullRequest({ title: "feat: add a feature", body: "Issue: none" }).length, 1);
+});
+
+test("only Dependabot dependency-only PRs receive the Issue-link exception", () => {
+    const pr = { title: "chore(deps): bump dependencies", user: { login: "dependabot[bot]", type: "Bot" } };
+    const files = [
+        "package-lock.json",
+        "Spiderlings_0.91/tools/requirements-atlas.txt",
+        ".github/workflows/repository-checks.yml",
+    ];
+    assert.deepEqual(validatePullRequest(pr, files), []);
+    for (const changed of [
+        [],
+        [...files, "Spiderlings_0.91/Spiderlings.js"],
+        [...files, ".github/scripts/check-repository.mjs"],
+    ]) {
+        assert.equal(validatePullRequest(pr, changed).length, 1);
+    }
+    for (const user of [undefined, { login: "maintainer", type: "User" }, { login: "dependabot[bot]", type: "User" }]) {
+        assert.equal(validatePullRequest({ ...pr, user }, files).length, 1);
+    }
+    assert.equal(validatePullRequest({ ...pr, title: "Update dependencies" }, files).length, 1);
 });
 
 test("lint accepts declared KD globals but rejects an unknown identifier and assignment mistake", async () => {
