@@ -231,6 +231,12 @@
         };
     }
 
+    function sceneEnclosureMap() {
+        const floor = [];
+        for (let y = 1; y < 20; y++) for (let x = 1; x < 30; x++) floor.push(`${x},${y}`);
+        return { width: 31, height: 21, floor, protected: [], occupied: [], exit: { x: 29, y: 10 } };
+    }
+
     function setupOverlap(input = {}) {
         const owners = input.ownerIds || [],
             split = Math.max(2, Math.floor(owners.length / 2)),
@@ -269,6 +275,7 @@
                 ownerIds: (input.ownerIds || []).slice(0, actorCount),
                 scenario: `SpinnerScenario:${sceneId}`,
                 sceneConditions: { geometry: definition.geometry, ...(input.sceneConditions || {}) },
+                map: input.map || sceneEnclosureMap(),
             },
             setup =
                 definition.setup === "doorway"
@@ -417,5 +424,6 @@
         exportScene,
         teardownScene,
         sceneMapSnapshot,
+        sceneEnclosureMap,
     };
 })();
