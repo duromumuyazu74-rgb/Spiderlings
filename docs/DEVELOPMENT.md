@@ -34,7 +34,7 @@ powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderli
 
 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues) holds new specs, tickets and triage. See [tracker operations](agents/issue-tracker.md) and [labels](agents/triage-labels.md). Old scratch records remain in the original KD workspace; historical links in imported maintenance records refer to that workspace and are not new acceptance evidence.
 
-Develop against `test`, preserving the formal baseline and increasing `-test.N` for each test delivery. Fixes intended for formal users go to `main` and are carried into `test` as needed. Promoting test gameplay requires the requested acceptance and the next formal version after the current `main` version. Current `main` is `0.92.38`, so the next ordinary formal release is `0.92.39`; do not promote by merely deleting `-test.11` from `0.92.36-test.12`.
+Develop against `test`, preserving the formal baseline and increasing `-test.N` for each test delivery. Fixes intended for formal users go to `main` and are carried into `test` as needed. Promoting test gameplay requires the requested acceptance and the next formal version after the current `main` version. Current `main` is `0.92.38`, so the next ordinary formal release is `0.92.39`; do not promote by merely deleting the test suffix from `0.92.36-test.13`.
 
 Keep commits focused and link the applicable Issue. Publishing only these initial snapshots does not migrate the original workspace's Git history, game files, personal configuration or scratch logs.
 

@@ -7,6 +7,7 @@
     "spiderlings-spinner-capture.test.js",
     "spiderlings-spinner-npc-capture.test.js",
     "spiderlings-spinner-npc-recovery.test.js",
+    "spiderlings-spinner-rollout.test.js",
     "spiderlings-spinner-recovery.test.js",
     "spiderlings-spinner-enclosure.test.js",
     "spiderlings-spinner-native-field.test.js",

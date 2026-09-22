@@ -152,6 +152,241 @@
         return { ...setup, ai };
     }
 
+    const REGISTRY = Object.freeze({
+        "single-door": Object.freeze({ setup: "doorway", actorCounts: [2], geometry: "one-cell-door" }),
+        "two-cell-corridor": Object.freeze({
+            setup: "autonomous",
+            actorCounts: [2, 4, 8],
+            geometry: "two-cell-corridor",
+        }),
+        "t-junction": Object.freeze({ setup: "autonomous", actorCounts: [2, 4, 8], geometry: "t-junction" }),
+        "cross-junction": Object.freeze({ setup: "autonomous", actorCounts: [2, 4, 8], geometry: "cross-junction" }),
+        "regular-room": Object.freeze({ setup: "regular", actorCounts: [2, 4, 8], geometry: "regular-room" }),
+        "irregular-concave-room": Object.freeze({ setup: "concave", actorCounts: [2, 4, 8], geometry: "concave-room" }),
+        "exit-vicinity": Object.freeze({ setup: "autonomous", actorCounts: [2, 4, 8], geometry: "protected-exit" }),
+        "insufficient-space": Object.freeze({
+            setup: "insufficient",
+            actorCounts: [2, 4, 8],
+            geometry: "insufficient-space",
+        }),
+        "overlapping-groups": Object.freeze({ setup: "cooperative", actorCounts: [4, 8], geometry: "shared-overlap" }),
+        "nested-fields": Object.freeze({ setup: "nested", actorCounts: [4, 8], geometry: "nested-fields" }),
+    });
+    let activeScene;
+    let actorOriginals = new Map();
+
+    function sceneMapSnapshot(sceneId) {
+        const cells = [];
+        for (let y = 1; y < 11; y++)
+            for (let x = 1; x < 17; x++)
+                cells.push({
+                    x,
+                    y,
+                    floor: true,
+                    protected: sceneId === "exit-vicinity" && x === 16 && y === 6,
+                    locked: false,
+                });
+        const byScene = {
+            "two-cell-corridor": {
+                chokes: [
+                    { x: 8, y: 5 },
+                    { x: 8, y: 6 },
+                ],
+                line: [
+                    { x: 8, y: 4 },
+                    { x: 8, y: 8 },
+                ],
+            },
+            "t-junction": {
+                chokes: [{ x: 3, y: 4 }],
+                line: [
+                    { x: 3, y: 2 },
+                    { x: 3, y: 5 },
+                ],
+            },
+            "cross-junction": {
+                chokes: [{ x: 8, y: 6 }],
+                line: [
+                    { x: 6, y: 6 },
+                    { x: 10, y: 6 },
+                ],
+            },
+            "exit-vicinity": {
+                chokes: [],
+                line: [
+                    { x: 13, y: 4 },
+                    { x: 13, y: 8 },
+                ],
+            },
+        }[sceneId];
+        return {
+            width: 18,
+            height: 12,
+            cells,
+            entrances: [{ x: 1, y: 6 }],
+            exits: [{ x: 16, y: 6 }],
+            chokes: byScene?.chokes || [],
+            nests: [],
+            candidateLines: byScene ? [byScene.line] : [],
+        };
+    }
+
+    function setupOverlap(input = {}) {
+        const owners = input.ownerIds || [],
+            split = Math.max(2, Math.floor(owners.length / 2)),
+            encounter = api.SpinnerNativeField.ensureMap({ scenario: input.scenario });
+        api.SpinnerNativeField.addLine({
+            fieldId: "scenario-overlap-a",
+            owners: owners.slice(0, split),
+            anchors: [
+                { x: 8, y: 4 },
+                { x: 8, y: 8 },
+            ],
+            scenario: input.scenario,
+        });
+        api.SpinnerNativeField.addLine({
+            fieldId: "scenario-overlap-b",
+            owners: owners.slice(split),
+            anchors: [
+                { x: 8, y: 6 },
+                { x: 12, y: 6 },
+            ],
+            scenario: input.scenario,
+        });
+        return { started: owners.length >= 4, encounter };
+    }
+
+    function setupScene(sceneId, input = {}) {
+        const definition = REGISTRY[sceneId];
+        if (!definition) return { started: false, reason: "unknown-scene" };
+        const actorCount = definition.actorCounts.includes(input.actorCount)
+                ? input.actorCount
+                : definition.actorCounts[0],
+            options = {
+                ...input,
+                sceneId,
+                actorCount,
+                ownerIds: (input.ownerIds || []).slice(0, actorCount),
+                scenario: `SpinnerScenario:${sceneId}`,
+                sceneConditions: { geometry: definition.geometry, ...(input.sceneConditions || {}) },
+            },
+            setup =
+                definition.setup === "doorway"
+                    ? setupDoorway(options)
+                    : definition.setup === "regular"
+                      ? setupRegular(options)
+                      : definition.setup === "concave"
+                        ? setupConcave(options)
+                        : definition.setup === "nested"
+                          ? setupNested(options)
+                          : definition.setup === "insufficient"
+                            ? setupInsufficient(options)
+                            : definition.setup === "cooperative"
+                              ? setupOverlap(options)
+                              : setupAutonomous({
+                                    ...options,
+                                    mapSnapshot: input.mapSnapshot || sceneMapSnapshot(sceneId),
+                                });
+        if (setup?.encounter) {
+            actorOriginals = new Map();
+            for (const id of options.ownerIds) {
+                const actor = KDMapData.Entities.find((entity) => entity.id === id);
+                if (!actor) continue;
+                actorOriginals.set(id, { aware: actor.aware, vp: actor.vp });
+                actor.aware = options.awareness !== "unaware";
+                actor.vp = options.awareness === "lost-contact" ? 0 : actor.aware ? 1 : 0;
+            }
+            setup.encounter.debugScenario = {
+                owner: "SpiderlingsSpinnerScenarios",
+                sceneId,
+                actorCount,
+                targetKind: input.targetKind === "npc" ? "npc" : "player",
+                awareness: input.awareness || "unaware",
+                geometry: definition.geometry,
+            };
+            activeScene = setup.encounter.debugScenario;
+        }
+        return {
+            ...setup,
+            sceneId,
+            actorCount,
+            targetKind: input.targetKind || "player",
+            awareness: input.awareness || "unaware",
+        };
+    }
+
+    function inspectScene() {
+        const encounter = api.SpinnerNativeField.state();
+        return {
+            scene: activeScene ? { ...activeScene } : undefined,
+            encounter: encounter ? JSON.parse(JSON.stringify(encounter)) : undefined,
+            playerCapture: api.SpinnerCapture?.state?.(),
+            npcCapture: api.SpinnerNPCCapture?.state?.(),
+            playerRecovery: api.SpinnerRecovery?.state?.(),
+            npcRecovery: api.SpinnerNPCRecovery?.state?.(),
+            routes: Object.keys(encounter?.topology?.composites || {}).map((id) => ({
+                compositeId: id,
+                reachability: api.SpinnerNativeField.nativeReachability?.(id, KinkyDungeonPlayerEntity),
+            })),
+            equipment:
+                typeof KinkyDungeonAllRestraintDynamic === "function"
+                    ? KinkyDungeonAllRestraintDynamic().map((entry) => ({
+                          id: entry.item.id,
+                          name: entry.item.name,
+                          data: entry.item.data,
+                      }))
+                    : [],
+        };
+    }
+
+    function stepScene() {
+        if (!activeScene || typeof KDSendInput !== "function") return "Blocked";
+        return KDSendInput("tick", { delta: 1 });
+    }
+
+    function damageStructure(data = {}) {
+        if (!activeScene) return { applied: false, reason: "inactive", debugInjected: true };
+        const enemy =
+            data.enemy ||
+            KDMapData.Entities.find(
+                (entity) => entity.x === data.x && entity.y === data.y && api.SpinnerNativeField.isOwnedProxy?.(entity),
+            );
+        if (!enemy) return { applied: false, reason: "target", debugInjected: true };
+        api.SpinnerNativeField.onNativeDamage({
+            enemy,
+            dmgDealt: Math.max(0, Number(data.amount) || 0),
+            incomingDamage: { flags: ["SpiderlingsDebugStructuralDamage"] },
+        });
+        return { applied: true, debugInjected: true };
+    }
+
+    function exportScene() {
+        return JSON.stringify({
+            scene: activeScene,
+            mapSeed: KDMapData?.RandomPathablePointsSeed,
+            mapIdentity: KDGameData?.RoomType || KDMapData?.RoomType || "ordinary",
+            gameVersion: typeof TextGet === "function" ? TextGet("KDVersionStr") : undefined,
+            tick: typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : 0,
+            state: inspectScene(),
+        });
+    }
+
+    function teardownScene() {
+        const encounter = api.SpinnerNativeField.state();
+        if (!encounter?.debugScenario || encounter.debugScenario.owner !== "SpiderlingsSpinnerScenarios") return false;
+        for (const entity of [...KDMapData.Entities])
+            if (api.SpinnerNativeField.isOwnedProxy?.(entity) && typeof KDRemoveEntity === "function")
+                KDRemoveEntity(entity, false, false, true);
+        for (const [id, original] of actorOriginals) {
+            const actor = KDMapData.Entities.find((entity) => entity.id === id);
+            if (actor) Object.assign(actor, original);
+        }
+        delete KDMapData[api.SpinnerNativeField.KEY];
+        activeScene = undefined;
+        actorOriginals = new Map();
+        return true;
+    }
+
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerDoorway = () =>
             setupFromNearbySpinners().started ? "SpinnerDoorwayStarted" : "SpinnerDoorwayBlocked";
@@ -174,5 +409,13 @@
         setupInsufficient,
         setupAutonomous,
         setupCooperative,
+        REGISTRY,
+        setupScene,
+        inspectScene,
+        stepScene,
+        damageStructure,
+        exportScene,
+        teardownScene,
+        sceneMapSnapshot,
     };
 })();

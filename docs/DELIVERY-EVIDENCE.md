@@ -16,7 +16,7 @@ Exit code zero means the requested automated verification passed. Game acceptanc
 
 ```powershell
 # Verify an existing downloaded ZIP without private game inputs.
-npm run report:delivery -- --mode public --package .\Spiderlings_0.92.36-test.12.zip
+npm run report:delivery -- --mode public --package .\Spiderlings_0.92.36-test.13.zip
 
 # Explicitly build a new versioned ZIP, then run full local verification.
 npm run report:delivery -- --build --base origin/test

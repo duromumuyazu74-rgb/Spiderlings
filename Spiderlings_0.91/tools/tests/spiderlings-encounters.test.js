@@ -353,6 +353,15 @@ test("the squad setting defaults on and the retired one-enemy fallback API stays
     assert.deepEqual({ type: toggle.type, default: toggle.default }, { type: "boolean", default: true });
     assert.equal(context.KDModSettings.Spiderlings.spiderlingsSquad, true);
     assert.equal(texts.KDModButtonspiderlingsSquad, "Fixed spiderling squad");
+    const spinnerEncounters = context.KDModConfigs.Spiderlings.find(
+        (entry) => entry.refvar === "spiderlingsSpinnerEncounters",
+    );
+    assert.deepEqual(
+        { type: spinnerEncounters.type, default: spinnerEncounters.default },
+        { type: "boolean", default: true },
+    );
+    assert.equal(context.KDModSettings.Spiderlings.spiderlingsSpinnerEncounters, true);
+    assert.equal(texts.KDModButtonspiderlingsSpinnerEncounters, "Autonomous Spinner encounters");
     assert.equal(EncounterRules.planOrdinaryFallback, undefined);
     assert.equal(EncounterRules.ORDINARY_FALLBACK_MAP_FLAG, undefined);
     assert.equal(context.KDEventMapGeneric.postMapgen?.SpiderlingsOrdinaryFallback, undefined);
@@ -1357,6 +1366,7 @@ test("NestEntrance registration removes recurring spells but preserves death sum
 test("every Spiderlings translation CSV includes squad and controlled reinforcement settings", () => {
     const keys = [
         "KDModButtonspiderlingsSquad",
+        "KDModButtonspiderlingsSpinnerEncounters",
         "KDModButtonspiderlingsMapPopulationCap",
         "KDModButtonspiderlingsNestReinforcementControl",
         "KDModButtonspiderlingsNestReinforcementCap",
