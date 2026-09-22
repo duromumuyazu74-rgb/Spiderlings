@@ -15,6 +15,7 @@
     "spiderlings-spinner-ai.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-release-version.test.js",
+    "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",
     "spiderlings-delivery-evidence.test.js"
   ],

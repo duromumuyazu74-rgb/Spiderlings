@@ -376,12 +376,9 @@ test("seven locale files contain all twenty-five current restraint text triplets
 
 test("the release builder regenerates the explicit atlas then packages only manifest and locale entries", () => {
     const builder = read("tools/build-spiderlings-release.ps1");
-    const checker = read("tools/check-spiderlings-mod.js");
     assert.match(builder, /fileorder/);
     assert.match(builder, /SpiderlingsCN\.csv/);
     assert.match(builder, /build-spiderlings-atlas\.py/);
-    assert.match(checker, /stale non-PNG entry/);
-    assert.match(checker, /!entry\.toLowerCase\(\)\.endsWith\("\.png"\)/);
     assert.match(builder, /\[switch\]\$Force/);
     assert.match(builder, /already exists[\s\S]*-Force/);
     assert.match(builder, /\[switch\]\$VerifyOnly/);

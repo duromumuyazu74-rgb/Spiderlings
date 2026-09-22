@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const zlib = require("node:zlib");
+const { spawnSync } = require("node:child_process");
 const { parseReleaseVersion } = require("./release-version.js");
 
 const modRoot = path.resolve(__dirname, "..");
@@ -1776,53 +1776,6 @@ function checkTranslations(state) {
     }
 }
 
-function parseZip(zipPath) {
-    const data = fs.readFileSync(zipPath);
-    let eocd = -1;
-    for (let index = data.length - 22; index >= Math.max(0, data.length - 65558); index -= 1) {
-        if (data.readUInt32LE(index) === 0x06054b50) {
-            eocd = index;
-            break;
-        }
-    }
-    if (eocd < 0) throw new Error("end-of-central-directory record not found");
-    const count = data.readUInt16LE(eocd + 10);
-    let offset = data.readUInt32LE(eocd + 16);
-    const entries = new Map();
-    for (let index = 0; index < count; index += 1) {
-        if (data.readUInt32LE(offset) !== 0x02014b50) throw new Error("invalid central-directory header");
-        const method = data.readUInt16LE(offset + 10);
-        const compressedSize = data.readUInt32LE(offset + 20);
-        const fileNameLength = data.readUInt16LE(offset + 28);
-        const extraLength = data.readUInt16LE(offset + 30);
-        const commentLength = data.readUInt16LE(offset + 32);
-        const localOffset = data.readUInt32LE(offset + 42);
-        const name = data
-            .slice(offset + 46, offset + 46 + fileNameLength)
-            .toString("utf8")
-            .replace(/\\/g, "/");
-        entries.set(name, { name, method, compressedSize, localOffset });
-        offset += 46 + fileNameLength + extraLength + commentLength;
-    }
-    return { data, entries };
-}
-
-function extractEntryBytes(zip, entry) {
-    const offset = entry.localOffset;
-    if (zip.data.readUInt32LE(offset) !== 0x04034b50) throw new Error(`invalid local header for ${entry.name}`);
-    const fileNameLength = zip.data.readUInt16LE(offset + 26);
-    const extraLength = zip.data.readUInt16LE(offset + 28);
-    const start = offset + 30 + fileNameLength + extraLength;
-    const compressed = zip.data.slice(start, start + entry.compressedSize);
-    if (entry.method === 0) return compressed;
-    if (entry.method === 8) return zlib.inflateRawSync(compressed);
-    throw new Error(`unsupported compression method ${entry.method}`);
-}
-
-function extractTextEntry(zip, entry) {
-    return extractEntryBytes(zip, entry).toString("utf8");
-}
-
 function checkReleaseZip(manifest) {
     if (!manifest || !manifest.modbuild) return;
     let zipName;
@@ -1837,50 +1790,26 @@ function checkReleaseZip(manifest) {
         note(`${zipName} is absent; this run checks the source package without certifying an installable ZIP.`);
         return;
     }
-    let zip;
-    try {
-        zip = parseZip(zipPath);
-    } catch (error) {
-        fail(`${zipName} is unreadable: ${error.message}`);
+    const powershell = process.platform === "win32" ? "powershell.exe" : "pwsh";
+    const result = spawnSync(
+        powershell,
+        [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            path.join(modRoot, "tools/build-spiderlings-release.ps1"),
+            "-VerifyOnly",
+            "-PackagePath",
+            zipPath,
+        ],
+        { encoding: "utf8", windowsHide: true },
+    );
+    if (result.error || result.status !== 0) {
+        fail(`${zipName} verification failed: ${result.error?.message || result.stderr || result.stdout}`);
         return;
     }
-    const expected = ["mod.json", ...manifest.fileorder, ...localeFiles].sort();
-    const actual = [...zip.entries.keys()].sort();
-    if (JSON.stringify(actual) !== JSON.stringify(expected))
-        fail(`${zipName} entries do not exactly match the manifest allowlist plus locales.`);
-    for (const name of actual) {
-        if (name.startsWith("/") || name.includes("\\") || name.includes("../") || name.startsWith("tools/"))
-            fail(`${zipName} contains unsafe/development entry ${name}.`);
-    }
-    for (const name of expected.filter((entry) => !entry.toLowerCase().endsWith(".png"))) {
-        const packed = zip.entries.get(name);
-        const sourcePath = path.join(modRoot, ...name.split("/"));
-        try {
-            if (!packed || !fs.readFileSync(sourcePath).equals(extractEntryBytes(zip, packed))) {
-                fail(`${zipName} contains stale non-PNG entry ${name}.`);
-            }
-        } catch (error) {
-            fail(`${zipName} non-PNG entry ${name} cannot be compared: ${error.message}`);
-        }
-    }
-    const packedManifestEntry = zip.entries.get("mod.json");
-    if (packedManifestEntry) {
-        try {
-            const packedManifest = JSON.parse(extractTextEntry(zip, packedManifestEntry).replace(/^\uFEFF/, ""));
-            if (
-                packedManifest.modbuild !== manifest.modbuild ||
-                JSON.stringify(packedManifest.fileorder) !== JSON.stringify(manifest.fileorder)
-            ) {
-                fail(`${zipName} contains a stale manifest contract.`);
-            }
-        } catch (error) {
-            fail(`${zipName} mod.json cannot be parsed: ${error.message}`);
-        }
-    }
-    if (!errors.some((message) => message.includes(zipName)))
-        pass(
-            `${zipName} contains exactly ${expected.length} allowlisted entries and current non-PNG payloads; PNG payloads were not inspected.`,
-        );
+    pass(`${zipName} has exactly the allowlisted entries and all payload bytes match source, including PNGs.`);
 }
 
 function main() {
