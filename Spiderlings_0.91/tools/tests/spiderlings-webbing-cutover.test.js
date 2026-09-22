@@ -290,7 +290,7 @@ test("legacy IDs, five-module exports, upgrade APIs, and the TrapBindings wrappe
     for (const id of legacyRestraints) {
         assert.equal(new RegExp(`createRestraint\\(\\{[^}]*name:\\s*["']${id}["']`).test(runtimeSources), false, id);
     }
-    assert.match(data, /name:\s*"SpiderWeb"[\s\S]*?playerEffect:\s*\{name:\s*"TrapBindings"/);
+    assert.match(data, /name:\s*"SpiderWeb"[\s\S]*?playerEffect:\s*\{\s*name:\s*"TrapBindings"/);
     assert.doesNotMatch(data.match(/name:\s*"SpiderWeb"[\s\S]*?\}\s*,/)[0], /WebCaster\.WebSpray/);
     assert.match(webbing, /ENEMY_PROFILES/);
 });

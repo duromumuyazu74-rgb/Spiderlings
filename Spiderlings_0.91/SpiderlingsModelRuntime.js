@@ -163,12 +163,12 @@
         const definition = ATLAS_DEFINITIONS.find((atlas) => atlas.path === atlasPath);
         const expectedImage = definition.image.slice(definition.image.lastIndexOf("/") + 1);
         const frameNames = Object.keys((atlasData && atlasData.frames) || {});
-        if (JSON.stringify(frameNames) != JSON.stringify(definition.frames))
+        if (JSON.stringify(frameNames) !== JSON.stringify(definition.frames))
             throw new Error(`Unexpected Spiderlings atlas frames in ${atlasPath}`);
         if (
             !atlasData.meta ||
-            atlasData.meta.image != expectedImage ||
-            atlasData.meta.scale != "1" ||
+            atlasData.meta.image !== expectedImage ||
+            ![1, "1"].includes(atlasData.meta.scale) ||
             atlasData.meta.related_multi_packs !== undefined
         )
             throw new Error(`Unexpected Spiderlings atlas metadata in ${atlasPath}`);
@@ -293,7 +293,7 @@
         return false;
     }
 
-    function loadTexture(texturePath, foreground) {
+    function loadTexture(texturePath, _foreground) {
         if (textureLoads.has(texturePath)) return textureLoads.get(texturePath);
         try {
             if (typeof KDTex == "function") KDTex(texturePath, false);
@@ -457,7 +457,7 @@
             !Array.isArray(KinkyDungeonRestraints)
         )
             return undefined;
-        const restraint = KinkyDungeonRestraints.find((entry) => entry.name == item.name);
+        const restraint = KinkyDungeonRestraints.find((entry) => entry.name === item.name);
         return restraint && restraint.Model;
     }
 
@@ -509,7 +509,7 @@
         if (typeof KDEventMapInventory == "undefined") return false;
         for (const trigger of ["postApply", "postRemoval", "afterDress"]) {
             addInventoryEvent(trigger, (event, item) => {
-                if (event && event.trigger == "afterDress") {
+                if (event && event.trigger === "afterDress") {
                     // Native dressing already refreshes its models. Invalidate only
                     // when a restored copy actually needed its color corrected.
                     if (syncWebbingColor()) refreshPlayerModel(false);

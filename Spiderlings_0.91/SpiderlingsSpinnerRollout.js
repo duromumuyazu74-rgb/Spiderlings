@@ -57,6 +57,24 @@
         return false;
     }
 
+    function plannedGeometry(group, plan) {
+        if (!plan?.anchors?.length) return undefined;
+        const center = {
+            x: Math.round((plan.anchors[0].x + plan.anchors.at(-1).x) / 2),
+            y: Math.round((plan.anchors[0].y + plan.anchors.at(-1).y) / 2),
+        };
+        return {
+            center,
+            compositeId: `rollout-${group.id}`,
+            vertices: [
+                { x: center.x - 3, y: center.y - 3 },
+                { x: center.x + 3, y: center.y - 3 },
+                { x: center.x + 3, y: center.y + 3 },
+                { x: center.x - 3, y: center.y + 3 },
+            ],
+        };
+    }
+
     function preparePositiveTurn() {
         const snapshot = KDMapData?.[FIELD],
             encounter = api.SpinnerNativeField.state(),
@@ -82,20 +100,12 @@
             .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
         if (!group) return undefined;
         const plan = ai.plans[group.planId],
-            center = plan.anchors?.length
-                ? {
-                      x: Math.round((plan.anchors[0].x + plan.anchors.at(-1).x) / 2),
-                      y: Math.round((plan.anchors[0].y + plan.anchors.at(-1).y) / 2),
-                  }
-                : undefined;
-        if (!center) return undefined;
-        const vertices = [
-                { x: center.x - 3, y: center.y - 3 },
-                { x: center.x + 3, y: center.y - 3 },
-                { x: center.x + 3, y: center.y + 3 },
-                { x: center.x - 3, y: center.y + 3 },
-            ],
-            compositeId = `rollout-${group.id}`,
+            geometry = plannedGeometry(group, plan);
+        if (!geometry) return undefined;
+        // This synchronous pass only reconciles owned proxies, which mapSnapshot excludes.
+        // Share the map input within this pass; never retain it across turns or map changes.
+        const map = api.SpinnerNativeField.mapSnapshot(),
+            { center, vertices, compositeId } = geometry,
             priorAI = ai,
             next = api.SpinnerNativeField.initializeEnclosure({
                 compositeId,
@@ -106,7 +116,7 @@
                 ],
                 fallbackLine: { fieldId: plan.fieldId, anchors: plan.anchors },
                 scenario: "ordinary-rollout",
-                map: api.SpinnerNativeField.mapSnapshot(),
+                map,
             });
         next.autonomous = true;
         next.builders = {};
@@ -128,18 +138,9 @@
         for (const otherGroup of Object.values(priorAI.groups || {})) {
             if (otherGroup.id === group.id) continue;
             const otherPlan = priorAI.plans?.[otherGroup.planId];
-            if (!otherPlan?.anchors?.length) continue;
-            const otherCenter = {
-                    x: Math.round((otherPlan.anchors[0].x + otherPlan.anchors.at(-1).x) / 2),
-                    y: Math.round((otherPlan.anchors[0].y + otherPlan.anchors.at(-1).y) / 2),
-                },
-                otherComposite = `rollout-${otherGroup.id}`,
-                otherVertices = [
-                    { x: otherCenter.x - 3, y: otherCenter.y - 3 },
-                    { x: otherCenter.x + 3, y: otherCenter.y - 3 },
-                    { x: otherCenter.x + 3, y: otherCenter.y + 3 },
-                    { x: otherCenter.x - 3, y: otherCenter.y + 3 },
-                ],
+            const otherGeometry = plannedGeometry(otherGroup, otherPlan);
+            if (!otherGeometry) continue;
+            const { center: otherCenter, compositeId: otherComposite, vertices: otherVertices } = otherGeometry,
                 partial = api.SpinnerTopology.createEnclosure({
                     compositeId: otherComposite,
                     owners: otherGroup.memberIds,
@@ -152,7 +153,7 @@
                         },
                     ],
                     fallbackLine: { fieldId: otherPlan.fieldId, anchors: otherPlan.anchors },
-                    map: api.SpinnerNativeField.mapSnapshot(),
+                    map,
                 });
             if (partial.kind === "enclosure") {
                 const existing = next.topology,

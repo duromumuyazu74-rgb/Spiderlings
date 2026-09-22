@@ -10,6 +10,12 @@
         warningColor: "#ff66ff",
     });
 
+    function sameEntityId(left, right) {
+        // Native entity IDs and saved/bullet IDs may differ only by numeric string representation.
+        // eslint-disable-next-line eqeqeq
+        return left == right;
+    }
+
     function distance(a, b) {
         const dx = Number(a.x) - Number(b.x);
         const dy = Number(a.y) - Number(b.y);
@@ -21,7 +27,7 @@
         const states = new Map();
 
         function isEligible(source, target, requireReadyCooldown) {
-            if (!source || !target || (source.Enemy && source.Enemy.name != "Jumper")) return false;
+            if (!source || !target || (source.Enemy && source.Enemy.name !== "Jumper")) return false;
             if (world.isSuppressed && world.isSuppressed(source, target)) return false;
             if (target.Enemy && !target.player && world.validNPC && !world.validNPC(source, target)) return false;
             const range = distance(source, target);
@@ -98,8 +104,8 @@
                 const target = world.findSource && world.findSource(state.targetId);
                 if (
                     !target ||
-                    target.x != state.target.x ||
-                    target.y != state.target.y ||
+                    target.x !== state.target.x ||
+                    target.y !== state.target.y ||
                     !world.validNPC?.(source, target)
                 ) {
                     finish(state);
@@ -202,7 +208,7 @@
             const y = Math.round(source.y + ((target.y - source.y) * step) / steps);
             if (typeof KinkyDungeonEnemyAt == "function") {
                 const blocker = KinkyDungeonEnemyAt(x, y);
-                if (blocker && blocker.id != source.id) return false;
+                if (blocker && !sameEntityId(blocker.id, source.id)) return false;
             }
         }
         return true;
@@ -217,13 +223,13 @@
             return false;
         if (
             typeof KinkyDungeonPlayerEntity != "undefined" &&
-            KinkyDungeonPlayerEntity.x == point.x &&
-            KinkyDungeonPlayerEntity.y == point.y
+            KinkyDungeonPlayerEntity.x === point.x &&
+            KinkyDungeonPlayerEntity.y === point.y
         )
             return false;
         if (typeof KinkyDungeonEnemyAt == "function") {
             const occupant = KinkyDungeonEnemyAt(point.x, point.y);
-            if (occupant && occupant.id != source.id) return false;
+            if (occupant && !sameEntityId(occupant.id, source.id)) return false;
         }
         return runtimeRouteClear(source, point);
     }
@@ -231,15 +237,15 @@
     function runtimeLandingCandidates(source, target) {
         const playerOccupiesTarget =
             typeof KinkyDungeonPlayerEntity != "undefined" &&
-            KinkyDungeonPlayerEntity.x == target.x &&
-            KinkyDungeonPlayerEntity.y == target.y;
+            KinkyDungeonPlayerEntity.x === target.x &&
+            KinkyDungeonPlayerEntity.y === target.y;
         const npcOccupiesTarget = typeof KinkyDungeonEnemyAt == "function" && KinkyDungeonEnemyAt(target.x, target.y);
         if (!playerOccupiesTarget && !npcOccupiesTarget)
             return runtimeLandingOpen(source, target) ? [{ x: target.x, y: target.y }] : [];
         const candidates = [];
         for (let dy = -1; dy <= 1; dy += 1) {
             for (let dx = -1; dx <= 1; dx += 1) {
-                if (dx == 0 && dy == 0) continue;
+                if (dx === 0 && dy === 0) continue;
                 const point = { x: target.x + dx, y: target.y + dy };
                 if (runtimeLandingOpen(source, point)) candidates.push(point);
             }
@@ -289,7 +295,7 @@
             if (typeof KinkyDungeonExtraWarningTiles == "undefined" || !Array.isArray(KinkyDungeonExtraWarningTiles))
                 return;
             for (let index = KinkyDungeonExtraWarningTiles.length - 1; index >= 0; index -= 1) {
-                if (KinkyDungeonExtraWarningTiles[index].spiderlingsJumperDashSourceId == state.sourceId) {
+                if (sameEntityId(KinkyDungeonExtraWarningTiles[index].spiderlingsJumperDashSourceId, state.sourceId)) {
                     KinkyDungeonExtraWarningTiles.splice(index, 1);
                 }
             }
@@ -314,7 +320,7 @@
         },
         findSource(sourceId) {
             if (typeof KDMapData == "undefined" || !Array.isArray(KDMapData.Entities)) return undefined;
-            return KDMapData.Entities.find((entity) => entity && entity.id == sourceId);
+            return KDMapData.Entities.find((entity) => entity && sameEntityId(entity.id, sourceId));
         },
         holdSource(source) {
             source.immobile = Math.max(Number(source.immobile || 0), 1);
@@ -322,8 +328,8 @@
         isPlayerAt(target) {
             return (
                 typeof KinkyDungeonPlayerEntity != "undefined" &&
-                KinkyDungeonPlayerEntity.x == target.x &&
-                KinkyDungeonPlayerEntity.y == target.y
+                KinkyDungeonPlayerEntity.x === target.x &&
+                KinkyDungeonPlayerEntity.y === target.y
             );
         },
         moveSource(source, landing) {
@@ -348,7 +354,7 @@
             }
             const spell =
                 typeof KinkyDungeonSpellListEnemies != "undefined"
-                    ? KinkyDungeonSpellListEnemies.find((entry) => entry.name == "SpiderlingsJumperDash")
+                    ? KinkyDungeonSpellListEnemies.find((entry) => entry.name === "SpiderlingsJumperDash")
                     : undefined;
             const result = KDPlayerEffects.SpiderlingsWebbingEnemyBind(
                 KinkyDungeonPlayerEntity,
@@ -372,7 +378,12 @@
         if (typeof KDMapData == "undefined" || !Array.isArray(KDMapData.Bullets)) return;
         for (let index = KDMapData.Bullets.length - 1; index >= 0; index -= 1) {
             const bullet = KDMapData.Bullets[index] && KDMapData.Bullets[index].bullet;
-            if (bullet && bullet.source == sourceId && bullet.spell && bullet.spell.name == "SpiderlingsJumperDash") {
+            if (
+                bullet &&
+                sameEntityId(bullet.source, sourceId) &&
+                bullet.spell &&
+                bullet.spell.name === "SpiderlingsJumperDash"
+            ) {
                 KDMapData.Bullets.splice(index, 1);
             }
         }
@@ -392,7 +403,7 @@
             KDCastConditions.SpiderlingsJumperDash = (source, target) => runtimeController.canStart(source, target);
         }
         addGenericEvent("enemyCast", "SpiderlingsJumperDash", (_event, data) => {
-            if (!data || !data.spell || data.spell.name != "SpiderlingsJumperDash" || !data.enemy) return;
+            if (!data || !data.spell || data.spell.name !== "SpiderlingsJumperDash" || !data.enemy) return;
             removeNativeTransportBullet(data.enemy.id);
             const target = data.player?.Enemy && !data.player.player ? data.player : { x: data.tx, y: data.ty };
             runtimeController.commitCast(data.enemy, target);
