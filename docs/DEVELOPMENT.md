@@ -11,7 +11,7 @@ Use Node.js with its built-in test runner, PowerShell, and Python with `Pillow` 
 - `KinkiestDungeon-5.5/`: official KD 5.5 source tree, used read-only.
 - `T‘s NEW Webbing LV1/` and `T‘s NEW Webbing LV2/`: original artwork reference folders used by existing provenance checks. Keep the curly apostrophe in these folder names.
 
-These inputs are not downloaded or redistributed by the repository. An existing KD workspace can supply them through local directory junctions; all generated files remain outside those targets. Run commands from the repository root:
+These inputs are not downloaded or redistributed by the repository. The formal branch's local checks require independent read-only copies at these paths. Keep shared inputs outside disposable worktrees; do not use directory junctions. Ongoing development on `test` uses its external input configuration. Run commands from the repository root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
