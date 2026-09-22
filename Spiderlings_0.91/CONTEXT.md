@@ -43,7 +43,7 @@ Temporary source-to-player strands admitted by a real Spinner melee hit inside a
 _Avoid_: proximity admission, free joins, field-breach cancellation, capture restraint item
 
 **Spinner recovery leash**:
-The real `ItemNeckRestraints` carrier used after the player walks out through the breached outer layer of a declared field. Departure only records eligibility. One surviving field owner must then land a fresh native Spinner hit before the Mod adds its Silk leash or reuses the top compatible real leash. The current recovery slice keeps one active source, which spends its native movement credit to pull once per world turn over ordinary legal terrain toward the live common core, or toward itself after the field disappears. Source loss leaves the carrier slack and requires another hit. Capture or leg-bag wrapping pauses recovery. External carrier fields and native tether ownership remain unchanged.
+The real neck-restraint carrier established by a fresh Spinner hit after the player leaves a breached field, with up to eight distinct sources and one paid pulling executor. It remains separate from Capture strands and the leg bag; reusing an external leash preserves that item's state and native ownership.
 _Avoid_: leash on breach, outside-position admission, collar replacement, copied external item state, free pull, native-plus-owned double movement
 
 **Spinner leg bag**:
@@ -51,7 +51,7 @@ The leg bag occupies ItemLegs and uses the existing broad helical ribbon on the 
 _Avoid_: scaled full-body Cocoon, contest-owned wrap progress, forced replacement, animation frames as world turns
 
 **Spinner training field**:
-The optional `SpiderlingsSpinnerDemo` start perk enters a dedicated flat room. Two Spinners construct a breakable 7×7 web boundary using actual action budgets; the player starts outside while unaware Spinners preplace four traps and connect three sides. Entering closes the remaining western edge and starts their approach. Native obstacle entities retain HP and collision. A broken knot removes this field's boundary but does not cancel strands already admitted by a native Spinner hit. Surviving builders resume after twenty subsequent world turns; each reinforcement action repairs one knot by 0.1 HP up to 2. During contest and wrap, other hostile spiders reposition without attacking the player. Existing player dash warnings cancel; after capture, new warnings again provide two real input opportunities. Reset and Jumper-release controls make the sequence repeatable. Field AI is confined to this room; ordinary maps keep native navigation. Spinner binding attacks remain persistent in both player and NPC routes, while normal defeat can kill them.
+The legacy flat-room experiment retained for historical comparison, distinct from current map-aware Spinner encounters. Current acceptance uses ordinary/infestation maps and the ten native scenario fixtures in [runtime documentation](../docs/RUNTIME.md); the old fixed-training-room save and playtest flow are not current acceptance paths.
 _Avoid_: decorative-only boundary, teleporting the player into a capture, immortal Spinner
 
 **Spinner demo reaction opportunity**:
