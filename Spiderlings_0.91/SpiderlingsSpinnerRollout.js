@@ -167,7 +167,7 @@
                     });
                 Object.assign(combined, {
                     kind: "graph",
-                    fields: { ...(existing.fields || {}), ...(partial.fields || {}) },
+                    fields: { ...(combined.fields || {}), ...(existing.fields || {}), ...(partial.fields || {}) },
                     composites: { ...(existing.composites || {}), ...(partial.composites || {}) },
                     fieldOwners: { ...(existing.fieldOwners || {}), ...(partial.fieldOwners || {}) },
                     lineFields: { ...(existing.lineFields || {}), ...(partial.lineFields || {}) },
