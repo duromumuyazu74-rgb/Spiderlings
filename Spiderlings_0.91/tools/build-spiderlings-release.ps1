@@ -30,6 +30,15 @@ $Locales = @(
 )
 
 $ModJson = Get-Content -LiteralPath $ModJsonPath -Raw | ConvertFrom-Json
+$VersionMatch = [regex]::Match([string]$ModJson.modbuild, '\A(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-test\.([1-9][0-9]*))?\z')
+if (!($ModJson.modbuild -is [string]) -or !$VersionMatch.Success) {
+    throw "modbuild must be a numeric major.minor.patch version, optionally followed by -test.N with N >= 1."
+}
+foreach ($Part in $VersionMatch.Groups | Select-Object -Skip 1) {
+    if ($Part.Success -and ($Part.Value.Length -gt 16 -or [decimal]$Part.Value -gt 9007199254740991)) {
+        throw "modbuild components must be safe integers."
+    }
+}
 if (!($ModJson.fileorder -is [array]) -or !$ModJson.fileorder.Count) {
     throw "mod.json fileorder must be a non-empty array."
 }
@@ -45,6 +54,9 @@ foreach ($RelativePath in $RuntimeFiles) {
 
 $DefaultZipPath = Join-Path $WorkspaceRoot ("Spiderlings_{0}.zip" -f $ModJson.modbuild)
 $ZipPath = if ($PackagePath) { [IO.Path]::GetFullPath($PackagePath) } else { $DefaultZipPath }
+if (!$VerifyOnly -and !$NoPackage -and !$Force -and (Test-Path -LiteralPath $ZipPath)) {
+    throw "$ZipPath already exists. Re-run with -Force only when replacement is intentional."
+}
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -118,13 +130,15 @@ if ($VerifyOnly) {
     exit 0
 }
 
-if ($RunCheck) {
+function Invoke-LocalCheck {
     $Watcher = Join-Path $ToolRoot "watch-spiderlings-mod.ps1"
-    & powershell -ExecutionPolicy Bypass -File $Watcher -Once
+    $PowerShellCommand = if ($PSVersionTable.PSEdition -eq "Core") { "pwsh" } else { "powershell.exe" }
+    & $PowerShellCommand -NoProfile -ExecutionPolicy Bypass -File $Watcher -Once
     if ($LASTEXITCODE -ne 0) { throw "Spiderlings check failed with exit code $LASTEXITCODE." }
 }
 
 if ($NoPackage) {
+    if ($RunCheck) { Invoke-LocalCheck }
     Write-Host "Validated $($RuntimeFiles.Count) allowlisted release files."
     exit 0
 }
@@ -150,10 +164,11 @@ try {
         $Zip.Dispose()
     }
     $PackageHash = Test-ReleasePackage $TemporaryZip
-    Move-Item -LiteralPath $TemporaryZip -Destination $ZipPath -Force
+    Move-Item -LiteralPath $TemporaryZip -Destination $ZipPath -Force:$Force
 } finally {
     if (Test-Path -LiteralPath $TemporaryZip) { Remove-Item -LiteralPath $TemporaryZip -Force }
 }
 
 Write-Host "Wrote $ZipPath with $($RuntimeFiles.Count) allowlisted entries."
 Write-Host "SHA256 $PackageHash"
+if ($RunCheck) { Invoke-LocalCheck }

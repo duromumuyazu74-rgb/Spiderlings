@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ESLint } from "eslint";
+import { checkRequiredJobs } from "./check-workflow-needs.mjs";
 import {
     isDocumentationOnly,
     validateCommitSubject,
@@ -8,6 +9,18 @@ import {
     validatePullRequest,
     validSubject,
 } from "./check-repository.mjs";
+
+test("the required CI gate rejects failed, skipped, cancelled and missing prerequisites", () => {
+    assert.doesNotThrow(() => checkRequiredJobs({ windows: { result: "success" }, delivery: { result: "success" } }));
+    for (const result of ["failure", "skipped", "cancelled", undefined]) {
+        for (const name of ["windows", "delivery"]) {
+            const jobs = { windows: { result: "success" }, delivery: { result: "success" } };
+            jobs[name].result = result;
+            assert.throws(() => checkRequiredJobs(jobs), new RegExp(name));
+        }
+    }
+    for (const jobs of [null, {}]) assert.throws(() => checkRequiredJobs(jobs), /missing/);
+});
 
 test("the reported README edit needs no commit prefix or Issue boilerplate", () => {
     const files = ["README.md"];
