@@ -109,6 +109,7 @@
                 map: api.SpinnerNativeField.mapSnapshot(),
             });
         next.autonomous = true;
+        next.builders = {};
         next.rolloutKind = snapshot.kind;
         next.ai = priorAI;
         const enclosure = next.topology.kind === "enclosure";
