@@ -1,8 +1,10 @@
-# Spiderlings 0.92.36-test.13 维护说明
+# Spiderlings 0.92.36-test.14 维护说明
 
 `Spiderlings_0.91/` 是当前开发 Mod 根目录，名称为迁移前历史路径。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
+
+test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，自动回归与安装包验证另见本次维护记录。实机与视觉测试由维护者后续执行，不沿用 test.13 的证据声称本版本已完成实机验收。
 
 ## 当前测试扩展
 
@@ -14,7 +16,7 @@
 
 NPC 回收复用 `SpiderlingsSpinnerRecoveryCore.js` 的来源、executor、目的地和 crossing 规则，不创建 leash 或其他物品。`enemyMove` 只有在 NPC 实际离开破损外边界时记录 departure；随后真实 Spinner 近战增加 Slime 才接入来源。付费拖拽使用原生 `KDMoveEntity(..., false)`，返回修复后的共同核心不会自动开始 Capture；还需下一次真实命中重新满足闭合围场、两只合法来源和绑定增加条件。
 
-`Models/SpiderlingsSpinnerLegbinder/` 的 Band、Tail、Finished、Closure 是四个直接替换入口，不进入共用蛛丝 atlas。`SpiderlingsSpinnerArt.js` 负责前后层、宽带和活动尾端；`SpiderlingsSpinnerCapture.js` 从 `SpiderlingsSpinnerNativeField.js` 的已闭合复合围场接收玩家入场资格，并保存独立于围场的临时 Capture strands。`SpiderlingsSpinnerNPCCapture.js` 在真实 Spinner 近战增加原生 Slime 后接收 NPC 入场资格，只拦截自愿移动，并把原生挣扎的实际减量用于临时丝线债务。旧试玩场建造仍由 `SpiderlingsSpinnerField.js` 保留。门口拦截线、自动预建线、单层围场和同组双层围场共用纯 JSON 的 `SpiderlingsSpinnerTopology.js` 与原生投影 `SpiderlingsSpinnerNativeField.js`。`SpiderlingsSpinnerAI.js` 保存分组、预建计划、稳定诱饵和四回合的最后已知目标信息，并在八回合失去视线后交回原生追击。`SpiderlingsSpinnerRollout.js` 在新普通／侵扰地图保存启用决定，并为每个合法 group 持久化确定性的 schema-2 enclosure 或 line fallback；enclosure 保留合法 3×3 core，保护格、占位或空间拒绝时该 group 保留 line fallback，且没有全局围场数量上限。`SpiderlingsSpinnerScenarios.js` 提供场景输入，`SpiderlingsSpinnerRuntime.js` 是唯一敌人循环分发器及后续攻击/施法门控点。玩家与 NPC 捕获都只会由真实 Spinner 近战命中的 Webbing 特效入口启动。`tools/artist-kit/` 生成独立画师交付，不进入安装 ZIP。
+`Models/SpiderlingsSpinnerLegbinder/` 的 Band、Tail、Finished、Closure 是四个直接替换入口，不进入共用蛛丝 atlas。`SpiderlingsSpinnerArt.js` 负责前后层、宽带和活动尾端；`SpiderlingsSpinnerCapture.js` 从 `SpiderlingsSpinnerNativeField.js` 的已闭合复合围场接收玩家入场资格，并保存独立于围场的临时 Capture strands。`SpiderlingsSpinnerNPCCapture.js` 在真实 Spinner 近战增加原生 Slime 后接收 NPC 入场资格，只拦截自愿移动，并把原生挣扎的实际减量用于临时丝线债务。旧试玩场建造仍由 `SpiderlingsSpinnerField.js` 保留。门口拦截线、自动预建线、单层围场和同组双层围场共用纯 JSON 的 `SpiderlingsSpinnerTopology.js` 与原生投影 `SpiderlingsSpinnerNativeField.js`。`SpiderlingsSpinnerAI.js` 保存分组、预建计划、稳定诱饵和四回合的最后已知目标信息，并在八回合失去视线后交回原生追击。`SpiderlingsSpinnerRollout.js` 在新普通／侵扰地图保存启用决定，并为每个合法 group 持久化确定性的 schema-2 enclosure 或 line fallback；enclosure 保留合法 3×3 core，保护格、占位或空间拒绝时该 group 保留 line fallback，且没有全局围场数量上限。`SpiderlingsSpinnerScenarios.js` 提供场景输入，`SpiderlingsSpinnerRuntime.js` 是唯一敌人循环分发器及后续攻击/施法门控点。玩家与 NPC 捕获都只会由真实 Spinner 近战命中的 Webbing 特效入口启动。画师交接页、专用脚本和生成记录仅保留在维护者本机，不进入公共仓库或安装 ZIP。
 
 `spiderlingsPinkWebbing` 同时选择拘束、投射物和带蛛丝敌人的外观。Spinner、Tunneler、WebCaster、NestEntrance 分别有原色和粉色 PNG；Jumper 两种设置共用同一张交付图。切色不改变实体 ID、存档或玩法。
 

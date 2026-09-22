@@ -59,6 +59,40 @@ function kd55SpellModeGate(enemy, AIData) {
     return Function("enemy", "AIData", `return ${match.groups.gate};`)(enemy, AIData);
 }
 
+test("native numeric-string IDs still clear only their own Dash transport and warnings", () => {
+    const source = { id: 17, x: 0, y: 0, hp: 5, Enemy: { name: "Jumper" } };
+    const context = loadDefinitions({
+        globals: {
+            KDMapData: {
+                Entities: [source],
+                Bullets: [
+                    { bullet: { source: "17", spell: { name: "SpiderlingsJumperDash" } } },
+                    { bullet: { source: "18", spell: { name: "SpiderlingsJumperDash" } } },
+                ],
+            },
+            KinkyDungeonExtraWarningTiles: [],
+        },
+    });
+    context.KDEventMapGeneric.enemyCast.SpiderlingsJumperDash(
+        {},
+        {
+            enemy: source,
+            spell: { name: "SpiderlingsJumperDash" },
+            tx: 3,
+            ty: 0,
+        },
+    );
+    assert.equal(context.KDMapData.Bullets.length, 1);
+    assert.equal(context.KDMapData.Bullets[0].bullet.source, "18");
+    assert.equal(context.Spiderlings.JumperDash.runtimeController.snapshot().length, 1);
+    context.KinkyDungeonExtraWarningTiles.push(
+        { spiderlingsJumperDashSourceId: "17" },
+        { spiderlingsJumperDashSourceId: "18" },
+    );
+    context.Spiderlings.JumperDash.runtimeController.clearAll("test");
+    assert.deepEqual(plain(context.KinkyDungeonExtraWarningTiles), [{ spiderlingsJumperDashSourceId: "18" }]);
+});
+
 test("Jumper can enter the KD 5.5 enemy spell loop", () => {
     const context = loadDefinitions();
     const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === "Jumper");
