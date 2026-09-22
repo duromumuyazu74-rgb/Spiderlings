@@ -1,6 +1,6 @@
 param(
-  [switch]$Once,
-  [int]$DebounceMilliseconds = 900
+    [switch]$Once,
+    [int]$DebounceMilliseconds = 900
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,24 +22,24 @@ $WebbingAtlasTest = Join-Path $ToolRoot "tests\spiderlings-webbing-atlas.test.js
 $NewSaveSmokeTest = Join-Path $ToolRoot "tests\spiderlings-new-save-smoke.test.js"
 
 function Invoke-SpiderlingsCheck {
-  $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-  Write-Host ""
-  Write-Host "[$stamp] Running Spiderlings mod check..."
-  & node --test $EncounterTest $CombatTest $MaidHostilityTest $InfestationTest $CutoverTest $WebbingTest $WebbingLifecycleTest $WebbingEnemyTest $JumperDashTest $WebbingWebSprayTest $WebbingCocoonTest $WebbingAtlasTest $NewSaveSmokeTest
-  if ($LASTEXITCODE -ne 0) {
-    Write-Host "[$stamp] Spiderlings tests failed with exit code $LASTEXITCODE."
-    return
-  }
-  & node $CheckScript
-  if ($LASTEXITCODE -eq 0) {
-    Write-Host "[$stamp] Spiderlings mod check passed."
-  } else {
-    Write-Host "[$stamp] Spiderlings mod check failed with exit code $LASTEXITCODE."
-  }
+    $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Write-Host ""
+    Write-Host "[$stamp] Running Spiderlings mod check..."
+    & node --test $EncounterTest $CombatTest $MaidHostilityTest $InfestationTest $CutoverTest $WebbingTest $WebbingLifecycleTest $WebbingEnemyTest $JumperDashTest $WebbingWebSprayTest $WebbingCocoonTest $WebbingAtlasTest $NewSaveSmokeTest
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[$stamp] Spiderlings tests failed with exit code $LASTEXITCODE."
+        return
+    }
+    & node $CheckScript
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[$stamp] Spiderlings mod check passed."
+    } else {
+        Write-Host "[$stamp] Spiderlings mod check failed with exit code $LASTEXITCODE."
+    }
 }
 
 if (!(Get-Command node -ErrorAction SilentlyContinue)) {
-  throw "Node.js is required to run $CheckScript."
+    throw "Node.js is required to run $CheckScript."
 }
 
 Invoke-SpiderlingsCheck
@@ -55,40 +55,40 @@ $watcher.Filter = "*.*"
 $watcher.NotifyFilter = [System.IO.NotifyFilters]'FileName, LastWrite, Size'
 
 $action = {
-  $path = $Event.SourceEventArgs.FullPath
-  if ($path -notmatch '\.(js|json|csv|png|wav|ogg|md)$') { return }
-  if ($path -match '\\tools\\watch-spiderlings-mod\.ps1$') { return }
-  $global:SpiderlingsModCheckPending = $true
-  $global:SpiderlingsModCheckLastEvent = Get-Date
+    $path = $Event.SourceEventArgs.FullPath
+    if ($path -notmatch '\.(js|json|csv|png|wav|ogg|md)$') { return }
+    if ($path -match '\\tools\\watch-spiderlings-mod\.ps1$') { return }
+    $global:SpiderlingsModCheckPending = $true
+    $global:SpiderlingsModCheckLastEvent = Get-Date
 }
 
 $subscriptions = @(
-  Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $action,
-  Register-ObjectEvent -InputObject $watcher -EventName Created -Action $action,
-  Register-ObjectEvent -InputObject $watcher -EventName Deleted -Action $action,
-  Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $action
+    Register-ObjectEvent -InputObject $watcher -EventName Changed -Action $action,
+    Register-ObjectEvent -InputObject $watcher -EventName Created -Action $action,
+    Register-ObjectEvent -InputObject $watcher -EventName Deleted -Action $action,
+    Register-ObjectEvent -InputObject $watcher -EventName Renamed -Action $action
 )
 
 try {
-  $watcher.EnableRaisingEvents = $true
-  Write-Host ""
-  Write-Host "Watching $ModRoot"
-  Write-Host "Press Ctrl+C to stop. Changes to .js, .json, .csv, .png, .wav, .ogg, and .md files will run the check."
-  while ($true) {
-    Start-Sleep -Milliseconds 250
-    if ($global:SpiderlingsModCheckPending) {
-      $elapsed = ((Get-Date) - $global:SpiderlingsModCheckLastEvent).TotalMilliseconds
-      if ($elapsed -ge $DebounceMilliseconds) {
-        $global:SpiderlingsModCheckPending = $false
-        Invoke-SpiderlingsCheck
-      }
+    $watcher.EnableRaisingEvents = $true
+    Write-Host ""
+    Write-Host "Watching $ModRoot"
+    Write-Host "Press Ctrl+C to stop. Changes to .js, .json, .csv, .png, .wav, .ogg, and .md files will run the check."
+    while ($true) {
+        Start-Sleep -Milliseconds 250
+        if ($global:SpiderlingsModCheckPending) {
+            $elapsed = ((Get-Date) - $global:SpiderlingsModCheckLastEvent).TotalMilliseconds
+            if ($elapsed -ge $DebounceMilliseconds) {
+                $global:SpiderlingsModCheckPending = $false
+                Invoke-SpiderlingsCheck
+            }
+        }
     }
-  }
 } finally {
-  $watcher.EnableRaisingEvents = $false
-  foreach ($subscription in $subscriptions) {
-    Unregister-Event -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
-    Remove-Job -Id $subscription.Id -Force -ErrorAction SilentlyContinue
-  }
-  $watcher.Dispose()
+    $watcher.EnableRaisingEvents = $false
+    foreach ($subscription in $subscriptions) {
+        Unregister-Event -SubscriptionId $subscription.Id -ErrorAction SilentlyContinue
+        Remove-Job -Id $subscription.Id -Force -ErrorAction SilentlyContinue
+    }
+    $watcher.Dispose()
 }
