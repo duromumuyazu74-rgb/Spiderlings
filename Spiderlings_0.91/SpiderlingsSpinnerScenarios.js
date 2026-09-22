@@ -377,7 +377,13 @@
                     ? { width: 9, height: 9 }
                     : definition.setup === "autonomous"
                       ? { width: 18, height: 12 }
-                      : { width: 30, height: 20 };
+                      : {
+                            "regular-room": { width: 25, height: 14 },
+                            "irregular-concave-room": { width: 23, height: 13 },
+                            "insufficient-space": { width: 13, height: 13 },
+                            "overlapping-groups": { width: 13, height: 9 },
+                            "nested-fields": { width: 20, height: 17 },
+                        }[sceneId] || { width: 30, height: 20 };
         if (width < required.width || height < required.height) return { started: false, reason: "map-size" };
         const selectedIds = selectedActors.map((actor) => actor.id),
             targetId = target?.id;
