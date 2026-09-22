@@ -1,5 +1,7 @@
 # Spiderlings 仓库审查，2026-09-22
 
+后续建议 2、4、6 与私有画师资料处理的执行记录见[同日维护记录](MAINTENANCE-FOLLOWUP-2026-09-22.zh-CN.md)。下文保留审查时的基线和验证结果。
+
 本次审查覆盖远端维护分支、CI 与保护规则、运行时契约、安装包、依赖、文档和目录组织。发现并修复的问题集中在交付检查与维护依赖。没有修改玩法、素材、manifest 或版本号。任务跟踪为 [Issue #43](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/43)。
 
 ## 基线与方法

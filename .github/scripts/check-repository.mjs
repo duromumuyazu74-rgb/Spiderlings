@@ -15,6 +15,7 @@ function git(...args) {
 }
 
 export function validateFile(file) {
+    if (policy.privateFiles.includes(file)) return `${file}: personal authoring material must stay untracked`;
     const extension = path.posix.extname(file).toLowerCase();
     const legacy = policy.legacyFiles.includes(file);
     if (!legacy && !policy.extensions.includes(extension) && !policy.specialFiles.includes(path.posix.basename(file))) {
@@ -50,7 +51,17 @@ export function validatePullRequest(pr, files = []) {
             "PR title must use a Conventional Commit subject, for example: fix(webbing): preserve escape progress",
         );
     }
+    const dependencyUpdate =
+        pr.user?.login === "dependabot[bot]" &&
+        pr.user?.type === "Bot" &&
+        files.length > 0 &&
+        files.every(
+            (file) =>
+                ["package.json", "package-lock.json", "Spiderlings_0.91/tools/requirements-atlas.txt"].includes(file) ||
+                /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file),
+        );
     if (
+        !dependencyUpdate &&
         !/(?:refs|fixes|closes|resolves)\s+#\d+\b/i.test(pr.body ?? "") &&
         !/^Issue: none\s+-\s+\S.+/im.test(pr.body ?? "")
     ) {
@@ -79,7 +90,9 @@ async function main() {
     const base = args[1] ?? event.pull_request?.base.sha ?? process.env.BASE_SHA ?? "origin/test";
     git("rev-parse", "--verify", `${base}^{commit}`);
     const changed = changedFiles(base);
-    const files = changed.filter((file) => existsSync(file));
+    // A removed tracked file may still exist locally under .gitignore after git rm --cached.
+    const present = new Set(git("ls-files", "--cached", "--others", "--exclude-standard", "-z").split("\0"));
+    const files = changed.filter((file) => present.has(file) && existsSync(file));
     const errors = files.map(validateFile).filter(Boolean);
     if (event.pull_request) errors.push(...validatePullRequest(event.pull_request, changed));
     const head = event.pull_request?.head.sha ?? "HEAD";

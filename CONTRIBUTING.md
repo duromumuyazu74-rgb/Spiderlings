@@ -5,7 +5,7 @@ Spiderlings has one independent maintainer. The same checks apply to the maintai
 ## Runtime and tooling
 
 - Runtime Mod code is plain JavaScript, loaded through the manifest in the native KD global environment. Keep shared state in the existing Spiderlings namespace and document compatibility hooks.
-- Maintenance code may use JavaScript, Python or PowerShell. JSON, CSV, Markdown, HTML/CSS, workflow configuration and artwork retain their existing data, documentation and preview roles. Adding another programming language requires a deliberate policy change. The existing artist-kit CMD launcher is grandfathered; new launchers use PowerShell.
+- Maintenance code may use JavaScript, Python or PowerShell. JSON, CSV, Markdown, HTML/CSS, workflow configuration and artwork retain their existing data, documentation and preview roles. Adding another programming language requires a deliberate policy change. New launchers use PowerShell; personal artist-kit launchers are excluded from the public repository.
 - Explain why a compatibility workaround exists rather than restating the code.
 - Keep the content of `README.md` and `README.zh-CN.md` synchronized, with reciprocal links at the top.
 
@@ -32,6 +32,8 @@ Both `main` and `test` require PRs and the GitHub Actions `Repository checks` st
 The intended remote configuration is recorded in `.github/branch-protection.json` and `.github/repository-settings.json`. Updating these files alone does not update GitHub settings; apply and read back any requested settings change through the repository API.
 
 CI validates supported file types, syntax, formatting and PR subject structure.
+
+Dependabot PRs limited to the approved dependency manifests, lockfile and workflow paths need no manual Issue link. This exception requires the actual `dependabot[bot]` author identity; titles, commit subjects and all checks still apply. [Dependency updates](docs/DEPENDENCIES.md) defines the schedule, security-update coverage and cross-branch review. Personal authoring paths listed in `.github/repository-policy.json` must remain untracked even when local generators recreate them.
 
 ## Verification
 

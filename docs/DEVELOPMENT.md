@@ -35,7 +35,7 @@ The [2026-09-22 repository audit](REPOSITORY-AUDIT-2026-09-22.zh-CN.md) records 
 
 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues) holds new specs, tickets and triage. See [tracker operations](agents/issue-tracker.md) and [labels](agents/triage-labels.md). Old scratch records remain in the original KD workspace; historical links in imported maintenance records refer to that workspace and are not new acceptance evidence.
 
-Develop against `test`, preserving the formal baseline and increasing `-test.N` for each test delivery. Fixes intended for formal users go to `main` and are carried into `test` as needed. Promoting test gameplay requires the requested acceptance and the next formal version after the current `main` version. Current `main` is `0.92.38`, so the next ordinary formal release is `0.92.39`; do not promote by merely deleting `-test.11` from `0.92.36-test.11`.
+Develop against `test`, preserving the formal baseline and increasing `-test.N` for each test delivery. Fixes intended for formal users go to `main` and are carried into `test` as needed. Promoting test gameplay requires the requested acceptance and the next formal version after the current `main` version. Current `main` is `0.92.38`, so the next ordinary formal release is `0.92.39`; do not promote by merely deleting the test suffix from `0.92.36-test.14`.
 
 Keep commits focused and link the applicable Issue. Publishing only these initial snapshots does not migrate the original workspace's Git history, game files, personal configuration or scratch logs.
 
@@ -46,3 +46,5 @@ Only formal versions receive a `v<modbuild>` tag and GitHub Release. After the a
 Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Read the Release and download its attachment again to confirm the filename, size and SHA-256. Test versions remain workflow artifacts from `test`; do not create a test Release.
 
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
+
+Follow [dependency maintenance](DEPENDENCIES.md) for scheduled update PRs and [third-party notices](../THIRD-PARTY-NOTICES.md) for licensing boundaries. Personal authoring paths are ignored and may not be reintroduced into the public repository.
