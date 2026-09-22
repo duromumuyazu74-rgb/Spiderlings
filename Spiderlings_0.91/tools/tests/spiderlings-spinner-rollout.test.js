@@ -141,8 +141,14 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
                         createPhysicalGraph: ({ fields, owners }) => ({
                             fields: Object.fromEntries(fields.map((field) => [field.id, field])),
                             owners,
-                            anchors: [],
-                            links: [],
+                            anchors: fields.flatMap((field) =>
+                                field.vertices.map((point, index) => ({
+                                    ...point,
+                                    id: `${field.id}:a${index}`,
+                                    owners: [field.id],
+                                })),
+                            ),
+                            links: fields.map((field) => ({ id: `${field.id}:link`, owners: [field.id] })),
                             junctions: [],
                         }),
                     },
@@ -221,6 +227,10 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
             if (kind === "mixed") {
                 assert.ok(context.KDMapData.Encounter.topology.fields["line-1"]);
                 assert.deepEqual(Array.from(context.KDMapData.Encounter.topology.fieldOwners["line-1"]), [1, 2]);
+                assert.ok(
+                    context.KDMapData.Encounter.topology.anchors.some((anchor) => anchor.owners.includes("line-1")),
+                );
+                assert.ok(context.KDMapData.Encounter.topology.links.some((link) => link.owners.includes("line-1")));
             }
         }
     }
