@@ -2,7 +2,7 @@
 
 New Spiderlings requests, specs, implementation tickets and triage live in [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues). Always pass `--repo duromumuyazu74-rgb/Spiderlings`, including when working from the original KD workspace.
 
-Player reports have no language restriction. Implementation briefs and development records use English primarily. Read `CONTRIBUTING.md` for the language policy and the single-maintainer PR/check requirements; an accepted Issue does not bypass branch checks.
+Read `CONTRIBUTING.md` for the single-maintainer PR/check requirements; an accepted Issue does not bypass branch checks.
 
 Independent authoring tools retain their own tracker configuration. Use `CONTEXT-MAP.md` to identify ownership before opening a Mod issue.
 

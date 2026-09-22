@@ -1,13 +1,13 @@
 # Contributing
 
-Spiderlings has one independent maintainer. The same checks apply to the maintainer and coding agents. Player reports are welcome in any language.
+Spiderlings has one independent maintainer. The same checks apply to the maintainer and coding agents.
 
-## Languages
+## Runtime and tooling
 
 - Runtime Mod code is plain JavaScript, loaded through the manifest in the native KD global environment. Keep shared state in the existing Spiderlings namespace and document compatibility hooks.
 - Maintenance code may use JavaScript, Python or PowerShell. JSON, CSV, Markdown, HTML/CSS, workflow configuration and artwork retain their existing data, documentation and preview roles. Adding another programming language requires a deliberate policy change. The existing artist-kit CMD launcher is grandfathered; new launchers use PowerShell.
-- Identifiers, new comments, commit subjects, PR descriptions and development records use English as the primary language. Chinese may supplement them. Explain why a compatibility workaround exists rather than restating the code.
-- Keep `README.md` and `README.zh-CN.md` synchronized, with language links at the top. Preserve game localization and historical records in their original languages. Player feedback has no language restriction; do not reject a report based on language.
+- Explain why a compatibility workaround exists rather than restating the code.
+- Keep the content of `README.md` and `README.zh-CN.md` synchronized, with reciprocal links at the top.
 
 ## Code conventions
 
@@ -21,9 +21,9 @@ Checks apply to added or modified files relative to the target branch. Existing 
 
 ## Issues, commits and PRs
 
-1. Track nontrivial work in a GitHub Issue with scope and acceptance criteria. Player reports can use any language; write the implementation brief primarily in English.
+1. Track nontrivial work in a GitHub Issue with scope and acceptance criteria.
 2. Branch from `test` for development, or from `main` for a formal-only fix or maintenance change. Use `feat/<issue>-<slug>`, `fix/<issue>-<slug>` or `chore/<slug>`.
-3. Commit focused code/configuration changes using `type(scope): English summary`; scope is optional. Types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` and `revert`. Example: `fix(webbing): preserve escape progress`. A commit that changes only Markdown may use a plain descriptive subject such as `Update README.md`, including when it is later carried into a code PR.
+3. Commit focused code/configuration changes using `type(scope): summary`; scope is optional. Types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` and `revert`. Example: `fix(webbing): preserve escape progress`. A commit that changes only Markdown may use a plain descriptive subject such as `Update README.md`, including when it is later carried into a code PR.
 4. Open a PR to the intended branch. For code/configuration changes, use the same subject format for its title and link an Issue with `Refs #N`; a small maintenance correction may instead explain `Issue: none - <reason>`. A PR changing only Markdown needs neither a Conventional Commit title nor an Issue or exception statement. CI checks the complete file change list, including deletions and renames, to distinguish documentation from mixed changes. Existing migration commits are explicitly grandfathered in the policy configuration.
 5. Record relevant tests, results and delivery artifacts in the PR. Inspect the diff, pass `Repository checks` against the current target branch, and resolve review conversations. The sole maintainer can rebase-merge their own PR; required external approvals are zero. Rebase merging preserves separate formatting and behavior commits. Update a stale feature branch by rebasing it onto its target before rerunning checks.
 
@@ -31,7 +31,7 @@ Both `main` and `test` require PRs and the GitHub Actions `Repository checks` st
 
 The intended remote configuration is recorded in `.github/branch-protection.json` and `.github/repository-settings.json`. Updating these files alone does not update GitHub settings; apply and read back any requested settings change through the repository API.
 
-Public English requirements are review conventions. CI does not try to identify natural language or scan player reports. It validates supported file types, syntax, formatting and PR subject structure.
+CI validates supported file types, syntax, formatting and PR subject structure.
 
 ## Verification
 

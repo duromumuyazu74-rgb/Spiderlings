@@ -1,6 +1,6 @@
 # Development and publishing
 
-Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for language restrictions, incremental formatting, commits and required PR checks. Both maintained branches use PRs; the sole maintainer can merge after checks without another person's approval.
+Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for code conventions, formatting, commits and required PR checks. Both maintained branches use PRs; the sole maintainer can merge after checks without another person's approval.
 
 ## Setup
 

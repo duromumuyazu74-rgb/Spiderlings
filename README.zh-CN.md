@@ -23,13 +23,11 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 ## 开发与反馈
 
-源码、运行素材和构建检查脚本位于 `Spiderlings_0.91/`，目录名因历史原因保留。维护时可查阅[开发与发布说明，英文](docs/DEVELOPMENT.md)、[维护记录](Spiderlings_0.91/MAINTENANCE.md)和[玩法设计](docs/spiderlings-0.92-game-design.zh-CN.md)。
+源码、运行素材和构建检查脚本位于 `Spiderlings_0.91/`。开发时可查阅[开发与发布说明](docs/DEVELOPMENT.md)、[维护说明](Spiderlings_0.91/MAINTENANCE.md)和[玩法设计](docs/spiderlings-0.92-game-design.zh-CN.md)。
 
-问题反馈、需求规格和实施任务统一使用 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues)。Matt Pocock 技能按[项目任务跟踪配置，英文](docs/agents/issue-tracker.md)操作。
+问题反馈和开发任务使用 [GitHub Issues](https://github.com/duromumuyazu74-rgb/Spiderlings/issues)。
 
-支持的编程语言、代码规范和单人 PR 流程见[贡献规范，英文](CONTRIBUTING.md)。玩家反馈不限语言。
-
-仓库以英语为主要语言，简体中文为辅助语言。安装步骤、分支版本或下载链接变化时，同步更新两版 README。
+代码规范和 PR 流程见[贡献规范](CONTRIBUTING.md)。
 
 ## 作者与署名
 
