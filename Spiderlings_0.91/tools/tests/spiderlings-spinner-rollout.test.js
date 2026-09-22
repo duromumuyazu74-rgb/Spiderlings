@@ -5,10 +5,37 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { rolloutFixture: nativeRollout } = require("../measure-spinner-rollout.js");
 
 const modRoot = path.resolve(__dirname, "../..");
 const load = (context, file) =>
     vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
+
+test("multiple rollout groups share a map scan without retaining it on another map", () => {
+    for (const count of [1, 2, 4]) {
+        const fixture = nativeRollout(count),
+            c = fixture.context;
+        const ai = JSON.parse(JSON.stringify(c.KDMapData.SpiderlingsSpinnerEncounter.ai));
+        const first = c.Spiderlings.SpinnerRollout.preparePositiveTurn();
+        assert.equal(Object.keys(first).length, count);
+        assert.equal(fixture.snapshotCalls(), 1);
+        assert.ok(Object.values(first).every((decision) => decision.kind === "enclosure"));
+        const saved = JSON.stringify(c.KDMapData.SpiderlingsSpinnerEncounter);
+        assert.equal(c.Spiderlings.SpinnerRollout.preparePositiveTurn(), first);
+        assert.equal(fixture.snapshotCalls(), 1);
+        assert.equal(JSON.stringify(c.KDMapData.SpiderlingsSpinnerEncounter), saved);
+        c.KDMapData = {
+            ...c.KDMapData,
+            Entities: [],
+            SpiderlingsSpinnerEncounter: { ai },
+            SpiderlingsSpinnerRollout: { version: 1, enabled: true, kind: "ordinary" },
+        };
+        c.KinkyDungeonMapGet = () => "1";
+        const second = c.Spiderlings.SpinnerRollout.preparePositiveTurn();
+        assert.equal(fixture.snapshotCalls(), 2);
+        assert.ok(Object.values(second).every((decision) => decision.kind === "line-fallback"));
+    }
+});
 
 function rolloutFixture(setting = true) {
     let ensureCalls = 0,

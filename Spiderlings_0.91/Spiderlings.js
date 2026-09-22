@@ -19,7 +19,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             entity &&
             targets.has(entity.Enemy?.name) &&
-            KDGetFaction(entity) == "Enemy" &&
+            KDGetFaction(entity) === "Enemy" &&
             !entity.allied &&
             !entity.Enemy.allied &&
             !(entity.ceasefire > 0) &&
@@ -30,7 +30,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
     function isMaidRival(entity) {
         return (
             entity?.Enemy &&
-            KDGetFaction(entity) == "Maidforce" &&
+            KDGetFaction(entity) === "Maidforce" &&
             !entity.allied &&
             !entity.Enemy.allied &&
             !(entity.ceasefire > 0) &&
@@ -53,8 +53,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
         if (original || !other || enemy === other) return original;
         if (enemy.ceasefire > 0 || other.ceasefire > 0) return original;
         return (
-            (KDGetFaction(enemy) == "Maidforce" && isHostileSpiderlingTarget(other)) ||
-            (KDGetFaction(other) == "Maidforce" && isHostileSpiderlingTarget(enemy)) ||
+            (KDGetFaction(enemy) === "Maidforce" && isHostileSpiderlingTarget(other)) ||
+            (KDGetFaction(other) === "Maidforce" && isHostileSpiderlingTarget(enemy)) ||
             original
         );
     };
@@ -67,7 +67,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             let radius = visionRadius || KDEnemyVisionRadius(enemy);
             if (!visionRadius && enemy.blind && !enemy.aware) radius = 1.5;
             const player = KinkyDungeonPlayerEntity;
-            const reinforcing = enemy.Enemy.name == "WebCaster" && SPIDERLINGS.Webbing?.needsCocoonReinforcement();
+            const reinforcing = enemy.Enemy.name === "WebCaster" && SPIDERLINGS.Webbing?.needsCocoonReinforcement();
             if (
                 (KDEnemyHasFlag(enemy, provokedFlag) || reinforcing) &&
                 KDHostile(enemy) &&
@@ -136,8 +136,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
             enemy.goToDespawn ||
             enemy.leash ||
             enemy.Enemy.master ||
-            enemy == KinkyDungeonJailGuard() ||
-            enemy == KinkyDungeonLeashingEnemy() ||
+            enemy === KinkyDungeonJailGuard() ||
+            enemy === KinkyDungeonLeashingEnemy() ||
             KDHelpless(enemy) ||
             KDIsImprisoned(enemy)
         )
@@ -200,19 +200,19 @@ const SPIDERLINGS = globalThis.Spiderlings;
     }
     KDAddEvent(KDEventMapGeneric, "playerAttack", "SpiderlingsRivalry", (_event, data) => {
         // A committed melee attempt provokes even when it misses.
-        if (data.attacker?.player && data.damage?.type != "heal" && data.damage?.type != "inert") provoke(data.enemy);
+        if (data.attacker?.player && data.damage?.type !== "heal" && data.damage?.type !== "inert") provoke(data.enemy);
     });
     KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", "SpiderlingsRivalry", (_event, data) => {
         // Native aggro excludes healing, inert effects and ally spells. Allied NPC
         // attacks must not be attributed to the player merely by their faction.
-        if (data.aggro && data.faction == "Player" && !data.attacker?.Enemy) provoke(data.enemy);
+        if (data.aggro && data.faction === "Player" && !data.attacker?.Enemy) provoke(data.enemy);
     });
     // Maidforce and generic Enemy are favorable (+0.1) in KD 5.5. NPC bullets
     // use this second gate, so target acquisition alone would not deal damage.
     if (typeof KDFactionFavorable == "function") {
         const nativeFavorable = KDFactionFavorable;
         KDFactionFavorable = function (faction, other) {
-            if (faction == "Maidforce" && isHostileSpiderlingTarget(other)) return false;
+            if (faction === "Maidforce" && isHostileSpiderlingTarget(other)) return false;
             return nativeFavorable.apply(this, arguments);
         };
     }

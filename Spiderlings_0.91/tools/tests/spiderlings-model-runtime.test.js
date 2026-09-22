@@ -18,82 +18,89 @@ const {
     pinkAtlasImage,
 } = require("./helpers/model-runtime.js");
 
-test("the model runtime caches all atlas frames under their direct model aliases before preload", async () => {
-    const atlasData = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
-    const fetches = [];
-    const kdTextures = [];
-    const assetLoads = [];
-    const textureCache = new Map();
-    const addedAliases = [];
-    let spritesheetInput;
-    const runtime = loadWebbingRuntime({
-        KDModFiles: {
-            [webbingAtlas]: "blob:spiderlings-webbing-atlas-json",
-            [webbingAtlasImage]: "blob:spiderlings-webbing-atlas-png",
-            [armAsset]: "blob:arm-fallback",
-        },
-        kdpixitex: textureCache,
-        KDTex(texturePath) {
-            kdTextures.push(texturePath);
-            return { texturePath };
-        },
-        PIXI: {
-            settings: {
-                ADAPTER: {
-                    async fetch(url) {
-                        fetches.push(url);
-                        return {
-                            ok: true,
-                            async json() {
-                                return atlasData;
-                            },
-                        };
+for (const scale of [1, "1"])
+    test(`the model runtime accepts ${typeof scale} atlas scale and caches all direct aliases before preload`, async () => {
+        const atlasData = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
+        atlasData.meta.scale = scale;
+        const fetches = [];
+        const kdTextures = [];
+        const assetLoads = [];
+        const textureCache = new Map();
+        const addedAliases = [];
+        let spritesheetInput;
+        const runtime = loadWebbingRuntime({
+            KDModFiles: {
+                [webbingAtlas]: "blob:spiderlings-webbing-atlas-json",
+                [webbingAtlasImage]: "blob:spiderlings-webbing-atlas-png",
+                [armAsset]: "blob:arm-fallback",
+            },
+            kdpixitex: textureCache,
+            KDTex(texturePath) {
+                kdTextures.push(texturePath);
+                return { texturePath };
+            },
+            PIXI: {
+                settings: {
+                    ADAPTER: {
+                        async fetch(url) {
+                            fetches.push(url);
+                            return {
+                                ok: true,
+                                async json() {
+                                    return atlasData;
+                                },
+                            };
+                        },
                     },
                 },
-            },
-            Assets: {
-                load(asset) {
-                    const texturePath = typeof asset === "string" ? asset : asset.src;
-                    assetLoads.push(texturePath);
-                    return Promise.resolve({ baseTexture: { texturePath } });
+                Assets: {
+                    load(asset) {
+                        const texturePath = typeof asset === "string" ? asset : asset.src;
+                        assetLoads.push(texturePath);
+                        return Promise.resolve({ baseTexture: { texturePath } });
+                    },
                 },
-            },
-            SCALE_MODES: { LINEAR: "linear" },
-            Spritesheet: class {
-                constructor(baseTexture, data, resolutionFilename) {
-                    spritesheetInput = { baseTexture, data, resolutionFilename };
-                    this.textures = Object.fromEntries(
-                        Object.keys(data.frames).map((key) => [key, { atlasFrame: key, baseTexture }]),
-                    );
-                }
-                async parse() {}
-            },
-            Texture: {
-                addToCache(texture, alias) {
-                    addedAliases.push([texture, alias]);
+                SCALE_MODES: { LINEAR: "linear" },
+                Spritesheet: class {
+                    constructor(baseTexture, data, resolutionFilename) {
+                        spritesheetInput = { baseTexture, data, resolutionFilename };
+                        this.textures = Object.fromEntries(
+                            Object.keys(data.frames).map((key) => [key, { atlasFrame: key, baseTexture }]),
+                        );
+                    }
+                    async parse() {}
                 },
+                Texture: {
+                    addToCache(texture, alias) {
+                        addedAliases.push([texture, alias]);
+                    },
+                },
+                utils: { TextureCache: {} },
             },
-            utils: { TextureCache: {} },
-        },
-    });
+        });
 
-    assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.TEXTURE_ATLASES), [webbingAtlas, pinkAtlas]);
-    assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.DISPLACEMENT_ASSETS), [...displacementAssets]);
-    assert.equal(typeof runtime.context.Spiderlings.preloadSpiderlingsTextures, "function");
-    assert.equal(typeof runtime.context.KDEventMapInventory.postApply.SpiderlingsRefreshModels, "function");
-    await runtime.context.Spiderlings.loadSpiderlingsTextureAtlases();
-    await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, false);
-    assert.deepEqual(fetches, ["blob:spiderlings-webbing-atlas-json"]);
-    assert.deepEqual(assetLoads, [...displacementAssets, webbingAtlasImage]);
-    assert.equal(spritesheetInput.resolutionFilename, webbingAtlas);
-    assert.equal(spritesheetInput.baseTexture.texturePath, webbingAtlasImage);
-    assert.deepEqual(kdTextures, displacementAssets);
-    assert.deepEqual([...textureCache.keys()], [...displacementAssets, ...Object.keys(atlasData.frames)]);
-    assert.equal(
-        addedAliases.some(([, alias]) => alias === armAsset),
-        true,
-    );
-});
+        assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.TEXTURE_ATLASES), [
+            webbingAtlas,
+            pinkAtlas,
+        ]);
+        assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.DISPLACEMENT_ASSETS), [
+            ...displacementAssets,
+        ]);
+        assert.equal(typeof runtime.context.Spiderlings.preloadSpiderlingsTextures, "function");
+        assert.equal(typeof runtime.context.KDEventMapInventory.postApply.SpiderlingsRefreshModels, "function");
+        await runtime.context.Spiderlings.loadSpiderlingsTextureAtlases();
+        await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, false);
+        assert.deepEqual(fetches, ["blob:spiderlings-webbing-atlas-json"]);
+        assert.deepEqual(assetLoads, [...displacementAssets, webbingAtlasImage]);
+        assert.equal(spritesheetInput.resolutionFilename, webbingAtlas);
+        assert.equal(spritesheetInput.baseTexture.texturePath, webbingAtlasImage);
+        assert.deepEqual(kdTextures, displacementAssets);
+        assert.deepEqual([...textureCache.keys()], [...displacementAssets, ...Object.keys(atlasData.frames)]);
+        assert.equal(
+            addedAliases.some(([, alias]) => alias === armAsset),
+            true,
+        );
+    });
 
 test("delivered bullet colors follow settings without changing spell identities or draw geometry", () => {
     const calls = [];
