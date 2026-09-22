@@ -25,11 +25,24 @@
     ".txt"
   ],
   "specialFiles": [".gitignore", ".gitattributes", ".prettierignore", ".editorconfig", "LICENSE", "NOTICE"],
-  "legacyFiles": ["Spiderlings_0.91/tools/artist-kit/BUILD-PREVIEW.cmd"],
+  "legacyFiles": [],
   "grandfatheredCommits": [
     "2ffaaacf0c98af6b04ebd05e0b47d97d83d2897d",
     "4aac8a8caad828c5bd402f6de243a1408234d636",
     "a88a7818dc06eb4582dea2a36b37632912dc9466",
     "f5257c060f1ed18b16b01640d790b8cc69b8100e"
+  ],
+  "privateFiles": [
+    "Spiderlings_0.91/Models/SpiderlingsSpinnerLegbinder/README.en.html",
+    "Spiderlings_0.91/Models/SpiderlingsSpinnerLegbinder/README.zh-CN.html",
+    "docs/spiderlings-spinner-capture/ARTIST-HANDOFF.en.html",
+    "docs/spiderlings-spinner-capture/ARTIST-HANDOFF.html",
+    "docs/spiderlings-spinner-capture/build-artist-handoff.mjs",
+    "docs/spiderlings-spinner-capture/test10-handoff-content.mjs",
+    "docs/spiderlings-spinner-capture/test10-imagegen-prompts.json",
+    "docs/spiderlings-spinner-capture/TEST10-PIPELINE.md",
+    "Spiderlings_0.91/tools/build-spinner-artist-kit.py",
+    "Spiderlings_0.91/tools/artist-kit/BUILD-PREVIEW.cmd",
+    "Spiderlings_0.91/tools/artist-kit/Build-Preview.ps1"
   ]
 }

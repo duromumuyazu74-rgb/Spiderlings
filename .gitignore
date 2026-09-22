@@ -13,3 +13,16 @@ __pycache__/
 .env
 .env.*
 *.zip
+
+# Personal authoring materials stay local, even when generated at legacy paths.
+/Spiderlings_0.91/Models/SpiderlingsSpinnerLegbinder/README.en.html
+/Spiderlings_0.91/Models/SpiderlingsSpinnerLegbinder/README.zh-CN.html
+/docs/spiderlings-spinner-capture/ARTIST-HANDOFF.en.html
+/docs/spiderlings-spinner-capture/ARTIST-HANDOFF.html
+/docs/spiderlings-spinner-capture/build-artist-handoff.mjs
+/docs/spiderlings-spinner-capture/test10-handoff-content.mjs
+/docs/spiderlings-spinner-capture/test10-imagegen-prompts.json
+/docs/spiderlings-spinner-capture/TEST10-PIPELINE.md
+/Spiderlings_0.91/tools/build-spinner-artist-kit.py
+/Spiderlings_0.91/tools/artist-kit/BUILD-PREVIEW.cmd
+/Spiderlings_0.91/tools/artist-kit/Build-Preview.ps1
