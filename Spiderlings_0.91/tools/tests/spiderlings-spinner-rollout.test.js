@@ -95,7 +95,7 @@ test("load restores enabled snapshots only and never activates absent or disable
 });
 
 test("rollout deterministically promotes a saved group to an enclosure or its line fallback", () => {
-    for (const kind of ["enclosure", "line"]) {
+    for (const kind of ["enclosure", "line", "mixed"]) {
         const ai = {
                 groups: {
                     g1: { id: "g1", memberIds: [1, 2], planId: "p1" },
@@ -126,7 +126,7 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
                     getSetting: () => true,
                     SpinnerTopology: {
                         createEnclosure(input) {
-                            if (kind !== "enclosure") return { kind: "line", owners: input.owners };
+                            if (kind === "line") return { kind: "line", owners: input.owners };
                             const fieldId = input.layers[0].id;
                             return {
                                 kind: "enclosure",
@@ -176,7 +176,14 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
                                               owners: input.owners,
                                               fields: {},
                                               composites: {},
-                                              fieldOwners: {},
+                                              fieldOwners: { "line-1": input.owners },
+                                              lineFields: {
+                                                  "line-1": {
+                                                      id: "line-1",
+                                                      type: "line",
+                                                      vertices: input.fallbackLine.anchors,
+                                                  },
+                                              },
                                           },
                                 builders: {},
                             });
@@ -202,14 +209,20 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
         load(context, "SpiderlingsSpinnerRollout.js");
         const decision = context.Spiderlings.SpinnerRollout.preparePositiveTurn();
         assert.equal(decision.g1.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
-        assert.equal(decision.g2.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
+        assert.equal(decision.g2.kind, kind === "line" ? "line-fallback" : "enclosure");
         assert.equal(context.KDMapData.Encounter.ai, ai);
         assert.equal(context.lastInput.layers[0].core.x, 8);
         assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
         if (kind === "line") {
             assert.equal(context.lines[0].fieldId, "line-2");
             assert.deepEqual(Array.from(context.lines[0].owners), [3, 4]);
-        } else assert.equal(context.KDMapData.Encounter.topology.composites["rollout-g2"].layerIds.length, 1);
+        } else {
+            assert.equal(context.KDMapData.Encounter.topology.composites["rollout-g2"].layerIds.length, 1);
+            if (kind === "mixed") {
+                assert.ok(context.KDMapData.Encounter.topology.fields["line-1"]);
+                assert.deepEqual(Array.from(context.KDMapData.Encounter.topology.fieldOwners["line-1"]), [1, 2]);
+            }
+        }
     }
 });
 
