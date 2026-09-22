@@ -217,7 +217,7 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
         assert.equal(decision.g1.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
         assert.equal(decision.g2.kind, kind === "line" ? "line-fallback" : "enclosure");
         assert.equal(context.KDMapData.Encounter.ai, ai);
-        assert.deepEqual(context.KDMapData.Encounter.builders, {});
+        assert.equal(JSON.stringify(context.KDMapData.Encounter.builders), "{}");
         assert.equal(context.lastInput.layers[0].core.x, 8);
         assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
         if (kind === "line") {
