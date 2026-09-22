@@ -106,6 +106,10 @@
         return Object.values(sourceRecords(recovery)).map((record) => record.id);
     }
 
+    function npcCaptureUsesSource(id) {
+        return api.SpinnerNPCCapture?.usesSource?.(id) === true;
+    }
+
     function sourceAssociation(source, fallback) {
         const field = api.SpinnerNativeField,
             graph = field?.state?.()?.topology,
@@ -326,7 +330,7 @@
 
     // This is called only by the successful native Spinner player-effect entrance.
     function hit(source) {
-        if (api.SpinnerCapture?.isControllingPlayer?.()) return false;
+        if (api.SpinnerCapture?.isControllingPlayer?.() || npcCaptureUsesSource(source?.id)) return false;
         audit();
         const recovery = state();
         if (recovery) {
