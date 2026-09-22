@@ -427,4 +427,37 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
     assert.equal(context.KDEventMapGeneric.beforeStairCancel?.SpiderlingsSpinnerScenarioControl, undefined);
     context.KDEventMapGeneric.beforeHandleStairs.SpiderlingsSpinnerScenarioControl({}, {});
     assert.equal(context.Spiderlings.SpinnerScenarios.inspectScene().scene, undefined);
+    for (const [sceneId, width, height, count] of [
+        ["irregular-concave-room", 24, 14, 2],
+        ["insufficient-space", 10, 14, 2],
+        ["overlapping-groups", 14, 10, 4],
+    ]) {
+        context.KDMapData.GridWidth = width;
+        context.KDMapData.GridHeight = height;
+        const exact = context.Spiderlings.SpinnerScenarios.setupScene(sceneId, {
+            ownerIds: actors.map((actor) => actor.id),
+            actorCount: count,
+        });
+        assert.equal(exact.started, true, `${sceneId}: exact minimum`);
+        context.Spiderlings.SpinnerScenarios.teardownScene();
+        const before = JSON.stringify({ encounter: context.KDMapData.Encounter, grid: [...grid] });
+        context.KDMapData.GridWidth = width - 1;
+        assert.equal(
+            context.Spiderlings.SpinnerScenarios.setupScene(sceneId, {
+                ownerIds: actors.map((actor) => actor.id),
+                actorCount: count,
+            }).reason,
+            "map-size",
+        );
+        context.KDMapData.GridWidth = width;
+        context.KDMapData.GridHeight = height - 1;
+        assert.equal(
+            context.Spiderlings.SpinnerScenarios.setupScene(sceneId, {
+                ownerIds: actors.map((actor) => actor.id),
+                actorCount: count,
+            }).reason,
+            "map-size",
+        );
+        assert.equal(JSON.stringify({ encounter: context.KDMapData.Encounter, grid: [...grid] }), before);
+    }
 });

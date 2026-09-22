@@ -265,13 +265,12 @@
     }
 
     function enclosureTerrainSnapshot() {
-        const map = sceneEnclosureMap();
-        return {
-            cells: map.floor.map((key) => {
-                const [x, y] = key.split(",").map(Number);
-                return { x, y, floor: true, protected: false };
-            }),
-        };
+        const cells = [],
+            width = KDMapData.GridWidth || 31,
+            height = KDMapData.GridHeight || 21;
+        for (let y = 1; y < height - 1; y++)
+            for (let x = 1; x < width - 1; x++) cells.push({ x, y, floor: true, protected: false });
+        return { cells };
     }
 
     function doorwayTerrainSnapshot() {
@@ -395,9 +394,9 @@
                       ? { width: 18, height: 12 }
                       : {
                             "regular-room": { width: 7, height: 11 },
-                            "irregular-concave-room": { width: 23, height: 13 },
-                            "insufficient-space": { width: 13, height: 13 },
-                            "overlapping-groups": { width: 13, height: 9 },
+                            "irregular-concave-room": { width: 24, height: 14 },
+                            "insufficient-space": { width: 10, height: 14 },
+                            "overlapping-groups": { width: 14, height: 10 },
                             "nested-fields": { width: 15, height: 15 },
                         }[sceneId] || { width: 30, height: 20 };
         if (width < required.width || height < required.height) return { started: false, reason: "map-size" };
