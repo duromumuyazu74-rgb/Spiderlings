@@ -4,7 +4,9 @@ Follow [CONTRIBUTING.md](../CONTRIBUTING.md) for code conventions, formatting, c
 
 ## Setup
 
-Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The source path stays `Spiderlings_0.91/` so existing tools retain their paths.
+See [source and history migration](SOURCE-MIGRATION.md) for the directory rename and cleanup of private authoring paths.
+
+Clone `https://github.com/duromumuyazu74-rgb/Spiderlings.git` and select `test` for development or `main` for formal maintenance. The active source directory is `KinkyDungeon-Spiderlings/`; the previous `Spiderlings_0.91/` directory name is retained only in historical records and private-path exclusions.
 
 Use Node.js with its built-in test runner, PowerShell, and Python with `Pillow` and `pyoxipng`. The atlas builder imports `PIL` and `oxipng`. The local regression tests need these separately supplied directories under an external input root:
 
@@ -22,8 +24,8 @@ git config --local spiderlings.referenceRoot 'D:/KD-reference-inputs'
 Run commands from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\watch-spiderlings-mod.ps1 -Once
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
 The builder validates `modbuild`, then uses the manifest allowlist plus seven locale CSVs. It emits `Spiderlings_<modbuild>.zip` at the repository root. Existing same-version packages are refused before atlas generation; replacing one requires an intentional replacement. `-RunCheck` runs the complete local watcher after writing and verifying the final ZIP. With `-NoPackage`, it checks the available source and any existing package. The watcher uses the same archive verifier as `-VerifyOnly`, including PNG bytes and duplicate entries. Keep derived atlases and direct PNG fallbacks committed with source. ZIPs are delivery artifacts, excluded from Git.
@@ -37,7 +39,7 @@ The required `Repository checks` job always evaluates both `Windows worktree saf
 To verify an existing package against the checked-out commit without rebuilding it:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
 ```
 
 ## Worktrees and cleanup
@@ -49,8 +51,8 @@ Windows worktree removal previously traversed shared-input junctions and erased 
 Run the cleanup script from a retained checkout, with an explicit target and a branch or tag that contains its HEAD:
 
 ```powershell
-powershell -NoProfile -File .\Spiderlings_0.91\tools\remove-safe-worktree.ps1 -Worktree 'D:/work/spinner-ticket'
-powershell -NoProfile -File .\Spiderlings_0.91\tools\remove-safe-worktree.ps1 -Worktree 'D:/work/spinner-ticket' -KeepRef refs/remotes/origin/test -Execute
+powershell -NoProfile -File .\KinkyDungeon-Spiderlings\tools\remove-safe-worktree.ps1 -Worktree 'D:/work/spinner-ticket'
+powershell -NoProfile -File .\KinkyDungeon-Spiderlings\tools\remove-safe-worktree.ps1 -Worktree 'D:/work/spinner-ticket' -KeepRef refs/remotes/origin/test -Execute
 ```
 
 The first invocation is a read-only preflight. The second repeats the checks and removes only a registered, non-primary, clean worktree with no ignored files, no reparse points and a retained HEAD. Preserve packages, logs and dependencies before cleanup. The script never unlocks a checkout, uses force, removes branches, or falls back to recursive filesystem deletion. If it refuses, retain the directory until the reported condition is resolved. Do not change the checkout concurrently with cleanup.
@@ -76,3 +78,5 @@ Only formal versions receive a `v<modbuild>` tag and GitHub Release. After the a
 Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Read the Release and download its attachment again to confirm the filename, size and SHA-256. Test versions remain workflow artifacts from `test`; do not create a test Release.
 
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
+
+For a manual verification after repository maintenance, run the `Repository checks` workflow on the selected maintained branch. Manual runs compare against their own checked-out commit and still run policy/public tests and package verification. An unchanged root-directory move is exempt from retroactive content formatting/linting; modified files and all path, manifest and delivery checks remain enforced.

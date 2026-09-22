@@ -20,15 +20,15 @@ export default [
         },
     },
     {
-        files: ["**/*.mjs", "Spiderlings_0.91/tools/**/*.js"],
+        files: ["**/*.mjs", "KinkyDungeon-Spiderlings/tools/**/*.js"],
         languageOptions: { globals: globals.node },
     },
     {
-        files: ["Spiderlings_0.91/tools/**/*.js"],
+        files: ["KinkyDungeon-Spiderlings/tools/**/*.js"],
         languageOptions: { sourceType: "commonjs" },
     },
     {
-        files: ["Spiderlings_0.91/*.js"],
+        files: ["KinkyDungeon-Spiderlings/*.js"],
         languageOptions: {
             sourceType: "script",
             globals: { ...globals.browser, ...Object.fromEntries(nativeGlobals.map((name) => [name, "writable"])) },

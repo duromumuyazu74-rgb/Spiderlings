@@ -5,7 +5,7 @@ description: Build or validate the Spiderlings Webbing atlas and installable rel
 
 # Spiderlings atlas and release
 
-Run from the workspace root. Read `Spiderlings_0.91/AGENTS.md` and the relevant packaging/atlas sections of `docs/spiderlings-official-modding-guidance.md`. Use existing scripts as the implementation authority.
+Run from the workspace root. Read `KinkyDungeon-Spiderlings/AGENTS.md` and the relevant packaging/atlas sections of `docs/spiderlings-official-modding-guidance.md`. Use existing scripts as the implementation authority.
 
 ## Contract
 
@@ -20,13 +20,13 @@ Inspect overlapping dirty changes and preserve them. Resolve compatible overlaps
 For a requested rebuild/check without a ZIP:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -NoPackage -RunCheck
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -NoPackage -RunCheck
 ```
 
 For a requested installable release:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Spiderlings_0.91\tools\build-spiderlings-release.ps1 -RunCheck
+powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -RunCheck
 ```
 
 Confirm the intended version from the request and manifest. Replace an existing same-version ZIP only when that replacement is authorized; do not use `-Force` to conceal a conflict.

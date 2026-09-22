@@ -28,8 +28,8 @@ function fixture(t) {
     write(".gitignore", ".scratch/\n*.zip\n");
     write(".gitattributes", "* text=auto eol=lf\n");
     write("tracked.txt", "source\n");
-    write("Spiderlings_0.91/mod.json", JSON.stringify({ modbuild: "1.2.3-test.1", fileorder: ["Example.js"] }));
-    write("Spiderlings_0.91/Example.js", "// fixture runtime\n");
+    write("KinkyDungeon-Spiderlings/mod.json", JSON.stringify({ modbuild: "1.2.3-test.1", fileorder: ["Example.js"] }));
+    write("KinkyDungeon-Spiderlings/Example.js", "// fixture runtime\n");
     write(
         ".github/scripts/check-repository.mjs",
         `import fs from 'node:fs';
@@ -42,10 +42,13 @@ console.log('fixture repository check passed');
         ".github/scripts/check-repository.test.mjs",
         "import test from 'node:test'; test('fixture policy', () => {});\n",
     );
-    write("Spiderlings_0.91/tools/run-spiderlings-tests.js", "console.log('fixture public suite passed');\n");
-    write("Spiderlings_0.91/tools/watch-spiderlings-mod.ps1", "Write-Output 'fixture local watcher passed'\nexit 0\n");
+    write("KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js", "console.log('fixture public suite passed');\n");
     write(
-        "Spiderlings_0.91/tools/build-spiderlings-release.ps1",
+        "KinkyDungeon-Spiderlings/tools/watch-spiderlings-mod.ps1",
+        "Write-Output 'fixture local watcher passed'\nexit 0\n",
+    );
+    write(
+        "KinkyDungeon-Spiderlings/tools/build-spiderlings-release.ps1",
         `param([switch]$VerifyOnly, [string]$PackagePath = "")
 $ErrorActionPreference = "Stop"
 $defaultZip = Join-Path (Get-Location) "Spiderlings_1.2.3-test.1.zip"

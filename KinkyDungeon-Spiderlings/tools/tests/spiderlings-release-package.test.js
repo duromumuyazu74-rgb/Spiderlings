@@ -12,7 +12,7 @@ const testRoot = path.resolve(__dirname, "../../../.scratch/release-package-test
 function fixture() {
     fs.mkdirSync(testRoot, { recursive: true });
     const root = fs.mkdtempSync(path.join(testRoot, "case-"));
-    const mod = path.join(root, "Spiderlings_0.91");
+    const mod = path.join(root, "KinkyDungeon-Spiderlings");
     const tools = path.join(mod, "tools");
     fs.mkdirSync(tools, { recursive: true });
     const manifest = { modbuild: "1.2.3-test.1", fileorder: ["Example.js", "Example.png"] };
