@@ -290,6 +290,24 @@ test("an active capture consumes the Spinner hit before recovery fallback", () =
     assert.ok(r.api.state(), "a later fresh hit may start recovery after capture ends");
 });
 
+test("an NPC Capture source cannot cross into player recovery", () => {
+    const r = recoveryRuntime();
+    r.player.x = 6;
+    r.leave();
+    r.c.Spiderlings.SpinnerNPCCapture = { usesSource: (id) => id === r.source.id };
+    r.hit();
+    assert.equal(r.api.state(), undefined);
+    assert.equal(
+        r.gear.some((item) => item.name === r.api.LEASH),
+        false,
+    );
+    assert.ok(r.api.departure(), "the rejected source does not consume the saved departure");
+
+    r.c.Spiderlings.SpinnerNPCCapture.usesSource = () => false;
+    r.hit();
+    assert.deepEqual(Array.from(r.api.sourceIds()), [r.source.id]);
+});
+
 test("the fresh native hit adds one owned leash and reload preserves its exact identity", () => {
     const r = recoveryRuntime();
     r.player.x = 6;

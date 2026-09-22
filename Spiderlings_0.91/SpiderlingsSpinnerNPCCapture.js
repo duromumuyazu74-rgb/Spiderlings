@@ -31,6 +31,16 @@
         return api.SpinnerCapture?.state()?.sourceIds?.includes(id) === true;
     }
 
+    function recoveryUsesSource(id) {
+        return api.SpinnerRecovery?.sourceIds?.().some((sourceId) => String(sourceId) === String(id)) === true;
+    }
+
+    function usesSource(id) {
+        return Object.values(records()).some((record) =>
+            record.sourceIds?.some((sourceId) => String(sourceId) === String(id)),
+        );
+    }
+
     function belongsToCapture(id, exceptTargetId) {
         for (const record of Object.values(records())) {
             if (record.targetId === exceptTargetId) continue;
@@ -70,6 +80,7 @@
             KinkyDungeonIsDisabled(source) ||
             !KDHostile(source, target) ||
             playerCaptureUses(source.id) ||
+            recoveryUsesSource(source.id) ||
             belongsToCapture(source.id, record?.targetId)
         )
             return false;
@@ -317,6 +328,7 @@
         HOLD_TURNS,
         state,
         records,
+        usesSource,
         targetEligible,
         sourceEligible,
         onSuccessfulNativeSpinnerHit,
