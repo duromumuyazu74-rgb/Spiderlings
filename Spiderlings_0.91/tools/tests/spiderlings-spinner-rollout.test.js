@@ -269,6 +269,10 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
         }
         if (id === "regular-room") assert.equal(grid.get("20,5"), ".");
         if (id === "nested-fields") assert.equal(grid.get("10,7"), ".");
+        if (id === "single-door") {
+            assert.equal(grid.get("5,1"), ".");
+            assert.equal(grid.get("5,0"), "1");
+        }
         assert.equal(api.teardownScene(), true);
         assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
         assert.equal(context.KDMapData.Entities.includes(priorProxy), true);
@@ -303,4 +307,22 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
         "actors",
     );
     assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
+    const originalInitialize = context.Spiderlings.SpinnerNativeField.initializeEnclosure;
+    context.Spiderlings.SpinnerNativeField.initializeEnclosure = () => {
+        const failedProxy = { id: 999, x: 4, y: 4, hp: 2, ownedProxy: true, Enemy: { name: "Web" } };
+        context.KDMapData.Entities.push(failedProxy);
+        return (context.KDMapData.Encounter = { topology: { kind: "abandoned", reason: "blocked" } });
+    };
+    const beforeIds = context.KDMapData.Entities.map((entity) => entity.id);
+    const failed = context.Spiderlings.SpinnerScenarios.setupScene("regular-room", {
+        ownerIds: [1, 2],
+        actorCount: 2,
+    });
+    assert.equal(failed.started, false);
+    assert.deepEqual(
+        context.KDMapData.Entities.map((entity) => entity.id),
+        beforeIds,
+    );
+    assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
+    context.Spiderlings.SpinnerNativeField.initializeEnclosure = originalInitialize;
 });
