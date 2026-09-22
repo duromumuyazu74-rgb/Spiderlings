@@ -24,8 +24,8 @@
             x = input.x ?? KinkyDungeonPlayerEntity.x + 4,
             centerY = input.y ?? KinkyDungeonPlayerEntity.y,
             anchors = input.anchors || [
-                { x, y: centerY - 2 },
-                { x, y: centerY + 2 },
+                { x: x - 2, y: centerY },
+                { x: x + 2, y: centerY },
             ],
             fieldId = input.fieldId || `${SCENARIO}:${KinkyDungeonCurrentTick || 0}`;
         if (owners.length !== 2) return { started: false, reason: "owners" };
@@ -258,8 +258,25 @@
         };
     }
 
+    function doorwayTerrainSnapshot() {
+        const doorX = KinkyDungeonPlayerEntity.x + 4,
+            centerY = KinkyDungeonPlayerEntity.y,
+            cells = [];
+        for (let y = centerY - 2; y <= centerY + 2; y++)
+            for (let x = doorX - 3; x <= doorX + 3; x++) cells.push({ x, y, floor: y === centerY, protected: false });
+        return { cells };
+    }
+
     function restoreOwnedState(control) {
         if (!control) return;
+        const priorIds = new Set((control.priorProxies || []).map((proxy) => proxy.id));
+        for (const entity of [...KDMapData.Entities])
+            if (
+                api.SpinnerNativeField.isOwnedProxy?.(entity) &&
+                !priorIds.has(entity.id) &&
+                typeof KDRemoveEntity === "function"
+            )
+                KDRemoveEntity(entity, false, false, true);
         for (const original of control.terrainOriginals || []) {
             if (typeof KinkyDungeonMapSet === "function") KinkyDungeonMapSet(original.x, original.y, original.tile);
             if (typeof KinkyDungeonTilesSet === "function") {
@@ -345,7 +362,11 @@
         if (selectedActors.length !== actorCount) return { started: false, reason: "actors" };
         if (input.targetKind === "npc" && !target) return { started: false, reason: "target" };
         const terrainSnapshot =
-                definition.setup === "autonomous" ? sceneMapSnapshot(sceneId) : enclosureTerrainSnapshot(),
+                sceneId === "single-door"
+                    ? doorwayTerrainSnapshot()
+                    : definition.setup === "autonomous"
+                      ? sceneMapSnapshot(sceneId)
+                      : enclosureTerrainSnapshot(),
             terrainOriginals = [];
         if (terrainSnapshot && typeof KinkyDungeonMapSet === "function")
             for (const cell of terrainSnapshot.cells) {
@@ -389,7 +410,7 @@
                                 ...options,
                                 mapSnapshot: input.mapSnapshot || sceneMapSnapshot(sceneId),
                             });
-        if (setup?.encounter) {
+        if (setup?.started && setup.encounter) {
             actorOriginals = new Map();
             for (const id of options.ownerIds) {
                 const actor = KDMapData.Entities.find((entity) => entity.id === id);
