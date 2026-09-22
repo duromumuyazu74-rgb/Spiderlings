@@ -97,7 +97,10 @@ test("load restores enabled snapshots only and never activates absent or disable
 test("rollout deterministically promotes a saved group to an enclosure or its line fallback", () => {
     for (const kind of ["enclosure", "line"]) {
         const ai = {
-                groups: { g1: { id: "g1", memberIds: [1, 2], planId: "p1" } },
+                groups: {
+                    g1: { id: "g1", memberIds: [1, 2], planId: "p1" },
+                    g2: { id: "g2", memberIds: [3, 4], planId: "p2" },
+                },
                 plans: {
                     p1: {
                         id: "p1",
@@ -105,6 +108,14 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
                         anchors: [
                             { x: 8, y: 4 },
                             { x: 8, y: 8 },
+                        ],
+                    },
+                    p2: {
+                        id: "p2",
+                        fieldId: "line-2",
+                        anchors: [
+                            { x: 3, y: 2 },
+                            { x: 3, y: 5 },
                         ],
                     },
                 },
@@ -121,6 +132,10 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
                             context.lastInput = input;
                             return (context.KDMapData.Encounter = { topology: { kind }, builders: {} });
                         },
+                        addLine(input) {
+                            (context.lines ||= []).push(input);
+                        },
+                        setOwners() {},
                         reconcile() {},
                     },
                 },
@@ -141,6 +156,8 @@ test("rollout deterministically promotes a saved group to an enclosure or its li
         assert.equal(context.KDMapData.Encounter.ai, ai);
         assert.equal(context.lastInput.layers[0].core.x, 8);
         assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
+        assert.equal(context.lines[0].fieldId, "line-2");
+        assert.deepEqual(Array.from(context.lines[0].owners), [3, 4]);
     }
 });
 
@@ -156,6 +173,9 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
         })),
         npcTarget = { id: 90, hp: 10, Enemy: { name: "Maid" } },
         prior = { topology: { kind: "line", fieldId: "prior" }, builders: {} },
+        priorProxy = { id: 700, x: 2, y: 2, hp: 2, ownedProxy: true, Enemy: { name: "Web" } },
+        grid = new Map(),
+        tileData = new Map(),
         context = {
             Spiderlings: {
                 SpinnerTopology: {
@@ -168,6 +188,7 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
                     ensureMap: () => (context.KDMapData.Encounter = encounter),
                     state: () => context.KDMapData.Encounter,
                     reconcile() {},
+                    isOwnedProxy: (entity) => entity?.ownedProxy === true,
                     onNativeDamage(data) {
                         sent.push(["damage", data]);
                     },
@@ -176,13 +197,19 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
                         return encounter;
                     },
                 },
-                SpinnerAI: { beginTurn: () => ({ groups: { g: {} } }) },
+                SpinnerAI: {
+                    beginTurn: (input) => ({ groups: { g: { memberIds: [...(input.ownerIds || [])] } } }),
+                },
                 SpinnerCapture: { state: () => undefined },
                 SpinnerNPCCapture: { state: () => undefined },
                 SpinnerRecovery: { state: () => undefined },
                 SpinnerNPCRecovery: { state: () => undefined },
             },
-            KDMapData: { Entities: [...actors, npcTarget], RandomPathablePointsSeed: 123, Encounter: prior },
+            KDMapData: {
+                Entities: [...actors, npcTarget, priorProxy],
+                RandomPathablePointsSeed: 123,
+                Encounter: prior,
+            },
             KDGameData: {},
             KDEventMapGeneric: {},
             KDAddEvent(map, trigger, id, handler) {
@@ -191,6 +218,11 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
             KinkyDungeonPlayerEntity: { x: 1, y: 1 },
             KinkyDungeonCurrentTick: 5,
             KDHostile: () => true,
+            KinkyDungeonMapGet: (x, y) => grid.get(`${x},${y}`) || "x",
+            KinkyDungeonMapSet: (x, y, value) => grid.set(`${x},${y}`, value),
+            KinkyDungeonTilesGet: (key) => tileData.get(key),
+            KinkyDungeonTilesSet: (key, value) => tileData.set(key, value),
+            KinkyDungeonTilesDelete: (key) => tileData.delete(key),
             KDRemoveEntity(entity) {
                 context.KDMapData.Entities = context.KDMapData.Entities.filter((candidate) => candidate !== entity);
             },
@@ -230,8 +262,18 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
         assert.equal(result.started, true);
         assert.equal(api.inspectScene().scene.targetId, 90);
         assert.equal(api.inspectScene().scene.ownerIds.length, result.actorCount);
+        if (api.REGISTRY[id].setup === "autonomous") {
+            const group = Object.values(result.ai.groups)[0];
+            assert.equal(group.engagement.target.id, 90);
+            assert.equal(group.memberIds.length, result.actorCount);
+        }
+        if (id === "regular-room") assert.equal(grid.get("20,5"), ".");
+        if (id === "nested-fields") assert.equal(grid.get("10,7"), ".");
         assert.equal(api.teardownScene(), true);
         assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
+        assert.equal(context.KDMapData.Entities.includes(priorProxy), true);
+        if (id === "regular-room") assert.equal(grid.get("20,5"), "x");
+        if (id === "nested-fields") assert.equal(grid.get("10,7"), "x");
     }
     const snapshots = ["two-cell-corridor", "t-junction", "cross-junction", "exit-vicinity"].map((id) =>
         api.sceneMapSnapshot(id),
@@ -251,5 +293,14 @@ test("scenario registry exposes all ten same-runtime classes and real controls",
     assert.equal(JSON.stringify(context.KDGameData.SpiderlingsSpinnerScenarioControl), savedControl);
     assert.equal(JSON.parse(context.Spiderlings.SpinnerScenarios.exportScene()).scene.sceneId, "regular-room");
     assert.equal(context.Spiderlings.SpinnerScenarios.teardownScene(), true);
+    assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
+    assert.equal(grid.get("8,4"), "x", "scenario terrain restores exactly");
+    assert.equal(
+        context.Spiderlings.SpinnerScenarios.setupScene("nested-fields", {
+            ownerIds: [1, 2],
+            actorCount: 4,
+        }).reason,
+        "actors",
+    );
     assert.equal(JSON.stringify(context.KDMapData.Encounter), JSON.stringify(prior));
 });
