@@ -276,8 +276,13 @@
             const result = nativeDamage.apply(this, args);
             const added = (target.boundLevel || 0) - before;
             const slimeAdded = (target.specialBoundLevel?.Slime || 0) - slimeBefore;
-            if (slimeAdded > 0 && source.Enemy.name === "Spinner")
-                api.SpinnerNPCCapture?.onSuccessfulNativeSpinnerHit(source, target, slimeAdded, { helplessBefore });
+            if (slimeAdded > 0 && source.Enemy.name === "Spinner") {
+                const captured = api.SpinnerNPCCapture?.onSuccessfulNativeSpinnerHit(source, target, slimeAdded, {
+                    helplessBefore,
+                });
+                if (captured) api.SpinnerNPCRecovery?.clearForCapture(target);
+                else api.SpinnerNPCRecovery?.onSuccessfulNativeSpinnerHit(source, target, slimeAdded);
+            }
             if (added > 0 && source.Enemy.name !== "Spinner") source.hp = 0;
             // Only this native melee caller treats the return as an effect
             // count. Damage events and every other caller retain real HP loss.

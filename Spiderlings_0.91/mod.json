@@ -109,10 +109,12 @@
     "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
+    "SpiderlingsSpinnerRecoveryCore.js",
     "SpiderlingsSpinnerNPCCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
     "SpiderlingsSpinnerRecovery.js",
+    "SpiderlingsSpinnerNPCRecovery.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRuntime.js"

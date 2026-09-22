@@ -3,6 +3,7 @@
 // Player recovery control is saved separately from both field geometry and the real leash item.
 (() => {
     const api = globalThis.Spiderlings,
+        core = api.SpinnerRecoveryCore,
         STATE = "SpiderlingsSpinnerRecovery",
         DEPARTURE = "SpiderlingsSpinnerRecoveryDeparture",
         LEASH = "SpiderlingsSilkLeash",
@@ -11,7 +12,7 @@
         VERSION = 2,
         ESCAPE_EVENT = "SpiderlingsRecoveryEscape";
     const CONFIG = Object.freeze({
-            maxSources: 8,
+            maxSources: core.MAX_SOURCES,
             escapePenaltyPerExtraSource: 0.05,
             standBase: 5,
             standPerExtraSource: 2,
@@ -99,11 +100,11 @@
     }
 
     function sourceRecords(recovery = state()) {
-        return recovery?.sources && typeof recovery.sources === "object" ? recovery.sources : {};
+        return core.sourceRecords(recovery);
     }
 
     function sourceIds(recovery = state()) {
-        return Object.values(sourceRecords(recovery)).map((record) => record.id);
+        return core.sourceIds(recovery);
     }
 
     function npcCaptureUsesSource(id) {
@@ -205,21 +206,16 @@
     }
 
     function chooseExecutor(recovery) {
-        const ids = sourceIds(recovery).sort((left, right) => String(left).localeCompare(String(right)));
-        if (ids.some((id) => sameId(id, recovery.executorId))) return recovery.executorId;
-        const next = ids[0];
-        if (next !== undefined) {
+        return core.chooseExecutor(recovery, (_previous, next) => {
             const source = sourceById(next);
             if (source) source.SpinnerConstructionPoints = 0;
-        }
-        recovery.executorId = next;
-        return next;
+        });
     }
 
     function reconcilePendingCrossing(recovery) {
         if (!recovery?.pendingCrossing) return;
         const goal = destination(recovery);
-        if (!crossingValid(recovery.pendingCrossing, goal?.key)) recovery.pendingCrossing = undefined;
+        core.reconcileCrossing(recovery, player(), goal?.key, recoveryAdapters());
     }
 
     function audit() {
@@ -241,13 +237,12 @@
             clearRecoveryForCarrierLoss(recovery);
             return false;
         }
-        for (const [key, record] of Object.entries(sourceRecords(recovery))) {
-            const source = sourceById(record?.id);
-            if (!allowedSource(recovery, source) || !sourceActionable(source)) {
-                delete recovery.sources[key];
-                delete recovery.sourceRemovalWork[key];
-            }
-        }
+        for (const id of core.auditSources(
+            recovery,
+            sourceById,
+            (source) => allowedSource(recovery, source) && sourceActionable(source),
+        ))
+            delete recovery.sourceRemovalWork[core.sourceKey(id)];
         if (!sourceIds(recovery).length) {
             recovery.executorId = undefined;
             recovery.resisted = false;
@@ -336,14 +331,10 @@
         if (recovery) {
             if (!allowedSource(recovery, source) || !sourceActionable(source)) return false;
             const key = sourceKey(source.id),
-                existing = recovery.sources[key];
-            if (existing) {
-                const refreshed = makeSourceRecord(source, existing);
-                existing.groupId = refreshed.groupId;
-                existing.compositeId = refreshed.compositeId;
-                existing.lastHitTick = turn();
-            } else if (sourceIds(recovery).length < MAX_SOURCES) {
-                recovery.sources[key] = makeSourceRecord(source, departure() || departureFromRecovery(recovery));
+                existing = recovery.sources[key],
+                association = sourceAssociation(source, existing || departure() || departureFromRecovery(recovery)),
+                upserted = core.upsertSource(recovery, source, association, turn(), MAX_SOURCES);
+            if (upserted.added) {
                 delete recovery.sourceRemovalWork[key];
                 chooseExecutor(recovery);
             }
@@ -388,44 +379,22 @@
     }
 
     function destination(recovery) {
-        const field = api.SpinnerNativeField,
-            executor = sourceById(recovery.executorId),
-            choices = new Map();
-        for (const record of Object.values(sourceRecords(recovery))) {
-            if (!record.compositeId) continue;
-            if (typeof field?.compositeById === "function" && !field.compositeById(record.compositeId)) continue;
-            const core = field.commonCore?.(record.compositeId);
-            if (!core) continue;
-            const path = nativePath(core, executor);
-            if (!Array.isArray(path)) continue;
-            const key = String(record.compositeId),
-                current = choices.get(key) || {
-                    key: `field:${key}`,
-                    compositeId: record.compositeId,
-                    x: core.x,
-                    y: core.y,
-                    count: 0,
-                    distance: path.length,
-                };
-            current.count += 1;
-            current.distance = Math.min(current.distance, path.length);
-            choices.set(key, current);
-        }
-        const selected = [...choices.values()].sort(
-            (left, right) =>
-                right.count - left.count ||
-                left.distance - right.distance ||
-                String(left.compositeId).localeCompare(String(right.compositeId)),
-        )[0];
-        if (selected) return selected;
-        return (
-            executor && {
-                key: `source:${executor.id}`,
-                x: executor.x,
-                y: executor.y,
-                count: 0,
-                distance: Math.max(Math.abs(executor.x - player().x), Math.abs(executor.y - player().y)),
-            }
+        const executor = sourceById(recovery.executorId);
+        return core.destination(
+            recovery,
+            (compositeId) => {
+                if (
+                    typeof api.SpinnerNativeField?.compositeById === "function" &&
+                    !api.SpinnerNativeField.compositeById(compositeId)
+                )
+                    return undefined;
+                return api.SpinnerNativeField?.commonCore?.(compositeId);
+            },
+            (goal) => {
+                const path = nativePath(goal, executor);
+                return Array.isArray(path) ? path.length : Number.POSITIVE_INFINITY;
+            },
+            sourceById,
         );
     }
 
@@ -436,56 +405,12 @@
         return !KinkyDungeonEntityAt(cell.x, cell.y);
     }
 
-    function sameCell(left, right) {
-        return !!left && !!right && left.x === right.x && left.y === right.y;
-    }
-
     function webCellLegal(cell) {
         if (!api.SpinnerNativeField?.isSpiderlingsWebCell?.(cell)) return false;
         if (!KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y))) return false;
         if (KinkyDungeonTilesGet(`${cell.x},${cell.y}`)?.Lock) return false;
         const occupant = KinkyDungeonEntityAt(cell.x, cell.y);
         return !occupant || api.SpinnerNativeField?.isOwnedProxy?.(occupant);
-    }
-
-    function crossingCandidate(goal) {
-        if (!goal) return undefined;
-        const currentDistance = Math.max(Math.abs(goal.x - player().x), Math.abs(goal.y - player().y));
-        const directions = [];
-        for (let dy = -1; dy <= 1; dy++)
-            for (let dx = -1; dx <= 1; dx++) {
-                if ((!dx && !dy) || (dx && dy)) continue;
-                const distance = Math.max(Math.abs(goal.x - (player().x + dx)), Math.abs(goal.y - (player().y + dy)));
-                if (distance < currentDistance) directions.push({ dx, dy, distance });
-            }
-        directions.sort((left, right) => left.distance - right.distance || left.dy - right.dy || left.dx - right.dx);
-        for (const { dx, dy } of directions) {
-            const webCells = [];
-            let x = player().x + dx,
-                y = player().y + dy;
-            while (api.SpinnerNativeField?.isSpiderlingsWebCell?.({ x, y })) {
-                const cell = { x, y };
-                if (!webCellLegal(cell)) return undefined;
-                webCells.push(cell);
-                x += dx;
-                y += dy;
-            }
-            const far = { x, y };
-            if (webCells.length && landingLegal(far)) return { near: { x: player().x, y: player().y }, webCells, far };
-        }
-        return undefined;
-    }
-
-    function crossingValid(crossing, destinationKey) {
-        return !!(
-            crossing &&
-            crossing.destinationKey === destinationKey &&
-            sameCell(crossing.near, player()) &&
-            Array.isArray(crossing.webCells) &&
-            crossing.webCells.length > 0 &&
-            crossing.webCells.every(webCellLegal) &&
-            landingLegal(crossing.far)
-        );
     }
 
     function alreadyMovedThisTurn(recovery) {
@@ -509,47 +434,27 @@
         return moved;
     }
 
+    function recoveryAdapters() {
+        return {
+            position: (target) => ({ x: target.x, y: target.y }),
+            turn,
+            destination,
+            path: nativePath,
+            landingLegal,
+            isWebCell: (cell) => api.SpinnerNativeField?.isSpiderlingsWebCell?.(cell) === true,
+            webCellLegal,
+            alreadyMoved: alreadyMovedThisTurn,
+            resist: (recovery) => {
+                if (!recovery.resisted) return false;
+                recovery.resisted = false;
+                return true;
+            },
+            move: (_target, cell) => movePlayer(cell),
+        };
+    }
+
     function pull(recovery, source) {
-        if (alreadyMovedThisTurn(recovery)) return false;
-        recovery.lastPullTick = turn();
-        const goal = destination(recovery);
-        if (!goal) return false;
-        if (recovery.pendingCrossing) {
-            if (!crossingValid(recovery.pendingCrossing, goal.key)) {
-                recovery.pendingCrossing = undefined;
-                return false;
-            }
-            if (recovery.resisted) {
-                recovery.resisted = false;
-                return true;
-            }
-            recovery.pendingCrossing.paidActions += 1;
-            if (
-                recovery.pendingCrossing.paidActions <
-                CONFIG.crossingActionsPerCell * recovery.pendingCrossing.webCells.length
-            )
-                return true;
-            const far = recovery.pendingCrossing.far;
-            recovery.pendingCrossing = undefined;
-            return movePlayer(far);
-        }
-        const path = nativePath(goal, source),
-            step = path?.[0];
-        if (landingLegal(step) && Math.max(Math.abs(step.x - player().x), Math.abs(step.y - player().y)) <= 1) {
-            if (recovery.resisted) {
-                recovery.resisted = false;
-                return true;
-            }
-            return movePlayer(step);
-        }
-        const crossing = crossingCandidate(goal);
-        if (!crossing) return false;
-        if (recovery.resisted) {
-            recovery.resisted = false;
-            return true;
-        }
-        recovery.pendingCrossing = { ...crossing, paidActions: 1, destinationKey: goal.key };
-        return true;
+        return core.advancePull(recovery, player(), source, recoveryAdapters()).moved;
     }
 
     function handleEnemyTurn(enemy, _target, delta) {
