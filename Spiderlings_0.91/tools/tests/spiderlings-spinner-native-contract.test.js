@@ -124,3 +124,29 @@ test("pinned KD 5.5.0 preserves NPC Slime binding, ordinary struggle, and comple
         /return 1 \+ KDEnemyRank\(enemy\) \+ \(enemy\.Enemy\.tags\.unstoppable \? 2 : \(enemy\.Enemy\.tags\.unflinching \? 1 : 0\)\)/,
     );
 });
+
+test("pinned KD 5.5.0 preserves forced NPC movement events and one-pull guards", () => {
+    const files = [
+        ["Game/src/map/KinkyDungeonTiles.ts", "86B90439FE9BE8B23E59F402AEEBD687B308A20BE21C234CD2D951EDA88C2796"],
+        ["Game/src/enemy/KinkyDungeonEnemies.ts", "9281E8A60FBC48FA5177FCB87F2ABBE0178C56E2B581796C4BB5DD26DA9E5242"],
+        ["Game/src/restraint/KDTethers.ts", "0DA0EF0354E25BA6A9F56EC6DD96BF42DC6FD2796387C88D7EBE0D39CA823DD8"],
+    ];
+    for (const [relative, expected] of files)
+        assert.equal(
+            crypto
+                .createHash("sha256")
+                .update(fs.readFileSync(path.join(gameRoot, relative)))
+                .digest("hex")
+                .toUpperCase(),
+            expected,
+            relative,
+        );
+    const tiles = read(files[0][0]),
+        tethers = read(files[2][0]);
+    assert.match(tiles, /function KDMoveEntity\(enemy: entity, x: number, y: number, willing: boolean/);
+    assert.match(tiles, /KinkyDungeonSendEvent\("enemyMove", \{/);
+    assert.match(tiles, /lastX: enemy\.lastx/);
+    assert.match(tethers, /else if \(KDEnemyHasFlag\(Entity, "pulled"\)\) return false/);
+    assert.match(tethers, /KDMoveEntity\(Entity, slot\.x, slot\.y, false/);
+    assert.match(tethers, /KinkyDungeonSetEnemyFlag\(Entity, "pulled", 1\)/);
+});

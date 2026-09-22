@@ -31,8 +31,11 @@
         return api.SpinnerCapture?.state()?.sourceIds?.includes(id) === true;
     }
 
-    function recoveryUsesSource(id) {
-        return api.SpinnerRecovery?.sourceIds?.().some((sourceId) => String(sourceId) === String(id)) === true;
+    function recoveryUsesSource(id, target) {
+        return !!(
+            api.SpinnerRecovery?.sourceIds?.().some((sourceId) => String(sourceId) === String(id)) ||
+            api.SpinnerNPCRecovery?.conflictsWithCapture?.(id, target?.id)
+        );
     }
 
     function usesSource(id) {
@@ -80,7 +83,7 @@
             KinkyDungeonIsDisabled(source) ||
             !KDHostile(source, target) ||
             playerCaptureUses(source.id) ||
-            recoveryUsesSource(source.id) ||
+            recoveryUsesSource(source.id, target) ||
             belongsToCapture(source.id, record?.targetId)
         )
             return false;
@@ -151,7 +154,12 @@
         const helplessBefore = admission.helplessBefore ?? KDHelpless(target);
         if (!targetEligible(source, target, helplessBefore) || !sourceEligible(source, target)) return false;
         const composite = api.SpinnerNativeField?.containingComposite(target);
-        if (!composite || !api.SpinnerNativeField.captureGeometryReady(target)) return false;
+        if (
+            !composite ||
+            api.SpinnerNPCRecovery?.compositeClaimed?.(composite.id, target.id) ||
+            !api.SpinnerNativeField.captureGeometryReady(target)
+        )
+            return false;
         const legalSources = entities().filter(
             (candidate) => !belongsToCapture(candidate.id) && sourceEligible(candidate, target),
         );
