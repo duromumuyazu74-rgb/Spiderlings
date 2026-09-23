@@ -358,7 +358,7 @@ SPIDERLINGS.addEnemies([
         shrines: ["Latex"],
     },
 
-    // Mage combat is summonable here; #66 owns its natural, nest and map-start rollout.
+    // Mage's natural weight is adjusted by the encounter selector for security and infestation.
     {
         name: "MageSpiderlings",
         clusterWith: "spiderlings",
@@ -367,8 +367,8 @@ SPIDERLINGS.addEnemies([
         AI: "hunt",
         visionRadius: 8,
         maxhp: 3,
-        minLevel: 5,
-        weight: 0,
+        minLevel: 0,
+        weight: 2,
         movePoints: 1.5,
         attackPoints: 3,
         attack: "Spell",
@@ -382,7 +382,7 @@ SPIDERLINGS.addEnemies([
         followRange: 3,
         kite: 3,
         kiteChance: 1,
-        terrainTags: { spiderlings: 50 },
+        terrainTags: {},
         allFloors: true,
         shrines: ["Latex"],
     },
