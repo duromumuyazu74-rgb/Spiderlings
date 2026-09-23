@@ -20,9 +20,9 @@ The original Spiderlings artwork credited to T_Swizzle in the following paths, i
 
 Credit T_Swizzle, link to the CC BY-NC 4.0 license, and indicate changes when sharing this artwork. The license allows sharing and adaptation for noncommercial purposes. Commercial use of the artwork requires separate permission. The MIT code license does not change these conditions.
 
-## Sound recordings: source pending
+## Sound recordings: ZapSplat Standard License
 
-The four OGG files in `KinkyDungeon-Spiderlings/Sounds/` came from another creator. The maintainer recalls a CC BY-NC 4.0 source license, but the creator and source page have not yet been recovered. This document does not grant rights to these recordings. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the current provenance status.
+The four OGG files in `KinkyDungeon-Spiderlings/Sounds/` are edited and converted versions of sound effects the maintainer sourced from [ZapSplat](https://www.zapsplat.com/). ZapSplat currently publishes these effects under its [Standard License](https://www.zapsplat.com/license-type/standard-license/), which allows use and editing within projects and requires ZapSplat credit for Basic accounts. It is not CC BY-NC 4.0 and does not grant a separate license to redistribute the recordings as standalone audio. Neither the MIT code license nor the Spiderlings artwork license applies to them. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for source links and credit.
 
 ## Other material
 
