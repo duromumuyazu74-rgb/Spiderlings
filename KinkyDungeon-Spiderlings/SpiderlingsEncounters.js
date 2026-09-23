@@ -775,7 +775,7 @@
     // Mapgen calls this before native random population. Saving the outcome on
     // map data prevents a later visit or a repeated population pass from adding
     // another guaranteed Mage.
-    function runGuaranteedMage(floor, room = {}) {
+    function runGuaranteedMage(floor, room = {}, spawnPoints = []) {
         if (typeof KDMapData === "undefined" || !KDMapData || KDMapData[MAGE_STATE_FIELD]) return false;
         const security = typeof KDGetEffSecurityLevel === "function" ? KDGetEffSecurityLevel() : -Infinity;
         if (!mageEligible(floor, security) || !isEligibleOrdinaryMap(room) || KDMapData.RoomType) {
@@ -792,7 +792,10 @@
         }
         const random = typeof KDRandom === "function" ? KDRandom : Math.random;
         const options = runtimePlacementOptions(random);
-        const cells = legalSquadCells(options);
+        // Authored points are still pending in native population. Occupying one
+        // here would make KinkyDungeonNoEnemy reject that scripted spawn.
+        const reserved = new Set(spawnPoints.map(pointKey));
+        const cells = legalSquadCells(options).filter((cell) => !reserved.has(pointKey(cell)));
         if (!cells.length) {
             KDMapData[MAGE_STATE_FIELD] = "unplaceable";
             return false;
@@ -837,7 +840,7 @@
     if (typeof KinkyDungeonPlaceEnemies === "function") {
         const nativePlaceEnemies = KinkyDungeonPlaceEnemies;
         KinkyDungeonPlaceEnemies = function (...args) {
-            runGuaranteedMage(args[4], args[7] || {});
+            runGuaranteedMage(args[4], args[7] || {}, args[0]);
             return nativePlaceEnemies.apply(this, args);
         };
     }
