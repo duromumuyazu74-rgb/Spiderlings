@@ -541,7 +541,8 @@
     api.getMapPopulationCap = function () {
         const value = String(api.getSetting("spiderlingsMapPopulationCap")).trim();
         const numeric = Number(value);
-        return /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
+        const configured = /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
+        return api.Prison?.isPrison?.() && configured > 0 ? Math.max(40, configured) : configured;
     };
 
     function availableSpiderlingSlots() {
@@ -597,6 +598,11 @@
         const nativeSummonEnemy = KinkyDungeonSummonEnemy;
         KinkyDungeonSummonEnemy = function (x, y, summonType, count, ...rest) {
             const name = typeof summonType == "string" ? summonType : summonType?.name;
+            if (name === "NestEntrance" && api.Prison?.isPrison?.()) {
+                const slots = api.PrisonNest?.entranceSlots?.() ?? 0;
+                if (slots === 0) return [];
+                if (count > slots) return nativeSummonEnemy.call(this, x, y, summonType, slots, ...rest);
+            }
             if (SQUAD_MEMBERS.includes(name)) {
                 const slots = availableSpiderlingSlots();
                 if (slots === 0) return [];
@@ -870,6 +876,7 @@
 
         const cap = api.getNestReinforcementCap();
         const tunnelerCap = api.getNestTunnelerCap();
+        const prison = api.Prison?.isPrison?.() === true;
         const interval = api.getNestReinforcementInterval();
         const weights = normalizeSpiderlingWeights(api.getSharedSpiderlingWeights());
         const index = indexReinforcementState(KDMapData.Entities);
@@ -878,10 +885,13 @@
         for (const nest of index.nests) {
             // Native entity saves retain this counter. Existing nests seed it
             // once from attributable children still present in the loaded map.
-            if (!Number.isSafeInteger(nest[NEST_TUNNELER_COUNT_FIELD]) || nest[NEST_TUNNELER_COUNT_FIELD] < 0)
+            if (
+                !prison &&
+                (!Number.isSafeInteger(nest[NEST_TUNNELER_COUNT_FIELD]) || nest[NEST_TUNNELER_COUNT_FIELD] < 0)
+            )
                 nest[NEST_TUNNELER_COUNT_FIELD] = index.knownTunnelersByParent.get(nest.id) || 0;
             const eligibleWeights =
-                nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
+                !prison && nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
             const totalWeight = Object.values(eligibleWeights).reduce((sum, weight) => sum + weight, 0);
             const livingOffspring = index.livingOffspringByParent.get(nest.id) || 0;
             const decision = advanceNestTimer({
@@ -890,7 +900,7 @@
                 interval,
                 cap,
                 livingOffspring,
-                eligible: nestCanReinforce(nest, index.hostileNests),
+                eligible: prison ? index.hostileNests.has(nest) : nestCanReinforce(nest, index.hostileNests),
             });
             nest[NEST_TIMER_FIELD] = decision.timer;
             if (
@@ -940,7 +950,7 @@
             if (!Array.isArray(created) || created.length === 0) continue;
 
             created[0][NEST_PARENT_ID_FIELD] = nest.id;
-            if (enemyName === "Tunneler") nest[NEST_TUNNELER_COUNT_FIELD] += 1;
+            if (enemyName === "Tunneler" && !prison) nest[NEST_TUNNELER_COUNT_FIELD] += 1;
             successfulSummons += 1;
         }
         return successfulSummons;

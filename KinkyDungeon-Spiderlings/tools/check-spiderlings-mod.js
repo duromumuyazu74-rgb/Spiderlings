@@ -40,6 +40,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsPrison.js",
+    "SpiderlingsPrisonNest.js",
     "SpiderlingsPrisonEscort.js",
     "SpiderlingsSpinnerRuntime.js",
 ];

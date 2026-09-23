@@ -153,6 +153,183 @@ function reachable(map, blocked = () => false) {
     return seen;
 }
 
+function nestRuntime() {
+    const r = runtime();
+    const kd = r.context;
+    let nextId = 100;
+    const moves = [];
+    const field = { reconciles: 0 };
+    kd.KinkyDungeonMovableTilesEnemy = ["0", "s"];
+    kd.KinkyDungeonEntityAt = (x, y) =>
+        kd.KDMapData.Entities.find((enemy) => enemy.hp > 0 && enemy.x === x && enemy.y === y);
+    kd.KinkyDungeonIsDisabled = () => false;
+    kd.KDHelpless = () => false;
+    kd.KDRemoveEntity = (enemy) => {
+        kd.KDMapData.Entities.splice(kd.KDMapData.Entities.indexOf(enemy), 1);
+    };
+    kd.KinkyDungeonSummonEnemy = (x, y, name) => {
+        if (kd.KinkyDungeonMapGet(x, y) !== "0" || kd.KinkyDungeonEntityAt(x, y)) return [];
+        const enemy = { id: nextId++, x, y, hp: 5, Enemy: { name, movePoints: 1 } };
+        kd.KDMapData.Entities.push(enemy);
+        return [enemy];
+    };
+    kd.KinkyDungeonFindPath = (x, y, gx, gy) => {
+        const queue = [{ x, y }];
+        const seen = new Set([`${x},${y}`]);
+        const parent = new Map();
+        for (let index = 0; index < queue.length; index += 1) {
+            const at = queue[index];
+            if (at.x === gx && at.y === gy) {
+                const path = [];
+                let point = at;
+                while (point.x !== x || point.y !== y) {
+                    path.unshift(point);
+                    point = parent.get(`${point.x},${point.y}`);
+                }
+                return path;
+            }
+            for (const [dx, dy] of [
+                [1, 0],
+                [0, 1],
+                [-1, 0],
+                [0, -1],
+            ]) {
+                const point = { x: at.x + dx, y: at.y + dy };
+                const key = `${point.x},${point.y}`;
+                if (
+                    seen.has(key) ||
+                    kd.KinkyDungeonMapGet(point.x, point.y) !== "0" ||
+                    kd.KinkyDungeonEntityAt(point.x, point.y)
+                )
+                    continue;
+                seen.add(key);
+                parent.set(key, at);
+                queue.push(point);
+            }
+        }
+        return undefined;
+    };
+    kd.KinkyDungeonEnemyTryMove = (enemy, direction) => {
+        enemy.x += direction.x;
+        enemy.y += direction.y;
+        moves.push([enemy.id, enemy.x, enemy.y]);
+        return true;
+    };
+    kd.KDAIType = {
+        hunt: { beforemove: () => false },
+        wander: { beforemove: () => false },
+    };
+    kd.Spiderlings.SpinnerNativeField = {
+        ensureMap() {
+            return (kd.KDMapData.SpiderlingsSpinnerNativeField ||= { ...field });
+        },
+        reconcile() {
+            kd.KDMapData.SpiderlingsSpinnerNativeField.reconciles += 1;
+        },
+    };
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsPrisonNest.js"), "utf8"), kd);
+    const entrance = { id: 14, x: 15, y: 15, hp: 5, Enemy: { name: "NestEntrance" } };
+    r.source.Entities.push(entrance);
+    assert.equal(kd.Spiderlings.Prison.enter({ entrance }), true);
+    kd.KDEventMapGeneric.postMapgen.SpiderlingsPrisonNest();
+    return { ...r, moves };
+}
+
+test("the native prison floor gets ten reachable mutually supporting nests and active builders", () => {
+    const r = nestRuntime();
+    const map = r.context.KDMapData;
+    const state = map.SpiderlingsPrison;
+    const nests = map.Entities.filter((enemy) => enemy.Enemy.name === "NestEntrance");
+    assert.equal(nests.length, 10);
+    assert.equal(state.mainNestIds.length, 10);
+    for (const nest of nests) {
+        assert.equal(nest.hp > 0, true);
+        assert.equal(nest.x >= state.mainNestBounds.left && nest.x <= state.mainNestBounds.right, true);
+        assert.equal(nest.y >= state.mainNestBounds.top && nest.y <= state.mainNestBounds.bottom, true);
+        for (const other of nests) assert.equal(Math.hypot(nest.x - other.x, nest.y - other.y) <= 5, true);
+    }
+    const blocked = new Set(nests.map((nest) => `${nest.x},${nest.y}`));
+    const walkable = reachable(map, (point) => blocked.has(`${point.x},${point.y}`));
+    assert.equal(walkable.has("51,22"), true);
+    for (const nest of nests) {
+        assert.equal(
+            [
+                [1, 0],
+                [-1, 0],
+                [0, 1],
+                [0, -1],
+            ].some(([dx, dy]) => walkable.has(`${nest.x + dx},${nest.y + dy}`)),
+            true,
+        );
+    }
+    assert.equal(map.Entities.filter((enemy) => enemy.Enemy.name === "Jumper").length, 2);
+    assert.equal(map.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 2);
+    assert.equal(map.SpiderlingsSpinnerNativeField.autonomous, true);
+    assert.equal(map.SpiderlingsSpinnerNativeField.reconciles, 1);
+    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 11, y: 22 }), false);
+    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 20, y: 32 }), false);
+    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 21, y: 22 }), true);
+});
+
+test("nest losses, extra nest vacancies and patrol routes persist across exit and return", () => {
+    const r = nestRuntime();
+    const kd = r.context;
+    const first = kd.KDMapData;
+    const state = first.SpiderlingsPrison;
+    const destroyed = state.mainNestIds[0];
+    first.Entities.find((enemy) => enemy.id === destroyed).hp = 0;
+    for (let index = 0; index < 6; index += 1)
+        first.Entities.push({
+            id: 500 + index,
+            x: 20 + index,
+            y: 20,
+            hp: 5,
+            Enemy: { name: "NestEntrance" },
+        });
+    assert.equal(kd.Spiderlings.PrisonNest.livingExtraEntrances(), 6);
+    assert.equal(kd.Spiderlings.PrisonNest.allowEntranceSummon(), false);
+    first.Entities.find((enemy) => enemy.id === 500).hp = 0;
+    assert.equal(kd.Spiderlings.PrisonNest.allowEntranceSummon(), true);
+    const patrolId = Number(Object.keys(state.patrols)[0]);
+    const patrol = first.Entities.find((enemy) => enemy.id === patrolId);
+    const oldPosition = [patrol.x, patrol.y];
+    kd.KDAIType.hunt.beforemove(patrol, {}, { canSensePlayer: false });
+    assert.notDeepEqual([patrol.x, patrol.y], oldPosition);
+    const moved = [patrol.x, patrol.y];
+    patrol.aware = true;
+    assert.equal(kd.KDAIType.hunt.beforemove(patrol, {}, { canSensePlayer: true }), false);
+    assert.deepEqual([patrol.x, patrol.y], moved);
+    const originalPrison = kd.KDGameData.RoomType;
+    kd.lastPrison = originalPrison;
+    kd.KDGoThruTile(51, 22);
+    const sourceNest = kd.KDMapData.Entities.find((enemy) => enemy.id === 14);
+    assert.equal(kd.Spiderlings.Prison.enter({ entrance: sourceNest }), true);
+    assert.equal(kd.KDGameData.RoomType, originalPrison);
+    kd.KDEventMapGeneric.afterLoadGame.SpiderlingsPrisonNest();
+    assert.equal(kd.KDMapData.Entities.find((enemy) => enemy.id === destroyed).hp, 0);
+    assert.equal(kd.KDMapData.SpiderlingsPrison.mainNestIds.length, 10);
+    assert.equal(kd.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "NestEntrance").length, 16);
+    assert.equal(kd.Spiderlings.PrisonNest.livingExtraEntrances(), 5);
+    assert.equal(Object.keys(kd.KDMapData.SpiderlingsPrison.patrols).length, 2);
+    assert.equal(kd.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 2);
+});
+
+test("both patrol routes keep moving through their shared central crossing before detection", () => {
+    const r = nestRuntime();
+    const kd = r.context;
+    const patrolIds = Object.keys(kd.KDMapData.SpiderlingsPrison.patrols).map(Number);
+    const reached = new Set();
+    for (let turn = 0; turn < 180; turn += 1) {
+        for (const id of patrolIds) {
+            const actor = kd.KDMapData.Entities.find((enemy) => enemy.id === id);
+            kd.KDAIType.hunt.beforemove(actor, {}, { canSensePlayer: false });
+            if (actor.x === 36 && actor.y === 22) reached.add(id);
+        }
+    }
+    assert.equal(reached.size, 2);
+    assert.equal(r.moves.length > 80, true);
+});
+
 test("native lair admission keeps the Cocoon and creates a connected prison with bypasses", () => {
     const r = runtime();
     const nest = { id: 14, x: 15, y: 15, hp: 5, Enemy: { name: "NestEntrance" } };

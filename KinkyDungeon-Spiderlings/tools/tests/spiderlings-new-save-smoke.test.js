@@ -60,8 +60,10 @@ const scripts = [
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
-    "SpiderlingsSpinnerRuntime.js",
     "SpiderlingsPrison.js",
+    "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonEscort.js",
+    "SpiderlingsSpinnerRuntime.js",
 ];
 const lv1Id = (family) => `SpiderlingsWebbingLv1${family}`;
 const lv2Id = (family) => `SpiderlingsWebbingLv2${family}`;
