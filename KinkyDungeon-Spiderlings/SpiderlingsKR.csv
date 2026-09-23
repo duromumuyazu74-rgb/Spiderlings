@@ -187,3 +187,7 @@ SpiderlingsFieldAddSpinner,Spinner 추가
 SpiderlingsFieldTrap,바닥 거미줄이 발을 붙잡아 잠시 이동을 늦춘다.
 SpiderlingsFieldRebuild,{turns} 월드 턴 후 거미들이 다시 설치를 시작한다.
 SpiderlingsFieldWaiting,함정 준비 완료. 들어올 때까지 서쪽 입구는 열려 있다.
+KDRoomType_SpiderlingsNestPrison,새끼 거미 둥지 감옥
+SpiderlingsPrisonArrival,고치 방이 거미줄로 덮여 있다. 세 갈래 길이 둥지를 지나 동쪽으로 이어진다.
+SpiderlingsPrisonTrail,서늘한 바람이 옅은 거미줄을 따라 바깥벽으로 흐른다.
+SpiderlingsPrisonExit,바깥 거미줄의 틈으로 햇빛이 스민다. 돌아가는 길은 여기다.

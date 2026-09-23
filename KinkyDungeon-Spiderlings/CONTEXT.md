@@ -36,6 +36,10 @@ _Avoid_: simultaneous Tunneler cap, shared ancestry budget, total nest count lim
 A living Spinner, Jumper, WebCaster, or Tunneler created by recurring nest reinforcement and tagged with its parent entrance ID. Untagged natural, squad, Tunneler, and death-burst entities are not nest children.
 _Avoid_: every Spiderling near a nest
 
+**Spiderlings nest prison**:
+A persistent KD side room tied to one source floor. A selected living NestEntrance receives a native shortcut on admission. The original Cocoon equipment stays on the player; the saved chamber, buildable western floor, optional main-nest area and outer return exit stay on `KDMapData` across visits. The exit returns through native stairs with zero journey advance. `Spiderlings.Prison.enter({ entrance })` admits an arrived escort, while `recapture()` relocates the player inside the same map.
+_Avoid_: regenerating the room on capture, making every ordinary nest an entrance, a separate map stack
+
 ## Spiderlings Webbing
 
 **Spinner Capture strands**:

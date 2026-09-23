@@ -40,6 +40,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsPrison.js",
 ];
 const atlasAssets = [
     "TextureAtlas/spiderlings-webbing-0.png",
@@ -1738,6 +1739,10 @@ function checkTranslations(state) {
         "SpiderlingsFieldWaiting",
         "SpiderlingsFieldAddSpinner",
         "SpiderlingsFieldTrap",
+        "KDRoomType_SpiderlingsNestPrison",
+        "SpiderlingsPrisonArrival",
+        "SpiderlingsPrisonTrail",
+        "SpiderlingsPrisonExit",
         ...["preparing", "ready", "sprung", "broken", "complete"].map((p) => "SpiderlingsFieldPhase" + p),
     );
     const pairedGateKey = "KinkyDungeonSpiderlingsWebbingLv1Covered";

@@ -187,3 +187,7 @@ SpiderlingsFieldAddSpinner,加入一只 Spinner
 SpiderlingsFieldTrap,地面蛛丝缠住脚步，短暂减缓移动。
 SpiderlingsFieldRebuild,幼蛛将在 {turns} 个世界回合后重新开始布场。
 SpiderlingsFieldWaiting,陷阱已备好。西侧入口在你进入前保持开放。
+KDRoomType_SpiderlingsNestPrison,幼蛛巢穴囚牢
+SpiderlingsPrisonArrival,蛛丝覆满茧室。三条通路穿过巢穴向东延伸。
+SpiderlingsPrisonTrail,一股凉风沿着浅色蛛丝吹向外墙。
+SpiderlingsPrisonExit,日光透过外层蛛网的裂口。回去的路就在这里。

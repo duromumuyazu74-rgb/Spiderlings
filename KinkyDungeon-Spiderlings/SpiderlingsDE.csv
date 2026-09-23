@@ -187,3 +187,7 @@ SpiderlingsFieldAddSpinner,Spinner hinzufügen
 SpiderlingsFieldTrap,Bodenseide hält deine Füße kurz auf.
 SpiderlingsFieldRebuild,Spinner beginnen in {turns} Weltrunden erneut zu bauen.
 SpiderlingsFieldWaiting,Fallen bereit. Der Westeingang bleibt bis zu deinem Eintritt offen.
+KDRoomType_SpiderlingsNestPrison,Spinnenbrut-Gefängnis
+SpiderlingsPrisonArrival,Seide bedeckt die Kokonkammer. Drei Wege führen durch das Nest nach Osten.
+SpiderlingsPrisonTrail,Ein kühler Luftzug folgt der hellen Seide zur Außenwand.
+SpiderlingsPrisonExit,Tageslicht fällt durch einen Riss im äußeren Netz. Hier geht es zurück.

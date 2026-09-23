@@ -33,6 +33,7 @@ const scripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsPrison.js",
 ];
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
@@ -325,11 +326,7 @@ test("seven locale files contain all twenty-five current restraint text triplets
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(
-            entries.size,
-            189,
-            `${csv}: current release text set including Spinner ground-trap message and its start preset`,
-        );
+        assert.equal(entries.size, 193, `${csv}: current release text set including prison clues and Spinner messages`);
         for (const key of [
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",

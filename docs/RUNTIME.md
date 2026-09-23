@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.14` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.15` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                               |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,6 +25,7 @@ The manifest owns script loading order. Runtime scripts remain plain JavaScript 
 | `SpiderlingsSpinnerNPCRecovery.js`                          | Records breached NPC departures and item-free recovery sources, then adapts shared paid pulling to native `KDMoveEntity`.                                                                                  |
 | `SpiderlingsSpinnerField.js`, `SpiderlingsSpinnerArt.js`    | Legacy training-room geometry/construction compatibility and character artwork.                                                                                                                            |
 | `SpiderlingsSpinnerRuntime.js`                              | Owns the single Spinner enemy-loop wrapper, composes native `hunt` perception/action gates and dispatches field damage, movement, load and positive-turn events.                                           |
+| `SpiderlingsPrison.js`                                      | Registers the persistent native side room, its shortcut and return exit. `Spiderlings.Prison.enter({ entrance })`, `isPrison()` and `recapture()` are the transport interface.                             |
 
 Core precedes encounters and WebCaster movement. Webbing data precedes Webbing rules, which precede the native Webbing adapter. Tests explicitly load these dependencies; the independent manifest allowlist test protects delivery order. Rule-only tests load data and rules without registering enemies, items, native hooks or game events.
 
@@ -56,6 +57,7 @@ Each callback forwards the original receiver, arguments and result on its unhand
 | Spinner group IDs, members, plan, assignments, stable target/lure, last-known age and action counts       | `KDMapData.SpiderlingsSpinnerEncounter.ai`; plain JSON saved with the active map.              |
 | Rollout enable decision and deterministic enclosure/fallback choice                                       | `KDMapData.SpiderlingsSpinnerRollout`; written once at map generation and reused on revisit.   |
 | Debug scene actor/target inputs, prior encounter and actor state                                          | `KDGameData.SpiderlingsSpinnerScenarioControl`; restored after load and consumed by teardown.  |
+| Source room, chamber, work area, main nest area, exit and seen clues                                      | `KDMapData.SpiderlingsPrison`; plain JSON kept in the native side-room map cache.              |
 | Native web-cell entities                                                                                  | Reconciled projection of the encounter topology; exactly one owned proxy per solid cell.       |
 | Deposited silk and leg-bag escape work                                                                    | The equipped item's `data`, including `wrapProgress` and `SpiderlingsLegbinderEscapeProgress`. |
 | Graphics, texture promises, animation interpolation and timer handles                                     | Runtime-only values; not serialized.                                                           |

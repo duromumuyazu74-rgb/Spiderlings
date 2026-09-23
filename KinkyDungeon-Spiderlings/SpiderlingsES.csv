@@ -187,3 +187,7 @@ SpiderlingsFieldAddSpinner,Añadir Spinner
 SpiderlingsFieldTrap,La seda del suelo frena tus pies brevemente.
 SpiderlingsFieldRebuild,Las tejedoras volverán a construir en {turns} turnos del mundo.
 SpiderlingsFieldWaiting,Trampas listas. La entrada oeste queda abierta hasta que entres.
+KDRoomType_SpiderlingsNestPrison,Prisión del nido de arañas
+SpiderlingsPrisonArrival,La seda cubre la cámara del capullo. Tres pasajes llevan al este a través del nido.
+SpiderlingsPrisonTrail,Una corriente fresca sigue la seda pálida hacia el muro exterior.
+SpiderlingsPrisonExit,La luz entra por una abertura en la red exterior. El camino de regreso está aquí.
