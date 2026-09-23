@@ -29,8 +29,12 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 代码规范和 PR 流程见[贡献规范](CONTRIBUTING.md)。
 
+## 许可证
+
+Chlorlne 的原创代码贡献采用 MIT。署名 T_Swizzle 的 Spiderlings 美术采用 CC BY-NC 4.0，允许署名后非商用复用。另行取得的音效还需核实来源和作者署名。[授权范围](LICENSE.md)列出了适用文件和例外。其他贡献者的代码与 Kinky Dungeon 保留各自的条款。
+
 ## 作者与署名
 
-美术素材：T_Swizzle。原 Mod 作者：anthropocentricity。重制作者：Chlorlne。保留 manifest 和源码中的既有署名。本仓库不为第三方美术素材或官方游戏授予新的许可。
+美术素材：T_Swizzle。原 Mod 作者：anthropocentricity。重制作者：Chlorlne。保留 manifest 和源码中的既有署名。
 
 Kinky Dungeon 原版代码与原生模板：Strait Laced Games LLC / Ada18980。授权边界见[第三方声明](THIRD-PARTY-NOTICES.md)。

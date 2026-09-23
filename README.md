@@ -29,8 +29,12 @@ Report bugs and track planned work in [GitHub Issues](https://github.com/duromum
 
 See [contribution rules](CONTRIBUTING.md) for code conventions and the PR workflow.
 
+## Licenses
+
+Chlorlne's original code contributions use MIT. Spiderlings artwork credited to T_Swizzle uses CC BY-NC 4.0, which permits noncommercial reuse with attribution. The separately sourced sound recordings still need a verified source and creator credit. The [license scope](LICENSE.md) identifies the covered files and exceptions. Other contributors' code and Kinky Dungeon retain their own terms.
+
 ## Credits
 
-Art assets: T_Swizzle. Original mod author: anthropocentricity. Reset author: Chlorlne. Existing authorship in the manifest and source is preserved. This repository does not grant a new license to third-party artwork or the official game.
+Art assets: T_Swizzle. Original mod author: anthropocentricity. Reset author: Chlorlne. Existing authorship in the manifest and source is preserved.
 
 Kinky Dungeon code and native templates: Strait Laced Games LLC / Ada18980. See [third-party notices](THIRD-PARTY-NOTICES.md) for licensing boundaries.
