@@ -425,6 +425,7 @@
             state.anchored = true;
             delete state.reinforcementPending;
             state.attemptAges = [];
+            api.PrisonEscort?.onAnchored(item);
             syncCocoonOuterPose();
             if (api.refreshSpiderlingsPlayerModelSoon) api.refreshSpiderlingsPlayerModelSoon(item);
             const localized = typeof TextGet == "function" ? TextGet(COCOON_ANCHORED_MESSAGE) : COCOON_ANCHORED_MESSAGE;
