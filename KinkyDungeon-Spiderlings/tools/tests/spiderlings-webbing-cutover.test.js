@@ -15,6 +15,7 @@ const scripts = [
     "Spiderlings.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsMage.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -49,6 +50,7 @@ const assets = [
     "Enemies/Spinner.png",
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
+    "Enemies/MageSpiderlings.png",
     "Enemies/NestEntrancePink.png",
     "Enemies/SpinnerPink.png",
     "Enemies/TunnelerPink.png",
@@ -295,7 +297,7 @@ test("legacy IDs, five-module exports, upgrade APIs, and the TrapBindings wrappe
     assert.match(webbing, /ENEMY_PROFILES/);
 });
 
-test("seven locale files contain all twenty-five current restraint text triplets", () => {
+test("seven locale files contain the current restraint and Mage text", () => {
     const current = [
         "SpiderlingsSpinnerLegbinder",
         "SpiderlingsWebbingLv1Arm",
@@ -325,15 +327,18 @@ test("seven locale files contain all twenty-five current restraint text triplets
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(
-            entries.size,
-            189,
-            `${csv}: current release text set including Spinner ground-trap message and its start preset`,
-        );
+        assert.equal(entries.size, 196, `${csv}: current release text set including Mage combat`);
         for (const key of [
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
+            "NameMageSpiderlings",
+            "KillMageSpiderlings",
+            "KinkyDungeonSpellSpiderlingsMageBolt",
+            "KinkyDungeonSpellCastSpiderlingsMageBolt",
+            "RestraintSpiderlingsMageArmSigil",
+            "RestraintSpiderlingsMageArmSigilDesc",
+            "RestraintSpiderlingsMageArmSigilDesc2",
         ]) {
             assert.ok(entries.get(key)?.trim(), `${csv}: ${key}`);
         }
