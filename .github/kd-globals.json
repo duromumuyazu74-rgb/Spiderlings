@@ -95,6 +95,7 @@
   "KinkyDungeonAllRestraintDynamic",
   "KinkyDungeonApplyBuffToEntity",
   "KinkyDungeonCalculateSlowLevel",
+  "KinkyDungeonCastSpell",
   "KinkyDungeonChangeConsumable",
   "KinkyDungeonCheckLOS",
   "KinkyDungeonCheckPath",
