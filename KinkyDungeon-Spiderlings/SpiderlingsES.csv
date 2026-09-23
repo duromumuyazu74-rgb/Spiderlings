@@ -187,3 +187,10 @@ SpiderlingsFieldAddSpinner,Añadir Spinner
 SpiderlingsFieldTrap,La seda del suelo frena tus pies brevemente.
 SpiderlingsFieldRebuild,Las tejedoras volverán a construir en {turns} turnos del mundo.
 SpiderlingsFieldWaiting,Trampas listas. La entrada oeste queda abierta hasta que entres.
+NameMageSpiderlings,Spiderling Mage
+KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
+KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
+KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
+RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
+RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
+RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

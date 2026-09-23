@@ -11,7 +11,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
 (() => {
     if (typeof KDHostile != "function" || KDHostile.spiderlingsMaidHostility) return;
     const nativeHostile = KDHostile;
-    const targets = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance"]);
+    const targets = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance", "MageSpiderlings"]);
     const provokedFlag = "SpiderlingsPlayerProvoked";
     const provokedTurns = 10;
     let rivalSelection = null;
@@ -358,6 +358,35 @@ SPIDERLINGS.addEnemies([
         shrines: ["Latex"],
     },
 
+    // Mage combat is summonable here; #66 owns its natural, nest and map-start rollout.
+    {
+        name: "MageSpiderlings",
+        clusterWith: "spiderlings",
+        color: "#8b64cf",
+        tags: KDMapInit(["MageSpiderlings", "spiderlings", "opendoors", "ranged", "hunter", "glueresist"]),
+        AI: "hunt",
+        visionRadius: 8,
+        maxhp: 3,
+        minLevel: 5,
+        weight: 0,
+        movePoints: 1.5,
+        attackPoints: 3,
+        attack: "Spell",
+        spells: ["SpiderlingsMageBolt"],
+        spellCooldownMult: 1,
+        spellCooldownMod: 0,
+        castWhileMoving: true,
+        stopToCast: false,
+        noSpellsWhenHarmless: true,
+        projectileTargeting: true,
+        followRange: 3,
+        kite: 3,
+        kiteChance: 1,
+        terrainTags: { spiderlings: 50 },
+        allFloors: true,
+        shrines: ["Latex"],
+    },
+
     //Tunneler - Creates new Nest Entrances
     // 掘穴幼蛛：通过 SummonNestEntrance 创建新的巢穴入口。
     {
@@ -502,6 +531,9 @@ addTextKey(
     "The Spiderling Web Caster draws its fine legs close and eases away, leaving a slender thread behind.",
 );
 
+addTextKey("NameMageSpiderlings", "Spiderling Mage");
+addTextKey("KillMageSpiderlings", "The Spiderling Mage draws back its legs and retreats into the shadows.");
+
 //Enemy Spells--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Glossary of spell effects
@@ -523,6 +555,28 @@ addTextKey(
 // summon: 召唤怪物列表；playerEffect: 命中玩家后施加的效果；trailcast: 飞弹轨迹生成的附加法术。
 
 SPIDERLINGS.addSpells([
+    {
+        enemySpell: true,
+        name: "SpiderlingsMageBolt",
+        noSprite: true,
+        color: "#a77bdc",
+        sfx: "Miss",
+        school: "Latex",
+        manacost: 4,
+        components: ["Arms"],
+        level: 1,
+        type: "bolt",
+        projectileTargeting: true,
+        castRange: 6,
+        minRange: 0,
+        onhit: "",
+        power: 0.5,
+        range: 8,
+        speed: 4,
+        size: 1,
+        damage: "glue",
+        playerEffect: { name: "SpiderlingsMageArmHit" },
+    },
     //Jumper Dash - inert transport into a source-owned, two-player-action Dash lifecycle.
     // Jumper 跃击：原生法术只触发独立生命周期；两次完整玩家行动后落地结算，推进蛛丝才消耗 Jumper。
     {
@@ -779,6 +833,11 @@ SPIDERLINGS.addSpells([
 ]);
 
 //Enemy Spell Text--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Mage Silk Bolt");
+addTextKey(
+    "KinkyDungeonSpellCastSpiderlingsMageBolt",
+    "The Spiderling Mage gathers a bright knot of silk and casts it toward you.",
+);
 addTextKey("KinkyDungeonSpellSummonSpinner", "Summon Spinner");
 addTextKey(
     "KinkyDungeonSummonSummonSpinner",

@@ -187,3 +187,10 @@ SpiderlingsFieldAddSpinner,加入一只 Spinner
 SpiderlingsFieldTrap,地面蛛丝缠住脚步，短暂减缓移动。
 SpiderlingsFieldRebuild,幼蛛将在 {turns} 个世界回合后重新开始布场。
 SpiderlingsFieldWaiting,陷阱已备好。西侧入口在你进入前保持开放。
+NameMageSpiderlings,法师幼蛛
+KillMageSpiderlings,法师幼蛛收拢细腿，退入阴影。
+KinkyDungeonSpellSpiderlingsMageBolt,幼蛛魔法丝弹
+KinkyDungeonSpellCastSpiderlingsMageBolt,法师幼蛛聚起一团发亮的蛛丝，向你掷来。
+RestraintSpiderlingsMageArmSigil,蛛丝臂印
+RestraintSpiderlingsMageArmSigilDesc,一枚紧实的蛛丝印记缠住你的双臂，将它们束在一起。
+RestraintSpiderlingsMageArmSigilDesc2,这是暂定设计。可按通常规则切断、移除或挣脱。
