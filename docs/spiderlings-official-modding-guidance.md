@@ -369,9 +369,11 @@ Spiderlings 0.92.32 uses native `KinkyDungeonNearestPlayer(nest, true, true)` to
 
 In KD 5.4.92 and 5.5, `KinkyDungeonPlaceEnemies` counts preset NPCs toward `ncount` at their normal rank cost, even though presets consume only 0.025 of the main population budget. Once `ncount > neutralCount`, random selection requires hostility toward Player. Default Player relations to Maidforce (-0.1) and Dressmaker (-0.4) exceed the -0.5 hostility threshold, so this excludes both groups and leaves Spiderlings filling the themed floor. Since 0.92.31, only initial random selection on an eligible ordinary Maidforce map clears `requireHostile: "Player"` on a copied alliance argument. Preserve other alliance predicates, native population/rank/level/tile limits, preset exclusion and hostile wandering searches; never change global faction relations. The regression uses neutral human factions and an exhausted allowance, and native full-map evidence is in `.scratch/spiderlings-maid-spawn-fix-20260913/`.
 
-## Mage map-start and selector order (0.92.36-test.15)
+## Mage map-start and selector order (0.92.36-test.16)
 
 KD 5.5 builds navigation before `KinkyDungeonPlaceEnemies` and sends `postMapgen` only after native population. A Mage map-start guarantee must run inside the place-enemies wrapper before the native call, then save its one-time outcome on `KDMapData`; the four-member squad stays on `postMapgen`. `KinkyDungeonGetEnemy` reads the Mage's base `weight` plus `bonusTags.MageSpiderlings.bonus`, applies `filterTags` at argument 7, and adds matching `terrainTags` to the draw weight. Give Mage a unique filter tag for the floor/security threshold and a numeric owned bonus for security and infestation. A broad `terrainTags.spiderlings` bonus would bypass the intended 2–9 weight range. The Mage shares the mobile cap, while `NestEntrance` remains excluded. Native selector and encounter tests cover these contracts; final map behavior still needs the test ZIP in both supported game references.
+
+KD 5.5 `KinkyDungeonBulletHit` creates a new `<bullet name>Hit` visual when `onhit` is `""`. The new bullet does not inherit `noSprite` from the original bullet, so even a hidden Mage bolt requests `Bullets/SpiderlingsMageBoltHit.png` on impact. A triggered Mage rune requests `Bullets/SpiderlingsMageRuneHit.png`. Keep both files in the manifest before scripts and assert their presence in the checker.
 
 ## Journey modifier selection
 
