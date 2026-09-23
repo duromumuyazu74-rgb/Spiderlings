@@ -329,7 +329,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 198, `${csv}: current release text set including Mage rune`);
+        assert.equal(entries.size, 199, `${csv}: current release text set including Mage rune`);
         for (const key of [
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",

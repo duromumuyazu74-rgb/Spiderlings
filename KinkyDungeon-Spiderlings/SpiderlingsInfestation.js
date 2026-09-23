@@ -304,7 +304,7 @@
     const QUIET_TURNS = 15;
     const GARRISON = 5;
     const NEARBY_RADIUS = 12;
-    const MOBILE = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler"]);
+    const MOBILE = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]);
     const POPULATION_TAG = MOD + "Population";
     const POPULATION_MULTIPLIERS = { Spider: 1, Maid: 3, Dressmaker: 0.5, Nurse: 1 };
     const POPULATION_TAGS = ["spiderlings", "maid", "dressmaker"];
@@ -316,7 +316,8 @@
         );
 
     function populationGroup(enemy) {
-        if (["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance"].includes(enemy?.name)) return "Spider";
+        if (["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"].includes(enemy?.name))
+            return "Spider";
         if (enemy?.faction === "Maidforce" && enemy.tags?.human) return "Maid";
         if (enemy?.name === "Nurse" && enemy.faction === "Dressmaker") return "Nurse";
         if (enemy?.faction === "Dressmaker" || enemy?.applyFaction === "Dressmaker") return "Dressmaker";
