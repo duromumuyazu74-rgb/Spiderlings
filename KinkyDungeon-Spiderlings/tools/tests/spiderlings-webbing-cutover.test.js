@@ -32,8 +32,9 @@ const scripts = [
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
-    "SpiderlingsSpinnerRuntime.js",
     "SpiderlingsPrison.js",
+    "SpiderlingsPrisonEscort.js",
+    "SpiderlingsSpinnerRuntime.js",
 ];
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",

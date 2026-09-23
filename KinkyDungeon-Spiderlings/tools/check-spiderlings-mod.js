@@ -39,8 +39,9 @@ const runtimeScripts = [
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
-    "SpiderlingsSpinnerRuntime.js",
     "SpiderlingsPrison.js",
+    "SpiderlingsPrisonEscort.js",
+    "SpiderlingsSpinnerRuntime.js",
 ];
 const atlasAssets = [
     "TextureAtlas/spiderlings-webbing-0.png",

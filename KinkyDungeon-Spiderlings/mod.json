@@ -118,7 +118,8 @@
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
-    "SpiderlingsSpinnerRuntime.js",
-    "SpiderlingsPrison.js"
+    "SpiderlingsPrison.js",
+    "SpiderlingsPrisonEscort.js",
+    "SpiderlingsSpinnerRuntime.js"
   ]
 }
