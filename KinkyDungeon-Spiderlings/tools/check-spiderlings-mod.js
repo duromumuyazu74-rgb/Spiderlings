@@ -66,6 +66,8 @@ const runtimeAssets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneHit.png",
+    "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
@@ -1491,6 +1493,11 @@ function checkRouting(state) {
     }
 
     const spellByName = new Map(state.spells.map((entry) => [entry.name, entry]));
+    for (const spellName of ["SpiderlingsMageRune", "SpiderlingsMageBolt"]) {
+        const spell = spellByName.get(spellName);
+        if (spell?.onhit !== "" || !exists(`Bullets/${spellName}Hit.png`))
+            fail(`${spellName} must package its native hit visual.`);
+    }
     const dash = spellByName.get("SpiderlingsJumperDash");
     const dashApi = state.context.Spiderlings && state.context.Spiderlings.JumperDash;
     const dashSource = readModText("SpiderlingsJumperDash.js");
