@@ -2,7 +2,13 @@
 
 ## 2026-09-23 授权决定
 
-维护者选择分项授权，现行范围见根目录 [LICENSE.md](../LICENSE.md)：Chlorlne 的原创代码贡献采用 MIT；列明路径内署名 T_Swizzle 的 Spiderlings 美术采用 CC BY-NC 4.0。四个外部音效据维护者回忆来自 CC BY-NC 4.0 网站，但已剪辑、转码，文件中没有作者、来源或许可证标签，尚不能核实具体来源；本次不替原作者重新授权。文档、其他作者的代码和 Kinky Dungeon 原版内容不随之改许可。混合文件只对维护者拥有权利的贡献适用 MIT。以下保留 2026-09-22 调查时的状态与依据，不作为当前授权声明。
+维护者选择分项授权，现行范围见根目录 [LICENSE.md](../LICENSE.md)：Chlorlne 的原创代码贡献采用 MIT；列明路径内署名 T_Swizzle 的 Spiderlings 美术采用 CC BY-NC 4.0。四个外部音效来自 ZapSplat，适用该站现行标准许可证，而非 CC BY-NC 4.0。文档、其他作者的代码和 Kinky Dungeon 原版内容不随之改许可。混合文件只对维护者拥有权利的贡献适用 MIT。以下保留 2026-09-22 调查时的状态与依据，不作为当前授权声明。
+
+## 2026-09-23 ZapSplat 音效核查
+
+维护者提供的[原检索链接](https://www.zapsplat.com/?s=spider&registration_redirect=1&item_id=6169)指向 ZapSplat。站内与四个 OGG 文件名相符的系列为“Thick cobwebs sweep away with hand”[1](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-1/)、[2](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-2/)、[3](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-3/)、[4](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-4/)。维护者已剪辑、转码；现有 OGG 元数据没有可用于逐文件校验原始下载的来源标记，因此系列匹配依据为维护者提供的来源和文件名。
+
+ZapSplat 的[标准许可证](https://www.zapsplat.com/license-type/standard-license/)（页面标注 2026-05-08 更新）允许将音效用于游戏并在项目内剪辑、改作；Basic 用户须署名，Premium 用户免署名。其[署名说明](https://www.zapsplat.com/how-to-credit-us/)建议在项目说明、游戏鸣谢等处以文字和链接署名。标准许可证同时限制把音效作为独立文件再分发，不能因剪辑、转码就将其改标为 CC BY-NC 4.0。现有四个 OGG 独立存在于公开源码与安装 ZIP，能否按该条款继续分发尚未确认；见 [Issue #58](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/58)。根目录 LICENSE 和第三方声明只标明已知来源和条款，不代表 ZapSplat 对此分发方式另行授权。
 
 ## 2026-09-22 调查记录
 
