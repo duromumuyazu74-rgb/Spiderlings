@@ -8,7 +8,7 @@
 
 维护者提供的[原检索链接](https://www.zapsplat.com/?s=spider&registration_redirect=1&item_id=6169)指向 ZapSplat。站内与四个 OGG 文件名相符的系列为“Thick cobwebs sweep away with hand”[1](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-1/)、[2](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-2/)、[3](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-3/)、[4](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-4/)。维护者已剪辑、转码；现有 OGG 元数据没有可用于逐文件校验原始下载的来源标记，因此系列匹配依据为维护者提供的来源和文件名。
 
-ZapSplat 的[标准许可证](https://www.zapsplat.com/license-type/standard-license/)（页面标注 2026-05-08 更新）允许将音效用于游戏并在项目内剪辑、改作；Basic 用户须署名，Premium 用户免署名。其[署名说明](https://www.zapsplat.com/how-to-credit-us/)建议在项目说明、游戏鸣谢等处以文字和链接署名。标准许可证同时限制把音效作为独立文件再分发，不能因剪辑、转码就将其改标为 CC BY-NC 4.0。现有四个 OGG 独立存在于公开源码与安装 ZIP，能否按该条款继续分发尚未确认；见 [Issue #58](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/58)。根目录 LICENSE 和第三方声明只标明已知来源和条款，不代表 ZapSplat 对此分发方式另行授权。
+ZapSplat 的[标准许可证](https://www.zapsplat.com/license-type/standard-license/)（页面标注 2026-05-08 更新）允许将音效用于游戏并在项目内剪辑、改作；Basic 用户须署名，Premium 用户免署名。其[署名说明](https://www.zapsplat.com/how-to-credit-us/)建议在项目说明、游戏鸣谢等处以文字和链接署名。标准许可证同时限制把音效作为独立文件再分发，不能因剪辑、转码就将其改标为 CC BY-NC 4.0。现有四个 OGG 独立存在于公开源码与安装 ZIP，能否按该条款继续分发尚未确认。根目录 LICENSE 和第三方声明只标明已知来源和条款，不代表 ZapSplat 对此分发方式另行授权。
 
 ## 2026-09-22 调查记录
 
