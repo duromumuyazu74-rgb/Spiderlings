@@ -173,6 +173,30 @@
         return state();
     }
 
+    function extendEnclosure(input) {
+        const encounter = state();
+        if (!encounter?.topology) return { added: false, reason: "inactive" };
+        const owners = input.owners?.map((owner) => (typeof owner === "object" ? owner.id : owner));
+        const extension = topology().extendEnclosure(encounter.topology, {
+            ...input,
+            owners,
+            map: input.map || mapSnapshot(),
+        });
+        if (!extension.added) return { added: false, reason: extension.reason };
+        encounter.topology = extension.state;
+        if (!encounter.autonomous)
+            for (const id of extension.state.fieldOwners[extension.fieldId])
+                encounter.builders[id] = encounter.builders[id] || { auto: true };
+        for (const plan of Object.values(encounter.ai?.plans || {}))
+            if (plan.compositeId === input.compositeId) {
+                plan.fieldIds = [...extension.state.composites[input.compositeId].layerIds];
+                plan.cells = Object.values(extension.state.fields)
+                    .filter((field) => field.compositeId === input.compositeId)
+                    .flatMap((field) => field.boundaryCells.map(cellKey));
+            }
+        return { added: true, fieldId: extension.fieldId };
+    }
+
     function ensureMap(input = {}) {
         if (!state())
             KDMapData[KEY] = {
@@ -565,6 +589,7 @@
         setOwners,
         initializeMap,
         initializeEnclosure,
+        extendEnclosure,
         applyPaidAction,
         accrueConstructionAction,
         handleEnemyTurn,

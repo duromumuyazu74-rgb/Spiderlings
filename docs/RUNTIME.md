@@ -80,7 +80,7 @@ Autonomous planning captures the map seed, forms groups from hostile capable Spi
 
 ## Native enclosing-field slice
 
-Issue #30 extends the same map-owned topology and `SpiderlingsSpinnerWebCell` projection used by the doorway line. It does not add a second collision or damage model. Every declared enclosure is a saved simple orthogonal polygon. The inner polygon has a 3-by-3 free core and a 3-to-7-cell interior width and height. A same-group outer layer requires four initial members, two free cell bands between boundaries, a common inner core and a boundary footprint no larger than 13 by 13.
+Issue #30 extends the same map-owned topology and `SpiderlingsSpinnerWebCell` projection used by the doorway line. It does not add a second collision or damage model. Every declared enclosure is a saved simple orthogonal polygon. The inner polygon has a 3-by-3 free core and a 3-to-7-cell interior width and height. A same-group outer layer requires four builders, two free cell bands between successive boundaries and the common inner core. Further legal layers can be appended to the saved composite without a fixed layer count or footprint limit; finite floor, protected and occupied work cells still constrain each extension. The existing field actions build every new layer, and damage, repair, collision and capture continue to use the shared topology.
 
 The physical graph expands boundaries to unit edges, merges equal edges and coalesces collinear spans only while owner sets match. Original polygon vertices remain real anchors. Overlap splits and crossings are junctions without anchor HP. Identical and partial overlaps therefore share one HP pool per physical span and one native proxy per occupied cell.
 

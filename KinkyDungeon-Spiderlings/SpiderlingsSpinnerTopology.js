@@ -136,10 +136,7 @@
         bounds.height = bounds.bottom - bounds.top + 1;
         const interiorWidth = bounds.right - bounds.left - 1,
             interiorHeight = bounds.bottom - bounds.top - 1;
-        if (
-            (!outer && (interiorWidth < 3 || interiorWidth > 7 || interiorHeight < 3 || interiorHeight > 7)) ||
-            (outer && (bounds.width > 13 || bounds.height > 13))
-        )
+        if (!outer && (interiorWidth < 3 || interiorWidth > 7 || interiorHeight < 3 || interiorHeight > 7))
             return { valid: false, reason: "dimensions" };
         if (!connected(interior)) return { valid: false, reason: "interior" };
         if (
@@ -149,6 +146,8 @@
             return { valid: false, reason: "terrain" };
         if (map && [...boundary, ...interior].some((cell) => mapHas(map, "protected", cell)))
             return { valid: false, reason: "protected" };
+        if (outer && map && boundary.some((cell) => mapHas(map, "occupied", cell)))
+            return { valid: false, reason: "occupied" };
         const interiorKeys = new Set(interior.map(key)),
             coreFree = (center) =>
                 [-1, 0, 1].every((dx) =>
@@ -450,7 +449,7 @@
                 break;
             }
             if (index > 0) {
-                const inner = accepted[0],
+                const inner = accepted[index - 1],
                     spacing =
                         Math.min(
                             ...checked.boundary.map((outer) =>
@@ -459,9 +458,8 @@
                         ) - 1;
                 if (
                     spacing !== 2 ||
-                    !checked.interior.some((cell) => sameCell(cell, inner.core)) ||
-                    checked.bounds.width > 13 ||
-                    checked.bounds.height > 13
+                    !inner.boundary.every((cell) => checked.interior.some((inside) => sameCell(cell, inside))) ||
+                    !checked.interior.some((cell) => sameCell(cell, accepted[0].core))
                 )
                     break;
             }
@@ -506,6 +504,66 @@
             };
         refresh(state);
         return state;
+    }
+
+    function extendEnclosure(state, input) {
+        const composite = state?.composites?.[input?.compositeId],
+            inner = composite && state.fields?.[composite.layerIds.at(-1)],
+            owners = unique(input?.owners || state?.fieldOwners?.[inner?.id] || []),
+            id = input?.layer?.id || `${input.compositeId}:layer:${composite?.layerIds.length}`;
+        if (!inner || inner.retired || owners.length < 4 || state.fields[id] || state.lineFields?.[id])
+            return { state, added: false, reason: "field" };
+        if (!isLayerClosed(state, inner.id)) return { state, added: false, reason: "inner-open" };
+        const checked = validatePolygon({ ...input.layer, map: input.map }, true);
+        if (!checked.valid) return { state, added: false, reason: checked.reason };
+        const innerBoundary = inner.boundaryCells,
+            spacing =
+                Math.min(
+                    ...checked.boundary.map((outer) => Math.min(...innerBoundary.map((cell) => distance(outer, cell)))),
+                ) - 1,
+            interior = new Set(checked.interior.map(key)),
+            otherBoundaries = new Set([
+                ...Object.values(state.fields)
+                    .filter((field) => field.compositeId !== composite.id && !field.retired)
+                    .flatMap((field) => field.boundaryCells.map(key)),
+                ...Object.values(state.lineFields || {})
+                    .filter((field) => !field.retired)
+                    .flatMap((field) => boundaryCells(field.vertices, false).map(key)),
+            ]);
+        if (
+            spacing !== 2 ||
+            !innerBoundary.every((cell) => interior.has(key(cell))) ||
+            !interior.has(key(composite.core)) ||
+            checked.boundary.some((cell) => otherBoundaries.has(key(cell)))
+        )
+            return { state, added: false, reason: "nesting" };
+        const next = clone(state),
+            graph = normalizeGraph([{ id, type: "enclosure", vertices: checked.vertices }]);
+        next.anchors.push(...graph.anchors);
+        next.links.push(...graph.links);
+        next.junctions.push(...graph.junctions);
+        next.owners = unique([...next.owners, ...owners]);
+        next.fieldOwners[id] = owners;
+        next.fields[id] = {
+            id,
+            compositeId: composite.id,
+            groupId: composite.groupId,
+            layer: composite.layerIds.length,
+            kind: "enclosure",
+            vertices: checked.vertices,
+            boundaryCells: checked.boundary,
+            interiorCells: checked.interior,
+            bounds: checked.bounds,
+            core: composite.core,
+            gateCell: checked.gate,
+            spacing: 2,
+            phase: "preparing",
+            retired: false,
+            reopenPending: false,
+        };
+        next.composites[composite.id].layerIds.push(id);
+        refresh(next);
+        return { state: next, added: true, fieldId: id };
     }
 
     function solidCells(state) {
@@ -1055,6 +1113,7 @@
         setFieldOwners,
         createPhysicalGraph,
         createEnclosure,
+        extendEnclosure,
         validatePolygon,
         legalAction,
         applyAction,

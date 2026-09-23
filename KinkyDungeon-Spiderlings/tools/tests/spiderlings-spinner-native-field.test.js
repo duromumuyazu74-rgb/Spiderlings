@@ -396,3 +396,109 @@ test("native enclosure reload deduplicates partial, sealed, and breached project
         assert.equal(JSON.stringify(encounter.topology), JSON.stringify(saved));
     }
 });
+
+test("native Spinner builder actions close four outward layers and restore their physical field", () => {
+    const r = runtime(),
+        c = r.context,
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        workers = [
+            [18, 18],
+            [26, 18],
+            [18, 26],
+            [26, 26],
+        ].map(([x, y], index) => ({
+            id: index + 1,
+            x,
+            y,
+            hp: 10,
+            buffs: {},
+            Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+        })),
+        layer = (index) => ({
+            id: `native-layer-${index}`,
+            vertices: [
+                { x: 19 - 3 * index, y: 19 - 3 * index },
+                { x: 25 + 3 * index, y: 19 - 3 * index },
+                { x: 25 + 3 * index, y: 25 + 3 * index },
+                { x: 19 - 3 * index, y: 25 + 3 * index },
+            ],
+            gate: { x: 19 - 3 * index, y: 22 },
+        });
+    c.KDMapData.GridWidth = 45;
+    c.KDMapData.GridHeight = 45;
+    c.KDMapData.StartPosition = { x: 2, y: 2 };
+    c.KDMapData.EndPosition = { x: 42, y: 42 };
+    c.KinkyDungeonPlayerEntity.x = 22;
+    c.KinkyDungeonPlayerEntity.y = 22;
+    c.KDMapData.Entities.push(...workers);
+    const encounter = field.initializeEnclosure({
+        compositeId: "native-growing",
+        owners: workers.map((worker) => worker.id),
+        layers: [layer(0)],
+    });
+    field.onEntry(c.KinkyDungeonPlayerEntity, 22, 22);
+    for (let index = 0; index < 4; index++) {
+        if (index) {
+            const extension = field.extendEnclosure({ compositeId: "native-growing", layer: layer(index) });
+            assert.equal(extension.added, true, extension.reason);
+        }
+        let paidOperations = 0;
+        while (encounter.topology.fields[`native-layer-${index}`].phase !== "sealed" && paidOperations < 150) {
+            const worker = workers[paidOperations % workers.length],
+                action = topology.nextWorkAction(encounter.topology, worker.id, worker);
+            assert.ok(action?.cell, `layer ${index} needs a physical work action`);
+            // The native adapter charges the action; the fixture positions each builder at its assigned work site.
+            worker.x = action.cell.x + 1;
+            worker.y = action.cell.y + 1;
+            const result = field.applyPaidAction(worker, { ...action, ownerId: worker.id });
+            assert.equal(result.paid, true);
+            assert.equal(result.applied, true, result.reason);
+            paidOperations++;
+        }
+        assert.ok(paidOperations < 150, `layer ${index} must close through paid builder actions`);
+        assert.ok(paidOperations >= layer(index).vertices.length);
+        assert.equal(
+            topology.captureGeometryReady(encounter.topology, "native-growing", c.KinkyDungeonPlayerEntity),
+            true,
+        );
+    }
+    assert.equal(encounter.topology.fields["native-layer-3"].bounds.width, 25);
+    const outerProxy = c.KDMapData.Entities.find(
+        (entity) => field.isOwnedProxy(entity) && entity.x === 10 && entity.y === 15,
+    );
+    assert.ok(outerProxy);
+    assert.equal(field.onNativeDamage({ enemy: outerProxy, dmgDealt: 99 }), true);
+    assert.equal(encounter.topology.fields["native-layer-3"].phase, "breached");
+    assert.equal(
+        topology.captureGeometryReady(encounter.topology, "native-growing", c.KinkyDungeonPlayerEntity),
+        false,
+    );
+    field.tick(4);
+    let repairOperations = 0;
+    while (encounter.topology.fields["native-layer-3"].phase !== "sealed" && repairOperations++ < 150) {
+        const worker = workers[repairOperations % workers.length],
+            action = topology.nextWorkAction(encounter.topology, worker.id, worker);
+        assert.ok(action?.cell);
+        worker.x = action.cell.x + 1;
+        worker.y = action.cell.y + 1;
+        assert.equal(field.applyPaidAction(worker, { ...action, ownerId: worker.id }).applied, true);
+    }
+    assert.ok(repairOperations < 150, "damaged outer layer must repair through the same field work");
+
+    const saved = JSON.parse(JSON.stringify(encounter.topology));
+    c.KDMapData.Entities.push({ ...c.KDMapData.Entities.find(field.isOwnedProxy), id: 9999 });
+    c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+    c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+    assert.equal(JSON.stringify(encounter.topology), JSON.stringify(saved));
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, topology.solidCells(saved).length);
+
+    const retainedMap = JSON.parse(JSON.stringify(c.KDMapData));
+    c.KDMapData = { ...retainedMap, Entities: [], SpiderlingsSpinnerEncounter: undefined };
+    assert.equal(field.state(), undefined);
+    c.KDMapData = retainedMap;
+    c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+    c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+    assert.equal(JSON.stringify(field.state().topology), JSON.stringify(saved));
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, topology.solidCells(saved).length);
+});
