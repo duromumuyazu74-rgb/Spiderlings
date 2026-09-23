@@ -1398,6 +1398,9 @@ function checkRuntime(state) {
             fail(`Cocoon outer webs are missing their ${trigger} lifecycle handler.`);
         }
     }
+    if (typeof state.context.Spiderlings.Webbing.hasAnchoredCocoon !== "function") {
+        fail("Spiderlings escort eligibility must read the equipped Cocoon's anchored state.");
+    }
     const cocoonRefreshTriggers = ((cocoonRestraint && cocoonRestraint.events) || [])
         .filter((event) => event.type === "SpiderlingsRefreshModels")
         .map((event) => event.trigger)

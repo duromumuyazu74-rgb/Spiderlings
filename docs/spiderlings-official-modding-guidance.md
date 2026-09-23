@@ -383,6 +383,8 @@ KD 5.5 sends `beforeMove` after resetting `KinkyDungeonNoMoveFlag` and tests the
 
 `KinkyDungeonDressPlayer` sends `afterDress` after rebuilding `KDCurrentModels.get(Character).Poses`. The Spiderlings handler adds its owned anchored pose only to the player and only from the equipped Cocoon state; `ModelDrawLayer` honors the outer layer's `RequirePoses` (`Data/Models.ts`). This preserves the single restraint identity and restores the layer after redress/save loading. The checker asserts the model gate and lifecycle registrations; Cocoon regression tests exercise frequency, source filtering, removal and restored item data.
 
+KD 5.5 clears `KDGameData.KinkyDungeonLeashingEnemy` before the enemy loop when the player lacks a matching entity tether. Native Pull can move an immobilized player without attaching that tether. Spiderlings records only a successful native pull's source while the anchored Cocoon and native leashed-player timer remain active; it rechecks the living entity after load. Escort interception changes hostility only for that source and hostile Spiderlings, leaving the leash and global faction table untouched. The native target selector excludes `noAttack` and Natural NPCs, so only a perceived active escort gets an exception. Native movement, attacks and projectile collision still decide the contest.
+
 ## Spiderlings-Specific Checks
 
 ### Spinner leg bag native contracts (0.92.36-test.1)

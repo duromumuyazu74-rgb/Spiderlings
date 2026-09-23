@@ -473,6 +473,10 @@
         return !!state?.reinforcementPending && !state.anchored;
     }
 
+    function hasAnchoredCocoon() {
+        return equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored === true;
+    }
+
     // Garrison peace counts waiting in a Cocoon independently of the 25-turn
     // movement vigil. tick samples before our vigil handler, while tickAfter
     // samples after KD clears LastAction: recognize both sides of a paid turn.
@@ -1385,6 +1389,7 @@
         COCOON_ESCAPE_CHANCE,
         COCOON_ESCAPE_EVENT,
         COCOON_ID,
+        hasAnchoredCocoon,
         isCocoonPassive,
         isCocoonDispersing,
         needsCocoonReinforcement,

@@ -606,6 +606,7 @@ test("escape and attack intents share a window and only WebCaster direct hits an
     const runtime = loadRuntime();
     runtime.manualEquipCocoon();
     const item = runtime.equipment.get("ItemDevices");
+    assert.equal(runtime.context.Spiderlings.Webbing.hasAnchoredCocoon(), false);
     runtime.nativeEscapeCocoon("Remove");
     runtime.event("tickAfter", { delta: 4 });
     runtime.context.KinkyDungeonLastAction = "Attack";
@@ -629,7 +630,12 @@ test("escape and attack intents share a window and only WebCaster direct hits an
     assert.equal(runtime.context.KDOverrideIgnore(caster, runtime.context.KinkyDungeonPlayerEntity), true);
     directHit(runtime);
     assert.equal(item.data[outerStateKey].anchored, true);
+    assert.equal(runtime.context.Spiderlings.Webbing.hasAnchoredCocoon(), true);
     assert.equal(runtime.context.Spiderlings.Webbing.needsCocoonReinforcement(), false);
+    item.data = plain(item.data);
+    assert.equal(runtime.context.Spiderlings.Webbing.hasAnchoredCocoon(), true, "saved equipment restores eligibility");
+    runtime.equipment.delete("ItemDevices");
+    assert.equal(runtime.context.Spiderlings.Webbing.hasAnchoredCocoon(), false);
 });
 
 test("offensive spell intents count once per action, while buffs, healing and waiting do not", () => {
