@@ -58,6 +58,14 @@ _Avoid_: scaled full-body Cocoon, contest-owned wrap progress, forced replacemen
 The legacy flat-room experiment retained for historical comparison, distinct from current map-aware Spinner encounters. Current acceptance uses ordinary/infestation maps and the ten native scenario fixtures in [runtime documentation](../docs/RUNTIME.md); the old fixed-training-room save and playtest flow are not current acceptance paths.
 _Avoid_: decorative-only boundary, teleporting the player into a capture, immortal Spinner
 
+**Prison regional alert**:
+A real hostile Spiderling sighting of the player records the reported tile and region on the prison map. Nearby placement-capable Spiderlings in that region receive an alert; other regions do not receive a movement goal. Hearing, awareness and NPC sightings do not create a player report. The saved report expires after twelve positive world turns without another valid sighting.
+_Avoid_: map-wide awareness, hearing as sight, live player coordinates for distant builders
+
+**Distant Spinner ambush**:
+A prison Spinner group keeps its home region when members move and uses the latest unexpired report to rank legal line sites in that home region. The group walks to its own work cells and pays normal construction actions; its report is separate from native combat engagement. Existing paid work remains after reports change or expire.
+_Avoid_: distant pursuit order, cross-region group merge, report-created finished field
+
 **Spinner demo reaction opportunity**:
 A real player input that advances time while a contest or leg bag is present, counted once even when the native action schedules multiple world turns. Jumper warnings still snapshot their target tile and resolve after two subsequent opportunities. Automatic weaving advances world effects without consuming player opportunities; NPC-targeted dashes retain world-time behavior.
 _Avoid_: every tick is a player action, frozen world during weaving
