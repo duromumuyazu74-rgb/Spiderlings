@@ -44,6 +44,7 @@ const scripts = [
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
     "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",

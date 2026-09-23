@@ -16,6 +16,7 @@ const scripts = [
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
     "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -38,6 +39,7 @@ const scripts = [
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
+    "Bullets/SpiderlingsMageRune.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
@@ -327,7 +329,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 196, `${csv}: current release text set including Mage combat`);
+        assert.equal(entries.size, 198, `${csv}: current release text set including Mage rune`);
         for (const key of [
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
@@ -336,6 +338,8 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KillMageSpiderlings",
             "KinkyDungeonSpellSpiderlingsMageBolt",
             "KinkyDungeonSpellCastSpiderlingsMageBolt",
+            "KinkyDungeonSpellSpiderlingsMageRune",
+            "KinkyDungeonSpellCastSpiderlingsMageRune",
             "RestraintSpiderlingsMageArmSigil",
             "RestraintSpiderlingsMageArmSigilDesc",
             "RestraintSpiderlingsMageArmSigilDesc2",

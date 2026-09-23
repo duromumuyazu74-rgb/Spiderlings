@@ -372,7 +372,7 @@ SPIDERLINGS.addEnemies([
         movePoints: 1.5,
         attackPoints: 3,
         attack: "Spell",
-        spells: ["SpiderlingsMageBolt"],
+        spells: ["SpiderlingsMageBolt", "SpiderlingsMageRune"],
         spellCooldownMult: 1,
         spellCooldownMod: 0,
         castWhileMoving: true,
@@ -555,6 +555,30 @@ addTextKey("KillMageSpiderlings", "The Spiderling Mage draws back its legs and r
 // summon: 召唤怪物列表；playerEffect: 命中玩家后施加的效果；trailcast: 飞弹轨迹生成的附加法术。
 
 SPIDERLINGS.addSpells([
+    {
+        enemySpell: true,
+        name: "SpiderlingsMageRune",
+        tags: ["rune", "trap", "slime"],
+        bulletColor: 0xa77bdc,
+        color: "#a77bdc",
+        school: "Latex",
+        manacost: 4,
+        components: ["Arms"],
+        level: 1,
+        type: "dot",
+        castRange: 6,
+        minRange: 0,
+        range: 3,
+        size: 1,
+        delay: 300,
+        onhit: "",
+        power: 0,
+        bind: 6,
+        bindType: "Slime",
+        damage: "glue",
+        noTerrainHit: true,
+        playerEffect: { name: "SpiderlingsMageRuneArms" },
+    },
     {
         enemySpell: true,
         name: "SpiderlingsMageBolt",
@@ -834,6 +858,8 @@ SPIDERLINGS.addSpells([
 
 //Enemy Spell Text--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Mage Silk Bolt");
+addTextKey("KinkyDungeonSpellSpiderlingsMageRune", "Silken Rune");
+addTextKey("KinkyDungeonSpellCastSpiderlingsMageRune", "The Spiderling Mage marks a nearby tile with a glowing rune.");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageBolt",
     "The Spiderling Mage gathers a bright knot of silk and casts it toward you.",
