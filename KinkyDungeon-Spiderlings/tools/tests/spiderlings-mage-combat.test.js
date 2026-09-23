@@ -15,6 +15,7 @@ function fixture() {
     const calls = { playerDamage: [], npcDamage: [], added: 0, nativeHits: 0 };
     let blockers = [];
     let compatible = true;
+    let playerDamageDealt = 0.5;
     const source = { id: 10, hp: 3, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
     const player = { player: true };
     const c = {
@@ -43,7 +44,7 @@ function fixture() {
         },
         KinkyDungeonDealDamage: (damage) => {
             calls.playerDamage.push(damage);
-            return damage.damage;
+            return { happened: playerDamageDealt, string: "" };
         },
         KinkyDungeonGetRestraintByName: (name) => restraints[0].restraint.name === name && restraints[0].restraint,
         KinkyDungeonAllRestraintDynamic: () => equipment.map((item) => ({ item })),
@@ -76,6 +77,7 @@ function fixture() {
         bullet,
         block: (items) => (blockers = items),
         allow: (value) => (compatible = value),
+        deal: (value) => (playerDamageDealt = value),
     };
 }
 
@@ -134,27 +136,36 @@ test("player hit equips one owned arm item and leaves incompatible equipment alo
     const existing = { name: "ExternalArmbinder", data: { sentinel: true } };
     occupied.equipment.push(existing);
     occupied.allow(false);
-    occupied.c.KDPlayerEffects.SpiderlingsMageArmHit(
-        occupied.player,
-        "glue",
-        {},
-        {},
-        "Enemy",
-        occupied.bullet(),
-        occupied.source,
+    assert.equal(
+        occupied.c.KDPlayerEffects.SpiderlingsMageArmHit(
+            occupied.player,
+            "glue",
+            {},
+            {},
+            "Enemy",
+            occupied.bullet(),
+            occupied.source,
+        ).effect,
+        true,
+        "native HP damage still counts when another arm item blocks the sigil",
     );
     assert.equal(occupied.equipment[0], existing);
     assert.equal(occupied.calls.added, 0);
     occupied.allow(true);
     occupied.block([existing]);
-    occupied.c.KDPlayerEffects.SpiderlingsMageArmHit(
-        occupied.player,
-        "glue",
-        {},
-        {},
-        "Enemy",
-        occupied.bullet(),
-        occupied.source,
+    occupied.deal(0);
+    assert.equal(
+        occupied.c.KDPlayerEffects.SpiderlingsMageArmHit(
+            occupied.player,
+            "glue",
+            {},
+            {},
+            "Enemy",
+            occupied.bullet(),
+            occupied.source,
+        ).effect,
+        false,
+        "a resisted hit without a new restraint has no effect",
     );
     assert.equal(occupied.calls.added, 0);
 });

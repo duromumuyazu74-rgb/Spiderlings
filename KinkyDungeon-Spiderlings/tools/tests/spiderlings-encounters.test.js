@@ -594,7 +594,8 @@ function mageMapRuntime(overrides = {}) {
         security: (value) => {
             security = value;
         },
-        generate: (floor, room = {}) => kd.KinkyDungeonPlaceEnemies([], false, [], {}, floor, 20, 20, room),
+        generate: (floor, room = {}, spawnPoints = []) =>
+            kd.KinkyDungeonPlaceEnemies(spawnPoints, false, [], {}, floor, 20, 20, room),
     };
 }
 
@@ -660,6 +661,26 @@ test("Mage guarantee counts an existing Mage and respects cap and legal-cell fai
     unplaceable.generate(5);
     assert.equal(unplaceable.kd.KDMapData.SpiderlingsGuaranteedMageState, "unplaceable");
     assert.equal(unplaceable.kd.KDMapData.Entities.length, 0);
+});
+
+test("Mage guarantee leaves authored native spawn points vacant", () => {
+    const r = mageMapRuntime();
+    const reserved = r.cells.slice(0, -1).map((cell) => ({ ...cell, required: ["guard"], priority: true }));
+    r.generate(5, {}, reserved);
+    assert.equal(r.kd.KDMapData.SpiderlingsGuaranteedMageState, "spawned");
+    assert.deepEqual(
+        [r.kd.KDMapData.Entities[0].x, r.kd.KDMapData.Entities[0].y],
+        [r.cells.at(-1).x, r.cells.at(-1).y],
+    );
+    assert.equal(
+        reserved.some((point) => point.x === r.kd.KDMapData.Entities[0].x && point.y === r.kd.KDMapData.Entities[0].y),
+        false,
+    );
+
+    const noFreeCell = mageMapRuntime();
+    noFreeCell.generate(5, {}, noFreeCell.cells);
+    assert.equal(noFreeCell.kd.KDMapData.SpiderlingsGuaranteedMageState, "unplaceable");
+    assert.equal(noFreeCell.kd.KDMapData.Entities.length, 0);
 });
 
 test("runtime registration keeps native weights and spawns one complete unaware 2x2 squad", () => {

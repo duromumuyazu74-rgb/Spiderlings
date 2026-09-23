@@ -134,8 +134,8 @@
             const damage =
                 typeof KinkyDungeonDealDamage === "function"
                     ? KinkyDungeonDealDamage({ damage: 0.5, type: "glue" }, bullet)
-                    : 0;
-            return { effect: equipArms(source || mageShot(bullet)) || damage > 0 };
+                    : undefined;
+            return { effect: equipArms(source || mageShot(bullet)) || (damage?.happened ?? 0) > 0 };
         };
     }
 })();
