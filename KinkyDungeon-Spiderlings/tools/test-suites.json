@@ -14,6 +14,7 @@
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-spinner-ai.test.js",
     "spiderlings-model-runtime.test.js",
+    "spiderlings-mage-combat.test.js",
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",

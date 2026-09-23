@@ -104,6 +104,9 @@ _Avoid_: global removal lock, consumed inner layers, inner-layer escape through 
 
 ## NPC silk combat
 
+**Mage Spiderlings combat**:
+The summonable Mage uses `SpiderlingsMageBolt`. Its direct projectile applies base 4 native glue HP damage only to hostile Maidforce NPCs, targeting an ordinary 8-HP maid in two unresisted hits. Native shields, resistance and immunity still resolve the hit. The player takes base 0.5 glue damage and may receive the separate `SpiderlingsMageArmSigil` ItemArms restraint. Strict native compatibility checks protect existing arm equipment and prohibit duplicate sigils. `Spiderlings.Mage.equipArms(source)` is shared with the planned rune effect. The sigil has native escape rules, no custom model yet, and no membership in Webbing progression or generic restraint pools. This slice leaves natural, nest and guaranteed Mage spawning to #66.
+
 **Temporary silk subdual**:
 Spiderling attacks use shared light tickle damage profiles for players and hostile NPCs: melee 0.05, dash 0.10, direct spray 0.05 and trail 0.01. Players receive eligible Webbing equipment; NPCs receive native Slime binding. Damage and binding have separate native resistance checks. NPC contact amplification is capped at twice its scaled input to prevent flat weakness bonuses overwhelming these tiny amounts. Native immunity, shields and struggling remain effective. Subdual means native helplessness, not permanent capture, recruitment or collection. Successful melee binding consumes the attacking Jumper; Spinners and WebCasters remain for repeated support.
 _Avoid_: guaranteed capture, player Webbing equipment on NPCs, HP damage as binding
