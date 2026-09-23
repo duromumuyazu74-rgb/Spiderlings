@@ -109,7 +109,7 @@
             from.y,
             to.x,
             to.y,
-            false,
+            !!actor,
             false,
             false,
             KinkyDungeonMovableTilesSmartEnemy,
@@ -146,7 +146,11 @@
             if (!legalCell(point) && !(occupiedByActor && walkable(point))) continue;
             const actorRoute = actor ? path(actor, point, actor) : [];
             if (!actorRoute) continue;
-            const steps = path(player(), approach, undefined).length + actorRoute.length;
+            const playerRoute = path(player(), point, undefined);
+            if (!playerRoute) continue;
+            // A nearby carrier cannot tug an anchored Cocoon. Reach the far side of the entrance.
+            const pullPenalty = !adjacent(player(), entrance) && playerRoute.length <= 2 ? 1000 : 0;
+            const steps = path(player(), approach, undefined).length + actorRoute.length + pullPenalty;
             if (!best || steps < best.steps) best = { point, steps };
         }
         return best;
