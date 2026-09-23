@@ -45,6 +45,7 @@ KDModButtonspiderlingsNestSpinnerWeight,방적자 가중치
 KDModButtonspiderlingsNestJumperWeight,도약자 가중치
 KDModButtonspiderlingsNestWebCasterWeight,거미줄 투사자 가중치
 KDModButtonspiderlingsNestTunnelerWeight,굴착자 가중치
+KDModButtonspiderlingsNestMageWeight,마법 거미 가중치
 KDModButtonspiderlingsNestReinforcementControl,둥지 반복 지원
 KDModButtonspiderlingsNestReinforcementCap,둥지당 생존 지원 개체 상한
 KDModButtonspiderlingsNestReinforcementInterval,지원 확인 간격(턴)

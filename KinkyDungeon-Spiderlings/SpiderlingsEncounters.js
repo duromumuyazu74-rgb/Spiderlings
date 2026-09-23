@@ -69,6 +69,16 @@
             stepcount: 1,
             block: undefined,
         },
+        {
+            type: "range",
+            name: "spiderlingsNestMageWeight",
+            refvar: "spiderlingsNestMageWeight",
+            default: 1,
+            rangelow: 0,
+            rangehigh: 10,
+            stepcount: 1,
+            block: undefined,
+        },
         { type: "text", refvar: "spiderlingsNestReinforcementControl" },
         {
             type: "string",
@@ -103,6 +113,7 @@
         Object.freeze({ enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 2 }),
         Object.freeze({ enemy: "WebCaster", refvar: "spiderlingsNestWebCasterWeight", default: 2 }),
         Object.freeze({ enemy: "Tunneler", refvar: "spiderlingsNestTunnelerWeight", default: 1 }),
+        Object.freeze({ enemy: "MageSpiderlings", refvar: "spiderlingsNestMageWeight", default: 1 }),
     ]);
     const DEFAULT_SPIDERLING_WEIGHTS = Object.freeze(
         Object.fromEntries(SHARED_SPIDERLING_OPTIONS.map((option) => [option.enemy, option.default])),
@@ -115,6 +126,11 @@
         NestEntrance: 2,
     });
     const SQUAD_MEMBERS = Object.freeze(["Jumper", "WebCaster", "Tunneler", "Spinner"]);
+    const MOBILE_SPIDERLINGS = new Set([...SQUAD_MEMBERS, "MageSpiderlings"]);
+    const MAGE = "MageSpiderlings";
+    const MAGE_STATE_FIELD = "SpiderlingsGuaranteedMageState";
+    const MAGE_PROVENANCE_FIELD = "SpiderlingsMageProvenance";
+    const MAGE_PROVENANCE = "guaranteed-map-start";
     const SQUAD_STATE_FIELD = "SpiderlingsGuaranteedSquadState";
     const SQUAD_PROVENANCE_FIELD = "SpiderlingsSquadProvenance";
     const SQUAD_PROVENANCE = "guaranteed-squad";
@@ -176,6 +192,16 @@
         const normalizedTags = Array.isArray(tags) ? tags.filter((tag) => tag !== "minor") : Object.assign({}, tags);
         if (!Array.isArray(normalizedTags)) delete normalizedTags.minor;
         return { weight, tags: normalizedTags };
+    }
+
+    function mageNaturalWeight(security, infestation = false) {
+        const level = Number.isFinite(security) ? security : -50;
+        const weight = 2 + Math.floor((6 * Math.max(0, Math.min(100, level + 50))) / 100);
+        return Math.min(9, weight + (infestation ? 1 : 0));
+    }
+
+    function mageEligible(floor, security) {
+        return Number(floor) >= 5 || Number(security) >= 0;
     }
 
     function pointKey(pointOrX, y) {
@@ -368,6 +394,9 @@
         DEFAULT_WEIGHTS: DEFAULT_SPIDERLING_WEIGHTS,
         NATIVE_WEIGHTS: NORMAL_SPIDERLING_WEIGHTS,
         SQUAD_MEMBERS,
+        MAGE_PROVENANCE,
+        MAGE_PROVENANCE_FIELD,
+        MAGE_STATE_FIELD,
         SQUAD_PROVENANCE,
         SQUAD_PROVENANCE_FIELD,
         SQUAD_STATES,
@@ -379,6 +408,8 @@
         isEligibleOrdinaryMap,
         isSquadCellLegal,
         nativePopulationOverrides,
+        mageEligible,
+        mageNaturalWeight,
         normalizeSpiderlingWeights,
         planSquadPlacement,
         selectWeightedSpiderling,
@@ -504,7 +535,7 @@
         for (let enemy of enemies) {
             const populationOverrides = nativePopulationOverrides(enemy.name, enemy.tags);
             if (populationOverrides) Object.assign(enemy, populationOverrides);
-            if (SQUAD_MEMBERS.includes(enemy.name)) enemy.tags.SpiderlingsMapPopulation = true;
+            if (MOBILE_SPIDERLINGS.has(enemy.name)) enemy.tags.SpiderlingsMapPopulation = true;
             disableLegacyNestSpells(enemy);
             enemy.nonHumanoid = true;
             enemy.GFX = Object.assign({ spriteWidth: 72, spriteHeight: 72 }, enemy.GFX || {});
@@ -551,7 +582,7 @@
         const living = entities.filter(
             (entity) =>
                 entity.hp > 0 &&
-                SQUAD_MEMBERS.includes(typeof entity.Enemy == "string" ? entity.Enemy : entity.Enemy?.name),
+                MOBILE_SPIDERLINGS.has(typeof entity.Enemy == "string" ? entity.Enemy : entity.Enemy?.name),
         ).length;
         return Math.max(0, cap - living);
     }
@@ -561,6 +592,20 @@
     if (typeof KinkyDungeonGetEnemy == "function") {
         const nativeGetEnemy = KinkyDungeonGetEnemy;
         KinkyDungeonGetEnemy = function (...args) {
+            const security = typeof KDGetEffSecurityLevel === "function" ? KDGetEffSecurityLevel() : -Infinity;
+            const floor = typeof MiniGameKinkyDungeonLevel !== "undefined" ? MiniGameKinkyDungeonLevel : args[1];
+            if (!mageEligible(floor, security)) args[7] = [...(args[7] || []), MAGE];
+            else {
+                const infestation = typeof KDMapData !== "undefined" && KDMapData?.MapMod === "SpiderlingsInfestation";
+                const callerMageBonus = args[6]?.[MAGE];
+                args[6] = {
+                    ...(args[6] || {}),
+                    [MAGE]: {
+                        bonus: (callerMageBonus?.bonus || 0) + mageNaturalWeight(security, infestation) - 2,
+                        mult: callerMageBonus?.mult ?? 1,
+                    },
+                };
+            }
             if (availableSpiderlingSlots() === 0) {
                 args[7] = [...(args[7] || []), "SpiderlingsMapPopulation"];
             }
@@ -576,7 +621,7 @@
         const nativeGetEnemyByName = KinkyDungeonGetEnemyByName;
         KinkyDungeonGetEnemyByName = function (_name) {
             const result = nativeGetEnemyByName.apply(this, arguments);
-            if (selectingWanderingSpawns && SQUAD_MEMBERS.includes(result?.name) && availableSpiderlingSlots() === 0)
+            if (selectingWanderingSpawns && MOBILE_SPIDERLINGS.has(result?.name) && availableSpiderlingSlots() === 0)
                 return undefined;
             return result;
         };
@@ -597,7 +642,7 @@
         const nativeSummonEnemy = KinkyDungeonSummonEnemy;
         KinkyDungeonSummonEnemy = function (x, y, summonType, count, ...rest) {
             const name = typeof summonType == "string" ? summonType : summonType?.name;
-            if (SQUAD_MEMBERS.includes(name)) {
+            if (MOBILE_SPIDERLINGS.has(name)) {
                 const slots = availableSpiderlingSlots();
                 if (slots === 0) return [];
                 if (count > slots) return nativeSummonEnemy.call(this, x, y, summonType, slots, ...rest);
@@ -681,6 +726,7 @@
         addTextKey("KDModButtonspiderlingsNestJumperWeight", "Jumper weight");
         addTextKey("KDModButtonspiderlingsNestWebCasterWeight", "Web Caster weight");
         addTextKey("KDModButtonspiderlingsNestTunnelerWeight", "Tunneler weight");
+        addTextKey("KDModButtonspiderlingsNestMageWeight", "Mage weight");
         addTextKey("KDModButtonspiderlingsNestReinforcementControl", "Living reinforcements per nest");
         addTextKey("KDModButtonspiderlingsNestReinforcementCap", "Living reinforcements per nest");
         addTextKey("KDModButtonspiderlingsNestTunnelerCap", "Lifetime Tunnelers per nest (0: none)");
@@ -723,6 +769,76 @@
                 (typeof KinkyDungeonTilesGet == "function" && KinkyDungeonTilesGet(pointKey(cell))?.OL === true),
             isReachable: (cell) => !!(KDMapData.RandomPathablePoints && KDMapData.RandomPathablePoints[pointKey(cell)]),
             random,
+        };
+    }
+
+    // Mapgen calls this before native random population. Saving the outcome on
+    // map data prevents a later visit or a repeated population pass from adding
+    // another guaranteed Mage.
+    function runGuaranteedMage(floor, room = {}) {
+        if (typeof KDMapData === "undefined" || !KDMapData || KDMapData[MAGE_STATE_FIELD]) return false;
+        const security = typeof KDGetEffSecurityLevel === "function" ? KDGetEffSecurityLevel() : -Infinity;
+        if (!mageEligible(floor, security) || !isEligibleOrdinaryMap(room) || KDMapData.RoomType) {
+            KDMapData[MAGE_STATE_FIELD] = "ineligible";
+            return false;
+        }
+        if ((KDMapData.Entities || []).some((entity) => entity.hp > 0 && entity.Enemy?.name === MAGE)) {
+            KDMapData[MAGE_STATE_FIELD] = "existing";
+            return true;
+        }
+        if (availableSpiderlingSlots() === 0 || (KDMapData.Entities || []).length >= 300) {
+            KDMapData[MAGE_STATE_FIELD] = "population-capped";
+            return false;
+        }
+        const random = typeof KDRandom === "function" ? KDRandom : Math.random;
+        const options = runtimePlacementOptions(random);
+        const cells = legalSquadCells(options);
+        if (!cells.length) {
+            KDMapData[MAGE_STATE_FIELD] = "unplaceable";
+            return false;
+        }
+        if (
+            typeof KinkyDungeonGetEnemyByName !== "function" ||
+            !KinkyDungeonGetEnemyByName(MAGE) ||
+            typeof KinkyDungeonSummonEnemy !== "function"
+        ) {
+            KDMapData[MAGE_STATE_FIELD] = "creation-failed";
+            return false;
+        }
+        const cell = cells[Math.floor(random() * cells.length)];
+        const created = KinkyDungeonSummonEnemy(
+            cell.x,
+            cell.y,
+            MAGE,
+            1,
+            0,
+            false,
+            undefined,
+            false,
+            false,
+            undefined,
+            true,
+            undefined,
+            false,
+            true,
+        );
+        if (!Array.isArray(created) || created.length !== 1 || created[0]?.x !== cell.x || created[0]?.y !== cell.y) {
+            if (Array.isArray(created) && typeof KDRemoveEntity === "function")
+                for (const entity of created) if (entity) KDRemoveEntity(entity, false, false, true);
+            KDMapData[MAGE_STATE_FIELD] = "creation-failed";
+            return false;
+        }
+        created[0][MAGE_PROVENANCE_FIELD] = MAGE_PROVENANCE;
+        KDMapData[MAGE_STATE_FIELD] = "spawned";
+        return true;
+    }
+
+    api.runGuaranteedMage = runGuaranteedMage;
+    if (typeof KinkyDungeonPlaceEnemies === "function") {
+        const nativePlaceEnemies = KinkyDungeonPlaceEnemies;
+        KinkyDungeonPlaceEnemies = function (...args) {
+            runGuaranteedMage(args[4], args[7] || {});
+            return nativePlaceEnemies.apply(this, args);
         };
     }
 
@@ -872,6 +988,14 @@
         const tunnelerCap = api.getNestTunnelerCap();
         const interval = api.getNestReinforcementInterval();
         const weights = normalizeSpiderlingWeights(api.getSharedSpiderlingWeights());
+        const security = typeof KDGetEffSecurityLevel === "function" ? KDGetEffSecurityLevel() : -Infinity;
+        if (
+            !mageEligible(
+                typeof MiniGameKinkyDungeonLevel !== "undefined" ? MiniGameKinkyDungeonLevel : -Infinity,
+                security,
+            )
+        )
+            weights[MAGE] = 0;
         const index = indexReinforcementState(KDMapData.Entities);
         let successfulSummons = 0;
 

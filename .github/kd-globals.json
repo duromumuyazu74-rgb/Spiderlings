@@ -36,6 +36,7 @@
   "KDFactionFavorable",
   "KDGameData",
   "KDGetAltType",
+  "KDGetEffSecurityLevel",
   "KDGetBlockersToAddRestraint",
   "KDGetDir",
   "KDGetFaction",

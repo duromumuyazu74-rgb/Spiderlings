@@ -5,12 +5,16 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 ## Spiderlings encounters
 
 **Map Spiderling population cap**:
-The configurable maximum of living Spinner, Jumper, WebCaster and Tunneler entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
+The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
 _Avoid_: per-nest offspring cap, total spawns over a floor, nest count limit
 
 **Native Spiderlings population**:
 Spiderlings selected by KD's ordinary enemy population system. It coexists with the guaranteed squad and nest reinforcement and is not a fallback.
 _Avoid_: guaranteed spawn, single-enemy fallback
+
+**Guaranteed Mage Spiderling**:
+One Mage placed before native random population on a newly generated ordinary map at floor 5 or effective security 0, if a legal cell and mobile population slot exist. The map records its one-time outcome. This Mage is separate from the unchanged four-member squad; natural rolls may add more within the shared cap.
+_Avoid_: adding Mage to the fixed squad, spawning on every revisit
 
 **Guaranteed Spiderling squad**:
 A default-enabled, one-shot encounter of exactly one Jumper, WebCaster, Tunneler, and Spinner on an eligible newly generated ordinary map. The group is additional to native population and is created only as a complete atomic unit.
@@ -33,7 +37,7 @@ The configurable number of successful Tunneler reinforcements from one nest over
 _Avoid_: simultaneous Tunneler cap, shared ancestry budget, total nest count limit
 
 **Nest child**:
-A living Spinner, Jumper, WebCaster, or Tunneler created by recurring nest reinforcement and tagged with its parent entrance ID. Untagged natural, squad, Tunneler, and death-burst entities are not nest children.
+A living Spinner, Jumper, WebCaster, Tunneler, or Mage created by recurring nest reinforcement and tagged with its parent entrance ID. Untagged natural, squad, Tunneler, Mage map-start, and death-burst entities are not nest children.
 _Avoid_: every Spiderling near a nest
 
 ## Spiderlings Webbing

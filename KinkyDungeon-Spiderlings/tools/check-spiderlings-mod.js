@@ -730,9 +730,10 @@ function checkRuntime(state) {
     if (
         !populationCap ||
         populationCap.default !== "25" ||
-        JSON.stringify(cappedSpecies) !== JSON.stringify(["Jumper", "Spinner", "Tunneler", "WebCaster"])
+        JSON.stringify(cappedSpecies) !==
+            JSON.stringify(["Jumper", "MageSpiderlings", "Spinner", "Tunneler", "WebCaster"])
     ) {
-        fail("Map population cap must default to 25 and count only the four Spiderlings species, excluding nests.");
+        fail("Map population cap must default to 25 and count the five mobile Spiderlings species, excluding nests.");
     }
     // Texture decoding, cache publication, and fallback are exercised by the
     // public model-runtime suite before this checker runs in the local watcher.

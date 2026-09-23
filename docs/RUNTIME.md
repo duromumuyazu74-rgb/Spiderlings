@@ -1,11 +1,11 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.14` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.15` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                               |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SpiderlingsCore.js`                                        | Shared named registration, restraint catalog, text registration, summon-message compatibility, and owned hook composition.                                                                                 |
-| `SpiderlingsEncounters.js`                                  | Configuration, population caps, squad placement, nest reinforcement and encounter events. Existing `EncounterRules`, `ReinforcementRules` and encounter entry points remain available.                     |
+| `SpiderlingsEncounters.js`                                  | Configuration, population caps, Mage placement before native population, the unchanged squad, nest reinforcement and encounter events. `EncounterRules` and `ReinforcementRules` remain available.         |
 | `SpiderlingsWebCaster.js`                                   | Qualification for crossfire and WebCaster movement preferences inside native movement budgets.                                                                                                             |
 | `SpiderlingsModelRuntime.js`, `SpiderlingsWebbingModels.js` | Texture readiness and model registration.                                                                                                                                                                  |
 | `SpiderlingsWebbingData.js`                                 | Immutable Webbing definitions, family metadata, messages and constants shared by rules and native integration.                                                                                             |
@@ -57,6 +57,7 @@ Each callback forwards the original receiver, arguments and result on its unhand
 | Native physical graph, declared fields, line metadata, composite layers, HP, cooldowns, snare IDs and age | `KDMapData.SpiderlingsSpinnerEncounter`; plain JSON saved with the active map.                 |
 | Spinner group IDs, members, plan, assignments, stable target/lure, last-known age and action counts       | `KDMapData.SpiderlingsSpinnerEncounter.ai`; plain JSON saved with the active map.              |
 | Rollout enable decision and deterministic enclosure/fallback choice                                       | `KDMapData.SpiderlingsSpinnerRollout`; written once at map generation and reused on revisit.   |
+| One-time Mage map-start outcome                                                                           | `KDMapData.SpiderlingsGuaranteedMageState`; written before native random population.           |
 | Debug scene actor/target inputs, prior encounter and actor state                                          | `KDGameData.SpiderlingsSpinnerScenarioControl`; restored after load and consumed by teardown.  |
 | Native web-cell entities                                                                                  | Reconciled projection of the encounter topology; exactly one owned proxy per solid cell.       |
 | Deposited silk and leg-bag escape work                                                                    | The equipped item's `data`, including `wrapProgress` and `SpiderlingsLegbinderEscapeProgress`. |
