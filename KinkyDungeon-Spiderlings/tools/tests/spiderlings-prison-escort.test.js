@@ -214,6 +214,27 @@ test("only the selected entrance admits the player after physical arrival", () =
     assert.equal(current.escort.state(), undefined);
 });
 
+test("escort approaches an occupied entrance without walking onto the player", () => {
+    const current = scenario();
+    current.escort.onAnchored(current.cocoon);
+    current.turn();
+    current.turn(30);
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    current.player.x = 13;
+    current.spinner.x = 11;
+    current.spinner.y = 10;
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.equal(current.spinner.x, 12);
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.notDeepEqual({ x: current.spinner.x, y: current.spinner.y }, { x: current.player.x, y: current.player.y });
+    assert.equal(
+        Math.max(Math.abs(current.spinner.x - current.nest.x), Math.abs(current.spinner.y - current.nest.y)),
+        1,
+    );
+    current.turn();
+    assert.equal(current.entryCount(), 1);
+});
+
 test("a full population reuses a living spider and builds one reachable entrance", () => {
     const current = scenario();
     current.map.Entities.splice(current.map.Entities.indexOf(current.nest), 1);

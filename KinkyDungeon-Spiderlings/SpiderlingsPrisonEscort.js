@@ -132,16 +132,21 @@
     }
 
     function entranceLanding(entrance, actor) {
+        const approach = nearbyCells(entrance, 1, Math.SQRT2)
+            .filter(
+                (point) =>
+                    (legalCell(point) || (point.x === player().x && point.y === player().y && walkable(point))) &&
+                    path(player(), point, undefined),
+            )
+            .sort((a, b) => path(player(), a, undefined).length - path(player(), b, undefined).length)[0];
+        if (!approach) return undefined;
         let best;
         for (const point of nearbyCells(entrance, 1, Math.SQRT2)) {
-            const occupiedByEndpoint =
-                (point.x === player().x && point.y === player().y) ||
-                (actor && point.x === actor.x && point.y === actor.y);
-            if (!legalCell(point) && !(occupiedByEndpoint && walkable(point))) continue;
-            const playerRoute = path(player(), point, undefined);
+            const occupiedByActor = actor && point.x === actor.x && point.y === actor.y;
+            if (!legalCell(point) && !(occupiedByActor && walkable(point))) continue;
             const actorRoute = actor ? path(actor, point, actor) : [];
-            if (!playerRoute || !actorRoute) continue;
-            const steps = playerRoute.length + actorRoute.length;
+            if (!actorRoute) continue;
+            const steps = path(player(), approach, undefined).length + actorRoute.length;
             if (!best || steps < best.steps) best = { point, steps };
         }
         return best;
