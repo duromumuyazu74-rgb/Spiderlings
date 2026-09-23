@@ -273,15 +273,6 @@
         return true;
     }
 
-    function actionPaid(enemy, delta) {
-        if (!(delta > 0)) return false;
-        enemy.SpiderlingsNestEscortPoints = (enemy.SpiderlingsNestEscortPoints || 0) + delta;
-        const cost = enemy.Enemy.attackPoints || enemy.Enemy.movePoints || 1;
-        if (enemy.SpiderlingsNestEscortPoints < cost) return false;
-        enemy.SpiderlingsNestEscortPoints -= cost;
-        return true;
-    }
-
     function moveToward(enemy, goal, delta) {
         const route = path(enemy, goal, enemy);
         const next = route?.[0];
@@ -338,7 +329,8 @@
                         (legalCell(cell) || (cell.x === enemy.x && cell.y === enemy.y)) && path(enemy, cell, enemy),
                 );
                 if (goal) moveToward(enemy, goal, delta);
-            } else if (actionPaid(enemy, delta)) {
+            } else if (delta > 0) {
+                // Native leash warnings expire between enemy turns; progress them every paid world turn.
                 if (!KDPlayerLeashed(player())) KDTryToLeash(enemy, player(), delta, false);
                 if (KDPlayerLeashed(player()) && !player().leash) {
                     const carrier = KinkyDungeonGetRestraintItem("ItemNeckRestraints");

@@ -8,7 +8,7 @@ const vm = require("node:vm");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "..", "SpiderlingsPrisonEscort.js"), "utf8");
 
-function scenario(roll = 0) {
+function scenario(roll = 0, leashTurns = 1) {
     const cocoon = {
         id: 7,
         name: "SpiderlingsWebbingCocoon",
@@ -29,6 +29,7 @@ function scenario(roll = 0) {
     };
     let nextId = 4;
     let leashed = false;
+    let leashCalls = 0;
     let entryCount = 0;
     const events = {};
     const messages = [];
@@ -87,7 +88,8 @@ function scenario(roll = 0) {
         KDLeashReason: {},
         KDPlayerLeashed: () => leashed,
         KDTryToLeash: () => {
-            leashed = true;
+            leashCalls += 1;
+            leashed = leashCalls >= leashTurns;
         },
         KinkyDungeonAttachTetherToEntity: (_length, enemy) => {
             player.leash = { entity: enemy.id };
@@ -274,4 +276,18 @@ test("the escort pays native movement points on its route to the entrance", () =
     current.escort.handleEnemyTurn(current.spinner, current.player, 1);
     assert.notDeepEqual({ x: current.spinner.x, y: current.spinner.y }, start);
     assert.equal(current.entryCount(), 0);
+});
+
+test("native leash warning can advance on consecutive world turns", () => {
+    const current = scenario(0, 6);
+    current.escort.onAnchored(current.cocoon);
+    current.turn();
+    current.turn(30);
+    for (let i = 0; i < 5; i += 1) {
+        current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+        assert.equal(current.player.leash, undefined);
+    }
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.equal(current.player.leash.entity, current.spinner.id);
+    assert.equal(current.escort.state().phase, "escort");
 });
