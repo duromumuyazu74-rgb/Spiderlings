@@ -8,6 +8,8 @@ Original Spiderlings Mod author: **anthropocentricity**. Revival and maintenance
 
 `Enemies/MageSpiderlings.png` is an unchanged copy of the existing T_Swizzle `Enemies/WebCaster.png`, used as temporary Mage artwork. The credit and CC BY-NC 4.0 terms above apply to both files.
 
+`Bullets/SpiderlingsMageRuneHit.png` and `Bullets/SpiderlingsMageBoltHit.png` are byte-for-byte copies of the existing `Bullets/SpiderlingsMageRune.png` glyph for KD's native hit effects; they add no separate external artwork source.
+
 Sound effects obtained from [ZapSplat](https://www.zapsplat.com/): the ["Thick cobwebs sweep away with hand" series, parts 1](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-1/), [2](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-2/), [3](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-3/), and [4](https://www.zapsplat.com/music/thick-cobwebs-sweep-away-with-hand-4/). The four OGG files in `KinkyDungeon-Spiderlings/Sounds/` were edited and converted from the downloaded audio. ZapSplat's [Standard License](https://www.zapsplat.com/license-type/standard-license/) applies; it requires credit for Basic accounts and restricts standalone redistribution. These recordings are outside the MIT and Spiderlings artwork grants. This notice does not grant permission to reuse the audio separately.
 
 The MIT grant in [LICENSE.md](LICENSE.md) applies to Chlorlne's original code contributions, including contributions within mixed files. It does not relicense inherited Mod code or native game excerpts. This notice records other sources and obligations; it does not grant additional rights. See the [license review](docs/LICENSE-REVIEW.zh-CN.md) for the scope assessment.

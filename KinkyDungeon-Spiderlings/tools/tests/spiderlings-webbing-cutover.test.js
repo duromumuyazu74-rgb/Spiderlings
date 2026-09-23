@@ -40,6 +40,8 @@ const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneHit.png",
+    "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
