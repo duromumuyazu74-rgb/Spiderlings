@@ -11,6 +11,7 @@
   "fileorder": [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
+    "Bullets/SpiderlingsMageRune.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
@@ -103,6 +104,7 @@
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
     "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
