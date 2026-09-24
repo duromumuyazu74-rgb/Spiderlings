@@ -293,13 +293,14 @@ function loadRuntime(options = {}) {
         return eventData;
     }
 
-    function nativeEscapeCocoon(method) {
+    function nativeEscapeCocoon(method, options = {}) {
         const item = equipment.get("ItemDevices");
         if (!item || item.name !== cocoonId) return false;
         const data = inventoryEvent("beforeStruggleCalc", item, {
             restraint: item,
             query: false,
             struggleType: method,
+            canCut: options.canCut,
             cost: kd55EscapeCosts[method],
             minSpeed: 0.4,
             escapeChance: item.restraint.escapeChance[method],
@@ -511,7 +512,7 @@ test("counted escape feedback is selected only for an effective unfinished actio
                 });
                 const counts =
                     condition === "effective" ||
-                    (condition === "no-tool" && method !== "Cut") ||
+                    condition === "no-tool" ||
                     (condition === "group-blocked" && name === cocoonId);
                 const suffix = name === cocoonId ? "SpiderlingsCocoon" : "SpiderlingsWebbing";
                 assert.equal(data.failSuffix, counts ? suffix : "Native", `${name} ${method} ${condition}`);
@@ -749,7 +750,7 @@ for (const methods of [
         assert.equal(item.data[outerStateKey].anchored, true);
     });
 
-test("frequency expires in game time; queries, blocked costs and missing cutting tools cannot arm outer webs", () => {
+test("frequency expires in game time; queries and blocked costs cannot arm outer webs", () => {
     const runtime = loadRuntime();
     runtime.manualEquipCocoon();
     const item = runtime.equipment.get("ItemDevices");
@@ -759,9 +760,6 @@ test("frequency expires in game time; queries, blocked costs and missing cutting
         runtime.setHasStamina(false);
         runtime.nativeEscapeCocoon(method);
     }
-    runtime.setHasStamina(true);
-    runtime.inventoryEvent("beforeStruggleCalc", item, { restraint: item, struggleType: "Cut", canCut: false });
-    runtime.inventoryEvent("struggle", item, { restraint: item, struggleType: "Cut", result: "Fail" });
     assert.equal(item.data[outerStateKey], undefined);
     runtime.setHasStamina(true);
     for (let n = 0; n < 2; n++) runtime.nativeEscapeCocoon("Struggle");
@@ -1300,6 +1298,19 @@ test("all three effective escape baselines finish, with final-method inventory f
     }
 });
 
+test("a no-tool Cut cannot finish Cocoon before its fortieth paid effective action", () => {
+    const runtime = loadRuntime();
+    assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
+    const worn = runtime.equipment.get("ItemDevices");
+    for (let action = 1; action < 40; action += 1) {
+        assert.equal(runtime.nativeEscapeCocoon("Cut", { canCut: false }), false, `action ${action}`);
+        assert.equal(runtime.equipment.get("ItemDevices"), worn);
+        assert.ok(Math.abs(worn.cutProgress - action / 40) < 1e-9, `action ${action} progress`);
+    }
+    assert.equal(runtime.nativeEscapeCocoon("Cut", { canCut: false }), true);
+    assert.equal(runtime.equipment.has("ItemDevices"), false);
+});
+
 test("queries and stamina-blocked attempts do not advance the native Cocoon escape gate", () => {
     const runtime = loadRuntime({ hasStamina: false });
     assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
@@ -1350,7 +1361,7 @@ test("Cocoon counts only the post-cost Fail event and preserves KD 5.5 negative 
     assert.ok(Math.abs(worn.cutProgress - 0.025) < 1e-9);
 });
 
-test("Cocoon ignores post-Fail events for unarmed and group-blocked attempts", () => {
+test("Cocoon counts KD's no-tool Cut and ignores group-blocked attempts", () => {
     const unarmed = loadRuntime();
     assert.equal(unarmed.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
     const unarmedItem = unarmed.equipment.get("ItemDevices");
@@ -1372,7 +1383,7 @@ test("Cocoon ignores post-Fail events for unarmed and group-blocked attempts", (
         struggleType: "Cut",
         result: "Fail",
     });
-    assert.equal(unarmedItem.cutProgress, undefined);
+    assert.ok(Math.abs(unarmedItem.cutProgress - 0.025) < 1e-9);
     assert.equal(unarmedItem.struggleProgress, undefined);
 
     const blocked = loadRuntime({ groupBlocked: () => true });

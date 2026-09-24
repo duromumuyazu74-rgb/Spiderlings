@@ -556,7 +556,7 @@ test("Lv2 stays above every visible Lv1 pair while Lv1 Legs/Ankles remain behind
     }
 });
 
-test("the real Lv2 inventory event makes the first native action spend-and-fail and the second succeed", () => {
+test("the real Lv2 inventory event counts no-tool Cut before completing a second method", () => {
     const runtime = loadWebbingRuntime();
     const id = "SpiderlingsWebbingLv2Arm";
     assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
@@ -564,7 +564,7 @@ test("the real Lv2 inventory event makes the first native action spend-and-fail 
     const eventType = runtime.context.Spiderlings.Webbing.LV2_ESCAPE_EVENT;
     const before = runtime.context.KDEventMapInventory.beforeStruggleCalc[eventType];
     const after = runtime.context.KDEventMapInventory.struggle[eventType];
-    const rejectedCut = {
+    const noToolCut = {
         restraint: item,
         query: false,
         struggleType: "Cut",
@@ -577,13 +577,10 @@ test("the real Lv2 inventory event makes the first native action spend-and-fail 
         escapePenalty: 0,
         limitChance: 0,
     };
-    before({}, item, rejectedCut);
+    before({}, item, noToolCut);
+    assert.equal(noToolCut.escapeSpeed, 0);
     after({}, item, { restraint: item, struggleType: "Cut", result: "Fail" });
-    assert.equal(
-        item.data.SpiderlingsEscapeActions,
-        undefined,
-        "an unarmed Cut must not be counted when KD later reports Fail",
-    );
+    assert.equal(item.data.SpiderlingsEscapeActions, 1);
 
     const blockedRuntime = loadWebbingRuntime({ KDGroupBlocked: () => true });
     assert.equal(blockedRuntime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
@@ -623,17 +620,9 @@ test("the real Lv2 inventory event makes the first native action spend-and-fail 
         limitChance: 0,
     };
     before({}, item, first);
-    assert.equal(first.escapeSpeed, 0);
-    assert.ok(first.minSpeed > 0);
-    assert.equal(item.data.SpiderlingsEscapeActions, undefined);
-    after({}, item, { restraint: item, struggleType: "Struggle", result: "Fail" });
-    assert.equal(item.data.SpiderlingsEscapeActions, 1);
-
-    const second = { ...first, escapeSpeed: 1, escapeChance: 100, escapePenalty: 0 };
-    before({}, item, second);
     assert.equal(item.cutProgress, 1);
-    assert.equal(second.escapeChance, 1);
-    assert.ok(second.escapePenalty < 0);
+    assert.equal(first.escapeChance, 1);
+    assert.ok(first.escapePenalty < 0);
 });
 
 test("debug equipment uses zero tightness and no lock, then one legal Lv1 action removes Arm Webbing", () => {

@@ -1072,7 +1072,7 @@
                 !ESCAPE_METHODS.includes(data.struggleType)
             )
                 return;
-            if (data.struggleType === "Cut" && data.canCut === false) return;
+            // KD 5.5 still advances Cut without a weapon for alwaysEscapable restraints.
             const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
             if (
                 data.struggleGroup &&
@@ -1145,7 +1145,7 @@
                 !ESCAPE_METHODS.includes(data.struggleType)
             )
                 return;
-            if (data.struggleType === "Cut" && data.canCut === false) return;
+            // Keep no-weapon Cut inside the counted gate when KD accepts the action.
             const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
             if (
                 data.struggleGroup &&
