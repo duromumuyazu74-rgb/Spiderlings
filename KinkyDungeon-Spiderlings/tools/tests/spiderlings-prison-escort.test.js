@@ -58,8 +58,15 @@ function scenario(roll = 0, leashTurns = 1) {
         KinkyDungeonEntityAt: (x, y) =>
             (player.x === x && player.y === y ? player : undefined) ||
             map.Entities.find((entity) => entity.hp > 0 && entity.x === x && entity.y === y),
-        KinkyDungeonFindPath: (x, y, targetX, targetY) =>
-            x === targetX && y === targetY ? [] : [{ x: x + Math.sign(targetX - x), y: y + Math.sign(targetY - y) }],
+        KinkyDungeonFindPath: (x, y, targetX, targetY) => {
+            const route = [];
+            while (x !== targetX || y !== targetY) {
+                x += Math.sign(targetX - x);
+                y += Math.sign(targetY - y);
+                route.push({ x, y });
+            }
+            return route;
+        },
         KinkyDungeonSummonEnemy: (x, y, name) => {
             const entity = {
                 id: nextId++,
@@ -290,4 +297,62 @@ test("native leash warning can advance on consecutive world turns", () => {
     current.escort.handleEnemyTurn(current.spinner, current.player, 1);
     assert.equal(current.player.leash.entity, current.spinner.id);
     assert.equal(current.escort.state().phase, "escort");
+});
+
+test("carrier moves beyond tether range when a returned-floor entrance is two cells from the player", () => {
+    const current = scenario();
+    current.escort.onAnchored(current.cocoon);
+    current.turn();
+    current.turn(30);
+    current.nest.x = 4;
+    current.nest.y = 5;
+    current.spinner.x = 3;
+    current.spinner.y = 5;
+    current.player.x = 4;
+    current.player.y = 7;
+    current.player.leash = { entity: current.spinner.id, length: 2.5 };
+    current.escort.state().phase = "escort";
+    const move = current.context.KinkyDungeonEnemyTryMove;
+    current.context.KinkyDungeonEnemyTryMove = (enemy, direction, delta) => {
+        const moved = move(enemy, direction, delta);
+        if (
+            moved &&
+            current.context.KinkyDungeonFindPath(current.player.x, current.player.y, enemy.x, enemy.y).length >
+                current.player.leash.length
+        ) {
+            current.player.x += Math.sign(enemy.x - current.player.x);
+            current.player.y += Math.sign(enemy.y - current.player.y);
+        }
+        return moved;
+    };
+    for (let i = 0; i < 5 && !current.entryCount(); i += 1) {
+        current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+        current.turn();
+    }
+    assert.equal(current.entryCount(), 1);
+    assert.equal(current.escort.state(), undefined);
+});
+
+test("carrier replaces a blocked entrance after a partial native tug", () => {
+    const current = scenario();
+    current.escort.onAnchored(current.cocoon);
+    current.turn();
+    current.turn(30);
+    current.nest.x = 4;
+    current.nest.y = 5;
+    current.spinner.x = 3;
+    current.spinner.y = 5;
+    current.player.x = 4;
+    current.player.y = 7;
+    current.player.leash = { entity: current.spinner.id, length: 2.5 };
+    current.escort.state().phase = "escort";
+    current.context.KinkyDungeonMapGet = (x, y) => (x >= 3 && x <= 5 && y >= 5 ? "0" : "1");
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.notEqual(current.escort.state().entranceId, current.nest.id);
+    assert.equal(
+        current.map.Entities.find((entity) => entity.id === current.escort.state().entranceId)?.SpiderlingsPrisonEntry,
+        true,
+    );
+    assert.equal(current.player.leash.entity, current.spinner.id);
+    assert.equal(current.entryCount(), 0);
 });

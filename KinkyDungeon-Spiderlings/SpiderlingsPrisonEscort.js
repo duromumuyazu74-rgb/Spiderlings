@@ -9,6 +9,7 @@
     const MIN_TURNS = 30;
     const MAX_TURNS = 50;
     const NEARBY_ENTRANCE = 12;
+    const TETHER_LENGTH = 2.5;
     const MESSAGE_KEY = "KinkyDungeonSpiderlingsNestEscort";
     const MESSAGE = "A spiderling moves in to take your cocoon to a nest entrance.";
 
@@ -110,7 +111,7 @@
             to.x,
             to.y,
             !!actor,
-            false,
+            !!actor,
             false,
             KinkyDungeonMovableTilesSmartEnemy,
             undefined,
@@ -141,16 +142,21 @@
             .sort((a, b) => path(player(), a, undefined).length - path(player(), b, undefined).length)[0];
         if (!approach) return undefined;
         let best;
-        for (const point of nearbyCells(entrance, 1, Math.SQRT2)) {
+        const needsPull = !adjacent(player(), entrance);
+        // Native tether movement uses path length, not straight-line distance. A
+        // carrier next to the entrance can otherwise stop two steps from the player.
+        for (const point of nearbyCells(entrance, 1, needsPull ? 3 : Math.SQRT2)) {
+            const playerRoute = path(player(), point, undefined);
+            if (!playerRoute) continue;
             const occupiedByActor = actor && point.x === actor.x && point.y === actor.y;
             if (!legalCell(point) && !(occupiedByActor && walkable(point))) continue;
             const actorRoute = actor ? path(actor, point, actor) : [];
             if (!actorRoute) continue;
-            const playerRoute = path(player(), point, undefined);
-            if (!playerRoute) continue;
-            // A nearby carrier cannot tug an anchored Cocoon. Reach the far side of the entrance.
-            const pullPenalty = !adjacent(player(), entrance) && playerRoute.length <= 2 ? 1000 : 0;
-            const steps = path(player(), approach, undefined).length + actorRoute.length + pullPenalty;
+            const steps =
+                path(player(), approach, undefined).length +
+                actorRoute.length +
+                Math.max(0, distance(point, entrance) - Math.SQRT2);
+            if (needsPull && playerRoute.length <= TETHER_LENGTH) continue;
             if (!best || steps < best.steps) best = { point, steps };
         }
         return best;
@@ -177,10 +183,7 @@
             if (!legalCell(point)) continue;
             if (KDMapData.StartPosition && distance(point, KDMapData.StartPosition) < 3) continue;
             if (KDMapData.EndPosition && distance(point, KDMapData.EndPosition) < 3) continue;
-            const landing = nearbyCells(point, 1, Math.SQRT2).find(
-                (cell) => legalCell(cell) && path(player(), cell) && (!escort || path(escort, cell, escort)),
-            );
-            if (!landing) continue;
+            if (!entranceLanding(point, escort)) continue;
             const created = KinkyDungeonSummonEnemy(
                 point.x,
                 point.y,
@@ -338,14 +341,24 @@
                 if (!KDPlayerLeashed(player())) KDTryToLeash(enemy, player(), delta, false);
                 if (KDPlayerLeashed(player()) && !player().leash) {
                     const carrier = KinkyDungeonGetRestraintItem("ItemNeckRestraints");
-                    KinkyDungeonAttachTetherToEntity(2.5, enemy, player(), STATE, undefined, 6, carrier);
+                    KinkyDungeonAttachTetherToEntity(TETHER_LENGTH, enemy, player(), STATE, undefined, 6, carrier);
                 }
                 if (ownsTether(record)) record.phase = "escort";
             }
             return result(enemy);
         }
         record.phase = "escort";
-        const destination = entranceLanding(currentEntrance(record), enemy)?.point;
+        let destination = entranceLanding(currentEntrance(record), enemy)?.point;
+        if (!destination) {
+            // A partial native tug can leave the player outside entry range while
+            // every reachable cell around the old entrance is inside tether range.
+            const replacement = selectEntrance(enemy) || createEntrance(enemy);
+            if (replacement) {
+                replacement[ENTRY] = true;
+                record.entranceId = replacement.id;
+                destination = entranceLanding(replacement, enemy)?.point;
+            }
+        }
         if (destination) moveToward(enemy, destination, delta);
         return result(enemy);
     }
