@@ -311,6 +311,7 @@
             report = group.remoteSighting,
             reportRoute = report ? routeOnSnapshot(snapshot, report, snapshot.exits?.[0]) : [],
             interception = reportRoute.filter((cell) => prisonRegion(cell) === group.homeRegion),
+            interceptionKeys = new Set(interception.map(cellKey)),
             members = group.members || group.memberPositions || [],
             origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
             distances = origin ? routeDistances(workSnapshot, origin) : undefined,
@@ -380,7 +381,15 @@
                 travelDistance,
             });
         }
-        return candidates
+        const crossingLines =
+            api.Prison?.isPrison() && report && interception.length
+                ? candidates.filter(
+                      (candidate) =>
+                          candidate.cells.some((cell) => interceptionKeys.has(cellKey(cell))) &&
+                          candidate.anchors.every((anchor) => !interceptionKeys.has(cellKey(anchor))),
+                  )
+                : [];
+        return (crossingLines.length ? crossingLines : candidates)
             .filter((candidate, index, values) => values.findIndex((other) => other.id === candidate.id) === index)
             .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
@@ -511,13 +520,22 @@
     }
 
     function workCells(target, snapshot) {
-        const byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+        const byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
+            nestKeys = api.Prison?.isPrison() ? new Set((snapshot.nests || []).map(cellKey)) : new Set();
         return DIRECTIONS.map((direction) => ({ x: target.x + direction.x, y: target.y + direction.y }))
             .filter((cell) => {
                 const value = byKey.get(cellKey(cell));
-                return value?.floor && !value.protected && !value.locked;
+                return value?.floor && !value.protected && !value.locked && !nestKeys.has(cellKey(cell));
             })
             .sort((a, b) => cellKey(a).localeCompare(cellKey(b)));
+    }
+
+    function workCellOpen(member, cell) {
+        return (
+            !api.Prison?.isPrison() ||
+            (member.x === cell.x && member.y === cell.y) ||
+            !api.SpinnerNativeField.snapshot(cell).occupied
+        );
     }
 
     function assignmentKey(assignment) {
@@ -598,6 +616,7 @@
                         workCells(field ? taskCell(field, retainedTask) : previous.target, workSnapshot).some(
                             (cell) => cellKey(cell) === cellKey(retainedWork),
                         ) &&
+                        workCellOpen(member, retainedWork) &&
                         Number.isFinite(pathDistance(member, retainedWork, { mapSnapshot: workSnapshot }));
                 if (canRetain) {
                     group.assignments[member.id] = field
@@ -619,6 +638,7 @@
                         .filter((cell) => !reservedWork.has(cellKey(cell)))
                         .sort(
                             (a, b) =>
+                                Number(!workCellOpen(member, a)) - Number(!workCellOpen(member, b)) ||
                                 pathDistance(member, a, { mapSnapshot: workSnapshot }) -
                                     pathDistance(member, b, { mapSnapshot: workSnapshot }) ||
                                 cellKey(a).localeCompare(cellKey(b)),
@@ -637,6 +657,7 @@
                                 .filter((cell) => !reservedWork.has(cellKey(cell)))
                                 .sort(
                                     (a, b) =>
+                                        Number(!workCellOpen(member, a)) - Number(!workCellOpen(member, b)) ||
                                         pathDistance(member, a, { mapSnapshot: workSnapshot }) -
                                             pathDistance(member, b, { mapSnapshot: workSnapshot }) ||
                                         cellKey(a).localeCompare(cellKey(b)),

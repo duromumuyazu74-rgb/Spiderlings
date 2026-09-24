@@ -378,6 +378,33 @@ test("remote ambush builders travel and construct with paid actions; stale saved
     );
 });
 
+test("remote prison ambush anchors flank the reported route when crossing lines exist", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        group = {
+            id: "remote",
+            homeRegion: "main-nest",
+            source: { type: "nest", nestId: 90 },
+            members: actors,
+            remoteSighting: { x: 11, y: 22, region: "chamber", serial: 1 },
+        };
+    snapshot.candidateLines = [
+        [
+            { x: 39, y: 22 },
+            { x: 41, y: 22 },
+        ],
+        [
+            { x: 40, y: 20 },
+            { x: 40, y: 24 },
+        ],
+    ];
+    const candidates = r.context.Spiderlings.SpinnerAI.analyzeLineCandidates(snapshot, group);
+    assert.ok(candidates.length > 0);
+    assert.ok(candidates.every((candidate) => candidate.anchors.every((anchor) => anchor.y !== 22)));
+    assert.ok(candidates.every((candidate) => candidate.cells.some((cell) => cell.y === 22)));
+});
+
 test("living prison nests disqualify line cells and replace an unpaid blocked plan", () => {
     const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
         actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
@@ -422,6 +449,76 @@ test("living prison nests disqualify line cells and replace an unpaid blocked pl
         r.context.KinkyDungeonCurrentTick++;
     }
     assert.ok(group.metrics.travel > 0);
+    assert.ok(group.metrics.construction > 0);
+});
+
+test("a prison builder reassigns a work cell occupied by a living nest", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity;
+    snapshot.candidateLines = [
+        [
+            { x: 35, y: 20 },
+            { x: 35, y: 24 },
+        ],
+    ];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        originalPlan = group.planId,
+        oldWork = plain(group.assignments[actors[0].id].workCell);
+    r.context.KDMapData.Entities.push({
+        id: 90,
+        ...oldWork,
+        hp: 5,
+        Enemy: { name: "NestEntrance" },
+    });
+    snapshot.nests.push({ id: 90, ...oldWork });
+    start(r, snapshot);
+    assert.equal(group.planId, originalPlan, "the legal line remains selected");
+    assert.ok(
+        Object.values(group.assignments).every(
+            (assignment) => `${assignment.workCell.x},${assignment.workCell.y}` !== `${oldWork.x},${oldWork.y}`,
+        ),
+        "a saved assignment cannot retain a permanent nest obstruction",
+    );
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(group.metrics.construction > 0);
+});
+
+test("a prison builder prefers a free work cell when another spiderling blocks its saved approach", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity;
+    snapshot.candidateLines = [
+        [
+            { x: 35, y: 20 },
+            { x: 35, y: 24 },
+        ],
+    ];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        originalPlan = group.planId,
+        oldWork = plain(group.assignments[actors[0].id].workCell);
+    r.context.KDMapData.Entities.push({
+        id: 90,
+        ...oldWork,
+        hp: 5,
+        Enemy: { name: "Tunneler" },
+    });
+    start(r, snapshot);
+    assert.equal(group.planId, originalPlan);
+    assert.notDeepEqual(plain(group.assignments[actors[0].id].workCell), oldWork);
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
     assert.ok(group.metrics.construction > 0);
 });
 
