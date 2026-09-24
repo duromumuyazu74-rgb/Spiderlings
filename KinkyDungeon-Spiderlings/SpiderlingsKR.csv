@@ -45,6 +45,7 @@ KDModButtonspiderlingsNestSpinnerWeight,방적자 가중치
 KDModButtonspiderlingsNestJumperWeight,도약자 가중치
 KDModButtonspiderlingsNestWebCasterWeight,거미줄 투사자 가중치
 KDModButtonspiderlingsNestTunnelerWeight,굴착자 가중치
+KDModButtonspiderlingsNestMageWeight,마법 거미 가중치
 KDModButtonspiderlingsNestReinforcementControl,둥지 반복 지원
 KDModButtonspiderlingsNestReinforcementCap,둥지당 생존 지원 개체 상한
 KDModButtonspiderlingsNestReinforcementInterval,지원 확인 간격(턴)
@@ -191,3 +192,12 @@ KDRoomType_SpiderlingsNestPrison,새끼 거미 둥지 감옥
 SpiderlingsPrisonArrival,고치 방이 거미줄로 덮여 있다. 세 갈래 길이 둥지를 지나 동쪽으로 이어진다.
 SpiderlingsPrisonTrail,서늘한 바람이 옅은 거미줄을 따라 바깥벽으로 흐른다.
 SpiderlingsPrisonExit,바깥 거미줄의 틈으로 햇빛이 스민다. 돌아가는 길은 여기다.
+NameMageSpiderlings,Spiderling Mage
+KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
+KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
+KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
+KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
+KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
+RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
+RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
+RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

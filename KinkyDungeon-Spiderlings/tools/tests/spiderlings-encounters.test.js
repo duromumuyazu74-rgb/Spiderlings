@@ -169,6 +169,51 @@ test("guaranteed squads use one fixed four-role composition on eligible ordinary
     assert.deepEqual(EncounterRules.SQUAD_MEMBERS, ["Jumper", "WebCaster", "Tunneler", "Spinner"]);
 });
 
+test("Mage eligibility and natural weight cover the floor, security and infestation boundaries", () => {
+    assert.equal(EncounterRules.mageEligible(4, -1), false);
+    assert.equal(EncounterRules.mageEligible(5, -50), true);
+    assert.equal(EncounterRules.mageEligible(1, 0), true);
+    assert.equal(EncounterRules.mageNaturalWeight(-50), 2);
+    assert.equal(EncounterRules.mageNaturalWeight(0), 5);
+    assert.equal(EncounterRules.mageNaturalWeight(50), 8);
+    assert.equal(EncounterRules.mageNaturalWeight(50, true), 9);
+    assert.equal(EncounterRules.mageNaturalWeight(-50, true), 3);
+    for (let security = -50; security < 50; security += 1)
+        assert.ok(EncounterRules.mageNaturalWeight(security) <= EncounterRules.mageNaturalWeight(security + 1));
+});
+
+test("Mage selector preserves native tags and filters its unique ID below both thresholds", () => {
+    let security = -50;
+    const calls = [];
+    const kd = loadCoreRuntime({
+        MiniGameKinkyDungeonLevel: 4,
+        KDGetEffSecurityLevel: () => security,
+        KDMapData: { Entities: [], MapMod: "" },
+        KinkyDungeonGetEnemy(...args) {
+            calls.push(args);
+            return args;
+        },
+    });
+    kd.KinkyDungeonGetEnemy([], 4, "grv", ".", [], undefined, { Other: { bonus: 3, mult: 2 } }, ["OtherTag"]);
+    assert.deepEqual(Array.from(calls.at(-1)[7]), ["OtherTag", "MageSpiderlings"]);
+    assert.equal(calls.at(-1)[6].MageSpiderlings, undefined);
+    security = 0;
+    kd.KinkyDungeonGetEnemy([], 4, "grv", ".", [], undefined, { Other: { bonus: 3, mult: 2 } }, ["OtherTag"]);
+    assert.deepEqual(Array.from(calls.at(-1)[7]), ["OtherTag"]);
+    assert.equal(calls.at(-1)[6].Other.bonus, 3);
+    assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 3);
+    kd.KinkyDungeonGetEnemy([], 4, "grv", ".", [], undefined, { MageSpiderlings: { bonus: 2, mult: 0.5 } });
+    assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 5);
+    assert.equal(calls.at(-1)[6].MageSpiderlings.mult, 0.5);
+    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    kd.KinkyDungeonGetEnemy([], 4, "grv", ".");
+    assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 4);
+    kd.MiniGameKinkyDungeonLevel = 5;
+    security = -50;
+    kd.KinkyDungeonGetEnemy([], 5, "grv", ".");
+    assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 1);
+});
+
 function cellKey(point) {
     return `${point.x},${point.y}`;
 }
@@ -365,12 +410,13 @@ test("the squad setting defaults on and the retired one-enemy fallback API stays
     assert.equal(context.KDEventMapGeneric.postMapgen?.SpiderlingsOrdinaryFallback, undefined);
 });
 
-test("nest selection keeps the unchanged 2/2/2/1 defaults", () => {
+test("nest selection gives Mage the same default weight as Tunneler", () => {
     assert.deepEqual(EncounterRules.DEFAULT_WEIGHTS, {
         Spinner: 2,
         Jumper: 2,
         WebCaster: 2,
         Tunneler: 1,
+        MageSpiderlings: 1,
     });
     assert.equal(
         EncounterRules.selectWeightedSpiderling({}, () => 0.1),
@@ -385,8 +431,12 @@ test("nest selection keeps the unchanged 2/2/2/1 defaults", () => {
         "WebCaster",
     );
     assert.equal(
-        EncounterRules.selectWeightedSpiderling({}, () => 0.95),
+        EncounterRules.selectWeightedSpiderling({}, () => 0.85),
         "Tunneler",
+    );
+    assert.equal(
+        EncounterRules.selectWeightedSpiderling({}, () => 0.99),
+        "MageSpiderlings",
     );
 });
 
@@ -398,6 +448,7 @@ test("a zero shared weight excludes that Spiderling type", () => {
                 Jumper: 0,
                 WebCaster: 0,
                 Tunneler: 0,
+                MageSpiderlings: 0,
             },
             () => 0.99,
         ),
@@ -410,6 +461,7 @@ test("a zero shared weight excludes that Spiderling type", () => {
                 Jumper: 0,
                 WebCaster: 0,
                 Tunneler: 0,
+                MageSpiderlings: 0,
             },
             () => 0.5,
         ),
@@ -490,6 +542,146 @@ function squadRuntime(overrides = {}) {
     });
     return { context, definitions, square };
 }
+
+function mageMapRuntime(overrides = {}) {
+    const cells = [
+        { x: 12, y: 12 },
+        { x: 13, y: 12 },
+        { x: 12, y: 13 },
+        { x: 13, y: 13 },
+        { x: 15, y: 12 },
+    ];
+    let security = -50;
+    const beforePopulation = [];
+    const kd = loadCoreRuntime({
+        KDMapData: {
+            Entities: [],
+            RoomType: "",
+            GridWidth: 20,
+            GridHeight: 20,
+            StartPosition: { x: 1, y: 1 },
+            EndPosition: { x: 18, y: 18 },
+            RandomPathablePoints: Object.fromEntries(cells.map((cell) => [cellKey(cell), cell])),
+        },
+        KinkyDungeonPlayerEntity: { player: true, x: 1, y: 1 },
+        MiniGameKinkyDungeonLevel: 5,
+        KDGetEffSecurityLevel: () => security,
+        KDGetAltType: () => ({}),
+        KDRandom: () => 0.5,
+        KinkyDungeonMovableTilesEnemy: ".",
+        KDDefaultAvoidTiles: "X",
+        KinkyDungeonMapGet: () => ".",
+        KinkyDungeonTilesGet: () => undefined,
+        KinkyDungeonGetEnemyByName: (name) => ({ name }),
+        KinkyDungeonSummonEnemy(x, y, name) {
+            const entity = { id: kd.KDMapData.Entities.length + 1, x, y, hp: 5, Enemy: { name } };
+            kd.KDMapData.Entities.push(entity);
+            return [entity];
+        },
+        KDRemoveEntity(entity) {
+            kd.KDMapData.Entities.splice(kd.KDMapData.Entities.indexOf(entity), 1);
+        },
+        KinkyDungeonPlaceEnemies() {
+            beforePopulation.push(kd.KDMapData.Entities.map((entity) => entity.Enemy.name));
+            return "native-population";
+        },
+        ...overrides,
+    });
+    return {
+        kd,
+        cells,
+        beforePopulation,
+        security: (value) => {
+            security = value;
+        },
+        generate: (floor, room = {}, spawnPoints = []) =>
+            kd.KinkyDungeonPlaceEnemies(spawnPoints, false, [], {}, floor, 20, 20, room),
+    };
+}
+
+test("eligible maps reserve a Mage before native population without changing the four-role squad", () => {
+    const r = mageMapRuntime();
+    r.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "5";
+    assert.equal(r.generate(5), "native-population");
+    assert.deepEqual(r.beforePopulation[0], ["MageSpiderlings"]);
+    assert.equal(r.kd.KDMapData.SpiderlingsGuaranteedMageState, "spawned");
+    assert.equal(r.kd.KDMapData.Entities[0].SpiderlingsMageProvenance, "guaranteed-map-start");
+    assert.equal(r.kd.KDEventMapGeneric.postMapgen.SpiderlingsGuaranteedSquad(), true);
+    assert.deepEqual(
+        r.kd.KDMapData.Entities.slice(1)
+            .map((entity) => entity.Enemy.name)
+            .sort(),
+        ["Jumper", "Spinner", "Tunneler", "WebCaster"],
+    );
+    assert.equal(r.generate(5), "native-population");
+    assert.equal(r.kd.KDMapData.Entities.length, 5, "a revisit does not add another Mage or squad");
+});
+
+test("Mage guarantee uses floor OR security and leaves ineligible and excluded maps alone", () => {
+    for (const [floor, security, room, roomType, expected] of [
+        [4, -1, {}, "", "ineligible"],
+        [4, 0, {}, "", "spawned"],
+        [5, -50, {}, "", "spawned"],
+        [5, 0, { bossroom: true }, "", "ineligible"],
+        [5, 0, { enemies: false }, "", "ineligible"],
+        [5, 0, { spawns: false }, "", "ineligible"],
+        [5, 0, {}, "PerkRoom", "ineligible"],
+    ]) {
+        const r = mageMapRuntime();
+        r.security(security);
+        r.kd.KDMapData.RoomType = roomType;
+        r.generate(floor, room);
+        assert.equal(r.kd.KDMapData.SpiderlingsGuaranteedMageState, expected);
+        assert.equal(r.kd.KDMapData.Entities.length, expected === "spawned" ? 1 : 0);
+    }
+});
+
+test("Mage guarantee counts an existing Mage and respects cap and legal-cell failures", () => {
+    const existing = mageMapRuntime();
+    existing.kd.KDMapData.Entities.push({ x: 12, y: 12, hp: 3, Enemy: { name: "MageSpiderlings" } });
+    existing.generate(5);
+    assert.equal(existing.kd.KDMapData.SpiderlingsGuaranteedMageState, "existing");
+    assert.equal(existing.kd.KDMapData.Entities.length, 1);
+
+    const capped = mageMapRuntime();
+    capped.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "1";
+    capped.generate(5);
+    assert.equal(capped.kd.KDMapData.Entities.length, 1);
+    assert.equal(capped.kd.KDEventMapGeneric.postMapgen.SpiderlingsGuaranteedSquad(), false);
+    assert.equal(capped.kd.KDMapData.SpiderlingsGuaranteedSquadState, "population-capped");
+
+    const full = mageMapRuntime();
+    full.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "1";
+    full.kd.KDMapData.Entities.push({ hp: 3, Enemy: { name: "Spinner" } });
+    full.generate(5);
+    assert.equal(full.kd.KDMapData.SpiderlingsGuaranteedMageState, "population-capped");
+
+    const unplaceable = mageMapRuntime();
+    unplaceable.kd.KDMapData.RandomPathablePoints = {};
+    unplaceable.generate(5);
+    assert.equal(unplaceable.kd.KDMapData.SpiderlingsGuaranteedMageState, "unplaceable");
+    assert.equal(unplaceable.kd.KDMapData.Entities.length, 0);
+});
+
+test("Mage guarantee leaves authored native spawn points vacant", () => {
+    const r = mageMapRuntime();
+    const reserved = r.cells.slice(0, -1).map((cell) => ({ ...cell, required: ["guard"], priority: true }));
+    r.generate(5, {}, reserved);
+    assert.equal(r.kd.KDMapData.SpiderlingsGuaranteedMageState, "spawned");
+    assert.deepEqual(
+        [r.kd.KDMapData.Entities[0].x, r.kd.KDMapData.Entities[0].y],
+        [r.cells.at(-1).x, r.cells.at(-1).y],
+    );
+    assert.equal(
+        reserved.some((point) => point.x === r.kd.KDMapData.Entities[0].x && point.y === r.kd.KDMapData.Entities[0].y),
+        false,
+    );
+
+    const noFreeCell = mageMapRuntime();
+    noFreeCell.generate(5, {}, noFreeCell.cells);
+    assert.equal(noFreeCell.kd.KDMapData.SpiderlingsGuaranteedMageState, "unplaceable");
+    assert.equal(noFreeCell.kd.KDMapData.Entities.length, 0);
+});
 
 test("runtime registration keeps native weights and spawns one complete unaware 2x2 squad", () => {
     const summons = [];
@@ -839,6 +1031,7 @@ function tunnelerCapRuntime() {
     });
     const settings = kd.KDModSettings.Spiderlings;
     for (const species of ["Spinner", "Jumper", "WebCaster"]) settings[`spiderlingsNest${species}Weight`] = 0;
+    settings.spiderlingsNestMageWeight = 0;
     const tick = () => kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 });
     return {
         kd,
@@ -1120,6 +1313,7 @@ test("zero unit weights pause a due timer without consuming RNG and resume immed
         "spiderlingsNestJumperWeight",
         "spiderlingsNestWebCasterWeight",
         "spiderlingsNestTunnelerWeight",
+        "spiderlingsNestMageWeight",
     ])
         settings[refvar] = 0;
     const handler = context.KDEventMapGeneric.afterEnemyTick.SpiderlingsNestReinforcement;
@@ -1370,6 +1564,7 @@ test("every Spiderlings translation CSV includes squad and controlled reinforcem
         "KDModButtonspiderlingsNestReinforcementCap",
         "KDModButtonspiderlingsNestTunnelerCap",
         "KDModButtonspiderlingsNestReinforcementInterval",
+        "KDModButtonspiderlingsNestMageWeight",
     ];
     for (const language of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
         const csv = fs.readFileSync(path.join(__dirname, "..", "..", `Spiderlings${language}.csv`), "utf8");
@@ -1428,13 +1623,13 @@ function nativePopulationRuntime(overrides = {}) {
         ],
     );
     context.Spiderlings.addEnemies(
-        ["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance"].map((name) => ({
+        ["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"].map((name) => ({
             name,
             maxhp: 5,
             minLevel: 0,
             allFloors: true,
             weight: 1,
-            tags: { spiderlings: true },
+            tags: { spiderlings: true, ...(name === "MageSpiderlings" ? { MageSpiderlings: true } : {}) },
             terrainTags: {},
         })),
     );
@@ -1553,6 +1748,7 @@ test("the default map cap limits native batch summons and releases slots after d
     assert.equal(summon("Spinner", 24).length, 24);
     assert.equal(summon("Jumper", 4).length, 1);
     assert.equal(summon("WebCaster", 1).length, 0);
+    assert.equal(summon("MageSpiderlings", 1).length, 0);
     assert.equal(summon("NestEntrance", 5).length, 5, "nests do not use spider slots");
     kd.KDMapData.Entities[0].hp = 0;
     assert.equal(summon("Tunneler", 2).length, 1);
@@ -1561,7 +1757,56 @@ test("the default map cap limits native batch summons and releases slots after d
     assert.equal(summon("Spinner", 1).length, 0);
 });
 
-test("native population selection excludes only the four capped species and recovers on a fresh map", () => {
+test("nests offer Mage at Tunneler's default weight only after the Mage threshold", () => {
+    let security = -1;
+    const nest = { id: 1, x: 2, y: 2, hp: 5, aware: true, Enemy: { name: "NestEntrance", visionRadius: 20 } };
+    const kd = loadCoreRuntime({
+        KDMapData: { Entities: [nest] },
+        MiniGameKinkyDungeonLevel: 4,
+        KDGetEffSecurityLevel: () => security,
+        KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
+        KDHostile: () => true,
+        KDGetFaction: () => "Enemy",
+        KinkyDungeonCheckLOS: () => true,
+        KDRandom: () => 0,
+        KinkyDungeonSummonEnemy(x, y, name) {
+            const entity = { id: 2, x, y, hp: 5, Enemy: { name } };
+            kd.KDMapData.Entities.push(entity);
+            return [entity];
+        },
+    });
+    const settings = kd.KDModSettings.Spiderlings;
+    for (const name of ["Spinner", "Jumper", "WebCaster", "Tunneler"]) settings[`spiderlingsNest${name}Weight`] = 0;
+    const tick = () => kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 1 });
+    assert.equal(tick(), 0);
+    assert.equal(tick(), 0);
+    assert.equal(nest.SpiderlingsNestReinforcementTimer, 2);
+    security = 0;
+    assert.equal(tick(), 1);
+    assert.equal(kd.KDMapData.Entities.at(-1).Enemy.name, "MageSpiderlings");
+    assert.equal(kd.KDMapData.Entities.at(-1).SpiderlingsNestParentID, nest.id);
+});
+
+test("the native selector admits Mage at floor five or security zero and keeps it out before both", () => {
+    let security = -1;
+    const kd = nativePopulationRuntime({
+        MiniGameKinkyDungeonLevel: 4,
+        KDGetEffSecurityLevel: () => security,
+    });
+    for (const enemy of kd.KinkyDungeonEnemies) if (enemy.name !== "MageSpiderlings") enemy.weight = 0;
+    const choose = () => kd.KinkyDungeonGetEnemy([], kd.MiniGameKinkyDungeonLevel, "grv", ".")?.name;
+    assert.equal(choose(), undefined);
+    security = 0;
+    assert.equal(choose(), "MageSpiderlings");
+    kd.MiniGameKinkyDungeonLevel = 5;
+    security = -50;
+    assert.equal(choose(), "MageSpiderlings");
+    kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "1";
+    kd.KinkyDungeonSummonEnemy(12, 12, "MageSpiderlings", 1, 1);
+    assert.equal(choose(), undefined, "Mage uses the same mobile population cap");
+});
+
+test("native population selection excludes capped mobile Spiderlings and recovers on a fresh map", () => {
     const kd = nativePopulationRuntime();
     kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "1";
     const choose = (...extra) => kd.KinkyDungeonGetEnemy([], 10, "grv", ".", ...extra);
@@ -1580,7 +1825,7 @@ test("native population selection excludes only the four capped species and reco
     });
     assert.equal(choose().name, "OtherSpider", "native and third-party spiders stay eligible");
     kd.KDMapData = { Entities: [], GridWidth: 40, GridHeight: 40 };
-    assert.equal(choose().name, "Jumper", "new map has its own full quota");
+    assert.equal(choose().name, "WebCaster", "new map has its own full quota, including Mage");
 });
 
 test("a fixed squad is skipped atomically when fewer than four map slots remain", () => {

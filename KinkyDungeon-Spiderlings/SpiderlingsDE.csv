@@ -45,6 +45,7 @@ KDModButtonspiderlingsNestSpinnerWeight,Spinner Gewicht
 KDModButtonspiderlingsNestJumperWeight,Springer Gewicht
 KDModButtonspiderlingsNestWebCasterWeight,Netzwerfer Gewicht
 KDModButtonspiderlingsNestTunnelerWeight,Gräber Gewicht
+KDModButtonspiderlingsNestMageWeight,Magier Gewicht
 KDModButtonspiderlingsNestReinforcementControl,Wiederkehrende Nestverstärkung
 KDModButtonspiderlingsNestReinforcementCap,Lebende Verstärkung je Nest
 KDModButtonspiderlingsNestReinforcementInterval,Prüfintervall für Verstärkung (Runden)
@@ -191,3 +192,12 @@ KDRoomType_SpiderlingsNestPrison,Spinnenbrut-Gefängnis
 SpiderlingsPrisonArrival,Seide bedeckt die Kokonkammer. Drei Wege führen durch das Nest nach Osten.
 SpiderlingsPrisonTrail,Ein kühler Luftzug folgt der hellen Seide zur Außenwand.
 SpiderlingsPrisonExit,Tageslicht fällt durch einen Riss im äußeren Netz. Hier geht es zurück.
+NameMageSpiderlings,Spiderling Mage
+KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
+KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
+KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
+KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
+KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
+RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
+RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
+RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

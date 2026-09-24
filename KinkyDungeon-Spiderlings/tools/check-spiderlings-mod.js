@@ -22,6 +22,8 @@ const runtimeScripts = [
     "Spiderlings.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -67,6 +69,9 @@ const soundAssets = [
 const runtimeAssets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
+    "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneHit.png",
+    "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
@@ -79,6 +84,7 @@ const runtimeAssets = [
     "Enemies/Spinner.png",
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
+    "Enemies/MageSpiderlings.png",
     "Enemies/NestEntrancePink.png",
     "Enemies/SpinnerPink.png",
     "Enemies/TunnelerPink.png",
@@ -730,9 +736,10 @@ function checkRuntime(state) {
     if (
         !populationCap ||
         populationCap.default !== "25" ||
-        JSON.stringify(cappedSpecies) !== JSON.stringify(["Jumper", "Spinner", "Tunneler", "WebCaster"])
+        JSON.stringify(cappedSpecies) !==
+            JSON.stringify(["Jumper", "MageSpiderlings", "Spinner", "Tunneler", "WebCaster"])
     ) {
-        fail("Map population cap must default to 25 and count only the four Spiderlings species, excluding nests.");
+        fail("Map population cap must default to 25 and count the five mobile Spiderlings species, excluding nests.");
     }
     // Texture decoding, cache publication, and fallback are exercised by the
     // public model-runtime suite before this checker runs in the local watcher.
@@ -747,7 +754,7 @@ function checkRuntime(state) {
     }
     const expectedIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash")
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash", "SpiderlingsMageArmSigil")
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)
@@ -1493,6 +1500,11 @@ function checkRouting(state) {
     }
 
     const spellByName = new Map(state.spells.map((entry) => [entry.name, entry]));
+    for (const spellName of ["SpiderlingsMageRune", "SpiderlingsMageBolt"]) {
+        const spell = spellByName.get(spellName);
+        if (spell?.onhit !== "" || !exists(`Bullets/${spellName}Hit.png`))
+            fail(`${spellName} must package its native hit visual.`);
+    }
     const dash = spellByName.get("SpiderlingsJumperDash");
     const dashApi = state.context.Spiderlings && state.context.Spiderlings.JumperDash;
     const dashSource = readModText("SpiderlingsJumperDash.js");

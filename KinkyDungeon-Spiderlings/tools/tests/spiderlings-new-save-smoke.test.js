@@ -43,6 +43,8 @@ const scripts = [
     "Spiderlings.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -317,7 +319,7 @@ function resolve(runtime, state, action, catalog) {
     return runtime.context.Spiderlings.Webbing.resolveWebbingAction(request);
 }
 
-test("fresh manifest VM exposes Webbing, Leg binder, and Silk leash restraints plus owned models", async () => {
+test("fresh manifest VM exposes Webbing, Mage, Leg binder, and Silk leash restraints plus owned models", async () => {
     const runtime = freshNewSaveRuntime();
     const restraintIds = runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort();
     const modelIds = runtime.models.map((entry) => entry.Name).sort();
@@ -330,6 +332,7 @@ test("fresh manifest VM exposes Webbing, Leg binder, and Silk leash restraints p
             cocoonId,
             "SpiderlingsSpinnerLegbinder",
             "SpiderlingsSilkLeash",
+            "SpiderlingsMageArmSigil",
         ].sort(),
     );
     assert.deepEqual(

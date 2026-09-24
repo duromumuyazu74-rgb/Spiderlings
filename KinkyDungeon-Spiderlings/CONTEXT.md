@@ -5,12 +5,16 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 ## Spiderlings encounters
 
 **Map Spiderling population cap**:
-The configurable maximum of living Spinner, Jumper, WebCaster and Tunneler entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
+The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
 _Avoid_: per-nest offspring cap, total spawns over a floor, nest count limit
 
 **Native Spiderlings population**:
 Spiderlings selected by KD's ordinary enemy population system. It coexists with the guaranteed squad and nest reinforcement and is not a fallback.
 _Avoid_: guaranteed spawn, single-enemy fallback
+
+**Guaranteed Mage Spiderling**:
+One Mage placed before native random population on a newly generated ordinary map at floor 5 or effective security 0, if a legal cell outside authored spawn points and a mobile population slot exist. The map records its one-time outcome. This Mage is separate from the unchanged four-member squad; natural rolls may add more within the shared cap.
+_Avoid_: adding Mage to the fixed squad, spawning on every revisit
 
 **Guaranteed Spiderling squad**:
 A default-enabled, one-shot encounter of exactly one Jumper, WebCaster, Tunneler, and Spinner on an eligible newly generated ordinary map. The group is additional to native population and is created only as a complete atomic unit.
@@ -33,7 +37,7 @@ The configurable number of successful Tunneler reinforcements from one nest over
 _Avoid_: simultaneous Tunneler cap, shared ancestry budget, total nest count limit
 
 **Nest child**:
-A living Spinner, Jumper, WebCaster, or Tunneler created by recurring nest reinforcement and tagged with its parent entrance ID. Untagged natural, squad, Tunneler, and death-burst entities are not nest children.
+A living Spinner, Jumper, WebCaster, Tunneler, or Mage created by recurring nest reinforcement and tagged with its parent entrance ID. Untagged natural, squad, Tunneler, Mage map-start, and death-burst entities are not nest children.
 _Avoid_: every Spiderling near a nest
 
 **Spiderlings nest prison**:
@@ -115,6 +119,12 @@ The player-facing removal order within Spiderlings chains. An equipped Cocoon is
 _Avoid_: global removal lock, consumed inner layers, inner-layer escape through an outer layer
 
 ## NPC silk combat
+
+**Mage Spiderlings combat**:
+The summonable Mage uses `SpiderlingsMageBolt`. Its direct projectile applies base 4 native glue HP damage only to hostile Maidforce NPCs, targeting an ordinary 8-HP maid in two unresisted hits. Native shields, resistance and immunity still resolve the hit. The player takes base 0.5 glue damage and may receive the separate `SpiderlingsMageArmSigil` ItemArms restraint. Strict native compatibility checks protect existing arm equipment and prohibit duplicate sigils. `Spiderlings.Mage.equipArms(source)` is shared with the rune effect. The sigil has native escape rules, no custom model yet, and no membership in Webbing progression or generic restraint pools. Natural, nest and guaranteed Mage spawning follow the shared population cap and the floor or security threshold.
+
+**Mage runes**:
+Each available Mage spell action has a one-in-four chance to select `SpiderlingsMageRune` instead of the bolt. The native stationary bullet occupies one tile for up to 300 turns and carries its caster ID through save/load; no more than three live runes can belong to one Mage. A hostile Maidforce NPC crossing it receives base 6 native Slime binding. The player instead receives an attempt to equip the shared arm sigil. The bullet triggers once, survives caster death, and has the native `rune` tag for NegateRune. Friendly Spiderlings and other NPCs do not trigger it.
 
 **Temporary silk subdual**:
 Spiderling attacks use shared light tickle damage profiles for players and hostile NPCs: melee 0.05, dash 0.10, direct spray 0.05 and trail 0.01. Players receive eligible Webbing equipment; NPCs receive native Slime binding. Damage and binding have separate native resistance checks. NPC contact amplification is capped at twice its scaled input to prevent flat weakness bonuses overwhelming these tiny amounts. Native immunity, shields and struggling remain effective. Subdual means native helplessness, not permanent capture, recruitment or collection. Successful melee binding consumes the attacking Jumper; Spinners and WebCasters remain for repeated support.

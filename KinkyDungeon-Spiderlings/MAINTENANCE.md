@@ -1,10 +1,14 @@
-# Spiderlings 0.92.36-test.14 维护说明
+# Spiderlings 0.92.36-test.16 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
 
 test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，自动回归与安装包验证另见本次维护记录。实机与视觉测试由维护者后续执行，不沿用 test.13 的证据声称本版本已完成实机验收。
+
+test.15 加入 Mage Spiderlings。第 5 层或有效安全等级 0 起，合格新普通地图在原生随机人口之前保留一只，前提是合法格和共享移动人口额度足够。自然权重随有效安全等级从 2 增至 8，侵扰地图再加 1，最高 9；巢穴增援默认权重 1，与 Tunneler 相同。法师使用远程攻击和单格符文；玩家 ItemArms 物品的最终素材与脱困设计待定。`KDMapData.SpiderlingsGuaranteedMageState` 保存本图保底结果，重访不补生。实机证据需按本次交付包另行记录。
+
+test.16 补齐符文与丝弹命中时由原生战斗逻辑请求的短暂命中贴图，复用现有符文图形，避免命中后产生缺失资源请求。实机证据需使用 test.16 的最终 ZIP 重新记录。
 
 ## 当前测试扩展
 
@@ -26,11 +30,11 @@ Manifest 按依赖顺序加载运行脚本。模块职责、共享 hook 的安�
 
 共享状态保存在现有 Spiderlings 命名空间、实体字段和地图数据中。`KDMapData.SpiderlingsSpinnerEncounter` 的 schema 2 保存声明围场、共同核心、层级、施工分配、共享物理段、HP、重建冷却和失主计时；原生蛛网实体只是可去重的投影。旧存档缺少新字段时按当前默认值恢复，不推断无法证明的历史来源。兼容包装只在对应 KD 原生函数存在时安装，并把不属于 Spiderlings 的参数完整交回原函数。
 
-地图默认最多保留 25 只移动幼蛛，0 表示不限。自然生成、游荡、固定小队、巢穴增援和死亡召唤共用额度。每个巢穴的存活子代与累计 Tunneler 额度独立保存。五个任务巢采用 3＋2 分组，保持地图连通和可攻击邻格；任务完成后才开放正向楼层出口。
+地图默认最多保留 25 只移动幼蛛，0 表示不限。Mage 也计入；自然生成、地图保底、游荡、固定小队、巢穴增援和死亡召唤共用额度。每个巢穴的存活子代与累计 Tunneler 额度独立保存。五个任务巢采用 3＋2 分组，保持地图连通和可攻击邻格；任务完成后才开放正向楼层出口。
 
 ## 拘束与模型
 
-当前共有 26 件运行拘束：十件 Lv1、五件 Lv2、八件 Lv3、Cocoon、Spinner 腿袋和 Silk leash。普通蛛丝部位独立按 Lv1 → Lv2 → Lv3 推进；Blindfold 和 Gag 从 Lv1 进入 Lv3，Hood 需要对应 Lv3 头口层。八件 Lv3 全部真实装备、命中前 slow 达到五层后，后续允许的直接命中才能施加 Cocoon。Spinner 普通命中只推进腿、踝和足。
+当前共有 27 件运行拘束：十件 Lv1、五件 Lv2、八件 Lv3、Cocoon、Spinner 腿袋、Silk leash 和 Mage 手臂占位物。普通蛛丝部位独立按 Lv1 → Lv2 → Lv3 推进；Blindfold 和 Gag 从 Lv1 进入 Lv3，Hood 需要对应 Lv3 头口层。八件 Lv3 全部真实装备、命中前 slow 达到五层后，后续允许的直接命中才能施加 Cocoon。Spinner 普通命中只推进腿、踝和足。
 
 Lv1 需要一次有效脱困行动；Lv2/Lv3 需要两次，可混合 Cut、Remove 和 Struggle。Cocoon 的 Cut 目标为 40，Remove/Struggle 目标为 50。Spinner 完整腿袋需要 Cut 4 次或 Remove/Struggle 6 次，半成品分别需要 2/3 次。Cocoon 阻止 23 件内层蛛丝操作；移除后恢复各部位外层优先顺序。
 

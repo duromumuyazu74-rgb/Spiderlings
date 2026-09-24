@@ -45,6 +45,7 @@ KDModButtonspiderlingsNestSpinnerWeight,Peso de hiladora
 KDModButtonspiderlingsNestJumperWeight,Peso de saltadora
 KDModButtonspiderlingsNestWebCasterWeight,Peso de escupidora
 KDModButtonspiderlingsNestTunnelerWeight,Peso de excavadora
+KDModButtonspiderlingsNestMageWeight,Peso de maga araña
 KDModButtonspiderlingsNestReinforcementControl,Refuerzos recurrentes del nido
 KDModButtonspiderlingsNestReinforcementCap,Refuerzos vivos por nido
 KDModButtonspiderlingsNestReinforcementInterval,Intervalo de comprobación de refuerzos (turnos)
@@ -191,3 +192,12 @@ KDRoomType_SpiderlingsNestPrison,Prisión del nido de arañas
 SpiderlingsPrisonArrival,La seda cubre la cámara del capullo. Tres pasajes llevan al este a través del nido.
 SpiderlingsPrisonTrail,Una corriente fresca sigue la seda pálida hacia el muro exterior.
 SpiderlingsPrisonExit,La luz entra por una abertura en la red exterior. El camino de regreso está aquí.
+NameMageSpiderlings,Spiderling Mage
+KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
+KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
+KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
+KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
+KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
+RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
+RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
+RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

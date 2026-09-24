@@ -45,6 +45,7 @@ KDModButtonspiderlingsNestSpinnerWeight,Waga prządki
 KDModButtonspiderlingsNestJumperWeight,Waga skoczka
 KDModButtonspiderlingsNestWebCasterWeight,Waga miotacza sieci
 KDModButtonspiderlingsNestTunnelerWeight,Waga kopacza
+KDModButtonspiderlingsNestMageWeight,Waga pajęczego maga
 KDModButtonspiderlingsNestReinforcementControl,Powtarzające się posiłki z gniazda
 KDModButtonspiderlingsNestReinforcementCap,Żywe posiłki na gniazdo
 KDModButtonspiderlingsNestReinforcementInterval,Odstęp sprawdzania posiłków (tury)
@@ -191,3 +192,12 @@ KDRoomType_SpiderlingsNestPrison,Więzienie w gnieździe pająków
 SpiderlingsPrisonArrival,Jedwab pokrywa komnatę kokonu. Trzy przejścia prowadzą przez gniazdo na wschód.
 SpiderlingsPrisonTrail,Chłodny powiew biegnie wzdłuż bladego jedwabiu ku zewnętrznej ścianie.
 SpiderlingsPrisonExit,Światło wpada przez szczelinę w zewnętrznej sieci. Tędy prowadzi droga powrotna.
+NameMageSpiderlings,Spiderling Mage
+KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
+KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
+KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
+KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
+KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
+RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
+RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
+RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

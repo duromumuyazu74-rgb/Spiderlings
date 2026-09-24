@@ -15,6 +15,8 @@ const scripts = [
     "Spiderlings.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -41,6 +43,9 @@ const scripts = [
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
+    "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneHit.png",
+    "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
@@ -53,6 +58,7 @@ const assets = [
     "Enemies/Spinner.png",
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
+    "Enemies/MageSpiderlings.png",
     "Enemies/NestEntrancePink.png",
     "Enemies/SpinnerPink.png",
     "Enemies/TunnelerPink.png",
@@ -299,7 +305,7 @@ test("legacy IDs, five-module exports, upgrade APIs, and the TrapBindings wrappe
     assert.match(webbing, /ENEMY_PROFILES/);
 });
 
-test("seven locale files contain all twenty-five current restraint text triplets", () => {
+test("seven locale files contain the current restraint and Mage text", () => {
     const current = [
         "SpiderlingsSpinnerLegbinder",
         "SpiderlingsWebbingLv1Arm",
@@ -329,11 +335,24 @@ test("seven locale files contain all twenty-five current restraint text triplets
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 193, `${csv}: current release text set including prison clues and Spinner messages`);
+        assert.equal(
+            entries.size,
+            203,
+            `${csv}: current release text set including prison clues, Spinner messages and Mage rune`,
+        );
         for (const key of [
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
+            "NameMageSpiderlings",
+            "KillMageSpiderlings",
+            "KinkyDungeonSpellSpiderlingsMageBolt",
+            "KinkyDungeonSpellCastSpiderlingsMageBolt",
+            "KinkyDungeonSpellSpiderlingsMageRune",
+            "KinkyDungeonSpellCastSpiderlingsMageRune",
+            "RestraintSpiderlingsMageArmSigil",
+            "RestraintSpiderlingsMageArmSigilDesc",
+            "RestraintSpiderlingsMageArmSigilDesc2",
         ]) {
             assert.ok(entries.get(key)?.trim(), `${csv}: ${key}`);
         }

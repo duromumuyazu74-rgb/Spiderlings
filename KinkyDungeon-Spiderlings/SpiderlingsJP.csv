@@ -45,6 +45,7 @@ KDModButtonspiderlingsNestSpinnerWeight,糸紡ぎの重み
 KDModButtonspiderlingsNestJumperWeight,跳躍者の重み
 KDModButtonspiderlingsNestWebCasterWeight,糸吐きの重み
 KDModButtonspiderlingsNestTunnelerWeight,穴掘りの重み
+KDModButtonspiderlingsNestMageWeight,魔法蜘蛛の重み
 KDModButtonspiderlingsNestReinforcementControl,巣穴の反復増援
 KDModButtonspiderlingsNestReinforcementCap,巣穴ごとの生存増援上限
 KDModButtonspiderlingsNestReinforcementInterval,増援の確認間隔（ターン）
@@ -191,3 +192,12 @@ KDRoomType_SpiderlingsNestPrison,幼グモの巣の牢獄
 SpiderlingsPrisonArrival,繭の部屋は蛛糸に覆われている。三つの通路が巣を抜けて東へ続く。
 SpiderlingsPrisonTrail,涼しい風が淡い蛛糸に沿って外壁へ流れている。
 SpiderlingsPrisonExit,外側の網の裂け目から日光が差す。帰り道はここだ。
+NameMageSpiderlings,Spiderling Mage
+KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
+KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
+KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
+KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
+KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
+RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
+RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
+RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

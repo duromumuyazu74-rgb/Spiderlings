@@ -15,6 +15,8 @@
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-spinner-ai.test.js",
     "spiderlings-model-runtime.test.js",
+    "spiderlings-mage-combat.test.js",
+    "spiderlings-mage-runes.test.js",
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",
@@ -23,6 +25,7 @@
   "local": [
     "spiderlings-encounters.test.js",
     "spiderlings-combat.test.js",
+    "spiderlings-mage-runes-native.test.js",
     "spiderlings-maid-hostility.test.js",
     "spiderlings-infestation.test.js",
     "spiderlings-webbing-lv1.test.js",
