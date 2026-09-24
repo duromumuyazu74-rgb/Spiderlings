@@ -287,6 +287,7 @@
 
     function analyzeLineCandidates(snapshot, group) {
         const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+            nestKeys = new Set((snapshot.nests || []).map(cellKey)),
             protectedKeys = new Set(
                 [...(snapshot.entrances || []), ...(snapshot.exits || []), ...(snapshot.protectedCells || [])].map(
                     cellKey,
@@ -299,6 +300,7 @@
                     !value.protected &&
                     !value.locked &&
                     !protectedKeys.has(cellKey(cell)) &&
+                    (!api.Prison?.isPrison() || !nestKeys.has(cellKey(cell))) &&
                     (!api.Prison?.isPrison() || api.PrisonNest?.ordinaryConstructionAllowed?.(cell) !== false) &&
                     (!group.homeRegion || prisonRegion(cell) === group.homeRegion)
                 );
@@ -670,17 +672,26 @@
         return String(KDMapData?.RoomType ?? KDMapData?.MapMod ?? `${KDMapData?.GridWidth}x${KDMapData?.GridHeight}`);
     }
 
-    function staticCandidateLegal(candidate, snapshot, group) {
-        const cells = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+    function staticCandidateLegal(candidate, snapshot, group, blockNests) {
+        const cells = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
+            nestKeys = blockNests ? new Set((snapshot.nests || []).map(cellKey)) : new Set();
         return candidate.cells.every((key) => {
             const cell = cells.get(key);
             return (
                 cell?.floor &&
                 !cell.protected &&
                 !cell.locked &&
+                !nestKeys.has(key) &&
                 (!group.homeRegion || prisonRegion(cell) === group.homeRegion)
             );
         });
+    }
+
+    function lineHasPaidWork(field) {
+        return (
+            !!field &&
+            (field.anchors.some((anchor) => anchor.built) || field.links.some((link) => link.builtCells.length))
+        );
     }
 
     function refreshReportedPlan(encounter, group) {
@@ -689,7 +700,7 @@
         if (!report || !plan || plan.kind === "enclosure" || (plan.reportSerial || 0) >= report.serial) return;
         const field = api.SpinnerNativeField.fieldById(encounter, plan.fieldId);
         if (!field) return;
-        const paid = field.anchors.some((anchor) => anchor.built) || field.links.some((link) => link.builtCells.length);
+        const paid = lineHasPaidWork(field);
         if ((paid || plan.reportSerial) && pendingTasks(field, true).length) return;
         if (!paid) {
             api.SpinnerNativeField.retireField(plan.fieldId);
@@ -778,8 +789,12 @@
             else delete group.remoteSighting;
             refreshReportedPlan(encounter, group);
             const current = ai.plans[group.planId];
-            if (current && current.kind !== "enclosure" && !staticCandidateLegal(current, snapshot, group))
-                invalidatePlan(encounter, group, "terrain", snapshot);
+            if (current && current.kind !== "enclosure") {
+                const field = api.SpinnerNativeField.fieldById(encounter, current.fieldId),
+                    blockNests = api.Prison?.isPrison() && !lineHasPaidWork(field);
+                if (!staticCandidateLegal(current, snapshot, group, blockNests))
+                    invalidatePlan(encounter, group, blockNests ? "nest-or-terrain" : "terrain", snapshot);
+            }
             if (group.planId) continue;
             const members = group.memberIds
                     .map((id) => entities.find((entity) => entity.id === id))
@@ -1113,6 +1128,7 @@
     }
 
     function handleBeforeMove(enemy, target, aiData = {}) {
+        // KD clears movePoints for idle enemies after beforemove, including a paid move below its speed threshold.
         const encounter = api.SpinnerNativeField.state(),
             state = encounter?.ai;
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
@@ -1129,12 +1145,9 @@
             );
         if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
             if (group.engagement.mode === "pursuit") return decide(enemy, group, "delegate-native", false);
-            return decide(
-                enemy,
-                group,
-                moveLure(enemy, group, observed ? target : undefined, observed && actualSight),
-                true,
-            );
+            const action = moveLure(enemy, group, observed ? target : undefined, observed && actualSight);
+            if (["lure-move", "yield"].includes(action)) aiData.idle = false;
+            return decide(enemy, group, action, true);
         }
         if (perceivedThreat && distance(enemy, target) <= 1)
             return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
@@ -1172,13 +1185,16 @@
                         false,
                     );
                     record(group, "yield");
+                    aiData.idle = false;
                     return decide(enemy, group, "yield", true);
                 }
             }
             record(group, "wait");
             return decide(enemy, group, "wait", true);
         }
-        return decide(enemy, group, performAssignment(enemy, group, assignment), true);
+        const action = performAssignment(enemy, group, assignment);
+        if (["builder-move", "field-work"].includes(action)) aiData.idle = false;
+        return decide(enemy, group, action, true);
     }
 
     function preparePositiveTurn(delta, input = {}) {

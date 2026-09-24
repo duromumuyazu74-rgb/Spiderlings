@@ -156,12 +156,15 @@ function runtime(entities = []) {
                         canSeePlayer: !!enemy.testSense,
                         hostile: true,
                         aggressive: true,
+                        idle: true,
                         ...(enemy.testAIData || {}),
                     },
                     handled = context.KDAIType[enemy.Enemy.AI || "hunt"].beforemove(enemy, target, aiData),
                     attacked = context.KDAIType.hunt.attack(enemy, target, aiData),
                     cast = context.KDAIType.hunt.spell(enemy, target, aiData);
-                return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
+                if (aiData.idle) enemy.movePoints = 0;
+                enemy.testIdle = aiData.idle;
+                return { idle: aiData.idle, handled, attacked, cast, defeat: false, defeatEnemy: enemy };
             },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] ||= {};
@@ -373,6 +376,84 @@ test("remote ambush builders travel and construct with paid actions; stale saved
             (assignment) => r.context.Spiderlings.PrisonAlerts.regionAt(assignment.workCell) === "main-nest",
         ),
     );
+});
+
+test("living prison nests disqualify line cells and replace an unpaid blocked plan", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
+        actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime([observer, ...actors]),
+        snapshot = prisonSnapshot(),
+        blocked = [
+            { x: 34, y: 22 },
+            { x: 38, y: 22 },
+        ],
+        available = [
+            { x: 33, y: 24 },
+            { x: 37, y: 24 },
+        ],
+        player = r.context.KinkyDungeonPlayerEntity;
+    observer.testSense = true;
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    snapshot.candidateLines = [blocked];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        oldPlan = ai.plans[group.planId];
+    assert.deepEqual(plain(oldPlan.anchors), blocked);
+
+    r.context.KDMapData.Entities.push(
+        ...blocked.map((point, index) => ({ id: 90 + index, ...point, hp: 5, Enemy: { name: "NestEntrance" } })),
+    );
+    snapshot.nests = blocked.map((point, index) => ({ id: 90 + index, ...point }));
+    snapshot.candidateLines.push(available);
+    start(r, snapshot);
+    const replacement = ai.plans[group.planId];
+    assert.notEqual(replacement.id, oldPlan.id);
+    assert.equal(oldPlan.status, "invalid");
+    assert.deepEqual(plain(replacement.anchors), available);
+    assert.ok(
+        Object.values(group.assignments).every(
+            (assignment) => r.context.Spiderlings.PrisonAlerts.regionAt(assignment.workCell) === group.homeRegion,
+        ),
+    );
+
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(group.metrics.travel > 0);
+    assert.ok(group.metrics.construction > 0);
+});
+
+test("a paid builder attempt stays non-idle while native movement points accumulate", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity,
+        nativeMove = r.context.KinkyDungeonEnemyTryMove;
+    snapshot.candidateLines = [
+        [
+            { x: 35, y: 20 },
+            { x: 35, y: 24 },
+        ],
+    ];
+    r.context.KinkyDungeonEnemyTryMove = (enemy, direction, delta, x, y) => {
+        enemy.movePoints = (enemy.movePoints || 0) + delta;
+        if (enemy.movePoints < 1.5) return false;
+        enemy.movePoints -= 1.5;
+        return nativeMove(enemy, direction, delta, x, y);
+    };
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0];
+    r.context.KinkyDungeonEnemyLoop(actors[0], player, 1);
+    assert.equal(actors[0].testIdle, false, "KD must retain the unpaid movement-point balance");
+    assert.equal(actors[0].movePoints, 1);
+    assert.equal(group.metrics.travel, 0);
+    r.context.KinkyDungeonCurrentTick++;
+    start(r, snapshot);
+    r.context.KinkyDungeonEnemyLoop(actors[0], player, 1);
+    assert.ok(group.metrics.travel > 0, "the next paid native attempt reaches its threshold");
+    assert.ok(r.movement.length > 0);
 });
 
 test("groups require eligible hostile Spinners within ten path steps and keep stable identity", () => {
