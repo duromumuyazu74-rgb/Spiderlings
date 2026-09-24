@@ -299,6 +299,7 @@ test("nest losses, extra nest vacancies and patrol routes persist across exit an
     patrol.aware = true;
     assert.equal(kd.KDAIType.hunt.beforemove(patrol, {}, { canSensePlayer: true }), false);
     assert.deepEqual([patrol.x, patrol.y], moved);
+    assert.equal(kd.KDAIType.hunt.beforemove(patrol, {}, { canSensePlayer: false }), true);
     const originalPrison = kd.KDGameData.RoomType;
     kd.lastPrison = originalPrison;
     kd.KDGoThruTile(51, 22);
@@ -323,11 +324,37 @@ test("both patrol routes keep moving through their shared central crossing befor
         for (const id of patrolIds) {
             const actor = kd.KDMapData.Entities.find((enemy) => enemy.id === id);
             kd.KDAIType.hunt.beforemove(actor, {}, { canSensePlayer: false });
-            if (actor.x === 36 && actor.y === 22) reached.add(id);
+            if (actor.x === 24 && actor.y === 22) reached.add(id);
         }
     }
     assert.equal(reached.size, 2);
     assert.equal(r.moves.length > 80, true);
+});
+
+test("a native Jumper carries paid movement points across idle-loop turns", () => {
+    const r = nestRuntime();
+    const kd = r.context;
+    const id = Number(Object.keys(kd.KDMapData.SpiderlingsPrison.patrols)[0]);
+    const actor = kd.KDMapData.Entities.find((enemy) => enemy.id === id);
+    actor.Enemy.movePoints = 1.25;
+    actor.movePoints = 0;
+    const start = [actor.x, actor.y];
+    kd.KinkyDungeonEnemyTryMove = (enemy, direction, delta) => {
+        enemy.movePoints += delta;
+        if (enemy.movePoints < enemy.Enemy.movePoints) return false;
+        enemy.movePoints -= enemy.Enemy.movePoints;
+        enemy.x += direction.x;
+        enemy.y += direction.y;
+        return true;
+    };
+    for (let turn = 0; turn < 2; turn += 1) {
+        const aiData = { idle: true, moved: false, canSensePlayer: false };
+        assert.equal(kd.KDAIType.hunt.beforemove(actor, {}, aiData), true);
+        if (aiData.idle) actor.movePoints = 0;
+        assert.equal(aiData.idle, false);
+    }
+    assert.notDeepEqual([actor.x, actor.y], start);
+    assert.equal(actor.movePoints, 0.75);
 });
 
 test("native lair admission keeps the Cocoon and creates a connected prison with bypasses", () => {

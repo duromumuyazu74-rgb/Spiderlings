@@ -22,13 +22,14 @@
             { x: 36, y: 8 },
             { x: 24, y: 8 },
             { x: 24, y: 22 },
-            { x: 36, y: 22 },
+            { x: 28, y: 22 },
+            { x: 22, y: 22 },
         ]),
         Object.freeze([
             { x: 36, y: 36 },
-            { x: 46, y: 36 },
-            { x: 46, y: 22 },
-            { x: 36, y: 22 },
+            { x: 24, y: 36 },
+            { x: 24, y: 22 },
+            { x: 24, y: 18 },
         ]),
     ]);
     const PATROL_STARTS = Object.freeze([
@@ -239,14 +240,7 @@
     function movePatrol(enemy, aiData) {
         const prison = state();
         const patrol = prison?.patrols?.[enemy?.id];
-        if (
-            !patrol ||
-            !(enemy.hp > 0) ||
-            enemy.aware ||
-            aiData.canSensePlayer ||
-            KinkyDungeonIsDisabled(enemy) ||
-            KDHelpless(enemy)
-        )
+        if (!patrol || !(enemy.hp > 0) || aiData.canSensePlayer || KinkyDungeonIsDisabled(enemy) || KDHelpless(enemy))
             return false;
         const route = PATROL_ROUTES[patrol.route];
         if (!route) return false;
@@ -255,7 +249,7 @@
             patrol.waypoint = (patrol.waypoint + 1) % route.length;
             waypoint = route[patrol.waypoint];
         }
-        const path = KinkyDungeonFindPath(
+        let path = KinkyDungeonFindPath(
             enemy.x,
             enemy.y,
             waypoint.x,
@@ -269,16 +263,37 @@
             undefined,
             enemy,
         );
-        const next = path?.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+        let next = path?.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+        if (next && KinkyDungeonEntityAt(next.x, next.y)) {
+            path = KinkyDungeonFindPath(
+                enemy.x,
+                enemy.y,
+                waypoint.x,
+                waypoint.y,
+                true,
+                true,
+                !!aiData.ignoreLocks,
+                aiData.MovableTiles || KinkyDungeonMovableTilesEnemy,
+                undefined,
+                undefined,
+                undefined,
+                enemy,
+            );
+            next = path?.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+        }
         if (!next || KinkyDungeonEntityAt(next.x, next.y)) return true;
-        KinkyDungeonEnemyTryMove(
-            enemy,
-            { x: next.x - enemy.x, y: next.y - enemy.y },
-            enemy.SpiderlingsSpinnerRuntimeDelta || 1,
-            next.x,
-            next.y,
-            false,
-        );
+        // KD resets movePoints for idle enemies at the end of its loop. A
+        // Jumper needs 1.25 points, so its paid movement must span turns.
+        aiData.idle = false;
+        aiData.moved =
+            KinkyDungeonEnemyTryMove(
+                enemy,
+                { x: next.x - enemy.x, y: next.y - enemy.y },
+                enemy.SpiderlingsSpinnerRuntimeDelta || 1,
+                next.x,
+                next.y,
+                false,
+            ) || aiData.moved;
         return true;
     }
 
