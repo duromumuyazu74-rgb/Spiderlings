@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.16` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.17` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                               |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -78,6 +78,8 @@ The doorway scenario remains a focused #28 fixture. Ordinary and infestation map
 The KD 5.5.0 projection uses a non-immobile `SpiderlingsSpinnerWebCell` enemy with `SpiderlingsWebTraversal` as its native path condition. Ordinary enemies fail the condition and remain blocked. A Spiderling accepted by the condition lands on the legal empty cell immediately beyond the web; the proxy is neither swapped nor co-occupied and stays attackable at its original coordinate. Projectiles and sight continue to use the underlying floor tile. The adapter stores every saved group line in the same schema-2 physical graph and reconciles exactly one proxy per solid cell.
 
 Autonomous planning captures the map seed, forms groups from hostile capable Spinners within ten reachable steps and saves each selected plan before travel. Candidate analysis reads floor topology, protected and locked metadata, entrances, exits, native choke hints, nests and member origins. Rollout persists a deterministic enclosure/core or line-fallback decision for every eligible group in `KDMapData.SpiderlingsSpinnerRollout`; revisits reuse those per-group decisions. Before detection, every capable member can hold one distinct work reservation.
+
+The test.16 package already included this rollout. On a newly generated eligible ordinary or infestation map, it enables the encounter but does not place a completed field at map start. A group needs at least two living, hostile, capable Spinners within ten reachable steps before it can plan; the guaranteed four-member Spiderling squad supplies only one Spinner. Existing Spinners then build the planned cells using their native action budget, so a map without a qualifying pair shows no construction.
 
 `afterDamageEnemy.dmgDealt` is the only durability input. Reconciliation then overwrites surviving proxy HP from topology and removes breached cells. Every solid-cell change sets `KDUpdateEnemyCache` and replaces both `KDPathCache` and `KDPathCacheIgnoreLocks`; `KDUpdateDoorNavMap()` alone is insufficient for the second cache in this patch. `afterLoadGame` reuses one valid proxy per cell, drops duplicates and creates missing projections without changing saved HP or ownership. Positive `tickAfter` events on the active map alone advance the final-owner collapse age.
 

@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.16 维护说明
+# Spiderlings 0.92.36-test.17 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -9,6 +9,8 @@ test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，
 test.15 加入 Mage Spiderlings。第 5 层或有效安全等级 0 起，合格新普通地图在原生随机人口之前保留一只，前提是合法格和共享移动人口额度足够。自然权重随有效安全等级从 2 增至 8，侵扰地图再加 1，最高 9；巢穴增援默认权重 1，与 Tunneler 相同。法师使用远程攻击和单格符文；玩家 ItemArms 物品的最终素材与脱困设计待定。`KDMapData.SpiderlingsGuaranteedMageState` 保存本图保底结果，重访不补生。实机证据需按本次交付包另行记录。
 
 test.16 补齐符文与丝弹命中时由原生战斗逻辑请求的短暂命中贴图，复用现有符文图形，避免命中后产生缺失资源请求。实机证据需使用 test.16 的最终 ZIP 重新记录。
+
+test.17 限制蛛丝符文仅由 Mage Spiderlings 施放，并将 Spinner Recovery 的蛛丝 leash 排除原生通用 `leashing` 拘束池。test.16 已包含自动 Spinner 布场逻辑：合格新地图只启动遭遇状态；附近至少两只可行动的敌对 Spinner 编组后才规划场地，随后按原生行动预算逐步施工。保底四人小队只有一只 Spinner，因此它本身不保证每图可见场地。
 
 ## 当前测试扩展
 

@@ -310,6 +310,8 @@ test("an NPC Capture source cannot cross into player recovery", () => {
 
 test("the fresh native hit adds one owned leash and reload preserves its exact identity", () => {
     const r = recoveryRuntime();
+    const leash = r.c.KinkyDungeonGetRestraintByName("SpiderlingsSilkLeash");
+    assert.deepEqual(JSON.parse(JSON.stringify(leash.enemyTags)), {}, "generic leashing must not select the carrier");
     r.player.x = 6;
     r.leave();
     assert.equal(r.api.state(), undefined, "a miss never reaches the successful hit entrance");

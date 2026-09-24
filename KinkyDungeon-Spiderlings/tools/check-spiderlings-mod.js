@@ -823,6 +823,8 @@ function checkRuntime(state) {
         leash.leash !== true ||
         leash.tether !== 2.9 ||
         leash.power !== 1 ||
+        !leash.enemyTags ||
+        Object.keys(leash.enemyTags).length !== 0 ||
         JSON.stringify(leash.requireAllTagsToEquip) !== JSON.stringify(["Collars"])
     )
         fail("Spiderlings Silk leash does not preserve the BasicLeash carrier contract.");
