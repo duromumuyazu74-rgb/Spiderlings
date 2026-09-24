@@ -110,6 +110,7 @@ test("native pathcondition lets only Spiderlings cross without moving or duplica
     c.KDMapData.Entities.push(spiderling, bandit);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(spiderling, proxy), true);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(bandit, proxy), false);
+    assert.equal(proxy.Enemy.tags.scenery, true);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.doPassthrough(spiderling, proxy, c.KDMapData), 2);
     assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 6, y: 5 });
     assert.deepEqual({ x: proxy.x, y: proxy.y }, { x: 5, y: 5 });

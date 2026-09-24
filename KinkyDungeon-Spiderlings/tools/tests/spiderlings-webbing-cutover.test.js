@@ -37,6 +37,7 @@ const scripts = [
     "SpiderlingsPrison.js",
     "SpiderlingsPrisonAlerts.js",
     "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonConstruction.js",
     "SpiderlingsPrisonEscort.js",
     "SpiderlingsSpinnerRuntime.js",
 ];

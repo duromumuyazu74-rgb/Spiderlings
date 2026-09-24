@@ -43,6 +43,7 @@
         return (
             entity?.hp > 0 &&
             entity.Enemy?.name === "Spinner" &&
+            !entity.SpiderlingsChamberBuilder &&
             hostile(entity) &&
             !allied(entity) &&
             !inParty(entity) &&

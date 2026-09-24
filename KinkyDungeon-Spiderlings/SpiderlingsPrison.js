@@ -226,7 +226,9 @@
         )
             return false;
         KDGoThruTile(shortcut.x, shortcut.y, true, true, false, true);
-        return KDGameData.RoomType === lairId && isPrison();
+        const arrived = KDGameData.RoomType === lairId && isPrison();
+        if (arrived) api.PrisonConstruction?.onPlaced();
+        return arrived;
     }
 
     function recapture() {
@@ -255,6 +257,7 @@
         KinkyDungeonPlayerEntity.visual_x = point.x;
         KinkyDungeonPlayerEntity.visual_y = point.y;
         KDUpdateEnemyCache = true;
+        api.PrisonConstruction?.onPlaced();
         return true;
     }
 

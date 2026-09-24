@@ -256,6 +256,29 @@ test("withdrawal reopens an unsealed gate through one paid operation", () => {
     assert.equal(state.fields.inner.phase, "ready");
 });
 
+test("another moving enemy cannot cancel the target's armed gate", () => {
+    const topology = rules();
+    const state = topology.createEnclosure({
+        compositeId: "occupied-core",
+        owners: [1, 2],
+        map: floorMap(),
+        layers: [{ id: "inner", vertices: rectangle(20, 5, 24, 13), gate: { x: 20, y: 9 } }],
+    });
+    topology.updateTarget(state, { id: "player", x: 22, y: 9 });
+    topology.updateTarget(state, { id: 7, x: 35, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, true);
+    assert.equal(state.composites["occupied-core"].targetId, "player");
+    topology.updateTarget(state, { id: 7, x: 22, y: 9 });
+    topology.updateTarget(state, { id: 7, x: 35, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, true);
+    assert.equal(state.composites["occupied-core"].targetId, "player");
+    topology.updateTarget(state, { id: "player", x: 18, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, false);
+    topology.updateTarget(state, { id: 7, x: 22, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, true);
+    assert.equal(state.composites["occupied-core"].targetId, 7);
+});
+
 test("normalized overlaps share HP and crossings do not become declared fields", () => {
     const topology = rules(),
         graph = topology.createPhysicalGraph({

@@ -17,6 +17,8 @@
                         return { idle: true, defeat: false, defeatEnemy: enemy };
                     const escort = api.PrisonEscort?.handleEnemyTurn(enemy, target, delta);
                     if (escort) return escort;
+                    const chamber = api.PrisonConstruction?.handleEnemyTurn(enemy, target, delta);
+                    if (chamber) return chamber;
                     const recovery = api.SpinnerRecovery?.handleEnemyTurn(enemy, target, delta);
                     if (recovery) return recovery;
                     const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);

@@ -197,6 +197,20 @@
         return { added: true, fieldId: extension.fieldId };
     }
 
+    function addEnclosure(input) {
+        const encounter = ensureMap({ scenario: "prison-chamber" });
+        const owners = input.owners.map((owner) => (typeof owner === "object" ? owner.id : owner));
+        const addition = topology().addEnclosure(encounter.topology, {
+            ...input,
+            owners,
+            map: input.map || mapSnapshot(),
+        });
+        if (!addition.added) return { added: false, reason: addition.reason };
+        encounter.topology = addition.state;
+        reconcile();
+        return { added: true, fieldId: addition.fieldId };
+    }
+
     function ensureMap(input = {}) {
         if (!state())
             KDMapData[KEY] = {
@@ -449,14 +463,23 @@
         const dx = Math.sign(proxy.x - mover.x),
             dy = Math.sign(proxy.y - mover.y),
             x = proxy.x + dx,
-            y = proxy.y + dy;
+            y = proxy.y + dy,
+            nextX = x + dx,
+            nextY = y + dy;
+        // KD 5.5 moves once more after doPassthrough returns 2.
         if (
             (!dx && !dy) ||
             !KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y)) ||
-            KinkyDungeonEntityAt(x, y)
+            KinkyDungeonEntityAt(x, y) ||
+            !KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(nextX, nextY)) ||
+            KinkyDungeonEntityAt(nextX, nextY)
         )
             return 0;
-        if (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y) return 0;
+        if (
+            (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y) ||
+            (KinkyDungeonPlayerEntity.x === nextX && KinkyDungeonPlayerEntity.y === nextY)
+        )
+            return 0;
         KDMoveEntity(mover, x, y, true, undefined, true, false);
         return 2;
     }
@@ -564,7 +587,7 @@
             weight: 0,
             dropTable: [],
             events: [],
-            tags: KDMapInit(["construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
+            tags: KDMapInit(["construct", "scenery", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
         });
     }
     if (typeof KDModFiles !== "undefined") {
@@ -589,6 +612,7 @@
         setOwners,
         initializeMap,
         initializeEnclosure,
+        addEnclosure,
         extendEnclosure,
         applyPaidAction,
         accrueConstructionAction,

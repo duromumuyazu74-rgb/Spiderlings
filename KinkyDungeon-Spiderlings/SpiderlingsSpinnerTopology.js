@@ -506,6 +506,33 @@
         return state;
     }
 
+    function addEnclosure(state, input) {
+        if (state?.composites?.[input?.compositeId]) return { state, added: false, reason: "field" };
+        const enclosure = createEnclosure(input);
+        if (enclosure.kind !== "enclosure") return { state, added: false, reason: enclosure.reason || "field" };
+        if (!state)
+            return { state: enclosure, added: true, fieldId: enclosure.composites[input.compositeId].layerIds[0] };
+        const occupied = new Set([...state.anchors.map(key), ...state.links.flatMap((link) => link.cells.map(key))]);
+        if (
+            [...enclosure.anchors, ...enclosure.links.flatMap((link) => link.cells)].some((cell) =>
+                occupied.has(key(cell)),
+            )
+        )
+            return { state, added: false, reason: "overlap" };
+        const next = clone(state);
+        next.kind = "graph";
+        next.anchors.push(...enclosure.anchors);
+        next.links.push(...enclosure.links);
+        next.junctions.push(...enclosure.junctions);
+        Object.assign(next.fields, enclosure.fields);
+        Object.assign(next.composites, enclosure.composites);
+        Object.assign(next.fieldOwners, enclosure.fieldOwners);
+        next.owners = unique([...next.owners, ...enclosure.owners]);
+        next.collapsed = false;
+        refresh(next);
+        return { state: next, added: true, fieldId: enclosure.composites[input.compositeId].layerIds[0] };
+    }
+
     function extendEnclosure(state, input) {
         const composite = state?.composites?.[input?.compositeId],
             inner = composite && state.fields?.[composite.layerIds.at(-1)],
@@ -803,9 +830,15 @@
         return [action.type, action.anchorId || action.linkId || "", action.cell ? key(action.cell) : ""].join(":");
     }
 
-    function nextWorkAction(state, ownerId, actorCell, reservedKeys = []) {
+    function nextWorkAction(state, ownerId, actorCell, reservedKeys = [], compositeId) {
         if (!state.owners.includes(ownerId)) return undefined;
-        const fields = Object.values(state.fields || {}).sort((a, b) => a.layer - b.layer),
+        const fields = Object.values(state.fields || {})
+                .filter(
+                    (field) =>
+                        state.fieldOwners?.[field.id]?.includes(ownerId) &&
+                        (!compositeId || field.compositeId === compositeId),
+                )
+                .sort((a, b) => a.layer - b.layer),
             here = point(actorCell),
             reserved = new Set(reservedKeys);
         for (const field of fields)
@@ -831,49 +864,51 @@
             if (actions.length) return actions[0];
             if (!fieldBodyComplete(state, field)) return undefined;
         }
-        const composite = Object.values(state.composites || {})[0];
-        if (composite?.closureArmed)
-            for (const field of fields) {
-                if (field.retired) continue;
-                if (isLayerClosed(state, field.id)) continue;
-                const link = state.links.find((candidate) =>
-                    candidate.plannedCells.some((cell) => sameCell(cell, field.gateCell)),
-                );
-                if (link?.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
-                    const action = {
-                        type: "connectGate",
-                        linkId: link.id,
-                        fieldId: field.id,
-                        role: "gate",
-                        cell: field.gateCell,
-                    };
-                    if (!reserved.has(workKey(action))) return action;
-                }
-                if (link) {
-                    const action = {
-                        type: "closeGate",
-                        linkId: link.id,
-                        fieldId: field.id,
-                        role: "gate",
-                        cell: field.gateCell,
-                    };
-                    if (!reserved.has(workKey(action))) return action;
-                }
+        for (const field of fields) {
+            if (!state.composites?.[field.compositeId]?.closureArmed) continue;
+            if (field.retired) continue;
+            if (isLayerClosed(state, field.id)) continue;
+            const link = state.links.find((candidate) =>
+                candidate.plannedCells.some((cell) => sameCell(cell, field.gateCell)),
+            );
+            if (link?.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
+                const action = {
+                    type: "connectGate",
+                    linkId: link.id,
+                    fieldId: field.id,
+                    role: "gate",
+                    cell: field.gateCell,
+                };
+                if (!reserved.has(workKey(action))) return action;
             }
+            if (link) {
+                const action = {
+                    type: "closeGate",
+                    linkId: link.id,
+                    fieldId: field.id,
+                    role: "gate",
+                    cell: field.gateCell,
+                };
+                if (!reserved.has(workKey(action))) return action;
+            }
+        }
         for (const link of state.links) {
-            const maintained = link.owners.some((fieldId) => state.fields[fieldId] && !state.fields[fieldId].retired);
+            const maintained = link.owners.some((fieldId) =>
+                fields.some((field) => field.id === fieldId && !field.retired),
+            );
             if (!maintained) continue;
+            const ownedFieldId = link.owners.find((fieldId) => fields.some((field) => field.id === fieldId));
             if (link.hp > 0 && link.hp < link.maxHp)
                 return {
                     type: "repair",
                     linkId: link.id,
-                    fieldId: link.owners[0],
+                    fieldId: ownedFieldId,
                     role: "repair",
                     cell: point(link.cells[0]),
                 };
             if (link.hp <= 0 && link.cooldown >= REBUILD_TURNS) {
                 const cell = link.plannedCells[0] || point(link.cells[0]);
-                return { type: "rebuildLink", linkId: link.id, fieldId: link.owners[0], role: "rebuild", cell };
+                return { type: "rebuildLink", linkId: link.id, fieldId: ownedFieldId, role: "rebuild", cell };
             }
         }
         return undefined;
@@ -882,9 +917,11 @@
     function updateTarget(state, target) {
         for (const composite of Object.values(state.composites || {})) {
             const inside = isInsideCommonCore(state, composite.id, target);
-            composite.targetId = target?.id;
-            if (inside) composite.closureArmed = true;
-            else if (composite.closureArmed) {
+            if (inside) {
+                if (composite.closureArmed && composite.targetId === "player" && target?.id !== "player") continue;
+                composite.targetId = target?.id;
+                composite.closureArmed = true;
+            } else if (composite.closureArmed && composite.targetId === target?.id) {
                 composite.closureArmed = false;
                 for (const fieldId of composite.layerIds) {
                     const field = state.fields[fieldId];
@@ -1113,6 +1150,7 @@
         setFieldOwners,
         createPhysicalGraph,
         createEnclosure,
+        addEnclosure,
         extendEnclosure,
         validatePolygon,
         legalAction,

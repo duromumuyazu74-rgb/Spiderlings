@@ -28,6 +28,7 @@ The manifest owns script loading order. Runtime scripts remain plain JavaScript 
 | `SpiderlingsSpinnerField.js`, `SpiderlingsSpinnerArt.js`    | Legacy training-room geometry/construction compatibility and character artwork.                                                                                                                            |
 | `SpiderlingsSpinnerRuntime.js`                              | Owns the single Spinner enemy-loop wrapper, composes native `hunt` perception/action gates and dispatches field damage, movement, load and positive-turn events.                                           |
 | `SpiderlingsPrison.js`                                      | Registers the persistent native side room, its shortcut and return exit. `Spiderlings.Prison.enter({ entrance })`, `isPrison()` and `recapture()` are the transport interface.                             |
+| `SpiderlingsPrisonConstruction.js`                          | Counts each chamber placement, requests main-nest builders at 50 world turns, and expands a map-owned composite through paid travel and work.                                                              |
 
 Core precedes encounters and WebCaster movement. Webbing data precedes Webbing rules, which precede the native Webbing adapter. Tests explicitly load these dependencies; the independent manifest allowlist test protects delivery order. Rule-only tests load data and rules without registering enemies, items, native hooks or game events.
 
@@ -61,6 +62,7 @@ Each callback forwards the original receiver, arguments and result on its unhand
 | One-time Mage map-start outcome                                                                           | `KDMapData.SpiderlingsGuaranteedMageState`; written before native random population.           |
 | Debug scene actor/target inputs, prior encounter and actor state                                          | `KDGameData.SpiderlingsSpinnerScenarioControl`; restored after load and consumed by teardown.  |
 | Source room, chamber, work area, main nest area, exit and seen clues                                      | `KDMapData.SpiderlingsPrison`; plain JSON kept in the native side-room map cache.              |
+| Chamber placement count, stay clock, dispatches and builder IDs                                           | `KDMapData.SpiderlingsPrison.chamberConstruction`; fields remain in the shared native graph.   |
 | Native web-cell entities                                                                                  | Reconciled projection of the encounter topology; exactly one owned proxy per solid cell.       |
 | Deposited silk and leg-bag escape work                                                                    | The equipped item's `data`, including `wrapProgress` and `SpiderlingsLegbinderEscapeProgress`. |
 | Graphics, texture promises, animation interpolation and timer handles                                     | Runtime-only values; not serialized.                                                           |
