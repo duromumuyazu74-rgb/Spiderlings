@@ -6,6 +6,8 @@
     const COMPOSITE = "spiderlings-prison-chamber";
     const TEAM_SIZE = 4;
     const THRESHOLD = 50;
+    const BUILDER_TYPES = ["Spinner", "WebCaster", "Tunneler", "Jumper", "MageSpiderlings"];
+    const BUILDERS = new Set(BUILDER_TYPES);
     const cellKey = (cell) => `${cell.x},${cell.y}`;
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     const directions = [
@@ -99,7 +101,7 @@
         const actors = new Map(
             KDMapData.Entities.filter((enemy) => enemy.hp > 0).map((enemy) => [String(enemy.id), enemy]),
         );
-        saved.ownerIds = saved.ownerIds.filter((id) => actors.get(String(id))?.Enemy?.name === "Spinner");
+        saved.ownerIds = saved.ownerIds.filter((id) => BUILDERS.has(actors.get(String(id))?.Enemy?.name));
         return saved.ownerIds.map((id) => actors.get(String(id)));
     }
 
@@ -172,6 +174,25 @@
         for (const actor of livingOwners(saved)) {
             if (selected.length >= TEAM_SIZE) break;
             if (!selected.some((candidate) => String(candidate.id) === String(actor.id))) selected.push(actor);
+        }
+        if (selected.length < TEAM_SIZE) {
+            const patrolIds = new Set(Object.keys(prison().patrols || {}));
+            const replacements = KDMapData.Entities.filter(
+                (enemy) =>
+                    enemy.hp > 0 &&
+                    BUILDERS.has(enemy.Enemy?.name) &&
+                    enemy.Enemy?.name !== "Spinner" &&
+                    KDHostile(enemy) &&
+                    !claimed.has(String(enemy.id)) &&
+                    !selected.some((candidate) => String(candidate.id) === String(enemy.id)),
+            ).sort(
+                (a, b) =>
+                    Number(patrolIds.has(String(a.id))) - Number(patrolIds.has(String(b.id))) ||
+                    BUILDER_TYPES.indexOf(a.Enemy.name) - BUILDER_TYPES.indexOf(b.Enemy.name) ||
+                    distance(a, main) - distance(b, main) ||
+                    String(a.id).localeCompare(String(b.id)),
+            );
+            selected.push(...replacements.slice(0, TEAM_SIZE - selected.length));
         }
         if (selected.length < TEAM_SIZE) return false;
         dispatch.memberIds = selected.map((actor) => actor.id);

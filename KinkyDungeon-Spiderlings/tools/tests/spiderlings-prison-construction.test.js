@@ -71,14 +71,40 @@ test("chamber placement counts 50 complete world turns and persists across save/
     assert.equal(construction.state().dispatches.length, 1);
 });
 
-test("a Mage occupies the shared population slot before chamber builders are summoned", () => {
-    const { c, construction, turn } = setup();
+test("a full prison reassigns a living Spiderling when fewer than four Spinners remain", () => {
+    const { c, construction, moves, turn } = setup();
     c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => enemy.id !== 4);
-    c.KDMapData.Entities.push({ id: 5, x: 40, y: 18, hp: 10, Enemy: { name: "MageSpiderlings" } });
+    c.KDMapData.Entities.push({
+        id: 5,
+        x: 40,
+        y: 18,
+        hp: 10,
+        Enemy: { name: "Jumper", movePoints: 1, tags: { spiderlings: true } },
+    });
     construction.onPlaced();
     turn(50);
-    assert.equal(construction.state().dispatches[0].memberIds.length, 0);
+    assert.equal(construction.state().dispatches[0].memberIds.length, 4);
+    assert.ok(construction.state().dispatches[0].memberIds.includes(5));
     assert.equal(c.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 3);
+    assert.ok(c.Spiderlings.SpinnerNativeField.compositeById(construction.COMPOSITE));
+    const jumper = c.KDMapData.Entities.find((enemy) => enemy.id === 5);
+    assert.ok(construction.handleEnemyTurn(jumper, c.KinkyDungeonPlayerEntity, 1));
+    assert.ok(moves.some((move) => move.id === jumper.id && move.delta === 1));
+});
+
+test("a full prison recruits an unassigned Spiderling before taking a patrol", () => {
+    const { c, construction, turn } = setup();
+    c.Spiderlings.getMapPopulationCap = () => 5;
+    c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => enemy.id !== 4);
+    c.KDMapData.Entities.push(
+        { id: 5, x: 35, y: 18, hp: 10, Enemy: { name: "Jumper", movePoints: 1, tags: { spiderlings: true } } },
+        { id: 6, x: 45, y: 18, hp: 10, Enemy: { name: "Jumper", movePoints: 1, tags: { spiderlings: true } } },
+    );
+    c.KDMapData.SpiderlingsPrison.patrols = { 5: { route: 0, waypoint: 0 } };
+    construction.onPlaced();
+    turn(50);
+    assert.ok(construction.state().dispatches[0].memberIds.includes(6));
+    assert.ok(!construction.state().dispatches[0].memberIds.includes(5));
 });
 
 test("leaving before threshold cancels that stay; recapture starts a fresh stay and retains fields", () => {

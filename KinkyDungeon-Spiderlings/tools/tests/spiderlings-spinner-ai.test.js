@@ -287,6 +287,27 @@ test("prison report requires real sight and alerts only nearby placement-capable
     );
 });
 
+test("a prison sighting expires while the player spends world turns on the source floor", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } };
+    const r = prisonRuntime([observer]);
+    const alert = r.context.Spiderlings.PrisonAlerts;
+    const prison = r.context.KDMapData;
+    const player = r.context.KinkyDungeonPlayerEntity;
+    assert.equal(alert.observe(observer, player, { hostile: true, canSeePlayer: true }), true);
+    assert.equal(alert.currentReport().serial, 1);
+
+    r.context.KDMapData = { RoomType: "", Entities: [] };
+    for (let turn = 0; turn < 20; turn++) {
+        r.context.KinkyDungeonCurrentTick++;
+        alert.advance(1);
+    }
+    r.context.KDMapData = prison;
+    assert.equal(alert.currentReport(), undefined);
+    assert.equal(alert.currentRegionReport("chamber"), undefined);
+    assert.equal(alert.observe(observer, player, { hostile: true, canSeePlayer: true }), true);
+    assert.equal(alert.currentReport().serial, 2, "a new sighting after expiry creates a new report");
+});
+
 test("prison groups keep stable home regions and distant plans use only the saved report", () => {
     const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
         actors = [

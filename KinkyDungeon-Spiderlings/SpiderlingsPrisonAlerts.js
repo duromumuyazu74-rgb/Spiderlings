@@ -29,14 +29,26 @@
         return prison.alerts;
     }
 
+    function reportAge(report) {
+        const now = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : undefined;
+        // KD 5.5 resets its saved world tick to zero after 100000.
+        const elapsed =
+            Number.isFinite(now) && Number.isFinite(report?.tick)
+                ? now >= report.tick
+                    ? now - report.tick
+                    : now + 100001 - report.tick
+                : 0;
+        return Math.max(report?.age || 0, elapsed);
+    }
+
     function currentReport() {
         const saved = alerts()?.report;
-        return saved && saved.age < REPORT_AGE ? saved : undefined;
+        return saved && reportAge(saved) < REPORT_AGE ? saved : undefined;
     }
 
     function currentRegionReport(region) {
         const saved = alerts()?.regions?.[region];
-        return saved && saved.age < REPORT_AGE ? saved : undefined;
+        return saved && reportAge(saved) < REPORT_AGE ? saved : undefined;
     }
 
     function canPlace(entity) {
@@ -60,7 +72,13 @@
         const region = regionAt(player),
             tick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : 0,
             prior = saved.report;
-        if (prior?.x === player.x && prior.y === player.y && prior.region === region) {
+        if (
+            prior &&
+            reportAge(prior) < REPORT_AGE &&
+            prior.x === player.x &&
+            prior.y === player.y &&
+            prior.region === region
+        ) {
             prior.age = 0;
             prior.tick = tick;
             saved.regions[region] = { ...prior };
