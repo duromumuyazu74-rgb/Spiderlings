@@ -108,7 +108,7 @@
         return (map?.[collection] || []).includes(key(cell));
     }
 
-    function validatePolygon(input, outer = false) {
+    function validatePolygon(input) {
         const vertices = (input.vertices || []).map(point),
             map = input.map;
         if (vertices.length < 4) return { valid: false, reason: "vertices" };
@@ -136,10 +136,7 @@
         bounds.height = bounds.bottom - bounds.top + 1;
         const interiorWidth = bounds.right - bounds.left - 1,
             interiorHeight = bounds.bottom - bounds.top - 1;
-        if (
-            (!outer && (interiorWidth < 3 || interiorWidth > 7 || interiorHeight < 3 || interiorHeight > 7)) ||
-            (outer && (bounds.width > 13 || bounds.height > 13))
-        )
+        if (interiorWidth < 1 || interiorHeight < 1 || bounds.width > 13 || bounds.height > 13)
             return { valid: false, reason: "dimensions" };
         if (!connected(interior)) return { valid: false, reason: "interior" };
         if (
@@ -149,18 +146,9 @@
             return { valid: false, reason: "terrain" };
         if (map && [...boundary, ...interior].some((cell) => mapHas(map, "protected", cell)))
             return { valid: false, reason: "protected" };
-        const interiorKeys = new Set(interior.map(key)),
-            coreFree = (center) =>
-                [-1, 0, 1].every((dx) =>
-                    [-1, 0, 1].every((dy) => {
-                        const cell = { x: center.x + dx, y: center.y + dy };
-                        return (
-                            interiorKeys.has(key(cell)) &&
-                            !mapHas(map, "protected", cell) &&
-                            !mapHas(map, "occupied", cell)
-                        );
-                    }),
-                );
+        if (map && boundary.some((cell) => mapHas(map, "occupied", cell))) return { valid: false, reason: "occupied" };
+        const coreFree = (center) =>
+            interior.some((cell) => sameCell(cell, center)) && !mapHas(map, "protected", center);
         const preferred = input.core && point(input.core),
             candidates = interior.filter(coreFree).sort((a, b) => {
                 const center = { x: (bounds.left + bounds.right) / 2, y: (bounds.top + bounds.bottom) / 2 };
@@ -176,7 +164,7 @@
         const edge = vertices.findIndex((vertex, index) =>
             cellsBetween(vertex, vertices[(index + 1) % vertices.length], true).some((cell) => sameCell(cell, gate)),
         );
-        if (edge < 0 || cellsBetween(vertices[edge], vertices[(edge + 1) % vertices.length], true).length < 4)
+        if (edge < 0 || cellsBetween(vertices[edge], vertices[(edge + 1) % vertices.length], true).length < 3)
             return { valid: false, reason: "gate-edge" };
         return { valid: true, vertices, boundary, interior, bounds, core, gate };
     }
@@ -434,11 +422,10 @@
     function createEnclosure(input) {
         const owners = unique(input.owners || []),
             requested = input.layers || [];
-        if (owners.length < 2) return abandonedState(input, owners, "owners");
+        if (owners.length < 1) return abandonedState(input, owners, "owners");
         const accepted = [];
         for (let index = 0; index < requested.length; index++) {
-            if (index > 0 && owners.length < 4) break;
-            const checked = validatePolygon({ ...requested[index], map: input.map }, index > 0);
+            const checked = validatePolygon({ ...requested[index], map: input.map });
             if (!checked.valid) {
                 if (index === 0 && input.fallbackLine)
                     return {
@@ -450,15 +437,16 @@
                 break;
             }
             if (index > 0) {
-                const inner = accepted[0],
-                    spacing =
-                        Math.min(
-                            ...checked.boundary.map((outer) =>
-                                Math.min(...inner.boundary.map((cell) => distance(outer, cell))),
-                            ),
-                        ) - 1;
+                const inner = accepted[index - 1],
+                    spacing = Math.min(
+                        ...checked.boundary.map((outer) =>
+                            Math.min(...inner.boundary.map((cell) => distance(outer, cell))),
+                        ),
+                    );
                 if (
-                    spacing !== 2 ||
+                    spacing !== 1 ||
+                    checked.bounds.width !== inner.bounds.width + 2 ||
+                    checked.bounds.height !== inner.bounds.height + 2 ||
                     !checked.interior.some((cell) => sameCell(cell, inner.core)) ||
                     checked.bounds.width > 13 ||
                     checked.bounds.height > 13
@@ -484,7 +472,8 @@
             layerIds: accepted.map((layer) => layer.id),
             core,
             targetId: null,
-            closureArmed: !!input.built,
+            closureArmed: !!(input.built || input.autoSeal),
+            autoSeal: !!input.autoSeal,
         };
         for (const layer of accepted)
             state.fields[layer.id] = {
@@ -499,13 +488,75 @@
                 bounds: layer.bounds,
                 core,
                 gateCell: layer.gate,
-                spacing: layer.layer ? 2 : 0,
+                spacing: layer.layer ? 1 : 0,
                 phase: input.built ? "sealed" : "preparing",
                 retired: false,
                 reopenPending: false,
             };
         refresh(state);
         return state;
+    }
+
+    function addEnclosure(state, input) {
+        const addition = createEnclosure(input);
+        if (addition.kind !== "enclosure") return { state: clone(state), added: false, reason: addition.reason };
+        if (!state) return { state: addition, added: true };
+        const next = clone(state);
+        if (next.composites?.[input.compositeId]) return { state: next, added: false, reason: "duplicate" };
+        next.kind = "graph";
+        next.owners = unique([...next.owners, ...addition.owners]);
+        next.anchors.push(...addition.anchors);
+        next.links.push(...addition.links);
+        next.junctions.push(...addition.junctions);
+        Object.assign(next.fields, addition.fields);
+        Object.assign(next.fieldOwners, addition.fieldOwners);
+        Object.assign(next.composites, addition.composites);
+        refresh(next);
+        return { state: next, added: true };
+    }
+
+    function addEnclosureLayer(state, input) {
+        const composite = state?.composites?.[input.compositeId],
+            inner = composite && state.fields[composite.layerIds.at(-1)],
+            checked = validatePolygon({ ...input.layer, map: input.map });
+        if (!inner || !isLayerClosed(state, inner.id)) return { state: clone(state), added: false, reason: "inner" };
+        if (!checked.valid) return { state: clone(state), added: false, reason: checked.reason };
+        if (
+            checked.bounds.left !== inner.bounds.left - 1 ||
+            checked.bounds.top !== inner.bounds.top - 1 ||
+            checked.bounds.right !== inner.bounds.right + 1 ||
+            checked.bounds.bottom !== inner.bounds.bottom + 1 ||
+            !checked.interior.some((cell) => sameCell(cell, composite.core))
+        )
+            return { state: clone(state), added: false, reason: "spacing" };
+        const fieldId = input.layer.id,
+            owners = input.owners || state.fieldOwners[inner.id],
+            addition = createEnclosure({
+                compositeId: `${input.compositeId}:new`,
+                owners,
+                layers: [input.layer],
+                map: input.map,
+                autoSeal: composite.autoSeal,
+            });
+        if (addition.kind !== "enclosure") return { state: clone(state), added: false, reason: addition.reason };
+        const next = clone(state),
+            field = addition.fields[fieldId];
+        next.anchors.push(...addition.anchors);
+        next.links.push(...addition.links);
+        next.junctions.push(...addition.junctions);
+        next.owners = unique([...next.owners, ...owners]);
+        next.fieldOwners[fieldId] = clone(owners);
+        next.fields[fieldId] = {
+            ...field,
+            compositeId: input.compositeId,
+            groupId: composite.groupId,
+            layer: composite.layerIds.length,
+            core: clone(composite.core),
+            spacing: 1,
+        };
+        next.composites[input.compositeId].layerIds.push(fieldId);
+        refresh(next);
+        return { state: next, added: true };
     }
 
     function solidCells(state) {
@@ -581,7 +632,7 @@
 
     function actionCell(state, action) {
         if (action.cell) return point(action.cell);
-        if (action.type === "placeAnchor") {
+        if (["placeAnchor", "rebuildAnchor"].includes(action.type)) {
             const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
             return anchor && point(anchor);
         }
@@ -599,6 +650,13 @@
             const reason = validateCell(snapshot, anchor);
             return { legal: !reason, reason };
         }
+        if (action.type === "rebuildAnchor") {
+            const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
+            if (!anchor?.built || anchor.hp > 0 || anchor.cooldown < REBUILD_TURNS)
+                return { legal: false, reason: "cooldown" };
+            const reason = validateCell(snapshot, anchor);
+            return { legal: !reason, reason };
+        }
         if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
             const link = state.links.find((candidate) => candidate.id === action.linkId),
                 cell = actionCell(state, action);
@@ -610,7 +668,7 @@
             if (!cell) return { legal: !link.connected, reason: link.connected ? "link" : "" };
             if (!link.plannedCells.some((candidate) => sameCell(candidate, cell)))
                 return { legal: false, reason: "cell" };
-            if (link.builtCells.some((candidate) => sameCell(candidate, cell)))
+            if (action.type !== "rebuildLink" && link.builtCells.some((candidate) => sameCell(candidate, cell)))
                 return { legal: false, reason: "built" };
             const reason = validateCell(snapshot, cell);
             return { legal: !reason, reason };
@@ -661,6 +719,11 @@
         if (action.type === "placeAnchor") {
             next.anchors.find((candidate) => candidate.id === action.anchorId).built = true;
             effects.push({ type: "placeProxy", cell });
+        } else if (action.type === "rebuildAnchor") {
+            const anchor = next.anchors.find((candidate) => candidate.id === action.anchorId);
+            anchor.hp = Math.max(anchor.maxHp * 0.1, 0.1);
+            anchor.cooldown = 0;
+            effects.push({ type: "placeProxy", cell });
         } else if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
             const link = next.links.find((candidate) => candidate.id === action.linkId);
             if (action.type === "rebuildLink") {
@@ -673,7 +736,11 @@
                 effects.push({ type: "placeProxy", cell });
             }
             if (action.type === "connectGate") link.connected = true;
-            else if (action.type !== "closeGate" && link.builtCells.length === link.plannedCells.length)
+            else if (
+                action.type !== "closeGate" &&
+                !(action.type === "rebuildLink" && sameCell(next.fields[action.fieldId]?.gateCell || {}, cell)) &&
+                link.builtCells.length === link.plannedCells.length
+            )
                 link.connected = true;
         } else if (action.type === "reopenGate") {
             const link = next.links.find((candidate) => candidate.id === action.linkId);
@@ -705,9 +772,12 @@
         const gate = key(field.gateCell),
             actions = [];
         for (const anchor of state.anchors)
-            if (anchor.owners.includes(field.id) && !anchor.built)
+            if (
+                anchor.owners.includes(field.id) &&
+                (!anchor.built || (anchor.hp <= 0 && anchor.cooldown >= REBUILD_TURNS))
+            )
                 actions.push({
-                    type: "placeAnchor",
+                    type: anchor.built ? "rebuildAnchor" : "placeAnchor",
                     anchorId: anchor.id,
                     fieldId: field.id,
                     role: "body",
@@ -755,7 +825,7 @@
                 const link = state.links.find((candidate) =>
                     candidate.builtCells.some((cell) => sameCell(cell, field.gateCell)),
                 );
-                if (link) {
+                if (link && !link.connected) {
                     const action = {
                         type: "reopenGate",
                         linkId: link.id,
@@ -769,9 +839,32 @@
             }
         for (const field of fields) {
             if (field.retired) continue;
+            if (field.layer > 0) {
+                const inner = fields.find((candidate) => candidate.layer === field.layer - 1);
+                if (!inner || !isLayerClosed(state, inner.id)) break;
+            }
             const actions = candidateActions(state, field, here).filter((action) => !reserved.has(workKey(action)));
             if (actions.length) return actions[0];
             if (!fieldBodyComplete(state, field)) return undefined;
+            const composite = state.composites[field.compositeId];
+            if (composite?.autoSeal && !isLayerClosed(state, field.id)) {
+                const link = state.links.find((candidate) =>
+                    candidate.plannedCells.some((cell) => sameCell(cell, field.gateCell)),
+                );
+                if (link && !link.connected) {
+                    const action = {
+                        type: link.builtCells.some((cell) => sameCell(cell, field.gateCell))
+                            ? "connectGate"
+                            : "closeGate",
+                        linkId: link.id,
+                        fieldId: field.id,
+                        role: "gate",
+                        cell: field.gateCell,
+                    };
+                    if (!reserved.has(workKey(action))) return action;
+                }
+                if (!link?.connected) return undefined;
+            }
         }
         const composite = Object.values(state.composites || {})[0];
         if (composite?.closureArmed)
@@ -781,7 +874,7 @@
                 const link = state.links.find((candidate) =>
                     candidate.plannedCells.some((cell) => sameCell(cell, field.gateCell)),
                 );
-                if (link?.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
+                if (!link?.connected && link?.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
                     const action = {
                         type: "connectGate",
                         linkId: link.id,
@@ -791,7 +884,7 @@
                     };
                     if (!reserved.has(workKey(action))) return action;
                 }
-                if (link) {
+                if (link && !link.connected && !link.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
                     const action = {
                         type: "closeGate",
                         linkId: link.id,
@@ -823,6 +916,7 @@
 
     function updateTarget(state, target) {
         for (const composite of Object.values(state.composites || {})) {
+            if (composite.autoSeal) continue;
             const inside = isInsideCommonCore(state, composite.id, target);
             composite.targetId = target?.id;
             if (inside) composite.closureArmed = true;
@@ -901,6 +995,7 @@
                 link.hp = Math.max(0, link.hp - amount);
                 damagedLinks.add(link.id);
             }
+            if (anchor.hp <= 0) anchor.cooldown = 0;
             if (anchor.hp <= 0)
                 for (const link of next.links.filter((candidate) => [candidate.a, candidate.b].includes(anchor.id))) {
                     link.hp = 0;
@@ -977,8 +1072,8 @@
     }
 
     function isInsideCommonCore(state, compositeId, target) {
-        const core = state.composites?.[compositeId]?.core;
-        return !!core && Math.abs(target.x - core.x) <= 1 && Math.abs(target.y - core.y) <= 1;
+        const inner = state.composites?.[compositeId]?.layerIds?.[0];
+        return !!inner && containsDeclaredField(state, inner, target);
     }
 
     function flood(state, start, map, goal) {
@@ -994,6 +1089,11 @@
             for (const direction of directions) {
                 const next = { x: current.x + direction.x, y: current.y + direction.y },
                     nextKey = key(next);
+                if (direction.x && direction.y) {
+                    const sideX = { x: current.x + direction.x, y: current.y },
+                        sideY = { x: current.x, y: current.y + direction.y };
+                    if (blocked.has(key(sideX)) || blocked.has(key(sideY))) continue;
+                }
                 if (floors.has(nextKey) && !blocked.has(nextKey) && !seen.has(nextKey)) {
                     seen.add(nextKey);
                     queue.push(next);
@@ -1030,7 +1130,7 @@
         return (
             !!composite &&
             containsDeclaredField(state, composite.layerIds[0], target) &&
-            composite.layerIds.every((fieldId) => isLayerClosed(state, fieldId))
+            isLayerClosed(state, composite.layerIds[0])
         );
     }
 
@@ -1055,6 +1155,8 @@
         setFieldOwners,
         createPhysicalGraph,
         createEnclosure,
+        addEnclosure,
+        addEnclosureLayer,
         validatePolygon,
         legalAction,
         applyAction,

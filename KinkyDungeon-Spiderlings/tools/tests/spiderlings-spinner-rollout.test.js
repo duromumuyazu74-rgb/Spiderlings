@@ -11,18 +11,18 @@ const modRoot = path.resolve(__dirname, "../..");
 const load = (context, file) =>
     vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
 
-test("multiple rollout groups share a map scan without retaining it on another map", () => {
+test("rollout records saved AI decisions without replacing fields or scanning the map", () => {
     for (const count of [1, 2, 4]) {
         const fixture = nativeRollout(count),
             c = fixture.context;
         const ai = JSON.parse(JSON.stringify(c.KDMapData.SpiderlingsSpinnerEncounter.ai));
         const first = c.Spiderlings.SpinnerRollout.preparePositiveTurn();
         assert.equal(Object.keys(first).length, count);
-        assert.equal(fixture.snapshotCalls(), 1);
-        assert.ok(Object.values(first).every((decision) => decision.kind === "enclosure"));
+        assert.equal(fixture.snapshotCalls(), 0);
+        assert.ok(Object.values(first).every((decision) => decision.kind === "line-fallback"));
         const saved = JSON.stringify(c.KDMapData.SpiderlingsSpinnerEncounter);
         assert.equal(c.Spiderlings.SpinnerRollout.preparePositiveTurn(), first);
-        assert.equal(fixture.snapshotCalls(), 1);
+        assert.equal(fixture.snapshotCalls(), 0);
         assert.equal(JSON.stringify(c.KDMapData.SpiderlingsSpinnerEncounter), saved);
         c.KDMapData = {
             ...c.KDMapData,
@@ -32,7 +32,7 @@ test("multiple rollout groups share a map scan without retaining it on another m
         };
         c.KinkyDungeonMapGet = () => "1";
         const second = c.Spiderlings.SpinnerRollout.preparePositiveTurn();
-        assert.equal(fixture.snapshotCalls(), 2);
+        assert.equal(fixture.snapshotCalls(), 0);
         assert.ok(Object.values(second).every((decision) => decision.kind === "line-fallback"));
     }
 });
@@ -121,147 +121,48 @@ test("load restores enabled snapshots only and never activates absent or disable
     assert.equal(r.reconcileCalls(), 1);
 });
 
-test("rollout deterministically promotes a saved group to an enclosure or its line fallback", () => {
-    for (const kind of ["enclosure", "line", "mixed"]) {
-        const ai = {
-                groups: {
-                    g1: { id: "g1", memberIds: [1, 2], planId: "p1" },
-                    g2: { id: "g2", memberIds: [3, 4], planId: "p2" },
-                },
-                plans: {
-                    p1: {
-                        id: "p1",
-                        fieldId: "line-1",
-                        anchors: [
-                            { x: 8, y: 4 },
-                            { x: 8, y: 8 },
-                        ],
-                    },
-                    p2: {
-                        id: "p2",
-                        fieldId: "line-2",
-                        anchors: [
-                            { x: 3, y: 2 },
-                            { x: 3, y: 5 },
-                        ],
-                    },
-                },
-            },
-            oldEncounter = { ai, autonomous: true },
-            context = {
-                Spiderlings: {
-                    getSetting: () => true,
-                    SpinnerTopology: {
-                        createEnclosure(input) {
-                            if (kind === "line") return { kind: "line", owners: input.owners };
-                            const fieldId = input.layers[0].id;
-                            return {
-                                kind: "enclosure",
-                                owners: input.owners,
-                                fields: {
-                                    [fieldId]: { id: fieldId, type: "enclosure", vertices: input.layers[0].vertices },
-                                },
-                                composites: { [input.compositeId]: { id: input.compositeId, layerIds: [fieldId] } },
-                                fieldOwners: { [fieldId]: input.owners },
-                            };
-                        },
-                        createPhysicalGraph: ({ fields, owners }) => ({
-                            fields: Object.fromEntries(fields.map((field) => [field.id, field])),
-                            owners,
-                            anchors: fields.flatMap((field) =>
-                                field.vertices.map((point, index) => ({
-                                    ...point,
-                                    id: `${field.id}:a${index}`,
-                                    owners: [field.id],
-                                })),
-                            ),
-                            links: fields.map((field) => ({ id: `${field.id}:link`, owners: [field.id] })),
-                            junctions: [],
-                        }),
-                    },
-                    SpinnerNativeField: {
-                        state: () => context.KDMapData.Encounter,
-                        ensureMap: () => (context.KDMapData.Encounter ||= oldEncounter),
-                        mapSnapshot: () => ({ width: 18, height: 12, floor: [], protected: [], occupied: [] }),
-                        initializeEnclosure(input) {
-                            context.lastInput = input;
-                            const fieldId = input.layers[0].id;
-                            return (context.KDMapData.Encounter = {
-                                topology:
-                                    kind === "enclosure"
-                                        ? {
-                                              kind,
-                                              owners: input.owners,
-                                              fields: {
-                                                  [fieldId]: {
-                                                      id: fieldId,
-                                                      type: "enclosure",
-                                                      vertices: input.layers[0].vertices,
-                                                  },
-                                              },
-                                              composites: {
-                                                  [input.compositeId]: { id: input.compositeId, layerIds: [fieldId] },
-                                              },
-                                              fieldOwners: { [fieldId]: input.owners },
-                                          }
-                                        : {
-                                              kind: "line",
-                                              owners: input.owners,
-                                              fields: {},
-                                              composites: {},
-                                              fieldOwners: { "line-1": input.owners },
-                                              lineFields: {
-                                                  "line-1": {
-                                                      id: "line-1",
-                                                      type: "line",
-                                                      vertices: input.fallbackLine.anchors,
-                                                  },
-                                              },
-                                          },
-                                builders: {},
-                            });
-                        },
-                        addLine(input) {
-                            (context.lines ||= []).push(input);
-                        },
-                        setOwners() {},
-                        reconcile() {},
-                    },
-                },
-                KDMapData: {
-                    Encounter: oldEncounter,
-                    SpiderlingsSpinnerRollout: { version: 1, enabled: true, kind: "ordinary" },
-                },
-                KDEventMapGeneric: {},
-                KDAddEvent(map, trigger, id, handler) {
-                    (map[trigger] ||= {})[id] = handler;
-                },
-            };
-        context.globalThis = context;
-        vm.createContext(context);
-        load(context, "SpiderlingsSpinnerRollout.js");
-        const decision = context.Spiderlings.SpinnerRollout.preparePositiveTurn();
-        assert.equal(decision.g1.kind, kind === "enclosure" ? "enclosure" : "line-fallback");
-        assert.equal(decision.g2.kind, kind === "line" ? "line-fallback" : "enclosure");
-        assert.equal(context.KDMapData.Encounter.ai, ai);
-        assert.equal(JSON.stringify(context.KDMapData.Encounter.builders), "{}");
-        assert.equal(context.lastInput.layers[0].core.x, 8);
-        assert.equal(context.lastInput.fallbackLine.fieldId, "line-1");
-        if (kind === "line") {
-            assert.equal(context.lines[0].fieldId, "line-2");
-            assert.deepEqual(Array.from(context.lines[0].owners), [3, 4]);
-        } else {
-            assert.equal(context.KDMapData.Encounter.topology.composites["rollout-g2"].layerIds.length, 1);
-            if (kind === "mixed") {
-                assert.ok(context.KDMapData.Encounter.topology.fields["line-1"]);
-                assert.deepEqual(Array.from(context.KDMapData.Encounter.topology.fieldOwners["line-1"]), [1, 2]);
-                assert.ok(
-                    context.KDMapData.Encounter.topology.anchors.some((anchor) => anchor.owners.includes("line-1")),
-                );
-                assert.ok(context.KDMapData.Encounter.topology.links.some((link) => link.owners.includes("line-1")));
-            }
-        }
-    }
+test("rollout preserves a 3x3 enclosure plan and records later groups without resetting topology", () => {
+    const r = rolloutFixture(),
+        map = r.context.KDMapData,
+        topology = { fieldId: "minimum", fields: { minimum: { bounds: { width: 3, height: 3 } } } },
+        first = {
+            id: "p1",
+            kind: "enclosure",
+            fieldId: "minimum",
+            center: { x: 8, y: 6 },
+            anchors: [
+                { x: 7, y: 5 },
+                { x: 9, y: 5 },
+                { x: 9, y: 7 },
+                { x: 7, y: 7 },
+            ],
+        };
+    map.SpiderlingsSpinnerRollout = { version: 1, enabled: true, kind: "ordinary" };
+    map.SpiderlingsSpinnerEncounter = {
+        topology,
+        ai: { groups: { g1: { id: "g1", memberIds: [1], planId: "p1" } }, plans: { p1: first } },
+    };
+    const decisions = r.api.preparePositiveTurn();
+    assert.equal(decisions.g1.kind, "enclosure");
+    assert.deepEqual({ ...decisions.g1.core }, { x: 8, y: 6 });
+    assert.equal(map.SpiderlingsSpinnerEncounter.topology, topology);
+    assert.equal(map.SpiderlingsSpinnerEncounter.ai.plans.p1, first);
+    map.SpiderlingsSpinnerEncounter.ai.groups.g2 = { id: "g2", memberIds: [2, 3], planId: "p2" };
+    map.SpiderlingsSpinnerEncounter.ai.plans.p2 = {
+        id: "p2",
+        kind: "line",
+        anchors: [
+            { x: 3, y: 4 },
+            { x: 3, y: 7 },
+        ],
+    };
+    assert.equal(r.api.preparePositiveTurn(), decisions);
+    assert.equal(decisions.g2.kind, "line-fallback");
+    assert.equal(map.SpiderlingsSpinnerEncounter.topology, topology);
+    map.SpiderlingsSpinnerEncounter.ai.groups.g1.planId = "p2";
+    assert.equal(r.api.preparePositiveTurn(), decisions);
+    assert.equal(decisions.g1.planId, "p2");
+    assert.equal(decisions.g1.kind, "line-fallback");
 });
 
 test("scenario registry exposes all ten same-runtime classes and real controls", () => {

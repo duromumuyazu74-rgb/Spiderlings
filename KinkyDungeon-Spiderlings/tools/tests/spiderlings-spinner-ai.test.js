@@ -103,12 +103,22 @@ function runtime(entities = []) {
             KinkyDungeonEntityAt(x, y) {
                 if (context.KinkyDungeonPlayerEntity.x === x && context.KinkyDungeonPlayerEntity.y === y)
                     return context.KinkyDungeonPlayerEntity;
-                return context.KDMapData.Entities.find((entity) => entity.hp > 0 && entity.x === x && entity.y === y);
+                return context.KDMapData.Entities.findLast(
+                    (entity) => entity.hp > 0 && entity.x === x && entity.y === y,
+                );
             },
             DialogueCreateEnemy(x, y, name) {
                 if (context.KinkyDungeonEntityAt(x, y)) return undefined;
                 const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
                 const entity = { id: nextId++, x, y, hp: definition.maxhp, Enemy: definition };
+                context.KDMapData.Entities.push(entity);
+                return entity;
+            },
+            DialogueGetEnemy(name) {
+                const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
+                return { id: nextId++, x: 1, y: 1, hp: definition.maxhp, Enemy: definition };
+            },
+            KDAddNewEntity(entity) {
                 context.KDMapData.Entities.push(entity);
                 return entity;
             },
@@ -125,8 +135,8 @@ function runtime(entities = []) {
             KinkyDungeonMultiplicativeStat: () => 1,
             KDBoundEffects: () => 0,
             KinkyDungeonApplyBuffToEntity() {},
-            KDMoveEntity(entity, x, y) {
-                if (context.KinkyDungeonEntityAt(x, y)) return false;
+            KDMoveEntity(entity, x, y, _willing, _dash, _forceHitBullets, ignoreBlocked) {
+                if (!ignoreBlocked && context.KinkyDungeonEntityAt(x, y)) return false;
                 entity.x = x;
                 entity.y = y;
                 return true;
@@ -139,7 +149,13 @@ function runtime(entities = []) {
                 ).slice(1);
             },
             KinkyDungeonEnemyTryMove(enemy, direction, _delta, x, y) {
-                if (!(_delta > 0) || context.KinkyDungeonEntityAt(x, y)) return false;
+                if (!(_delta > 0)) return false;
+                const occupant = context.KinkyDungeonEntityAt(x, y);
+                if (occupant) {
+                    const condition = context.KDPathConditions[occupant.Enemy?.pathcondition];
+                    if (!condition?.query(enemy, occupant)) return false;
+                    return condition.doPassthrough(enemy, occupant, context.KDMapData) === 2;
+                }
                 movement.push({ id: enemy.id, direction: plain(direction), x, y });
                 enemy.x = x;
                 enemy.y = y;
@@ -182,6 +198,54 @@ function runtime(entities = []) {
 function start(r, snapshot = mapSnapshot()) {
     return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
 }
+
+test("a lone Spinner plans and pays for a 3x3 outer field before expanding", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.ok(ai.plannerWorkLast.candidateCells <= snapshot.cells.length);
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(
+        r.context.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].boundaryCells.length,
+        8,
+    );
+    assert.equal(r.context.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].phase, "preparing");
+    for (let turn = 0; turn < 160; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    assert.equal(ai.plannerWorkLast.candidateCells, 0);
+    assert.ok(ai.plannerWorkPeak.expansionCells <= 24);
+    assert.equal(graph.fields[plan.fieldId].phase, "sealed", JSON.stringify(group.metrics));
+    assert.equal(graph.composites[plan.compositeId].layerIds.length, 3, JSON.stringify(group.metrics));
+    assert.ok(graph.composites[plan.compositeId].layerIds.every((id) => graph.fields[id].phase === "sealed"));
+    assert.ok(graph.actionLog.filter((action) => action.fieldId === plan.fieldId).length >= 9);
+});
+
+test("an unavailable site is retried after geometry changes without idle rerolls", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    for (const cell of snapshot.cells) cell.protected = true;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0];
+    assert.equal(group.planId, null);
+    assert.equal(ai.plannerWorkLast.candidateCells, snapshot.cells.length);
+    start(r, snapshot);
+    assert.equal(ai.plannerWorkLast.candidateCells, 0);
+    for (const cell of snapshot.cells)
+        if (Math.max(Math.abs(cell.x - 8), Math.abs(cell.y - 6)) <= 1 || (cell.x === 6 && cell.y === 6))
+            cell.protected = false;
+    start(r, snapshot);
+    assert.equal(ai.plans[group.planId].kind, "enclosure");
+});
 
 test("groups require eligible hostile Spinners within ten path steps and keep stable identity", () => {
     const actors = [

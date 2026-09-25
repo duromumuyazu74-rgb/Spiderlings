@@ -51,13 +51,21 @@ function runtime() {
             KinkyDungeonEntityAt(x, y) {
                 if (context.KinkyDungeonPlayerEntity.x === x && context.KinkyDungeonPlayerEntity.y === y)
                     return context.KinkyDungeonPlayerEntity;
-                return context.KDMapData.Entities.find((entity) => entity.x === x && entity.y === y);
+                return context.KDMapData.Entities.findLast((entity) => entity.x === x && entity.y === y);
             },
             DialogueCreateEnemy(x, y, name) {
                 if (context.KinkyDungeonEntityAt(x, y)) return undefined;
                 const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
                 if (!definition) return undefined;
                 const entity = { id: nextId++, x, y, hp: definition.maxhp, Enemy: definition };
+                context.KDMapData.Entities.push(entity);
+                return entity;
+            },
+            DialogueGetEnemy(name) {
+                const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
+                return { id: nextId++, x: 1, y: 1, hp: definition.maxhp, Enemy: definition };
+            },
+            KDAddNewEntity(entity) {
                 context.KDMapData.Entities.push(entity);
                 return entity;
             },
@@ -73,8 +81,8 @@ function runtime() {
                 entity.buffs[buff.id] = buff;
                 buffs.push({ entity, buff });
             },
-            KDMoveEntity(entity, x, y) {
-                if (context.KinkyDungeonEntityAt(x, y)) return false;
+            KDMoveEntity(entity, x, y, _willing, _dash, _forceHitBullets, ignoreBlocked) {
+                if (!ignoreBlocked && context.KinkyDungeonEntityAt(x, y)) return false;
                 entity.x = x;
                 entity.y = y;
                 return true;
