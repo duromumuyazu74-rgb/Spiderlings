@@ -195,3 +195,7 @@ KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
+KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
+KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage traces a wide sigil across the ground.
+KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
+KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers at the edge of a broad spell circle.
