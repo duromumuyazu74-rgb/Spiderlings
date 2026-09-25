@@ -85,7 +85,7 @@
         const mage = data.enemy;
         if (mage?.Enemy?.name !== MAGE) return;
         const canPlace = activeRunes(mage.id) < LIMIT && legalCells(mage).length > 0;
-        const chosen = canPlace && KDRandom() < 0.25 ? RUNE : "SpiderlingsMageBolt";
+        const chosen = canPlace && KDRandom() < 0.25 ? RUNE : api.MageSpells?.choose?.(mage) || "SpiderlingsMageBolt";
         data.spellOptions.splice(0, data.spellOptions.length, chosen);
         data.spellPriority.splice(0, data.spellPriority.length);
     });

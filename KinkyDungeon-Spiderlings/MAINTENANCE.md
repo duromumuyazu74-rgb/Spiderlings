@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.29 维护说明
+# Spiderlings 0.92.36-test.30 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -19,6 +19,8 @@ test.27 从 T_Swizzle 的 `Enemy Webs.psd` 提取 Spinner 陷阱的侧边、转�
 test.28 采用画师新交付的八张 Pink PNG：Spinner 边框三件、玩家牵引线与四种 WebCaster 弹体效果。WebCaster 四种 Normal 效果也从 PSD 中换成对应的 v2 图，沿用原有文件名与战斗逻辑。Normal/Pink 按现有蛛丝颜色选项切换；贴图绘制不可用时仍回退到线条。Spinner 边框角图的原始直边位于左侧和下侧，四角旋转起点改为 90°，使直边与上下左右的边框衔接。此版本完成了静态拼接检查和自动测试，游戏内视觉效果仍需以此包检查。
 
 test.29 修复 Pink 模式下 Spinner 场地仍显示灰白蛛网的问题。普通地图的 `SpiderlingsSpinnerWebCell` 与训练场的 `SpiderlingsSilkAnchor` 都是原生敌人贴图，先前只把 `WebSprayTrail.png` 注册为其图像别名；弹体效果的颜色切换不会自动覆盖这两个敌人名。现在为两者注册 Normal/Pink 别名，并在原生敌人绘制时按现有设置选取对应路径。切换设置后现存蛛网格也随下一次绘制更新；蛛网战斗逻辑和美术源文件不变。
+
+test.30 为 Mage 增加蚀盾咒印和千丝坠牢。咒印先预警两回合，再在 4×4 区域持续三回合，并对其中敌对女仆施加最高 3 点即时破盾；逐回合叠加的咒印在其他幼蛛有效命中后延迟一回合按 1 格、3×3 或 5×5 爆发。护盾易碎从最后一次留在法阵内起持续三回合，实际护盾伤害增加 50%，超出护盾的部分不增加生命伤害。坠牢按 21 格阵形逐环向内预警三回合，爆发时依位置造成递减生命伤害及普通蛛丝／原生 Slime 施加；爆发后冷却七回合。两个法术复用 T's 已有 Normal/Pink 蛛网效果图，符文和丝弹仍保留。自动测试与安装包检查独立记录，实机视觉仍待本版 ZIP 验收。
 
 ## 当前测试扩展
 
@@ -70,7 +72,7 @@ Lv1 没有 displacement。Lv2/Lv3 共用对应部位配置：
 
 英文 fallback 与七份 CSV 覆盖 25 件拘束以及当前敌人、技能、设置、门禁、侵扰、试玩和脱困文案。日语中的 Spiderling 统一称为「幼蛛」。中文和英文属于界面排版验收范围，其余语言保留现有翻译。
 
-测试包由 manifest、117 个 `fileorder` 条目和七份 CSV 组成，共 125 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
+测试包由 manifest、126 个 `fileorder` 条目和七份 CSV 组成，共 134 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
 
 按 [CONTRIBUTING.md 的验证矩阵](../CONTRIBUTING.md#verification)选择检查范围。仅修改文档不需要游戏输入、版本升级或本地 ZIP。运行时交付在 Spiderlings 仓库根目录构建最终 ZIP 后执行完整本地检查：
 

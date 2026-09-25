@@ -22,6 +22,7 @@ const scripts = [
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsMageSpells.js",
     "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
@@ -340,7 +341,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 197, `${csv}: current release text set including Hood preference`);
+        assert.equal(entries.size, 201, `${csv}: current release text set including Mage field spells`);
         for (const key of [
             "KDModButtonspiderlingsEnableHood",
             "KinkyDungeonStatSpiderlingsCocoonStart",
@@ -352,6 +353,10 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KinkyDungeonSpellCastSpiderlingsMageBolt",
             "KinkyDungeonSpellSpiderlingsMageRune",
             "KinkyDungeonSpellCastSpiderlingsMageRune",
+            "KinkyDungeonSpellSpiderlingsMageHex",
+            "KinkyDungeonSpellCastSpiderlingsMageHex",
+            "KinkyDungeonSpellSpiderlingsMageCollapse",
+            "KinkyDungeonSpellCastSpiderlingsMageCollapse",
         ]) {
             assert.ok(entries.get(key)?.trim(), `${csv}: ${key}`);
         }
