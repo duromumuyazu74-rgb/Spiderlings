@@ -146,14 +146,18 @@
         const names = new Set((snapshot.items || []).map((item) => item && item.name).filter(Boolean));
         const complete = (stage) => {
             const catalog = completeStageCatalog(descriptors, stage);
-            return !!catalog && stageFamilies(stage).every((family) => names.has(catalog.get(family).id));
+            const families =
+                stage === 3 && snapshot.allowHood === false
+                    ? stageFamilies(stage).filter((family) => family !== "Hood")
+                    : stageFamilies(stage);
+            return !!catalog && families.every((family) => names.has(catalog.get(family).id));
         };
         return { names, lv1Complete: complete(1), lv2Complete: complete(2), lv3Complete: complete(3) };
     }
 
     function sourceAllowsDirectCocoon(source) {
         if (!source) return false;
-        if (source.kind === "enemy") return ["Spinner", "Jumper", "WebCaster"].includes(source.name);
+        if (source.kind === "enemy") return ["Spinner", "Jumper", "WebCaster", "MageSpiderlings"].includes(source.name);
         return (
             source.kind === "webSpray" && source.provenance === WEBSPRAY_PROVENANCE && source.triggerSource === "direct"
         );
@@ -232,6 +236,7 @@
 
         const eligible = [];
         for (const family of PROFILE_FAMILIES) {
+            if (family === "Hood" && snapshot.allowHood === false) continue;
             // Each family contributes only its next layer, with its original weight.
             // Re-read equipment on every hit, including multiple hits in one turn.
             const chain = catalogs.map((catalog) => catalog?.get(family)).filter(Boolean);

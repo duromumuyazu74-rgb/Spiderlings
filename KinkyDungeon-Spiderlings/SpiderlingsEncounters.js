@@ -12,6 +12,13 @@
             default: false,
             block: undefined,
         },
+        {
+            type: "boolean",
+            name: "spiderlingsEnableHood",
+            refvar: "spiderlingsEnableHood",
+            default: true,
+            block: undefined,
+        },
         { type: "boolean", name: "spiderlingsSquad", refvar: "spiderlingsSquad", default: true, block: undefined },
         {
             type: "boolean",
@@ -718,6 +725,7 @@
         if (typeof addTextKey != "function") return;
         addTextKey("KDModButtonSpiderlings", "Spiderlings");
         addTextKey("KDModButtonspiderlingsPinkWebbing", "Pink webbing (off: original)");
+        addTextKey("KDModButtonspiderlingsEnableHood", "Spiderlings silk hood (off: never equip)");
         addTextKey("KDModButtonspiderlingsSquad", "Fixed spiderling squad");
         addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Autonomous Spinner encounters");
         addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiders per map (0: unlimited)");

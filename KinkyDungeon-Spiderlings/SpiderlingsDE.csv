@@ -131,6 +131,7 @@ SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/TARGET
 SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
 SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Rosa Spinnweben (aus: Original)
+KDModButtonspiderlingsEnableHood,Seidene Spinnenhaube (aus: nie anlegen)
 KinkyDungeonSpiderlingsWebbingInterwoven,Die sich kreuzenden Fäden ziehen sich zu und fesseln einen weiteren Teil deines Körpers.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Du schneidest in TargetRestraint. Klebrige Fäden reißen und der Schnitt wird tiefer.
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Du schneidest in TargetRestraint. Klebrige Fäden reißen und der Schnitt wird tiefer.
@@ -194,6 +195,3 @@ KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
-RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
-RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
-RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

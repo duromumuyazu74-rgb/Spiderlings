@@ -577,7 +577,6 @@ SPIDERLINGS.addSpells([
         bindType: "Slime",
         damage: "glue",
         noTerrainHit: true,
-        playerEffect: { name: "SpiderlingsMageRuneArms" },
     },
     {
         enemySpell: true,
@@ -599,7 +598,7 @@ SPIDERLINGS.addSpells([
         speed: 4,
         size: 1,
         damage: "glue",
-        playerEffect: { name: "SpiderlingsMageArmHit" },
+        playerEffect: { name: "Damage", power: 0.5 },
     },
     //Jumper Dash - inert transport into a source-owned, two-player-action Dash lifecycle.
     // Jumper 跃击：原生法术只触发独立生命周期；两次完整玩家行动后落地结算，推进蛛丝才消耗 Jumper。

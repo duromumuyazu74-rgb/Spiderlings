@@ -23,7 +23,7 @@ function functionAt(source, declaration) {
     throw new Error(`unclosed native ${declaration}`);
 }
 
-test("KD 5.5 spell choice and dot launch keep one Mage action and a saved one-cell rune", () => {
+test("KD 5.5 spell choice and dot launch keep one Mage action and a saved staged rune", () => {
     const enemySource = readNative("enemy/KinkyDungeonEnemies.ts");
     const magicSource = readNative("magic/KinkyDungeonMagic.ts");
     const fightSource = readNative("fight/KinkyDungeonFight.ts");
@@ -56,7 +56,7 @@ test("KD 5.5 spell choice and dot launch keep one Mage action and a saved one-ce
     const map = { Entities: [mage], Bullets: [] };
     const events = {};
     const context = {
-        Spiderlings: { Mage: { equipArms: () => true } },
+        Spiderlings: {},
         KDMapData: map,
         KinkyDungeonPlayerEntity: player,
         KinkyDungeonMovableTilesEnemy: ["0"],
@@ -104,7 +104,7 @@ test("KD 5.5 spell choice and dot launch keep one Mage action and a saved one-ce
         bind: 6,
         bindType: "Slime",
         damage: "glue",
-        playerEffect: { name: "SpiderlingsMageRuneArms" },
+        playerEffect: { name: "Damage" },
         onhit: "",
         noTerrainHit: true,
     };
@@ -117,6 +117,8 @@ test("KD 5.5 spell choice and dot launch keep one Mage action and a saved one-ce
     assert.equal(bullet.vy, 0);
     assert.equal(bullet.bullet.width, 1);
     assert.equal(bullet.bullet.source, mage.id);
+    assert.equal(bullet.SpiderlingsRunePhase, "placing");
+    assert.equal(bullet.bullet.name, "SpiderlingsMageRuneIcon");
     assert.equal(bullet.bullet.spell.tags.includes("rune"), true);
     assert.notDeepEqual([bullet.x, bullet.y], [player.x, player.y]);
     assert.equal(context.KinkyDungeonCastSpell(player.x, player.y, spell, mage).result, "Cast");
@@ -137,7 +139,7 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
     let tied = 0;
     let converted = 0;
     const context = {
-        Spiderlings: { Mage: { equipArms: () => true } },
+        Spiderlings: {},
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { player: true },
         KinkyDungeonMovableTilesEnemy: ["0"],
@@ -175,7 +177,7 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
         context,
     );
     vm.runInContext(fs.readFileSync(path.join(root, "SpiderlingsMageRunes.js"), "utf8"), context);
-    const spell = { name: "SpiderlingsMageRune", playerEffect: { name: "SpiderlingsMageRuneArms" } };
+    const spell = { name: "SpiderlingsMageRune" };
     const bullet = {
         x: maid.x,
         y: maid.y,
@@ -190,7 +192,7 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
     assert.equal(tied, 1);
     assert.equal(maid.slime, 6);
     assert.equal(converted, 0);
-    assert.equal(bullet.bullet.spell.playerEffect.name, "SpiderlingsMageRuneArms");
+    assert.equal(bullet.bullet.spell.playerEffect, undefined);
     const shielded = { ...maid, shield: 1, slime: 0 };
     context.KDBulletHitEnemy(bullet, shielded, 0, true);
     assert.equal(shielded.slime, 0);

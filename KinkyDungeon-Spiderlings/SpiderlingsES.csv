@@ -131,6 +131,7 @@ SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/TARGET
 SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/TARGET)
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Telaraña rosa (no: original)
+KDModButtonspiderlingsEnableHood,Capucha de seda arácnida (no: nunca equipar)
 KinkyDungeonSpiderlingsWebbingInterwoven,Los hilos entrecruzados se tensan y atan otra parte de tu cuerpo.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Cortas TargetRestraint. Varias hebras pegajosas se rompen y el corte se hace más profundo.
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Cortas TargetRestraint. Varias hebras pegajosas se rompen y el corte se hace más profundo.
@@ -194,6 +195,3 @@ KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
-RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
-RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
-RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

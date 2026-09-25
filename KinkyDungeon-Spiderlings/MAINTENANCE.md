@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.16 维护说明
+# Spiderlings 0.92.36-test.26 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -6,9 +6,13 @@
 
 test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，自动回归与安装包验证另见本次维护记录。实机与视觉测试由维护者后续执行，不沿用 test.13 的证据声称本版本已完成实机验收。
 
-test.15 加入 Mage Spiderlings。第 5 层或有效安全等级 0 起，合格新普通地图在原生随机人口之前保留一只，前提是合法格和共享移动人口额度足够。自然权重随有效安全等级从 2 增至 8，侵扰地图再加 1，最高 9；巢穴增援默认权重 1，与 Tunneler 相同。法师使用远程攻击和单格符文；玩家 ItemArms 物品的最终素材与脱困设计待定。`KDMapData.SpiderlingsGuaranteedMageState` 保存本图保底结果，重访不补生。实机证据需按本次交付包另行记录。
+test.15 加入 Mage Spiderlings。第 5 层或有效安全等级 0 起，合格新普通地图在原生随机人口之前保留一只，前提是合法格和共享移动人口额度足够。自然权重随有效安全等级从 2 增至 8，侵扰地图再加 1，最高 9；巢穴增援默认权重 1，与 Tunneler 相同。法师使用远程攻击和单格符文；当时的玩家 ItemArms 占位物在 test.26 停用。`KDMapData.SpiderlingsGuaranteedMageState` 保存本图保底结果，重访不补生。实机证据需按本次交付包另行记录。
 
 test.16 补齐符文与丝弹命中时由原生战斗逻辑请求的短暂命中贴图，复用现有符文图形，避免命中后产生缺失资源请求。实机证据需使用 test.16 的最终 ZIP 重新记录。
+
+test.25 增加独立的自有 Hood 开关，并尊重原生 NoHood Perk；关闭后下一游戏回合解除已穿戴的自有 Hood，结茧和满蛛丝开局改用七件 Lv3 门槛。Mage 敌人贴图已采用专用素材，手臂拘束仍无专用模型。`T's Enemies (12).zip` 中的两张 72×72 PNG 分别采用为符文底图和放置时的蜘蛛图标；命中图沿用新底图。放置阶段显示发光图标，布置完成后显示底图；踩中后发光并警示 3×3 区域，下一回合按当时位置结算。玩家调用普通 Webbing 进阶，敌对 Maidforce 通过原生 Slime、护盾和抗性结算。Webbinder 不在本次包中。
+
+test.26 移除 Mage 手臂拘束及其文案。丝弹通过原生 `Damage` 效果对玩家造成 0.5 点胶属性伤害，不再穿戴额外物品；对敌对 Maidforce 的原生伤害仍为 4 点。Mage 仍只选择丝弹或符文，未启用旧版四种召唤法术。此测试版不兼容已装备旧 Mage 手臂拘束的存档。
 
 ## 当前测试扩展
 
@@ -34,7 +38,7 @@ Manifest 按依赖顺序加载运行脚本。模块职责、共享 hook 的安�
 
 ## 拘束与模型
 
-当前共有 27 件运行拘束：十件 Lv1、五件 Lv2、八件 Lv3、Cocoon、Spinner 腿袋、Silk leash 和 Mage 手臂占位物。普通蛛丝部位独立按 Lv1 → Lv2 → Lv3 推进；Blindfold 和 Gag 从 Lv1 进入 Lv3，Hood 需要对应 Lv3 头口层。八件 Lv3 全部真实装备、命中前 slow 达到五层后，后续允许的直接命中才能施加 Cocoon。Spinner 普通命中只推进腿、踝和足。
+当前共有 26 件运行拘束：十件 Lv1、五件 Lv2、八件 Lv3、Cocoon、Spinner 腿袋和 Silk leash。普通蛛丝部位独立按 Lv1 → Lv2 → Lv3 推进；Blindfold 和 Gag 从 Lv1 进入 Lv3，Hood 需要对应 Lv3 头口层。Hood 允许时八件 Lv3 全部真实装备，禁用时其余七件真实装备；命中前 slow 达到五层后，后续允许的直接命中才能施加 Cocoon。Spinner 普通命中只推进腿、踝和足。
 
 Lv1 需要一次有效脱困行动；Lv2/Lv3 需要两次，可混合 Cut、Remove 和 Struggle。Cocoon 的 Cut 目标为 40，Remove/Struggle 目标为 50。Spinner 完整腿袋需要 Cut 4 次或 Remove/Struggle 6 次，半成品分别需要 2/3 次。Cocoon 阻止 23 件内层蛛丝操作；移除后恢复各部位外层优先顺序。
 
@@ -60,7 +64,7 @@ Lv1 没有 displacement。Lv2/Lv3 共用对应部位配置：
 
 英文 fallback 与七份 CSV 覆盖 25 件拘束以及当前敌人、技能、设置、门禁、侵扰、试玩和脱困文案。日语中的 Spiderling 统一称为「幼蛛」。中文和英文属于界面排版验收范围，其余语言保留现有翻译。
 
-测试包由 manifest、110 个 `fileorder` 条目和七份 CSV 组成，共 118 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
+测试包由 manifest、117 个 `fileorder` 条目和七份 CSV 组成，共 125 项。开发脚本、文档、画师包、原画和验证记录不进入安装包。图集依赖固定在 `tools/requirements-atlas.txt`。
 
 按 [CONTRIBUTING.md 的验证矩阵](../CONTRIBUTING.md#verification)选择检查范围。仅修改文档不需要游戏输入、版本升级或本地 ZIP。运行时交付在 Spiderlings 仓库根目录构建最终 ZIP 后执行完整本地检查：
 

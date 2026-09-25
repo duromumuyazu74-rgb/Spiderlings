@@ -7,22 +7,13 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const mageFile = path.join(__dirname, "../..", "SpiderlingsMage.js");
-const ITEM = "SpiderlingsMageArmSigil";
 
 function fixture() {
-    const restraints = [];
-    const equipment = [];
-    const calls = { playerDamage: [], npcDamage: [], added: 0, nativeHits: 0 };
-    let blockers = [];
-    let compatible = true;
-    let playerDamageDealt = 0.5;
+    const calls = { npcDamage: [], nativeHits: 0 };
     const source = { id: 10, hp: 3, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
-    const player = { player: true };
     const c = {
-        Spiderlings: { restraintCatalog: { register: (definition) => restraints.push(definition) } },
         KDMapData: { Entities: [source] },
         KDPlayerEffects: {},
-        KinkyDungeonPlayerEntity: player,
         KDGetFaction: (entity) => entity.faction,
         KDHostile: (a, b) => a.faction !== b.faction && !b.allied,
         KDBulletCanHitEntity: (bullet, target) =>
@@ -42,20 +33,6 @@ function fixture() {
             if (bullet.bullet.playerEffect || bullet.bullet.spell.playerEffect) target.equipment = true;
             return c.KinkyDungeonDamageEnemy(target, bullet.bullet.damage);
         },
-        KinkyDungeonDealDamage: (damage) => {
-            calls.playerDamage.push(damage);
-            return { happened: playerDamageDealt, string: "" };
-        },
-        KinkyDungeonGetRestraintByName: (name) => restraints[0].restraint.name === name && restraints[0].restraint,
-        KinkyDungeonAllRestraintDynamic: () => equipment.map((item) => ({ item })),
-        KDGetBlockersToAddRestraint: () => blockers,
-        KDCanAddRestraint: () => compatible,
-        KinkyDungeonGetRestraintItem: () => equipment[0],
-        KinkyDungeonAddRestraint: (restraint) => {
-            calls.added++;
-            equipment.push({ name: restraint.name });
-            return 1;
-        },
     };
     vm.createContext(c);
     vm.runInContext(fs.readFileSync(mageFile, "utf8"), c);
@@ -64,20 +41,14 @@ function fixture() {
             source: source.id,
             spell: { name: "SpiderlingsMageBolt" },
             damage: { damage: 0.5, type: "glue" },
-            playerEffect: { name: "SpiderlingsMageArmHit" },
+            playerEffect: { name: "Damage", power: 0.5 },
         },
     });
     return {
         c,
         source,
-        player,
-        restraints,
-        equipment,
         calls,
         bullet,
-        block: (items) => (blockers = items),
-        allow: (value) => (compatible = value),
-        deal: (value) => (playerDamageDealt = value),
     };
 }
 
@@ -119,53 +90,8 @@ test("Mage bonus does not affect allies or unrelated NPC targets", () => {
     );
 });
 
-test("player hit equips one owned arm item and leaves incompatible equipment alone", () => {
+test("Mage combat module adds no arm restraint or custom player effect", () => {
     const r = fixture();
-    const effect = r.c.KDPlayerEffects.SpiderlingsMageArmHit;
-    assert.equal(typeof r.c.Spiderlings.Mage.equipArms, "function");
-    assert.equal(r.restraints[0].restraint.Group, "ItemArms");
-    assert.equal(r.restraints[0].restraint.weight, 0);
-    assert.deepEqual(Object.keys(r.restraints[0].restraint.enemyTags), []);
-    assert.equal(effect(r.player, "glue", {}, {}, "Enemy", r.bullet(), r.source).effect, true);
-    assert.equal(r.equipment.length, 1);
-    assert.equal(r.equipment[0].name, ITEM);
-    effect(r.player, "glue", {}, {}, "Enemy", r.bullet(), r.source);
-    assert.equal(r.calls.added, 1, "repeat hits cannot add another copy");
-    assert.equal(r.calls.playerDamage.length, 2);
-    const occupied = fixture();
-    const existing = { name: "ExternalArmbinder", data: { sentinel: true } };
-    occupied.equipment.push(existing);
-    occupied.allow(false);
-    assert.equal(
-        occupied.c.KDPlayerEffects.SpiderlingsMageArmHit(
-            occupied.player,
-            "glue",
-            {},
-            {},
-            "Enemy",
-            occupied.bullet(),
-            occupied.source,
-        ).effect,
-        true,
-        "native HP damage still counts when another arm item blocks the sigil",
-    );
-    assert.equal(occupied.equipment[0], existing);
-    assert.equal(occupied.calls.added, 0);
-    occupied.allow(true);
-    occupied.block([existing]);
-    occupied.deal(0);
-    assert.equal(
-        occupied.c.KDPlayerEffects.SpiderlingsMageArmHit(
-            occupied.player,
-            "glue",
-            {},
-            {},
-            "Enemy",
-            occupied.bullet(),
-            occupied.source,
-        ).effect,
-        false,
-        "a resisted hit without a new restraint has no effect",
-    );
-    assert.equal(occupied.calls.added, 0);
+    assert.equal(r.bullet().bullet.playerEffect.name, "Damage");
+    assert.equal(r.c.KDPlayerEffects.SpiderlingsMageArmHit, undefined);
 });

@@ -131,6 +131,7 @@ SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/TARGET
 SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/TARGET)
 SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Różowa pajęczyna (wył.: oryginalna)
+KDModButtonspiderlingsEnableHood,Jedwabny kaptur pająków (wył.: nie zakładaj)
 KinkyDungeonSpiderlingsWebbingInterwoven,Krzyżujące się nici zaciskają się i krępują kolejną część twojego ciała.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Nacinasz TargetRestraint. Lepkie nici pękają i szczelina staje się głębsza.
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Nacinasz TargetRestraint. Lepkie nici pękają i szczelina staje się głębsza.
@@ -194,6 +195,3 @@ KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
-RestraintSpiderlingsMageArmSigil,Silken Arm Sigil
-RestraintSpiderlingsMageArmSigilDesc,A compact silk mark winds around your arms and holds them together.
-RestraintSpiderlingsMageArmSigilDesc2,Cut remove or struggle against it using the usual rules.

@@ -66,6 +66,7 @@ const runtimeAssets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneIcon.png",
     "Bullets/SpiderlingsMageRuneHit.png",
     "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
@@ -750,7 +751,7 @@ function checkRuntime(state) {
     }
     const expectedIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash", "SpiderlingsMageArmSigil")
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash")
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)
@@ -1715,6 +1716,7 @@ function checkTranslations(state) {
         .concat(cocoon.id, "SpiderlingsSpinnerLegbinder");
     const runtimeMessageKeys = [
         "KDModButtonspiderlingsPinkWebbing",
+        "KDModButtonspiderlingsEnableHood",
         "KinkyDungeonSpellSpiderlingsJumperDash",
         "KinkyDungeonSpellCastSpiderlingsJumperDash",
         "KinkyDungeonSpiderlingsCocoonAnchored",

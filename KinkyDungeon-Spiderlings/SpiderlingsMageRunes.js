@@ -4,9 +4,10 @@
     const api = globalThis.Spiderlings;
     const MAGE = "MageSpiderlings";
     const RUNE = "SpiderlingsMageRune";
-    const ARM_EFFECT = "SpiderlingsMageRuneArms";
     const LIMIT = 3;
     const RADIUS = 3;
+    const PHASE = "SpiderlingsRunePhase";
+    const TURNS = "SpiderlingsRuneTurns";
 
     function isRune(bullet) {
         return bullet?.bullet?.spell?.name === RUNE;
@@ -16,6 +17,18 @@
         return KDMapData.Bullets.filter(
             (bullet) => isRune(bullet) && bullet.time > 0 && bullet.bullet.source === ownerId,
         ).length;
+    }
+
+    function setPhase(bullet, phase, turns) {
+        bullet[PHASE] = phase;
+        bullet[TURNS] = turns;
+        bullet.bullet.name = phase === "placing" ? "SpiderlingsMageRuneIcon" : RUNE;
+        bullet.bullet.bulletLight = phase === "triggered" ? 6 : phase === "placing" ? 4 : 0;
+        bullet.bullet.bulletColor = 0xa77bdc;
+        bullet.bullet.aoe = phase === "triggered" ? 1 : undefined;
+        bullet.bullet.aoetype = phase === "triggered" ? "box" : undefined;
+        if (typeof KinkyDungeonUpdateSingleBulletVisual === "function")
+            KinkyDungeonUpdateSingleBulletVisual(bullet, false);
     }
 
     function legalCells(mage) {
@@ -87,23 +100,46 @@
             const args = Array.from(arguments);
             args[0] = cell.x;
             args[1] = cell.y;
-            return nativeCast.apply(this, args);
+            const previous = new Set(KDMapData.Bullets);
+            const result = nativeCast.apply(this, args);
+            if (result?.result === "Cast") {
+                const bullet = KDMapData.Bullets.find((candidate) => !previous.has(candidate) && isRune(candidate));
+                if (bullet) setPhase(bullet, "placing", 2);
+            }
+            return result;
         };
     }
 
     if (typeof KDBulletCanHitEntity === "function") {
         const nativeCanHit = KDBulletCanHitEntity;
-        KDBulletCanHitEntity = function (bullet, target) {
-            if (!isRune(bullet) || target?.player) return nativeCanHit.apply(this, arguments);
-            if (!hostileMaid(bullet, target)) return false;
-            const original = bullet.bullet;
-            // KD considers Enemy and Maidforce favorable. Override that one
-            // collision without changing either faction's global relation.
-            bullet.bullet = { ...original, spell: { ...original.spell, friendlyfire: true } };
+        KDBulletCanHitEntity = function (bullet, _target) {
+            // The rune resolves after its warning turn, never on contact.
+            return isRune(bullet) ? false : nativeCanHit.apply(this, arguments);
+        };
+    }
+
+    if (typeof KDBulletAoECanHitEntity === "function") {
+        const nativeAoECanHit = KDBulletAoECanHitEntity;
+        KDBulletAoECanHitEntity = function (bullet) {
+            return isRune(bullet) ? false : nativeAoECanHit.apply(this, arguments);
+        };
+    }
+
+    if (typeof KDCheckCollideableBullets === "function") {
+        const nativeMovementCollision = KDCheckCollideableBullets;
+        KDCheckCollideableBullets = function (target, force) {
+            // Forced moves bypass KDBulletCanHitEntity. Hide only our rune's
+            // damage during this native movement query so it can arm on tickAfter.
+            if (!force) return nativeMovementCollision.apply(this, arguments);
+            const runes = KDMapData.Bullets.filter(
+                (bullet) => isRune(bullet) && bullet.x === target?.x && bullet.y === target?.y,
+            );
+            const damage = runes.map((bullet) => bullet.bullet.damage);
+            for (const bullet of runes) bullet.bullet.damage = undefined;
             try {
-                return nativeCanHit.apply(this, arguments);
+                return nativeMovementCollision.apply(this, arguments);
             } finally {
-                bullet.bullet = original;
+                runes.forEach((bullet, index) => (bullet.bullet.damage = damage[index]));
             }
         };
     }
@@ -128,7 +164,53 @@
         };
     }
 
-    KDPlayerEffects[ARM_EFFECT] = (target, _damage, _effect, _spell, _faction, bullet, source) => ({
-        effect: !!target?.player && api.Mage.equipArms(source || mageRuneSource(bullet)),
+    function inBlast(bullet, target) {
+        return target && Math.abs(target.x - bullet.x) <= 1 && Math.abs(target.y - bullet.y) <= 1;
+    }
+
+    function resolveRune(bullet) {
+        const player = KinkyDungeonPlayerEntity;
+        if (inBlast(bullet, player)) {
+            api.Webbing?.applyEnemyProgression("WebCaster", mageRuneSource(bullet), "Enemy");
+        }
+        if (typeof KDBulletHitEnemy === "function") {
+            for (const target of KDMapData.Entities) {
+                if (inBlast(bullet, target) && hostileMaid(bullet, target)) {
+                    api.Combat?.pressureNPCShield(target);
+                    KDBulletHitEnemy(bullet, target, 0, false);
+                }
+            }
+        }
+        bullet.time = 0;
+        const index = KDMapData.Bullets.indexOf(bullet);
+        if (index >= 0) KDMapData.Bullets.splice(index, 1);
+        if (typeof KinkyDungeonUpdateSingleBulletVisual === "function")
+            KinkyDungeonUpdateSingleBulletVisual(bullet, true);
+        if (typeof KinkyDungeonBulletsID !== "undefined" && bullet.spriteID)
+            KinkyDungeonBulletsID[bullet.spriteID] = null;
+        if (typeof KinkyDungeonSendEvent === "function")
+            KinkyDungeonSendEvent("bulletDestroy", { bullet, target: undefined, outOfRange: false, outOfTime: false });
+    }
+
+    KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsMageRuneTiming", (_event, data) => {
+        if (!(Number(data?.delta) > 0)) return;
+        for (const bullet of [...KDMapData.Bullets]) {
+            if (!isRune(bullet) || bullet.time <= 0) continue;
+            const phase = bullet[PHASE] || "armed";
+            if (phase === "placing") {
+                if (--bullet[TURNS] <= 0) setPhase(bullet, "armed", 0);
+            } else if (phase === "armed") {
+                const playerOnRune =
+                    inBlast(bullet, KinkyDungeonPlayerEntity) &&
+                    KinkyDungeonPlayerEntity.x === bullet.x &&
+                    KinkyDungeonPlayerEntity.y === bullet.y;
+                const maidOnRune = KDMapData.Entities.some(
+                    (target) => target.x === bullet.x && target.y === bullet.y && hostileMaid(bullet, target),
+                );
+                if (playerOnRune || maidOnRune) setPhase(bullet, "triggered", 1);
+            } else if (phase === "triggered" && --bullet[TURNS] <= 0) {
+                resolveRune(bullet);
+            }
+        }
     });
 })();
