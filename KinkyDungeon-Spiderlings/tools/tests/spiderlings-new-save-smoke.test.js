@@ -279,6 +279,39 @@ test("native perk initialization equips all 24 physical layers only when selecte
     assert.equal(context.KinkyDungeonAllRestraintDynamic().length, 24, "existing layers are not duplicated");
 });
 
+test("Spiderlings Hood toggle and native NoHood each skip the start Hood; disabling removes only an owned Hood", () => {
+    const disabled = freshNewSaveRuntime();
+    disabled.context.KinkyDungeonStatsChoice = new Map();
+    const setting = disabled.context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsEnableHood");
+    assert.equal(setting.default, true);
+    disabled.context.KDModSettings.Spiderlings.spiderlingsEnableHood = false;
+    disabled.context.KDPerkStart.SpiderlingsCocoonStart();
+    const disabledNames = disabled.context.KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name);
+    assert.equal(disabledNames.length, 23);
+    assert.equal(disabledNames.includes("SpiderlingsWebbingLv3Hood"), false);
+    assert.equal(disabledNames.includes(cocoonId), true);
+
+    const perk = freshNewSaveRuntime();
+    perk.context.KinkyDungeonStatsChoice = new Map([["NoHood", true]]);
+    perk.context.KDPerkStart.SpiderlingsCocoonStart();
+    assert.equal(
+        perk.context.KinkyDungeonAllRestraintDynamic().some(({ item }) => item.name === "SpiderlingsWebbingLv3Hood"),
+        false,
+    );
+
+    const changed = freshNewSaveRuntime();
+    changed.context.KinkyDungeonStatsChoice = new Map();
+    changed.context.KDPerkStart.SpiderlingsCocoonStart();
+    assert.equal(changed.context.KinkyDungeonAllRestraintDynamic().length, 24);
+    changed.context.KDModSettings.Spiderlings.spiderlingsEnableHood = false;
+    changed.context.KDEventMapGeneric.tickAfter.SpiderlingsHoodPreference({}, { delta: 1 });
+    const names = changed.context.KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name);
+    assert.equal(names.length, 23);
+    assert.equal(names.includes("SpiderlingsWebbingLv3Hood"), false);
+    assert.equal(names.includes("SpiderlingsWebbingLv3Blindfold"), true);
+    assert.equal(names.includes(cocoonId), true);
+});
+
 function syntheticCatalog(stages = [1, 2, 3]) {
     return stages.flatMap((stage) =>
         (stage === 3 ? lv3Families : stage === 2 ? lv2Families : families).map((family) => ({

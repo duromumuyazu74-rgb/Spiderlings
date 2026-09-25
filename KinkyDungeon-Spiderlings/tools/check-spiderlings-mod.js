@@ -66,6 +66,7 @@ const runtimeAssets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneIcon.png",
     "Bullets/SpiderlingsMageRuneHit.png",
     "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
@@ -1715,6 +1716,7 @@ function checkTranslations(state) {
         .concat(cocoon.id, "SpiderlingsSpinnerLegbinder");
     const runtimeMessageKeys = [
         "KDModButtonspiderlingsPinkWebbing",
+        "KDModButtonspiderlingsEnableHood",
         "KinkyDungeonSpellSpiderlingsJumperDash",
         "KinkyDungeonSpellCastSpiderlingsJumperDash",
         "KinkyDungeonSpiderlingsCocoonAnchored",

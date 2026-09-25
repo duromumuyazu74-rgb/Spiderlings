@@ -131,6 +131,7 @@ SpiderlingsInfestationProgress,파괴한 목표 둥지: CURRENT/TARGET
 SpiderlingsInfestationBlocked,계단 앞에서 발길이 멎는다. 둥지 깊은 곳의 바스락거림은 아직 잠잠해지지 않았다. (CURRENT/TARGET)
 SpiderlingsInfestationComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,분홍색 거미줄 (끄기: 원래 색)
+KDModButtonspiderlingsEnableHood,새끼거미 비단 두건 (끄기: 착용 안 함)
 KinkyDungeonSpiderlingsWebbingInterwoven,엇갈린 거미줄이 조여들며 몸의 다른 부위까지 휘감는다.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,당신은 TargetRestraint의 실 틈을 따라 날을 밀어 넣는다. 끈적한 실 몇 가닥이 끊어지며 베인 틈이 조금 깊어진다.
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,당신은 TargetRestraint의 실 틈을 따라 날을 밀어 넣는다. 끈적한 실 몇 가닥이 끊어지며 베인 틈이 조금 깊어진다.
