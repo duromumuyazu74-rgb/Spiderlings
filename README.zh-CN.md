@@ -20,8 +20,11 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 | [侵扰楼层 PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)          | `0.92.36-test.24` | 修复 Spinner 施工和守巢反击的普通侵扰楼层测试版                 |
 | [头套与符文 Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84)   | `0.92.36-test.26` | 可关闭幼蛛头套、延迟一回合的 3×3 法师符文，取消法师手臂拘束     |
 | [敌方蛛网素材 Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86) | `0.92.36-test.29` | Spinner 双配色、四角方向校正、WebCaster v2 效果及蛛网格颜色修复 |
+| [侵扰总规格 #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)         | `0.92.36-test.31` | 三巢四守卫、全图布局、可扩展 Spinner 围场、蛛网移动与非致命缠裹 |
 
 这个测试包包含三巢侵扰楼层改动，不包含独立开发的巢穴监狱。监狱实验版使用自己的 `prison.alpha.N` 版本序列；游戏中一次只启用一个 Spiderlings 包。
+
+test.31 为三个原始侵扰任务巢各配四名守卫，三巢全部击破后才能下楼。Spinner 按真实行动建造最小 3×3 围场，并可逐圈扩展；移动幼蛛通过自有蛛网时加速。WebCaster 蛛丝可黏住敌对 NPC，相邻幼蛛随后可支付三次行动，非致命缠走合格目标。BlindZombie 可以被黏住，但不会被缠走。
 
 测试分支沿用 `0.92.36` 正式基线，并已包含正式版 `0.92.38` 的兼容修复。它增加了实验性的 Spinner 捕获和 Mage Spiderlings。法师幼蛛会发射造成伤害的丝弹，并布置可见的符文陷阱。在 test.26 中，符文布置时显示发光蜘蛛图标；踩中后先警示 3×3 区域，一回合后对仍在范围内的目标施加蛛丝。新生成的普通地图达到第 5 层或有效安全等级 0 时，只要有合法空格且未超过幼蛛人口上限，就会有一只法师幼蛛。法师敌人的贴图已经换成专用素材。法师专用的手臂拘束已移除。Spiderlings 头套选项默认开启；关闭后即使没有选择原生 NoHood Perk 也不会穿戴自有头套，丝茧和满蛛丝开局仍可用。目前只有正式版发布 GitHub Release；测试包按[开发说明](docs/DEVELOPMENT.md)在本地构建。
 
