@@ -4,6 +4,16 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { runtime } = require("./helpers/spinner-native-runtime.js");
 
+test("native Spinner web cells expose matching Normal and Pink artwork aliases", () => {
+    const c = runtime().context;
+    for (const prefix of ["", "Game/"])
+        for (const color of ["", "Pink"])
+            assert.equal(
+                c.KDModFiles[`${prefix}Enemies/SpiderlingsSpinnerWebCell${color}.png`],
+                c.KDModFiles[`Bullets/WebSprayTrail${color}.png`],
+            );
+});
+
 function buildAll(
     r,
     anchors = [

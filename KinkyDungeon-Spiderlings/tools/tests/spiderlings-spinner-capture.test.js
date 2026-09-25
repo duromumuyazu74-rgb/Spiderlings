@@ -50,6 +50,89 @@ test("drawing observes schema-3 membership without mutating capture authority", 
     assert.deepEqual(Array.from(r.api.state().sourceIds), [1, 2]);
 });
 
+test("capture strands use the selected tether art", () => {
+    const r = contestRuntime();
+    r.start();
+    const paths = [];
+    r.c.KDDraw = (_board, _sprites, _id, image) => {
+        paths.push(image);
+        return {};
+    };
+    r.c.KinkyDungeonRootDirectory = "Game/";
+    r.c.Spiderlings.getSetting = () => false;
+    drawCapture(r);
+    assert.deepEqual(paths, ["Game/Bullets/SpiderlingsPlayerTether.png"]);
+    paths.length = 0;
+    r.c.Spiderlings.getSetting = () => true;
+    drawCapture(r);
+    assert.deepEqual(paths, ["Game/Bullets/SpiderlingsPlayerTetherPink.png"]);
+});
+
+test("the Spinner training boundary uses both art colors and correctly oriented corners", () => {
+    const r = contestRuntime();
+    r.c.KDModFiles = {
+        "Bullets/WebSprayTrail.png": { color: "normal" },
+        "Bullets/WebSprayTrailPink.png": { color: "pink" },
+    };
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerField.js"), "utf8"), r.c);
+    for (const prefix of ["", "Game/"])
+        for (const color of ["", "Pink"])
+            assert.equal(
+                r.c.KDModFiles[`${prefix}Enemies/SpiderlingsSilkAnchor${color}.png`],
+                r.c.KDModFiles[`Bullets/WebSprayTrail${color}.png`],
+            );
+    const traps = [
+        { x: 3, y: 3, placed: true },
+        { x: 9, y: 3, placed: true },
+        { x: 9, y: 9, placed: true },
+        { x: 3, y: 9, placed: true },
+    ];
+    r.c.KDMapData.RoomType = r.c.Spiderlings.SpinnerField.ROOM;
+    r.c.KDMapData.SpiderlingsSpinnerField = {
+        phase: "ready",
+        traps,
+        links: traps.map((_trap, index) => ({ a: index, b: (index + 1) % traps.length, built: true })),
+        nodes: [],
+    };
+    const draws = [];
+    r.c.KDDraw = (_board, _sprites, id, image, _x, _y, _w, _h, rotation) => {
+        draws.push({ id, image, rotation });
+        return {};
+    };
+    r.c.KinkyDungeonRootDirectory = "Game/";
+    r.c.Spiderlings.getSetting = () => false;
+    drawCapture(r);
+    r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerField({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    assert.deepEqual(
+        new Set(draws.map((draw) => draw.image)),
+        new Set([
+            "Game/Bullets/SpiderlingsSpinnerTrapSide.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapCorner.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapTop.png",
+        ]),
+    );
+    assert.deepEqual(
+        draws.filter((draw) => draw.image.endsWith("TrapCorner.png")).map((draw) => draw.rotation),
+        [Math.PI / 2, Math.PI, (3 * Math.PI) / 2, 2 * Math.PI],
+    );
+    draws.length = 0;
+    r.c.Spiderlings.getSetting = () => true;
+    drawCapture(r);
+    r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerField({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    assert.deepEqual(
+        new Set(draws.map((draw) => draw.image)),
+        new Set([
+            "Game/Bullets/SpiderlingsSpinnerTrapSidePink.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapCornerPink.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapTopPink.png",
+        ]),
+    );
+    assert.deepEqual(
+        draws.filter((draw) => draw.image.endsWith("TrapCornerPink.png")).map((draw) => draw.rotation),
+        [Math.PI / 2, Math.PI, (3 * Math.PI) / 2, 2 * Math.PI],
+    );
+});
+
 test("drawing an invalid source cannot mutate capture before a native audit", () => {
     const r = contestRuntime();
     r.start();
