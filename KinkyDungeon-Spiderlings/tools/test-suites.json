@@ -15,6 +15,7 @@
     "spiderlings-spinner-ai.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-mage-combat.test.js",
+    "spiderlings-mage-visuals.test.js",
     "spiderlings-mage-runes.test.js",
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",

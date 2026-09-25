@@ -24,6 +24,7 @@ const runtimeScripts = [
     "SpiderlingsCombat.js",
     "SpiderlingsMage.js",
     "SpiderlingsMageRunes.js",
+    "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -81,6 +82,9 @@ const runtimeAssets = [
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
     "Enemies/MageSpiderlings.png",
+    "Enemies/MageSpiderlingsSpellParticles.png",
+    "Enemies/MageSpiderlingsSubtleGlow.png",
+    "Enemies/MageSpiderlingsReallyGlowy.png",
     "Enemies/NestEntrancePink.png",
     "Enemies/SpinnerPink.png",
     "Enemies/TunnelerPink.png",
@@ -823,6 +827,8 @@ function checkRuntime(state) {
         leash.leash !== true ||
         leash.tether !== 2.9 ||
         leash.power !== 1 ||
+        !leash.enemyTags ||
+        Object.keys(leash.enemyTags).length !== 0 ||
         JSON.stringify(leash.requireAllTagsToEquip) !== JSON.stringify(["Collars"])
     )
         fail("Spiderlings Silk leash does not preserve the BasicLeash carrier contract.");

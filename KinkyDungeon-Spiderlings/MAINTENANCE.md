@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.16 维护说明
+# Spiderlings 0.92.36-test.20 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -9,6 +9,16 @@ test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，
 test.15 加入 Mage Spiderlings。第 5 层或有效安全等级 0 起，合格新普通地图在原生随机人口之前保留一只，前提是合法格和共享移动人口额度足够。自然权重随有效安全等级从 2 增至 8，侵扰地图再加 1，最高 9；巢穴增援默认权重 1，与 Tunneler 相同。法师使用远程攻击和单格符文；玩家 ItemArms 物品的最终素材与脱困设计待定。`KDMapData.SpiderlingsGuaranteedMageState` 保存本图保底结果，重访不补生。实机证据需按本次交付包另行记录。
 
 test.16 补齐符文与丝弹命中时由原生战斗逻辑请求的短暂命中贴图，复用现有符文图形，避免命中后产生缺失资源请求。实机证据需使用 test.16 的最终 ZIP 重新记录。
+
+test.17 限制蛛丝符文仅由 Mage Spiderlings 施放，并将 Spinner Recovery 的蛛丝 leash 排除原生通用 `leashing` 拘束池。test.16 已包含自动 Spinner 布场逻辑：合格新地图只启动遭遇状态；附近至少两只可行动的敌对 Spinner 编组后才规划场地，随后按原生行动预算逐步施工。保底四人小队只有一只 Spinner，因此它本身不保证每图可见场地。
+
+test.18 将保底小队扩为五只：Jumper、WebCaster、Tunneler 各一只，Spinner 两只。整队需要五个合法紧凑格和五个人口名额；两只 Spinner 可以组成布场小组，仍需在后续回合按原生行动预算规划和施工，不会在地图生成时立即出现完整场地。
+
+test.19 修复实机发现的自动施工停滞：原生循环将接管移动的 Spinner 标为闲置并清空未攒满的移动行动点。现在施工移动保留行动点，寻路按原生敌人／玩家占位重新计算，下一步由原生移动处理可交换的单位。test.18 仅为本地诊断包，未提交为测试交付。
+
+test.19 安装包实机验收：KD 5.4.92 和本地只读 KD 5.5.0 均在新普通地图生成完整五只小队，两只队内 Spinner 编组并保存布场方案；等待 120 回合后，两版均记录付费施工动作并产生场地蛛网实体。5.5.0 本地参考仍有原版 TextureAtlas 请求缺失，未将其计入 Mod 资源问题。
+
+test.20 将 Mage 的临时 WebCaster 贴图替换为专用 Mage 本体图。成功放置符文时，在本体上叠加 Spell particles 和 Subtle Glow；成功施放其他法术时叠加 Spell particles 和 Really Glowy；待机及施法失败时只绘制本体。四张源图保留原始像素，绘制时仅对这些图的统一深蓝导出底色做精确色键透明处理。短暂施法图层不进入存档。
 
 ## 当前测试扩展
 

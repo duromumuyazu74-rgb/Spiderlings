@@ -24,6 +24,7 @@
   "KDDefaultAvoidTiles",
   "KDDefaultMapData",
   "KDDraw",
+  "KDDrawEnemySprite",
   "KDDynamicLinkListSurface",
   "KDEnemyCanSignal",
   "KDEnemyCanTalk",

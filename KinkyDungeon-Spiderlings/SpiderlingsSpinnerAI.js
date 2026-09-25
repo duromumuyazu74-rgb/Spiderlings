@@ -755,6 +755,10 @@
         return !decision || ["native-defense", "delegate-native"].includes(decision.category);
     }
 
+    function ownsMovementTurn(enemy) {
+        return ["builder-move", "lure-move", "yield"].includes(turnDecisions.get(decisionKey(enemy))?.category);
+    }
+
     function planWaypoint(encounter, group) {
         const plan = encounter.ai?.plans?.[group.planId],
             composite = encounter.topology?.composites?.[plan?.compositeId];
@@ -883,8 +887,8 @@
                 enemy.y,
                 target.x,
                 target.y,
-                false,
-                false,
+                true,
+                true,
                 false,
                 KinkyDungeonMovableTilesEnemy,
                 undefined,
@@ -920,10 +924,11 @@
         if (distance(enemy, assignment.workCell) > 0) {
             const path = nativePath(enemy, assignment.workCell),
                 next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
-            if (!next || api.SpinnerNativeField.snapshot(next).occupied) {
+            if (!next) {
                 record(group, "wait");
                 return "wait";
             }
+            const previous = { x: enemy.x, y: enemy.y };
             const moved = KinkyDungeonEnemyTryMove(
                 enemy,
                 { x: next.x - enemy.x, y: next.y - enemy.y },
@@ -932,7 +937,7 @@
                 next.y,
                 false,
             );
-            record(group, moved ? "travel" : "wait");
+            record(group, moved && (enemy.x !== previous.x || enemy.y !== previous.y) ? "travel" : "wait");
             return "builder-move";
         }
         if (!api.SpinnerNativeField.accrueConstructionAction(enemy, delta)) {
@@ -1174,6 +1179,7 @@
         preparePositiveTurn,
         handleBeforeMove,
         gateNativePhase,
+        ownsMovementTurn,
         completePositiveTurn,
         restoreAfterLoad,
         auditSavedState,

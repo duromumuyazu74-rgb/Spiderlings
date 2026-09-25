@@ -80,7 +80,10 @@
     if (typeof KinkyDungeonCastSpell === "function") {
         const nativeCast = KinkyDungeonCastSpell;
         KinkyDungeonCastSpell = function (x, y, spell, mage) {
-            if (spell?.name !== RUNE || mage?.Enemy?.name !== MAGE) return nativeCast.apply(this, arguments);
+            if (spell?.name !== RUNE) return nativeCast.apply(this, arguments);
+            // The native caster entry point is also used outside enemy spell selection.
+            // Keep this owned rune unavailable to WebCasters and other callers.
+            if (mage?.Enemy?.name !== MAGE) return { result: "Fail" };
             const cells = activeRunes(mage.id) < LIMIT ? legalCells(mage) : [];
             if (!cells.length) return { result: "Fail" };
             const cell = cells[Math.floor(KDRandom() * cells.length)];

@@ -68,11 +68,12 @@ function fixture() {
         damage: "glue",
         playerEffect: { name: "SpiderlingsMageRuneArms" },
     };
-    const choose = () => {
-        const data = { enemy: mage, spellOptions: ["SpiderlingsMageBolt", spell.name], spellPriority: [] };
+    const chooseFor = (enemy, spells) => {
+        const data = { enemy, spellOptions: [...spells], spellPriority: [] };
         events.enumerateSpellOpts(null, data);
-        return data.spellOptions[0];
+        return data.spellOptions;
     };
+    const choose = () => chooseFor(mage, ["SpiderlingsMageBolt", spell.name])[0];
     const cast = () => c.KinkyDungeonCastSpell(player.x, player.y, spell, mage);
     const step = (entity) => {
         for (const bullet of [...map.Bullets]) {
@@ -85,7 +86,7 @@ function fixture() {
             map.Bullets.splice(map.Bullets.indexOf(bullet), 1);
         }
     };
-    return { c, mage, player, map, calls, spell, choose, cast, step, random: (value) => (random = value) };
+    return { c, mage, player, map, calls, spell, choose, chooseFor, cast, step, random: (value) => (random = value) };
 }
 
 test("rune replaces one native Mage cast, chooses an empty nearby tile and stops at three active runes", () => {
@@ -110,6 +111,19 @@ test("rune replaces one native Mage cast, chooses an empty nearby tile and stops
     assert.equal(r.calls.casts.length, 3);
     r.map.Bullets[0].time = 0;
     assert.equal(r.choose(), r.spell.name, "expired runes free capacity");
+});
+
+test("WebCaster and other non-Mage callers cannot cast the Mage rune", () => {
+    const r = fixture();
+    const webCaster = { id: 11, x: 5, y: 5, hp: 3, faction: "Enemy", Enemy: { name: "WebCaster" } };
+    assert.deepEqual(r.chooseFor(webCaster, ["WebSpray"]), ["WebSpray"]);
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, r.spell, webCaster).result, "Fail");
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, r.spell, undefined).result, "Fail");
+    assert.equal(r.calls.casts.length, 0);
+    assert.equal(r.map.Bullets.length, 0);
+    const spray = { name: "WebSpray" };
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, spray, webCaster).result, "Cast");
+    assert.equal(r.calls.casts[0].spell.name, "WebSpray");
 });
 
 test("one-cell collisions bind hostile Maidforce once and leave allies and neighboring cells alone", () => {
