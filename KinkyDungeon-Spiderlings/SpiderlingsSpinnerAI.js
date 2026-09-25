@@ -116,8 +116,38 @@
         return path.reverse();
     }
 
+    function routeDistances(snapshot) {
+        const passable = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
+            fields = new Map();
+        return (from, to) => {
+            if (!from || !to) return Infinity;
+            const start = cellKey(from),
+                goal = cellKey(to);
+            if (!passable.has(start) || !passable.has(goal)) return Infinity;
+            if (!fields.has(start)) {
+                const field = new Map([[start, 0]]),
+                    queue = [{ x: from.x, y: from.y }];
+                for (let index = 0; index < queue.length; index++) {
+                    const current = queue[index],
+                        steps = field.get(cellKey(current)) + 1;
+                    for (const direction of DIRECTIONS) {
+                        const next = { x: current.x + direction.x, y: current.y + direction.y },
+                            key = cellKey(next);
+                        if (passable.has(key) && !field.has(key)) {
+                            field.set(key, steps);
+                            queue.push(next);
+                        }
+                    }
+                }
+                fields.set(start, field);
+            }
+            return fields.get(start).get(goal) ?? Infinity;
+        };
+    }
+
     function pathDistance(a, b, options = {}) {
         if (typeof options.pathDistance === "function") return options.pathDistance(a, b);
+        if (typeof options.routeDistances === "function") return options.routeDistances(a, b);
         if (options.mapSnapshot) {
             const path = routeOnSnapshot(options.mapSnapshot, a, b);
             return path.length ? path.length - 1 : Infinity;
@@ -242,7 +272,7 @@
         return cells;
     }
 
-    function analyzeLineCandidates(snapshot, group) {
+    function analyzeLineCandidates(snapshot, group, distances = routeDistances(snapshot)) {
         const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
             protectedKeys = new Set(
                 [...(snapshot.entrances || []), ...(snapshot.exits || []), ...(snapshot.protectedCells || [])].map(
@@ -293,7 +323,7 @@
                 exitDistance = nearestDistance(center, snapshot.exits || []),
                 chokeDistance = nearestDistance(center, snapshot.chokes || []),
                 nestDistance = nest ? distance(center, nest) : 99,
-                travelDistance = origin ? pathDistance(origin, center, { mapSnapshot: snapshot }) : 0,
+                travelDistance = origin ? distances(origin, center) : 0,
                 reasons =
                     group.source?.type === "nest"
                         ? {
@@ -320,8 +350,13 @@
                 travelDistance,
             });
         }
+        const seen = new Set();
         return candidates
-            .filter((candidate, index, values) => values.findIndex((other) => other.id === candidate.id) === index)
+            .filter((candidate) => {
+                if (seen.has(candidate.id)) return false;
+                seen.add(candidate.id);
+                return true;
+            })
             .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
 
@@ -502,7 +537,7 @@
         };
     }
 
-    function reserveActions(encounter, snapshot) {
+    function reserveActions(encounter, snapshot, distances = routeDistances(snapshot)) {
         const ai = ensureAI(encounter),
             entities = new Map(KDMapData.Entities.map((entity) => [entity.id, entity]));
         for (const group of Object.values(ai.groups)) {
@@ -536,7 +571,7 @@
                         workCells(field ? taskCell(field, retainedTask) : previous.target, snapshot).some(
                             (cell) => cellKey(cell) === cellKey(retainedWork),
                         ) &&
-                        Number.isFinite(pathDistance(member, retainedWork, { mapSnapshot: snapshot }));
+                        Number.isFinite(distances(member, retainedWork));
                 if (canRetain) {
                     group.assignments[member.id] = field
                         ? {
@@ -557,11 +592,9 @@
                         .filter((cell) => !reservedWork.has(cellKey(cell)))
                         .sort(
                             (a, b) =>
-                                pathDistance(member, a, { mapSnapshot: snapshot }) -
-                                    pathDistance(member, b, { mapSnapshot: snapshot }) ||
-                                cellKey(a).localeCompare(cellKey(b)),
+                                distances(member, a) - distances(member, b) || cellKey(a).localeCompare(cellKey(b)),
                         )[0];
-                    if (!work || !Number.isFinite(pathDistance(member, work, { mapSnapshot: snapshot }))) continue;
+                    if (!work || !Number.isFinite(distances(member, work))) continue;
                     group.assignments[member.id] = assignmentFromAction(action, work);
                     reservedTasks.add(assignmentKey(action));
                     reservedWork.add(cellKey(work));
@@ -575,15 +608,14 @@
                                 .filter((cell) => !reservedWork.has(cellKey(cell)))
                                 .sort(
                                     (a, b) =>
-                                        pathDistance(member, a, { mapSnapshot: snapshot }) -
-                                            pathDistance(member, b, { mapSnapshot: snapshot }) ||
+                                        distances(member, a) - distances(member, b) ||
                                         cellKey(a).localeCompare(cellKey(b)),
                                 )[0];
                         return {
                             task,
                             target,
                             work,
-                            steps: work ? pathDistance(member, work, { mapSnapshot: snapshot }) : Infinity,
+                            steps: work ? distances(member, work) : Infinity,
                         };
                     })
                     .filter((option) => option.work && Number.isFinite(option.steps))
@@ -618,7 +650,7 @@
         });
     }
 
-    function invalidatePlan(encounter, group, reason, snapshot) {
+    function invalidatePlan(encounter, group, reason, snapshot, distances = routeDistances(snapshot)) {
         const ai = ensureAI(encounter),
             plan = ai.plans[group.planId];
         if (!plan) return;
@@ -632,7 +664,7 @@
         const members = group.memberIds
                 .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity)),
-            candidates = analyzeLineCandidates(snapshot, { ...group, members });
+            candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances);
         ai.candidates = candidates;
         if (members.length < 2) return;
         const replacement = selectSavedPlan(ai, group, candidates);
@@ -681,18 +713,19 @@
                 mapIdentity: input.mapIdentity ?? mapIdentity(),
             }),
             snapshot = input.mapSnapshot || nativeMapSnapshot(),
+            distances = routeDistances(snapshot),
             entities = input.entities || KDMapData.Entities;
-        auditGroups(ai, entities, { ...input, mapSnapshot: snapshot });
+        auditGroups(ai, entities, { ...input, mapSnapshot: snapshot, routeDistances: distances });
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             const current = ai.plans[group.planId];
             if (current && current.kind !== "enclosure" && !staticCandidateLegal(current, snapshot))
-                invalidatePlan(encounter, group, "terrain", snapshot);
+                invalidatePlan(encounter, group, "terrain", snapshot, distances);
             if (group.planId) continue;
             const members = group.memberIds
                     .map((id) => entities.find((entity) => entity.id === id))
                     .filter((entity) => eligibleSpinner(entity, input)),
-                candidates = analyzeLineCandidates(snapshot, { ...group, members });
+                candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances);
             ai.candidates = candidates;
             if (members.length < 2) continue;
             const plan = selectSavedPlan(ai, group, candidates);
@@ -711,7 +744,7 @@
                     api.SpinnerNativeField.setOwners(fieldId, group.memberIds);
             auditEngagement(encounter, group);
         }
-        reserveActions(encounter, snapshot);
+        reserveActions(encounter, snapshot, distances);
         let replacedApproach = false;
         for (const group of Object.values(ai.groups)) {
             const plan = ai.plans[group.planId],
@@ -726,11 +759,11 @@
                 pendingTasks(field, true).length > 0 &&
                 Object.keys(group.assignments).length === 0
             ) {
-                invalidatePlan(encounter, group, "approach", snapshot);
+                invalidatePlan(encounter, group, "approach", snapshot, distances);
                 replacedApproach = true;
             }
         }
-        if (replacedApproach) reserveActions(encounter, snapshot);
+        if (replacedApproach) reserveActions(encounter, snapshot, distances);
         return ai;
     }
 
