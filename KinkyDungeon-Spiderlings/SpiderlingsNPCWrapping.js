@@ -112,7 +112,14 @@
     }
 
     function helpless(target) {
-        return typeof KDHelpless === "function" && KDHelpless(target) && api.NPCAdhesion?.hasAttributedSilk(target);
+        return !!(
+            target?.Enemy &&
+            !target.player &&
+            target.hp > 0 &&
+            typeof KDHelpless === "function" &&
+            KDHelpless(target) &&
+            api.NPCAdhesion?.hasAttributedSilk(target)
+        );
     }
 
     function preemptNativeCapture() {
@@ -168,9 +175,9 @@
         audit();
         const candidates = [];
         const wrappable = (target) => fullPin(target) || helpless(target);
-        if (nativeTarget && wrappable(nativeTarget) && targetEligible(nativeTarget)) candidates.push(nativeTarget);
+        if (targetEligible(nativeTarget) && wrappable(nativeTarget)) candidates.push(nativeTarget);
         for (const target of entities())
-            if (target !== nativeTarget && wrappable(target) && targetEligible(target)) candidates.push(target);
+            if (target !== nativeTarget && targetEligible(target) && wrappable(target)) candidates.push(target);
         candidates.sort((a, b) => {
             if (a === nativeTarget) return -1;
             if (b === nativeTarget) return 1;
