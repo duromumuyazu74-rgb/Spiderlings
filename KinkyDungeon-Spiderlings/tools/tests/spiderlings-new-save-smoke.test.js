@@ -50,6 +50,7 @@ const scripts = [
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsMageSpells.js",
     "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",

@@ -182,7 +182,11 @@
         const source = data.attacker || incoming.spiderlingsSource;
         // The binding call already owns the bullet's hit bookkeeping. The
         // second component has no bullet, so it neither skips nor reopens it.
-        const contact = { ...damageInfo(incoming.spiderlingsAttack), flags: [CONTACT_FLAG] };
+        const contact = {
+            ...damageInfo(incoming.spiderlingsAttack),
+            flags: [CONTACT_FLAG],
+            spiderlingsAttack: incoming.spiderlingsAttack,
+        };
         incoming.spiderlingsDamageDealt = KinkyDungeonDamageEnemy(
             data.enemy,
             contact,

@@ -29,6 +29,7 @@ const runtimeScripts = [
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsMageSpells.js",
     "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
@@ -1506,6 +1507,11 @@ function checkRouting(state) {
         const spell = spellByName.get(spellName);
         if (spell?.onhit !== "" || !exists(`Bullets/${spellName}Hit.png`))
             fail(`${spellName} must package its native hit visual.`);
+    }
+    for (const spellName of ["SpiderlingsMageHex", "SpiderlingsMageCollapse"]) {
+        const spell = spellByName.get(spellName);
+        if (spell?.type !== "inert" || spell.noSprite !== true)
+            fail(`${spellName} must leave damage and drawing to the saved Mage spell lifecycle.`);
     }
     const dash = spellByName.get("SpiderlingsJumperDash");
     const dashApi = state.context.Spiderlings && state.context.Spiderlings.JumperDash;

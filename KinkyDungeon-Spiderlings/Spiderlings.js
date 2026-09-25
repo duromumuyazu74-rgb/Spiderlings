@@ -372,7 +372,7 @@ SPIDERLINGS.addEnemies([
         movePoints: 1.5,
         attackPoints: 3,
         attack: "Spell",
-        spells: ["SpiderlingsMageBolt", "SpiderlingsMageRune"],
+        spells: ["SpiderlingsMageBolt", "SpiderlingsMageRune", "SpiderlingsMageHex", "SpiderlingsMageCollapse"],
         spellCooldownMult: 1,
         spellCooldownMod: 0,
         castWhileMoving: true,
@@ -599,6 +599,48 @@ SPIDERLINGS.addSpells([
         size: 1,
         damage: "glue",
         playerEffect: { name: "Damage", power: 0.5 },
+    },
+    {
+        enemySpell: true,
+        name: "SpiderlingsMageHex",
+        noSprite: true,
+        noCastMsg: false,
+        color: "#a77bdc",
+        school: "Latex",
+        manacost: 4,
+        components: ["Arms"],
+        level: 1,
+        type: "inert",
+        castRange: 6,
+        minRange: 0,
+        range: 6,
+        size: 1,
+        delay: 1,
+        onhit: "",
+        power: 0,
+        damage: "inert",
+        noTerrainHit: true,
+    },
+    {
+        enemySpell: true,
+        name: "SpiderlingsMageCollapse",
+        noSprite: true,
+        noCastMsg: false,
+        color: "#a77bdc",
+        school: "Latex",
+        manacost: 4,
+        components: ["Arms"],
+        level: 1,
+        type: "inert",
+        castRange: 6,
+        minRange: 0,
+        range: 6,
+        size: 1,
+        delay: 1,
+        onhit: "",
+        power: 0,
+        damage: "inert",
+        noTerrainHit: true,
     },
     //Jumper Dash - inert transport into a source-owned, two-player-action Dash lifecycle.
     // Jumper 跃击：原生法术只触发独立生命周期；两次完整玩家行动后落地结算，推进蛛丝才消耗 Jumper。
@@ -858,6 +900,10 @@ SPIDERLINGS.addSpells([
 //Enemy Spell Text--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Mage Silk Bolt");
 addTextKey("KinkyDungeonSpellSpiderlingsMageRune", "Silken Rune");
+addTextKey("KinkyDungeonSpellSpiderlingsMageHex", "Shield-Eating Sigil");
+addTextKey("KinkyDungeonSpellSpiderlingsMageCollapse", "Thousand-Silk Collapse");
+addTextKey("KinkyDungeonSpellCastSpiderlingsMageHex", "The Spiderling Mage traces a wide sigil across the ground.");
+addTextKey("KinkyDungeonSpellCastSpiderlingsMageCollapse", "Silk gathers at the edge of a broad spell circle.");
 addTextKey("KinkyDungeonSpellCastSpiderlingsMageRune", "The Spiderling Mage marks a nearby tile with a glowing rune.");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageBolt",
