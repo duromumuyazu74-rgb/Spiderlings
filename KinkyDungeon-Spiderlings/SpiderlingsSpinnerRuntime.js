@@ -108,7 +108,7 @@
             api.NPCWrapping?.audit();
         });
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
-            api.WebMobility?.invalidateNavigation();
+            api.WebMobility?.invalidateNavigation(true);
             api.SpinnerAI?.restoreAfterLoad();
             api.SpinnerNativeField.reconcile();
             api.SpinnerRecovery?.afterLoad();
