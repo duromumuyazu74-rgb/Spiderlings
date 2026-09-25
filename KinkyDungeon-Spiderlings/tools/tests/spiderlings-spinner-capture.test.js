@@ -50,6 +50,64 @@ test("drawing observes schema-3 membership without mutating capture authority", 
     assert.deepEqual(Array.from(r.api.state().sourceIds), [1, 2]);
 });
 
+test("normal capture strands use the supplied tether art while pink awaits an artist export", () => {
+    const r = contestRuntime();
+    r.start();
+    const paths = [];
+    r.c.KDDraw = (_board, _sprites, _id, image) => {
+        paths.push(image);
+        return {};
+    };
+    r.c.KinkyDungeonRootDirectory = "Game/";
+    r.c.Spiderlings.getSetting = () => false;
+    drawCapture(r);
+    assert.deepEqual(paths, ["Game/Bullets/SpiderlingsPlayerTether.png"]);
+    paths.length = 0;
+    r.c.Spiderlings.getSetting = () => true;
+    drawCapture(r);
+    assert.deepEqual(paths, []);
+});
+
+test("the Spinner training boundary uses corrected Normal pieces and keeps Pink on its prior lines", () => {
+    const r = contestRuntime();
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerField.js"), "utf8"), r.c);
+    const traps = [
+        { x: 3, y: 3, placed: true },
+        { x: 9, y: 3, placed: true },
+        { x: 9, y: 9, placed: true },
+        { x: 3, y: 9, placed: true },
+    ];
+    r.c.KDMapData.RoomType = r.c.Spiderlings.SpinnerField.ROOM;
+    r.c.KDMapData.SpiderlingsSpinnerField = {
+        phase: "ready",
+        traps,
+        links: traps.map((_trap, index) => ({ a: index, b: (index + 1) % traps.length, built: true })),
+        nodes: [],
+    };
+    const paths = [];
+    r.c.KDDraw = (_board, _sprites, _id, image) => {
+        paths.push(image);
+        return {};
+    };
+    r.c.KinkyDungeonRootDirectory = "Game/";
+    r.c.Spiderlings.getSetting = () => false;
+    drawCapture(r);
+    r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerField({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    assert.deepEqual(
+        new Set(paths),
+        new Set([
+            "Game/Bullets/SpiderlingsSpinnerTrapSide.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapCorner.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapTop.png",
+        ]),
+    );
+    paths.length = 0;
+    r.c.Spiderlings.getSetting = () => true;
+    drawCapture(r);
+    r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerField({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    assert.deepEqual(paths, []);
+});
+
 test("drawing an invalid source cannot mutate capture before a native audit", () => {
     const r = contestRuntime();
     r.start();

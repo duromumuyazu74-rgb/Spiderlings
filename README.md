@@ -19,10 +19,13 @@ Use the attached installable ZIP. GitHub's automatic Source code archives contai
 | [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)                  | `0.92.38`         | Formal release                                                                  |
 | [Infestation PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)        | `0.92.36-test.24` | Infestation playtest with active Spinner construction and nest defense          |
 | [Hood and rune Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84) | `0.92.36-test.26` | Optional Spiderlings Hood, delayed 3-by-3 Mage runes, and no Mage arm restraint |
+| [Enemy Webs Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86)    | `0.92.36-test.27` | Correct Normal Spinner trap borders and player tether art; Pink art pending     |
 
 This test package covers the three-nest Infestation redesign and does not include the separate Nest prison experiment. Install only one Spiderlings package at a time. The Nest prison experiment uses its own `prison.alpha.N` version series.
 
 The test branch retains its `0.92.36` baseline and includes the compatibility fixes carried into formal `0.92.38`. It adds experimental Spinner capture and Mage Spiderlings. Mages use a damaging silk bolt and visible rune traps. In test.26, a rune shows a glowing spider icon while being placed, then warns for one turn over a 3-by-3 area after triggering. Targets still inside receive silk binding. On a newly generated ordinary map, one Mage appears from floor 5 or effective security 0 when there is a legal cell and room under the Spiderling population cap. The Mage enemy sprite has dedicated artwork. The separate Mage arm restraint is removed. The Spiderlings Hood setting is on by default; turning it off prevents the owned Hood even without the native NoHood perk, while Cocoon and Silken Awakening remain available. Only formal versions have GitHub Releases at present; build test packages locally using the [development guide](docs/DEVELOPMENT.md).
+
+Test.27 uses T_Swizzle's corrected Normal web border art in the Spinner training field and Normal tether art during player capture. Pink mode retains the existing line drawings until distinct artist Pink files are available. The four WebCaster projectile effects already use complete Normal/Pink pairs.
 
 ## Development
 

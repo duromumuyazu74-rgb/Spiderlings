@@ -6,6 +6,8 @@ The game's source is not under MIT or GPL. Its [official README](https://github.
 
 Original Spiderlings Mod author: **anthropocentricity**. Revival and maintenance: **Chlorlne**. Credited artwork: **T_Swizzle**. The Spiderlings artwork listed in [LICENSE.md](LICENSE.md) is offered under CC BY-NC 4.0. This does not change the terms of any other contributor's work.
 
+`Bullets/SpiderlingsSpinnerTrapSide.png`, `SpiderlingsSpinnerTrapCorner.png`, `SpiderlingsSpinnerTrapTop.png`, and `SpiderlingsPlayerTether.png` were exported from T_Swizzle's `Enemy Webs.psd` Normal artwork. The red guide layers were excluded from the corner and top exports; the gray artwork was not recolored. The source PSD remains a local artwork input and is not included in the Mod ZIP.
+
 `Enemies/MageSpiderlings.png` is an unchanged copy of the existing T_Swizzle `Enemies/WebCaster.png`, used as temporary Mage artwork. The credit and CC BY-NC 4.0 terms above apply to both files.
 
 `Bullets/SpiderlingsMageRuneHit.png` and `Bullets/SpiderlingsMageBoltHit.png` are byte-for-byte copies of the existing `Bullets/SpiderlingsMageRune.png` glyph for KD's native hit effects; they add no separate external artwork source.

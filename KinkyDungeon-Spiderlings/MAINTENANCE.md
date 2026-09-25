@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.26 维护说明
+# Spiderlings 0.92.36-test.27 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -13,6 +13,8 @@ test.16 补齐符文与丝弹命中时由原生战斗逻辑请求的短暂命中
 test.25 增加独立的自有 Hood 开关，并尊重原生 NoHood Perk；关闭后下一游戏回合解除已穿戴的自有 Hood，结茧和满蛛丝开局改用七件 Lv3 门槛。Mage 敌人贴图已采用专用素材，手臂拘束仍无专用模型。`T's Enemies (12).zip` 中的两张 72×72 PNG 分别采用为符文底图和放置时的蜘蛛图标；命中图沿用新底图。放置阶段显示发光图标，布置完成后显示底图；踩中后发光并警示 3×3 区域，下一回合按当时位置结算。玩家调用普通 Webbing 进阶，敌对 Maidforce 通过原生 Slime、护盾和抗性结算。Webbinder 不在本次包中。
 
 test.26 移除 Mage 手臂拘束及其文案。丝弹通过原生 `Damage` 效果对玩家造成 0.5 点胶属性伤害，不再穿戴额外物品；对敌对 Maidforce 的原生伤害仍为 4 点。Mage 仍只选择丝弹或符文，未启用旧版四种召唤法术。此测试版不兼容已装备旧 Mage 手臂拘束的存档。
+
+test.27 从 T_Swizzle 的 `Enemy Webs.psd` 提取 Spinner 陷阱的侧边、转角、上边框以及玩家牵引线的 72×72 Normal 图。转角和上边框只取灰色成稿图层，不带红色草稿线。训练场中已建成的边界和 Spinner 捕获玩家时的牵引线使用这些图；若贴图尚未加载或玩家选择粉色蛛丝，则保留原有线条绘制。四组 WebCaster 弹体效果继续使用已有的 Normal/Pink 成对贴图。PSD 中 Spinner 陷阱三件和玩家牵引线的 Pink 组仍是灰色副本，等待画师提供粉色版；`Web Caster Webs v2` 的四个 Pink 组也不是粉色，尚未替换现用弹体贴图。
 
 ## 当前测试扩展
 
