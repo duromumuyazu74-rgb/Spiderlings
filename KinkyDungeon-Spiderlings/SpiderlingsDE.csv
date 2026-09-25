@@ -127,9 +127,9 @@ KDMapMod_SpiderlingsInfestation,Spinnenbefall
 KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
 KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
 KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
-SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/5
-SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/5)
-SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
+SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/TARGET
+SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
+SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Rosa Spinnweben (aus: Original)
 KinkyDungeonSpiderlingsWebbingInterwoven,Die sich kreuzenden Fäden ziehen sich zu und fesseln einen weiteren Teil deines Körpers.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Du schneidest in TargetRestraint. Klebrige Fäden reißen und der Schnitt wird tiefer.

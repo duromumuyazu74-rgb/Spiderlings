@@ -38,6 +38,17 @@
         return { damage: CONFIG[kind].damage, type: "tickle" };
     }
 
+    function pressureNPCShield(target) {
+        if (!(target?.shield > 0) || typeof KinkyDungeonApplyBuffToEntity !== "function") return;
+        const regen = typeof KDGetShieldRegen === "function" ? KDGetShieldRegen(target) : 0;
+        KinkyDungeonApplyBuffToEntity(target, {
+            id: "SpiderlingsWebShieldPressure",
+            type: "ShieldDrain",
+            power: Math.max(2, regen + 2),
+            duration: 2,
+        });
+    }
+
     function damagePlayer(kind) {
         if (typeof KinkyDungeonDealDamage === "function") return KinkyDungeonDealDamage(damageInfo(kind));
     }
@@ -182,6 +193,7 @@
             source,
             data.Delay,
         );
+        pressureNPCShield(data.enemy);
     });
 
     function hitNPC(source, target, kind) {
@@ -347,5 +359,14 @@
             cooperationClock = 0;
         });
 
-    api.Combat = Object.freeze({ CONFIG, CROSSFIRE, damageInfo, damagePlayer, hitNPC, applySilkBinding, eligible });
+    api.Combat = Object.freeze({
+        CONFIG,
+        CROSSFIRE,
+        damageInfo,
+        damagePlayer,
+        hitNPC,
+        applySilkBinding,
+        pressureNPCShield,
+        eligible,
+    });
 })();

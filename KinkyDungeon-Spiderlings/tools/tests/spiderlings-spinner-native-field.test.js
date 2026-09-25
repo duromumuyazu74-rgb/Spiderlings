@@ -194,6 +194,20 @@ test("anchor snare is once per target and never creates capture or restraint sta
     assert.equal(c.KDGameData.SpiderlingsSpinnerCapture, undefined);
 });
 
+test("a hostile shielded NPC touching an owned ground trap receives shield pressure", () => {
+    const r = runtime();
+    buildAll(r);
+    const c = r.context;
+    const pressured = [];
+    c.Spiderlings.Combat = { pressureNPCShield: (enemy) => pressured.push(enemy.id) };
+    const maid = { id: 71, x: 5, y: 3, hp: 8, shield: 8, Enemy: { name: "MaidforceMini", tags: {} } };
+    c.KDMapData.Entities.push(maid);
+    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3), true);
+    assert.deepEqual(pressured, [71]);
+    c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3);
+    assert.deepEqual(pressured, [71]);
+});
+
 test("runtime movement events apply Snaring on voluntary, forced, and NPC anchor entry", () => {
     for (const entry of [
         { event: "playerMove", willing: true, npc: false },
@@ -320,6 +334,36 @@ test("pinned regular room meets the two-worker native target and keeps useful sc
         [15, 6, 4],
     );
     assert.ok(arrival.every((measurement) => measurement.blocked.length === 0));
+});
+
+test("a sealed owned web field keeps pressure on a shielded NPC inside", () => {
+    const r = runtime(),
+        c = r.context;
+    const workers = [1, 2].map((id) => ({
+        id,
+        x: 10 + id,
+        y: 9 + id,
+        hp: 10,
+        Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+    }));
+    c.KDMapData.Entities.push(...workers);
+    const encounter = c.Spiderlings.SpinnerScenarios.setupNested({ ownerIds: workers.map((e) => e.id) }).encounter;
+    for (const anchor of encounter.topology.anchors) anchor.built = true;
+    for (const link of encounter.topology.links) {
+        link.builtCells = JSON.parse(JSON.stringify(link.plannedCells));
+        link.connected = true;
+    }
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    const core = Object.values(encounter.topology.composites)[0].core;
+    const maid = { id: 70, x: core.x, y: core.y, hp: 8, shield: 8, Enemy: { name: "MaidforceMini", tags: {} } };
+    c.KDMapData.Entities.push(maid);
+    const pressured = [];
+    c.Spiderlings.Combat = { pressureNPCShield: (enemy) => pressured.push(enemy.id) };
+    c.Spiderlings.SpinnerNativeField.tick(1);
+    assert.deepEqual(pressured, [70]);
+    maid.shield = 0;
+    c.Spiderlings.SpinnerNativeField.tick(1);
+    assert.deepEqual(pressured, [70]);
 });
 
 test("native enclosure reload deduplicates partial, sealed, and breached projections", () => {
