@@ -228,6 +228,42 @@ test("a lone Spinner plans and pays for a 3x3 outer field before expanding", () 
     assert.ok(graph.actionLog.filter((action) => action.fieldId === plan.fieldId).length >= 9);
 });
 
+test("separate Spinner groups perform paid work on their own enclosures", () => {
+    const workers = [spinner(1, 3, 3), spinner(2, 15, 8)],
+        r = runtime(workers),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        groups = Object.values(ai.groups);
+    assert.equal(groups.length, 2);
+    const fieldByWorker = new Map(groups.map((group) => [group.memberIds[0], ai.plans[group.planId].fieldId]));
+    const wrongAssignment = Object.values(groups[0].assignments)[0];
+    assert.ok(wrongAssignment);
+    groups[1].assignments[workers[1].id] = plain(wrongAssignment);
+    start(r, snapshot);
+    assert.equal(groups[1].assignments[workers[1].id]?.fieldId, fieldByWorker.get(workers[1].id));
+    for (let turn = 0; turn < 30; turn++) {
+        start(r, snapshot);
+        for (const group of groups)
+            for (const assignment of Object.values(group.assignments))
+                assert.ok(ai.plans[group.planId].fieldIds.includes(assignment.fieldId));
+        for (const worker of workers) r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    for (const [workerId, fieldId] of fieldByWorker) {
+        assert.ok(
+            graph.actionLog.some((action) => action.fieldId === fieldId),
+            `${workerId}: ${fieldId}`,
+        );
+        assert.ok(
+            graph.actionLog.every(
+                (action) => action.fieldId !== fieldId || graph.fieldOwners[fieldId].includes(workerId),
+            ),
+        );
+    }
+});
+
 test("an unavailable site is retried after geometry changes without idle rerolls", () => {
     const worker = spinner(1, 8, 6),
         r = runtime([worker]),
@@ -237,7 +273,10 @@ test("an unavailable site is retried after geometry changes without idle rerolls
     const ai = start(r, snapshot),
         group = Object.values(ai.groups)[0];
     assert.equal(group.planId, null);
-    assert.equal(ai.plannerWorkLast.candidateCells, snapshot.cells.length);
+    assert.equal(
+        ai.plannerWorkLast.candidateCells,
+        snapshot.cells.filter((cell) => Math.max(Math.abs(cell.x - worker.x), Math.abs(cell.y - worker.y)) <= 6).length,
+    );
     start(r, snapshot);
     assert.equal(ai.plannerWorkLast.candidateCells, 0);
     for (const cell of snapshot.cells)

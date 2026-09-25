@@ -87,9 +87,10 @@
         return target.player ? KDHostile(member) : KDHostile(member, target);
     }
 
-    function routeOnSnapshot(snapshot, from, to, blocked = new Set()) {
+    function routeOnSnapshot(snapshot, from, to, blocked = new Set(), passable, neighbors) {
         if (!from || !to) return [];
-        const cells = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
+        const cells =
+                passable || new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             start = cellKey(from),
             goal = cellKey(to),
             queue = [start],
@@ -98,6 +99,16 @@
         for (let index = 0; index < queue.length; index++) {
             const current = queue[index];
             if (current === goal) break;
+            if (neighbors) {
+                for (const neighbor of neighbors.get(current) || []) {
+                    if (neighbor.corners?.some((corner) => blocked.has(corner))) continue;
+                    if (!blocked.has(neighbor.key) && !parent.has(neighbor.key)) {
+                        parent.set(neighbor.key, current);
+                        queue.push(neighbor.key);
+                    }
+                }
+                continue;
+            }
             const [x, y] = current.split(",").map(Number);
             for (const direction of DIRECTIONS) {
                 const next = `${x + direction.x},${y + direction.y}`;
@@ -124,7 +135,17 @@
 
     function routeDistances(snapshot, work) {
         const passable = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
-            fields = new Map();
+            fields = new Map(),
+            neighbors = new Map();
+        for (const key of passable) {
+            const [x, y] = key.split(",").map(Number);
+            neighbors.set(
+                key,
+                DIRECTIONS.map((direction) => `${x + direction.x},${y + direction.y}`).filter((next) =>
+                    passable.has(next),
+                ),
+            );
+        }
         return (from, to) => {
             if (!from || !to) return Infinity;
             const start = cellKey(from),
@@ -133,15 +154,13 @@
             if (!fields.has(start)) {
                 if (work) work.distanceFieldBuilds++;
                 const field = new Map([[start, 0]]),
-                    queue = [{ x: from.x, y: from.y }];
+                    queue = [start];
                 for (let index = 0; index < queue.length; index++) {
                     const current = queue[index],
-                        steps = field.get(cellKey(current)) + 1;
-                    for (const direction of DIRECTIONS) {
-                        const next = { x: current.x + direction.x, y: current.y + direction.y },
-                            key = cellKey(next);
-                        if (passable.has(key) && !field.has(key)) {
-                            field.set(key, steps);
+                        steps = field.get(current) + 1;
+                    for (const next of neighbors.get(current)) {
+                        if (!field.has(next)) {
+                            field.set(next, steps);
                             queue.push(next);
                         }
                     }
@@ -419,7 +438,12 @@
         radius,
         work,
         byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
+        passable = new Set((snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
+        cache,
+        neighbors,
     ) {
+        const cacheKey = `${cellKey(center)}:${radius}`;
+        if (cache?.has(cacheKey)) return cache.get(cacheKey) || undefined;
         const blocked = new Set(ringCells(center, radius).map(cellKey)),
             origins = [snapshot.entrances?.[0], snapshot.exits?.[0]].filter(Boolean);
         for (const direction of DIRECTIONS.slice(0, 4)) {
@@ -430,19 +454,22 @@
             if (
                 origins.every((origin) => {
                     if (work) work.routeChecks++;
-                    return routeOnSnapshot(snapshot, origin, exterior, blocked).length > 0;
+                    return routeOnSnapshot(snapshot, origin, exterior, blocked, passable, neighbors).length > 0;
                 })
-            )
+            ) {
+                cache?.set(cacheKey, gate);
                 return gate;
+            }
         }
+        cache?.set(cacheKey, null);
         return undefined;
     }
 
-    function analyzeEnclosureCandidates(snapshot, group, distances = routeDistances(snapshot), work) {
+    function analyzeEnclosureCandidates(snapshot, group, distances = routeDistances(snapshot), work, geometry) {
         // A supplied line catalogue is an explicit line-only scenario (used by authored fixtures).
         if (Object.hasOwn(snapshot, "candidateLines")) return [];
         const origin = (group.members || group.memberPositions || [])[0],
-            byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+            byKey = geometry?.byKey || new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
             occupied = new Set([
                 ...KDMapData.Entities.filter(
                     (entity) =>
@@ -452,52 +479,68 @@
                 ).map(cellKey),
                 cellKey(KinkyDungeonPlayerEntity),
             ]),
-            route = routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]),
-            routeKeys = new Set(route.map(cellKey)),
+            routeKeys =
+                geometry?.routeKeys ||
+                new Set(routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey)),
+            passable =
+                geometry?.passable ||
+                new Set((snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             nests = snapshot.nests || [],
             candidates = [];
         if (!origin) return candidates;
-        for (const center of snapshot.cells || []) {
-            if (work) {
-                work.candidateCells++;
-                work.candidatesExamined++;
-            }
-            if (distance(origin, center) > 6 || !Number.isFinite(distances(origin, center))) continue;
-            const boundary = ringCells(center, 1),
-                cells = [...boundary, center],
-                legal = cells.every((cell) => {
-                    const tile = byKey.get(cellKey(cell));
-                    return (
-                        tile?.floor &&
-                        !tile.locked &&
-                        !tile.protected &&
-                        (cellKey(cell) === cellKey(center) || !occupied.has(cellKey(cell)))
-                    );
+        for (let y = origin.y - 6; y <= origin.y + 6; y++)
+            for (let x = origin.x - 6; x <= origin.x + 6; x++) {
+                const center = byKey.get(`${x},${y}`);
+                if (!center) continue;
+                if (work) {
+                    work.candidateCells++;
+                    work.candidatesExamined++;
+                }
+                if (distance(origin, center) > 6 || !Number.isFinite(distances(origin, center))) continue;
+                const boundary = ringCells(center, 1),
+                    cells = [...boundary, center],
+                    legal = cells.every((cell) => {
+                        const tile = byKey.get(cellKey(cell));
+                        return (
+                            tile?.floor &&
+                            !tile.locked &&
+                            !tile.protected &&
+                            (cellKey(cell) === cellKey(center) || !occupied.has(cellKey(cell)))
+                        );
+                    });
+                if (!legal) continue;
+                const gate = reachableGate(
+                    snapshot,
+                    center,
+                    1,
+                    work,
+                    byKey,
+                    passable,
+                    geometry?.gateCache,
+                    geometry?.neighbors,
+                );
+                if (!gate) continue;
+                const nest =
+                        group.source?.type === "nest"
+                            ? nests.find((candidate) => candidate.id === group.source.nestId)
+                            : undefined,
+                    routeHits = cells.filter((cell) => routeKeys.has(cellKey(cell))).length,
+                    travelDistance = distances(origin, gate),
+                    nestDistance = nest ? distance(center, nest) : 99,
+                    score = 300 + routeHits * 12 + Math.max(0, 12 - nestDistance * 2) - travelDistance * 2;
+                if (!Number.isFinite(travelDistance)) continue;
+                candidates.push({
+                    id: `enclosure:${cellKey(center)}`,
+                    type: "enclosure",
+                    center: { x: center.x, y: center.y },
+                    anchors: rectangle(center, 1),
+                    gate,
+                    cells,
+                    score,
+                    travelDistance,
+                    reasons: { route: routeHits, nest: nestDistance },
                 });
-            if (!legal) continue;
-            const gate = reachableGate(snapshot, center, 1, work, byKey);
-            if (!gate) continue;
-            const nest =
-                    group.source?.type === "nest"
-                        ? nests.find((candidate) => candidate.id === group.source.nestId)
-                        : undefined,
-                routeHits = cells.filter((cell) => routeKeys.has(cellKey(cell))).length,
-                travelDistance = distances(origin, gate),
-                nestDistance = nest ? distance(center, nest) : 99,
-                score = 300 + routeHits * 12 + Math.max(0, 12 - nestDistance * 2) - travelDistance * 2;
-            if (!Number.isFinite(travelDistance)) continue;
-            candidates.push({
-                id: `enclosure:${cellKey(center)}`,
-                type: "enclosure",
-                center: { x: center.x, y: center.y },
-                anchors: rectangle(center, 1),
-                gate,
-                cells,
-                score,
-                travelDistance,
-                reasons: { route: routeHits, nest: nestDistance },
-            });
-        }
+            }
         return candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
 
@@ -668,9 +711,15 @@
         );
     }
 
-    function assignmentPending(encounter, assignment) {
+    function assignmentPending(encounter, assignment, ownerId) {
         const field = assignmentField(encounter, assignment);
         if (!field || !assignment?.target || !assignment?.workCell) return false;
+        const graph = encounter?.topology;
+        if (
+            graph?.fields?.[assignment.fieldId] &&
+            !(graph.fieldOwners?.[assignment.fieldId] || graph.owners).includes(ownerId)
+        )
+            return false;
         if (assignment.anchorId) {
             const anchor = field.anchors.find((candidate) => candidate.id === assignment.anchorId);
             if (!anchor) return false;
@@ -724,7 +773,7 @@
                         previous &&
                         (field
                             ? tasks.find((task) => task.key === previous.key)
-                            : assignmentPending(encounter, previous)),
+                            : assignmentPending(encounter, previous, member.id)),
                     retainedWork = previous?.workCell,
                     canRetain =
                         retainedTask &&
@@ -845,6 +894,7 @@
         distances = routeDistances(snapshot),
         lines = lineCatalogue(snapshot),
         work,
+        enclosureGeometry,
     ) {
         const ai = ensureAI(encounter),
             plan = ai.plans[group.planId];
@@ -862,7 +912,13 @@
         const members = group.memberIds
                 .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity)),
-            enclosures = analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work),
+            enclosures = analyzeEnclosureCandidates(
+                snapshot,
+                { ...group, members },
+                distances,
+                work,
+                enclosureGeometry?.(),
+            ),
             candidates = enclosures.length
                 ? enclosures
                 : analyzeLineCandidates(snapshot, { ...group, members }, distances, lines, work);
@@ -1008,7 +1064,7 @@
             },
             distances = routeDistances(snapshot, work),
             entities = input.entities || KDMapData.Entities;
-        let lines;
+        let lines, enclosureGeometry;
         // Share static geometry only within this turn; construction may change the next map snapshot.
         const signature = geometrySignature(snapshot),
             currentLines = () => {
@@ -1017,6 +1073,45 @@
                     lines = lineCatalogue(snapshot);
                 }
                 return lines;
+            },
+            currentEnclosureGeometry = () => {
+                if (!enclosureGeometry) {
+                    const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+                        passable = new Set(
+                            (snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey),
+                        ),
+                        neighbors = new Map();
+                    for (const key of passable) {
+                        const [x, y] = key.split(",").map(Number);
+                        neighbors.set(
+                            key,
+                            DIRECTIONS.flatMap((direction) => {
+                                const next = `${x + direction.x},${y + direction.y}`;
+                                return passable.has(next)
+                                    ? [
+                                          {
+                                              key: next,
+                                              corners:
+                                                  direction.x && direction.y
+                                                      ? [`${x + direction.x},${y}`, `${x},${y + direction.y}`]
+                                                      : undefined,
+                                          },
+                                      ]
+                                    : [];
+                            }),
+                        );
+                    }
+                    enclosureGeometry = {
+                        byKey,
+                        passable,
+                        neighbors,
+                        routeKeys: new Set(
+                            routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey),
+                        ),
+                        gateCache: new Map(),
+                    };
+                }
+                return enclosureGeometry;
             };
         if (ai.geometrySignature && ai.geometrySignature !== signature) {
             ai.invalidCandidateIds = [];
@@ -1028,14 +1123,29 @@
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             const current = ai.plans[group.planId];
             if (current && !staticCandidateLegal(current, snapshot))
-                invalidatePlan(encounter, group, "terrain", snapshot, distances, currentLines(), work);
+                invalidatePlan(
+                    encounter,
+                    group,
+                    "terrain",
+                    snapshot,
+                    distances,
+                    currentLines(),
+                    work,
+                    currentEnclosureGeometry,
+                );
             if (group.planId) continue;
             const members = group.memberIds
                 .map((id) => entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity, input));
             const noPlanSignature = planningSignature(ai, members);
             if (group.noPlanSignature === noPlanSignature) continue;
-            const enclosures = analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work),
+            const enclosures = analyzeEnclosureCandidates(
+                    snapshot,
+                    { ...group, members },
+                    distances,
+                    work,
+                    currentEnclosureGeometry(),
+                ),
                 candidates = enclosures.length
                     ? enclosures
                     : analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines(), work);
@@ -1088,7 +1198,16 @@
                 Object.keys(group.assignments).length === 0 &&
                 !group.engagement
             ) {
-                invalidatePlan(encounter, group, "approach", snapshot, distances, currentLines(), work);
+                invalidatePlan(
+                    encounter,
+                    group,
+                    "approach",
+                    snapshot,
+                    distances,
+                    currentLines(),
+                    work,
+                    currentEnclosureGeometry,
+                );
                 replacedApproach = true;
             }
         }
