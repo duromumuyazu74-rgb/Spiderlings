@@ -14,10 +14,10 @@ Use the attached installable ZIP. GitHub's automatic Source code archives contai
 
 ## Versions
 
-| Branch                                                                          | Version           | Purpose                                                  |
-| ------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------- |
-| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)           | `0.92.38`         | Formal release                                           |
-| [Infestation PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83) | `0.92.36-test.23` | Normal Infestation playtest with faster Spinner planning |
+| Branch                                                                          | Version           | Purpose                                                                |
+| ------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------- |
+| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)           | `0.92.38`         | Formal release                                                         |
+| [Infestation PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83) | `0.92.36-test.24` | Infestation playtest with active Spinner construction and nest defense |
 
 This test package covers the three-nest Infestation redesign and does not include the separate Nest prison experiment. Install only one Spiderlings package at a time. The Nest prison experiment uses its own `prison.alpha.N` version series.
 

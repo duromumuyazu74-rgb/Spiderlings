@@ -14,10 +14,10 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 ## 版本
 
-| 分支                                                                         | 版本              | 用途                                  |
-| ---------------------------------------------------------------------------- | ----------------- | ------------------------------------- |
-| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)        | `0.92.38`         | 正式版                                |
-| [侵扰楼层 PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83) | `0.92.36-test.23` | 优化 Spinner 规划的普通侵扰楼层测试版 |
+| 分支                                                                         | 版本              | 用途                                            |
+| ---------------------------------------------------------------------------- | ----------------- | ----------------------------------------------- |
+| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)        | `0.92.38`         | 正式版                                          |
+| [侵扰楼层 PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83) | `0.92.36-test.24` | 修复 Spinner 施工和守巢反击的普通侵扰楼层测试版 |
 
 这个测试包包含三巢侵扰楼层改动，不包含独立开发的巢穴监狱。监狱实验版使用自己的 `prison.alpha.N` 版本序列；游戏中一次只启用一个 Spiderlings 包。
 
