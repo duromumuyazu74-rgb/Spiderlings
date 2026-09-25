@@ -70,33 +70,118 @@ test("declared regular and concave enclosures preserve a free 3x3 core", () => {
     assert.equal(topology.containsDeclaredField(concave, "inner", { x: 18, y: 11 }), false);
 });
 
-test("nesting needs four owners, exact spacing, a shared core, and a 13x13 footprint", () => {
+test("one owner may build concentric 3x3, 5x5 and 7x7 outer rings", () => {
     const topology = rules(),
-        two = topology.createEnclosure({
-            compositeId: "two",
+        one = topology.createEnclosure({
+            compositeId: "one",
             groupId: "g",
-            owners: [1, 2],
+            owners: [1],
             map: floorMap(),
             layers: [
-                { id: "inner", vertices: rectangle(10, 7, 16, 13), gate: { x: 10, y: 10 } },
-                { id: "outer", vertices: rectangle(7, 4, 19, 16), gate: { x: 7, y: 10 } },
-            ],
-        }),
-        four = topology.createEnclosure({
-            compositeId: "four",
-            groupId: "g",
-            owners: [1, 2, 3, 4],
-            map: floorMap(),
-            layers: [
-                { id: "inner", vertices: rectangle(10, 7, 16, 13), gate: { x: 10, y: 10 } },
-                { id: "outer", vertices: rectangle(7, 4, 19, 16), gate: { x: 7, y: 10 } },
+                { id: "inner", vertices: rectangle(12, 8, 14, 10), gate: { x: 12, y: 9 } },
+                { id: "middle", vertices: rectangle(11, 7, 15, 11), gate: { x: 11, y: 9 } },
+                { id: "outer", vertices: rectangle(10, 6, 16, 12), gate: { x: 10, y: 9 } },
             ],
         });
-    assert.deepEqual(Object.keys(two.fields), ["inner"]);
-    assert.deepEqual(Object.keys(four.fields), ["inner", "outer"]);
-    assert.deepEqual(four.fields.inner.core, four.fields.outer.core);
-    assert.equal(four.fields.outer.bounds.width, 13);
-    assert.equal(four.fields.outer.spacing, 2);
+    assert.deepEqual(Object.keys(one.fields), ["inner", "middle", "outer"]);
+    assert.equal(one.fields.inner.interiorCells.length, 1);
+    assert.deepEqual(one.fields.inner.core, one.fields.outer.core);
+    assert.deepEqual(
+        Object.values(one.fields).map((field) => field.bounds.width),
+        [3, 5, 7],
+    );
+    assert.equal(one.fields.outer.spacing, 1);
+});
+
+test("a boundary actor blocks a site while an interior prey actor does not", () => {
+    const topology = rules(),
+        input = {
+            compositeId: "occupancy",
+            owners: [1],
+            layers: [{ id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } }],
+        };
+    assert.equal(topology.createEnclosure({ ...input, map: { ...floorMap(), occupied: ["12,9"] } }).reason, "occupied");
+    assert.equal(topology.createEnclosure({ ...input, map: { ...floorMap(), occupied: ["13,10"] } }).kind, "enclosure");
+});
+
+test("a lone builder pays for a sealed 3x3 ring before adding an independent 5x5 ring", () => {
+    const topology = rules(),
+        map = floorMap(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false }),
+        layer = { id: "outer", vertices: rectangle(11, 8, 15, 12), gate: { x: 11, y: 10 } };
+    let state = topology.createEnclosure({
+        compositeId: "lone",
+        owners: [1],
+        map,
+        autoSeal: true,
+        layers: [{ id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } }],
+    });
+    assert.equal(topology.addEnclosureLayer(state, { compositeId: "lone", layer, map }).reason, "inner");
+    let action;
+    let work = 0;
+    while ((action = topology.nextWorkAction(state, 1, { x: 13, y: 10 })) && work++ < 20) {
+        const applied = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell));
+        assert.equal(applied.outcome.legal, true);
+        state = applied.state;
+    }
+    assert.equal(work, 9);
+    assert.equal(state.fields.inner.phase, "sealed");
+    assert.equal(topology.solidCells(state).length, 8);
+    const addition = topology.addEnclosureLayer(state, { compositeId: "lone", layer, map });
+    assert.equal(addition.added, true);
+    state = addition.state;
+    assert.equal(state.fields.inner.phase, "sealed");
+    assert.equal(state.fields.outer.phase, "preparing");
+    assert.equal(topology.captureGeometryReady(state, "lone", { x: 13, y: 10 }), true);
+    assert.equal(topology.captureGeometryReady(state, "lone", { x: 12, y: 10 }), false);
+    action = topology.nextWorkAction(state, 1, { x: 13, y: 10 });
+    assert.equal(action.fieldId, "outer");
+    state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    const restored = topology.restore(JSON.parse(JSON.stringify(state)));
+    assert.equal(restored.fields.inner.phase, "sealed");
+    assert.equal(restored.fields.outer.phase, "preparing");
+    assert.equal(topology.tickOwnerless(restored, { activeOwnerIds: [], delta: 20 }).state.collapsed, true);
+});
+
+test("an intact corner cannot be crossed diagonally into a 3x3 interior", () => {
+    const topology = rules(),
+        map = floorMap(),
+        state = topology.createEnclosure({
+            compositeId: "corner",
+            owners: [1],
+            built: true,
+            map,
+            layers: [{ id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } }],
+        });
+    assert.equal(topology.pathOutsideField(state, "inner", { x: 13, y: 10 }, map).length, 0);
+    state.anchors.find((anchor) => anchor.x === 12 && anchor.y === 9).hp = 0;
+    assert.equal(topology.pathOutsideField(state, "inner", { x: 13, y: 10 }, map).length, 0);
+});
+
+test("a destroyed 3x3 corner and its links can be rebuilt with paid work", () => {
+    const topology = rules(),
+        map = floorMap(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "repair",
+        owners: [1],
+        built: true,
+        autoSeal: true,
+        map,
+        layers: [{ id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } }],
+    });
+    state = topology.damageAt(state, { cell: { x: 12, y: 9 }, damage: 3 }).state;
+    assert.equal(state.fields.inner.phase, "breached");
+    state = topology.tickOwnerless(state, { activeOwnerIds: [1], delta: 4 }).state;
+    let work = 0;
+    let action;
+    while ((action = topology.nextWorkAction(state, 1, { x: 12, y: 9 })) && work++ < 20) {
+        const applied = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell));
+        assert.equal(applied.outcome.legal, true, `${JSON.stringify(action)}: ${applied.outcome.reason}`);
+        state = applied.state;
+    }
+    assert.ok(work >= 3);
+    assert.equal(state.fields.inner.phase, "sealed");
 });
 
 test("an undersized enclosure falls back to the declared line or is saved as abandoned", () => {
@@ -106,7 +191,7 @@ test("an undersized enclosure falls back to the declared line or is saved as aba
             groupId: "g",
             owners: [1, 2],
             map: floorMap(),
-            layers: [{ id: "inner", vertices: rectangle(4, 4, 7, 7), gate: { x: 4, y: 5 } }],
+            layers: [{ id: "inner", vertices: rectangle(4, 4, 5, 5), gate: { x: 4, y: 5 } }],
         },
         abandoned = topology.createEnclosure(input),
         fallback = topology.createEnclosure({
@@ -135,11 +220,11 @@ test("body construction is inner-first and core entry closes gates inner-to-oute
     let state = topology.createEnclosure({
         compositeId: "nested",
         groupId: "g",
-        owners: [1, 2, 3, 4],
+        owners: [1],
         map: floorMap(),
         layers: [
-            { id: "inner", vertices: rectangle(10, 7, 16, 13), gate: { x: 10, y: 10 } },
-            { id: "outer", vertices: rectangle(7, 4, 19, 16), gate: { x: 7, y: 10 } },
+            { id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } },
+            { id: "outer", vertices: rectangle(11, 8, 15, 12), gate: { x: 11, y: 10 } },
         ],
     });
     topology.updateTarget(state, { id: "player", x: 13, y: 10 });
@@ -243,8 +328,8 @@ test("declared containment, outside reachability, and exit reachability are inde
             map,
             built: true,
             layers: [
-                { id: "inner", vertices: rectangle(10, 7, 16, 13), gate: { x: 10, y: 10 } },
-                { id: "outer", vertices: rectangle(7, 4, 19, 16), gate: { x: 7, y: 10 } },
+                { id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } },
+                { id: "outer", vertices: rectangle(11, 8, 15, 12), gate: { x: 11, y: 10 } },
             ],
         }),
         point = { x: 13, y: 10 },

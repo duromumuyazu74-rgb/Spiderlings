@@ -81,7 +81,7 @@ if (require.main === module) {
     console.log(
         JSON.stringify(
             {
-                scope: "Paid-work-free rollout initialization on open fixture maps",
+                scope: "Saved rollout decision bookkeeping on open fixture maps",
                 results: [1, 2, 4].map((count) => measure(count, source)),
             },
             null,

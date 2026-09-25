@@ -57,147 +57,22 @@
         return false;
     }
 
-    function plannedGeometry(group, plan) {
-        if (!plan?.anchors?.length) return undefined;
-        const center = {
-            x: Math.round((plan.anchors[0].x + plan.anchors.at(-1).x) / 2),
-            y: Math.round((plan.anchors[0].y + plan.anchors.at(-1).y) / 2),
-        };
-        return {
-            center,
-            compositeId: `rollout-${group.id}`,
-            vertices: [
-                { x: center.x - 3, y: center.y - 3 },
-                { x: center.x + 3, y: center.y - 3 },
-                { x: center.x + 3, y: center.y + 3 },
-                { x: center.x - 3, y: center.y + 3 },
-            ],
-        };
-    }
-
     function preparePositiveTurn() {
         const snapshot = KDMapData?.[FIELD],
-            encounter = api.SpinnerNativeField.state(),
-            ai = encounter?.ai;
+            ai = api.SpinnerNativeField.state()?.ai;
         if (!snapshot?.enabled || !ai) return snapshot?.enclosureDecisions;
-        if (snapshot.enclosureDecisions) {
-            for (const group of Object.values(ai.groups || {})) {
-                if (snapshot.enclosureDecisions[group.id]) continue;
-                const plan = ai.plans?.[group.planId];
-                if (!plan) continue;
-                plan.kind = "line";
-                plan.fieldIds = [plan.fieldId];
-                snapshot.enclosureDecisions[group.id] = {
-                    groupId: group.id,
-                    planId: plan.id,
-                    kind: "late-line-fallback",
-                };
-            }
-            return snapshot.enclosureDecisions;
-        }
-        const group = Object.values(ai.groups || {})
-            .filter((candidate) => candidate.memberIds?.length >= 2 && ai.plans?.[candidate.planId])
-            .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
-        if (!group) return undefined;
-        const plan = ai.plans[group.planId],
-            geometry = plannedGeometry(group, plan);
-        if (!geometry) return undefined;
-        // This synchronous pass only reconciles owned proxies, which mapSnapshot excludes.
-        // Share the map input within this pass; never retain it across turns or map changes.
-        const map = api.SpinnerNativeField.mapSnapshot(),
-            { center, vertices, compositeId } = geometry,
-            priorAI = ai,
-            next = api.SpinnerNativeField.initializeEnclosure({
-                compositeId,
-                groupId: group.id,
-                owners: group.memberIds,
-                layers: [
-                    { id: `${compositeId}-inner`, vertices, core: center, gate: { x: center.x - 3, y: center.y } },
-                ],
-                fallbackLine: { fieldId: plan.fieldId, anchors: plan.anchors },
-                scenario: "ordinary-rollout",
-                map,
-            });
-        next.autonomous = true;
-        next.builders = {};
-        next.rolloutKind = snapshot.kind;
-        next.ai = priorAI;
-        const enclosure = next.topology.kind === "enclosure";
-        plan.kind = enclosure ? "enclosure" : "line";
-        plan.fieldIds = enclosure ? [...(next.topology.composites?.[compositeId]?.layerIds || [])] : [plan.fieldId];
-        if (enclosure) plan.compositeId = compositeId;
-        const decisions = {
-            [group.id]: {
+        const decisions = (snapshot.enclosureDecisions ||= {});
+        for (const group of Object.values(ai.groups || {}).sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const plan = ai.plans?.[group.planId];
+            if (!plan || decisions[group.id]?.planId === plan.id) continue;
+            decisions[group.id] = {
                 groupId: group.id,
                 planId: plan.id,
-                kind: enclosure ? "enclosure" : "line-fallback",
-                core: center,
-                vertices,
-            },
-        };
-        for (const otherGroup of Object.values(priorAI.groups || {})) {
-            if (otherGroup.id === group.id) continue;
-            const otherPlan = priorAI.plans?.[otherGroup.planId];
-            const otherGeometry = plannedGeometry(otherGroup, otherPlan);
-            if (!otherGeometry) continue;
-            const { center: otherCenter, compositeId: otherComposite, vertices: otherVertices } = otherGeometry,
-                partial = api.SpinnerTopology.createEnclosure({
-                    compositeId: otherComposite,
-                    owners: otherGroup.memberIds,
-                    layers: [
-                        {
-                            id: `${otherComposite}-inner`,
-                            vertices: otherVertices,
-                            core: otherCenter,
-                            gate: { x: otherCenter.x - 3, y: otherCenter.y },
-                        },
-                    ],
-                    fallbackLine: { fieldId: otherPlan.fieldId, anchors: otherPlan.anchors },
-                    map,
-                });
-            if (partial.kind === "enclosure") {
-                const existing = next.topology,
-                    fields = [
-                        ...Object.values(existing.fields || {}),
-                        ...Object.values(existing.lineFields || {}),
-                        ...Object.values(partial.fields || {}),
-                        ...Object.values(partial.lineFields || {}),
-                    ].map((field) => ({ id: field.id, type: field.type || "line", vertices: field.vertices })),
-                    combined = api.SpinnerTopology.createPhysicalGraph({
-                        fields,
-                        owners: [...existing.owners, ...partial.owners],
-                    });
-                Object.assign(combined, {
-                    kind: "graph",
-                    fields: { ...(combined.fields || {}), ...(existing.fields || {}), ...(partial.fields || {}) },
-                    composites: { ...(existing.composites || {}), ...(partial.composites || {}) },
-                    fieldOwners: { ...(existing.fieldOwners || {}), ...(partial.fieldOwners || {}) },
-                    lineFields: { ...(existing.lineFields || {}), ...(partial.lineFields || {}) },
-                });
-                next.topology = combined;
-                otherPlan.kind = "enclosure";
-                otherPlan.compositeId = otherComposite;
-                otherPlan.fieldIds = [...(partial.composites?.[otherComposite]?.layerIds || [])];
-            } else {
-                api.SpinnerNativeField.addLine({
-                    fieldId: otherPlan.fieldId,
-                    owners: otherGroup.memberIds,
-                    anchors: otherPlan.anchors,
-                    scenario: "ordinary-rollout",
-                });
-                otherPlan.kind = "line";
-                otherPlan.fieldIds = [otherPlan.fieldId];
-            }
-            decisions[otherGroup.id] = {
-                groupId: otherGroup.id,
-                planId: otherPlan.id,
-                kind: partial.kind === "enclosure" ? "enclosure" : "line-fallback",
-                core: otherCenter,
-                vertices: otherVertices,
+                kind: plan.kind === "enclosure" ? "enclosure" : "line-fallback",
+                ...(plan.center ? { core: { x: plan.center.x, y: plan.center.y } } : {}),
+                vertices: plan.anchors?.map((cell) => ({ x: cell.x, y: cell.y })) || [],
             };
         }
-        api.SpinnerNativeField.reconcile();
-        snapshot.enclosureDecisions = decisions;
         return decisions;
     }
 

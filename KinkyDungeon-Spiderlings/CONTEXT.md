@@ -46,6 +46,10 @@ _Avoid_: every Spiderling near a nest
 
 ## Spiderlings Webbing
 
+**Spinner physical field**:
+A saved, paid enclosure whose first complete perimeter is a 3-by-3 outer footprint with one interior cell and eight web cells. One capable Spinner can build it; completed inner rings remain when new 5-by-5 and 7-by-7 rings are built. The web proxy and one actual spider may share a cell, but two actual actors may not. Non-spiders breach the web through ordinary attacks. Field construction and player Capture strands are separate capabilities.
+_Avoid_: a required 3-by-3 interior, four-owner expansion gate, free planned segments, a new restraint from lone construction
+
 **Spinner Capture strands**:
 Temporary source-to-player strands admitted by a real Spinner melee hit inside a closed containing composite field. Admission needs two legal sources but records only the hitter. Up to seven more sources can spend later enemy operations to join. The strands pin translation without adding equipment and continue after field damage. One source weaves 6.25/100 per world turn against an escape goal of 50; two weave 12.5 against 75; further sources add 4 rate and 25 escape target. A paid pull adds 25 escape work for displayed stamina 10 and one world turn. Source loss preserves both counters, and escape wins simultaneous finishes. Escape holds only effective participants for the next six hostile operations. There is no retry cooldown or global immunity.
 _Avoid_: proximity admission, free joins, field-breach cancellation, capture restraint item

@@ -105,7 +105,7 @@ test("two supplied Spinners construct one cell per paid action without moving", 
     assert.ok(proxies.every((proxy) => proxy.targetedForAttack && proxy.Enemy.immobile === false));
 });
 
-test("native pathcondition lets only Spiderlings cross without moving or duplicating the proxy", () => {
+test("native pathcondition lets a spider stand on a web while preserving both identities", () => {
     const r = runtime();
     buildAll(r, [
         { x: 5, y: 4 },
@@ -121,9 +121,33 @@ test("native pathcondition lets only Spiderlings cross without moving or duplica
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(spiderling, proxy), true);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(bandit, proxy), false);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.doPassthrough(spiderling, proxy, c.KDMapData), 2);
-    assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 6, y: 5 });
+    assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 5, y: 5 });
     assert.deepEqual({ x: proxy.x, y: proxy.y }, { x: 5, y: 5 });
-    assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 1);
+    assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 2);
+    assert.equal(c.KinkyDungeonEntityAt(5, 5), spiderling);
+    assert.equal(c.Spiderlings.SpinnerNativeField.snapshot({ x: 5, y: 5 }).occupied, false);
+    assert.equal(c.Spiderlings.SpinnerNativeField.snapshot({ x: 5, y: 5 }).actorOccupied, true);
+});
+
+test("a builder places web beneath a spider without kicking it or redirecting its hit", () => {
+    const r = runtime(),
+        c = r.context,
+        standing = { id: 77, x: 5, y: 5, hp: 5, Enemy: { name: "Jumper", tags: { spiderlings: true } } };
+    c.KDMapData.Entities.push(standing);
+    const built = buildAll(r);
+    assert.equal(
+        built.encounter.topology.links[0].builtCells.some((cell) => cell.x === 5 && cell.y === 5),
+        true,
+    );
+    const proxy = c.KDMapData.Entities.find(
+        (entity) => c.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5,
+    );
+    assert.ok(proxy);
+    assert.deepEqual({ x: standing.x, y: standing.y, hp: standing.hp }, { x: 5, y: 5, hp: 5 });
+    assert.equal(c.KinkyDungeonEntityAt(5, 5), standing);
+    const hp = built.encounter.topology.links[0].hp;
+    assert.equal(c.Spiderlings.SpinnerNativeField.onNativeDamage({ enemy: standing, dmgDealt: 1 }), false);
+    assert.equal(built.encounter.topology.links[0].hp, hp);
 });
 
 test("native planning snapshot protects object shortcuts, jail points, and required interaction tiles", () => {
