@@ -20,6 +20,7 @@
     "spiderlings-mage-spells.test.js",
     "spiderlings-npc-adhesion.test.js",
     "spiderlings-npc-wrapping.test.js",
+    "spiderlings-infestation-layout.test.js",
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",
