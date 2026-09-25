@@ -751,7 +751,7 @@ function checkRuntime(state) {
     }
     const expectedIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash", "SpiderlingsMageArmSigil")
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash")
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)

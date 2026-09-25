@@ -332,7 +332,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 200, `${csv}: current release text set including Hood preference`);
+        assert.equal(entries.size, 197, `${csv}: current release text set including Hood preference`);
         for (const key of [
             "KDModButtonspiderlingsEnableHood",
             "KinkyDungeonStatSpiderlingsCocoonStart",
@@ -344,9 +344,6 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KinkyDungeonSpellCastSpiderlingsMageBolt",
             "KinkyDungeonSpellSpiderlingsMageRune",
             "KinkyDungeonSpellCastSpiderlingsMageRune",
-            "RestraintSpiderlingsMageArmSigil",
-            "RestraintSpiderlingsMageArmSigilDesc",
-            "RestraintSpiderlingsMageArmSigilDesc2",
         ]) {
             assert.ok(entries.get(key)?.trim(), `${csv}: ${key}`);
         }

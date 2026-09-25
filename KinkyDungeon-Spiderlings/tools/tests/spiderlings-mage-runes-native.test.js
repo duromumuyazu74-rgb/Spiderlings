@@ -56,7 +56,7 @@ test("KD 5.5 spell choice and dot launch keep one Mage action and a saved staged
     const map = { Entities: [mage], Bullets: [] };
     const events = {};
     const context = {
-        Spiderlings: { Mage: { equipArms: () => true } },
+        Spiderlings: {},
         KDMapData: map,
         KinkyDungeonPlayerEntity: player,
         KinkyDungeonMovableTilesEnemy: ["0"],
@@ -104,7 +104,7 @@ test("KD 5.5 spell choice and dot launch keep one Mage action and a saved staged
         bind: 6,
         bindType: "Slime",
         damage: "glue",
-        playerEffect: { name: "SpiderlingsMageRuneArms" },
+        playerEffect: { name: "Damage" },
         onhit: "",
         noTerrainHit: true,
     };
@@ -139,7 +139,7 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
     let tied = 0;
     let converted = 0;
     const context = {
-        Spiderlings: { Mage: { equipArms: () => true } },
+        Spiderlings: {},
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { player: true },
         KinkyDungeonMovableTilesEnemy: ["0"],

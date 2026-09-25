@@ -348,10 +348,13 @@ function resolve(runtime, state, action, catalog) {
     return runtime.context.Spiderlings.Webbing.resolveWebbingAction(request);
 }
 
-test("fresh manifest VM exposes Webbing, Mage, Leg binder, and Silk leash restraints plus owned models", async () => {
+test("fresh manifest VM exposes active restraints and a damage-only Mage bolt", async () => {
     const runtime = freshNewSaveRuntime();
     const restraintIds = runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort();
     const modelIds = runtime.models.map((entry) => entry.Name).sort();
+    const bolt = runtime.context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "SpiderlingsMageBolt");
+    assert.equal(bolt?.playerEffect?.name, "Damage");
+    assert.equal(bolt.playerEffect.power, 0.5);
     assert.deepEqual(
         restraintIds,
         [
@@ -361,7 +364,6 @@ test("fresh manifest VM exposes Webbing, Mage, Leg binder, and Silk leash restra
             cocoonId,
             "SpiderlingsSpinnerLegbinder",
             "SpiderlingsSilkLeash",
-            "SpiderlingsMageArmSigil",
         ].sort(),
     );
     assert.deepEqual(
