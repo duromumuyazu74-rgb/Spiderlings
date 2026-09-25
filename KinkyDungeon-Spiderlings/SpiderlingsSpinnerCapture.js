@@ -628,10 +628,8 @@
                 (e.y - d.CamY - (boardPans ? 0 : d.CamY_offset) + 0.5) * size,
             ];
             const p = point(player());
-            const normalArt =
-                api.getSetting?.("spiderlingsPinkWebbing") !== true &&
-                typeof KDDraw === "function" &&
-                typeof kdpixisprites !== "undefined";
+            const textureArt = typeof KDDraw === "function" && typeof kdpixisprites !== "undefined";
+            const color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "";
             const root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
             for (const id of s.sourceIds) {
                 const enemy = source(id);
@@ -640,15 +638,14 @@
                 const dx = p[0] - xy[0];
                 const dy = p[1] - xy[1];
                 // The delivered 72x72 tether runs vertically through its center.
-                // Stretch it between the source and player; use the existing line
-                // until T's supplies a distinct pink tether image.
+                // Stretch it between the source and player in the selected color.
                 const sprite =
-                    normalArt &&
+                    textureArt &&
                     KDDraw(
                         kdgameboard,
                         kdpixisprites,
                         `SpiderlingsPlayerTether_${id}`,
-                        root + "Bullets/SpiderlingsPlayerTether.png",
+                        root + `Bullets/SpiderlingsPlayerTether${color}.png`,
                         (xy[0] + p[0]) / 2,
                         (xy[1] + p[1]) / 2,
                         size,
