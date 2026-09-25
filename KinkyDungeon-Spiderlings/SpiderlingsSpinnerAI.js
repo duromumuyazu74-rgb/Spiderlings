@@ -272,7 +272,7 @@
         return cells;
     }
 
-    function analyzeLineCandidates(snapshot, group, distances = routeDistances(snapshot)) {
+    function lineCatalogue(snapshot) {
         const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
             protectedKeys = new Set(
                 [...(snapshot.entrances || []), ...(snapshot.exits || []), ...(snapshot.protectedCells || [])].map(
@@ -285,12 +285,6 @@
             },
             route = routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]),
             routeKeys = new Set(route.map(cellKey)),
-            members = group.members || group.memberPositions || [],
-            origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
-            nest =
-                group.source?.type === "nest"
-                    ? (snapshot.nests || []).find((candidate) => candidate.id === group.source.nestId)
-                    : undefined,
             supplied = snapshot.candidateLines || [],
             pairs = [];
         if (supplied.length) {
@@ -310,18 +304,42 @@
                     }
             }
         }
-        const candidates = [];
+        const lines = [],
+            seen = new Set();
         for (const pair of pairs) {
             const anchors = pair.map((cell) => ({ x: cell.x, y: cell.y })),
                 cells = lineCells(anchors[0], anchors[1]);
             if (anchors.length !== 2 || !cells.every(floor)) continue;
+            const id = `line:${cellKey(anchors[0])};${cellKey(anchors[1])}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
             const center = cells[Math.floor(cells.length / 2)],
                 neighbors = DIRECTIONS.slice(0, 4).filter((direction) =>
                     floor({ x: center.x + direction.x, y: center.y + direction.y }),
                 ).length,
                 routeHits = cells.filter((cell) => routeKeys.has(cellKey(cell))).length,
                 exitDistance = nearestDistance(center, snapshot.exits || []),
-                chokeDistance = nearestDistance(center, snapshot.chokes || []),
+                chokeDistance = nearestDistance(center, snapshot.chokes || []);
+            lines.push({ id, anchors, cells, center, neighbors, routeHits, exitDistance, chokeDistance });
+        }
+        return lines;
+    }
+
+    function analyzeLineCandidates(
+        snapshot,
+        group,
+        distances = routeDistances(snapshot),
+        lines = lineCatalogue(snapshot),
+    ) {
+        const members = group.members || group.memberPositions || [],
+            origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
+            nest =
+                group.source?.type === "nest"
+                    ? (snapshot.nests || []).find((candidate) => candidate.id === group.source.nestId)
+                    : undefined,
+            candidates = [];
+        for (const line of lines) {
+            const { center, neighbors, routeHits, exitDistance, chokeDistance } = line,
                 nestDistance = nest ? distance(center, nest) : 99,
                 travelDistance = origin ? distances(origin, center) : 0,
                 reasons =
@@ -341,23 +359,16 @@
                 score = Object.values(reasons).reduce((total, value) => total + value, 0) - travelDistance * 0.3;
             if (!Number.isFinite(travelDistance)) continue;
             candidates.push({
-                id: `line:${cellKey(anchors[0])};${cellKey(anchors[1])}`,
+                id: line.id,
                 type: "line",
-                anchors,
-                cells,
+                anchors: line.anchors.map((anchor) => ({ x: anchor.x, y: anchor.y })),
+                cells: line.cells.map((cell) => ({ x: cell.x, y: cell.y })),
                 score,
                 reasons,
                 travelDistance,
             });
         }
-        const seen = new Set();
-        return candidates
-            .filter((candidate) => {
-                if (seen.has(candidate.id)) return false;
-                seen.add(candidate.id);
-                return true;
-            })
-            .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        return candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
 
     function selectSavedPlan(ai, group, candidates) {
@@ -650,7 +661,14 @@
         });
     }
 
-    function invalidatePlan(encounter, group, reason, snapshot, distances = routeDistances(snapshot)) {
+    function invalidatePlan(
+        encounter,
+        group,
+        reason,
+        snapshot,
+        distances = routeDistances(snapshot),
+        lines = lineCatalogue(snapshot),
+    ) {
         const ai = ensureAI(encounter),
             plan = ai.plans[group.planId];
         if (!plan) return;
@@ -664,7 +682,7 @@
         const members = group.memberIds
                 .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity)),
-            candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances);
+            candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances, lines);
         ai.candidates = candidates;
         if (members.length < 2) return;
         const replacement = selectSavedPlan(ai, group, candidates);
@@ -715,17 +733,20 @@
             snapshot = input.mapSnapshot || nativeMapSnapshot(),
             distances = routeDistances(snapshot),
             entities = input.entities || KDMapData.Entities;
+        let lines;
+        // Share static geometry only within this turn; construction may change the next map snapshot.
+        const currentLines = () => (lines ||= lineCatalogue(snapshot));
         auditGroups(ai, entities, { ...input, mapSnapshot: snapshot, routeDistances: distances });
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             const current = ai.plans[group.planId];
             if (current && current.kind !== "enclosure" && !staticCandidateLegal(current, snapshot))
-                invalidatePlan(encounter, group, "terrain", snapshot, distances);
+                invalidatePlan(encounter, group, "terrain", snapshot, distances, currentLines());
             if (group.planId) continue;
             const members = group.memberIds
                     .map((id) => entities.find((entity) => entity.id === id))
                     .filter((entity) => eligibleSpinner(entity, input)),
-                candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances);
+                candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines());
             ai.candidates = candidates;
             if (members.length < 2) continue;
             const plan = selectSavedPlan(ai, group, candidates);
@@ -759,7 +780,7 @@
                 pendingTasks(field, true).length > 0 &&
                 Object.keys(group.assignments).length === 0
             ) {
-                invalidatePlan(encounter, group, "approach", snapshot, distances);
+                invalidatePlan(encounter, group, "approach", snapshot, distances, currentLines());
                 replacedApproach = true;
             }
         }
