@@ -574,8 +574,10 @@
     }
     if (typeof KDModFiles !== "undefined") {
         for (const prefix of ["", typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : ""])
-            KDModFiles[prefix + "Enemies/" + PROXY + ".png"] =
-                KDModFiles[prefix + "Bullets/WebSprayTrail.png"] || KDModFiles["Bullets/WebSprayTrail.png"];
+            for (const color of ["", "Pink"])
+                KDModFiles[prefix + "Enemies/" + PROXY + color + ".png"] =
+                    KDModFiles[prefix + "Bullets/WebSprayTrail" + color + ".png"] ||
+                    KDModFiles["Bullets/WebSprayTrail" + color + ".png"];
     }
     if (typeof KDPathConditions !== "undefined")
         KDPathConditions[PATH] = { query: canTraverse, doPassthrough: passThrough };

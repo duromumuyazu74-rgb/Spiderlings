@@ -38,7 +38,7 @@ function runtime() {
             KinkyDungeonCurrentTick: 5,
             KinkyDungeonRootDirectory: "Game/",
             KinkyDungeonFlags: new Map(),
-            KDModFiles: { "Bullets/WebSprayTrail.png": {} },
+            KDModFiles: { "Bullets/WebSprayTrail.png": {}, "Bullets/WebSprayTrailPink.png": {} },
             KDPathConditions: {},
             KDInputTypes: {},
             KDEventMapGeneric: {},

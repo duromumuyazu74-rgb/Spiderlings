@@ -70,7 +70,17 @@ test("capture strands use the selected tether art", () => {
 
 test("the Spinner training boundary uses both art colors and correctly oriented corners", () => {
     const r = contestRuntime();
+    r.c.KDModFiles = {
+        "Bullets/WebSprayTrail.png": { color: "normal" },
+        "Bullets/WebSprayTrailPink.png": { color: "pink" },
+    };
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerField.js"), "utf8"), r.c);
+    for (const prefix of ["", "Game/"])
+        for (const color of ["", "Pink"])
+            assert.equal(
+                r.c.KDModFiles[`${prefix}Enemies/SpiderlingsSilkAnchor${color}.png`],
+                r.c.KDModFiles[`Bullets/WebSprayTrail${color}.png`],
+            );
     const traps = [
         { x: 3, y: 3, placed: true },
         { x: 9, y: 3, placed: true },
