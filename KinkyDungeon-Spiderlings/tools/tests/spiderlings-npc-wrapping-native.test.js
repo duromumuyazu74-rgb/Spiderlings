@@ -7,8 +7,8 @@ const vm = require("node:vm");
 const { stripTypeScriptTypes } = require("node:module");
 const { gamePath } = require("../reference-inputs.js");
 
-function nativeFunction(name) {
-    const source = fs.readFileSync(gamePath("Game/src/enemy/KinkyDungeonEnemies.ts"), "utf8");
+function nativeFunction(name, file = "enemy/KinkyDungeonEnemies.ts") {
+    const source = fs.readFileSync(gamePath(`Game/src/${file}`), "utf8");
     const start = source.indexOf(`function ${name}(`);
     assert.ok(start >= 0, `missing pinned native ${name}`);
     const open = source.indexOf("{", start);
@@ -19,6 +19,43 @@ function nativeFunction(name) {
     }
     throw Error(`unclosed native ${name}`);
 }
+
+test("native KD helpless entry never receives the player or an entity without Enemy during NPC wrapping", () => {
+    const player = { player: true, id: 999, x: 1, y: 1, hp: 10 };
+    const spider = { id: 1, x: 3, y: 3, hp: 5, Enemy: { name: "WebCaster", maxhp: 5 } };
+    const maid = {
+        id: 2,
+        x: 5,
+        y: 3,
+        hp: 8,
+        boundLevel: 0,
+        Enemy: { name: "Maidforce", maxhp: 8, bound: "Maidforce", tags: {} },
+    };
+    const map = { Entities: [spider, maid, { id: 3, x: 8, y: 8, hp: 1 }] };
+    const context = {
+        Spiderlings: {
+            Hooks: { wrap: (_name, native, wrapper) => wrapper(native) },
+            NPCAdhesion: { status: () => "free", hasAttributedSilk: () => false },
+        },
+        KDMapData: map,
+        KDGameData: { Collection: {} },
+        KDHostile: () => true,
+        KDNPCStruggleThreshMult: () => 1,
+        KDBoundEffects: () => 0,
+        KinkyDungeonGetEnemyByName: (name) => ({ name, maxhp: 8 }),
+    };
+    vm.createContext(context);
+    vm.runInContext(nativeFunction("KDUnPackEnemy", "base/game/KinkyDungeonGame.ts"), context);
+    vm.runInContext(nativeFunction("KDHelpless"), context);
+    vm.runInContext(
+        fs.readFileSync(require("node:path").join(__dirname, "../..", "SpiderlingsNPCWrapping.js"), "utf8"),
+        context,
+    );
+    assert.throws(() => context.KDHelpless(player), /name/, "pinned native entry rejects a player as enemy");
+    assert.doesNotThrow(() => context.Spiderlings.NPCWrapping.handleEnemyTurn(spider, player, 1));
+    assert.doesNotThrow(() => context.Spiderlings.NPCWrapping.tickAfter(1));
+    assert.equal(map.Entities.includes(maid), true);
+});
 
 test("pinned KD nonlethal removal honors cancellation, returns stolen items, and keeps persistent NPC identity", () => {
     const persistent = { id: 10, spawned: true };
