@@ -326,6 +326,22 @@ test("separate groups activate separate saved lines and never merge after meetin
     assert.equal(Object.keys(ai.groups).length, 2, "saved groups do not merge when their members meet");
 });
 
+test("one positive turn scans candidate line geometry once for multiple groups", () => {
+    const r = runtime([spinner(1, 1, 2), spinner(2, 2, 2), spinner(3, 15, 9), spinner(4, 16, 9)]),
+        snapshot = mapSnapshot(),
+        lines = snapshot.candidateLines;
+    let scans = 0;
+    Object.defineProperty(snapshot, "candidateLines", {
+        get() {
+            scans++;
+            return lines;
+        },
+    });
+    const ai = start(r, snapshot);
+    assert.equal(Object.keys(ai.groups).length, 2);
+    assert.equal(scans, 1);
+});
+
 test("the schema-2 graph accepts independently owned lines without a global field cap", () => {
     const r = runtime(),
         nativeField = r.context.Spiderlings.SpinnerNativeField,
