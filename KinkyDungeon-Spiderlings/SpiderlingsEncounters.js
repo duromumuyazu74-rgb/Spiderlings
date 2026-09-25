@@ -988,6 +988,7 @@
             return 0;
 
         const cap = api.getNestReinforcementCap();
+        const infestation = KDMapData.SpiderlingsInfestation;
         const tunnelerCap = api.getNestTunnelerCap();
         const interval = api.getNestReinforcementInterval();
         const weights = normalizeSpiderlingWeights(api.getSharedSpiderlingWeights());
@@ -1015,7 +1016,12 @@
                 timer: nest[NEST_TIMER_FIELD],
                 delta,
                 interval,
-                cap,
+                cap:
+                    infestation?.status === "active" &&
+                    infestation.garrisonVersion === 1 &&
+                    infestation.targetIds?.includes(nest.id)
+                        ? Math.min(cap, 4)
+                        : cap,
                 livingOffspring,
                 eligible: nestCanReinforce(nest, index.hostileNests),
             });

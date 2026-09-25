@@ -1537,6 +1537,50 @@ test("live interval, cap, and weight changes apply without deleting offspring", 
     assert.deepEqual(context.KDMapData.Entities, [nest, childA, childB]);
 });
 
+test("only original three-nest objectives have a four-guard living cap", () => {
+    const task = {
+        id: 11,
+        x: 2,
+        y: 2,
+        hp: 12,
+        aware: true,
+        SpiderlingsNestReinforcementTimer: 2,
+        Enemy: { name: "NestEntrance", visionRadius: 30 },
+    };
+    const ordinary = { ...task, id: 12, x: 3, y: 2, SpiderlingsNestReinforcementTimer: 2 };
+    const children = (parent, count) =>
+        Array.from({ length: count }, (_, index) => ({
+            id: 30 + parent * 10 + index,
+            hp: 1,
+            SpiderlingsNestParentID: parent,
+            Enemy: { name: "Spinner" },
+        }));
+    let nextId = 200;
+    const c = loadCoreRuntime({
+        KDMapData: {
+            Entities: [task, ...children(11, 3)],
+            SpiderlingsInfestation: { status: "active", garrisonVersion: 1, targetIds: [11] },
+        },
+        KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
+        KDHostile: () => true,
+        KinkyDungeonCheckLOS: () => true,
+        KDistEuclidean: Math.hypot,
+        KDGetFaction: () => "Enemy",
+        KDRandom: () => 0,
+        KinkyDungeonSummonEnemy(x, y, name) {
+            const child = { id: nextId++, hp: 1, Enemy: { name } };
+            c.KDMapData.Entities.push(child);
+            return [child];
+        },
+    });
+    const tick = () => c.Spiderlings.runNestReinforcements("afterEnemyTick", { allied: false, delta: 2 });
+    assert.equal(tick(), 1);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === 11).length, 4);
+    assert.equal(tick(), 0);
+    c.KDMapData.Entities = [ordinary, ...children(12, 4)];
+    assert.equal(tick(), 1, "new ordinary nests keep the configured six-child cap");
+});
+
 test("NestEntrance registration removes recurring spells but preserves death summons", () => {
     const ondeath = [{ type: "summon", enemy: "Spinner", count: 2 }];
     const context = loadCoreRuntime();

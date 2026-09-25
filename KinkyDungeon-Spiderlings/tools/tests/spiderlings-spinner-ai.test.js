@@ -147,6 +147,7 @@ function runtime(entities = []) {
             },
             KinkyDungeonEnemyLoop(enemy, target, _delta) {
                 nativeCalls.push(enemy.id);
+                context.lastNativeTarget = target;
                 const aiData = {
                         canSensePlayer: !!enemy.testSense,
                         canSeePlayer: !!enemy.testSense,
@@ -207,8 +208,78 @@ test("groups require eligible hostile Spinners within ten path steps and keep st
     actors.push(spinner(8, 12, 3, { SpiderlingsNestParentID: 90 }));
     start(r);
     assert.equal(state.groups[savedId].id, savedId);
-    assert.deepEqual(plain(state.groups[savedId].memberIds), [1, 2, 8]);
+    assert.deepEqual(plain(state.groups[savedId].memberIds), [1, 2]);
     assert.equal(actors.at(-1).SpiderlingsNestParentID, 90);
+});
+
+test("nest guards form their own construction group and natural Spinners remain free", () => {
+    const actors = [
+            spinner(1, 4, 4, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 5, 4, { SpiderlingsNestParentID: 90 }),
+            spinner(3, 6, 4),
+        ],
+        r = runtime(actors),
+        ai = start(r);
+    assert.deepEqual(
+        Object.values(ai.groups).map((group) => plain(group.memberIds)),
+        [[1, 2]],
+    );
+    assert.deepEqual(plain(Object.values(ai.groups)[0].source), { type: "nest", nestId: 90 });
+    assert.equal(
+        r.context.Spiderlings.SpinnerAI.handleBeforeMove(actors[2], r.context.KinkyDungeonPlayerEntity),
+        false,
+    );
+});
+
+test("construction wait preserves native movement credit and unassigned guards use native AI", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]),
+        aiData = { idle: true, hostile: true, canSensePlayer: false };
+    assert.equal(r.context.KDAIType.hunt.beforemove(worker, r.context.KinkyDungeonPlayerEntity, aiData), true);
+    assert.equal(aiData.idle, false, "a paid movement attempt must keep accrued native move points");
+    group.assignments = {};
+    assert.equal(
+        r.context.KDAIType.hunt.beforemove(worker, r.context.KinkyDungeonPlayerEntity, aiData),
+        false,
+        "a guard with no work should be free to fight or roam",
+    );
+});
+
+test("a reported nest attacker interrupts Spinner construction and becomes the native target", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        maid = { id: 99, x: 6, y: 3, hp: 4, Enemy: { name: "Maidforce" } },
+        r = runtime([...actors, maid]),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]);
+    r.context.Spiderlings.Infestation = {
+        resolveNestDefenderTarget: () => maid,
+        isNestAttacker: (_enemy, target) => target === maid,
+    };
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(r.context.lastNativeTarget, maid);
+    assert.equal(group.lastAction, undefined, "defenders delegate the strike instead of recording construction");
+    assert.equal(r.phaseCalls.filter((entry) => entry.id === worker.id).length, 2);
+});
+
+test("nest guards keep building when a distant maid is sensed but has not hit the nest", () => {
+    const actors = [
+            spinner(1, 5, 3, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 5, 9, { SpiderlingsNestParentID: 90 }),
+        ],
+        maid = { id: 99, x: 8, y: 3, hp: 4, Enemy: { name: "Maidforce" } },
+        r = runtime([...actors, maid]),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]);
+    worker.aware = true;
+    worker.testSense = true;
+    r.context.KinkyDungeonEnemyLoop(worker, maid, 1);
+    assert.equal(group.engagement, undefined);
+    assert.ok(["travel", "wait", "construction"].includes(group.lastAction));
 });
 
 test("saved deterministic selection uses topology and provenance without target position", () => {
@@ -235,6 +306,72 @@ test("saved deterministic selection uses topology and provenance without target 
     assert.equal(again.id, chosen.id);
     assert.equal(again.candidateId, chosen.candidateId);
     assert.equal(restored.groups.saved.selectionOrdinal, 0);
+});
+
+test("nest groups shortlist buildable lines close to their own nest", () => {
+    const actors = [
+            spinner(1, 3, 3, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 4, 3, { SpiderlingsNestParentID: 90 }),
+        ],
+        r = runtime(actors),
+        snapshot = mapSnapshot([
+            [
+                { x: 3, y: 2 },
+                { x: 3, y: 5 },
+            ],
+            [
+                { x: 13, y: 4 },
+                { x: 13, y: 8 },
+            ],
+        ]),
+        group = { source: { type: "nest", nestId: 90 }, members: actors },
+        candidates = r.context.Spiderlings.SpinnerAI.analyzeLineCandidates(snapshot, group);
+    assert.ok(candidates.length > 0);
+    assert.ok(candidates.every((candidate) => candidate.anchors.every((anchor) => anchor.x < 8)));
+});
+
+test("candidate distances match independent routes through open, blocked, and disconnected maps", () => {
+    const api = runtime().context.Spiderlings.SpinnerAI,
+        origin = { x: 2, y: 2 },
+        layouts = [
+            [],
+            [
+                { x: 9, y: 2 },
+                { x: 9, y: 3 },
+                { x: 9, y: 4 },
+                { x: 9, y: 6 },
+            ],
+            Array.from({ length: 10 }, (_, index) => ({ x: 9, y: index + 1 })),
+        ];
+    for (const walls of layouts) {
+        const snapshot = { ...mapSnapshot(), candidateLines: [] },
+            wallKeys = new Set(walls.map(cellKeyForTest));
+        for (const cell of snapshot.cells) if (wallKeys.has(cellKeyForTest(cell))) cell.floor = false;
+        const candidates = api.analyzeLineCandidates(snapshot, {
+            source: { type: "ordinary" },
+            members: [origin],
+        });
+        assert.ok(candidates.length > 0);
+        for (const candidate of candidates) {
+            const center = candidate.cells[Math.floor(candidate.cells.length / 2)],
+                route = api.routeOnSnapshot(snapshot, origin, center);
+            assert.equal(candidate.travelDistance, route.length - 1, candidate.id);
+        }
+        if (walls.length === 10)
+            assert.ok(candidates.every((candidate) => candidate.cells.every((cell) => cell.x < 9)));
+    }
+});
+
+test("duplicate supplied lines keep the first candidate", () => {
+    const api = runtime().context.Spiderlings.SpinnerAI,
+        line = [
+            { x: 3, y: 2 },
+            { x: 3, y: 5 },
+        ],
+        snapshot = mapSnapshot([line, line]);
+    const candidates = api.analyzeLineCandidates(snapshot, { members: [{ x: 2, y: 2 }] });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].id, "line:3,2;3,5");
 });
 
 test("corridor, T, cross, and exit fixtures use the same legal line analyzer", () => {
@@ -280,6 +417,22 @@ test("separate groups activate separate saved lines and never merge after meetin
     actors[3].y = 2;
     start(r);
     assert.equal(Object.keys(ai.groups).length, 2, "saved groups do not merge when their members meet");
+});
+
+test("one positive turn scans candidate line geometry once for multiple groups", () => {
+    const r = runtime([spinner(1, 1, 2), spinner(2, 2, 2), spinner(3, 15, 9), spinner(4, 16, 9)]),
+        snapshot = mapSnapshot(),
+        lines = snapshot.candidateLines;
+    let scans = 0;
+    Object.defineProperty(snapshot, "candidateLines", {
+        get() {
+            scans++;
+            return lines;
+        },
+    });
+    const ai = start(r, snapshot);
+    assert.equal(Object.keys(ai.groups).length, 2);
+    assert.equal(scans, 1);
 });
 
 test("the schema-2 graph accepts independently owned lines without a global field cap", () => {
@@ -356,6 +509,29 @@ test("a statically blocked approach abandons instead of waiting forever", () => 
     assert.equal(ai.plans[plan.id].status, "invalid");
     assert.equal(ai.plans[plan.id].invalidReason, "approach");
     assert.equal(group.planId, null);
+});
+
+test("a fighting group retains its field plan while construction approach is blocked", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        blocked = plain(snapshot);
+    group.engagement = {
+        target: { kind: "player", id: 0 },
+        lureId: actors[0].id,
+        mode: "lure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    for (const actor of actors)
+        for (const cell of blocked.cells)
+            if (Math.max(Math.abs(actor.x - cell.x), Math.abs(actor.y - cell.y)) <= 1) cell.floor = false;
+    start(r, blocked);
+    assert.equal(group.planId, plan.id);
+    assert.equal(plan.status, "traveling");
 });
 
 function cellKeyForTest(cell) {
@@ -738,8 +914,8 @@ test("paired 2/4/8 traces separate travel, construction, wait, and repair accoun
         [2, 4, 8],
     );
     assert.deepEqual(observations, [
-        { count: 2, travel: 22, construction: 5, wait: 46, yield: 0, repair: 3 },
-        { count: 4, travel: 22, construction: 5, wait: 122, yield: 0, repair: 3 },
-        { count: 8, travel: 22, construction: 5, wait: 274, yield: 0, repair: 3 },
+        { count: 2, travel: 22, construction: 5, wait: 5, yield: 0, repair: 3 },
+        { count: 4, travel: 22, construction: 5, wait: 5, yield: 0, repair: 3 },
+        { count: 8, travel: 22, construction: 5, wait: 5, yield: 0, repair: 3 },
     ]);
 });

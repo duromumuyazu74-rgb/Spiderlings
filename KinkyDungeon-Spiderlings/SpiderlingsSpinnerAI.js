@@ -116,8 +116,38 @@
         return path.reverse();
     }
 
+    function routeDistances(snapshot) {
+        const passable = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
+            fields = new Map();
+        return (from, to) => {
+            if (!from || !to) return Infinity;
+            const start = cellKey(from),
+                goal = cellKey(to);
+            if (!passable.has(start) || !passable.has(goal)) return Infinity;
+            if (!fields.has(start)) {
+                const field = new Map([[start, 0]]),
+                    queue = [{ x: from.x, y: from.y }];
+                for (let index = 0; index < queue.length; index++) {
+                    const current = queue[index],
+                        steps = field.get(cellKey(current)) + 1;
+                    for (const direction of DIRECTIONS) {
+                        const next = { x: current.x + direction.x, y: current.y + direction.y },
+                            key = cellKey(next);
+                        if (passable.has(key) && !field.has(key)) {
+                            field.set(key, steps);
+                            queue.push(next);
+                        }
+                    }
+                }
+                fields.set(start, field);
+            }
+            return fields.get(start).get(goal) ?? Infinity;
+        };
+    }
+
     function pathDistance(a, b, options = {}) {
         if (typeof options.pathDistance === "function") return options.pathDistance(a, b);
+        if (typeof options.routeDistances === "function") return options.routeDistances(a, b);
         if (options.mapSnapshot) {
             const path = routeOnSnapshot(options.mapSnapshot, a, b);
             return path.length ? path.length - 1 : Infinity;
@@ -165,6 +195,12 @@
         return { type: "ordinary" };
     }
 
+    function sameSource(entity, group) {
+        return group.source?.type === "nest"
+            ? entity.SpiderlingsNestParentID === group.source.nestId
+            : entity.SpiderlingsNestParentID === undefined;
+    }
+
     function auditGroups(ai, entities, options = {}) {
         const byId = new Map(entities.map((entity) => [entity.id, entity])),
             assigned = new Set();
@@ -189,7 +225,7 @@
                             .map((member) => pathDistance(entity, member, options)),
                     ),
                 }))
-                .filter((choice) => choice.steps <= GROUP_RADIUS)
+                .filter((choice) => choice.steps <= GROUP_RADIUS && sameSource(entity, choice.group))
                 .sort((a, b) => a.steps - b.steps || a.group.id.localeCompare(b.group.id));
             if (choices[0]) {
                 choices[0].group.memberIds.push(entity.id);
@@ -207,7 +243,11 @@
                 const current = queue[index];
                 component.push(current);
                 for (const candidate of remaining)
-                    if (!visited.has(candidate.id) && pathDistance(current, candidate, options) <= GROUP_RADIUS) {
+                    if (
+                        !visited.has(candidate.id) &&
+                        candidate.SpiderlingsNestParentID === current.SpiderlingsNestParentID &&
+                        pathDistance(current, candidate, options) <= GROUP_RADIUS
+                    ) {
                         visited.add(candidate.id);
                         queue.push(candidate);
                     }
@@ -242,7 +282,7 @@
         return cells;
     }
 
-    function analyzeLineCandidates(snapshot, group) {
+    function lineCatalogue(snapshot) {
         const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
             protectedKeys = new Set(
                 [...(snapshot.entrances || []), ...(snapshot.exits || []), ...(snapshot.protectedCells || [])].map(
@@ -255,12 +295,6 @@
             },
             route = routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]),
             routeKeys = new Set(route.map(cellKey)),
-            members = group.members || group.memberPositions || [],
-            origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
-            nest =
-                group.source?.type === "nest"
-                    ? (snapshot.nests || []).find((candidate) => candidate.id === group.source.nestId)
-                    : undefined,
             supplied = snapshot.candidateLines || [],
             pairs = [];
         if (supplied.length) {
@@ -280,20 +314,44 @@
                     }
             }
         }
-        const candidates = [];
+        const lines = [],
+            seen = new Set();
         for (const pair of pairs) {
             const anchors = pair.map((cell) => ({ x: cell.x, y: cell.y })),
                 cells = lineCells(anchors[0], anchors[1]);
             if (anchors.length !== 2 || !cells.every(floor)) continue;
+            const id = `line:${cellKey(anchors[0])};${cellKey(anchors[1])}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
             const center = cells[Math.floor(cells.length / 2)],
                 neighbors = DIRECTIONS.slice(0, 4).filter((direction) =>
                     floor({ x: center.x + direction.x, y: center.y + direction.y }),
                 ).length,
                 routeHits = cells.filter((cell) => routeKeys.has(cellKey(cell))).length,
                 exitDistance = nearestDistance(center, snapshot.exits || []),
-                chokeDistance = nearestDistance(center, snapshot.chokes || []),
+                chokeDistance = nearestDistance(center, snapshot.chokes || []);
+            lines.push({ id, anchors, cells, center, neighbors, routeHits, exitDistance, chokeDistance });
+        }
+        return lines;
+    }
+
+    function analyzeLineCandidates(
+        snapshot,
+        group,
+        distances = routeDistances(snapshot),
+        lines = lineCatalogue(snapshot),
+    ) {
+        const members = group.members || group.memberPositions || [],
+            origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
+            nest =
+                group.source?.type === "nest"
+                    ? (snapshot.nests || []).find((candidate) => candidate.id === group.source.nestId)
+                    : undefined,
+            candidates = [];
+        for (const line of lines) {
+            const { center, neighbors, routeHits, exitDistance, chokeDistance } = line,
                 nestDistance = nest ? distance(center, nest) : 99,
-                travelDistance = origin ? pathDistance(origin, center, { mapSnapshot: snapshot }) : 0,
+                travelDistance = origin ? distances(origin, center) : 0,
                 reasons =
                     group.source?.type === "nest"
                         ? {
@@ -311,18 +369,22 @@
                 score = Object.values(reasons).reduce((total, value) => total + value, 0) - travelDistance * 0.3;
             if (!Number.isFinite(travelDistance)) continue;
             candidates.push({
-                id: `line:${cellKey(anchors[0])};${cellKey(anchors[1])}`,
+                id: line.id,
                 type: "line",
-                anchors,
-                cells,
+                anchors: line.anchors.map((anchor) => ({ x: anchor.x, y: anchor.y })),
+                cells: line.cells.map((cell) => ({ x: cell.x, y: cell.y })),
                 score,
                 reasons,
                 travelDistance,
             });
         }
-        return candidates
-            .filter((candidate, index, values) => values.findIndex((other) => other.id === candidate.id) === index)
-            .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        const local = nest
+            ? candidates.filter(
+                  (candidate) =>
+                      candidate.travelDistance <= 8 && candidate.anchors.every((anchor) => distance(anchor, nest) <= 6),
+              )
+            : [];
+        return (local.length ? local : candidates).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
 
     function selectSavedPlan(ai, group, candidates) {
@@ -386,6 +448,10 @@
         const nests = KDMapData.Entities.filter((entity) => entity.hp > 0 && entity.Enemy?.name === "NestEntrance").map(
             (entity) => ({ id: entity.id, x: entity.x, y: entity.y }),
         );
+        const fixedBlockers = new Set(
+            KDMapData.Entities.filter((entity) => entity.hp > 0 && entity.Enemy?.immobile).map(cellKey),
+        );
+        for (const cell of cells) if (fixedBlockers.has(cellKey(cell))) cell.protected = true;
         const entrances = [KDMapData.StartPosition, ...Object.values(KDMapData.ShortcutPositions || {})].filter(
                 Boolean,
             ),
@@ -502,7 +568,7 @@
         };
     }
 
-    function reserveActions(encounter, snapshot) {
+    function reserveActions(encounter, snapshot, distances = routeDistances(snapshot)) {
         const ai = ensureAI(encounter),
             entities = new Map(KDMapData.Entities.map((entity) => [entity.id, entity]));
         for (const group of Object.values(ai.groups)) {
@@ -536,7 +602,7 @@
                         workCells(field ? taskCell(field, retainedTask) : previous.target, snapshot).some(
                             (cell) => cellKey(cell) === cellKey(retainedWork),
                         ) &&
-                        Number.isFinite(pathDistance(member, retainedWork, { mapSnapshot: snapshot }));
+                        Number.isFinite(distances(member, retainedWork));
                 if (canRetain) {
                     group.assignments[member.id] = field
                         ? {
@@ -557,11 +623,9 @@
                         .filter((cell) => !reservedWork.has(cellKey(cell)))
                         .sort(
                             (a, b) =>
-                                pathDistance(member, a, { mapSnapshot: snapshot }) -
-                                    pathDistance(member, b, { mapSnapshot: snapshot }) ||
-                                cellKey(a).localeCompare(cellKey(b)),
+                                distances(member, a) - distances(member, b) || cellKey(a).localeCompare(cellKey(b)),
                         )[0];
-                    if (!work || !Number.isFinite(pathDistance(member, work, { mapSnapshot: snapshot }))) continue;
+                    if (!work || !Number.isFinite(distances(member, work))) continue;
                     group.assignments[member.id] = assignmentFromAction(action, work);
                     reservedTasks.add(assignmentKey(action));
                     reservedWork.add(cellKey(work));
@@ -575,15 +639,14 @@
                                 .filter((cell) => !reservedWork.has(cellKey(cell)))
                                 .sort(
                                     (a, b) =>
-                                        pathDistance(member, a, { mapSnapshot: snapshot }) -
-                                            pathDistance(member, b, { mapSnapshot: snapshot }) ||
+                                        distances(member, a) - distances(member, b) ||
                                         cellKey(a).localeCompare(cellKey(b)),
                                 )[0];
                         return {
                             task,
                             target,
                             work,
-                            steps: work ? pathDistance(member, work, { mapSnapshot: snapshot }) : Infinity,
+                            steps: work ? distances(member, work) : Infinity,
                         };
                     })
                     .filter((option) => option.work && Number.isFinite(option.steps))
@@ -618,7 +681,14 @@
         });
     }
 
-    function invalidatePlan(encounter, group, reason, snapshot) {
+    function invalidatePlan(
+        encounter,
+        group,
+        reason,
+        snapshot,
+        distances = routeDistances(snapshot),
+        lines = lineCatalogue(snapshot),
+    ) {
         const ai = ensureAI(encounter),
             plan = ai.plans[group.planId];
         if (!plan) return;
@@ -632,7 +702,7 @@
         const members = group.memberIds
                 .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity)),
-            candidates = analyzeLineCandidates(snapshot, { ...group, members });
+            candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances, lines);
         ai.candidates = candidates;
         if (members.length < 2) return;
         const replacement = selectSavedPlan(ai, group, candidates);
@@ -681,18 +751,22 @@
                 mapIdentity: input.mapIdentity ?? mapIdentity(),
             }),
             snapshot = input.mapSnapshot || nativeMapSnapshot(),
+            distances = routeDistances(snapshot),
             entities = input.entities || KDMapData.Entities;
-        auditGroups(ai, entities, { ...input, mapSnapshot: snapshot });
+        let lines;
+        // Share static geometry only within this turn; construction may change the next map snapshot.
+        const currentLines = () => (lines ||= lineCatalogue(snapshot));
+        auditGroups(ai, entities, { ...input, mapSnapshot: snapshot, routeDistances: distances });
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             const current = ai.plans[group.planId];
             if (current && current.kind !== "enclosure" && !staticCandidateLegal(current, snapshot))
-                invalidatePlan(encounter, group, "terrain", snapshot);
+                invalidatePlan(encounter, group, "terrain", snapshot, distances, currentLines());
             if (group.planId) continue;
             const members = group.memberIds
                     .map((id) => entities.find((entity) => entity.id === id))
                     .filter((entity) => eligibleSpinner(entity, input)),
-                candidates = analyzeLineCandidates(snapshot, { ...group, members });
+                candidates = analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines());
             ai.candidates = candidates;
             if (members.length < 2) continue;
             const plan = selectSavedPlan(ai, group, candidates);
@@ -711,7 +785,7 @@
                     api.SpinnerNativeField.setOwners(fieldId, group.memberIds);
             auditEngagement(encounter, group);
         }
-        reserveActions(encounter, snapshot);
+        reserveActions(encounter, snapshot, distances);
         let replacedApproach = false;
         for (const group of Object.values(ai.groups)) {
             const plan = ai.plans[group.planId],
@@ -724,13 +798,14 @@
                 field &&
                 members.length >= 2 &&
                 pendingTasks(field, true).length > 0 &&
-                Object.keys(group.assignments).length === 0
+                Object.keys(group.assignments).length === 0 &&
+                !group.engagement
             ) {
-                invalidatePlan(encounter, group, "approach", snapshot);
+                invalidatePlan(encounter, group, "approach", snapshot, distances, currentLines());
                 replacedApproach = true;
             }
         }
-        if (replacedApproach) reserveActions(encounter, snapshot);
+        if (replacedApproach) reserveActions(encounter, snapshot, distances);
         return ai;
     }
 
@@ -1014,8 +1089,10 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
-        auditEngagement(encounter, group);
-        const observed = observeTarget(encounter, group, enemy, target, aiData),
+        if (group.source?.type === "nest") clearEngagement(group);
+        else auditEngagement(encounter, group);
+        if (api.Infestation?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
+        const observed = group.source?.type === "nest" ? false : observeTarget(encounter, group, enemy, target, aiData),
             perceivedThreat = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
             actualSight = !!(
                 aiData.canSeePlayer ||
@@ -1034,7 +1111,8 @@
         }
         if (perceivedThreat && distance(enemy, target) <= 1)
             return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
-        if (!group.engagement && perceivedThreat) return decide(enemy, group, "delegate-native", false);
+        if (!group.engagement && perceivedThreat && group.source?.type !== "nest")
+            return decide(enemy, group, "delegate-native", false);
         const assignment = group.assignments?.[enemy.id];
         if (!assignment) {
             const blocking = Object.entries(group.assignments || {}).some(
@@ -1063,8 +1141,7 @@
                     return decide(enemy, group, "yield", true);
                 }
             }
-            record(group, "wait");
-            return decide(enemy, group, "wait", true);
+            return decide(enemy, group, "delegate-native", false);
         }
         return decide(enemy, group, performAssignment(enemy, group, assignment), true);
     }

@@ -395,6 +395,19 @@
         encounter.topology = consumed.state;
         if (!consumed.outcome.snared) return false;
         KinkyDungeonApplyBuffToEntity(entity, { id: SNARE, type: "MoveSpeed", power: -1, duration: 2 });
+        if (!entity.player && entity.shield > 0) {
+            const anchorId = consumed.effects.find((effect) => effect.type === "snareTarget")?.anchorId;
+            const anchor = encounter.topology.anchors.find((candidate) => candidate.id === anchorId);
+            if (
+                anchor?.owners.some((fieldId) =>
+                    fieldOwners(fieldId).some((ownerId) => {
+                        const owner = KDMapData.Entities.find((candidate) => candidate.id === ownerId);
+                        return owner?.hp > 0 && isSpiderling(owner) && KDHostile(owner, entity);
+                    }),
+                )
+            )
+                api.Combat?.pressureNPCShield(entity);
+        }
         return true;
     }
 
@@ -413,6 +426,22 @@
             delta,
         });
         encounter.topology = settled.state;
+        for (const enemy of KDMapData.Entities) {
+            if (!(enemy.hp > 0) || !(enemy.shield > 0) || enemy.player || isOwnedProxy(enemy)) continue;
+            const inside = Object.values(encounter.topology.composites || {}).some((composite) => {
+                const outer = composite.layerIds.at(-1);
+                if (
+                    encounter.topology.fields?.[outer]?.phase !== "sealed" ||
+                    !topology().containsDeclaredField(encounter.topology, outer, enemy)
+                )
+                    return false;
+                return fieldOwners(composite.id).some((ownerId) => {
+                    const owner = KDMapData.Entities.find((candidate) => candidate.id === ownerId);
+                    return owner?.hp > 0 && isSpiderling(owner) && KDHostile(owner, enemy);
+                });
+            });
+            if (inside) api.Combat?.pressureNPCShield(enemy);
+        }
         reconcile();
     }
 

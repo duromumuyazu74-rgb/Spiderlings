@@ -127,9 +127,9 @@ KDMapMod_SpiderlingsInfestation,Inwazja małych pająków
 KinkyDungeonMapModSpiderlingsInfestation,Jedwab pełznie po kątach, a w cieniach szelest odpowiada szelestowi. To miejsce od dawna ma innych mieszkańców.
 KDEscapeMethod_SpiderlingsInfestation,Zniszcz oznaczone gniazda
 KDEscapeMethodDesc_SpiderlingsInfestation,Gniazda, które jako pierwsze zajęły to miejsce, wciąż poruszają się w ciemności; z głębi wejść dobiega ciche skrobanie.
-SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/5
-SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/5)
-SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (5/5)
+SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/TARGET
+SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/TARGET)
+SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Różowa pajęczyna (wył.: oryginalna)
 KinkyDungeonSpiderlingsWebbingInterwoven,Krzyżujące się nici zaciskają się i krępują kolejną część twojego ciała.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Nacinasz TargetRestraint. Lepkie nici pękają i szczelina staje się głębsza.
