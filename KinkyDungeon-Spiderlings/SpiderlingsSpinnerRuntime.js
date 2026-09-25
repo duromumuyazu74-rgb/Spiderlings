@@ -29,7 +29,9 @@
                     if (legacyField) return legacyField;
                     enemy.SpiderlingsSpinnerRuntimeDelta = delta;
                     try {
-                        return native.apply(this, arguments);
+                        const result = native.apply(this, arguments);
+                        if (result?.idle && api.SpinnerAI?.ownsMovementTurn(enemy)) result.idle = false;
+                        return result;
                     } finally {
                         delete enemy.SpiderlingsSpinnerRuntimeDelta;
                     }

@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.17` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.19` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                               |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,6 +80,10 @@ The KD 5.5.0 projection uses a non-immobile `SpiderlingsSpinnerWebCell` enemy wi
 Autonomous planning captures the map seed, forms groups from hostile capable Spinners within ten reachable steps and saves each selected plan before travel. Candidate analysis reads floor topology, protected and locked metadata, entrances, exits, native choke hints, nests and member origins. Rollout persists a deterministic enclosure/core or line-fallback decision for every eligible group in `KDMapData.SpiderlingsSpinnerRollout`; revisits reuse those per-group decisions. Before detection, every capable member can hold one distinct work reservation.
 
 The test.16 package already included this rollout. On a newly generated eligible ordinary or infestation map, it enables the encounter but does not place a completed field at map start. A group needs at least two living, hostile, capable Spinners within ten reachable steps before it can plan; the guaranteed four-member Spiderling squad supplies only one Spinner. Existing Spinners then build the planned cells using their native action budget, so a map without a qualifying pair shows no construction.
+
+The test.18 guaranteed squad adds a second Spinner and uses five compact legal cells. Its two Spinners can satisfy the group requirement on their own. Planning and construction still occur over subsequent turns and require the normal map and action conditions.
+
+In test.19, owned Spinner construction movement keeps its native movement points between turns. Pathfinding accounts for occupied enemy and player cells, and native movement decides whether an occupied next step can be swapped. This allows the planned group to reach its work cells when the route is available.
 
 `afterDamageEnemy.dmgDealt` is the only durability input. Reconciliation then overwrites surviving proxy HP from topology and removes breached cells. Every solid-cell change sets `KDUpdateEnemyCache` and replaces both `KDPathCache` and `KDPathCacheIgnoreLocks`; `KDUpdateDoorNavMap()` alone is insufficient for the second cache in this patch. `afterLoadGame` reuses one valid proxy per cell, drops duplicates and creates missing projections without changing saved HP or ownership. Positive `tickAfter` events on the active map alone advance the final-owner collapse age.
 

@@ -154,10 +154,10 @@ function runtime(entities = []) {
                         aggressive: true,
                         ...(enemy.testAIData || {}),
                     },
-                    handled = context.KDAIType.hunt.beforemove(enemy, target, aiData),
+                    _handled = context.KDAIType.hunt.beforemove(enemy, target, aiData),
                     attacked = context.KDAIType.hunt.attack(enemy, target, aiData),
                     cast = context.KDAIType.hunt.spell(enemy, target, aiData);
-                return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
+                return { idle: true, attacked, cast, defeat: false, defeatEnemy: enemy };
             },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] ||= {};
@@ -209,6 +209,36 @@ test("groups require eligible hostile Spinners within ten path steps and keep st
     assert.equal(state.groups[savedId].id, savedId);
     assert.deepEqual(plain(state.groups[savedId].memberIds), [1, 2, 8]);
     assert.equal(actors.at(-1).SpiderlingsNestParentID, 90);
+});
+
+test("owned builder movement keeps native move points until the Spinner can reach its work cell", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]),
+        originalPath = r.context.KinkyDungeonFindPath,
+        originalMove = r.context.KinkyDungeonEnemyTryMove;
+    const pathFlags = [];
+    r.context.KinkyDungeonFindPath = (...args) => {
+        pathFlags.push(args.slice(4, 6));
+        return originalPath(...args);
+    };
+    r.context.KinkyDungeonEnemyTryMove = (enemy, direction, delta, x, y, canSprint) => {
+        enemy.movePoints = (enemy.movePoints || 0) + delta;
+        if (enemy.movePoints < enemy.Enemy.movePoints) return false;
+        enemy.movePoints -= enemy.Enemy.movePoints;
+        return originalMove(enemy, direction, delta, x, y, canSprint);
+    };
+    const origin = { x: worker.x, y: worker.y };
+    const first = r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(first.idle, false, "the outer native loop must not discard a pending move point");
+    assert.deepEqual({ x: worker.x, y: worker.y }, origin);
+    assert.equal(worker.movePoints, 1);
+    const second = r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(second.idle, false);
+    assert.notDeepEqual({ x: worker.x, y: worker.y }, origin);
+    assert.ok(pathFlags.every(([blockEnemy, blockPlayer]) => blockEnemy && blockPlayer));
 });
 
 test("saved deterministic selection uses topology and provenance without target position", () => {

@@ -17,9 +17,9 @@ Use the attached installable ZIP. GitHub's automatic Source code archives contai
 | Branch                                                                | Version           | Purpose                     |
 | --------------------------------------------------------------------- | ----------------- | --------------------------- |
 | [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main) | `0.92.38`         | Formal release              |
-| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.17` | Development and playtesting |
+| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.19` | Development and playtesting |
 
-The test branch retains its `0.92.36` baseline and includes the compatibility fixes carried into formal `0.92.38`. It adds experimental Spinner capture and Mage Spiderlings. Mages use ranged attacks and visible rune traps. On a newly generated ordinary map, one Mage appears from floor 5 or effective security 0 when there is a legal cell and room under the Spiderling population cap. The Mage arm restraint still uses placeholder artwork and native escape rules. Only formal versions have GitHub Releases at present; build test packages locally using the [development guide](docs/DEVELOPMENT.md).
+The test branch retains its `0.92.36` baseline and includes the compatibility fixes carried into formal `0.92.38`. It adds experimental Spinner capture and Mage Spiderlings. The guaranteed squad contains two Spinners, a Jumper, a WebCaster and a Tunneler, subject to five legal nearby cells and five population slots. Mages use ranged attacks and visible rune traps. On a newly generated ordinary map, one Mage appears from floor 5 or effective security 0 when there is a legal cell and room under the Spiderling population cap. The Mage arm restraint still uses placeholder artwork and native escape rules. Only formal versions have GitHub Releases at present; build test packages locally using the [development guide](docs/DEVELOPMENT.md).
 
 ## Development
 

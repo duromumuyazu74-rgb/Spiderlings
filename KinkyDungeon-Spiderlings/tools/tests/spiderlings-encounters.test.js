@@ -160,13 +160,13 @@ test("ordinary Spiderlings use the confirmed native weights without the minor ta
     }
 });
 
-test("guaranteed squads use one fixed four-role composition on eligible ordinary maps", () => {
+test("guaranteed squads use two Spinners and the three other fixed roles on eligible ordinary maps", () => {
     assert.equal(EncounterRules.isEligibleOrdinaryMap({}), true);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ enemies: true, spawns: true, bossroom: false }), true);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ bossroom: true }), false);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ enemies: false }), false);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ spawns: false }), false);
-    assert.deepEqual(EncounterRules.SQUAD_MEMBERS, ["Jumper", "WebCaster", "Tunneler", "Spinner"]);
+    assert.deepEqual(EncounterRules.SQUAD_MEMBERS, ["Jumper", "WebCaster", "Tunneler", "Spinner", "Spinner"]);
 });
 
 test("Mage eligibility and natural weight cover the floor, security and infestation boundaries", () => {
@@ -236,7 +236,7 @@ function candidateKeys(candidate) {
     return candidate.cells.map(cellKey).sort();
 }
 
-test("placement planning enumerates every legal square and never mixes compact fallbacks into tier one", () => {
+test("placement planning extends legal squares to five cells before compact fallbacks", () => {
     const firstSquare = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
@@ -249,41 +249,43 @@ test("placement planning enumerates every legal square and never mixes compact f
         { x: 20, y: 21 },
         { x: 21, y: 21 },
     ];
-    const fallbackLine = [
-        { x: 30, y: 10 },
-        { x: 31, y: 10 },
-        { x: 32, y: 10 },
-        { x: 33, y: 10 },
-    ];
-    const options = placementOptions([...firstSquare, ...secondSquare, ...fallbackLine], { random: () => 0.99 });
+    const firstExtra = { x: 14, y: 12 };
+    const secondExtra = { x: 22, y: 20 };
+    const fallbackLine = [30, 31, 32, 33, 34].map((x) => ({ x, y: 10 }));
+    const options = placementOptions([...firstSquare, firstExtra, ...secondSquare, secondExtra, ...fallbackLine], {
+        random: () => 0.99,
+    });
 
     const squares = EncounterRules.enumerateSquareCandidates(options);
     const plan = EncounterRules.planSquadPlacement(options);
 
     assert.equal(squares.length, 2);
-    assert.deepEqual(squares.map(candidateKeys), [firstSquare.map(cellKey).sort(), secondSquare.map(cellKey).sort()]);
+    assert.deepEqual(squares.map(candidateKeys), [
+        [...firstSquare, firstExtra].map(cellKey).sort(),
+        [...secondSquare, secondExtra].map(cellKey).sort(),
+    ]);
     assert.equal(plan.outcome, "placeable");
     assert.equal(plan.tier, "square");
     assert.equal(plan.candidateCount, 2);
     assert.deepEqual(
         plan.placements.map((placement) => cellKey(placement.cell)).sort(),
-        secondSquare.map(cellKey).sort(),
+        [...secondSquare, secondExtra].map(cellKey).sort(),
     );
 });
 
-test("compact fallback enumeration covers every four-cell corridor window and accepts L shapes", () => {
-    const corridor = [12, 13, 14, 15, 16].map((x) => ({ x, y: 12 }));
+test("compact fallback enumeration covers every five-cell corridor window and accepts L shapes", () => {
+    const corridor = [12, 13, 14, 15, 16, 17].map((x) => ({ x, y: 12 }));
     const candidates = EncounterRules.enumerateCompactCandidates(placementOptions(corridor));
     assert.deepEqual(candidates.map(candidateKeys), [
-        corridor.slice(0, 4).map(cellKey),
-        corridor.slice(1, 5).map(cellKey),
+        corridor.slice(0, 5).map(cellKey),
+        corridor.slice(1, 6).map(cellKey),
     ]);
 
     const linePlan = EncounterRules.planSquadPlacement(placementOptions(corridor));
     assert.equal(linePlan.tier, "compact");
     assert.deepEqual(
         linePlan.placements.map((placement) => cellKey(placement.cell)).sort(),
-        corridor.slice(0, 4).map(cellKey).sort(),
+        corridor.slice(0, 5).map(cellKey).sort(),
     );
 
     const lShape = [
@@ -291,23 +293,28 @@ test("compact fallback enumeration covers every four-cell corridor window and ac
         { x: 20, y: 13 },
         { x: 20, y: 14 },
         { x: 21, y: 14 },
+        { x: 22, y: 14 },
     ];
     const lPlan = EncounterRules.planSquadPlacement(placementOptions(lShape));
     assert.equal(lPlan.tier, "compact");
     assert.deepEqual(lPlan.placements.map((placement) => cellKey(placement.cell)).sort(), lShape.map(cellKey).sort());
 });
 
-test("compact candidates require four distinct connected cells within anchor radius two", () => {
+test("compact candidates require five distinct connected cells within anchor radius two", () => {
     const line = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
         { x: 14, y: 12 },
         { x: 15, y: 12 },
+        { x: 16, y: 12 },
     ];
     assert.equal(EncounterRules.isConnectedCandidate(line), true);
-    assert.deepEqual(EncounterRules.findCompactAnchor(line), { x: 13, y: 12 });
-    assert.equal(EncounterRules.isConnectedCandidate([line[0], line[1], line[2], line[2]]), false);
-    assert.equal(EncounterRules.isConnectedCandidate([line[0], line[1], { x: 20, y: 20 }, { x: 21, y: 20 }]), false);
+    assert.deepEqual(EncounterRules.findCompactAnchor(line), { x: 14, y: 12 });
+    assert.equal(EncounterRules.isConnectedCandidate([line[0], line[1], line[2], line[3], line[3]]), false);
+    assert.equal(
+        EncounterRules.isConnectedCandidate([line[0], line[1], line[2], { x: 20, y: 20 }, { x: 21, y: 20 }]),
+        false,
+    );
 });
 
 test("cell legality applies inclusive diagonal 10/4 safety boundaries", () => {
@@ -353,9 +360,11 @@ test("the same seeded random sequence reproduces candidate choice and member ass
         { x: 21, y: 20 },
         { x: 20, y: 21 },
         { x: 21, y: 21 },
+        { x: 22, y: 20 },
+        { x: 14, y: 12 },
     ];
     const seeded = () => {
-        const values = [0.75, 0.1, 0.9, 0.4];
+        const values = [0.75, 0.1, 0.9, 0.4, 0.6];
         let index = 0;
         return () => values[index++];
     };
@@ -366,12 +375,24 @@ test("the same seeded random sequence reproduces candidate choice and member ass
     assert.deepEqual(first.placements.map((placement) => placement.enemy).sort(), [
         "Jumper",
         "Spinner",
+        "Spinner",
         "Tunneler",
         "WebCaster",
     ]);
 });
 
 test("placement planning returns unplaceable without a smaller fallback", () => {
+    assert.deepEqual(
+        EncounterRules.planSquadPlacement(
+            placementOptions([
+                { x: 12, y: 12 },
+                { x: 13, y: 12 },
+                { x: 12, y: 13 },
+                { x: 13, y: 13 },
+            ]),
+        ),
+        { outcome: "unplaceable" },
+    );
     assert.deepEqual(
         EncounterRules.planSquadPlacement(
             placementOptions([
@@ -473,6 +494,7 @@ function squadRuntime(overrides = {}) {
     const square = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
+        { x: 14, y: 12 },
         { x: 12, y: 13 },
         { x: 13, y: 13 },
     ];
@@ -544,13 +566,7 @@ function squadRuntime(overrides = {}) {
 }
 
 function mageMapRuntime(overrides = {}) {
-    const cells = [
-        { x: 12, y: 12 },
-        { x: 13, y: 12 },
-        { x: 12, y: 13 },
-        { x: 13, y: 13 },
-        { x: 15, y: 12 },
-    ];
+    const cells = [...[12, 13, 14].flatMap((y) => [12, 13, 14].map((x) => ({ x, y }))), { x: 15, y: 12 }];
     let security = -50;
     const beforePopulation = [];
     const kd = loadCoreRuntime({
@@ -599,9 +615,9 @@ function mageMapRuntime(overrides = {}) {
     };
 }
 
-test("eligible maps reserve a Mage before native population without changing the four-role squad", () => {
+test("eligible maps reserve a Mage before native population and the five-member squad", () => {
     const r = mageMapRuntime();
-    r.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "5";
+    r.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "6";
     assert.equal(r.generate(5), "native-population");
     assert.deepEqual(r.beforePopulation[0], ["MageSpiderlings"]);
     assert.equal(r.kd.KDMapData.SpiderlingsGuaranteedMageState, "spawned");
@@ -611,10 +627,10 @@ test("eligible maps reserve a Mage before native population without changing the
         r.kd.KDMapData.Entities.slice(1)
             .map((entity) => entity.Enemy.name)
             .sort(),
-        ["Jumper", "Spinner", "Tunneler", "WebCaster"],
+        ["Jumper", "Spinner", "Spinner", "Tunneler", "WebCaster"],
     );
     assert.equal(r.generate(5), "native-population");
-    assert.equal(r.kd.KDMapData.Entities.length, 5, "a revisit does not add another Mage or squad");
+    assert.equal(r.kd.KDMapData.Entities.length, 6, "a revisit does not add another Mage or squad");
 });
 
 test("Mage guarantee uses floor OR security and leaves ineligible and excluded maps alone", () => {
@@ -683,7 +699,7 @@ test("Mage guarantee leaves authored native spawn points vacant", () => {
     assert.equal(noFreeCell.kd.KDMapData.Entities.length, 0);
 });
 
-test("runtime registration keeps native weights and spawns one complete unaware 2x2 squad", () => {
+test("runtime registration keeps native weights and spawns one complete unaware five-member squad", () => {
     const summons = [];
     const natural = { id: 1, x: 11, y: 11, hp: 3, Enemy: { name: "NaturalEnemy" } };
     const { context, definitions, square } = squadRuntime();
@@ -707,12 +723,12 @@ test("runtime registration keeps native weights and spawns one complete unaware 
     assert.equal(typeof handler, "function");
     assert.equal(handler(), true);
     assert.equal(handler(), false);
-    assert.equal(summons.length, 4);
+    assert.equal(summons.length, 5);
     assert.deepEqual(
         summons.map((args) => ({ x: args[0], y: args[1] })),
         square,
     );
-    assert.deepEqual(summons.map((args) => args[2]).sort(), ["Jumper", "Spinner", "Tunneler", "WebCaster"]);
+    assert.deepEqual(summons.map((args) => args[2]).sort(), ["Jumper", "Spinner", "Spinner", "Tunneler", "WebCaster"]);
     assert.equal(
         summons.every(
             (args) =>
@@ -728,7 +744,16 @@ test("runtime registration keeps native weights and spawns one complete unaware 
     const squad = context.KDMapData.Entities.filter(
         (entity) => entity.SpiderlingsSquadProvenance === "guaranteed-squad",
     );
-    assert.deepEqual(squad.map((entity) => entity.Enemy.name).sort(), ["Jumper", "Spinner", "Tunneler", "WebCaster"]);
+    assert.deepEqual(squad.map((entity) => entity.Enemy.name).sort(), [
+        "Jumper",
+        "Spinner",
+        "Spinner",
+        "Tunneler",
+        "WebCaster",
+    ]);
+    const spinners = squad.filter((entity) => entity.Enemy.name === "Spinner");
+    assert.equal(spinners.length, 2);
+    assert.ok(Math.max(Math.abs(spinners[0].x - spinners[1].x), Math.abs(spinners[0].y - spinners[1].y)) <= 2);
     assert.deepEqual(
         squad.map((entity) => ({ x: entity.x, y: entity.y })),
         square,
@@ -800,7 +825,7 @@ test("state-less stored maps have no load or transition hook that can backfill a
 
 test("runtime placement uses a compact corridor only when no legal square exists", () => {
     const { context } = squadRuntime();
-    const corridor = [12, 13, 14, 15].map((x) => ({ x, y: 12 }));
+    const corridor = [12, 13, 14, 15, 16].map((x) => ({ x, y: 12 }));
     context.KDMapData.RandomPathablePoints = Object.fromEntries(corridor.map((point) => [cellKey(point), point]));
 
     const handler = context.KDEventMapGeneric.postMapgen.SpiderlingsGuaranteedSquad;
@@ -823,7 +848,7 @@ test("partial creation failure rolls back every new member without events or dam
     let attempts = 0;
     context.KinkyDungeonSummonEnemy = (...args) => {
         attempts += 1;
-        return attempts === 3 ? [] : originalSummon(...args);
+        return attempts === 5 ? [] : originalSummon(...args);
     };
     const removals = [];
     context.KDRemoveEntity = (entity, kill, capture, noEvent) => {
@@ -836,13 +861,13 @@ test("partial creation failure rolls back every new member without events or dam
     assert.equal(handler(), false);
     assert.equal(context.KDMapData.SpiderlingsGuaranteedSquadState, "creation-failed");
     assert.deepEqual(context.KDMapData.Entities, [natural]);
-    assert.equal(removals.length, 2);
+    assert.equal(removals.length, 4);
     assert.equal(
         removals.every((removal) => removal.kill === false && removal.capture === false && removal.noEvent === true),
         true,
     );
     assert.equal(handler(), false);
-    assert.equal(attempts, 3);
+    assert.equal(attempts, 5);
 });
 
 test("runtime validates all member definitions and entity capacity before creating anything", () => {
@@ -1722,9 +1747,9 @@ test("native population selection excludes capped mobile Spiderlings and recover
     assert.equal(choose().name, "WebCaster", "new map has its own full quota, including Mage");
 });
 
-test("a fixed squad is skipped atomically when fewer than four map slots remain", () => {
+test("a fixed squad is skipped atomically when fewer than five map slots remain", () => {
     const { context: kd } = squadRuntime();
-    kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "4";
+    kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "5";
     const existing = { id: 1, x: 5, y: 5, hp: 2, Enemy: { name: "Spinner" } };
     kd.KDMapData.Entities.push(existing);
     assert.equal(kd.Spiderlings.runGuaranteedSpiderlingSquad(), false);
@@ -1733,9 +1758,9 @@ test("a fixed squad is skipped atomically when fewer than four map slots remain"
     kd.KDMapData.Entities = [];
     assert.equal(kd.Spiderlings.runGuaranteedSpiderlingSquad(), false, "no late backfill on a visited map");
     const fresh = squadRuntime().context;
-    fresh.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "4";
+    fresh.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "5";
     assert.equal(fresh.Spiderlings.runGuaranteedSpiderlingSquad(), true);
-    assert.equal(fresh.KDMapData.Entities.length, 4);
+    assert.equal(fresh.KDMapData.Entities.length, 5);
 });
 
 test("multiple nests share the last map slot and a capped nest keeps its due timer", () => {

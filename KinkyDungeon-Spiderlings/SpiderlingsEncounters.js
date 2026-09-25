@@ -125,7 +125,7 @@
         Tunneler: 4,
         NestEntrance: 2,
     });
-    const SQUAD_MEMBERS = Object.freeze(["Jumper", "WebCaster", "Tunneler", "Spinner"]);
+    const SQUAD_MEMBERS = Object.freeze(["Jumper", "WebCaster", "Tunneler", "Spinner", "Spinner"]);
     const MOBILE_SPIDERLINGS = new Set([...SQUAD_MEMBERS, "MageSpiderlings"]);
     const MAGE = "MageSpiderlings";
     const MAGE_STATE_FIELD = "SpiderlingsGuaranteedMageState";
@@ -257,25 +257,40 @@
     }
 
     function enumerateSquareCandidates(options = {}) {
-        const result = [];
+        const candidates = new Map();
         for (let y = 1; y < options.height - 1; y += 1) {
             for (let x = 1; x < options.width - 1; x += 1) {
-                const cells = [
+                const square = [
                     { x, y },
                     { x: x + 1, y },
                     { x, y: y + 1 },
                     { x: x + 1, y: y + 1 },
                 ];
-                if (cells.every((cell) => isSquadCellLegal(cell, options))) {
-                    result.push({ anchor: { x, y }, cells });
+                if (!square.every((cell) => isSquadCellLegal(cell, options))) continue;
+                for (let dy = -1; dy <= 2; dy += 1) {
+                    for (let dx = -1; dx <= 2; dx += 1) {
+                        if (dx >= 0 && dx <= 1 && dy >= 0 && dy <= 1) continue;
+                        const extra = { x: x + dx, y: y + dy };
+                        if (!isSquadCellLegal(extra, options)) continue;
+                        const cells = [...square, extra];
+                        const anchor = findCompactAnchor(cells);
+                        if (anchor) candidates.set(candidateKey(cells), { anchor, cells: canonicalCells(cells) });
+                    }
                 }
             }
         }
-        return result;
+        return [...candidates.entries()]
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([, candidate]) => candidate);
     }
 
     function isConnectedCandidate(cells) {
-        if (!Array.isArray(cells) || cells.length !== 4 || new Set(cells.map(pointKey)).size !== 4) return false;
+        if (
+            !Array.isArray(cells) ||
+            cells.length !== SQUAD_MEMBERS.length ||
+            new Set(cells.map(pointKey)).size !== SQUAD_MEMBERS.length
+        )
+            return false;
         const remaining = new Map(cells.map((cell) => [pointKey(cell), cell]));
         const pending = [cells[0]];
         remaining.delete(pointKey(cells[0]));
@@ -299,12 +314,6 @@
         return anchor ? { x: anchor.x, y: anchor.y } : null;
     }
 
-    function isSquareCandidate(cells) {
-        const xs = [...new Set(cells.map((cell) => cell.x))].sort((left, right) => left - right);
-        const ys = [...new Set(cells.map((cell) => cell.y))].sort((left, right) => left - right);
-        return xs.length === 2 && ys.length === 2 && xs[1] - xs[0] === 1 && ys[1] - ys[0] === 1;
-    }
-
     function enumerateCompactCandidates(options = {}) {
         const legal = legalSquadCells(options);
         const indexByKey = new Map(legal.map((cell, index) => [pointKey(cell), index]));
@@ -314,10 +323,10 @@
             const partialKey = candidateIndexes.join(",");
             if (visited.has(partialKey)) return;
             visited.add(partialKey);
-            if (candidateIndexes.length === 4) {
+            if (candidateIndexes.length === SQUAD_MEMBERS.length) {
                 const cells = candidateIndexes.map((index) => legal[index]);
                 const anchor = findCompactAnchor(cells);
-                if (anchor && !isSquareCandidate(cells)) {
+                if (anchor) {
                     candidates.set(candidateKey(cells), { anchor, cells: canonicalCells(cells) });
                 }
                 return;

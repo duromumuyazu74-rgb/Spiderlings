@@ -195,7 +195,7 @@ NPC 跃击同时锁定实体 ID 与原地格，两次完整玩家行动后结算
 
 ## Encounter 设置
 
-`SpiderlingsCore.js` 的自然刷怪、固定四人小队与 NestEntrance 循环增援保持独立。自然刷怪权重为 Spinner/Jumper/WebCaster/Tunneler/NestEntrance `12/12/8/4/2`；默认开启的 `Spiderling squad` 在每张新生成合格地图原子放置 Jumper、WebCaster、Tunneler、Spinner 各一只。
+`SpiderlingsCore.js` 的自然刷怪、固定五只小队与 NestEntrance 循环增援保持独立。自然刷怪权重为 Spinner/Jumper/WebCaster/Tunneler/NestEntrance `12/12/8/4/2`；默认开启的 `Spiderling squad` 在每张新生成合格地图原子放置 Jumper、WebCaster、Tunneler 各一只和 Spinner 两只。
 
 | 设置                                   |    默认值 | 作用                                                                        |
 | -------------------------------------- | --------: | --------------------------------------------------------------------------- |

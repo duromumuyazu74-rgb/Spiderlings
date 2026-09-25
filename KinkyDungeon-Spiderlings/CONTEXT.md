@@ -5,7 +5,7 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 ## Spiderlings encounters
 
 **Map Spiderling population cap**:
-The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
+The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs five slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
 _Avoid_: per-nest offspring cap, total spawns over a floor, nest count limit
 
 **Native Spiderlings population**:
@@ -13,15 +13,15 @@ Spiderlings selected by KD's ordinary enemy population system. It coexists with 
 _Avoid_: guaranteed spawn, single-enemy fallback
 
 **Guaranteed Mage Spiderling**:
-One Mage placed before native random population on a newly generated ordinary map at floor 5 or effective security 0, if a legal cell outside authored spawn points and a mobile population slot exist. The map records its one-time outcome. This Mage is separate from the unchanged four-member squad; natural rolls may add more within the shared cap.
+One Mage placed before native random population on a newly generated ordinary map at floor 5 or effective security 0, if a legal cell outside authored spawn points and a mobile population slot exist. The map records its one-time outcome. This Mage is separate from the five-member squad; natural rolls may add more within the shared cap.
 _Avoid_: adding Mage to the fixed squad, spawning on every revisit
 
 **Guaranteed Spiderling squad**:
-A default-enabled, one-shot encounter of exactly one Jumper, WebCaster, Tunneler, and Spinner on an eligible newly generated ordinary map. The group is additional to native population and is created only as a complete atomic unit.
-_Avoid_: random four Spiderlings, natural spawn replacement, one-enemy fallback
+A default-enabled, one-shot encounter of exactly one Jumper, WebCaster and Tunneler plus two Spinners on an eligible newly generated ordinary map. The group is additional to native population and is created only as a complete atomic unit.
+_Avoid_: random Spiderlings, natural spawn replacement, one-enemy fallback
 
 **Compact squad placement**:
-A complete four-cell placement selected from legal `2×2` squares first, or from other connected four-cell neighborhoods only when no legal square exists. It never reduces the squad size to fit a map.
+A complete five-cell placement selected from a legal `2×2` square with one adjacent cell first, or from other connected compact five-cell neighborhoods only when no such placement exists. It never reduces the squad size to fit a map.
 _Avoid_: partial squad, arbitrary scatter, single-member fallback
 
 **Nest reinforcement**:
