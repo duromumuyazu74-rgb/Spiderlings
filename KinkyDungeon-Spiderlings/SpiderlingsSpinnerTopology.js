@@ -817,7 +817,12 @@
 
     function nextWorkAction(state, ownerId, actorCell, reservedKeys = []) {
         if (!state.owners.includes(ownerId)) return undefined;
-        const fields = Object.values(state.fields || {}).sort((a, b) => a.layer - b.layer),
+        const allFields = Object.values(state.fields || {}),
+            ownedFields = allFields.filter((field) =>
+                (state.fieldOwners?.[field.id] || state.owners).includes(ownerId),
+            ),
+            ownedIds = new Set(ownedFields.map((field) => field.id)),
+            fields = ownedFields.sort((a, b) => a.layer - b.layer),
             here = point(actorCell),
             reserved = new Set(reservedKeys);
         for (const field of fields)
@@ -840,8 +845,10 @@
         for (const field of fields) {
             if (field.retired) continue;
             if (field.layer > 0) {
-                const inner = fields.find((candidate) => candidate.layer === field.layer - 1);
-                if (!inner || !isLayerClosed(state, inner.id)) break;
+                const inner = allFields.find(
+                    (candidate) => candidate.compositeId === field.compositeId && candidate.layer === field.layer - 1,
+                );
+                if (!inner || !isLayerClosed(state, inner.id)) continue;
             }
             const actions = candidateActions(state, field, here).filter((action) => !reserved.has(workKey(action)));
             if (actions.length) return actions[0];
@@ -866,9 +873,8 @@
                 if (!link?.connected) return undefined;
             }
         }
-        const composite = Object.values(state.composites || {})[0];
-        if (composite?.closureArmed)
-            for (const field of fields) {
+        for (const field of fields) {
+            if (state.composites[field.compositeId]?.closureArmed) {
                 if (field.retired) continue;
                 if (isLayerClosed(state, field.id)) continue;
                 const link = state.links.find((candidate) =>
@@ -895,20 +901,24 @@
                     if (!reserved.has(workKey(action))) return action;
                 }
             }
+        }
         for (const link of state.links) {
-            const maintained = link.owners.some((fieldId) => state.fields[fieldId] && !state.fields[fieldId].retired);
-            if (!maintained) continue;
-            if (link.hp > 0 && link.hp < link.maxHp)
-                return {
+            const fieldId = link.owners.find((id) => ownedIds.has(id) && !state.fields[id]?.retired);
+            if (!fieldId) continue;
+            if (link.hp > 0 && link.hp < link.maxHp) {
+                const action = {
                     type: "repair",
                     linkId: link.id,
-                    fieldId: link.owners[0],
+                    fieldId,
                     role: "repair",
                     cell: point(link.cells[0]),
                 };
+                if (!reserved.has(workKey(action))) return action;
+            }
             if (link.hp <= 0 && link.cooldown >= REBUILD_TURNS) {
                 const cell = link.plannedCells[0] || point(link.cells[0]);
-                return { type: "rebuildLink", linkId: link.id, fieldId: link.owners[0], role: "rebuild", cell };
+                const action = { type: "rebuildLink", linkId: link.id, fieldId, role: "rebuild", cell };
+                if (!reserved.has(workKey(action))) return action;
             }
         }
         return undefined;

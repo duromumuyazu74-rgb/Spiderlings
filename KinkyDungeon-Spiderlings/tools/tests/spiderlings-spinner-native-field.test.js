@@ -93,6 +93,60 @@ test("pure topology requires paid anchor and connection operations and rejects a
     }
 });
 
+test("independent Spinner owners finish their own enclosures in one topology graph", () => {
+    const rules = runtime().context.Spiderlings.SpinnerTopology,
+        layer = (id, x) => ({
+            id,
+            vertices: [
+                { x: x - 1, y: 4 },
+                { x: x + 1, y: 4 },
+                { x: x + 1, y: 6 },
+                { x: x - 1, y: 6 },
+            ],
+            gate: { x, y: 4 },
+        });
+    let graph = rules.createEnclosure({
+        compositeId: "one",
+        owners: [1],
+        layers: [layer("one-field", 5)],
+        autoSeal: true,
+    });
+    graph = rules.addEnclosure(graph, {
+        compositeId: "two",
+        owners: [2],
+        layers: [layer("two-field", 14)],
+        autoSeal: true,
+    }).state;
+    const expected = new Map([
+        [1, "one-field"],
+        [2, "two-field"],
+    ]);
+    for (let turn = 0; turn < 30; turn++) {
+        for (const [ownerId, fieldId] of expected) {
+            const action = rules.nextWorkAction(graph, ownerId, { x: ownerId === 1 ? 5 : 14, y: 7 });
+            if (!action) continue;
+            assert.equal(action.fieldId, fieldId);
+            const result = rules.applyAction(
+                graph,
+                { ...action, ownerId },
+                {
+                    cell: action.cell,
+                    inBounds: true,
+                    floor: true,
+                    protected: false,
+                    occupied: false,
+                },
+            );
+            assert.equal(result.outcome.legal, true, `${fieldId}: ${JSON.stringify(result.outcome)}`);
+            graph = result.state;
+        }
+    }
+    for (const fieldId of expected.values()) {
+        assert.equal(graph.fields[fieldId].phase, "sealed");
+        assert.ok(graph.actionLog.some((action) => action.fieldId === fieldId && action.type === "closeGate"));
+    }
+});
+
 test("two supplied Spinners construct one cell per paid action without moving", () => {
     const r = runtime(),
         built = buildAll(r),
