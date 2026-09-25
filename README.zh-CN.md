@@ -17,9 +17,9 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 | 分支                                                                  | 版本              | 用途       |
 | --------------------------------------------------------------------- | ----------------- | ---------- |
 | [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main) | `0.92.38`         | 正式版     |
-| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.19` | 测试开发版 |
+| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.20` | 测试开发版 |
 
-测试分支沿用 `0.92.36` 正式基线，并已包含正式版 `0.92.38` 的兼容修复。它增加了实验性的 Spinner 捕获和 Mage Spiderlings。保底小队由两只 Spinner、一只 Jumper、一只 WebCaster 和一只 Tunneler 组成，需有五个相邻合法格及五个人口名额。法师幼蛛会远程攻击并布置可见的符文陷阱。新生成的普通地图达到第 5 层或有效安全等级 0 时，只要有合法空格且未超过幼蛛人口上限，就会有一只法师幼蛛。法师的手臂拘束暂用占位素材和原生脱困规则。目前只有正式版发布 GitHub Release；测试包按[开发说明](docs/DEVELOPMENT.md)在本地构建。
+测试分支沿用 `0.92.36` 正式基线，并已包含正式版 `0.92.38` 的兼容修复。它增加了实验性的 Spinner 捕获和 Mage Spiderlings。保底小队由两只 Spinner、一只 Jumper、一只 WebCaster 和一只 Tunneler 组成，需有五个相邻合法格及五个人口名额。法师幼蛛会远程攻击并布置可见的符文陷阱。新生成的普通地图达到第 5 层或有效安全等级 0 时，只要有合法空格且未超过幼蛛人口上限，就会有一只法师幼蛛。法师幼蛛现有专用本体图：成功放置符文时叠加施法粒子和轻微光效，其他法术成功时叠加相同粒子和较强光效。法师的手臂拘束暂用占位素材和原生脱困规则。目前只有正式版发布 GitHub Release；测试包按[开发说明](docs/DEVELOPMENT.md)在本地构建。
 
 ## 开发与反馈
 

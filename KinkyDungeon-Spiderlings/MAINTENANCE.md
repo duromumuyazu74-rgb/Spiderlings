@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.19 维护说明
+# Spiderlings 0.92.36-test.20 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -17,6 +17,8 @@ test.18 将保底小队扩为五只：Jumper、WebCaster、Tunneler 各一只，
 test.19 修复实机发现的自动施工停滞：原生循环将接管移动的 Spinner 标为闲置并清空未攒满的移动行动点。现在施工移动保留行动点，寻路按原生敌人／玩家占位重新计算，下一步由原生移动处理可交换的单位。test.18 仅为本地诊断包，未提交为测试交付。
 
 test.19 安装包实机验收：KD 5.4.92 和本地只读 KD 5.5.0 均在新普通地图生成完整五只小队，两只队内 Spinner 编组并保存布场方案；等待 120 回合后，两版均记录付费施工动作并产生场地蛛网实体。5.5.0 本地参考仍有原版 TextureAtlas 请求缺失，未将其计入 Mod 资源问题。
+
+test.20 将 Mage 的临时 WebCaster 贴图替换为专用 Mage 本体图。成功放置符文时，在本体上叠加 Spell particles 和 Subtle Glow；成功施放其他法术时叠加 Spell particles 和 Really Glowy；待机及施法失败时只绘制本体。四张源图保留原始像素，绘制时仅对这些图的统一深蓝导出底色做精确色键透明处理。短暂施法图层不进入存档。
 
 ## 当前测试扩展
 
