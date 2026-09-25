@@ -101,4 +101,20 @@ test("pinned KD 5.5.0 TryMove pays fractional web steps through live proxies wit
     const prior = spider.movePoints;
     context.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, spider.x + 1, 3, false);
     assert.equal(spider.movePoints, prior + 1);
+
+    const pending = { id: 3, x: 1, y: 5, hp: 10, movePoints: 0, Enemy: { tags: { spiderlings: true }, movePoints: 2 } };
+    context.KDMapData.Entities.push(pending);
+    web.add("2,5");
+    assert.equal(context.KinkyDungeonEnemyTryMove(pending, { x: 1, y: 0, delta: 1 }, 1, 2, 5, false), false);
+    assert.equal(pending.movePoints, 1.5);
+    assert.equal(context.KinkyDungeonEnemyTryMove(pending, { x: 0, y: 1, delta: 1 }, 0.5, 1, 6, false), false);
+    assert.equal(pending.movePoints, 1.5);
+    web.add("2,6");
+    const broken = { id: 4, x: 1, y: 6, hp: 10, movePoints: 0, Enemy: { tags: { spiderlings: true }, movePoints: 2 } };
+    context.KDMapData.Entities.push(broken);
+    context.KinkyDungeonEnemyTryMove(broken, { x: 1, y: 0, delta: 1 }, 1, 2, 6, false);
+    assert.equal(broken.movePoints, 1.5);
+    web.delete("2,6");
+    context.Spiderlings.WebMobility.invalidateNavigation(true);
+    assert.equal(broken.movePoints, 1);
 });

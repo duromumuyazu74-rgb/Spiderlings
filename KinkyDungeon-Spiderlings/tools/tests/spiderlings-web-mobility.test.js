@@ -135,8 +135,38 @@ test("blocked web steps earn no discount and ordinary departure pays ordinary co
         context.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, 2, 3, false);
     assert.equal(spider.x, 2);
     context.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, 3, 3, false);
+    assert.equal(spider.x, 2);
+    assert.equal(spider.movePoints, 1);
+    context.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, 3, 3, false);
     assert.equal(spider.x, 3);
     assert.equal(spider.movePoints, 0);
+});
+
+test("unfinished web credit cannot pay a later ordinary destination", () => {
+    const { context, web } = fixture(),
+        spider = actor(1, { spiderlings: true });
+    web.add("2,3");
+    assert.equal(context.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, 2, 3, false), false);
+    assert.equal(spider.movePoints, 1.5);
+    assert.equal(context.KinkyDungeonEnemyTryMove(spider, { x: 0, y: 1, delta: 1 }, 0.5, 1, 4, false), false);
+    assert.equal(spider.movePoints, 1.5);
+    assert.deepEqual({ x: spider.x, y: spider.y }, { x: 1, y: 3 });
+});
+
+test("breaking a pending web destination removes its credit immediately, including after reload", () => {
+    const { context, web } = fixture(),
+        spider = actor(1, { spiderlings: true });
+    web.add("2,3");
+    context.KDMapData.Entities.push(spider);
+    context.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, 2, 3, false);
+    assert.equal(spider.movePoints, 1.5);
+    const restored = JSON.parse(JSON.stringify(spider));
+    context.KDMapData = { Entities: [restored], Traffic: [] };
+    web.delete("2,3");
+    context.Spiderlings.WebMobility.invalidateNavigation(true);
+    assert.equal(restored.movePoints, 1);
+    assert.equal(context.KinkyDungeonEnemyTryMove(restored, { x: 1, y: 0, delta: 1 }, 0.5, 2, 3, false), false);
+    assert.equal(restored.movePoints, 1.5);
 });
 
 test("weighted spider path prefers a longer web route and invalidates on breakage, occupancy and reload", () => {

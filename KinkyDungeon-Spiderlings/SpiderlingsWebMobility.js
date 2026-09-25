@@ -26,10 +26,36 @@
         );
     }
 
-    function invalidateNavigation() {
+    function discardWebCredit(actor) {
+        const credit = Math.min(actor?.SpiderlingsWebMoveCredit || 0, Math.max(0, actor?.movePoints || 0));
+        if (credit > 0) actor.movePoints -= credit;
+        if (actor) {
+            delete actor.SpiderlingsWebMoveCredit;
+            delete actor.SpiderlingsWebMoveDestination;
+        }
+    }
+
+    function recordWebCredit(actor, credit, destination) {
+        const retained = Math.min(credit, Math.max(0, actor.movePoints || 0));
+        if (!(retained > 0)) return discardWebCredit(actor);
+        actor.SpiderlingsWebMoveCredit = retained;
+        actor.SpiderlingsWebMoveDestination = destination;
+    }
+
+    function invalidateNavigation(webChanged = false) {
         routes = new Map();
         routeMap = typeof KDMapData === "undefined" ? undefined : KDMapData;
         webKeys = undefined;
+        if (!webChanged || !routeMap) return;
+        const graph = api.SpinnerNativeField?.state()?.topology;
+        if (api.SpinnerTopology) webKeys = new Set(graph ? api.SpinnerTopology.solidCells(graph).map(key) : []);
+        for (const actor of routeMap.Entities || []) {
+            if (!(actor.SpiderlingsWebMoveCredit > 0)) continue;
+            const [x, y] = String(actor.SpiderlingsWebMoveDestination || "")
+                .split(",")
+                .map(Number);
+            if (!web({ x, y }, webKeys)) discardWebCredit(actor);
+        }
     }
 
     function ownedWebKeys() {
@@ -57,15 +83,15 @@
     }
 
     function moveWithWebCredit(native, actor, direction, delta, x, y, canSprint) {
-        if (
-            !isMobileSpider(actor) ||
-            !(delta > 0) ||
-            !web({ x, y }, ownedWebKeys()) ||
-            actorAt(x, y, actor) ||
-            (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y)
-        )
+        const webDestination = isMobileSpider(actor) && web({ x, y }, ownedWebKeys()),
+            occupied =
+                webDestination &&
+                (actorAt(x, y, actor) || (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y));
+        if (!webDestination || occupied) discardWebCredit(actor);
+        if (!webDestination || occupied || !(delta > 0))
             return native.call(this, actor, direction, delta, x, y, canSprint);
         const before = { x: actor.x, y: actor.y },
+            previousCredit = Math.min(actor.SpiderlingsWebMoveCredit || 0, Math.max(0, actor.movePoints || 0)),
             ordinary = movementCredit(actor, delta, canSprint),
             bonus = ordinary * (SPEED - 1),
             boundCost = KDBoundEffects(actor) * 0.5,
@@ -77,7 +103,9 @@
             paid = (actor.movePoints || 0) + ordinary + bonus >= threshold;
         actor.movePoints = (actor.movePoints || 0) + bonus;
         const moved = native.call(this, actor, direction, delta, x, y, canSprint);
-        if (paid && (!moved || same(actor, before))) actor.movePoints = Math.max(0, actor.movePoints - bonus);
+        const blocked = paid && (!moved || same(actor, before));
+        if (blocked) actor.movePoints = Math.max(0, actor.movePoints - bonus);
+        recordWebCredit(actor, previousCredit + (blocked ? 0 : bonus), `${x},${y}`);
         return moved;
     }
 

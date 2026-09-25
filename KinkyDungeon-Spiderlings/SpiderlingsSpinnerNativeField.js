@@ -46,7 +46,7 @@
         KDUpdateEnemyCache = true;
         KDPathCache = new Map();
         KDPathCacheIgnoreLocks = new Map();
-        api.WebMobility?.invalidateNavigation();
+        api.WebMobility?.invalidateNavigation(true);
     }
 
     function topologyCell(field, cell) {
