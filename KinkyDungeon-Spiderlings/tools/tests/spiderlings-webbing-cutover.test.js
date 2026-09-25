@@ -32,6 +32,7 @@ const scripts = [
     "SpiderlingsSpinnerNPCCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsWebMobility.js",
     "SpiderlingsSpinnerRecovery.js",
     "SpiderlingsSpinnerNPCRecovery.js",
     "SpiderlingsSpinnerAI.js",

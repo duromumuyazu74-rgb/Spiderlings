@@ -81,12 +81,14 @@
         );
         KDAddEvent(KDEventMapGeneric, "playerMove", KEY, (_event, data) => {
             if (!data?.cancelmove) {
+                api.WebMobility?.invalidateNavigation();
                 api.SpinnerRecovery?.onPlayerMove(data);
                 api.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity, data.moveX, data.moveY);
             }
         });
         KDAddEvent(KDEventMapGeneric, "enemyMove", KEY, (_event, data) => {
             if (!data?.cancelmove) {
+                api.WebMobility?.invalidateNavigation();
                 api.SpinnerNPCRecovery?.onEnemyMove(data);
                 api.SpinnerNativeField.onEntry(data.enemy, data.moveX, data.moveY);
             }
@@ -106,6 +108,7 @@
             api.NPCWrapping?.audit();
         });
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
+            api.WebMobility?.invalidateNavigation();
             api.SpinnerAI?.restoreAfterLoad();
             api.SpinnerNativeField.reconcile();
             api.SpinnerRecovery?.afterLoad();

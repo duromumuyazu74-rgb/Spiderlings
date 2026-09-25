@@ -47,6 +47,7 @@ _Avoid_: every Spiderling near a nest
 ## Spiderlings Webbing
 
 **Spinner physical field**:
+Tagged mobile spiders of either faction traverse any intact Spiderlings-owned web at 1.5 times ordinary movement credit and prefer its 2/3-cost path. This changes movement only; work and offensive actions keep their native cadence.
 A saved, paid enclosure whose first complete perimeter is a 3-by-3 outer footprint with one interior cell and eight web cells. One capable Spinner can build it; completed inner rings remain when new 5-by-5 and 7-by-7 rings are built. The web proxy and one actual spider may share a cell, but two actual actors may not. Non-spiders breach the web through ordinary attacks. Field construction and player Capture strands are separate capabilities.
 _Avoid_: a required 3-by-3 interior, four-owner expansion gate, free planned segments, a new restraint from lone construction
 
