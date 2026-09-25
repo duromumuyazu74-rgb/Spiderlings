@@ -43,7 +43,7 @@ function runtime(overrides = {}, nativeSources = []) {
             (entity.flags ||= {})[name] = value;
         },
         KinkyDungeonSummonEnemy(x, y, name) {
-            const entity = { x, y, id: ++id, hp: 12, Enemy: { name, immobile: true } };
+            const entity = { x, y, id: ++id, hp: 12, Enemy: { name, immobile: name === "NestEntrance" } };
             context.KDMapData.Entities.push(entity);
             return [entity];
         },
@@ -90,7 +90,7 @@ function runtime(overrides = {}, nativeSources = []) {
     };
 }
 
-test("native modifier selects eligible floors and adds five grouped nests alongside native population", () => {
+test("native modifier adds three independent nests and nine attributable guards", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsInfestation;
     assert.equal(mod.weight, 100);
@@ -99,23 +99,28 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
     assert.equal(mod.filter({ y: 3 }), 1);
     assert.equal(mod.filter({ y: 3, RoomType: "PerkRoom" }), 0);
     assert.equal(r.generate(), "native-result");
-    assert.equal(r.context.KDMapData.Entities.length, 5);
-    const nests = r.context.KDMapData.Entities;
-    assert.deepEqual(
-        nests
-            .map(
-                (nest) =>
-                    nests.filter((other) => other !== nest && Math.hypot(nest.x - other.x, nest.y - other.y) <= 5)
-                        .length,
-            )
-            .sort(),
-        [1, 1, 2, 2, 2],
-    );
-    assert.ok(r.context.KDMapData.Entities.every((e) => e.flags.no_pers_wander === -1 && e.flags.questtarget === -1));
+    assert.equal(r.context.KDMapData.Entities.length, 12);
+    const nests = r.context.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance");
+    assert.equal(nests.length, 3);
+    for (const nest of nests) {
+        assert.ok(
+            nests.every(
+                (other) => other === nest || Math.max(Math.abs(nest.x - other.x), Math.abs(nest.y - other.y)) >= 9,
+            ),
+        );
+        assert.deepEqual(
+            r.context.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === nest.id)
+                .map((e) => e.Enemy.name)
+                .sort(),
+            ["Spinner", "Spinner", "WebCaster"],
+        );
+        assert.equal(nest.flags.no_pers_wander, -1);
+        assert.equal(nest.flags.questtarget, -1);
+    }
     assert.equal(r.population[0][7], undefined, "keep the native population budget");
     r.generate();
     r.event("postMapgen");
-    assert.equal(r.context.KDMapData.Entities.length, 5);
+    assert.equal(r.context.KDMapData.Entities.length, 12);
     assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsInfestation.filterRandom(), 0);
 });
 
@@ -252,7 +257,7 @@ test("loading repairs only unvisited early infestation previews and keeps indepe
     assert.equal(JSON.stringify(slots), after);
 });
 
-test("maid floors have no infestation objective; infestation floors place five nests without a maid modifier", () => {
+test("maid floors have no infestation objective; infestation floors place three nests without a maid modifier", () => {
     const r = runtime();
     r.context.KDMapData.MapMod = "Mold";
     r.generate();
@@ -262,8 +267,8 @@ test("maid floors have no infestation objective; infestation floors place five n
     r.context.KDMapData.MapMod = "SpiderlingsInfestation";
     r.context.KDMapData.MapFaction = "Bandit";
     r.generate();
-    assert.equal(r.context.KDMapData.Entities.length, 5);
-    assert.equal(r.context.Spiderlings.Infestation.activeState().targetIds.length, 5);
+    assert.equal(r.context.KDMapData.Entities.length, 12);
+    assert.equal(r.context.Spiderlings.Infestation.activeState().targetIds.length, 3);
 });
 
 function nativePopulationRuntime() {
@@ -387,8 +392,8 @@ test("maid population contains only Spiderlings, maids and a small Dressmaker/Nu
             JSON.stringify(counts),
         );
         const humans = counts.Maid + counts.Dressmaker + counts.Nurse;
-        assert.ok(counts.Maid / humans > 0.75, JSON.stringify({ level, counts }));
-        assert.ok(counts.Dressmaker / humans < 0.15 && counts.Nurse / humans < 0.15, JSON.stringify({ level, counts }));
+        assert.ok(counts.Spider > humans * 10, JSON.stringify({ level, counts }));
+        assert.ok(counts.Maid > counts.Dressmaker && counts.Maid > counts.Nurse, JSON.stringify({ level, counts }));
     }
 });
 
@@ -466,7 +471,7 @@ test("initial maid ecology survives an exhausted neutral allowance while wanderi
     assert.equal(r.select(...args), undefined, "other main factions still use the native neutral allowance");
 });
 
-test("faction population and the five-nest objective vary independently across all four combinations", () => {
+test("faction population and the three-nest objective vary independently across all four combinations", () => {
     for (const faction of ["Maidforce", "Bandit", "Nevermere"]) {
         for (const mod of ["None", "SpiderlingsInfestation"]) {
             const r = nativePopulationRuntime();
@@ -486,7 +491,7 @@ test("faction population and the five-nest objective vary independently across a
             const state = c.Spiderlings.Infestation.activeState();
             assert.equal(
                 state?.targetIds.length || 0,
-                mod === "SpiderlingsInfestation" ? 5 : 0,
+                mod === "SpiderlingsInfestation" ? 3 : 0,
                 `${faction}/${mod} objective`,
             );
             assert.equal(
@@ -503,7 +508,7 @@ test("faction population and the five-nest objective vary independently across a
             if (state) {
                 assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), false);
                 for (const enemy of [...c.KDMapData.Entities]) c.KDRemoveEntity(enemy, true);
-                assert.equal(state.destroyedIds.length, 5);
+                assert.equal(state.destroyedIds.length, 3);
                 assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), true);
             }
         }
@@ -590,13 +595,24 @@ test("failed creation rolls back the full batch without suppressing ordinary ene
     assert.equal(r.population[0][7], undefined);
 });
 
-test("five successful original-nest destructions count once regardless of attribution and unlock descent", () => {
+test("a missing initial guard cancels all three nests before carving terrain", () => {
+    let writes = 0;
+    const r = runtime({ KinkyDungeonMapSet: () => writes++ });
+    const summon = r.context.KinkyDungeonSummonEnemy;
+    r.context.KinkyDungeonSummonEnemy = (...args) => (args[2] === "NestEntrance" ? summon(...args) : []);
+    r.generate();
+    assert.equal(r.context.KDMapData.Entities.length, 0);
+    assert.equal(r.context.KDMapData.SpiderlingsInfestation.reason, "garrison-failed");
+    assert.equal(writes, 0);
+});
+
+test("three successful original-nest destructions count once regardless of attribution and unlock descent", () => {
     const r = runtime();
     r.generate();
     const c = r.context;
-    const original = [...c.KDMapData.Entities];
+    const original = c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance");
     const state = c.KDMapData.SpiderlingsInfestation;
-    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /0\/5/);
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /0\/3/);
     assert.equal(r.event("calcEscapeMethod", { escapeMethod: "Key" }).escapeMethod, "SpiderlingsInfestation");
     for (const data of [
         { toTile: "s", AdvanceAmount: 0 },
@@ -622,16 +638,16 @@ test("five successful original-nest destructions count once regardless of attrib
     assert.equal(state.destroyedIds.length, 0);
     for (let index = 0; index < original.length; index++) {
         original[index].playerdmg = index === 0 ? 12 : undefined;
-        original[index].killer = ["Player", "Maidforce", "Enemy", "Environment", "Player"][index];
+        original[index].killer = ["Player", "Maidforce", "Enemy"][index];
         c.KDRemoveEntity(original[index], true, true);
         c.KDRemoveEntity(original[index], true, true);
         assert.equal(state.destroyedIds.length, index + 1);
-        assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), index === 4);
+        assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), index === 2);
     }
-    assert.match(r.messages.at(-1), /stairs.*\(5\/5\)/);
-    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), "Marked nests destroyed: 5/5");
-    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.doortext(), /stairs.*\(5\/5\)/);
-    assert.equal(r.messages.length, 5);
+    assert.match(r.messages.at(-1), /stairs.*\(3\/3\)/);
+    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), "Marked nests destroyed: 3/3");
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.doortext(), /stairs.*\(3\/3\)/);
+    assert.equal(r.messages.length, 3);
     assert.equal(r.event("beforeStairCancel", { toTile: "s", AdvanceAmount: 1 }).cancelevent, undefined);
 });
 
@@ -644,8 +660,8 @@ test("map JSON preserves partial and completed progress, registration is idempot
     const snapshot = JSON.stringify(c.KDMapData);
     c.KDMapData = JSON.parse(snapshot);
     r.generate();
-    assert.equal(c.KDMapData.Entities.length, 4);
-    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /1\/5/);
+    assert.equal(c.KDMapData.Entities.length, 11);
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /1\/3/);
     for (const entity of [...c.KDMapData.Entities]) c.KDRemoveEntity(entity, true);
     c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
     assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), true);
@@ -678,61 +694,112 @@ function rectangle(width, height) {
     return cells;
 }
 
-test("three-plus-two objectives reinforce within groups at four to five tiles and keep a six-to-eight-tile gap", () => {
-    const cells = rectangle(30, 30),
-        passable = new Set(cells.map((p) => `${p.x},${p.y}`));
-    const planner = runtime().context.Spiderlings.Infestation.planGroupedNestPlacement;
+test("independent nest placement keeps all three attackable and outside mutual reinforcement range", () => {
+    const cells = rectangle(30, 30);
+    const passable = new Set(cells.map((p) => `${p.x},${p.y}`));
+    const planner = runtime().context.Spiderlings.Infestation.planIndependentNestPlacement;
     for (const seed of [1, 8, 21]) {
-        const candidates = cells.filter((p) => p.x > 5 && p.y > 5),
-            start = { x: 1, y: 1 };
-        const plan = planner({ start, passable, candidates, random: seededRandom(seed) });
-        assert.equal(plan.length, 5);
-        assert.equal(new Set(plan.map((p) => `${p.x},${p.y}`)).size, 5);
-        const triple = plan.slice(0, 3),
-            pair = plan.slice(3);
-        for (const group of [triple, pair])
-            for (const a of group)
-                for (const b of group)
-                    if (a !== b) {
-                        const d = Math.hypot(a.x - b.x, a.y - b.y);
-                        assert.ok(d >= 4 && d <= 5);
-                    }
-        const gap = Math.min(...triple.flatMap((a) => pair.map((b) => Math.hypot(a.x - b.x, a.y - b.y))));
-        assert.ok(gap >= 6 && gap <= 8);
-        assert.deepEqual(
-            Array.from(plan, (a) => plan.filter((b) => a !== b && Math.hypot(a.x - b.x, a.y - b.y) <= 5).length),
-            [2, 2, 2, 1, 1],
-        );
-        const reached = reachableCells(start, passable, new Set(plan.map((p) => `${p.x},${p.y}`)));
-        assert.equal(reached.size, passable.size - 5);
-        for (const p of plan)
+        const plan = planner({
+            start: { x: 1, y: 1 },
+            passable,
+            candidates: cells.filter((p) => p.x > 5 && p.y > 5),
+            random: seededRandom(seed),
+        });
+        assert.equal(plan.length, 3);
+        for (const nest of plan) {
             assert.ok(
-                [
-                    { x: p.x - 1, y: p.y },
-                    { x: p.x + 1, y: p.y },
-                    { x: p.x, y: p.y - 1 },
-                    { x: p.x, y: p.y + 1 },
-                ].some((q) => reached.has(`${q.x},${q.y}`)),
+                plan.every(
+                    (other) => other === nest || Math.max(Math.abs(nest.x - other.x), Math.abs(nest.y - other.y)) >= 9,
+                ),
             );
+            assert.ok(plan.every((other) => other === nest || Math.hypot(nest.x - other.x, nest.y - other.y) > 5));
+        }
+        const reached = reachableCells({ x: 1, y: 1 }, passable, new Set(plan.map((p) => `${p.x},${p.y}`)));
+        assert.equal(reached.size, passable.size - 3);
     }
+    assert.equal(
+        planner({
+            start: { x: 1, y: 1 },
+            passable,
+            candidates: [
+                { x: 10, y: 10 },
+                { x: 20, y: 20 },
+            ],
+            random: () => 0,
+        }),
+        null,
+    );
 });
 
-test("group placement rejects excessive gaps, cross-bonus distances and jointly blocked corridors", () => {
-    const planner = runtime().context.Spiderlings.Infestation.planGroupedNestPlacement;
-    const triple = [
-        { x: 6, y: 6 },
-        { x: 10, y: 6 },
-        { x: 8, y: 10 },
-    ];
-    const points = (x) => [...triple, { x, y: 6 }, { x, y: 10 }];
-    const cells = rectangle(30, 30),
-        options = { start: { x: 1, y: 1 }, passable: new Set(cells.map((p) => `${p.x},${p.y}`)), random: () => 1 };
-    for (const x of [16, 18]) assert.equal(planner({ ...options, candidates: points(x) }).length, 5);
-    for (const x of [15, 19, 25]) assert.equal(planner({ ...options, candidates: points(x) }), null);
-    assert.equal(planner({ ...options, candidates: points(16).slice(0, 4) }), null);
-    assert.equal(planner({ ...options, candidates: points(16).map((p) => ({ x: p.x + 100, y: p.y })) }), null);
-    const corridor = new Set(cells.filter((p) => p.y !== 6 || p.x === 6).map((p) => `${p.x},${p.y}`));
-    assert.equal(planner({ ...options, passable: corridor, candidates: points(16) }), null);
+test("infestation has at most three initial rivals and no wandering rivals", () => {
+    let c, shop, scripted;
+    const r = runtime({
+        KinkyDungeonHandleWanderingSpawns() {
+            for (let i = 0; i < 2; i++) c.KinkyDungeonSummonEnemy(5 + i, 5, "MaidforceMini")[0].faction = "Maidforce";
+        },
+    });
+    c = r.context;
+    c.KDMapData.MapFaction = "Maidforce";
+    c.populationAction = () => {
+        c.KinkyDungeonSummonEnemy(20, 20, "MaidforceMini")[0].faction = "Maidforce";
+        for (let i = 0; i < 6; i++) c.KinkyDungeonSummonEnemy(10 + i, 10, "MaidforceMini")[0].faction = "Maidforce";
+        shop = c.KinkyDungeonSummonEnemy(18, 10, "MaidforceMini")[0];
+        shop.faction = "Maidforce";
+        shop.flags = { Shop: -1 };
+        scripted = c.KinkyDungeonSummonEnemy(19, 10, "MaidforceMini")[0];
+        scripted.faction = "Maidforce";
+        scripted.runSpawnAI = true;
+    };
+    c.KinkyDungeonPlaceEnemies([{ x: 20, y: 20 }], false, [], {}, 3, 30, 30, {}, []);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 6);
+    assert.ok(c.KDMapData.Entities.includes(shop) && c.KDMapData.Entities.includes(scripted));
+    r.event("postMapgen");
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 5);
+    c.KinkyDungeonHandleWanderingSpawns();
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 5);
+    const ordinary = runtime();
+    ordinary.context.KDMapData.MapMod = "None";
+    ordinary.context.KDMapData.MapFaction = "Maidforce";
+    ordinary.context.populationAction = () => {
+        for (let i = 0; i < 6; i++)
+            ordinary.context.KinkyDungeonSummonEnemy(10 + i, 10, "MaidforceMini")[0].faction = "Maidforce";
+    };
+    ordinary.generate();
+    assert.equal(ordinary.context.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 6);
+});
+
+test("post-map generation caps earlier patrols while preserving a shop actor", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.MapFaction = "Maidforce";
+    for (let i = 0; i < 4; i++) c.KinkyDungeonSummonEnemy(6 + i, 6, "MaidforceMini")[0].faction = "Maidforce";
+    const shop = c.KinkyDungeonSummonEnemy(12, 6, "MaidforceMini")[0];
+    shop.faction = "Maidforce";
+    shop.flags = { Shop: -1 };
+    r.generate();
+    r.event("postMapgen");
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce" && !e.flags?.Shop).length, 3);
+    assert.ok(c.KDMapData.Entities.includes(shop));
+});
+
+test("a saved five-nest map retains its objective count and stair gate", () => {
+    const r = runtime();
+    r.generate();
+    const c = r.context;
+    const state = c.KDMapData.SpiderlingsInfestation;
+    for (let index = 0; index < 2; index++)
+        state.targetIds.push(c.KinkyDungeonSummonEnemy(2 + index, 2, "NestEntrance")[0].id);
+    state.target = 5;
+    delete state.garrisonVersion;
+    c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /0\/5/);
+    const nests = c.KDMapData.Entities.filter((e) => state.targetIds.includes(e.id));
+    for (const nest of nests.slice(0, 4)) c.KDRemoveEntity(nest, true);
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.doortext(), /4\/5/);
+    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), false);
+    c.KDRemoveEntity(nests[4], true);
+    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.check(), true);
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /5\/5/);
 });
 
 // Independent removal-and-flood-fill oracle, retaining the original shuffle.
@@ -916,12 +983,12 @@ test("maid lethal damage lets only an original task nest release one Tunneler be
 });
 
 test("task nest evacuation respects the map cap and reserves the last slot before ordinary death summons", () => {
-    for (const count of [24, 25]) {
+    for (const count of [15, 16]) {
         const { c, nest, born, hit } = escapeRuntime();
         for (let i = 0; i < count; i++) c.KDMapData.Entities.push({ id: 100 + i, hp: 1, Enemy: { name: "Spinner" } });
         hit("Maidforce", 20);
         c.KDRemoveEntity(nest, true);
-        assert.deepEqual(born, count === 24 ? ["Tunneler"] : []);
+        assert.deepEqual(born, count === 15 ? ["Tunneler"] : []);
     }
 });
 
@@ -932,7 +999,7 @@ test("the final objective evacuates before the task becomes complete", () => {
     hit("Maidforce", 20);
     c.KDRemoveEntity(nest, true);
     assert.equal(born[0], "Tunneler");
-    assert.equal(state.destroyedIds.length, 5);
+    assert.equal(state.destroyedIds.length, 3);
     assert.equal(state.complete, true);
 });
 
@@ -1013,18 +1080,17 @@ test("terrain opens only after all nests are created, refreshes navigation, and 
     const native = c.KinkyDungeonSummonEnemy;
     c.KinkyDungeonSummonEnemy = function (...args) {
         const born = native.apply(this, args);
-        if (c.KDMapData.Entities.length === 5) {
-            const group = c.KDMapData.Entities.slice(0, 3);
-            wall = {
-                x: Math.round(group.reduce((sum, e) => sum + e.x, 0) / 3),
-                y: Math.round(group.reduce((sum, e) => sum + e.y, 0) / 3),
-            };
+        if (
+            args[2] === "NestEntrance" &&
+            c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length === 3
+        ) {
+            wall = { x: born[0].x + 1, y: born[0].y };
         }
         return born;
     };
     r.generate();
     const state = c.KDMapData.SpiderlingsInfestation;
-    assert.equal(state.clearing.length, 5);
+    assert.equal(state.clearing.length, 3);
     assert.equal(writes, 1, "the clearing is actually carved");
     assert.equal(nav, 1);
     const count = writes;
@@ -1073,11 +1139,11 @@ test("one shared fifteen-turn peace timer leaves five wild spiders and every nes
     assert.ok(spiders.every((e) => c.KDMapData.Entities.includes(e)));
     tick(1);
     assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5);
-    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 5);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 3);
     assert.equal(state.destroyedIds.length, 0);
     assert.equal(state.complete, false);
     tick(15);
-    assert.equal(c.KDMapData.Entities.length, 10);
+    assert.equal(c.KDMapData.Entities.length, 17);
 });
 
 test("nearby capable hostile NPCs and players reset peace, including partial binding and edge fights", () => {
@@ -1159,7 +1225,7 @@ test("the player waiting inside a Cocoon does not keep either spiders or objecti
     }
     assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5);
     assert.equal(state.quietTurns, 15);
-    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 5);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 3);
 });
 
 test("a capable NPC still interrupts retirement beside a passive Cocoon player", () => {
@@ -1189,7 +1255,7 @@ test("retirement preserves allied, party and captive spiders, remote fighters an
     const ordinary = quietRuntime();
     delete ordinary.c.KDMapData.SpiderlingsInfestation;
     ordinary.tick(100);
-    assert.equal(ordinary.c.KDMapData.Entities.length, 14);
+    assert.equal(ordinary.c.KDMapData.Entities.length, 21);
 });
 
 test("peace survives entity/map serialization and retirement honors native removal cancellation", () => {
@@ -1198,10 +1264,10 @@ test("peace survives entity/map serialization and retirement honors native remov
     c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
     c.cancelRemoval = true;
     tick(1);
-    assert.equal(c.KDMapData.Entities.length, 14);
+    assert.equal(c.KDMapData.Entities.length, 21);
     c.cancelRemoval = false;
     tick(1);
-    assert.equal(c.KDMapData.Entities.length, 10);
+    assert.equal(c.KDMapData.Entities.length, 17);
     assert.equal(c.KDMapData.SpiderlingsInfestation.quietTurns, 15);
     assert.equal(state.quietTurns, 14, "saved map contains its own timer");
 });

@@ -127,9 +127,9 @@ KDMapMod_SpiderlingsInfestation,Infestación de arañitas
 KinkyDungeonMapModSpiderlingsInfestation,La seda invade los rincones y unos susurros responden a otros en las sombras. Este lugar lleva tiempo teniendo otros habitantes.
 KDEscapeMethod_SpiderlingsInfestation,Destruir los nidos marcados
 KDEscapeMethodDesc_SpiderlingsInfestation,Los nidos que primero ocuparon este lugar aún se agitan en la oscuridad; se oyen leves arañazos en el fondo de sus entradas.
-SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/5
-SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/5)
-SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
+SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/TARGET
+SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/TARGET)
+SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Telaraña rosa (no: original)
 KinkyDungeonSpiderlingsWebbingInterwoven,Los hilos entrecruzados se tensan y atan otra parte de tu cuerpo.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Cortas TargetRestraint. Varias hebras pegajosas se rompen y el corte se hace más profundo.

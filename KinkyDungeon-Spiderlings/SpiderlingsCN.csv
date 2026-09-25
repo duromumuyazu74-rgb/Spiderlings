@@ -127,9 +127,9 @@ KDMapMod_SpiderlingsInfestation,幼蛛侵扰
 KinkyDungeonMapModSpiderlingsInfestation,角落铺着细软的蛛网，幼蛛沿丝缕轻巧地来往，四下响着轻细的窸窣声。
 KDEscapeMethod_SpiderlingsInfestation,摧毁目标巢穴
 KDEscapeMethodDesc_SpiderlingsInfestation,最初筑在这里的几处蛛巢，洞边垂着细软的丝缕。摧毁这些目标巢穴后，便可继续下行。
-SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/5
-SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/5）
-SpiderlingsInfestationComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（5/5）
+SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/TARGET
+SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/TARGET）
+SpiderlingsInfestationComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（TARGET/TARGET）
 KDModButtonspiderlingsPinkWebbing,粉色蛛丝（关闭为原色）
 KinkyDungeonSpiderlingsWebbingInterwoven,两束蛛丝相互交织，贴着身体铺好，又缠住了一处。
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,你沿TargetRestraint的丝缝细细割开，几根丝线分断，切口又延长了一点。

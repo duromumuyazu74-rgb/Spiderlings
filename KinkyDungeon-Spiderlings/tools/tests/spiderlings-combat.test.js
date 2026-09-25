@@ -95,6 +95,25 @@ function fixture(overrides = {}) {
     return { c, events, spawn };
 }
 
+test("NPC silk contact applies native shield drain while shield still blocks binding", () => {
+    const applied = [];
+    const { c, spawn } = fixture({
+        KDGetShieldRegen: () => 4,
+        KinkyDungeonApplyBuffToEntity: (enemy, buff) => applied.push({ enemy, buff }),
+    });
+    const spider = spawn(1, "Spinner", "Enemy");
+    const maid = spawn(2, "MaidforceMini", "Maidforce");
+    maid.shield = 8;
+    c.Spiderlings.Combat.hitNPC(spider, maid, "direct");
+    assert.equal(maid.boundLevel, 0);
+    assert.equal(applied.length, 1);
+    assert.equal(applied[0].enemy, maid);
+    assert.equal(applied[0].buff.type, "ShieldDrain");
+    assert.equal(applied[0].buff.power, 6);
+    assert.equal(applied[0].buff.duration, 2);
+    assert.equal(maid.shield < 8, true);
+});
+
 test("native alarm recipients refresh entity goals on KD 5.5.3 while silk-gagged callers remain silent", () => {
     const { stripTypeScriptTypes } = require("node:module");
     const source = fs.readFileSync(gamePath("Game/src/magic/KinkyDungeonMagic.ts"), "utf8");

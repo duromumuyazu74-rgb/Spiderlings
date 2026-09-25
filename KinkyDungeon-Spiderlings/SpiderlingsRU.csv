@@ -127,9 +127,9 @@ KDMapMod_SpiderlingsInfestation,Нашествие паучат
 KinkyDungeonMapModSpiderlingsInfestation,Шёлк расползается по углам, и в тени шорох отвечает шороху. У этого места давно появились другие обитатели.
 KDEscapeMethod_SpiderlingsInfestation,Уничтожить отмеченные гнёзда
 KDEscapeMethodDesc_SpiderlingsInfestation,Гнёзда первых обитателей всё ещё шевелятся во тьме; из глубины входов доносится мелкое царапанье.
-SpiderlingsInfestationProgress,Уничтожено отмеченных гнёзд: CURRENT/5
-SpiderlingsInfestationBlocked,Ты останавливаешься перед лестницей. Шорох в глубине гнёзд всё ещё не стих. (CURRENT/5)
-SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (5/5)
+SpiderlingsInfestationProgress,Уничтожено отмеченных гнёзд: CURRENT/TARGET
+SpiderlingsInfestationBlocked,Ты останавливаешься перед лестницей. Шорох в глубине гнёзд всё ещё не стих. (CURRENT/TARGET)
+SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Розовая паутина (выкл.: исходная)
 KinkyDungeonSpiderlingsWebbingInterwoven,Переплетённые нити стягиваются и опутывают ещё одну часть твоего тела.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Ты надрезаешь TargetRestraint. Липкие нити лопаются и разрез становится немного глубже.
