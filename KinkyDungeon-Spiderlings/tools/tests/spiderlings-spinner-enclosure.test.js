@@ -70,7 +70,7 @@ test("declared regular and concave enclosures preserve a free 3x3 core", () => {
     assert.equal(topology.containsDeclaredField(concave, "inner", { x: 18, y: 11 }), false);
 });
 
-test("nesting needs four owners, exact spacing, a shared core, and a 13x13 footprint", () => {
+test("nesting needs four owners, exact spacing, and a shared core", () => {
     const topology = rules(),
         two = topology.createEnclosure({
             compositeId: "two",
@@ -97,6 +97,75 @@ test("nesting needs four owners, exact spacing, a shared core, and a 13x13 footp
     assert.deepEqual(four.fields.inner.core, four.fields.outer.core);
     assert.equal(four.fields.outer.bounds.width, 13);
     assert.equal(four.fields.outer.spacing, 2);
+});
+
+test("legal third and fourth layers preserve earlier construction and reject exhausted or occupied space", () => {
+    const topology = rules(),
+        map = { ...floorMap(45, 45), protected: [], exit: { x: 42, y: 42 } },
+        layer = (index) => ({
+            id: `layer-${index}`,
+            vertices: rectangle(19 - 3 * index, 19 - 3 * index, 25 + 3 * index, 25 + 3 * index),
+            gate: { x: 19 - 3 * index, y: 22 },
+        }),
+        owners = [1, 2, 3, 4];
+    let state = topology.createEnclosure({
+        compositeId: "growing",
+        owners,
+        map,
+        built: true,
+        layers: [layer(0), layer(1)],
+    });
+    assert.equal(state.fields["layer-1"].bounds.width, 13);
+    const unfinished = topology.createEnclosure({
+        compositeId: "growing",
+        owners,
+        map,
+        layers: [layer(0), layer(1)],
+    });
+    assert.equal(
+        topology.extendEnclosure(unfinished, { compositeId: "growing", layer: layer(2), map }).reason,
+        "inner-open",
+    );
+    const oldStructures = JSON.stringify({ anchors: state.anchors, links: state.links });
+    for (const index of [2, 3]) {
+        const result = topology.extendEnclosure(state, { compositeId: "growing", layer: layer(index), map });
+        assert.equal(result.added, true, result.reason);
+        state = result.state;
+        assert.equal(state.fields[`layer-${index}`].phase, "preparing");
+        for (const anchor of state.anchors.filter((candidate) => candidate.owners.includes(result.fieldId)))
+            anchor.built = true;
+        for (const link of state.links.filter((candidate) => candidate.owners.includes(result.fieldId))) {
+            link.builtCells = JSON.parse(JSON.stringify(link.plannedCells));
+            link.connected = true;
+        }
+        topology.refresh(state);
+    }
+    assert.equal(state.fields["layer-3"].bounds.width, 25);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.composites.growing.layerIds)), [
+        "layer-0",
+        "layer-1",
+        "layer-2",
+        "layer-3",
+    ]);
+    assert.equal(JSON.stringify({ anchors: state.anchors.slice(0, 8), links: state.links.slice(0, 8) }), oldStructures);
+
+    const before = JSON.stringify(state);
+    for (const [candidateMap, reason] of [
+        [{ ...map, protected: [...map.protected, "7,22"] }, "protected"],
+        [{ ...map, occupied: ["7,22"] }, "occupied"],
+        [{ ...map, floor: map.floor.filter((cell) => cell !== "7,22") }, "terrain"],
+        [floorMap(31, 31), "terrain"],
+    ]) {
+        const result = topology.extendEnclosure(state, {
+            compositeId: "growing",
+            layer: layer(4),
+            owners,
+            map: candidateMap,
+        });
+        assert.equal(result.added, false);
+        assert.equal(result.reason, reason);
+        assert.equal(JSON.stringify(state), before);
+    }
 });
 
 test("an undersized enclosure falls back to the declared line or is saved as abandoned", () => {
@@ -185,6 +254,29 @@ test("withdrawal reopens an unsealed gate through one paid operation", () => {
     state = topology.applyAction(state, { ...reopen, ownerId: 1 }, clear(reopen.cell)).state;
     assert.equal(topology.isLayerClosed(state, "inner"), false);
     assert.equal(state.fields.inner.phase, "ready");
+});
+
+test("another moving enemy cannot cancel the target's armed gate", () => {
+    const topology = rules();
+    const state = topology.createEnclosure({
+        compositeId: "occupied-core",
+        owners: [1, 2],
+        map: floorMap(),
+        layers: [{ id: "inner", vertices: rectangle(20, 5, 24, 13), gate: { x: 20, y: 9 } }],
+    });
+    topology.updateTarget(state, { id: "player", x: 22, y: 9 });
+    topology.updateTarget(state, { id: 7, x: 35, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, true);
+    assert.equal(state.composites["occupied-core"].targetId, "player");
+    topology.updateTarget(state, { id: 7, x: 22, y: 9 });
+    topology.updateTarget(state, { id: 7, x: 35, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, true);
+    assert.equal(state.composites["occupied-core"].targetId, "player");
+    topology.updateTarget(state, { id: "player", x: 18, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, false);
+    topology.updateTarget(state, { id: 7, x: 22, y: 9 });
+    assert.equal(state.composites["occupied-core"].closureArmed, true);
+    assert.equal(state.composites["occupied-core"].targetId, 7);
 });
 
 test("normalized overlaps share HP and crossings do not become declared fields", () => {

@@ -41,6 +41,11 @@ const runtimeScripts = [
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
+    "SpiderlingsPrison.js",
+    "SpiderlingsPrisonAlerts.js",
+    "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonConstruction.js",
+    "SpiderlingsPrisonEscort.js",
     "SpiderlingsSpinnerRuntime.js",
 ];
 const atlasAssets = [
@@ -1405,6 +1410,9 @@ function checkRuntime(state) {
             fail(`Cocoon outer webs are missing their ${trigger} lifecycle handler.`);
         }
     }
+    if (typeof state.context.Spiderlings.Webbing.hasAnchoredCocoon !== "function") {
+        fail("Spiderlings escort eligibility must read the equipped Cocoon's anchored state.");
+    }
     const cocoonRefreshTriggers = ((cocoonRestraint && cocoonRestraint.events) || [])
         .filter((event) => event.type === "SpiderlingsRefreshModels")
         .map((event) => event.trigger)
@@ -1747,6 +1755,10 @@ function checkTranslations(state) {
         "SpiderlingsFieldWaiting",
         "SpiderlingsFieldAddSpinner",
         "SpiderlingsFieldTrap",
+        "KDRoomType_SpiderlingsNestPrison",
+        "SpiderlingsPrisonArrival",
+        "SpiderlingsPrisonTrail",
+        "SpiderlingsPrisonExit",
         ...["preparing", "ready", "sprung", "broken", "complete"].map((p) => "SpiderlingsFieldPhase" + p),
     );
     const pairedGateKey = "KinkyDungeonSpiderlingsWebbingLv1Covered";

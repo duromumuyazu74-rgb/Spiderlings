@@ -14,7 +14,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
     const targets = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance", "MageSpiderlings"]);
     const provokedFlag = "SpiderlingsPlayerProvoked";
     const provokedTurns = 10;
+    const escortState = "SpiderlingsContestedEscort";
     let rivalSelection = null;
+    let escortSelection = null;
     function isHostileSpiderlingTarget(entity) {
         return (
             entity &&
@@ -45,14 +47,47 @@ const SPIDERLINGS = globalThis.Spiderlings;
                 (isHostileSpiderlingTarget(enemy) && isMaidRival(other)))
         );
     }
+    function activeEscort() {
+        if (typeof SPIDERLINGS.Webbing?.hasAnchoredCocoon !== "function") return undefined;
+        if (!SPIDERLINGS.Webbing.hasAnchoredCocoon() || !(KDGameData.KinkyDungeonLeashedPlayer > 0)) {
+            delete KDGameData[escortState];
+            return undefined;
+        }
+        if (typeof KDMapData === "undefined" || !Array.isArray(KDMapData.Entities)) return undefined;
+        const leashId = KinkyDungeonPlayerEntity.leash?.entity;
+        const escortId = leashId || KDGameData.KinkyDungeonLeashingEnemy || KDGameData[escortState]?.id;
+        const escort = KDMapData.Entities.find((entity) => entity.id === escortId);
+        if (
+            !escort?.Enemy ||
+            !(escort.hp > 0) ||
+            (leashId && leashId !== escort.id) ||
+            (targets.has(escort.Enemy.name) && KDGetFaction(escort) === "Enemy")
+        )
+            return undefined;
+        return escort;
+    }
+    function isEscortPair(enemy, other) {
+        const escort = activeEscort();
+        return (
+            escort &&
+            other?.hp > 0 &&
+            ((isHostileSpiderlingTarget(enemy) && other === escort) ||
+                (enemy === escort && isHostileSpiderlingTarget(other)))
+        );
+    }
     KDHostile = function (enemy, other) {
         const original = nativeHostile.apply(this, arguments);
         // Only during the rival-search pass: remove the player's distance ceiling
         // and let the native selector consider this pair, with its normal perception.
-        if (rivalSelection === enemy && !isRivalPair(enemy, other)) return false;
+        if (
+            rivalSelection === enemy &&
+            !(escortSelection ? other === escortSelection && isEscortPair(enemy, other) : isRivalPair(enemy, other))
+        )
+            return false;
         if (original || !other || enemy === other) return original;
         if (enemy.ceasefire > 0 || other.ceasefire > 0) return original;
         return (
+            isEscortPair(enemy, other) ||
             (KDGetFaction(enemy) === "Maidforce" && isHostileSpiderlingTarget(other)) ||
             (KDGetFaction(other) === "Maidforce" && isHostileSpiderlingTarget(enemy)) ||
             original
@@ -105,13 +140,48 @@ const SPIDERLINGS = globalThis.Spiderlings;
                 )
             )
                 enemy.aware = true;
+            const escort = isHostileSpiderlingTarget(enemy) ? activeEscort() : undefined;
+            if (escort && isEscortPair(enemy, escort)) {
+                const escortVisible =
+                    !KDHelpless(enemy) &&
+                    !KDIsImprisoned(enemy) &&
+                    !KDHelpless(escort) &&
+                    !KDIsImprisoned(escort) &&
+                    (enemy.Enemy.visionRadius || enemy.Enemy.blindSight) &&
+                    !(enemy.Enemy.noAttack && !enemy.Enemy.spells?.length) &&
+                    KDHostile(enemy, escort) &&
+                    KinkyDungeonCheckLOS(
+                        enemy,
+                        escort,
+                        Math.hypot(escort.x - enemy.x, escort.y - enemy.y),
+                        radius,
+                        true,
+                        true,
+                    );
+                if (!enemy.aware && escortVisible) enemy.aware = true;
+                const previousSelection = rivalSelection;
+                const previousEscort = escortSelection;
+                rivalSelection = enemy;
+                escortSelection = escort;
+                let selected;
+                try {
+                    selected = nativeNearest.call(this, enemy, requireVision, decoy, visionRadius, aiData);
+                } finally {
+                    rivalSelection = previousSelection;
+                    escortSelection = previousEscort;
+                }
+                if (selected === escort || escortVisible) return escort;
+            }
             const previous = rivalSelection;
+            const previousEscort = escortSelection;
             rivalSelection = enemy;
+            escortSelection = null;
             let rival;
             try {
                 rival = nativeNearest.call(this, enemy, requireVision, decoy, visionRadius, aiData);
             } finally {
                 rivalSelection = previous;
+                escortSelection = previousEscort;
             }
             return rival && !rival.player ? rival : nativeNearest.apply(this, arguments);
         };
@@ -144,13 +214,18 @@ const SPIDERLINGS = globalThis.Spiderlings;
             return false;
         const candidates = KDNearbyEnemies(enemy.x, enemy.y, 12).filter(
             (target) =>
-                isRivalPair(enemy, target) &&
+                (isEscortPair(enemy, target) || isRivalPair(enemy, target)) &&
                 KDHostile(enemy, target) &&
-                !target.Enemy.noAttack &&
+                (!target.Enemy.noAttack || target === activeEscort()) &&
                 !KDHelpless(target) &&
                 !KDIsImprisoned(target),
         );
-        candidates.sort((a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y));
+        const escort = activeEscort();
+        candidates.sort(
+            (a, b) =>
+                Number(b === escort) - Number(a === escort) ||
+                Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y),
+        );
         for (const target of candidates) {
             const route = KinkyDungeonFindPath(
                 enemy.x,
@@ -198,6 +273,24 @@ const SPIDERLINGS = globalThis.Spiderlings;
             };
         }
     }
+    if (typeof KinkyDungeonEnemyLoop == "function") {
+        const nativeLoop = KinkyDungeonEnemyLoop;
+        KinkyDungeonEnemyLoop = function (enemy, player) {
+            const before = player?.player && { x: player.x, y: player.y };
+            const result = nativeLoop.apply(this, arguments);
+            // KD clears an untethered leasher ID before the next enemy loop, even
+            // when native Pull has just moved an immobilized player.
+            if (
+                before &&
+                (player.x !== before.x || player.y !== before.y) &&
+                SPIDERLINGS.Webbing?.hasAnchoredCocoon?.() &&
+                KDGameData.KinkyDungeonLeashedPlayer > 0 &&
+                KDGameData.KinkyDungeonLeashingEnemy === enemy?.id
+            )
+                KDGameData[escortState] = { id: enemy.id };
+            return result;
+        };
+    }
     KDAddEvent(KDEventMapGeneric, "playerAttack", "SpiderlingsRivalry", (_event, data) => {
         // A committed melee attempt provokes even when it misses.
         if (data.attacker?.player && data.damage?.type !== "heal" && data.damage?.type !== "inert") provoke(data.enemy);
@@ -213,6 +306,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
         const nativeFavorable = KDFactionFavorable;
         KDFactionFavorable = function (faction, other) {
             if (faction === "Maidforce" && isHostileSpiderlingTarget(other)) return false;
+            const escort = faction === "Enemy" && activeEscort();
+            if (escort && !(escort.ceasefire > 0) && other === escort) return false;
             return nativeFavorable.apply(this, arguments);
         };
     }

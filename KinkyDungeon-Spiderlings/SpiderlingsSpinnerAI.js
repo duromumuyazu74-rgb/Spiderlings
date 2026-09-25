@@ -43,6 +43,7 @@
         return (
             entity?.hp > 0 &&
             entity.Enemy?.name === "Spinner" &&
+            !entity.SpiderlingsChamberBuilder &&
             hostile(entity) &&
             !allied(entity) &&
             !inParty(entity) &&
@@ -116,6 +117,25 @@
         return path.reverse();
     }
 
+    function routeDistances(snapshot, from) {
+        const cells = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
+            start = from && cellKey(from),
+            queue = start && cells.has(start) ? [start] : [],
+            steps = new Map(queue.map((key) => [key, 0]));
+        for (let index = 0; index < queue.length; index++) {
+            const current = queue[index],
+                [x, y] = current.split(",").map(Number);
+            for (const direction of DIRECTIONS) {
+                const next = `${x + direction.x},${y + direction.y}`;
+                if (cells.has(next) && !steps.has(next)) {
+                    steps.set(next, steps.get(current) + 1);
+                    queue.push(next);
+                }
+            }
+        }
+        return steps;
+    }
+
     function pathDistance(a, b, options = {}) {
         if (typeof options.pathDistance === "function") return options.pathDistance(a, b);
         if (options.mapSnapshot) {
@@ -165,11 +185,25 @@
         return { type: "ordinary" };
     }
 
+    function prisonRegion(point) {
+        return api.Prison?.isPrison() ? api.PrisonAlerts?.regionAt(point) : undefined;
+    }
+
+    function regionSnapshot(snapshot, group) {
+        if (!group.homeRegion) return snapshot;
+        return {
+            ...snapshot,
+            cells: snapshot.cells.filter((cell) => prisonRegion(cell) === group.homeRegion),
+        };
+    }
+
     function auditGroups(ai, entities, options = {}) {
         const byId = new Map(entities.map((entity) => [entity.id, entity])),
             assigned = new Set();
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             group.memberIds = group.memberIds.filter((id) => baseEligibility(byId.get(id), options));
+            if (api.Prison?.isPrison() && !group.homeRegion)
+                group.homeRegion = prisonRegion(byId.get(group.memberIds[0]));
             for (const id of group.memberIds) assigned.add(id);
             for (const id of Object.keys(group.assignments || {}))
                 if (!group.memberIds.includes(Number(id)) && !group.memberIds.includes(id))
@@ -179,15 +213,19 @@
             .filter((entity) => eligibleSpinner(entity, options) && !assigned.has(entity.id))
             .sort((a, b) => String(a.id).localeCompare(String(b.id)));
         for (const entity of [...available]) {
+            const homeRegion = prisonRegion(entity);
             const choices = Object.values(ai.groups)
                 .map((group) => ({
                     group,
-                    steps: Math.min(
-                        ...group.memberIds
-                            .map((id) => byId.get(id))
-                            .filter((member) => eligibleSpinner(member, options))
-                            .map((member) => pathDistance(entity, member, options)),
-                    ),
+                    steps:
+                        group.homeRegion && group.homeRegion !== homeRegion
+                            ? Infinity
+                            : Math.min(
+                                  ...group.memberIds
+                                      .map((id) => byId.get(id))
+                                      .filter((member) => eligibleSpinner(member, options))
+                                      .map((member) => pathDistance(entity, member, options)),
+                              ),
                 }))
                 .filter((choice) => choice.steps <= GROUP_RADIUS)
                 .sort((a, b) => a.steps - b.steps || a.group.id.localeCompare(b.group.id));
@@ -207,7 +245,11 @@
                 const current = queue[index];
                 component.push(current);
                 for (const candidate of remaining)
-                    if (!visited.has(candidate.id) && pathDistance(current, candidate, options) <= GROUP_RADIUS) {
+                    if (
+                        !visited.has(candidate.id) &&
+                        prisonRegion(candidate) === prisonRegion(entity) &&
+                        pathDistance(current, candidate, options) <= GROUP_RADIUS
+                    ) {
                         visited.add(candidate.id);
                         queue.push(candidate);
                     }
@@ -218,6 +260,7 @@
                 id,
                 memberIds: component.map((member) => member.id),
                 source: sourceFor(component),
+                ...(api.Prison?.isPrison() ? { homeRegion: prisonRegion(entity) } : {}),
                 selectionOrdinal: 0,
                 planId: null,
                 assignments: {},
@@ -244,6 +287,7 @@
 
     function analyzeLineCandidates(snapshot, group) {
         const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+            nestKeys = new Set((snapshot.nests || []).map(cellKey)),
             protectedKeys = new Set(
                 [...(snapshot.entrances || []), ...(snapshot.exits || []), ...(snapshot.protectedCells || [])].map(
                     cellKey,
@@ -251,12 +295,26 @@
             ),
             floor = (cell) => {
                 const value = byKey.get(cellKey(cell));
-                return !!value?.floor && !value.protected && !value.locked && !protectedKeys.has(cellKey(cell));
+                return (
+                    !!value?.floor &&
+                    !value.protected &&
+                    !value.locked &&
+                    !protectedKeys.has(cellKey(cell)) &&
+                    (!api.Prison?.isPrison() || !nestKeys.has(cellKey(cell))) &&
+                    (!api.Prison?.isPrison() || api.PrisonNest?.ordinaryConstructionAllowed?.(cell) !== false) &&
+                    (!group.homeRegion || prisonRegion(cell) === group.homeRegion)
+                );
             },
             route = routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]),
             routeKeys = new Set(route.map(cellKey)),
+            workSnapshot = regionSnapshot(snapshot, group),
+            report = group.remoteSighting,
+            reportRoute = report ? routeOnSnapshot(snapshot, report, snapshot.exits?.[0]) : [],
+            interception = reportRoute.filter((cell) => prisonRegion(cell) === group.homeRegion),
+            interceptionKeys = new Set(interception.map(cellKey)),
             members = group.members || group.memberPositions || [],
             origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
+            distances = origin ? routeDistances(workSnapshot, origin) : undefined,
             nest =
                 group.source?.type === "nest"
                     ? (snapshot.nests || []).find((candidate) => candidate.id === group.source.nestId)
@@ -293,7 +351,7 @@
                 exitDistance = nearestDistance(center, snapshot.exits || []),
                 chokeDistance = nearestDistance(center, snapshot.chokes || []),
                 nestDistance = nest ? distance(center, nest) : 99,
-                travelDistance = origin ? pathDistance(origin, center, { mapSnapshot: snapshot }) : 0,
+                travelDistance = origin ? (distances.get(cellKey(center)) ?? Infinity) : 0,
                 reasons =
                     group.source?.type === "nest"
                         ? {
@@ -308,8 +366,11 @@
                               choke: Math.max(0, 60 - chokeDistance * 8),
                               junction: neighbors >= 3 ? 10 : 0,
                           },
-                score = Object.values(reasons).reduce((total, value) => total + value, 0) - travelDistance * 0.3;
+                ambushDistance = report ? nearestDistance(center, interception.length ? interception : [report]) : 99,
+                ambush = report ? Math.max(0, 90 - ambushDistance * 12) : 0,
+                score = Object.values(reasons).reduce((total, value) => total + value, ambush) - travelDistance * 0.3;
             if (!Number.isFinite(travelDistance)) continue;
+            if (report) reasons.ambush = ambush;
             candidates.push({
                 id: `line:${cellKey(anchors[0])};${cellKey(anchors[1])}`,
                 type: "line",
@@ -320,7 +381,15 @@
                 travelDistance,
             });
         }
-        return candidates
+        const crossingLines =
+            api.Prison?.isPrison() && report && interception.length
+                ? candidates.filter(
+                      (candidate) =>
+                          candidate.cells.some((cell) => interceptionKeys.has(cellKey(cell))) &&
+                          candidate.anchors.every((anchor) => !interceptionKeys.has(cellKey(anchor))),
+                  )
+                : [];
+        return (crossingLines.length ? crossingLines : candidates)
             .filter((candidate, index, values) => values.findIndex((other) => other.id === candidate.id) === index)
             .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
@@ -364,6 +433,7 @@
             anchors: clone(selected.anchors),
             cells: selected.cells.map(cellKey),
             invalidReason: null,
+            ...(group.remoteSighting ? { reportSerial: group.remoteSighting.serial } : {}),
         };
         group.planId = planId;
         return ai.plans[planId];
@@ -450,13 +520,22 @@
     }
 
     function workCells(target, snapshot) {
-        const byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+        const byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
+            nestKeys = api.Prison?.isPrison() ? new Set((snapshot.nests || []).map(cellKey)) : new Set();
         return DIRECTIONS.map((direction) => ({ x: target.x + direction.x, y: target.y + direction.y }))
             .filter((cell) => {
                 const value = byKey.get(cellKey(cell));
-                return value?.floor && !value.protected && !value.locked;
+                return value?.floor && !value.protected && !value.locked && !nestKeys.has(cellKey(cell));
             })
             .sort((a, b) => cellKey(a).localeCompare(cellKey(b)));
+    }
+
+    function workCellOpen(member, cell) {
+        return (
+            !api.Prison?.isPrison() ||
+            (member.x === cell.x && member.y === cell.y) ||
+            !api.SpinnerNativeField.snapshot(cell).occupied
+        );
     }
 
     function assignmentKey(assignment) {
@@ -509,6 +588,7 @@
             const previousAssignments = group.assignments || {};
             group.assignments = {};
             const plan = ai.plans[group.planId],
+                workSnapshot = plan?.kind === "enclosure" ? snapshot : regionSnapshot(snapshot, group),
                 field =
                     plan?.kind === "enclosure" ? undefined : api.SpinnerNativeField.fieldById(encounter, plan?.fieldId),
                 graph = encounter.topology,
@@ -533,10 +613,11 @@
                         retainedWork &&
                         !reservedTasks.has(assignmentKey(field ? retainedTask : previous)) &&
                         !reservedWork.has(cellKey(retainedWork)) &&
-                        workCells(field ? taskCell(field, retainedTask) : previous.target, snapshot).some(
+                        workCells(field ? taskCell(field, retainedTask) : previous.target, workSnapshot).some(
                             (cell) => cellKey(cell) === cellKey(retainedWork),
                         ) &&
-                        Number.isFinite(pathDistance(member, retainedWork, { mapSnapshot: snapshot }));
+                        workCellOpen(member, retainedWork) &&
+                        Number.isFinite(pathDistance(member, retainedWork, { mapSnapshot: workSnapshot }));
                 if (canRetain) {
                     group.assignments[member.id] = field
                         ? {
@@ -553,15 +634,16 @@
                 if (!field && graph?.fields && plan?.compositeId) {
                     const action = api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...reservedTasks]);
                     if (!action?.cell) continue;
-                    const work = workCells(action.cell, snapshot)
+                    const work = workCells(action.cell, workSnapshot)
                         .filter((cell) => !reservedWork.has(cellKey(cell)))
                         .sort(
                             (a, b) =>
-                                pathDistance(member, a, { mapSnapshot: snapshot }) -
-                                    pathDistance(member, b, { mapSnapshot: snapshot }) ||
+                                Number(!workCellOpen(member, a)) - Number(!workCellOpen(member, b)) ||
+                                pathDistance(member, a, { mapSnapshot: workSnapshot }) -
+                                    pathDistance(member, b, { mapSnapshot: workSnapshot }) ||
                                 cellKey(a).localeCompare(cellKey(b)),
                         )[0];
-                    if (!work || !Number.isFinite(pathDistance(member, work, { mapSnapshot: snapshot }))) continue;
+                    if (!work || !Number.isFinite(pathDistance(member, work, { mapSnapshot: workSnapshot }))) continue;
                     group.assignments[member.id] = assignmentFromAction(action, work);
                     reservedTasks.add(assignmentKey(action));
                     reservedWork.add(cellKey(work));
@@ -571,19 +653,20 @@
                     .filter((task) => !reservedTasks.has(task.key))
                     .map((task) => {
                         const target = taskCell(field, task),
-                            work = workCells(target, snapshot)
+                            work = workCells(target, workSnapshot)
                                 .filter((cell) => !reservedWork.has(cellKey(cell)))
                                 .sort(
                                     (a, b) =>
-                                        pathDistance(member, a, { mapSnapshot: snapshot }) -
-                                            pathDistance(member, b, { mapSnapshot: snapshot }) ||
+                                        Number(!workCellOpen(member, a)) - Number(!workCellOpen(member, b)) ||
+                                        pathDistance(member, a, { mapSnapshot: workSnapshot }) -
+                                            pathDistance(member, b, { mapSnapshot: workSnapshot }) ||
                                         cellKey(a).localeCompare(cellKey(b)),
                                 )[0];
                         return {
                             task,
                             target,
                             work,
-                            steps: work ? pathDistance(member, work, { mapSnapshot: snapshot }) : Infinity,
+                            steps: work ? pathDistance(member, work, { mapSnapshot: workSnapshot }) : Infinity,
                         };
                     })
                     .filter((option) => option.work && Number.isFinite(option.steps))
@@ -610,12 +693,43 @@
         return String(KDMapData?.RoomType ?? KDMapData?.MapMod ?? `${KDMapData?.GridWidth}x${KDMapData?.GridHeight}`);
     }
 
-    function staticCandidateLegal(candidate, snapshot) {
-        const cells = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+    function staticCandidateLegal(candidate, snapshot, group, blockNests) {
+        const cells = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
+            nestKeys = blockNests ? new Set((snapshot.nests || []).map(cellKey)) : new Set();
         return candidate.cells.every((key) => {
             const cell = cells.get(key);
-            return cell?.floor && !cell.protected && !cell.locked;
+            return (
+                cell?.floor &&
+                !cell.protected &&
+                !cell.locked &&
+                !nestKeys.has(key) &&
+                (!group.homeRegion || prisonRegion(cell) === group.homeRegion)
+            );
         });
+    }
+
+    function lineHasPaidWork(field) {
+        return (
+            !!field &&
+            (field.anchors.some((anchor) => anchor.built) || field.links.some((link) => link.builtCells.length))
+        );
+    }
+
+    function refreshReportedPlan(encounter, group) {
+        const report = group.remoteSighting,
+            plan = encounter.ai?.plans?.[group.planId];
+        if (!report || !plan || plan.kind === "enclosure" || (plan.reportSerial || 0) >= report.serial) return;
+        const field = api.SpinnerNativeField.fieldById(encounter, plan.fieldId);
+        if (!field) return;
+        const paid = lineHasPaidWork(field);
+        if ((paid || plan.reportSerial) && pendingTasks(field, true).length) return;
+        if (!paid) {
+            api.SpinnerNativeField.retireField(plan.fieldId);
+            plan.status = "abandoned";
+        }
+        group.planId = null;
+        group.assignments = {};
+        group.selectionOrdinal++;
     }
 
     function invalidatePlan(encounter, group, reason, snapshot) {
@@ -685,9 +799,23 @@
         auditGroups(ai, entities, { ...input, mapSnapshot: snapshot });
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
+            const report = api.PrisonAlerts?.currentReport();
+            if (group.homeRegion && report && report.region !== group.homeRegion)
+                group.remoteSighting = {
+                    x: report.x,
+                    y: report.y,
+                    region: report.region,
+                    serial: report.serial,
+                };
+            else delete group.remoteSighting;
+            refreshReportedPlan(encounter, group);
             const current = ai.plans[group.planId];
-            if (current && current.kind !== "enclosure" && !staticCandidateLegal(current, snapshot))
-                invalidatePlan(encounter, group, "terrain", snapshot);
+            if (current && current.kind !== "enclosure") {
+                const field = api.SpinnerNativeField.fieldById(encounter, current.fieldId),
+                    blockNests = api.Prison?.isPrison() && !lineHasPaidWork(field);
+                if (!staticCandidateLegal(current, snapshot, group, blockNests))
+                    invalidatePlan(encounter, group, blockNests ? "nest-or-terrain" : "terrain", snapshot);
+            }
             if (group.planId) continue;
             const members = group.memberIds
                     .map((id) => entities.find((entity) => entity.id === id))
@@ -875,9 +1003,9 @@
         return true;
     }
 
-    function nativePath(enemy, target) {
+    function nativePath(enemy, target, group, plan) {
         if (typeof KinkyDungeonFindPath !== "function") return [];
-        return (
+        const path =
             KinkyDungeonFindPath(
                 enemy.x,
                 enemy.y,
@@ -891,15 +1019,27 @@
                 undefined,
                 undefined,
                 enemy,
-            ) || []
-        );
+            ) || [];
+        if (!group.homeRegion || plan?.kind === "enclosure") return path;
+        if (prisonRegion(enemy) !== group.homeRegion || prisonRegion(target) !== group.homeRegion) return [];
+        if (path.every((cell) => prisonRegion(cell) === group.homeRegion)) return path;
+        return routeOnSnapshot(regionSnapshot(nativeMapSnapshot(), group), enemy, target).slice(1);
     }
 
     function performAssignment(enemy, group, assignment) {
         const encounter = api.SpinnerNativeField.state(),
             field = assignmentField(encounter, assignment),
+            plan = encounter.ai?.plans?.[group.planId],
             delta = enemy.SpiderlingsSpinnerRuntimeDelta || 1;
         if (!field) {
+            record(group, "wait");
+            return "wait";
+        }
+        if (
+            group.homeRegion &&
+            plan?.kind !== "enclosure" &&
+            [enemy, assignment.target, assignment.workCell].some((cell) => prisonRegion(cell) !== group.homeRegion)
+        ) {
             record(group, "wait");
             return "wait";
         }
@@ -918,7 +1058,7 @@
             return "wait";
         }
         if (distance(enemy, assignment.workCell) > 0) {
-            const path = nativePath(enemy, assignment.workCell),
+            const path = nativePath(enemy, assignment.workCell, group, plan),
                 next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
             if (!next || api.SpinnerNativeField.snapshot(next).occupied) {
                 record(group, "wait");
@@ -1009,6 +1149,7 @@
     }
 
     function handleBeforeMove(enemy, target, aiData = {}) {
+        // KD clears movePoints for idle enemies after beforemove, including a paid move below its speed threshold.
         const encounter = api.SpinnerNativeField.state(),
             state = encounter?.ai;
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
@@ -1025,16 +1166,21 @@
             );
         if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
             if (group.engagement.mode === "pursuit") return decide(enemy, group, "delegate-native", false);
-            return decide(
-                enemy,
-                group,
-                moveLure(enemy, group, observed ? target : undefined, observed && actualSight),
-                true,
-            );
+            const action = moveLure(enemy, group, observed ? target : undefined, observed && actualSight);
+            if (["lure-move", "yield"].includes(action)) aiData.idle = false;
+            return decide(enemy, group, action, true);
         }
         if (perceivedThreat && distance(enemy, target) <= 1)
             return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
         if (!group.engagement && perceivedThreat) return decide(enemy, group, "delegate-native", false);
+        const localReport = api.PrisonAlerts?.currentRegionReport(group.homeRegion);
+        if (
+            !perceivedThreat &&
+            localReport &&
+            enemy.SpiderlingsPrisonAlert?.serial === localReport.serial &&
+            enemy.SpiderlingsPrisonAlert?.region === group.homeRegion
+        )
+            return decide(enemy, group, "delegate-native", false);
         const assignment = group.assignments?.[enemy.id];
         if (!assignment) {
             const blocking = Object.entries(group.assignments || {}).some(
@@ -1060,13 +1206,16 @@
                         false,
                     );
                     record(group, "yield");
+                    aiData.idle = false;
                     return decide(enemy, group, "yield", true);
                 }
             }
             record(group, "wait");
             return decide(enemy, group, "wait", true);
         }
-        return decide(enemy, group, performAssignment(enemy, group, assignment), true);
+        const action = performAssignment(enemy, group, assignment);
+        if (["builder-move", "field-work"].includes(action)) aiData.idle = false;
+        return decide(enemy, group, action, true);
     }
 
     function preparePositiveTurn(delta, input = {}) {
@@ -1113,11 +1262,15 @@
         )) {
             const member = KDMapData.Entities.find((entity) => String(entity.id) === String(memberId)),
                 task = assignment && assignmentKey(assignment),
-                workKeyValue = assignment?.workCell && cellKey(assignment.workCell);
+                workKeyValue = assignment?.workCell && cellKey(assignment.workCell),
+                plan = encounter.ai?.plans?.[group.planId];
             if (
                 !eligibleSpinner(member) ||
                 String(group.engagement?.lureId) === String(memberId) ||
                 !assignmentPending(encounter, assignment) ||
+                (group.homeRegion &&
+                    plan?.kind !== "enclosure" &&
+                    [assignment.target, assignment.workCell].some((cell) => prisonRegion(cell) !== group.homeRegion)) ||
                 tasks.has(task) ||
                 work.has(workKeyValue)
             )

@@ -14,12 +14,13 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 ## 版本
 
-| 分支                                                                  | 版本              | 用途       |
-| --------------------------------------------------------------------- | ----------------- | ---------- |
-| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main) | `0.92.38`         | 正式版     |
-| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) | `0.92.36-test.16` | 测试开发版 |
+| 分支                                                                         | 版本                     | 用途           |
+| ---------------------------------------------------------------------------- | ------------------------ | -------------- |
+| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)        | `0.92.38`                | 正式版         |
+| [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test)        | `0.92.36-test.16`        | 共用开发基线   |
+| [巢穴监狱 PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) | `0.92.36-prison.alpha.1` | 巢穴监狱实验版 |
 
-测试分支沿用 `0.92.36` 正式基线，并已包含正式版 `0.92.38` 的兼容修复。它增加了实验性的 Spinner 捕获和 Mage Spiderlings。法师幼蛛会远程攻击并布置可见的符文陷阱。新生成的普通地图达到第 5 层或有效安全等级 0 时，只要有合法空格且未超过幼蛛人口上限，就会有一只法师幼蛛。法师的手臂拘束暂用占位素材和原生脱困规则。目前只有正式版发布 GitHub Release；测试包按[开发说明](docs/DEVELOPMENT.md)在本地构建。
+共用测试分支沿用 `0.92.36` 正式基线，并已包含正式版 `0.92.38` 的兼容修复。独立的 `prison.alpha.N` 序列用于巢穴监狱实验，暂不并入普通 `test.N` 测试包。监狱实验版继承其基线的 Spinner 捕获和 Mage Spiderlings；锚定蛛茧可触发能被打断的幼蛛押送，将玩家带入保留地图变化的监狱。监狱有巡逻、持续扩建的蛛网场地和返回原楼层的出口。它不包含 [PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83) 的三巢侵扰楼层改动。目前只有正式版发布 GitHub Release；开发包按[开发说明](docs/DEVELOPMENT.md)在本地构建。
 
 ## 开发与反馈
 

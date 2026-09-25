@@ -34,6 +34,11 @@ const scripts = [
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
+    "SpiderlingsPrison.js",
+    "SpiderlingsPrisonAlerts.js",
+    "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonConstruction.js",
+    "SpiderlingsPrisonEscort.js",
     "SpiderlingsSpinnerRuntime.js",
 ];
 const assets = [
@@ -331,7 +336,11 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 199, `${csv}: current release text set including Mage rune`);
+        assert.equal(
+            entries.size,
+            203,
+            `${csv}: current release text set including prison clues, Spinner messages and Mage rune`,
+        );
         for (const key of [
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",

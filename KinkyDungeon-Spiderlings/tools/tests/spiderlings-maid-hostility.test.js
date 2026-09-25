@@ -51,6 +51,18 @@ function loadRuntime() {
         KinkyDungeonVisionGet: () => 1,
         KinkyDungeonJailGuard: () => undefined,
         KinkyDungeonLeashingEnemy: () => undefined,
+        KinkyDungeonEnemyLoop(enemy, player) {
+            if (enemy.pullTo && player?.player) {
+                player.x = enemy.pullTo.x;
+                player.y = enemy.pullTo.y;
+                context.KDGameData.KinkyDungeonLeashedPlayer = 3;
+                context.KDGameData.KinkyDungeonLeashingEnemy = enemy.id;
+            } else if (enemy.moveWithoutLeash && player?.player) {
+                player.x = enemy.moveWithoutLeash.x;
+                player.y = enemy.moveWithoutLeash.y;
+            }
+            return { idle: false };
+        },
         KinkyDungeonFindPath: (_x, _y, x, y) => [{ x, y }],
         KDNearbyEnemies(x, y, radius) {
             return context.KDMapData.Entities.filter((e) => Math.hypot(e.x - x, e.y - y) <= radius);
@@ -156,6 +168,126 @@ test("visible Maidforce and Spiderlings prefer each other even with the player c
             assert.equal(kd.KinkyDungeonNearestPlayer(actor, false, false), kd.KinkyDungeonPlayerEntity);
         }
     }
+});
+
+test("anchored Cocoon makes a Spiderling contest the active NPC escort through native targeting", () => {
+    const { context: kd, nativeHostile, nativeNearest, make } = loadRuntime();
+    const spider = make("Spinner", { x: 6, y: 4 });
+    const escort = make("Bandit", { x: 4, y: 4, faction: "Enemy" });
+    const bystander = make("Bandit", { x: 7, y: 4, faction: "Enemy" });
+    kd.KDMapData.Entities = [spider, escort, bystander];
+    kd.KinkyDungeonPlayerEntity.x = 5;
+    kd.KinkyDungeonPlayerEntity.y = 4;
+    kd.KinkyDungeonPlayerEntity.leash = { entity: escort.id };
+    kd.KDGameData.KinkyDungeonLeashedPlayer = 3;
+    kd.KDGameData.KinkyDungeonLeashingEnemy = escort.id;
+    let anchored = true;
+    kd.Spiderlings.Webbing = { hasAnchoredCocoon: () => anchored };
+
+    assert.equal(nativeNearest(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), escort);
+    assert.equal(kd.KDHostile(spider, escort), true);
+    assert.equal(kd.KDHostile(escort, spider), true);
+    assert.equal(kd.KDFactionFavorable("Enemy", escort), false);
+    assert.equal(kd.KDFactionFavorable("Enemy", bystander), true);
+    assert.equal(kd.KDHostile(spider, bystander), false);
+    const bullet = { x: escort.x, y: escort.y, bullet: { faction: "Enemy", spell: {}, damage: { type: "glue" } } };
+    assert.equal(kd.KDBulletCanHitEntity(bullet, escort), true);
+    assert.equal(kd.KDBulletCanHitEntity({ ...bullet, x: bystander.x }, bystander), false);
+    assert.equal(kd.KinkyDungeonPlayerEntity.leash.entity, escort.id);
+    assert.equal(kd.KDGameData.KinkyDungeonLeashingEnemy, escort.id);
+
+    escort.Enemy.noAttack = true;
+    assert.equal(nativeNearest(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), escort, "a noncombat escort is still contested");
+    const see = kd.KinkyDungeonCheckLOS;
+    kd.KinkyDungeonCheckLOS = () => false;
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    kd.KinkyDungeonCheckLOS = see;
+    delete escort.Enemy.noAttack;
+    escort.faction = "Natural";
+    assert.equal(nativeNearest(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), escort, "the exact escort can be neutral");
+    escort.faction = "Enemy";
+    escort.ceasefire = 5;
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KDFactionFavorable("Enemy", escort), true);
+    delete escort.ceasefire;
+
+    const allied = make("Spinner", { x: 6, y: 4, allied: 20 });
+    assert.equal(kd.KDHostile(allied, escort), nativeHostile(allied, escort));
+    assert.equal(kd.KDHostile(escort, allied), nativeHostile(escort, allied));
+
+    anchored = false;
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KDHostile(spider, escort), false);
+    assert.equal(kd.KDFactionFavorable("Enemy", escort), true);
+    assert.equal(kd.KDBulletCanHitEntity(bullet, escort), false);
+});
+
+test("a Spiderling searches toward a competing escort on a native route", () => {
+    const { context: kd, make } = loadRuntime();
+    const spider = make("Spinner", { x: 4, y: 4, aware: false });
+    const escort = make("Bandit", { x: 10, y: 4, faction: "Enemy" });
+    kd.KDMapData.Entities = [spider, escort];
+    kd.KinkyDungeonPlayerEntity.x = 5;
+    kd.KinkyDungeonPlayerEntity.y = 4;
+    kd.KDGameData.KinkyDungeonLeashedPlayer = 3;
+    kd.KDGameData.KinkyDungeonLeashingEnemy = escort.id;
+    kd.Spiderlings.Webbing = { hasAnchoredCocoon: () => true };
+    const route = [
+        { x: 5, y: 4 },
+        { x: 6, y: 4 },
+        { x: 7, y: 4 },
+    ];
+    kd.KinkyDungeonFindPath = () => route;
+    assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), true);
+    assert.deepEqual([spider.gx, spider.gy], [escort.x, escort.y]);
+    assert.equal(spider.path, route);
+
+    spider.path = undefined;
+    kd.KDGameData.KinkyDungeonLeashedPlayer = 0;
+    assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), false);
+    assert.equal(spider.path, undefined);
+});
+
+test("only an actual native pull retains an untethered escort across a turn and save", () => {
+    const { context: kd, make } = loadRuntime();
+    const spider = make("Jumper", { x: 6, y: 4 });
+    const escort = make("Bandit", { x: 4, y: 4, faction: "Enemy" });
+    kd.KDMapData.Entities = [spider, escort];
+    kd.KinkyDungeonPlayerEntity.x = 5;
+    kd.KinkyDungeonPlayerEntity.y = 4;
+    kd.Spiderlings.Webbing = { hasAnchoredCocoon: () => true };
+    escort.pullTo = { x: 4, y: 4 };
+    kd.KinkyDungeonEnemyLoop(escort, kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KDGameData.SpiderlingsContestedEscort.id, escort.id);
+
+    kd.KDGameData = JSON.parse(JSON.stringify(kd.KDGameData));
+    kd.KDGameData.KinkyDungeonLeashingEnemy = 0;
+    kd.Spiderlings.Webbing = undefined;
+    kd.KDMapData.Entities = [];
+    assert.equal(kd.KDHostile(spider, escort), false);
+    assert.equal(kd.KDGameData.SpiderlingsContestedEscort.id, escort.id, "loading must retain the pull source");
+    kd.Spiderlings.Webbing = { hasAnchoredCocoon: () => true };
+    assert.equal(kd.KDHostile(spider, escort), false);
+    assert.equal(kd.KDGameData.SpiderlingsContestedEscort.id, escort.id);
+    kd.KDMapData.Entities = [spider, escort];
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), escort);
+    assert.equal(kd.KDHostile(spider, escort), true);
+
+    kd.KDGameData.KinkyDungeonLeashedPlayer = 0;
+    assert.equal(kd.KDHostile(spider, escort), false);
+    assert.equal(kd.KDGameData.SpiderlingsContestedEscort, undefined);
+    kd.KDGameData.KinkyDungeonLeashedPlayer = 3;
+    kd.KinkyDungeonEnemyLoop(
+        { ...escort, id: 999, pullTo: undefined, moveWithoutLeash: { x: 3, y: 4 } },
+        kd.KinkyDungeonPlayerEntity,
+    );
+    assert.equal(kd.KDHostile(spider, escort), false, "unrelated NPC movement cannot recreate custody");
+    kd.KDGameData.KinkyDungeonLeashingEnemy = escort.id;
+    escort.hp = 0;
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
 });
 
 test("a WebCaster prioritizes visible pending Cocoon reinforcement then returns to its rival", () => {

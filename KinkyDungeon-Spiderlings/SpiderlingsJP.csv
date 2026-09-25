@@ -188,6 +188,10 @@ SpiderlingsFieldAddSpinner,Spinner を追加
 SpiderlingsFieldTrap,地面の蛛糸に足が引っ掛かり、一時的に移動が遅くなる。
 SpiderlingsFieldRebuild,あと {turns} ワールドターンで幼グモが再設置を始める。
 SpiderlingsFieldWaiting,罠の準備完了。入るまで西側の入口は開いている。
+KDRoomType_SpiderlingsNestPrison,幼グモの巣の牢獄
+SpiderlingsPrisonArrival,繭の部屋は蛛糸に覆われている。三つの通路が巣を抜けて東へ続く。
+SpiderlingsPrisonTrail,涼しい風が淡い蛛糸に沿って外壁へ流れている。
+SpiderlingsPrisonExit,外側の網の裂け目から日光が差す。帰り道はここだ。
 NameMageSpiderlings,Spiderling Mage
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt

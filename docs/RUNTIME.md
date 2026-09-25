@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.16` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.18` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                               |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -27,6 +27,8 @@ The manifest owns script loading order. Runtime scripts remain plain JavaScript 
 | `SpiderlingsSpinnerNPCRecovery.js`                          | Records breached NPC departures and item-free recovery sources, then adapts shared paid pulling to native `KDMoveEntity`.                                                                                  |
 | `SpiderlingsSpinnerField.js`, `SpiderlingsSpinnerArt.js`    | Legacy training-room geometry/construction compatibility and character artwork.                                                                                                                            |
 | `SpiderlingsSpinnerRuntime.js`                              | Owns the single Spinner enemy-loop wrapper, composes native `hunt` perception/action gates and dispatches field damage, movement, load and positive-turn events.                                           |
+| `SpiderlingsPrison.js`                                      | Registers the persistent native side room, its shortcut and return exit. `Spiderlings.Prison.enter({ entrance })`, `isPrison()` and `recapture()` are the transport interface.                             |
+| `SpiderlingsPrisonConstruction.js`                          | Counts each chamber placement, requests main-nest builders at 50 world turns, and expands a map-owned composite through paid travel and work.                                                              |
 
 Core precedes encounters and WebCaster movement. Webbing data precedes Webbing rules, which precede the native Webbing adapter. Tests explicitly load these dependencies; the independent manifest allowlist test protects delivery order. Rule-only tests load data and rules without registering enemies, items, native hooks or game events.
 
@@ -59,6 +61,8 @@ Each callback forwards the original receiver, arguments and result on its unhand
 | Rollout enable decision and deterministic enclosure/fallback choice                                       | `KDMapData.SpiderlingsSpinnerRollout`; written once at map generation and reused on revisit.   |
 | One-time Mage map-start outcome                                                                           | `KDMapData.SpiderlingsGuaranteedMageState`; written before native random population.           |
 | Debug scene actor/target inputs, prior encounter and actor state                                          | `KDGameData.SpiderlingsSpinnerScenarioControl`; restored after load and consumed by teardown.  |
+| Source room, chamber, work area, main nest area, exit and seen clues                                      | `KDMapData.SpiderlingsPrison`; plain JSON kept in the native side-room map cache.              |
+| Chamber placement count, stay clock, dispatches and builder IDs                                           | `KDMapData.SpiderlingsPrison.chamberConstruction`; fields remain in the shared native graph.   |
 | Native web-cell entities                                                                                  | Reconciled projection of the encounter topology; exactly one owned proxy per solid cell.       |
 | Deposited silk and leg-bag escape work                                                                    | The equipped item's `data`, including `wrapProgress` and `SpiderlingsLegbinderEscapeProgress`. |
 | Graphics, texture promises, animation interpolation and timer handles                                     | Runtime-only values; not serialized.                                                           |
@@ -83,7 +87,7 @@ Autonomous planning captures the map seed, forms groups from hostile capable Spi
 
 ## Native enclosing-field slice
 
-Issue #30 extends the same map-owned topology and `SpiderlingsSpinnerWebCell` projection used by the doorway line. It does not add a second collision or damage model. Every declared enclosure is a saved simple orthogonal polygon. The inner polygon has a 3-by-3 free core and a 3-to-7-cell interior width and height. A same-group outer layer requires four initial members, two free cell bands between boundaries, a common inner core and a boundary footprint no larger than 13 by 13.
+Issue #30 extends the same map-owned topology and `SpiderlingsSpinnerWebCell` projection used by the doorway line. It does not add a second collision or damage model. Every declared enclosure is a saved simple orthogonal polygon. The inner polygon has a 3-by-3 free core and a 3-to-7-cell interior width and height. A same-group outer layer requires four builders, two free cell bands between successive boundaries and the common inner core. Further legal layers can be appended to the saved composite without a fixed layer count or footprint limit; finite floor, protected and occupied work cells still constrain each extension. The existing field actions build every new layer, and damage, repair, collision and capture continue to use the shared topology.
 
 The physical graph expands boundaries to unit edges, merges equal edges and coalesces collinear spans only while owner sets match. Original polygon vertices remain real anchors. Overlap splits and crossings are junctions without anchor HP. Identical and partial overlaps therefore share one HP pool per physical span and one native proxy per occupied cell.
 

@@ -188,6 +188,10 @@ SpiderlingsFieldAddSpinner,Добавить Spinner
 SpiderlingsFieldTrap,Шёлк на земле ненадолго замедляет ваши шаги.
 SpiderlingsFieldRebuild,Паучки начнут строить заново через {turns} ходов мира.
 SpiderlingsFieldWaiting,Ловушки готовы. Западный вход открыт пока вы не войдёте.
+KDRoomType_SpiderlingsNestPrison,Тюрьма в паучьем гнезде
+SpiderlingsPrisonArrival,Шёлк покрывает комнату кокона. Три прохода ведут через гнездо на восток.
+SpiderlingsPrisonTrail,Прохладный ветер идёт вдоль светлого шёлка к внешней стене.
+SpiderlingsPrisonExit,Свет проникает через разрыв во внешней паутине. Здесь путь назад.
 NameMageSpiderlings,Spiderling Mage
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt

@@ -908,7 +908,7 @@ test("Cocoon hides every inner HUD/context action and removing it restores the o
     assert.equal(runtime.nativeStruggleInputs.length, 0, "menu queries spend no actions");
 });
 
-test("Lv3 native escape shares two actions across methods and ignores queries, failed prerequisites, and duplicate Fail events", () => {
+test("Lv3 native escape counts a no-tool Cut and ignores queries, failed prerequisites, and duplicate Fail events", () => {
     const runtime = loadLifecycleRuntime({ KinkyDungeonHasStamina: () => true });
     const api = runtime.context.Spiderlings.Webbing;
     assert.equal(api.equipForDebug("SpiderlingsWebbingLv3Arm").applied, true);
@@ -924,29 +924,25 @@ test("Lv3 native escape shares two actions across methods and ignores queries, f
         escapePenalty: 0,
         ...extra,
     });
-    for (const extra of [{ query: true }, { canCut: false }]) {
-        before({}, target, attempt("Cut", extra));
-        after({}, target, { ...attempt("Cut"), result: "Fail" });
-        assert.equal(target.data.SpiderlingsEscapeActions, undefined);
-    }
+    before({}, target, attempt("Cut", { query: true }));
+    after({}, target, { ...attempt("Cut"), result: "Fail" });
+    assert.equal(target.data.SpiderlingsEscapeActions, undefined);
+    const noTool = attempt("Cut", { canCut: false });
+    before({}, target, noTool);
+    assert.equal(noTool.escapeSpeed, 0);
+    after({}, target, { ...noTool, result: "Fail" });
+    after({}, target, { ...noTool, result: "Fail" });
+    assert.equal(target.data.SpiderlingsEscapeActions, 1);
     runtime.context.KinkyDungeonHasStamina = () => false;
     before({}, target, attempt("Struggle"));
     after({}, target, { ...attempt("Struggle"), result: "Fail" });
-    assert.equal(target.data.SpiderlingsEscapeActions, undefined);
+    assert.equal(target.data.SpiderlingsEscapeActions, 1);
     runtime.context.KinkyDungeonHasStamina = () => true;
     runtime.context.KDGroupBlocked = () => true;
     before({}, target, attempt("Struggle"));
     after({}, target, { ...attempt("Struggle"), result: "Fail" });
-    assert.equal(target.data.SpiderlingsEscapeActions, undefined);
+    assert.equal(target.data.SpiderlingsEscapeActions, 1);
     runtime.context.KDGroupBlocked = () => false;
-    for (const [index, method] of ["Struggle"].entries()) {
-        const data = attempt(method);
-        before({}, target, data);
-        assert.equal(data.escapeChance, 0);
-        after({}, target, { ...data, result: "Fail" });
-        after({}, target, { ...data, result: "Fail" });
-        assert.equal(target.data.SpiderlingsEscapeActions, index + 1);
-    }
     const final = attempt("Remove");
     before({}, target, final);
     assert.equal(target.cutProgress, 1);

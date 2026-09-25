@@ -40,6 +40,10 @@ _Avoid_: simultaneous Tunneler cap, shared ancestry budget, total nest count lim
 A living Spinner, Jumper, WebCaster, Tunneler, or Mage created by recurring nest reinforcement and tagged with its parent entrance ID. Untagged natural, squad, Tunneler, Mage map-start, and death-burst entities are not nest children.
 _Avoid_: every Spiderling near a nest
 
+**Spiderlings nest prison**:
+A persistent KD side room tied to one source floor. A selected living NestEntrance receives a native shortcut on admission. The original Cocoon equipment stays on the player; the saved chamber, buildable western floor, optional main-nest area and outer return exit stay on `KDMapData` across visits. The exit returns through native stairs with zero journey advance. `Spiderlings.Prison.enter({ entrance })` admits an arrived escort, while `recapture()` relocates the player inside the same map.
+_Avoid_: regenerating the room on capture, making every ordinary nest an entrance, a separate map stack
+
 ## Spiderlings Webbing
 
 **Spinner Capture strands**:
@@ -57,6 +61,14 @@ _Avoid_: scaled full-body Cocoon, contest-owned wrap progress, forced replacemen
 **Spinner training field**:
 The legacy flat-room experiment retained for historical comparison, distinct from current map-aware Spinner encounters. Current acceptance uses ordinary/infestation maps and the ten native scenario fixtures in [runtime documentation](../docs/RUNTIME.md); the old fixed-training-room save and playtest flow are not current acceptance paths.
 _Avoid_: decorative-only boundary, teleporting the player into a capture, immortal Spinner
+
+**Prison regional alert**:
+A real hostile Spiderling sighting of the player records the reported tile and region on the prison map. Nearby placement-capable Spiderlings in that region receive an alert; other regions do not receive a movement goal. Hearing, awareness and NPC sightings do not create a player report. The saved report expires after twelve positive world turns without another valid sighting.
+_Avoid_: map-wide awareness, hearing as sight, live player coordinates for distant builders
+
+**Distant Spinner ambush**:
+A prison Spinner group keeps its home region when members move and uses the latest unexpired report to rank legal line sites in that home region. The group walks to its own work cells and pays normal construction actions; its report is separate from native combat engagement. Existing paid work remains after reports change or expire.
+_Avoid_: distant pursuit order, cross-region group merge, report-created finished field
 
 **Spinner demo reaction opportunity**:
 A real player input that advances time while a contest or leg bag is present, counted once even when the native action schedules multiple world turns. Jumper warnings still snapshot their target tile and resolve after two subsequent opportunities. Automatic weaving advances world effects without consuming player opportunities; NPC-targeted dashes retain world-time behavior.

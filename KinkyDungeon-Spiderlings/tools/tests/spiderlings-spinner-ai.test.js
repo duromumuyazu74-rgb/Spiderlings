@@ -96,9 +96,13 @@ function runtime(entities = []) {
                         return true;
                     },
                 },
+                wander: { beforemove: () => false },
             },
             KDMapInit: (values) => Object.fromEntries(values.map((value) => [value, true])),
-            KinkyDungeonMapGet: (x, y) => (x > 0 && y > 0 && x < 17 && y < 11 ? "." : "1"),
+            KinkyDungeonMapGet: (x, y) =>
+                x > 0 && y > 0 && x < context.KDMapData.GridWidth - 1 && y < context.KDMapData.GridHeight - 1
+                    ? "."
+                    : "1",
             KinkyDungeonTilesGet: (key) => tiles.get(key),
             KinkyDungeonEntityAt(x, y) {
                 if (context.KinkyDungeonPlayerEntity.x === x && context.KinkyDungeonPlayerEntity.y === y)
@@ -133,7 +137,7 @@ function runtime(entities = []) {
             },
             KinkyDungeonFindPath(fromX, fromY, toX, toY) {
                 return context.Spiderlings.SpinnerAI.routeOnSnapshot(
-                    mapSnapshot(),
+                    context.testSnapshot || mapSnapshot(),
                     { x: fromX, y: fromY },
                     { x: toX, y: toY },
                 ).slice(1);
@@ -152,12 +156,15 @@ function runtime(entities = []) {
                         canSeePlayer: !!enemy.testSense,
                         hostile: true,
                         aggressive: true,
+                        idle: true,
                         ...(enemy.testAIData || {}),
                     },
-                    handled = context.KDAIType.hunt.beforemove(enemy, target, aiData),
+                    handled = context.KDAIType[enemy.Enemy.AI || "hunt"].beforemove(enemy, target, aiData),
                     attacked = context.KDAIType.hunt.attack(enemy, target, aiData),
                     cast = context.KDAIType.hunt.spell(enemy, target, aiData);
-                return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
+                if (aiData.idle) enemy.movePoints = 0;
+                enemy.testIdle = aiData.idle;
+                return { idle: aiData.idle, handled, attacked, cast, defeat: false, defeatEnemy: enemy };
             },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] ||= {};
@@ -175,12 +182,397 @@ function runtime(entities = []) {
     context.Spiderlings.SpinnerField = { handleEnemyTurn: () => undefined };
     context.Spiderlings.SpinnerCapture = { handleEnemyTurn: () => undefined };
     load(context, "SpiderlingsSpinnerRuntime.js");
+    context.Spiderlings.Prison = {
+        isPrison: () => context.KDMapData.RoomType === "SpiderlingsNestPrison" && !!context.KDMapData.SpiderlingsPrison,
+    };
+    load(context, "SpiderlingsPrisonAlerts.js");
     return { context, tiles, movement, nativeCalls, phaseCalls };
 }
 
 function start(r, snapshot = mapSnapshot()) {
+    r.context.testSnapshot = snapshot;
     return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
 }
+
+function prisonSnapshot() {
+    const cells = [];
+    for (let y = 1; y < 44; y++)
+        for (let x = 1; x < 54; x++) cells.push({ x, y, floor: true, protected: false, locked: false });
+    return {
+        width: 55,
+        height: 45,
+        cells,
+        entrances: [{ x: 11, y: 22 }],
+        exits: [{ x: 51, y: 22 }],
+        chokes: [],
+        nests: [],
+        candidateLines: [
+            [
+                { x: 10, y: 20 },
+                { x: 10, y: 24 },
+            ],
+            [
+                { x: 25, y: 20 },
+                { x: 25, y: 24 },
+            ],
+            [
+                { x: 35, y: 20 },
+                { x: 35, y: 24 },
+            ],
+            [
+                { x: 39, y: 20 },
+                { x: 39, y: 24 },
+            ],
+        ],
+    };
+}
+
+function prisonRuntime(entities) {
+    const r = runtime(entities);
+    r.context.KDMapData.GridWidth = 55;
+    r.context.KDMapData.GridHeight = 45;
+    r.context.KDMapData.RoomType = "SpiderlingsNestPrison";
+    r.context.KDMapData.StartPosition = { x: 11, y: 22 };
+    r.context.KDMapData.EndPosition = { x: 51, y: 22 };
+    r.context.KDMapData.SpiderlingsPrison = { version: 1 };
+    r.context.KinkyDungeonPlayerEntity.x = 11;
+    r.context.KinkyDungeonPlayerEntity.y = 22;
+    return r;
+}
+
+test("prison report requires real sight and alerts only nearby placement-capable Spiderlings", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
+        local = spinner(2, 12, 22),
+        remote = spinner(3, 35, 22),
+        localBuilder = spinner(4, 13, 22),
+        r = prisonRuntime([observer, local, remote, localBuilder]),
+        alert = r.context.Spiderlings.PrisonAlerts,
+        player = r.context.KinkyDungeonPlayerEntity;
+    observer.testSense = true;
+    observer.testAIData = { canSeePlayer: false, canSeePlayerChase: true };
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    assert.equal(alert.currentReport(), undefined, "hearing and chase perception do not report a sighting");
+    observer.aware = true;
+    observer.testAIData = { canSeePlayer: false };
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    assert.equal(alert.currentReport(), undefined, "awareness alone does not report a sighting");
+    observer.testAIData = { canSeePlayer: true };
+    r.context.KinkyDungeonEnemyLoop(observer, { id: 99, hp: 2, x: 11, y: 22 }, 1);
+    assert.equal(alert.currentReport(), undefined, "an NPC target is not a player sighting");
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    assert.deepEqual(plain(alert.currentReport()), {
+        x: 11,
+        y: 22,
+        region: "chamber",
+        serial: 1,
+        age: 0,
+        tick: 1,
+    });
+    assert.equal(local.aware, true);
+    assert.deepEqual([local.gx, local.gy], [11, 22]);
+    assert.equal(remote.aware, undefined);
+    assert.equal(remote.gx, undefined);
+    start(r, prisonSnapshot());
+    r.phaseCalls.length = 0;
+    r.context.KinkyDungeonEnemyLoop(local, player, 1);
+    assert.equal(r.phaseCalls.length, 2, "alerted local Spinner delegates its response to native movement and combat");
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    assert.equal(alert.currentReport().serial, 1, "two observations in one tick do not duplicate a report");
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    assert.equal(
+        alert.currentReport().serial,
+        1,
+        "a renewed sighting of the same tile refreshes age without rerolling jobs",
+    );
+});
+
+test("a prison sighting expires while the player spends world turns on the source floor", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } };
+    const r = prisonRuntime([observer]);
+    const alert = r.context.Spiderlings.PrisonAlerts;
+    const prison = r.context.KDMapData;
+    const player = r.context.KinkyDungeonPlayerEntity;
+    assert.equal(alert.observe(observer, player, { hostile: true, canSeePlayer: true }), true);
+    assert.equal(alert.currentReport().serial, 1);
+
+    r.context.KDMapData = { RoomType: "", Entities: [] };
+    for (let turn = 0; turn < 20; turn++) {
+        r.context.KinkyDungeonCurrentTick++;
+        alert.advance(1);
+    }
+    r.context.KDMapData = prison;
+    assert.equal(alert.currentReport(), undefined);
+    assert.equal(alert.currentRegionReport("chamber"), undefined);
+    assert.equal(alert.observe(observer, player, { hostile: true, canSeePlayer: true }), true);
+    assert.equal(alert.currentReport().serial, 2, "a new sighting after expiry creates a new report");
+});
+
+test("prison groups keep stable home regions and distant plans use only the saved report", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
+        actors = [
+            spinner(2, 19, 22),
+            spinner(3, 20, 22),
+            spinner(4, 21, 22),
+            spinner(5, 22, 22),
+            spinner(6, 34, 22),
+            spinner(7, 35, 22),
+        ],
+        r = prisonRuntime([observer, ...actors]),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity;
+    r.context.Spiderlings.PrisonNest = { ordinaryConstructionAllowed: (cell) => cell.x > 20 };
+    observer.testSense = true;
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    const ai = start(r, snapshot),
+        groups = Object.values(ai.groups),
+        main = groups.find((group) => group.homeRegion === "main-nest");
+    assert.deepEqual(
+        groups.map((group) => group.homeRegion).sort(),
+        ["chamber", "crossroads", "main-nest"],
+        "one-step neighbors across the boundary do not merge",
+    );
+    assert.deepEqual(plain(main.remoteSighting), { x: 11, y: 22, region: "chamber", serial: 1 });
+    assert.equal(groups.find((group) => group.homeRegion === "chamber").planId, null);
+    assert.equal(main.engagement, undefined);
+    assert.equal(ai.plans[main.planId].reportSerial, 1);
+    assert.ok(
+        ai.plans[main.planId].anchors.every(
+            (cell) => r.context.Spiderlings.PrisonAlerts.regionAt(cell) === "main-nest",
+        ),
+    );
+    player.x = 14;
+    player.y = 24;
+    start(r, snapshot);
+    assert.deepEqual(plain(main.remoteSighting), { x: 11, y: 22, region: "chamber", serial: 1 });
+    assert.equal(main.engagement, undefined, "no sight leaves distant builders out of native pursuit");
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    start(r, snapshot);
+    assert.deepEqual(plain(main.remoteSighting), { x: 14, y: 24, region: "chamber", serial: 2 });
+    assert.equal(ai.plans[main.planId].reportSerial, 1, "an assigned line keeps its physical job while reports update");
+});
+
+test("remote ambush builders travel and construct with paid actions; stale saved reports do not duplicate jobs", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
+        actors = [spinner(2, 32, 19), spinner(3, 33, 19)],
+        r = prisonRuntime([observer, ...actors]),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity;
+    observer.testSense = true;
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    let ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0];
+    assert.equal(group.homeRegion, "main-nest");
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.Spiderlings.PrisonAlerts.advance(1);
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(group.metrics.travel > 0, "builders walk to an in-region work cell");
+    assert.ok(group.metrics.construction > 0, "the ordinary field uses paid topology actions");
+    assert.ok(r.movement.every((move) => r.context.Spiderlings.PrisonAlerts.regionAt(move) === "main-nest"));
+    assert.equal(
+        r.context.Spiderlings.PrisonAlerts.currentReport(),
+        undefined,
+        "the report expires after twelve turns",
+    );
+    const plans = Object.keys(ai.plans).length,
+        topology = plain(r.context.Spiderlings.SpinnerNativeField.state().topology);
+    r.context.KDMapData = plain(r.context.KDMapData);
+    r.context.Spiderlings.PrisonAlerts.audit();
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    r.context.Spiderlings.SpinnerNativeField.reconcile();
+    r.context.Spiderlings.PrisonAlerts.audit();
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    ai = start(r, snapshot);
+    group = Object.values(ai.groups)[0];
+    assert.equal(group.remoteSighting, undefined);
+    assert.equal(Object.keys(ai.plans).length, plans);
+    assert.deepEqual(plain(r.context.Spiderlings.SpinnerNativeField.state().topology), topology);
+    assert.ok(
+        Object.values(group.assignments).every(
+            (assignment) => r.context.Spiderlings.PrisonAlerts.regionAt(assignment.workCell) === "main-nest",
+        ),
+    );
+});
+
+test("remote prison ambush anchors flank the reported route when crossing lines exist", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        group = {
+            id: "remote",
+            homeRegion: "main-nest",
+            source: { type: "nest", nestId: 90 },
+            members: actors,
+            remoteSighting: { x: 11, y: 22, region: "chamber", serial: 1 },
+        };
+    snapshot.candidateLines = [
+        [
+            { x: 39, y: 22 },
+            { x: 41, y: 22 },
+        ],
+        [
+            { x: 40, y: 20 },
+            { x: 40, y: 24 },
+        ],
+    ];
+    const candidates = r.context.Spiderlings.SpinnerAI.analyzeLineCandidates(snapshot, group);
+    assert.ok(candidates.length > 0);
+    assert.ok(candidates.every((candidate) => candidate.anchors.every((anchor) => anchor.y !== 22)));
+    assert.ok(candidates.every((candidate) => candidate.cells.some((cell) => cell.y === 22)));
+});
+
+test("living prison nests disqualify line cells and replace an unpaid blocked plan", () => {
+    const observer = { id: 1, x: 9, y: 22, hp: 2, Enemy: { name: "Jumper", tags: { spiderlings: true } } },
+        actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime([observer, ...actors]),
+        snapshot = prisonSnapshot(),
+        blocked = [
+            { x: 34, y: 22 },
+            { x: 38, y: 22 },
+        ],
+        available = [
+            { x: 33, y: 24 },
+            { x: 37, y: 24 },
+        ],
+        player = r.context.KinkyDungeonPlayerEntity;
+    observer.testSense = true;
+    r.context.KinkyDungeonEnemyLoop(observer, player, 1);
+    snapshot.candidateLines = [blocked];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        oldPlan = ai.plans[group.planId];
+    assert.deepEqual(plain(oldPlan.anchors), blocked);
+
+    r.context.KDMapData.Entities.push(
+        ...blocked.map((point, index) => ({ id: 90 + index, ...point, hp: 5, Enemy: { name: "NestEntrance" } })),
+    );
+    snapshot.nests = blocked.map((point, index) => ({ id: 90 + index, ...point }));
+    snapshot.candidateLines.push(available);
+    start(r, snapshot);
+    const replacement = ai.plans[group.planId];
+    assert.notEqual(replacement.id, oldPlan.id);
+    assert.equal(oldPlan.status, "invalid");
+    assert.deepEqual(plain(replacement.anchors), available);
+    assert.ok(
+        Object.values(group.assignments).every(
+            (assignment) => r.context.Spiderlings.PrisonAlerts.regionAt(assignment.workCell) === group.homeRegion,
+        ),
+    );
+
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(group.metrics.travel > 0);
+    assert.ok(group.metrics.construction > 0);
+});
+
+test("a prison builder reassigns a work cell occupied by a living nest", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity;
+    snapshot.candidateLines = [
+        [
+            { x: 35, y: 20 },
+            { x: 35, y: 24 },
+        ],
+    ];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        originalPlan = group.planId,
+        oldWork = plain(group.assignments[actors[0].id].workCell);
+    r.context.KDMapData.Entities.push({
+        id: 90,
+        ...oldWork,
+        hp: 5,
+        Enemy: { name: "NestEntrance" },
+    });
+    snapshot.nests.push({ id: 90, ...oldWork });
+    start(r, snapshot);
+    assert.equal(group.planId, originalPlan, "the legal line remains selected");
+    assert.ok(
+        Object.values(group.assignments).every(
+            (assignment) => `${assignment.workCell.x},${assignment.workCell.y}` !== `${oldWork.x},${oldWork.y}`,
+        ),
+        "a saved assignment cannot retain a permanent nest obstruction",
+    );
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(group.metrics.construction > 0);
+});
+
+test("a prison builder prefers a free work cell when another spiderling blocks its saved approach", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity;
+    snapshot.candidateLines = [
+        [
+            { x: 35, y: 20 },
+            { x: 35, y: 24 },
+        ],
+    ];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        originalPlan = group.planId,
+        oldWork = plain(group.assignments[actors[0].id].workCell);
+    r.context.KDMapData.Entities.push({
+        id: 90,
+        ...oldWork,
+        hp: 5,
+        Enemy: { name: "Tunneler" },
+    });
+    start(r, snapshot);
+    assert.equal(group.planId, originalPlan);
+    assert.notDeepEqual(plain(group.assignments[actors[0].id].workCell), oldWork);
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(group.metrics.construction > 0);
+});
+
+test("a paid builder attempt stays non-idle while native movement points accumulate", () => {
+    const actors = [spinner(2, 34, 18), spinner(3, 38, 18)],
+        r = prisonRuntime(actors),
+        snapshot = prisonSnapshot(),
+        player = r.context.KinkyDungeonPlayerEntity,
+        nativeMove = r.context.KinkyDungeonEnemyTryMove;
+    snapshot.candidateLines = [
+        [
+            { x: 35, y: 20 },
+            { x: 35, y: 24 },
+        ],
+    ];
+    r.context.KinkyDungeonEnemyTryMove = (enemy, direction, delta, x, y) => {
+        enemy.movePoints = (enemy.movePoints || 0) + delta;
+        if (enemy.movePoints < 1.5) return false;
+        enemy.movePoints -= 1.5;
+        return nativeMove(enemy, direction, delta, x, y);
+    };
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0];
+    r.context.KinkyDungeonEnemyLoop(actors[0], player, 1);
+    assert.equal(actors[0].testIdle, false, "KD must retain the unpaid movement-point balance");
+    assert.equal(actors[0].movePoints, 1);
+    assert.equal(group.metrics.travel, 0);
+    r.context.KinkyDungeonCurrentTick++;
+    start(r, snapshot);
+    r.context.KinkyDungeonEnemyLoop(actors[0], player, 1);
+    assert.ok(group.metrics.travel > 0, "the next paid native attempt reaches its threshold");
+    assert.ok(r.movement.length > 0);
+});
 
 test("groups require eligible hostile Spinners within ten path steps and keep stable identity", () => {
     const actors = [

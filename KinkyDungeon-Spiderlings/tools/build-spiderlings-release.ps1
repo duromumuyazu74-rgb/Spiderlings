@@ -30,9 +30,9 @@ $Locales = @(
 )
 
 $ModJson = Get-Content -LiteralPath $ModJsonPath -Raw | ConvertFrom-Json
-$VersionMatch = [regex]::Match([string]$ModJson.modbuild, '\A(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-test\.([1-9][0-9]*))?\z')
+$VersionMatch = [regex]::Match([string]$ModJson.modbuild, '\A(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-test\.([1-9][0-9]*)|-prison\.alpha\.([1-9][0-9]*))?\z')
 if (!($ModJson.modbuild -is [string]) -or !$VersionMatch.Success) {
-    throw "modbuild must be a numeric major.minor.patch version, optionally followed by -test.N with N >= 1."
+    throw "modbuild must be major.minor.patch, optionally followed by -test.N or -prison.alpha.N with N >= 1."
 }
 foreach ($Part in $VersionMatch.Groups | Select-Object -Skip 1) {
     if ($Part.Success -and ($Part.Value.Length -gt 16 -or [decimal]$Part.Value -gt 9007199254740991)) {

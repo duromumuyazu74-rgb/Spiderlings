@@ -4,6 +4,8 @@
     "spiderlings-webbing-cutover.test.js",
     "spiderlings-webbing-cocoon.test.js",
     "spiderlings-webbing-enemy.test.js",
+    "spiderlings-prison-escort.test.js",
+    "spiderlings-prison-construction.test.js",
     "spiderlings-spinner-art.test.js",
     "spiderlings-spinner-capture.test.js",
     "spiderlings-spinner-npc-capture.test.js",
@@ -33,6 +35,7 @@
     "spiderlings-webbing-webspray.test.js",
     "spiderlings-webbing-atlas.test.js",
     "spiderlings-new-save-smoke.test.js",
-    "spiderlings-spinner-native-contract.test.js"
+    "spiderlings-spinner-native-contract.test.js",
+    "spiderlings-prison.test.js"
   ]
 }

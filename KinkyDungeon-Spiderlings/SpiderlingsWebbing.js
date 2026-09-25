@@ -425,6 +425,7 @@
             state.anchored = true;
             delete state.reinforcementPending;
             state.attemptAges = [];
+            api.PrisonEscort?.onAnchored(item);
             syncCocoonOuterPose();
             if (api.refreshSpiderlingsPlayerModelSoon) api.refreshSpiderlingsPlayerModelSoon(item);
             const localized = typeof TextGet == "function" ? TextGet(COCOON_ANCHORED_MESSAGE) : COCOON_ANCHORED_MESSAGE;
@@ -470,6 +471,10 @@
     function needsCocoonReinforcement() {
         const state = equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE];
         return !!state?.reinforcementPending && !state.anchored;
+    }
+
+    function hasAnchoredCocoon() {
+        return equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored === true;
     }
 
     // Garrison peace counts waiting in a Cocoon independently of the 25-turn
@@ -1067,7 +1072,7 @@
                 !ESCAPE_METHODS.includes(data.struggleType)
             )
                 return;
-            if (data.struggleType === "Cut" && data.canCut === false) return;
+            // KD 5.5 still advances Cut without a weapon for alwaysEscapable restraints.
             const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
             if (
                 data.struggleGroup &&
@@ -1140,7 +1145,7 @@
                 !ESCAPE_METHODS.includes(data.struggleType)
             )
                 return;
-            if (data.struggleType === "Cut" && data.canCut === false) return;
+            // Keep no-weapon Cut inside the counted gate when KD accepts the action.
             const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
             if (
                 data.struggleGroup &&
@@ -1384,6 +1389,7 @@
         COCOON_ESCAPE_CHANCE,
         COCOON_ESCAPE_EVENT,
         COCOON_ID,
+        hasAnchoredCocoon,
         isCocoonPassive,
         isCocoonDispersing,
         needsCocoonReinforcement,

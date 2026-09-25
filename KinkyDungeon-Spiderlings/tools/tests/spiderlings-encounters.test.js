@@ -1636,6 +1636,112 @@ function nativePopulationRuntime(overrides = {}) {
     return context;
 }
 
+test("prison population uses forty as its positive floor, retains higher settings and zero", () => {
+    for (const [setting, expected] of [
+        ["25", 40],
+        ["50", 50],
+        ["0", 0],
+    ]) {
+        const kd = nativePopulationRuntime();
+        kd.Spiderlings.Prison = { isPrison: () => true };
+        kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = setting;
+        assert.equal(kd.Spiderlings.getMapPopulationCap(), expected);
+        const requested = expected || 55;
+        assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Spinner", requested, 1).length, requested);
+        if (expected) assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Jumper", 1, 1).length, 0);
+    }
+});
+
+test("prison extra nests use a separate live cap even for native batch summons", () => {
+    const kd = nativePopulationRuntime();
+    kd.Spiderlings.Prison = { isPrison: () => true };
+    kd.KDMapData.SpiderlingsPrison = { mainNestIds: Array.from({ length: 10 }, (_, index) => index + 100) };
+    for (const id of kd.KDMapData.SpiderlingsPrison.mainNestIds)
+        kd.KDMapData.Entities.push({
+            id,
+            hp: 5,
+            Enemy: { name: "NestEntrance" },
+        });
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsPrisonNest.js"), "utf8"), kd);
+    const summon = (count) => kd.KinkyDungeonSummonEnemy(12, 12, "NestEntrance", count, 1);
+    assert.equal(summon(7).length, 6);
+    assert.equal(summon(1).length, 0);
+    kd.KDMapData.Entities.find((enemy) => enemy.id === 1).hp = 0;
+    assert.equal(summon(3).length, 1);
+    assert.equal(kd.Spiderlings.PrisonNest.livingExtraEntrances(), 6);
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 40, "extra nests do not consume spider population slots");
+});
+
+test("all ten hidden hostile main nests reinforce, then one loss reduces their chance", () => {
+    const nests = Array.from({ length: 10 }, (_, index) => ({
+        id: index + 1,
+        x: 36 + [-2, -2, -2, -1, -1, 1, 1, 2, 2, 2][index],
+        y: 22 + [-1, 0, 1, -2, 2, -2, 2, -1, 0, 1][index],
+        hp: 5,
+        aware: false,
+        SpiderlingsNestReinforcementTimer: 2,
+        Enemy: { name: "NestEntrance", visionRadius: 30 },
+    }));
+    const kd = loadCoreRuntime({
+        KDMapData: { Entities: nests },
+        KDHostile: () => true,
+        KinkyDungeonCheckLOS: () => false,
+        KDistEuclidean: Math.hypot,
+        KDGetFaction: () => "Enemy",
+        KDRandom: () => 0.999,
+        KinkyDungeonSummonEnemy(_x, _y, name) {
+            const child = { id: 100 + kd.KDMapData.Entities.length, hp: 1, Enemy: { name } };
+            kd.KDMapData.Entities.push(child);
+            return [child];
+        },
+    });
+    kd.Spiderlings.Prison = { isPrison: () => true };
+    const tick = () => kd.Spiderlings.runNestReinforcements("afterEnemyTick", { allied: false, delta: 1 });
+    assert.equal(tick(), 10);
+    nests[0].hp = 0;
+    for (const nest of nests.slice(1)) nest.SpiderlingsNestReinforcementTimer = 2;
+    kd.KDRandom = () => 0.96;
+    assert.equal(tick(), 0);
+});
+
+test("prison Tunnelers remain eligible beyond the ordinary lifetime quota", () => {
+    const nest = {
+        id: 10,
+        x: 12,
+        y: 12,
+        hp: 5,
+        aware: false,
+        SpiderlingsNestReinforcementTimer: 2,
+        SpiderlingsNestTunnelerCount: 3,
+        Enemy: { name: "NestEntrance", visionRadius: 30 },
+    };
+    const kd = loadCoreRuntime({
+        KDMapData: { Entities: [nest] },
+        KDHostile: () => true,
+        KDistEuclidean: Math.hypot,
+        KDGetFaction: () => "Enemy",
+        KDRandom: () => 0,
+        KinkyDungeonSummonEnemy(_x, _y, name) {
+            const child = { id: 100 + kd.KDMapData.Entities.length, hp: 1, Enemy: { name } };
+            kd.KDMapData.Entities.push(child);
+            return [child];
+        },
+    });
+    kd.Spiderlings.Prison = { isPrison: () => true };
+    Object.assign(kd.KDModSettings.Spiderlings, {
+        spiderlingsNestSpinnerWeight: 0,
+        spiderlingsNestJumperWeight: 0,
+        spiderlingsNestWebCasterWeight: 0,
+        spiderlingsNestTunnelerWeight: 1,
+    });
+    for (let index = 0; index < 4; index += 1) {
+        nest.SpiderlingsNestReinforcementTimer = 2;
+        assert.equal(kd.Spiderlings.runNestReinforcements("afterEnemyTick", { allied: false, delta: 1 }), 1);
+        kd.KDMapData.Entities.at(-1).hp = 0;
+    }
+    assert.equal(nest.SpiderlingsNestTunnelerCount, 3);
+});
+
 test("the default map cap limits native batch summons and releases slots after death or removal", () => {
     const kd = nativePopulationRuntime();
     const summon = (name, count) => kd.KinkyDungeonSummonEnemy(12, 12, name, count, 1);

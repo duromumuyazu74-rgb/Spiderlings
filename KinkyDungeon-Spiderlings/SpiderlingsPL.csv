@@ -188,6 +188,10 @@ SpiderlingsFieldAddSpinner,Dodaj Spinnera
 SpiderlingsFieldTrap,Jedwab na ziemi na chwilę spowalnia twoje kroki.
 SpiderlingsFieldRebuild,Tkacze zaczną odbudowę za {turns} tur świata.
 SpiderlingsFieldWaiting,Pułapki gotowe. Zachodnie wejście pozostaje otwarte aż wejdziesz.
+KDRoomType_SpiderlingsNestPrison,Więzienie w gnieździe pająków
+SpiderlingsPrisonArrival,Jedwab pokrywa komnatę kokonu. Trzy przejścia prowadzą przez gniazdo na wschód.
+SpiderlingsPrisonTrail,Chłodny powiew biegnie wzdłuż bladego jedwabiu ku zewnętrznej ścianie.
+SpiderlingsPrisonExit,Światło wpada przez szczelinę w zewnętrznej sieci. Tędy prowadzi droga powrotna.
 NameMageSpiderlings,Spiderling Mage
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt

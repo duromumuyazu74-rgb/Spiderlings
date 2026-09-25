@@ -1,6 +1,6 @@
-# Spiderlings 0.92.36-test.16 维护说明
+# Spiderlings 0.92.36-prison.alpha.1 维护说明
 
-`KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
+`KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)。当前巢穴监狱实验版 `prison.alpha.1` 保留 `0.92.36` 版本基线，和普通 `test.N` 包分开安装测试。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 当轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
 
@@ -9,6 +9,12 @@ test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，
 test.15 加入 Mage Spiderlings。第 5 层或有效安全等级 0 起，合格新普通地图在原生随机人口之前保留一只，前提是合法格和共享移动人口额度足够。自然权重随有效安全等级从 2 增至 8，侵扰地图再加 1，最高 9；巢穴增援默认权重 1，与 Tunneler 相同。法师使用远程攻击和单格符文；玩家 ItemArms 物品的最终素材与脱困设计待定。`KDMapData.SpiderlingsGuaranteedMageState` 保存本图保底结果，重访不补生。实机证据需按本次交付包另行记录。
 
 test.16 补齐符文与丝弹命中时由原生战斗逻辑请求的短暂命中贴图，复用现有符文图形，避免命中后产生缺失资源请求。实机证据需使用 test.16 的最终 ZIP 重新记录。
+
+test.17 加入巢穴监狱：锚定蛛茧后，幼蛛在 30–50 个世界回合内开始可打断的牵引押送；玩家抵达巢穴入口才入狱。监狱保留同一地图、十个主巢入口、巡逻、地区警报、普通施工与茧房 50 回合后的分层扩建。玩家可切开蛛茧、绕过主巢并从外出口返回原楼层；再次被捕会回到保留旧破坏与施工状态的茧房。无刀 Cut 按蛛茧原有的 40 次有效动作门槛计数。最终实机证据和包哈希见本次交付报告。
+
+test.18 修复离开监狱期间的目击报告过期计算；再次目击已过期的相同位置会建立新报告。茧房施工队优先使用现有 Spinner，有空位时补召 Spinner；满员仍不足四只时，优先征用未承担巡逻的存活敌对幼蛛，补足四名所有者并沿用原有付费施工与外层规则。
+
+此前 test.17／test.18 是监狱功能的历史安装包。当前实验包改用 `prison.alpha.1` 命名，玩法沿用 test.18 的监狱实现；旧包不改名，也不作为当前版本的验收证据。
 
 ## 当前测试扩展
 
