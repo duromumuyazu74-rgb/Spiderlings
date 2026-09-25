@@ -1026,7 +1026,7 @@
                 interval,
                 cap:
                     infestation?.status === "active" &&
-                    infestation.garrisonVersion === 1 &&
+                    infestation.garrisonVersion >= 1 &&
                     infestation.targetIds?.includes(nest.id)
                         ? Math.min(cap, 4)
                         : cap,

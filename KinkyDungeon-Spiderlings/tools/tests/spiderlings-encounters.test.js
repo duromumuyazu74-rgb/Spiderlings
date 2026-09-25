@@ -1558,8 +1558,8 @@ test("only original three-nest objectives have a four-guard living cap", () => {
     let nextId = 200;
     const c = loadCoreRuntime({
         KDMapData: {
-            Entities: [task, ...children(11, 3)],
-            SpiderlingsInfestation: { status: "active", garrisonVersion: 1, targetIds: [11] },
+            Entities: [task, ...children(11, 4)],
+            SpiderlingsInfestation: { status: "active", garrisonVersion: 2, targetIds: [11] },
         },
         KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
         KDHostile: () => true,
@@ -1574,7 +1574,10 @@ test("only original three-nest objectives have a four-guard living cap", () => {
         },
     });
     const tick = () => c.Spiderlings.runNestReinforcements("afterEnemyTick", { allied: false, delta: 2 });
-    assert.equal(tick(), 1);
+    c.KDMapData.Entities[1].x = 30;
+    assert.equal(tick(), 0, "a guard leaving the nest still occupies its parent quota");
+    c.KDMapData.Entities.splice(1, 1);
+    assert.equal(tick(), 1, "removing a guard frees one slot");
     assert.equal(c.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === 11).length, 4);
     assert.equal(tick(), 0);
     c.KDMapData.Entities = [ordinary, ...children(12, 4)];
