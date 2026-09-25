@@ -13,6 +13,7 @@ const scripts = [
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
+    "SpiderlingsInfestationLayout.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
     "SpiderlingsNPCAdhesion.js",

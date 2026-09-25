@@ -486,9 +486,10 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", MOD, repairEarlyJourneyPreviews);
     }
 
-    function reserveInitialGuards(plan, passable, occupied, spawnPoints) {
+    function reserveInitialGuards(plan, passable, occupied, spawnPoints, accessibleOverride) {
         const blocked = new Set([...occupied, ...plan.map(key)]);
-        const accessible = reachableCells(KDMapData.StartPosition, passable, new Set(plan.map(key)));
+        const accessible =
+            accessibleOverride || reachableCells(KDMapData.StartPosition, passable, new Set(plan.map(key)));
         const protectedPoints = [
             KDMapData.StartPosition,
             KDMapData.EndPosition,
@@ -545,6 +546,7 @@
             cancelInfestation("ineligible");
             return false;
         }
+        api.InfestationLayout?.release(KDMapData);
         const passable = new Set();
         const candidates = [];
         const start = KDMapData.StartPosition;
@@ -571,7 +573,29 @@
                 candidates.push(point);
             }
         }
-        const plan = planIndependentNestPlacement({ start, passable, candidates, random: KDRandom });
+        const earlyLayout = api.InfestationLayout?.earlyPlan(KDMapData);
+        const encounter =
+            earlyLayout && !earlyLayout.failed
+                ? api.InfestationLayout.planEncounter({
+                      width: KDMapData.GridWidth,
+                      height: KDMapData.GridHeight,
+                      tile: KinkyDungeonMapGet,
+                      meta: (x, y) => KinkyDungeonTilesGet(`${x},${y}`),
+                      start,
+                      exits,
+                      spawnPoints,
+                      entities: KDMapData.Entities,
+                      movable: KinkyDungeonMovableTiles,
+                      anchors: earlyLayout.anchors,
+                      huntingSites: earlyLayout.huntingSites,
+                      acceptNest: (point, reached) =>
+                          !!reserveInitialGuards([point], passable, occupied, spawnPoints, reached),
+                      random: KDRandom,
+                  })
+                : null;
+        const plan = earlyLayout
+            ? encounter?.nests
+            : planIndependentNestPlacement({ start, passable, candidates, random: KDRandom });
         const guards = plan && reserveInitialGuards(plan, passable, occupied, spawnPoints);
         if (
             !guards ||
@@ -653,10 +677,24 @@
             complete: false,
             garrisonVersion: 2,
             clearing: plan.map((point) => ({ ...point })),
-            clearedTiles: openNestClearing(
-                plan.map((point) => [point]),
-                spawnPoints,
-            ),
+            layout: encounter
+                ? {
+                      ...encounter.metrics,
+                      sites: encounter.sites,
+                      opened: earlyLayout.opened,
+                      attempts: earlyLayout.attempts,
+                      retries: earlyLayout.attempts - 1,
+                      fallback: !!earlyLayout.fallback,
+                      relocatedShrines: earlyLayout.relocatedShrines || 0,
+                      relocatedChargers: earlyLayout.relocatedChargers || 0,
+                  }
+                : undefined,
+            clearedTiles: earlyLayout
+                ? 0
+                : openNestClearing(
+                      plan.map((point) => [point]),
+                      spawnPoints,
+                  ),
         };
         return true;
     }
@@ -832,6 +870,7 @@
         KDCancelEvents[MOD] = () => KinkyDungeonSendActionMessage(10, progressText(true), "#ff88ff", 3);
         // Rooms with enemies:false never invoke population; clear their modifier too.
         KDAddEvent(KDEventMapGeneric, "postMapgen", MOD, () => {
+            api.InfestationLayout?.release(KDMapData);
             if (KDMapData.MapMod === MOD && !KDMapData[FIELD]) cancelInfestation("ineligible");
             else trimInfestationPatrol();
         });
