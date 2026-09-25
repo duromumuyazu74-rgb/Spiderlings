@@ -122,7 +122,7 @@
         return path.reverse();
     }
 
-    function routeDistances(snapshot) {
+    function routeDistances(snapshot, work) {
         const passable = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             fields = new Map();
         return (from, to) => {
@@ -131,6 +131,7 @@
                 goal = cellKey(to);
             if (!passable.has(start) || !passable.has(goal)) return Infinity;
             if (!fields.has(start)) {
+                if (work) work.distanceFieldBuilds++;
                 const field = new Map([[start, 0]]),
                     queue = [{ x: from.x, y: from.y }];
                 for (let index = 0; index < queue.length; index++) {
@@ -346,6 +347,7 @@
         group,
         distances = routeDistances(snapshot),
         lines = lineCatalogue(snapshot),
+        work,
     ) {
         const members = group.members || group.memberPositions || [],
             origin = members[0] || snapshot.origins?.[0] || snapshot.entrances?.[0],
@@ -355,6 +357,7 @@
                     : undefined,
             candidates = [];
         for (const line of lines) {
+            if (work) work.candidatesExamined++;
             const { center, neighbors, routeHits, exitDistance, chokeDistance } = line,
                 nestDistance = nest ? distance(center, nest) : 99,
                 travelDistance = origin ? distances(origin, center) : 0,
@@ -455,7 +458,10 @@
             candidates = [];
         if (!origin) return candidates;
         for (const center of snapshot.cells || []) {
-            if (work) work.candidateCells++;
+            if (work) {
+                work.candidateCells++;
+                work.candidatesExamined++;
+            }
             if (distance(origin, center) > 6 || !Number.isFinite(distances(origin, center))) continue;
             const boundary = ringCells(center, 1),
                 cells = [...boundary, center],
@@ -838,10 +844,14 @@
         snapshot,
         distances = routeDistances(snapshot),
         lines = lineCatalogue(snapshot),
+        work,
     ) {
         const ai = ensureAI(encounter),
             plan = ai.plans[group.planId];
         if (!plan) return;
+        if (work) work.failedSiteReplans++;
+        else if (ai.plannerWorkLast)
+            ai.plannerWorkLast.failedSiteReplans = (ai.plannerWorkLast.failedSiteReplans || 0) + 1;
         plan.status = "invalid";
         plan.invalidReason = reason;
         ai.invalidCandidateIds = Array.from(new Set([...(ai.invalidCandidateIds || []), plan.candidateId]));
@@ -852,10 +862,10 @@
         const members = group.memberIds
                 .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity)),
-            enclosures = analyzeEnclosureCandidates(snapshot, { ...group, members }, distances),
+            enclosures = analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work),
             candidates = enclosures.length
                 ? enclosures
-                : analyzeLineCandidates(snapshot, { ...group, members }, distances, lines);
+                : analyzeLineCandidates(snapshot, { ...group, members }, distances, lines, work);
         ai.candidates = candidates;
         if (members.length < 2 && candidates[0]?.type === "line") {
             group.noPlanSignature = planningSignature(ai, members);
@@ -986,24 +996,39 @@
                 mapIdentity: input.mapIdentity ?? mapIdentity(),
             }),
             snapshot = input.mapSnapshot || nativeMapSnapshot(),
-            distances = routeDistances(snapshot),
+            work = {
+                mapScans: input.mapSnapshot ? 0 : 1,
+                distanceFieldBuilds: 0,
+                lineCatalogueBuilds: 0,
+                candidatesExamined: 0,
+                candidateCells: 0,
+                expansionCells: 0,
+                routeChecks: 0,
+                failedSiteReplans: 0,
+            },
+            distances = routeDistances(snapshot, work),
             entities = input.entities || KDMapData.Entities;
+        let lines;
+        // Share static geometry only within this turn; construction may change the next map snapshot.
         const signature = geometrySignature(snapshot),
-            work = { candidateCells: 0, expansionCells: 0, routeChecks: 0 };
+            currentLines = () => {
+                if (!lines) {
+                    work.lineCatalogueBuilds++;
+                    lines = lineCatalogue(snapshot);
+                }
+                return lines;
+            };
         if (ai.geometrySignature && ai.geometrySignature !== signature) {
             ai.invalidCandidateIds = [];
             ai.candidateRevision++;
         }
         ai.geometrySignature = signature;
-        let lines;
-        // Share static geometry only within this turn; construction may change the next map snapshot.
-        const currentLines = () => (lines ||= lineCatalogue(snapshot));
         auditGroups(ai, entities, { ...input, mapSnapshot: snapshot, routeDistances: distances });
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             const current = ai.plans[group.planId];
             if (current && !staticCandidateLegal(current, snapshot))
-                invalidatePlan(encounter, group, "terrain", snapshot, distances, currentLines());
+                invalidatePlan(encounter, group, "terrain", snapshot, distances, currentLines(), work);
             if (group.planId) continue;
             const members = group.memberIds
                 .map((id) => entities.find((entity) => entity.id === id))
@@ -1013,7 +1038,7 @@
             const enclosures = analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work),
                 candidates = enclosures.length
                     ? enclosures
-                    : analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines());
+                    : analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines(), work);
             ai.candidates = candidates;
             if (members.length < 2 && candidates[0]?.type === "line") {
                 group.noPlanSignature = noPlanSignature;
@@ -1063,16 +1088,21 @@
                 Object.keys(group.assignments).length === 0 &&
                 !group.engagement
             ) {
-                invalidatePlan(encounter, group, "approach", snapshot, distances, currentLines());
+                invalidatePlan(encounter, group, "approach", snapshot, distances, currentLines(), work);
                 replacedApproach = true;
             }
         }
         if (replacedApproach) reserveActions(encounter, snapshot, distances);
         ai.plannerWorkLast = work;
         ai.plannerWorkPeak = {
+            mapScans: Math.max(ai.plannerWorkPeak?.mapScans || 0, work.mapScans),
+            distanceFieldBuilds: Math.max(ai.plannerWorkPeak?.distanceFieldBuilds || 0, work.distanceFieldBuilds),
+            lineCatalogueBuilds: Math.max(ai.plannerWorkPeak?.lineCatalogueBuilds || 0, work.lineCatalogueBuilds),
+            candidatesExamined: Math.max(ai.plannerWorkPeak?.candidatesExamined || 0, work.candidatesExamined),
             candidateCells: Math.max(ai.plannerWorkPeak?.candidateCells || 0, work.candidateCells),
             expansionCells: Math.max(ai.plannerWorkPeak?.expansionCells || 0, work.expansionCells),
             routeChecks: Math.max(ai.plannerWorkPeak?.routeChecks || 0, work.routeChecks),
+            failedSiteReplans: Math.max(ai.plannerWorkPeak?.failedSiteReplans || 0, work.failedSiteReplans),
         };
         return ai;
     }
