@@ -65,9 +65,29 @@ test("the builder checks the final ZIP and propagates a failed watcher", () => {
     assert.match(failed.output, /check failed with exit code 7/);
 });
 
+test("the builder gives the prison alpha channel its own package name", () => {
+    const f = fixture();
+    f.manifest.modbuild = "1.2.3-prison.alpha.1";
+    f.saveManifest();
+    const zip = path.join(f.root, "Spiderlings_1.2.3-prison.alpha.1.zip");
+    const built = f.run();
+    assert.equal(built.status, 0, built.output);
+    assert.equal(fs.existsSync(zip), true);
+    assert.equal(f.run("-VerifyOnly").status, 0);
+});
+
 test("invalid versions fail before atlas generation or package writes", () => {
     const f = fixture();
-    for (const version of ["1.2", "1.2.03", "1.2.3-test.0", "1.2.3\n", "1.2.3/../../outside", "9007199254740992.0.0"]) {
+    for (const version of [
+        "1.2",
+        "1.2.03",
+        "1.2.3-test.0",
+        "1.2.3-prison.alpha.0",
+        "1.2.3-prison.alpha.01",
+        "1.2.3\n",
+        "1.2.3/../../outside",
+        "9007199254740992.0.0",
+    ]) {
         f.manifest.modbuild = version;
         f.saveManifest();
         const result = f.run("-NoPackage");

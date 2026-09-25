@@ -20,7 +20,7 @@ Historical `.scratch/<feature>/PRD.md`, specs and `issues/*.md` retain their ori
 
 ## Branches and delivery
 
-`main` holds formal releases; `test` holds test development. Test deliveries retain their formal baseline and increment `-test.N`. A formal promotion uses the next version after the latest formal release, rather than reverting to the older test baseline. Promote test gameplay only when explicitly requested and accepted.
+`main` holds formal releases; `test` holds normal test development. Normal test deliveries retain their formal baseline and increment `-test.N`. The Nest prison experiment uses its own `-prison.alpha.N` delivery sequence while it remains separate from the normal test line. A formal promotion uses the next version after the latest formal release, rather than reverting to the older test baseline. Promote gameplay only when explicitly requested and accepted.
 
 Formal versions use `v<modbuild>` tags and GitHub Releases, attaching `Spiderlings_<modbuild>.zip` built from the explicit allowlist. Currently only formal Releases are published. Test source stays on `test`; successful CI runs retain test ZIPs as temporary workflow artifacts, and maintainers may also build them locally. GitHub's automatic Source code ZIP is not an installable Mod.
 
