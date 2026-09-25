@@ -486,6 +486,53 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", MOD, repairEarlyJourneyPreviews);
     }
 
+    function reserveInitialGuards(plan, passable, occupied, spawnPoints) {
+        const blocked = new Set([...occupied, ...plan.map(key)]);
+        const accessible = reachableCells(KDMapData.StartPosition, passable, new Set(plan.map(key)));
+        const protectedPoints = [
+            KDMapData.StartPosition,
+            KDMapData.EndPosition,
+            KinkyDungeonPlayerEntity,
+            ...Object.values(KDMapData.ShortcutPositions || {}),
+            ...(KDMapData.JailPoints || []),
+            ...spawnPoints,
+        ].filter(Boolean);
+        const movable =
+            typeof KinkyDungeonMovableTilesEnemy !== "undefined"
+                ? KinkyDungeonMovableTilesEnemy
+                : KinkyDungeonMovableTiles;
+        const placements = [];
+        for (const nest of plan) {
+            const cells = [];
+            for (let dx = -2; dx <= 2; dx += 1)
+                for (let dy = -2; dy <= 2; dy += 1) {
+                    const point = { x: nest.x + dx, y: nest.y + dy };
+                    const name = key(point);
+                    const meta = KinkyDungeonTilesGet(name);
+                    if (
+                        Math.hypot(dx, dy) > 2.5 ||
+                        blocked.has(name) ||
+                        !accessible.has(name) ||
+                        !movable.includes(KinkyDungeonMapGet(point.x, point.y)) ||
+                        meta?.OL ||
+                        meta?.Lock ||
+                        meta?.Type ||
+                        protectedPoints.some((protectedPoint) => distance(protectedPoint, point) < 2) ||
+                        (typeof globalThis.KinkyDungeonNoEnemy === "function" &&
+                            !globalThis.KinkyDungeonNoEnemy(point.x, point.y, true))
+                    )
+                        continue;
+                    cells.push(point);
+                }
+            cells.sort((a, b) => Math.hypot(a.x - nest.x, a.y - nest.y) - Math.hypot(b.x - nest.x, b.y - nest.y));
+            if (cells.length < 4) return null;
+            const guards = cells.slice(0, 4);
+            for (const point of guards) blocked.add(key(point));
+            placements.push(guards);
+        }
+        return placements;
+    }
+
     function placeNests(spawnPoints, floor, room = {}) {
         if (KDMapData.MapMod !== MOD || KDMapData[FIELD]) return !!activeState();
         if (
@@ -525,7 +572,14 @@
             }
         }
         const plan = planIndependentNestPlacement({ start, passable, candidates, random: KDRandom });
-        if (!plan || !KinkyDungeonGetEnemyByName("NestEntrance") || KDMapData.Entities.length + TARGET * 4 > 300) {
+        const guards = plan && reserveInitialGuards(plan, passable, occupied, spawnPoints);
+        if (
+            !guards ||
+            !["NestEntrance", "Spinner", "WebCaster", "MageSpiderlings"].every((name) =>
+                KinkyDungeonGetEnemyByName(name),
+            ) ||
+            KDMapData.Entities.length + TARGET * 5 > 300
+        ) {
             cancelInfestation("insufficient-space");
             return false;
         }
@@ -556,15 +610,17 @@
             }
             nests.push(batch[0]);
         }
-        for (const nest of nests) {
-            for (const name of ["Spinner", "Spinner", "WebCaster"]) {
+        for (let index = 0; index < nests.length; index += 1) {
+            const nest = nests[index];
+            for (const [guardIndex, name] of ["Spinner", "Spinner", "WebCaster", "MageSpiderlings"].entries()) {
+                const position = guards[index][guardIndex];
                 const batch = KinkyDungeonSummonEnemy(
-                    nest.x,
-                    nest.y,
+                    position.x,
+                    position.y,
                     name,
                     1,
-                    2.5,
-                    true,
+                    0,
+                    false,
                     undefined,
                     false,
                     false,
@@ -575,7 +631,7 @@
                     false,
                 );
                 const guard = batch?.[0];
-                if (batch?.length !== 1 || Math.hypot(guard.x - nest.x, guard.y - nest.y) > 2.5) {
+                if (batch?.length !== 1 || guard.x !== position.x || guard.y !== position.y) {
                     for (const entity of batch || []) KDRemoveEntity(entity, false, false, true);
                     for (const entity of created) KDRemoveEntity(entity, false, false, true);
                     cancelInfestation("garrison-failed");
@@ -595,7 +651,7 @@
             targetIds: nests.map((entity) => entity.id),
             destroyedIds: [],
             complete: false,
-            garrisonVersion: 1,
+            garrisonVersion: 2,
             clearing: plan.map((point) => ({ ...point })),
             clearedTiles: openNestClearing(
                 plan.map((point) => [point]),
