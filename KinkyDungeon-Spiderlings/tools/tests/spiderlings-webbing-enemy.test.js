@@ -465,6 +465,32 @@ test("Lv3 Hood waits for both Lv3 eye and mouth layers, then uses its source wei
     }
 });
 
+test("Hood preference excludes Hood while seven Lv3 layers still permit Cocoon", () => {
+    const runtime = loadRuntime();
+    const catalog = [
+        ...syntheticCatalog([1, 2, 3]),
+        { id: "SpiderlingsWebbingCocoon", family: "Cocoon", group: "ItemDevices", stage: "Cocoon" },
+    ];
+    const inner = [
+        ...families.map((family) => ownedItem(1, family)),
+        ...lv2Families.map((family) => ownedItem(2, family)),
+        ...lv3Families.filter((family) => family !== "Hood").map((family) => ownedItem(3, family)),
+    ];
+    const webSpray = { stacks: 5 };
+    assert.equal(
+        select(runtime, { catalog, snapshot: snapshotFor(inner, { allowHood: false, webSpray }) }).selectedId,
+        "SpiderlingsWebbingCocoon",
+    );
+    assert.equal(
+        select(runtime, { catalog, snapshot: snapshotFor(inner, { allowHood: true, webSpray }) }).selectedId,
+        id(3, "Hood"),
+    );
+    assert.equal(
+        select(runtime, { catalog, snapshot: snapshotFor(inner, { allowHood: false }) }).reason,
+        "no-eligible-candidate",
+    );
+});
+
 test("WebCaster, Jumper melee and Jumper landing payloads can each add the full Lv3 set one item per hit", () => {
     for (const [profile, consumeOnProgress] of [
         ["WebCaster", false],

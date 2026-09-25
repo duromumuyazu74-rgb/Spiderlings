@@ -577,7 +577,6 @@ SPIDERLINGS.addSpells([
         bindType: "Slime",
         damage: "glue",
         noTerrainHit: true,
-        playerEffect: { name: "SpiderlingsMageRuneArms" },
     },
     {
         enemySpell: true,

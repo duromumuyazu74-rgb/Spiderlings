@@ -349,6 +349,7 @@
 
     function runtimeEnemySnapshot(catalog, entity) {
         const snapshot = runtimeEquipmentSnapshot();
+        snapshot.allowHood = hoodAllowed();
         const poses = currentPoseNames();
         snapshot.registered = {};
         snapshot.poseCompatible = {};
@@ -679,6 +680,19 @@
         const progressed = applySelectedRestraint(resolution.outcome.selectedId, entity, faction);
         if (progressed && resolution.outcome.selectedId === COCOON_ID) clearRuntimeWebSpray("enemy-cocoon-applied");
         return { ...resolution.outcome, progressed, reason: progressed ? "applied" : "native-add-failed" };
+    }
+
+    function hoodAllowed() {
+        return (
+            api.getSetting?.("spiderlingsEnableHood") !== false &&
+            !(typeof KinkyDungeonStatsChoice !== "undefined" && KinkyDungeonStatsChoice?.get("NoHood"))
+        );
+    }
+
+    function reconcileHoodPreference() {
+        if (hoodAllowed()) return;
+        const hood = equippedItem("SpiderlingsWebbingLv3Hood");
+        if (hood) kdAdapter.remove(hood, "Remove");
     }
 
     function registerEnemyBindEffect() {
@@ -1349,7 +1363,9 @@
             const ids = [
                 ...LV1_FAMILIES.map((family) => "SpiderlingsWebbingLv1" + family),
                 ...LV2_FAMILIES.map((family) => "SpiderlingsWebbingLv2" + family),
-                ...LV3_FAMILIES.map((family) => "SpiderlingsWebbingLv3" + family),
+                ...LV3_FAMILIES.filter((family) => family !== "Hood" || hoodAllowed()).map(
+                    (family) => "SpiderlingsWebbingLv3" + family,
+                ),
                 COCOON_ID,
             ];
             for (const restraintId of ids) {
@@ -1390,6 +1406,7 @@
         COCOON_MODEL_ID,
         COCOON_REPAIR_AMOUNT,
         ENEMY_BIND_EFFECT,
+        applyEnemyProgression,
         ENEMY_PROFILES,
         ESCAPE_METHODS,
         ESCAPE_SOUND_EVENT,
@@ -1430,6 +1447,8 @@
     registerCocoonApplyEvent();
     registerCocoonEscapeEvent();
     registerCocoonOuterEvents();
+    addRuntimeEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsHoodPreference", reconcileHoodPreference);
+    addRuntimeEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsHoodPreference", reconcileHoodPreference);
     registerCocoonVigil();
     registerLayerEscapeEvent("Lv2", LV2_ESCAPE_EVENT);
     registerLayerEscapeEvent("Lv3", LV3_ESCAPE_EVENT);

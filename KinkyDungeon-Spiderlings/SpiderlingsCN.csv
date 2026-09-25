@@ -131,6 +131,7 @@ SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/TARGET
 SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/TARGET）
 SpiderlingsInfestationComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（TARGET/TARGET）
 KDModButtonspiderlingsPinkWebbing,粉色蛛丝（关闭为原色）
+KDModButtonspiderlingsEnableHood,幼蛛丝质头套（关闭后不再穿戴）
 KinkyDungeonSpiderlingsWebbingInterwoven,两束蛛丝相互交织，贴着身体铺好，又缠住了一处。
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,你沿TargetRestraint的丝缝细细割开，几根丝线分断，切口又延长了一点。
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,你沿TargetRestraint的丝缝细细割开，几根丝线分断，切口又延长了一点。

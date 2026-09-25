@@ -39,11 +39,11 @@ Stuffing 与 Gag 按同一物理链规范化，合计 gag 为 `0.25`，外层 Ga
 
 八个 `SpiderlingsWebbingLv3*` 对应 Arm、Belly、Legs、Ankles、Foot、Blindfold、Gag、Hood，`power: 3`，需两次有效 Cut/Struggle/Remove 行动，方法可混用。前七项沿用对应部位的 Group，Hood 使用 `ItemHead`。身体同部位链按 Lv1 → Lv2 → Lv3 排列；头部链为 Lv1 Blindfold → Lv3 Blindfold → Lv3 Hood，嘴部链为 Lv1 Stuffing → Lv1 Gag → Lv3 Gag。Lv3 阻挡被其覆盖的内层逃脱；五个身体部位的 Lv2 也阻挡对应 Lv1，拦截不消耗回合或资源。
 
-敌方 Lv3 Hood 只在 Lv3 Blindfold 和 Lv3 Gag 已装备后成为候选；身体其余部位继续按来源权重抽选。Spinner 接触只推进下身三族；Jumper 近战/跃击、WebCaster 喷网直击及带来源标记的残留蛛网可推进其他 Lv3，残留蛛网每回合最多一次。最后一件 Lv3 装上后，且命中前已累积五层 slow 时，后续 Jumper 或 WebCaster 合格 direct 命中才新结全身茧；Spinner 仅可修补已有茧。
+敌方 Lv3 Hood 只在 Lv3 Blindfold 和 Lv3 Gag 已装备后成为候选；原生 `NoHood` Perk 或 Spiderlings 配置中的“幼蛛丝质头套”关闭时，Hood 不进入候选，已穿戴的自有 Hood 会在下个游戏回合解除。其他部位继续按来源权重抽选。Spinner 接触只推进下身三族；Jumper 近战/跃击、WebCaster 喷网直击及带来源标记的残留蛛网可推进其他 Lv3，残留蛛网每回合最多一次。允许 Hood 时需八件 Lv3；禁用时只需其余七件。达到该门槛且命中前已累积五层 slow 后，后续 Jumper、WebCaster 或 Mage 符文的合格直接命中才可新结全身茧；Spinner 仅可修补已有茧。满蛛丝开局 Perk 在禁用 Hood 时也跳过它，但仍装备 Cocoon。
 
 Lv1/Lv2 保留既有衣物与可见层 displacement。Lv3 使用区域覆盖姿势和 `Pri: 52`，完整素材覆盖处的内层模型停止绘制，物品仍装备；隐藏内层的 displacement 不继续绘制。Arm 使用 `WrappingChest` 并只在可见的 Wristtie 姿势参与 `ChestBinding` 跨层覆盖。Hood 独立覆盖整个头部，并隐藏被罩住的眼罩、口部与头发等图层。
 
-`SpiderlingsWebbingCocoon` 是独立 `ItemDevices` 终态玩法层，`hobble: 3`，普通状态可缓慢移动；外围网加固后禁止普通移动。使用正式 `Models/SpiderlingsWebbingCocoon/Cocoon.png` 和 `FurnitureFront`、`Pri: 100`。其美术覆盖身体与颈口下缘，头部上半仍露出，不自动补 Hood；自身 `FeetLinked`、`BlockKneel`、`BlockHogtie` 标签保证单独装备也保持 Closed 站姿。敌方施加需要物理八件 Lv3（Lv1／Lv2 可不齐）、命中前五层 slow 和后续允许的 direct 来源，故正常敌方结茧时已有独立 Hood；手动装备不补内层。Cocoon 的有效逃脱目标为 Cut 40、Struggle 50、Remove 50 次；敌方 direct 命中每次最多修复 `0.10` 已有进度。
+`SpiderlingsWebbingCocoon` 是独立 `ItemDevices` 终态玩法层，`hobble: 3`，普通状态可缓慢移动；外围网加固后禁止普通移动。使用正式 `Models/SpiderlingsWebbingCocoon/Cocoon.png` 和 `FurnitureFront`、`Pri: 100`。其美术覆盖身体与颈口下缘，头部上半仍露出，不自动补 Hood；自身 `FeetLinked`、`BlockKneel`、`BlockHogtie` 标签保证单独装备也保持 Closed 站姿。敌方施加需要物理八件 Lv3，禁用 Hood 时改为其余七件（Lv1／Lv2 均可不齐）、命中前五层 slow 和后续允许的 direct 来源；手动装备不补内层。Cocoon 的有效逃脱目标为 Cut 40、Struggle 50、Remove 50 次；敌方 direct 命中每次最多修复 `0.10` 已有进度。
 
 最近 12 回合内，有效 Cut/Remove/Struggle 与攻击意图合计 3 次后，WebCaster 会优先瞄准视野内玩家，并在实际喷网直击时加上外围网，固定至脱茧。未命中近战也算，攻击法术按一次行动计数，多段伤害不重复累计；治疗、buff、等待、无效脱困输入不计。待加固标记持续保留，WebCaster 仍遵守视线、距离、冷却和失能限制；Spinner/Jumper 可以修补进度，但不能施加外围网。
 
@@ -119,7 +119,7 @@ KD 以加权不放回抽选补充三个特性候选，再逐一随机分配给�
 
 ## 敌人选择权重
 
-权重索引顺序固定为 Arm、Mitten Left、Mitten Right、Belly、Legs、Ankles、Foot、Blindfold、Stuffing、Gag、Hood。每个部位取下一件可晋级层，过滤已满级、已装备、头口前置未满足、姿势不支持、KD 原生不允许共存的外部同组占用和其他原生拒绝后，权重会在剩余候选中重新归一化；每次普通施加最多添加一件，添加失败不重掷、不回退到 tag pool；WebCaster 交叉命中的额外施加规则见下文 WebSpray。Lv1 使用前十项；Lv2 只使用五个身体部位；Lv3 跳过两只手套和 Stuffing。
+权重索引顺序固定为 Arm、Mitten Left、Mitten Right、Belly、Legs、Ankles、Foot、Blindfold、Stuffing、Gag、Hood。每个部位取下一件可晋级层，过滤已满级、已装备、头口前置未满足、Hood 偏好关闭、姿势不支持、KD 原生不允许共存的外部同组占用和其他原生拒绝后，权重会在剩余候选中重新归一化；每次普通施加最多添加一件，添加失败不重掷、不回退到 tag pool；WebCaster 交叉命中的额外施加规则见下文 WebSpray。Lv1 使用前十项；Lv2 只使用五个身体部位；Lv3 跳过两只手套和 Stuffing。
 
 外部装备按原生合法链接保留：护甲、普通拘束及混合链，只要原生 blocker 为空且 `KDCanAddRestraint(..., noOverpower=true)` 允许，敌方即可通过原生链接补齐蛛网。此规则覆盖全部蛛丝部位及 Cocoon 的 ItemDevices 槽。外部实例和属性继续生效，结茧的八件 Lv3 门槛仍按实际装备检查；不自动移除或替换外部物品。原生阻挡或添加拒绝时仍不强行叠加。手动装备只绕过敌方进度门槛，自有链规范化不重排混合外部链。
 

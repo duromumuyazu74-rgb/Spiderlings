@@ -40,6 +40,7 @@ const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneIcon.png",
     "Bullets/SpiderlingsMageRuneHit.png",
     "Bullets/SpiderlingsMageBoltHit.png",
     "Bullets/SpiderWebHit.png",
@@ -331,8 +332,9 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 199, `${csv}: current release text set including Mage rune`);
+        assert.equal(entries.size, 200, `${csv}: current release text set including Hood preference`);
         for (const key of [
+            "KDModButtonspiderlingsEnableHood",
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
