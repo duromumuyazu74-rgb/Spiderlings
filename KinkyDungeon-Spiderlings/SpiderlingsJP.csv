@@ -199,3 +199,6 @@ KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
 KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage traces a wide sigil across the ground.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers at the edge of a broad spell circle.
+SpiderlingsNPCAdhesionInitial,足止め
+SpiderlingsNPCAdhesionFull,糸で拘束
+SpiderlingsNPCAdhesionHelpless,無力化
