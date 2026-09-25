@@ -195,6 +195,12 @@
         return { type: "ordinary" };
     }
 
+    function sameSource(entity, group) {
+        return group.source?.type === "nest"
+            ? entity.SpiderlingsNestParentID === group.source.nestId
+            : entity.SpiderlingsNestParentID === undefined;
+    }
+
     function auditGroups(ai, entities, options = {}) {
         const byId = new Map(entities.map((entity) => [entity.id, entity])),
             assigned = new Set();
@@ -219,7 +225,7 @@
                             .map((member) => pathDistance(entity, member, options)),
                     ),
                 }))
-                .filter((choice) => choice.steps <= GROUP_RADIUS)
+                .filter((choice) => choice.steps <= GROUP_RADIUS && sameSource(entity, choice.group))
                 .sort((a, b) => a.steps - b.steps || a.group.id.localeCompare(b.group.id));
             if (choices[0]) {
                 choices[0].group.memberIds.push(entity.id);
@@ -237,7 +243,11 @@
                 const current = queue[index];
                 component.push(current);
                 for (const candidate of remaining)
-                    if (!visited.has(candidate.id) && pathDistance(current, candidate, options) <= GROUP_RADIUS) {
+                    if (
+                        !visited.has(candidate.id) &&
+                        candidate.SpiderlingsNestParentID === current.SpiderlingsNestParentID &&
+                        pathDistance(current, candidate, options) <= GROUP_RADIUS
+                    ) {
                         visited.add(candidate.id);
                         queue.push(candidate);
                     }
@@ -368,7 +378,13 @@
                 travelDistance,
             });
         }
-        return candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        const local = nest
+            ? candidates.filter(
+                  (candidate) =>
+                      candidate.travelDistance <= 8 && candidate.anchors.every((anchor) => distance(anchor, nest) <= 6),
+              )
+            : [];
+        return (local.length ? local : candidates).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     }
 
     function selectSavedPlan(ai, group, candidates) {
@@ -432,6 +448,10 @@
         const nests = KDMapData.Entities.filter((entity) => entity.hp > 0 && entity.Enemy?.name === "NestEntrance").map(
             (entity) => ({ id: entity.id, x: entity.x, y: entity.y }),
         );
+        const fixedBlockers = new Set(
+            KDMapData.Entities.filter((entity) => entity.hp > 0 && entity.Enemy?.immobile).map(cellKey),
+        );
+        for (const cell of cells) if (fixedBlockers.has(cellKey(cell))) cell.protected = true;
         const entrances = [KDMapData.StartPosition, ...Object.values(KDMapData.ShortcutPositions || {})].filter(
                 Boolean,
             ),
@@ -778,7 +798,8 @@
                 field &&
                 members.length >= 2 &&
                 pendingTasks(field, true).length > 0 &&
-                Object.keys(group.assignments).length === 0
+                Object.keys(group.assignments).length === 0 &&
+                !group.engagement
             ) {
                 invalidatePlan(encounter, group, "approach", snapshot, distances, currentLines());
                 replacedApproach = true;
@@ -1068,8 +1089,10 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
-        auditEngagement(encounter, group);
-        const observed = observeTarget(encounter, group, enemy, target, aiData),
+        if (group.source?.type === "nest") clearEngagement(group);
+        else auditEngagement(encounter, group);
+        if (api.Infestation?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
+        const observed = group.source?.type === "nest" ? false : observeTarget(encounter, group, enemy, target, aiData),
             perceivedThreat = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
             actualSight = !!(
                 aiData.canSeePlayer ||
@@ -1088,7 +1111,8 @@
         }
         if (perceivedThreat && distance(enemy, target) <= 1)
             return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
-        if (!group.engagement && perceivedThreat) return decide(enemy, group, "delegate-native", false);
+        if (!group.engagement && perceivedThreat && group.source?.type !== "nest")
+            return decide(enemy, group, "delegate-native", false);
         const assignment = group.assignments?.[enemy.id];
         if (!assignment) {
             const blocking = Object.entries(group.assignments || {}).some(
@@ -1117,8 +1141,7 @@
                     return decide(enemy, group, "yield", true);
                 }
             }
-            record(group, "wait");
-            return decide(enemy, group, "wait", true);
+            return decide(enemy, group, "delegate-native", false);
         }
         return decide(enemy, group, performAssignment(enemy, group, assignment), true);
     }

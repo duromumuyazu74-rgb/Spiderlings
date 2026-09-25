@@ -124,6 +124,25 @@ test("native modifier adds three independent nests and nine attributable guards"
     assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsInfestation.filterRandom(), 0);
 });
 
+test("task nest damage makes nearby spiders target the maid attacker for a short window", () => {
+    const r = runtime({
+        KinkyDungeonCurrentTick: 10,
+        KDHostile: (source, target) => source?.Enemy?.name !== "Maidforce" && target?.Enemy?.name === "Maidforce",
+    });
+    r.generate();
+    const c = r.context,
+        nest = c.KDMapData.Entities.find((entity) => entity.Enemy.name === "NestEntrance"),
+        guard = c.KDMapData.Entities.find((entity) => entity.SpiderlingsNestParentID === nest.id),
+        maid = { id: 900, x: nest.x + 1, y: nest.y, hp: 8, faction: "Maidforce", Enemy: { name: "Maidforce" } },
+        original = c.KinkyDungeonPlayerEntity;
+    c.KDMapData.Entities.push(maid);
+    assert.equal(c.Spiderlings.Infestation.resolveNestDefenderTarget(guard, original), original);
+    r.event("afterDamageEnemy", { enemy: nest, attacker: maid, dmgDealt: 1, aggro: true });
+    assert.equal(c.Spiderlings.Infestation.resolveNestDefenderTarget(guard, original), maid);
+    c.KinkyDungeonCurrentTick = 15;
+    assert.equal(c.Spiderlings.Infestation.resolveNestDefenderTarget(guard, original), original);
+});
+
 function nativeJourneyRuntime(overrides = {}) {
     const game = require("../reference-inputs.js").gamePath("Game/src/map");
     return runtime(
@@ -780,6 +799,20 @@ test("post-map generation caps earlier patrols while preserving a shop actor", (
     r.event("postMapgen");
     assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce" && !e.flags?.Shop).length, 3);
     assert.ok(c.KDMapData.Entities.includes(shop));
+});
+
+test("false scripted flags count toward the three maid patrols while permanent shops survive", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.MapFaction = "Maidforce";
+    for (let i = 0; i < 8; i++) {
+        const maid = c.KinkyDungeonSummonEnemy(6 + i, 6, "MaidforceMini")[0];
+        maid.faction = "Maidforce";
+        maid.runSpawnAI = false;
+    }
+    r.generate();
+    r.event("postMapgen");
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 3);
 });
 
 test("a saved five-nest map retains its objective count and stair gate", () => {

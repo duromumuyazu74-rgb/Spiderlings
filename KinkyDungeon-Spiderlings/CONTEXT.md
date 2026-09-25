@@ -30,6 +30,7 @@ _Avoid_: global reinforcement budget, NestEntrance spell list, death summon
 
 **Independent infestation nests**:
 Three original objectives are at least nine tiles apart in Chebyshev distance. Their blocked cells retain map connectivity and an attackable neighbor for each nest. Each starts with two Spinners and one WebCaster attributed to that nest; recurring reinforcement has at most four living attributed guards per task nest. Other spiders can roam the floor. A failed complete placement cancels the objective. Existing saved maps retain their original target IDs and count, including five-nest maps.
+The two attributed Spinners form a separate construction group. A Maidforce hit against a living task nest makes nearby Spiderlings prioritize the attacker for four ticks; this does not add a reinforcement or change the nest's death burst. Spinner construction keeps native movement credit between turns, and unassigned Spinners use native AI.
 _Avoid_: grouped task nests, a movement leash for wild spiders, relocating saved objectives
 
 **Infestation rivals**:

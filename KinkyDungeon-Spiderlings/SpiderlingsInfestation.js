@@ -292,7 +292,8 @@
     }
 
     function patrolRival(entity) {
-        return rival(entity) && !entity.flags?.Shop && !("runSpawnAI" in entity);
+        const activeShop = typeof KDEnemyHasFlag === "function" ? KDEnemyHasFlag(entity, "Shop") : !!entity.flags?.Shop;
+        return rival(entity) && !activeShop && entity.runSpawnAI !== true;
     }
 
     function trimNewRivals(previous, maximum, protectedPositions = new Set()) {
@@ -606,6 +607,9 @@
 
     const MAID_FINISHER = "SpiderlingsTaskNestMaidFinisher";
     const ESCAPE_DEATH = "SpiderlingsTaskNestEscape";
+    const NEST_ATTACKER = "SpiderlingsTaskNestAttacker";
+    const DEFENDER_TARGET = "SpiderlingsTaskNestDefenderTarget";
+    const DEFENSE_TURNS = 4;
     function isObjectiveNest(map, enemy) {
         const state = activeState(map);
         return !!(
@@ -619,6 +623,13 @@
     function recordTaskNestDamage(_event, data) {
         const nest = data.enemy;
         if (!isObjectiveNest(KDMapData, nest)) return;
+        if (
+            data.dmgDealt > 0 &&
+            nest.hp > 0 &&
+            data.attacker?.id !== undefined &&
+            KDGetFaction(data.attacker) === "Maidforce"
+        )
+            nest[NEST_ATTACKER] = { id: data.attacker.id, tick: KinkyDungeonCurrentTick };
         // Record the lethal HP crossing, never the last nonlethal attacker or a
         // later hit against an already dead nest. Native bullet faction survives
         // when its shooter has already left the entity list.
@@ -627,6 +638,42 @@
             if (nest.hp <= 0 && faction === "Maidforce") nest[MAID_FINISHER] = true;
             else delete nest[MAID_FINISHER];
         } else if (nest.hp > 0) delete nest[MAID_FINISHER];
+    }
+
+    function resolveNestDefenderTarget(enemy, nativeTarget) {
+        delete enemy?.[DEFENDER_TARGET];
+        const state = activeState();
+        if (
+            !state ||
+            enemy?.hp <= 0 ||
+            (!enemy?.SpiderlingsNestParentID && !enemy?.Enemy?.tags?.spiderlings) ||
+            enemy?.Enemy?.name === "NestEntrance"
+        )
+            return nativeTarget;
+        let chosen;
+        let nearest = Infinity;
+        for (const nest of KDMapData.Entities) {
+            if (!state.targetIds.includes(nest.id) || nest.hp <= 0 || !nest[NEST_ATTACKER]) continue;
+            const alert = nest[NEST_ATTACKER];
+            if (KinkyDungeonCurrentTick < alert.tick || KinkyDungeonCurrentTick - alert.tick > DEFENSE_TURNS) continue;
+            const range = distance(enemy, nest);
+            if (range > 8 || range >= nearest) continue;
+            const attacker = KDMapData.Entities.find((entity) => entity.id === alert.id);
+            if (!attacker || attacker.hp <= 0 || !attacker.Enemy || !KDHostile(enemy, attacker)) continue;
+            chosen = attacker;
+            nearest = range;
+        }
+        if (!chosen) return nativeTarget;
+        enemy[DEFENDER_TARGET] = chosen.id;
+        enemy.aware = true;
+        enemy.tx = chosen.x;
+        enemy.ty = chosen.y;
+        enemy.target = chosen.id;
+        return chosen;
+    }
+
+    function isNestAttacker(enemy, target) {
+        return target?.id !== undefined && enemy?.[DEFENDER_TARGET] === target.id;
     }
 
     function evacuateTaskNest(enemy, _entry, map) {
@@ -811,6 +858,8 @@
         reachableCells,
         populationGroup,
         activeState,
+        resolveNestDefenderTarget,
+        isNestAttacker,
         register,
     });
     register();
