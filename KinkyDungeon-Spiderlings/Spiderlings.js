@@ -486,6 +486,10 @@ SPIDERLINGS.addEnemies([
 
 //Enemy Text------------------------------------------------------------------------------------------------------------------
 
+addTextKey("SpiderlingsNPCAdhesionInitial", "Pinned");
+addTextKey("SpiderlingsNPCAdhesionFull", "Silk-bound");
+addTextKey("SpiderlingsNPCAdhesionHelpless", "Helpless");
+
 //Spinner
 addTextKey("NameSpinner", "Spiderling Spinner");
 addTextKey(

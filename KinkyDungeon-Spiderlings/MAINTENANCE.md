@@ -82,4 +82,6 @@ powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-
 powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
+#94 的 `SpiderlingsNPCAdhesion.js` 为敌对 NPC 记录独立的八回合蛛丝压力、自有 Slime 余额和初始／完全黏住状态。实际原生 Slime 增量按一次付费行动合并；普通蛛丝喷射开启序列，Spinner、Jumper 与 Mage 的有效蛛丝动作可续加压力。初始黏住阻止主动移动，完全黏住使可缩放的直接伤害乘 0.65，不设置原生昏迷或无力反抗。行动间的原生挣脱会扣减自有余额与压力；地图时钟和 NPC 记录随新存档保存。`Spiderlings.NPCAdhesion` 提供 #95 缠裹与回退所需的状态和归属查询。此段是待 #96 集成的开发内容，正式 test 交付版本仍以 manifest 与对应 ZIP 为准。
+
 `Repository checks` 在每个 PR 和维护分支推送上重建 atlas、构建 ZIP、逐项比对包内容，并保存以提交 SHA 命名的 14 天 workflow artifact。测试版本不创建 GitHub Release。正式发布只从 `main` 产生，并将通过验收的同一 ZIP 附加到 `v<modbuild>` Release。

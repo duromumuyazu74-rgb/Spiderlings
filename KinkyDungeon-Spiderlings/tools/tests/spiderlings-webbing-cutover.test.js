@@ -15,6 +15,7 @@ const scripts = [
     "Spiderlings.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsNPCAdhesion.js",
     "SpiderlingsMage.js",
     "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
@@ -341,7 +342,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 201, `${csv}: current release text set including Mage field spells`);
+        assert.equal(entries.size, 204, `${csv}: current release text set including NPC adhesion`);
         for (const key of [
             "KDModButtonspiderlingsEnableHood",
             "KinkyDungeonStatSpiderlingsCocoonStart",
@@ -357,6 +358,9 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KinkyDungeonSpellCastSpiderlingsMageHex",
             "KinkyDungeonSpellSpiderlingsMageCollapse",
             "KinkyDungeonSpellCastSpiderlingsMageCollapse",
+            "SpiderlingsNPCAdhesionInitial",
+            "SpiderlingsNPCAdhesionFull",
+            "SpiderlingsNPCAdhesionHelpless",
         ]) {
             assert.ok(entries.get(key)?.trim(), `${csv}: ${key}`);
         }

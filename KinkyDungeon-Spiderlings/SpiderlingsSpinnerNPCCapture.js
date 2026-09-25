@@ -224,7 +224,7 @@
                     contributors[0],
                     target,
                     BIND_PER_SOURCE * contributors.length,
-                    { contact: false, attack: "capture" },
+                    { contact: false, attack: "capture", contributors: contributors.map((source) => source.id) },
                 );
                 record.strandDebt += result.slimeAdded;
             }

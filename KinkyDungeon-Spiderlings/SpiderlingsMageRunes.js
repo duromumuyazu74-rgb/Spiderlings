@@ -157,7 +157,18 @@
                 spell: { ...original.spell, playerEffect: undefined },
             };
             try {
-                return nativeHit.apply(this, arguments);
+                const before = target.specialBoundLevel?.Slime || 0;
+                const result = nativeHit.apply(this, arguments);
+                const added = Math.max(0, (target.specialBoundLevel?.Slime || 0) - before);
+                if (added > 0)
+                    api.NPCAdhesion?.recordNativeSilk(
+                        mageRuneSource(bullet),
+                        target,
+                        added,
+                        "mage-rune",
+                        bullet.spriteID || `${bullet.bullet.source}:${bullet.x}:${bullet.y}`,
+                    );
+                return result;
             } finally {
                 bullet.bullet = original;
             }
