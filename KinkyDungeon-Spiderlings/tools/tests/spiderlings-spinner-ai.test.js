@@ -237,6 +237,50 @@ test("saved deterministic selection uses topology and provenance without target 
     assert.equal(restored.groups.saved.selectionOrdinal, 0);
 });
 
+test("candidate distances match independent routes through open, blocked, and disconnected maps", () => {
+    const api = runtime().context.Spiderlings.SpinnerAI,
+        origin = { x: 2, y: 2 },
+        layouts = [
+            [],
+            [
+                { x: 9, y: 2 },
+                { x: 9, y: 3 },
+                { x: 9, y: 4 },
+                { x: 9, y: 6 },
+            ],
+            Array.from({ length: 10 }, (_, index) => ({ x: 9, y: index + 1 })),
+        ];
+    for (const walls of layouts) {
+        const snapshot = { ...mapSnapshot(), candidateLines: [] },
+            wallKeys = new Set(walls.map(cellKeyForTest));
+        for (const cell of snapshot.cells) if (wallKeys.has(cellKeyForTest(cell))) cell.floor = false;
+        const candidates = api.analyzeLineCandidates(snapshot, {
+            source: { type: "ordinary" },
+            members: [origin],
+        });
+        assert.ok(candidates.length > 0);
+        for (const candidate of candidates) {
+            const center = candidate.cells[Math.floor(candidate.cells.length / 2)],
+                route = api.routeOnSnapshot(snapshot, origin, center);
+            assert.equal(candidate.travelDistance, route.length - 1, candidate.id);
+        }
+        if (walls.length === 10)
+            assert.ok(candidates.every((candidate) => candidate.cells.every((cell) => cell.x < 9)));
+    }
+});
+
+test("duplicate supplied lines keep the first candidate", () => {
+    const api = runtime().context.Spiderlings.SpinnerAI,
+        line = [
+            { x: 3, y: 2 },
+            { x: 3, y: 5 },
+        ],
+        snapshot = mapSnapshot([line, line]);
+    const candidates = api.analyzeLineCandidates(snapshot, { members: [{ x: 2, y: 2 }] });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].id, "line:3,2;3,5");
+});
+
 test("corridor, T, cross, and exit fixtures use the same legal line analyzer", () => {
     const r = runtime([spinner(1, 2, 2), spinner(2, 3, 2)]),
         api = r.context.Spiderlings.SpinnerAI,
