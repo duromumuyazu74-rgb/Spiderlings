@@ -50,7 +50,7 @@ test("drawing observes schema-3 membership without mutating capture authority", 
     assert.deepEqual(Array.from(r.api.state().sourceIds), [1, 2]);
 });
 
-test("normal capture strands use the supplied tether art while pink awaits an artist export", () => {
+test("capture strands use the selected tether art", () => {
     const r = contestRuntime();
     r.start();
     const paths = [];
@@ -65,10 +65,10 @@ test("normal capture strands use the supplied tether art while pink awaits an ar
     paths.length = 0;
     r.c.Spiderlings.getSetting = () => true;
     drawCapture(r);
-    assert.deepEqual(paths, []);
+    assert.deepEqual(paths, ["Game/Bullets/SpiderlingsPlayerTetherPink.png"]);
 });
 
-test("the Spinner training boundary uses corrected Normal pieces and keeps Pink on its prior lines", () => {
+test("the Spinner training boundary uses both art colors and correctly oriented corners", () => {
     const r = contestRuntime();
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerField.js"), "utf8"), r.c);
     const traps = [
@@ -84,9 +84,9 @@ test("the Spinner training boundary uses corrected Normal pieces and keeps Pink 
         links: traps.map((_trap, index) => ({ a: index, b: (index + 1) % traps.length, built: true })),
         nodes: [],
     };
-    const paths = [];
-    r.c.KDDraw = (_board, _sprites, _id, image) => {
-        paths.push(image);
+    const draws = [];
+    r.c.KDDraw = (_board, _sprites, id, image, _x, _y, _w, _h, rotation) => {
+        draws.push({ id, image, rotation });
         return {};
     };
     r.c.KinkyDungeonRootDirectory = "Game/";
@@ -94,18 +94,33 @@ test("the Spinner training boundary uses corrected Normal pieces and keeps Pink 
     drawCapture(r);
     r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerField({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
     assert.deepEqual(
-        new Set(paths),
+        new Set(draws.map((draw) => draw.image)),
         new Set([
             "Game/Bullets/SpiderlingsSpinnerTrapSide.png",
             "Game/Bullets/SpiderlingsSpinnerTrapCorner.png",
             "Game/Bullets/SpiderlingsSpinnerTrapTop.png",
         ]),
     );
-    paths.length = 0;
+    assert.deepEqual(
+        draws.filter((draw) => draw.image.endsWith("TrapCorner.png")).map((draw) => draw.rotation),
+        [Math.PI / 2, Math.PI, (3 * Math.PI) / 2, 2 * Math.PI],
+    );
+    draws.length = 0;
     r.c.Spiderlings.getSetting = () => true;
     drawCapture(r);
     r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerField({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
-    assert.deepEqual(paths, []);
+    assert.deepEqual(
+        new Set(draws.map((draw) => draw.image)),
+        new Set([
+            "Game/Bullets/SpiderlingsSpinnerTrapSidePink.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapCornerPink.png",
+            "Game/Bullets/SpiderlingsSpinnerTrapTopPink.png",
+        ]),
+    );
+    assert.deepEqual(
+        draws.filter((draw) => draw.image.endsWith("TrapCornerPink.png")).map((draw) => draw.rotation),
+        [Math.PI / 2, Math.PI, (3 * Math.PI) / 2, 2 * Math.PI],
+    );
 });
 
 test("drawing an invalid source cannot mutate capture before a native audit", () => {

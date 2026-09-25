@@ -547,19 +547,17 @@
                 (n.x - d.CamX - (boardPans ? 0 : d.CamX_offset)) * size,
                 (n.y - d.CamY - (boardPans ? 0 : d.CamY_offset)) * size,
             ];
-            const normalArt =
-                api.getSetting?.("spiderlingsPinkWebbing") !== true &&
-                typeof KDDraw === "function" &&
-                typeof kdpixisprites !== "undefined";
+            const textureArt = typeof KDDraw === "function" && typeof kdpixisprites !== "undefined";
+            const color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "";
             const root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
             const border = (cell, name, rotation = 0) => {
-                if (!normalArt) return false;
+                if (!textureArt) return false;
                 const [x, y] = xy(cell);
                 return !!KDDraw(
                     kdgameboard,
                     kdpixisprites,
                     `SpiderlingsFieldBorder_${cell.x},${cell.y}`,
-                    root + `Bullets/SpiderlingsSpinnerTrap${name}.png`,
+                    root + `Bullets/SpiderlingsSpinnerTrap${name}${color}.png`,
                     x + size / 2,
                     y + size / 2,
                     size,
@@ -601,7 +599,9 @@
                     }
                 for (let i = 0; i < f.traps.length; i++)
                     if (f.links[i]?.built && f.links[(i + f.traps.length - 1) % f.traps.length]?.built)
-                        border(f.traps[i], "Corner", (i * Math.PI) / 2);
+                        // Source corner has its straight legs on the left and bottom.
+                        // The first trap is the top-left corner, so rotate it once.
+                        border(f.traps[i], "Corner", ((i + 1) * Math.PI) / 2);
                 for (const n of f.nodes.filter((n) => n.weak)) {
                     const [x, y] = xy(n);
                     drawing.lineStyle(3, 0xffd76a, 1).drawCircle(x + size / 2, y + size / 2, size * 0.22);
