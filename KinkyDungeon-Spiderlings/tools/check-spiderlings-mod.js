@@ -23,6 +23,7 @@ const runtimeScripts = [
     "SpiderlingsInfestation.js",
     "SpiderlingsCombat.js",
     "SpiderlingsNPCAdhesion.js",
+    "SpiderlingsNPCWrapping.js",
     "SpiderlingsMage.js",
     "SpiderlingsMageRunes.js",
     "SpiderlingsJumperDash.js",
