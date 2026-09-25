@@ -208,6 +208,30 @@ test("enemy artwork follows restored settings and repeated toggles without chang
     }
 });
 
+test("Pink mode selects matching art for Spinner web-cell enemies", () => {
+    const images = [];
+    const { context } = loadWebbingRuntime({
+        KinkyDungeonRootDirectory: "Game/",
+        KDModSettings: { Spiderlings: { spiderlingsPinkWebbing: true } },
+        KDDraw(_board, _sprites, _id, image) {
+            images.push(image);
+            return {};
+        },
+    });
+    for (const name of ["SpiderlingsSpinnerWebCell", "SpiderlingsSilkAnchor"])
+        context.KDDraw({}, new Map(), `spr_${name}`, `Game/Enemies/${name}.png`);
+    assert.deepEqual(images, [
+        "Game/Enemies/SpiderlingsSpinnerWebCellPink.png",
+        "Game/Enemies/SpiderlingsSilkAnchorPink.png",
+    ]);
+    images.length = 0;
+    context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
+    context.KDEventMapGeneric.afterModConfig.Spiderlings();
+    for (const name of ["SpiderlingsSpinnerWebCell", "SpiderlingsSilkAnchor"])
+        context.KDDraw({}, new Map(), `spr_${name}`, `Game/Enemies/${name}.png`);
+    assert.deepEqual(images, ["Game/Enemies/SpiderlingsSpinnerWebCell.png", "Game/Enemies/SpiderlingsSilkAnchor.png"]);
+});
+
 test("both color atlases preload before equipment, reuse textures on switching, and fail independently", async () => {
     const original = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
     const pink = JSON.parse(fs.readFileSync(path.join(modRoot, pinkAtlas), "utf8"));

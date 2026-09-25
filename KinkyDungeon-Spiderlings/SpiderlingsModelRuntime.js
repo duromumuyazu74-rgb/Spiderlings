@@ -395,7 +395,14 @@
         const paths = new Map(
             [
                 ...["SpiderWeb", "SpiderWebHit", "WebSpray", "WebSprayTrail"].map((name) => `Bullets/${name}`),
-                ...["Spinner", "Tunneler", "WebCaster", "NestEntrance"].map((name) => `Enemies/${name}`),
+                ...[
+                    "Spinner",
+                    "Tunneler",
+                    "WebCaster",
+                    "NestEntrance",
+                    "SpiderlingsSpinnerWebCell",
+                    "SpiderlingsSilkAnchor",
+                ].map((name) => `Enemies/${name}`),
             ].map((path) => [`${root}${path}.png`, `${root}${path}Pink.png`]),
         );
         KDDraw = function (...args) {

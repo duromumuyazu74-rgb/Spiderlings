@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.28 维护说明
+# Spiderlings 0.92.36-test.29 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -17,6 +17,8 @@ test.26 移除 Mage 手臂拘束及其文案。丝弹通过原生 `Damage` 效�
 test.27 从 T_Swizzle 的 `Enemy Webs.psd` 提取 Spinner 陷阱的侧边、转角、上边框以及玩家牵引线的 72×72 Normal 图。转角和上边框只取灰色成稿图层，不带红色草稿线。训练场中已建成的边界和 Spinner 捕获玩家时的牵引线使用这些图；若贴图尚未加载或玩家选择粉色蛛丝，则保留原有线条绘制。四组 WebCaster 弹体效果继续使用已有的 Normal/Pink 成对贴图。PSD 中 Spinner 陷阱三件和玩家牵引线的 Pink 组仍是灰色副本，等待画师提供粉色版；`Web Caster Webs v2` 的四个 Pink 组也不是粉色，尚未替换现用弹体贴图。
 
 test.28 采用画师新交付的八张 Pink PNG：Spinner 边框三件、玩家牵引线与四种 WebCaster 弹体效果。WebCaster 四种 Normal 效果也从 PSD 中换成对应的 v2 图，沿用原有文件名与战斗逻辑。Normal/Pink 按现有蛛丝颜色选项切换；贴图绘制不可用时仍回退到线条。Spinner 边框角图的原始直边位于左侧和下侧，四角旋转起点改为 90°，使直边与上下左右的边框衔接。此版本完成了静态拼接检查和自动测试，游戏内视觉效果仍需以此包检查。
+
+test.29 修复 Pink 模式下 Spinner 场地仍显示灰白蛛网的问题。普通地图的 `SpiderlingsSpinnerWebCell` 与训练场的 `SpiderlingsSilkAnchor` 都是原生敌人贴图，先前只把 `WebSprayTrail.png` 注册为其图像别名；弹体效果的颜色切换不会自动覆盖这两个敌人名。现在为两者注册 Normal/Pink 别名，并在原生敌人绘制时按现有设置选取对应路径。切换设置后现存蛛网格也随下一次绘制更新；蛛网战斗逻辑和美术源文件不变。
 
 ## 当前测试扩展
 
