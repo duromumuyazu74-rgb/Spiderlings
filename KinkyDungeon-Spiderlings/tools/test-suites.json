@@ -13,6 +13,7 @@
     "spiderlings-spinner-enclosure.test.js",
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-spinner-ai.test.js",
+    "spiderlings-web-mobility.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-mage-combat.test.js",
     "spiderlings-mage-runes.test.js",
@@ -39,6 +40,7 @@
     "spiderlings-webbing-webspray.test.js",
     "spiderlings-webbing-atlas.test.js",
     "spiderlings-new-save-smoke.test.js",
-    "spiderlings-spinner-native-contract.test.js"
+    "spiderlings-spinner-native-contract.test.js",
+    "spiderlings-web-mobility-native.test.js"
   ]
 }
