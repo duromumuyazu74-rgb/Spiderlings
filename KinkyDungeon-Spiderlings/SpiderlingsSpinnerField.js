@@ -547,19 +547,48 @@
                 (n.x - d.CamX - (boardPans ? 0 : d.CamX_offset)) * size,
                 (n.y - d.CamY - (boardPans ? 0 : d.CamY_offset)) * size,
             ];
+            const normalArt =
+                api.getSetting?.("spiderlingsPinkWebbing") !== true &&
+                typeof KDDraw === "function" &&
+                typeof kdpixisprites !== "undefined";
+            const root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
+            const border = (cell, name, rotation = 0) => {
+                if (!normalArt) return false;
+                const [x, y] = xy(cell);
+                return !!KDDraw(
+                    kdgameboard,
+                    kdpixisprites,
+                    `SpiderlingsFieldBorder_${cell.x},${cell.y}`,
+                    root + `Bullets/SpiderlingsSpinnerTrap${name}.png`,
+                    x + size / 2,
+                    y + size / 2,
+                    size,
+                    size,
+                    rotation,
+                    undefined,
+                    true,
+                );
+            };
             if (!["broken", "complete"].includes(f.phase)) {
-                for (const l of f.links || [])
+                for (const [index, l] of (f.links || []).entries())
                     if (l.built) {
                         const a = xy(f.traps[l.a]),
                             b = xy(f.traps[l.b]);
-                        drawing
-                            .lineStyle(5, 0xffffff, 1)
-                            .moveTo(a[0] + size / 2, a[1] + size / 2)
-                            .lineTo(b[0] + size / 2, b[1] + size / 2);
                         const cells = linkCells(f, l),
                             health = f.nodes
                                 .filter((n) => cells.some((c) => c.x === n.x && c.y === n.y))
                                 .map((n) => KDMapData.Entities.find((e) => e.id === n.id)?.hp || 0);
+                        const art = cells
+                            .slice(1, -1)
+                            .map((cell) =>
+                                border(cell, index % 2 === 0 ? "Top" : "Side", index >= 1 && index <= 2 ? Math.PI : 0),
+                            )
+                            .every(Boolean);
+                        if (!art)
+                            drawing
+                                .lineStyle(5, 0xffffff, 1)
+                                .moveTo(a[0] + size / 2, a[1] + size / 2)
+                                .lineTo(b[0] + size / 2, b[1] + size / 2);
                         if (health.length)
                             DrawTextKD(
                                 Math.round(Math.min(...health) * 10) / 10 + "/2",
@@ -570,6 +599,9 @@
                                 16,
                             );
                     }
+                for (let i = 0; i < f.traps.length; i++)
+                    if (f.links[i]?.built && f.links[(i + f.traps.length - 1) % f.traps.length]?.built)
+                        border(f.traps[i], "Corner", (i * Math.PI) / 2);
                 for (const n of f.nodes.filter((n) => n.weak)) {
                     const [x, y] = xy(n);
                     drawing.lineStyle(3, 0xffd76a, 1).drawCircle(x + size / 2, y + size / 2, size * 0.22);
