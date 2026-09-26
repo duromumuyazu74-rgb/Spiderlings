@@ -33,7 +33,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
             other?.Enemy &&
             other.hp > 0 &&
             !other.player &&
-            !targets.has(other.Enemy.name) &&
+            other.Enemy.name !== "NestEntrance" &&
+            KDGetFaction(other) !== KDGetFaction(enemy) &&
+            !other.Enemy.tags?.scenery &&
             !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other)
         );
     }
@@ -195,7 +197,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             (target) =>
                 isRivalPair(enemy, target) &&
                 KDHostile(enemy, target) &&
-                !target.Enemy.noAttack &&
+                (!target.Enemy.noAttack || isHuntingPrey(enemy, target)) &&
                 !KDHelpless(target) &&
                 !KDIsImprisoned(target),
         );

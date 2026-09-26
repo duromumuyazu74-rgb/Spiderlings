@@ -186,17 +186,49 @@ test("Hunting Grounds spiders seek other NPCs without locking onto their own fac
     const hunter = make("Spinner", { x: 6 });
     const spider = make("Jumper", { x: 7 });
     const nest = make("NestEntrance", { x: 9 });
+    const sameFaction = make("EnemyScout", {
+        x: 6,
+        y: 5,
+        Enemy: { name: "EnemyScout", faction: "Enemy", visionRadius: 6, tags: {} },
+    });
     const prey = make("NeutralPrey", {
         x: 8,
         Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
     });
-    kd.KDMapData.Entities = [hunter, spider, nest, prey];
+    kd.KDMapData.Entities = [hunter, spider, nest, sameFaction, prey];
     kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
     kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
     assert.equal(kd.KDHostile(hunter, spider), false);
     assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(hunter, spider), false);
     assert.equal(kd.KDHostile(hunter, nest), false);
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(hunter, sameFaction), false);
+    assert.equal(kd.KDHostile(hunter, sameFaction), false);
     assert.equal(kd.KinkyDungeonNearestPlayer(hunter, false, true), prey);
+});
+
+test("Hunting Grounds patrol seeks different-faction noAttack NPCs but ignores scenery", () => {
+    const { context: kd, make } = loadRuntime();
+    const spider = make("Spinner", { aware: false });
+    const scenery = make("ExplosiveBarrel", {
+        x: 5,
+        Enemy: { name: "ExplosiveBarrel", faction: "Barrel", tags: { scenery: true } },
+    });
+    const prey = make("NeutralPrey", {
+        x: 12,
+        Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
+    });
+    kd.KDMapData.Entities = [spider, scenery, prey];
+    kd.KinkyDungeonFindPath = (_x, _y, x, y) => [{ x, y }];
+    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), false);
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(spider, scenery), false);
+    assert.equal(kd.KDHostile(spider, scenery), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), true);
+    assert.deepEqual([spider.gx, spider.gy], [prey.x, prey.y]);
+    assert.equal(spider.aware, false, "patrol search does not grant extra vision");
 });
 
 test("a WebCaster prioritizes visible pending Cocoon reinforcement then returns to its rival", () => {
