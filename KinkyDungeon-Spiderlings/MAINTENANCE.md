@@ -1,8 +1,14 @@
-# Spiderlings 0.92.36-test.42 维护说明
+# Spiderlings 0.92.36-test.45 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
+
+test.43 采用维护者提供的透明背景 `Spider Rune.png` 和 `Spider Rune Spider Icon.png`，逐字节替换地面符文及放置图标；旧存档原生命中路径使用的 `SpiderlingsMageRuneHit.png` 同步采用透明符文图。保留 72×72 原画布、符文阶段、警示范围和战斗结算，其他法术特效维持现状。
+
+test.44 继续采用维护者提供的透明 `Regular.png`、`Subtle Glow.png`、`Really Glowy.png` 和 `Spell particles.png`，保留各自 72×72 原画布与字节。Regular 是背部符文覆盖层，常态绘制；成功施法后沿用原来的两回合粒子与对应辉光，结束后恢复 Regular。身体底图不变，只有身体仍需要旧蓝底过滤，四张覆盖图直接使用其透明度。地面法术特效新方案尚未采用。
+
+test.45 采用维护者补充的透明、无背部符文 `Mage.png` 作为身体底图，移除旧蓝底过滤。常态组合为本体加 Regular；符文施法为本体加 Subtle Glow 与粒子，攻击施法为本体加 Really Glowy 与粒子，施法显示结束后恢复 Regular。所有五张 Mage PNG 直接使用原图透明度，符文不再烘焙在本体里。
 
 test.14 清理比较运算并减少同次 Rollout 规划的重复地图扫描，自动回归与安装包验证另见本次维护记录。实机与视觉测试由维护者后续执行，不沿用 test.13 的证据声称本版本已完成实机验收。
 

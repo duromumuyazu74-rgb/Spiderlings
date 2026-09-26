@@ -4,39 +4,23 @@
     const MAGE = "MageSpiderlings";
     const RUNE = "SpiderlingsMageRune";
     const DISPLAY_TURNS = 2;
+    const BODY = "Enemies/MageSpiderlings.png";
+    const REGULAR = "Enemies/MageSpiderlingsRegular.png";
     const PARTICLES = "Enemies/MageSpiderlingsSpellParticles.png";
     const GLOWS = Object.freeze({
         rune: "Enemies/MageSpiderlingsSubtleGlow.png",
         attack: "Enemies/MageSpiderlingsReallyGlowy.png",
     });
-    const CHROMA_KEY = `
-        varying vec2 vTextureCoord;
-        uniform sampler2D uSampler;
-        void main(void) {
-            vec4 color = texture2D(uSampler, vTextureCoord);
-            vec3 matte = vec3(58.0 / 255.0, 66.0 / 255.0, 109.0 / 255.0);
-            gl_FragColor = distance(color.rgb, matte) < 0.005 ? vec4(0.0) : color;
-        }
-    `;
     const active = new WeakMap();
-    const keyedPaths = new Set(
-        ["Enemies/MageSpiderlings.png", PARTICLES, ...Object.values(GLOWS)].map(
-            (path) => KinkyDungeonRootDirectory + path,
-        ),
+    const magePaths = new Set(
+        [BODY, REGULAR, PARTICLES, ...Object.values(GLOWS)].map((path) => KinkyDungeonRootDirectory + path),
     );
-    let matteFilter;
-
-    function filter() {
-        matteFilter ||= new PIXI.Filter(null, CHROMA_KEY, {});
-        return matteFilter;
-    }
 
     if (typeof KDDraw === "function") {
         const nativeDraw = KDDraw;
         KDDraw = function (board, sprites, id, image) {
             const sprite = nativeDraw.apply(this, arguments);
-            if (sprite?.texture && keyedPaths.has(image)) {
-                sprite.filters = [filter()];
+            if (sprite?.texture && magePaths.has(image)) {
                 sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
             }
             return sprite;
@@ -71,9 +55,9 @@
             const base = kdpixisprites.get(`spr_${enemy.id}${id}`);
             if (!base?.texture || base.parent !== board) return spriteName;
             const visual = active.get(enemy);
-            if (!visual || visual.remaining <= 0) return spriteName;
+            const layers = visual?.remaining > 0 ? [PARTICLES, GLOWS[visual.kind]] : [REGULAR];
 
-            for (const [index, path] of [PARTICLES, GLOWS[visual.kind]].entries()) {
+            for (const [index, path] of layers.entries()) {
                 const layer = KDDraw(
                     board,
                     kdpixisprites,

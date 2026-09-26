@@ -19,12 +19,6 @@ function runtime() {
             KDEventMapGeneric: {},
             kdpixisprites: sprites,
             PIXI: {
-                Filter: class {
-                    constructor(vertex, fragment) {
-                        this.vertex = vertex;
-                        this.fragment = fragment;
-                    }
-                },
                 SCALE_MODES: { NEAREST: 0 },
                 BLEND_MODES: { NORMAL: 0, ADD: 1 },
             },
@@ -71,7 +65,7 @@ function runtime() {
     return { context, board, draws, mage, webCaster };
 }
 
-test("Mage is plain at rest and successful rune and attack casts use distinct layered art", () => {
+test("Mage uses the regular rune at rest and transparent cast layers without chroma keying", () => {
     const { context, board, draws, mage, webCaster } = runtime();
     const draw = () => {
         draws.length = 0;
@@ -79,10 +73,12 @@ test("Mage is plain at rest and successful rune and attack casts use distinct la
         return draws.map((entry) => entry.image);
     };
 
-    assert.deepEqual(draw(), ["Game/Enemies/MageSpiderlings.png"]);
-    assert.equal(draws[0].sprite.filters.length, 1, "the opaque export matte is keyed on the base sprite");
-    assert.match(draws[0].sprite.filters[0].fragment, /58\.0 \/ 255\.0/);
+    assert.deepEqual(draw(), ["Game/Enemies/MageSpiderlings.png", "Game/Enemies/MageSpiderlingsRegular.png"]);
+    assert.equal(draws[0].sprite.filters, undefined, "the transparent body needs no chroma-key filter");
     assert.equal(draws[0].sprite.texture.baseTexture.scaleMode, 0);
+    assert.equal(draws[1].sprite.filters, undefined, "the regular rune keeps its supplied alpha and colors");
+    assert.equal(draws[1].sprite.blendMode, 0);
+    assert.equal(draws[1].sprite.texture.baseTexture.scaleMode, 0);
     const unrelated = context.KDDraw(board, context.kdpixisprites, "other", "Game/Enemies/WebCaster.png", 0, 0, 72, 72);
     assert.equal(unrelated.filters, undefined);
 
@@ -92,7 +88,7 @@ test("Mage is plain at rest and successful rune and attack casts use distinct la
         "Game/Enemies/MageSpiderlingsSpellParticles.png",
         "Game/Enemies/MageSpiderlingsSubtleGlow.png",
     ]);
-    assert.ok(draws.every((entry) => entry.sprite.filters?.length === 1));
+    assert.ok(draws.every((entry) => entry.sprite.filters === undefined));
     assert.ok(draws.every((entry) => entry.sprite.position.x === 144 && entry.sprite.position.y === 216));
     assert.ok(draws[0].sprite.zIndex < draws[1].sprite.zIndex && draws[1].sprite.zIndex < draws[2].sprite.zIndex);
     assert.equal(draws[1].sprite.blendMode, 0);
@@ -113,7 +109,8 @@ test("failed casts do not light Mage and the cast layers expire after their turn
     context.castResult = "Fail";
     context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageRune" }, mage);
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
-    assert.equal(draws.length, 1);
+    assert.equal(draws.length, 2);
+    assert.equal(draws[1].image, "Game/Enemies/MageSpiderlingsRegular.png");
 
     context.castResult = "Cast";
     context.KinkyDungeonCastSpell(5, 5, { name: "AnotherMageSpell" }, mage);
@@ -128,13 +125,14 @@ test("failed casts do not light Mage and the cast layers expire after their turn
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
     assert.deepEqual(
         draws.map((entry) => entry.image),
-        ["Game/Enemies/MageSpiderlings.png"],
+        ["Game/Enemies/MageSpiderlings.png", "Game/Enemies/MageSpiderlingsRegular.png"],
     );
 });
 
 test("the supplied Mage artwork and each cast layer retain 72-pixel native enemy dimensions", () => {
     for (const name of [
         "MageSpiderlings.png",
+        "MageSpiderlingsRegular.png",
         "MageSpiderlingsSpellParticles.png",
         "MageSpiderlingsSubtleGlow.png",
         "MageSpiderlingsReallyGlowy.png",
