@@ -21,6 +21,7 @@ const scripts = [
     "SpiderlingsNPCWrapping.js",
     "SpiderlingsMage.js",
     "SpiderlingsMageRunes.js",
+    "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -71,6 +72,9 @@ const assets = [
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
     "Enemies/MageSpiderlings.png",
+    "Enemies/MageSpiderlingsSpellParticles.png",
+    "Enemies/MageSpiderlingsSubtleGlow.png",
+    "Enemies/MageSpiderlingsReallyGlowy.png",
     "Enemies/NestEntrancePink.png",
     "Enemies/SpinnerPink.png",
     "Enemies/TunnelerPink.png",
@@ -347,7 +351,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 212, `${csv}: both floor modifiers and current NPC wrapping`);
+        assert.equal(entries.size, 213, `${csv}: both floor modifiers, physical web names and current NPC wrapping`);
         for (const key of [
             "KDMapMod_SpiderlingsInfestation",
             "KDMapMod_SpiderlingsHuntingGrounds",
@@ -358,6 +362,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
             "NameMageSpiderlings",
+            "NameSpiderlingsSpinnerWebCell",
             "KillMageSpiderlings",
             "KinkyDungeonSpellSpiderlingsMageBolt",
             "KinkyDungeonSpellCastSpiderlingsMageBolt",

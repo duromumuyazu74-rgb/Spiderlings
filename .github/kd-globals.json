@@ -28,6 +28,7 @@
   "KDDefaultEnemySprint",
   "KDDefaultMapData",
   "KDDraw",
+  "KDDrawEnemySprite",
   "KDDynamicLinkListSurface",
   "KDEnemyCanSignal",
   "KDEnemyCanSprint",

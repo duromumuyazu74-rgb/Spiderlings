@@ -109,7 +109,7 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
                         .length,
             )
             .sort(),
-        [1, 1, 2, 2, 2],
+        [0, 1, 1, 1, 1],
     );
     assert.ok(r.context.KDMapData.Entities.every((e) => e.flags.no_pers_wander === -1 && e.flags.questtarget === -1));
     assert.equal(r.population[0][7], undefined, "keep the native population budget");
@@ -117,6 +117,95 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
     r.event("postMapgen");
     assert.equal(r.context.KDMapData.Entities.length, 5);
     assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsInfestation.filterRandom(), 0);
+});
+
+test("Infestation distribution favors 2+2+1 and raises the five-nest chance with depth", () => {
+    const rules = runtime().context.Spiderlings.Infestation;
+    assert.deepEqual(
+        Array.from(rules.nestDistribution(3), (option) => option.weight),
+        [80, 18, 2],
+    );
+    assert.deepEqual(
+        Array.from(rules.nestDistribution(13), (option) => option.weight),
+        [70, 18, 12],
+    );
+    assert.deepEqual(
+        Array.from(rules.nestDistribution(40), (option) => option.weight),
+        [52, 18, 30],
+    );
+    assert.deepEqual(Array.from(rules.selectNestDistribution(3, () => 0.79)), [2, 2, 1]);
+    assert.deepEqual(Array.from(rules.selectNestDistribution(3, () => 0.8)), [2, 3]);
+    assert.deepEqual(Array.from(rules.selectNestDistribution(3, () => 0.98)), [5]);
+});
+
+test("all three sampled Infestation shapes preserve separate groups and traversable nest approaches", () => {
+    const planner = runtime().context.Spiderlings.Infestation.planGroupedNestPlacement,
+        cells = rectangle(40, 30),
+        passable = new Set(cells.map((point) => `${point.x},${point.y}`)),
+        start = { x: 1, y: 1 };
+    for (const groupSizes of [[2, 2, 1], [2, 3], [5]]) {
+        const plan = planner({
+            start,
+            passable,
+            candidates: cells.filter((point) => point.x > 5),
+            groupSizes,
+            random: seededRandom(21),
+        });
+        assert.equal(plan?.length, 5, groupSizes.join("+"));
+        let offset = 0;
+        const groups = groupSizes.map((size) => {
+            const group = Array.from(plan.slice(offset, offset + size));
+            offset += size;
+            return group;
+        });
+        for (let i = 0; i < groups.length; i++)
+            for (let j = i + 1; j < groups.length; j++)
+                for (const left of groups[i])
+                    for (const right of groups[j]) assert.ok(Math.hypot(left.x - right.x, left.y - right.y) >= 8);
+        const reached = reachableCells(start, passable, new Set(Array.from(plan, (point) => `${point.x},${point.y}`)));
+        assert.equal(reached.size, passable.size - 5);
+    }
+});
+
+test("crowded Infestation spiders receive distinct native patrol goals without extra awareness or removal", () => {
+    const r = runtime({
+        KinkyDungeonPlayerEntity: { player: true, x: 1, y: 1 },
+        KinkyDungeonMovableTilesEnemy: "0",
+        KDHelpless: () => false,
+        KDIsImprisoned: () => false,
+        KinkyDungeonFindPath: (_x, _y, x, y) => [{ x, y }],
+    });
+    r.generate();
+    const c = r.context,
+        home = c.KDMapData.Entities[0],
+        spiders = ["WebCaster", "Jumper", "MageSpiderlings"].map((name, index) => ({
+            id: 100 + index,
+            hp: 3,
+            x: home.x + 1,
+            y: home.y + index,
+            Enemy: { name },
+            SpiderlingsNestParentId: home.id,
+        }));
+    c.KDMapData.Entities.push(...spiders);
+    const before = c.KDMapData.Entities.length;
+    for (const spider of spiders) {
+        assert.equal(c.Spiderlings.Infestation.seekPatrol(spider, c.KinkyDungeonPlayerEntity, {}), true);
+        assert.equal(spider.aware, undefined);
+        assert.ok(
+            c.KDMapData.Entities.filter((entity) => entity.Enemy.name === "NestEntrance").every(
+                (nest) => Math.max(Math.abs(spider.gx - nest.x), Math.abs(spider.gy - nest.y)) >= 6,
+            ),
+        );
+    }
+    assert.equal(new Set(spiders.map((spider) => `${spider.gx},${spider.gy}`)).size, 3);
+    assert.equal(c.KDMapData.Entities.length, before);
+    assert.equal(
+        c.Spiderlings.Infestation.seekPatrol(spiders[0], c.KinkyDungeonPlayerEntity, { canSensePlayer: true }),
+        false,
+    );
+    const saved = JSON.parse(JSON.stringify(spiders[0]));
+    assert.equal(c.Spiderlings.Infestation.seekPatrol(saved, c.KinkyDungeonPlayerEntity, {}), true);
+    assert.deepEqual([saved.gx, saved.gy], [spiders[0].gx, spiders[0].gy]);
 });
 
 function nativeJourneyRuntime(overrides = {}) {
@@ -722,10 +811,10 @@ test("terrain opens only after all nests are created, refreshes navigation, and 
     c.KinkyDungeonSummonEnemy = function (...args) {
         const born = native.apply(this, args);
         if (c.KDMapData.Entities.length === 5) {
-            const group = c.KDMapData.Entities.slice(0, 3);
+            const group = c.KDMapData.Entities.slice(0, 2);
             wall = {
-                x: Math.round(group.reduce((sum, e) => sum + e.x, 0) / 3),
-                y: Math.round(group.reduce((sum, e) => sum + e.y, 0) / 3),
+                x: Math.round(group.reduce((sum, e) => sum + e.x, 0) / group.length),
+                y: Math.round(group.reduce((sum, e) => sum + e.y, 0) / group.length),
             };
         }
         return born;

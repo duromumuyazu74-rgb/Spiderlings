@@ -16,6 +16,7 @@
     "spiderlings-web-mobility.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-mage-combat.test.js",
+    "spiderlings-mage-visuals.test.js",
     "spiderlings-mage-runes.test.js",
     "spiderlings-mage-spells.test.js",
     "spiderlings-npc-adhesion.test.js",

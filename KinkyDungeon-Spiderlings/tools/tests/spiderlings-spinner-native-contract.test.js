@@ -8,6 +8,44 @@ const crypto = require("node:crypto");
 const gameRoot = require("../reference-inputs.js").gamePath();
 const read = (relative) => fs.readFileSync(path.join(gameRoot, relative), "utf8");
 
+test("native swap admission allows an owned web structure after its spider-only path condition", () => {
+    const { runtime } = require("./helpers/spinner-native-runtime.js"),
+        { stripTypeScriptTypes } = require("node:module"),
+        vm = require("node:vm"),
+        { context: c } = runtime(),
+        source = read("Game/src/enemy/KinkyDungeonEnemies.ts"),
+        start = source.indexOf("function KinkyDungeonCanSwapWith("),
+        end = source.indexOf("function KinkyDungeonNoEnemyExceptSub(", start);
+    assert.ok(start >= 0 && end > start);
+    Object.assign(c, {
+        KDIsImmobile: (entity) => !!entity.Enemy.immobile,
+        KDEnemyHasFlag: () => false,
+        KinkyDungeonLeashingEnemy: () => undefined,
+        KinkyDungeonJailGuard: () => undefined,
+        KDIsPlayerTetheredToLocation: () => false,
+    });
+    vm.runInContext(stripTypeScriptTypes(source.slice(start, end)), c);
+    c.Spiderlings.SpinnerNativeField.initializeMap({
+        fieldId: "native-admission",
+        owners: [1],
+        anchors: [
+            { id: "a", x: 3, y: 3 },
+            { id: "b", x: 5, y: 3 },
+        ],
+    });
+    const web = {
+            hp: 2,
+            x: 3,
+            y: 3,
+            Enemy: c.KinkyDungeonEnemies.find((enemy) => enemy.name === "SpiderlingsSpinnerWebCell"),
+            SpiderlingsSpinnerProxy: { fieldId: "native-admission", cell: "3,3" },
+        },
+        spider = { id: 1, hp: 3, x: 2, y: 3, idle: true, Enemy: { tags: { spiderlings: true } } },
+        maid = { ...spider, id: 2, Enemy: { tags: {} } };
+    assert.equal(c.KinkyDungeonCanSwapWith(web, spider), true);
+    assert.equal(c.KinkyDungeonCanSwapWith(web, maid), false);
+});
+
 test("pinned KD 5.5.0 preserves the native Spinner traversal projection contract", () => {
     const version = read("Screens/MiniGame/KinkyDungeon/Text_KinkyDungeon.csv"),
         enemies = read("Game/src/enemy/KinkyDungeonEnemies.ts"),

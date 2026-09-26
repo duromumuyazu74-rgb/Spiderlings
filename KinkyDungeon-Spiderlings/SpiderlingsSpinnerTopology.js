@@ -519,7 +519,8 @@
         const composite = state?.composites?.[input.compositeId],
             inner = composite && state.fields[composite.layerIds.at(-1)],
             checked = validatePolygon({ ...input.layer, map: input.map });
-        if (!inner || !isLayerClosed(state, inner.id)) return { state: clone(state), added: false, reason: "inner" };
+        if (!inner || (!isLayerClosed(state, inner.id) && (composite.autoSeal || inner.phase !== "ready")))
+            return { state: clone(state), added: false, reason: "inner" };
         if (!checked.valid) return { state: clone(state), added: false, reason: checked.reason };
         if (
             checked.bounds.left !== inner.bounds.left - 1 ||
@@ -747,7 +748,10 @@
             link.builtCells = link.builtCells.filter((candidate) => !sameCell(candidate, cell));
             link.connected = false;
             const field = next.fields[action.fieldId];
-            if (field) field.reopenPending = false;
+            if (field) {
+                field.reopenPending = false;
+                field.phase = "preparing";
+            }
             effects.push({ type: "removeProxy", cell });
         } else if (["repair", "repairAnchor", "repairLink"].includes(action.type)) {
             const structure =
@@ -827,10 +831,12 @@
             reserved = new Set(reservedKeys);
         for (const field of fields)
             if (field.reopenPending) {
-                const link = state.links.find((candidate) =>
-                    candidate.builtCells.some((cell) => sameCell(cell, field.gateCell)),
+                const link = state.links.find(
+                    (candidate) =>
+                        candidate.owners.includes(field.id) &&
+                        candidate.builtCells.some((cell) => sameCell(cell, field.gateCell)),
                 );
-                if (link && !link.connected) {
+                if (link) {
                     const action = {
                         type: "reopenGate",
                         linkId: link.id,
@@ -839,6 +845,7 @@
                         cell: field.gateCell,
                     };
                     if (!reserved.has(workKey(action))) return action;
+                    continue;
                 }
                 field.reopenPending = false;
             }
@@ -848,7 +855,12 @@
                 const inner = allFields.find(
                     (candidate) => candidate.compositeId === field.compositeId && candidate.layer === field.layer - 1,
                 );
-                if (!inner || !isLayerClosed(state, inner.id)) continue;
+                if (
+                    !inner ||
+                    (!isLayerClosed(state, inner.id) &&
+                        (state.composites[field.compositeId]?.autoSeal || !fieldBodyComplete(state, inner)))
+                )
+                    continue;
             }
             const actions = candidateActions(state, field, here).filter((action) => !reserved.has(workKey(action)));
             if (actions.length) return actions[0];
@@ -924,8 +936,9 @@
         return undefined;
     }
 
-    function updateTarget(state, target) {
+    function updateTarget(state, target, compositeId) {
         for (const composite of Object.values(state.composites || {})) {
+            if (compositeId && composite.id !== compositeId) continue;
             if (composite.autoSeal) continue;
             const inside = isInsideCommonCore(state, composite.id, target);
             composite.targetId = target?.id;
@@ -934,7 +947,8 @@
                 composite.closureArmed = false;
                 for (const fieldId of composite.layerIds) {
                     const field = state.fields[fieldId];
-                    if (field.phase === "sealing" && !isLayerClosed(state, fieldId)) field.reopenPending = true;
+                    if (field.phase === "sealed" || (field.phase === "sealing" && !isLayerClosed(state, fieldId)))
+                        field.reopenPending = true;
                 }
             }
         }

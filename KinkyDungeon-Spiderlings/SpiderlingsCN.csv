@@ -190,6 +190,7 @@ SpiderlingsFieldTrap,地面蛛丝缠住脚步，短暂减缓移动。
 SpiderlingsFieldRebuild,幼蛛将在 {turns} 个世界回合后重新开始布场。
 SpiderlingsFieldWaiting,陷阱已备好。西侧入口在你进入前保持开放。
 NameMageSpiderlings,法师幼蛛
+NameSpiderlingsSpinnerWebCell,织成的蛛网
 KillMageSpiderlings,法师幼蛛收拢细腿，退入阴影。
 KinkyDungeonSpellSpiderlingsMageBolt,幼蛛魔法丝弹
 KinkyDungeonSpellCastSpiderlingsMageBolt,法师幼蛛聚起一团发亮的蛛丝，向你掷来。

@@ -245,7 +245,12 @@ const SPIDERLINGS = globalThis.Spiderlings;
             const ai = KDAIType[name];
             const nativeAfterMove = ai.aftermove;
             ai.aftermove = function (enemy, player, aiData) {
-                return nativeAfterMove.apply(this, arguments) || seekRival(enemy, player, aiData);
+                return (
+                    nativeAfterMove.apply(this, arguments) ||
+                    seekRival(enemy, player, aiData) ||
+                    SPIDERLINGS.Infestation?.seekPatrol(enemy, player, aiData) ||
+                    false
+                );
             };
         }
     }
@@ -588,6 +593,7 @@ addTextKey(
 );
 
 addTextKey("NameMageSpiderlings", "Spiderling Mage");
+addTextKey("NameSpiderlingsSpinnerWebCell", "Woven Web");
 addTextKey("KillMageSpiderlings", "The Spiderling Mage draws back its legs and retreats into the shadows.");
 
 //Enemy Spells--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
