@@ -1,5 +1,7 @@
 # Spinner 平坦场地试玩
 
+本页保留 test.10 的历史试验记录。当前 test.39 已移除独立地面陷阱及踩点减速，捕获场地使用 `SpiderlingsSpinnerTrap` 边缘与拐角；普通地图的建造、扩建、封口和捕获以[参数说明](../../KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md)及[当前运行时说明](../RUNTIME.md)为准。
+
 测试版本 **0.92.36-test.10**，正式基线 **0.92.36**。安装包为工作区根目录 `Spiderlings_0.92.36-test.10.zip`。只启用这一份 Spiderlings ZIP，历史正式包与 test.1–9 保留。
 
 test.10 使用四张实际 PNG 测试图显示缠绕宽带、活动尾端、完成袋体和大腿封口。画师可直接替换 `Models/SpiderlingsSpinnerLegbinder/` 中的同名图。画师交接页及专用生成资料仅保留在维护者本机，不随公共仓库提供。
