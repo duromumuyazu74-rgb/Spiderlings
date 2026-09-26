@@ -1155,9 +1155,16 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
+        const quietCocoon = api.Prison?.isPrison() && api.Webbing?.isCocoonDispersing?.(enemy, target);
+        if (quietCocoon && group.engagement?.target?.kind === "player") clearEngagement(group);
         auditEngagement(encounter, group);
-        const observed = observeTarget(encounter, group, enemy, target, aiData),
-            perceivedThreat = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
+        const observed = !quietCocoon && observeTarget(encounter, group, enemy, target, aiData),
+            perceivedThreat =
+                !quietCocoon &&
+                enemy.aware &&
+                aiData.canSensePlayer &&
+                aiData.hostile === true &&
+                targetIsLiving(target),
             actualSight = !!(
                 aiData.canSeePlayer ||
                 aiData.canSeePlayerChase ||
@@ -1175,6 +1182,7 @@
         if (!group.engagement && perceivedThreat) return decide(enemy, group, "delegate-native", false);
         const localReport = api.PrisonAlerts?.currentRegionReport(group.homeRegion);
         if (
+            !quietCocoon &&
             !perceivedThreat &&
             localReport &&
             enemy.SpiderlingsPrisonAlert?.serial === localReport.serial &&

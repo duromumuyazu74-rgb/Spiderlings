@@ -240,7 +240,13 @@
     function movePatrol(enemy, aiData) {
         const prison = state();
         const patrol = prison?.patrols?.[enemy?.id];
-        if (!patrol || !(enemy.hp > 0) || aiData.canSensePlayer || KinkyDungeonIsDisabled(enemy) || KDHelpless(enemy))
+        if (
+            !patrol ||
+            !(enemy.hp > 0) ||
+            (aiData.canSensePlayer && !aiData.ignore) ||
+            KinkyDungeonIsDisabled(enemy) ||
+            KDHelpless(enemy)
+        )
             return false;
         const route = PATROL_ROUTES[patrol.route];
         if (!route) return false;

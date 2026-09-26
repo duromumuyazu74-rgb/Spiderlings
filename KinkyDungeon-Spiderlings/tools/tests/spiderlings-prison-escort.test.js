@@ -285,6 +285,37 @@ test("the escort pays native movement points on its route to the entrance", () =
     assert.equal(current.entryCount(), 0);
 });
 
+test("a leashed escort uses native-approved swaps through a crowded corridor", () => {
+    const current = scenario();
+    const c = current.context;
+    current.escort.onAnchored(current.cocoon);
+    current.turn();
+    current.turn(30);
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    const blocker = { id: 50, x: 12, y: 10, hp: 1, Enemy: { name: "WebCaster" } };
+    current.map.Entities.push(blocker);
+    const findPath = c.KinkyDungeonFindPath;
+    c.KinkyDungeonFindPath = (x, y, gx, gy, ...args) =>
+        x === 11 && y === 10 && gx > 12
+            ? [{ x: 12, y: 10 }, ...findPath(12, 10, gx, gy, ...args)]
+            : findPath(x, y, gx, gy, ...args);
+    const tryMove = c.KinkyDungeonEnemyTryMove;
+    c.KinkyDungeonEnemyTryMove = (enemy, direction, delta) => {
+        const previous = { x: enemy.x, y: enemy.y };
+        const moved = tryMove(enemy, direction, delta);
+        if (moved) Object.assign(blocker, previous);
+        return moved;
+    };
+    c.KinkyDungeonEnemyCanMove = () => false;
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.equal(current.spinner.x, 11);
+    c.KinkyDungeonEnemyCanMove = () => true;
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.equal(current.spinner.x, 12);
+    assert.equal(blocker.x, 11);
+    assert.equal(current.player.leash.entity, current.spinner.id);
+});
+
 test("native leash warning can advance on consecutive world turns", () => {
     const current = scenario(0, 6);
     current.escort.onAnchored(current.cocoon);
@@ -355,4 +386,80 @@ test("carrier replaces a blocked entrance after a partial native tug", () => {
     );
     assert.equal(current.player.leash.entity, current.spinner.id);
     assert.equal(current.entryCount(), 0);
+});
+
+function prisonScenario() {
+    const current = scenario();
+    const c = current.context;
+    c.KDUpdateEnemyCache = false;
+    c.KDGameData.RoomType = current.map.RoomType = "prison";
+    current.map.SpiderlingsPrison = {
+        version: 1,
+        chamber: { x: 3, y: 3 },
+        chamberBounds: { left: 2, top: 2, right: 4, bottom: 4 },
+    };
+    c.Spiderlings.SpinnerNativeField = { compositeById: () => undefined };
+    for (const file of ["SpiderlingsPrison.js", "SpiderlingsPrisonConstruction.js"])
+        vm.runInContext(fs.readFileSync(path.join(__dirname, "../..", file), "utf8"), c, { filename: file });
+    return current;
+}
+
+test("a prison corridor recapture waits for an interruptible escort and preserves the changed map", () => {
+    const current = prisonScenario();
+    const c = current.context;
+    const construction = c.Spiderlings.PrisonConstruction;
+    construction.onPlaced();
+    construction.state().stay.phase = "left";
+    current.map.SpiderlingsSpinnerEncounter = { topology: { retainedField: { hp: 2 } } };
+    const existingField = current.map.SpiderlingsSpinnerEncounter;
+    const destroyedNest = { id: 99, hp: 0, Enemy: { name: "NestEntrance" } };
+    current.map.Entities.push(destroyedNest);
+    current.escort.onAnchored(current.cocoon);
+    current.turn();
+    current.turn(29);
+    assert.equal(current.escort.state()?.phase, "pending");
+    assert.deepEqual([current.player.x, current.player.y], [10, 10]);
+    current.turn();
+    assert.equal(current.escort.state().phase, "approach");
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.equal(current.player.leash.entity, current.spinner.id);
+    assert.deepEqual([current.player.x, current.player.y], [10, 10]);
+
+    // Native tether movement has brought both participants alongside the selected entrance.
+    Object.assign(current.player, { x: 13, y: 10 });
+    Object.assign(current.spinner, { x: 13, y: 9 });
+    current.turn();
+    assert.deepEqual([current.player.x, current.player.y], [3, 3]);
+    assert.equal(current.player.leash, undefined);
+    assert.equal(current.escort.state(), undefined);
+    assert.equal(c.KDMapData, current.map);
+    assert.equal(current.map.SpiderlingsSpinnerEncounter, existingField);
+    assert.equal(current.map.Entities.includes(destroyedNest), true);
+    assert.equal(destroyedNest.hp, 0);
+    assert.equal(construction.state().placementOrdinal, 2);
+    assert.equal(construction.state().stay.elapsed, 0);
+    assert.equal(construction.state().stay.phase, "counting");
+    current.turn(60);
+    assert.equal(current.escort.state(), undefined, "remaining in the chamber must not dispatch another escort");
+    assert.equal(construction.state().placementOrdinal, 2);
+});
+
+test("saved prison escorts keep their deadline and stop when anchoring is removed", () => {
+    const current = prisonScenario();
+    const c = current.context;
+    current.escort.onAnchored(current.cocoon);
+    current.turn(21);
+    c.KDGameData = JSON.parse(JSON.stringify(c.KDGameData));
+    current.events["afterLoadGame:SpiderlingsPrisonEscort"]();
+    assert.equal(current.escort.state().deadline, 30);
+    assert.equal(current.escort.state().elapsed, 20);
+    current.turn(10);
+    current.escort.handleEnemyTurn(current.spinner, current.player, 1);
+    assert.equal(current.player.leash.entity, current.spinner.id);
+    current.cocoon.data.SpiderlingsCocoonOuterWebs.anchored = false;
+    current.turn();
+    assert.equal(current.player.leash, undefined);
+    assert.equal(current.escort.state(), undefined);
+    assert.deepEqual([current.player.x, current.player.y], [10, 10]);
+    assert.equal(c.KDMapData.SpiderlingsPrison.chamberConstruction, undefined);
 });

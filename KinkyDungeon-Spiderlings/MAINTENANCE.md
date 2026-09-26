@@ -1,6 +1,6 @@
-# Spiderlings 0.92.36-prison.alpha.1 维护说明
+# Spiderlings 0.92.36-prison.alpha.4 维护说明
 
-`KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)。当前巢穴监狱实验版 `prison.alpha.1` 保留 `0.92.36` 版本基线，和普通 `test.N` 包分开安装测试。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 当轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
+`KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)。当前巢穴监狱实验版 `prison.alpha.4` 保留 `0.92.36` 版本基线，和普通 `test.N` 包分开安装测试。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 当轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
 
@@ -14,7 +14,9 @@ test.17 加入巢穴监狱：锚定蛛茧后，幼蛛在 30–50 个世界回合
 
 test.18 修复离开监狱期间的目击报告过期计算；再次目击已过期的相同位置会建立新报告。茧房施工队优先使用现有 Spinner，有空位时补召 Spinner；满员仍不足四只时，优先征用未承担巡逻的存活敌对幼蛛，补足四名所有者并沿用原有付费施工与外层规则。
 
-此前 test.17／test.18 是监狱功能的历史安装包。当前实验包改用 `prison.alpha.1` 命名，玩法沿用 test.18 的监狱实现；旧包不改名，也不作为当前版本的验收证据。
+此前 test.17／test.18 是监狱功能的历史安装包。`prison.alpha.1` 开始使用独立实验包命名，玩法沿用 test.18 的监狱实现；旧包不改名，也不作为当前版本的验收证据。
+
+`prison.alpha.4` 接通监狱内再次捕获：茧室外的锚定蛛茧沿用 30–50 回合派遣与可打断押送，抵达选定巢穴入口后回到原茧室，保留地图破坏和施工，并重新开始 50 回合停留计时。茧室内不重复派遣。玩家在蛛茧里静待满 25 回合后，巡逻和普通 Spinner 施工继续执行，幼蛛仍停止攻击静止蛛茧；没有任务的幼蛛继续散开。
 
 ## 当前测试扩展
 

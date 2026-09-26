@@ -589,6 +589,14 @@
                         aiData.kite = false;
                         enemy.attackPoints = 0;
                         enemy.warningTiles = [];
+                        // Prison patrol and field controllers still have work while the Cocoon is quiet.
+                        if (
+                            api.Prison?.isPrison?.() &&
+                            (KDMapData.SpiderlingsPrison?.patrols?.[enemy.id] ||
+                                (api.SpinnerNativeField?.state()?.autonomous &&
+                                    api.SpinnerAI?.eligibleSpinner?.(enemy)))
+                        )
+                            return beforemove.apply(this, arguments);
                         // Give KD a legal outward goal; native movement still pays its normal cost.
                         const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
                         if (

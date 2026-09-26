@@ -63,8 +63,19 @@
         if (KDGameData) delete KDGameData[STATE];
     }
 
+    function inPrisonChamber() {
+        const bounds = api.Prison?.isPrison?.() && KDMapData.SpiderlingsPrison?.chamberBounds;
+        return (
+            !!bounds &&
+            player().x >= bounds.left &&
+            player().x <= bounds.right &&
+            player().y >= bounds.top &&
+            player().y <= bounds.bottom
+        );
+    }
+
     function start(item = anchoredItem(), skipNextTick = false) {
-        if (!item || api.Prison?.isPrison?.()) return undefined;
+        if (!item || inPrisonChamber()) return undefined;
         const roll = typeof KDRandom === "function" ? KDRandom() : Math.random();
         const deadline =
             MIN_TURNS + Math.floor(Math.min(Math.max(roll, 0), 1 - Number.EPSILON) * (MAX_TURNS - MIN_TURNS + 1));
@@ -285,9 +296,10 @@
         const next = route?.[0];
         if (!next) return false;
         const direction = { x: next.x - enemy.x, y: next.y - enemy.y, delta };
+        // Native movement permits the leasher to swap with mobile allies in crowded corridors.
         if (
             !KinkyDungeonEnemyCanMove(enemy, direction, KinkyDungeonMovableTilesSmartEnemy, "", false, 0) ||
-            KinkyDungeonEntityAt(next.x, next.y)
+            KinkyDungeonEntityAt(next.x, next.y)?.player
         )
             return false;
         KinkyDungeonEnemyTryMove(enemy, direction, delta, next.x, next.y, false);
@@ -307,8 +319,9 @@
             !adjacent(player(), entrance)
         )
             return false;
-        if (api.Prison?.enter?.({ entrance, escort }) !== true) return false;
-        delete KDGameData[STATE];
+        const arrived = api.Prison?.isPrison?.() ? api.Prison.recapture() : api.Prison?.enter?.({ entrance, escort });
+        if (arrived !== true) return false;
+        clear();
         return true;
     }
 
@@ -366,7 +379,7 @@
     function tickAfter(_event, data) {
         if (!(Number(data?.delta) > 0)) return;
         const item = anchoredItem();
-        if (!item || api.Prison?.isPrison?.()) {
+        if (!item || inPrisonChamber()) {
             clear();
             return;
         }

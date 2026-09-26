@@ -18,7 +18,7 @@ Use the attached installable ZIP. GitHub's automatic Source code archives contai
 | ------------------------------------------------------------------------------- | ------------------------ | --------------------------------- |
 | [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)           | `0.92.38`                | Formal release                    |
 | [`test`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test)           | `0.92.36-test.16`        | Shared development baseline       |
-| [Nest prison PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) | `0.92.36-prison.alpha.1` | Experimental Nest prison playtest |
+| [Nest prison PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) | `0.92.36-prison.alpha.4` | Experimental Nest prison playtest |
 
 The shared test branch retains its `0.92.36` baseline and includes the compatibility fixes carried into formal `0.92.38`. The separate `prison.alpha.N` series tests the Nest prison before it joins normal `test.N` deliveries. It includes the existing Spinner capture and Mage Spiderlings from its base, plus an interruptible escort from an anchored Cocoon into a persistent prison with patrols, expanding web fields and an exit back to the source floor. It does not include the separate three-nest Infestation redesign in [PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83). Only formal versions have GitHub Releases at present; build development packages locally using the [development guide](docs/DEVELOPMENT.md).
 

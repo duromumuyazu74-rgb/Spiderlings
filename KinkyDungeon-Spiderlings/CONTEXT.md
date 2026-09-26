@@ -41,7 +41,7 @@ A living Spinner, Jumper, WebCaster, Tunneler, or Mage created by recurring nest
 _Avoid_: every Spiderling near a nest
 
 **Spiderlings nest prison**:
-A persistent KD side room tied to one source floor. A selected living NestEntrance receives a native shortcut on admission. The original Cocoon equipment stays on the player; the saved chamber, buildable western floor, optional main-nest area and outer return exit stay on `KDMapData` across visits. The exit returns through native stairs with zero journey advance. `Spiderlings.Prison.enter({ entrance })` admits an arrived escort, while `recapture()` relocates the player inside the same map.
+A persistent KD side room tied to one source floor. A selected living NestEntrance receives a native shortcut on admission. The original Cocoon equipment stays on the player; the saved chamber, buildable western floor, optional main-nest area and outer return exit stay on `KDMapData` across visits. The exit returns through native stairs with zero journey advance. `Spiderlings.Prison.enter({ entrance })` admits an arrived escort. An anchored Cocoon outside the prison chamber uses the same delayed, interruptible escort; arrival calls `recapture()` to return to the original chamber and restart its stay timer without replacing the map. No escort is dispatched for a player already inside the chamber.
 _Avoid_: regenerating the room on capture, making every ordinary nest an entrance, a separate map stack
 
 ## Spiderlings Webbing
