@@ -98,6 +98,7 @@
   "KDUpdateItemEventCache",
   "KDUpdateLinkCaches",
   "KDUpdateMoveToEntity",
+  "KDWorldMap",
   "KDistEuclidean",
   "KinkyDungeonAddRestraint",
   "KinkyDungeonAddRestraintIfWeaker",
