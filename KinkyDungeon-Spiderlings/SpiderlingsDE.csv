@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier anges
 SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/5
 SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/5)
 SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
+KDModButtonspiderlingsInfestationWeight,Befall-Gewichtung (0: aus)
+KDModButtonspiderlingsHuntingGroundsWeight,Jagdgebiet-Gewichtung - nur Maidforce (0: aus)

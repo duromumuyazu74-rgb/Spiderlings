@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,처음부터 이곳에 자리 잡은 �
 SpiderlingsInfestationProgress,파괴한 목표 둥지: CURRENT/5
 SpiderlingsInfestationBlocked,계단 앞에서 발길이 멎는다. 둥지 깊은 곳의 바스락거림은 아직 잠잠해지지 않았다. (CURRENT/5)
 SpiderlingsInfestationComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (5/5)
+KDModButtonspiderlingsInfestationWeight,유충 침입 가중치 (0: 끄기)
+KDModButtonspiderlingsHuntingGroundsWeight,유충 사냥터 가중치 - Maidforce 전용 (0: 끄기)

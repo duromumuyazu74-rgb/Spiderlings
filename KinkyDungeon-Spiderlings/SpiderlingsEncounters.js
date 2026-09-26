@@ -35,6 +35,22 @@
             default: "25",
             block: undefined,
         },
+        { type: "text", refvar: "spiderlingsInfestationWeight" },
+        {
+            type: "string",
+            name: "spiderlingsInfestationWeight",
+            refvar: "spiderlingsInfestationWeight",
+            default: "50",
+            block: undefined,
+        },
+        { type: "text", refvar: "spiderlingsHuntingGroundsWeight" },
+        {
+            type: "string",
+            name: "spiderlingsHuntingGroundsWeight",
+            refvar: "spiderlingsHuntingGroundsWeight",
+            default: "750",
+            block: undefined,
+        },
         { type: "text", refvar: "spiderlingsNestSummonWeights" },
         {
             type: "range",
@@ -730,6 +746,8 @@
         addTextKey("KDModButtonspiderlingsSquad", "Fixed spiderling squad");
         addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Autonomous Spinner encounters");
         addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiders per map (0: unlimited)");
+        addTextKey("KDModButtonspiderlingsInfestationWeight", "Infestation weight (0: off)");
+        addTextKey("KDModButtonspiderlingsHuntingGroundsWeight", "Hunting Grounds weight - Maidforce only (0: off)");
         addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement type weights");
         addTextKey("KDModButtonspiderlingsNestSpinnerWeight", "Spinner weight");
         addTextKey("KDModButtonspiderlingsNestJumperWeight", "Jumper weight");

@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,Gniazda, które jako pierwsze zajęły
 SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/5
 SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/5)
 SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (5/5)
+KDModButtonspiderlingsInfestationWeight,Waga inwazji (0: wyłączona)
+KDModButtonspiderlingsHuntingGroundsWeight,Waga łowiska - tylko Maidforce (0: wyłączone)

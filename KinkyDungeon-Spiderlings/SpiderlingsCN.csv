@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,最初筑在这里的几处蛛巢，�
 SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/5
 SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/5）
 SpiderlingsInfestationComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（5/5）
+KDModButtonspiderlingsInfestationWeight,幼蛛侵扰权重（0：关闭）
+KDModButtonspiderlingsHuntingGroundsWeight,幼蛛猎场权重，仅女仆主派系（0：关闭）

@@ -75,6 +75,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
     };
     vm.createContext(context);
     for (const native of nativeSources) vm.runInContext(stripTypeScriptTypes(native), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), context);
     if (withOld) vm.runInContext(oldSource, context);
     vm.runInContext(source, context);
     return {
@@ -95,7 +96,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
 test("old Infestation and Hunting Grounds register independently in one Mod", () => {
     const r = runtime({}, [], true);
     assert.equal(r.context.KDMapMods.SpiderlingsInfestation.weight, 50);
-    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 100);
+    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 750);
     r.generate();
     assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.targetIds.length, 3);
     assert.equal(r.context.KDMapData.SpiderlingsInfestation, undefined);
@@ -207,10 +208,11 @@ test("loading in a side room migrates stored three-nest floors and their own jou
 test("native modifier adds three independent nests and twelve attributable guards", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;
-    assert.equal(mod.weight, 100);
-    assert.equal(mod.faction, "Maidforce");
+    assert.equal(mod.weight, 750);
+    assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
-    assert.equal(mod.filter({ y: 3 }), 1);
+    assert.equal(mod.filter({ y: 3 }), 0);
+    assert.equal(mod.filter({ y: 3, Faction: "Maidforce" }), 1);
     assert.equal(mod.filter({ y: 3, RoomType: "PerkRoom" }), 0);
     assert.equal(r.generate(), "native-result");
     assert.equal(r.context.KDMapData.Entities.length, 15);
@@ -311,14 +313,14 @@ test("both floor labels obey native journey selection together", (t) => {
             const slot = KDJourneySlotTypes.basic(null, 0, 5, "grv");
             counts[slot.MapMod] = (counts[slot.MapMod] || 0) + 1;
             if (slot.MapMod.startsWith("Spiderlings") &&
-                (slot.Faction !== "Maidforce" || slot.EscapeMethod !== slot.MapMod))
+                ((slot.MapMod === "SpiderlingsHuntingGrounds" && slot.Faction !== "Maidforce") || slot.EscapeMethod !== slot.MapMod))
                 throw new Error("Spider modifier lost its faction or objective");
         }
         return counts;
     })()`,
         r.context,
     );
-    assert.ok(counts.SpiderlingsHuntingGrounds > counts.SpiderlingsInfestation);
+    assert.ok(counts.SpiderlingsHuntingGrounds > 0);
     assert.ok(counts.SpiderlingsInfestation > 0 && counts.Bandit > 0 && counts.None > 0);
     t.diagnostic(JSON.stringify(counts));
 });
@@ -339,51 +341,133 @@ test("native journey rejects a cached infestation below floor three and preserve
     assert.ok(!remaining.includes("SpiderlingsHuntingGrounds"));
     const eligible = vm.runInContext(
         `
-        KDMapModRefreshList = [KDMapMods.SpiderlingsHuntingGrounds];
+        KDRandom = () => 0.25;
+        KDMapModRefreshList = [KDMapMods.Mold];
         KDJourneySlotTypes.basic(null, 0, 3, "grv");
     `,
         c,
     );
     assert.equal(eligible.MapMod, "SpiderlingsHuntingGrounds");
     assert.equal(eligible.EscapeMethod, "SpiderlingsHuntingGrounds");
-    assert.equal(eligible.Faction, "Maidforce", "new infestations select maids even in a Bandit biome");
+    assert.equal(
+        eligible.Faction,
+        "Maidforce",
+        "Hunting Grounds keeps the Maidforce selected by the native Mold candidate",
+    );
 });
 
-test("native journey increases infestation frequency and pairs it with maids without replacing other themes", (t) => {
-    function sample(weight, paired) {
-        let seed = 1;
-        const r = nativeJourneyRuntime({
-            CommonRandomItemFromList: () => "Bandit",
-            KDRandom: () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296,
-        });
-        const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;
-        mod.weight = weight;
-        if (!paired) delete mod.faction;
-        return vm.runInContext(
-            `(() => {
-            KDMapModRefreshList = [];
-            const counts = {total: 30000, infestation: 0, paired: 0, maid: 0};
-            for (let i = 0; i < counts.total; i++) {
-                const slot = KDJourneySlotTypes.basic(null, 0, 5, "grv");
-                if (slot.MapMod === "SpiderlingsHuntingGrounds") {
-                    counts.infestation++;
-                    if (slot.Faction === "Maidforce") counts.paired++;
-                }
-                if (slot.Faction === "Maidforce") counts.maid++;
-                if (slot.MapMod === "Bandit" && slot.Faction !== "Bandit") throw new Error("Bandit theme changed");
-                if (slot.MapMod === "None" && slot.Faction !== "Bandit") throw new Error("Biome faction changed");
-            }
-            return counts;
-        })()`,
-            r.context,
+test("spider selection preserves every native primary faction and sets the objective before side rooms", () => {
+    for (const base of ["None", "Mold", "Bandit", "Dragon", "Witch", "Slime"]) {
+        const seen = [];
+        const r = nativeJourneyRuntime(
+            {
+                CommonRandomItemFromList: () => "Nevermere",
+                KDRandom: () => 0.01,
+                KDGetSideRoom(slot, top) {
+                    seen.push({ mod: slot.MapMod, faction: slot.Faction, escape: slot.EscapeMethod });
+                    return { name: top ? "top" : "bottom" };
+                },
+            },
+            true,
         );
+        const c = r.context;
+        const slot = vm.runInContext(
+            `KDMapModRefreshList = [KDMapMods.${base}]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
+            c,
+        );
+        const faction = c.KDMapMods[base].faction || "Nevermere";
+        assert.equal(slot.MapMod, "SpiderlingsInfestation", base);
+        assert.equal(slot.Faction, faction, base);
+        assert.equal(slot.EscapeMethod, slot.MapMod);
+        assert.equal(seen.length, 2);
+        assert.ok(seen.every((s) => s.mod === slot.MapMod && s.faction === faction && s.escape === slot.MapMod));
+        assert.deepEqual(Array.from(slot.SideRooms), ["top", "bottom"]);
     }
-    const before = sample(50, false),
-        after = sample(100, true);
-    assert.ok(after.infestation > before.infestation * 1.4, JSON.stringify({ before, after }));
-    assert.equal(after.paired, after.infestation);
-    assert.ok(after.maid > before.maid);
-    t.diagnostic(JSON.stringify({ before, after }));
+});
+
+test("Hunting Grounds only replaces a Maidforce primary faction even with an overwhelming weight", () => {
+    const r = nativeJourneyRuntime({ CommonRandomItemFromList: () => "Bandit", KDRandom: () => 0.25 }, true);
+    const c = r.context;
+    c.Spiderlings.getSetting = (name) => (name === "spiderlingsInfestationWeight" ? "0" : "1000000");
+    for (const base of ["None", "Bandit", "Dragon", "Mold"]) {
+        const slot = vm.runInContext(
+            `KDMapModRefreshList = [KDMapMods.${base}]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
+            c,
+        );
+        assert.equal(slot.MapMod, base === "Mold" ? "SpiderlingsHuntingGrounds" : base);
+        assert.equal(slot.Faction, c.KDMapMods[base].faction || "Bandit");
+    }
+});
+
+test("floor weights take effect on the next draw, zero disables, and invalid input uses defaults", () => {
+    const r = nativeJourneyRuntime({ KDRandom: () => 0.25 }, true),
+        c = r.context;
+    const settings = { spiderlingsInfestationWeight: "0", spiderlingsHuntingGroundsWeight: "0" };
+    c.Spiderlings.getSetting = (name) => settings[name];
+    const draw = () =>
+        vm.runInContext(`KDMapModRefreshList = [KDMapMods.Mold]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`, c);
+    const preview = draw();
+    assert.equal(preview.MapMod, "Mold");
+    settings.spiderlingsHuntingGroundsWeight = "750";
+    assert.equal(draw().MapMod, "SpiderlingsHuntingGrounds");
+    settings.spiderlingsHuntingGroundsWeight = "0";
+    settings.spiderlingsInfestationWeight = "1000";
+    assert.equal(draw().MapMod, "SpiderlingsInfestation");
+    assert.equal(preview.MapMod, "Mold", "already generated nodes are not rerolled");
+    for (const bad of ["", "-1", "1.5", "Infinity", "garbage", "9007199254740992"]) {
+        settings.spiderlingsInfestationWeight = settings.spiderlingsHuntingGroundsWeight = bad;
+        assert.equal(c.KDMapMods.SpiderlingsInfestation.weight, 50, bad);
+        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 750, bad);
+    }
+});
+
+test("native modifier pool excludes spider floors until a faction is known and ignores stale spider entries", () => {
+    const r = nativeJourneyRuntime({ KDRandom: () => 0.1, CommonRandomItemFromList: () => "Bandit" }, true),
+        c = r.context;
+    for (const name of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"])
+        assert.equal(c.KDMapMods[name].filter({ y: 5, Faction: "", RoomType: "" }), 0);
+    c.Spiderlings.getSetting = () => "0";
+    const slot = vm.runInContext(
+        `KDMapModRefreshList = [KDMapMods.SpiderlingsInfestation, KDMapMods.SpiderlingsHuntingGrounds, KDMapMods.None]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
+        c,
+    );
+    assert.equal(slot.MapMod, "None");
+    assert.equal(slot.Faction, "Bandit");
+});
+
+test("spider selection skips special rooms and Hell and does not leak outside basic journey generation", () => {
+    const seen = [];
+    const r = nativeJourneyRuntime(
+            {
+                KDRandom: () => 0.001,
+                KDGetSideRoom(slot) {
+                    seen.push(slot.MapMod);
+                },
+            },
+            true,
+        ),
+        c = r.context;
+    c.KDMapMods.Special = { name: "Special", roomType: "PerkRoom", faction: "Maidforce" };
+    const special = vm.runInContext(
+        `KDMapModRefreshList = [KDMapMods.Special]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
+        c,
+    );
+    assert.equal(special.MapMod, "Special");
+    c.KDIsHellFloor = () => true;
+    const hell = vm.runInContext(`KDJourneySlotTypes.basic(null, 0, 5, "grv")`, c);
+    assert.equal(hell.MapMod, "");
+    c.KDIsHellFloor = () => false;
+    const external = { type: "basic", y: 5, MapMod: "None", Faction: "Maidforce", RoomType: "" };
+    c.KDGetSideRoom(external, true, []);
+    assert.equal(external.MapMod, "None");
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), c);
+    seen.length = 0;
+    const once = vm.runInContext(
+        `KDMapModRefreshList = [KDMapMods.None]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
+        c,
+    );
+    assert.equal(once.MapMod, "SpiderlingsInfestation");
+    assert.deepEqual(seen, [once.MapMod, once.MapMod]);
 });
 
 test("repeated native new journeys cannot reuse deep-floor infestation candidates on floor two", () => {

@@ -74,6 +74,7 @@ function runtime(overrides = {}, nativeSources = []) {
     };
     vm.createContext(context);
     for (const native of nativeSources) vm.runInContext(stripTypeScriptTypes(native), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), context);
     vm.runInContext(source, context);
     return {
         context,
@@ -94,9 +95,10 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsInfestation;
     assert.equal(mod.weight, 50);
-    assert.equal(mod.faction, "Maidforce");
+    assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
-    assert.equal(mod.filter({ y: 3 }), 1);
+    assert.equal(mod.filter({ y: 3 }), 0);
+    assert.equal(mod.filter({ y: 3, Faction: "Maidforce" }), 1);
     assert.equal(mod.filter({ y: 3, RoomType: "PerkRoom" }), 0);
     assert.equal(r.generate(), "native-result");
     assert.equal(r.context.KDMapData.Entities.length, 5);
@@ -255,22 +257,23 @@ test("native journey rejects a cached infestation below floor three and preserve
     assert.ok(!remaining.includes("SpiderlingsInfestation"));
     const eligible = vm.runInContext(
         `
-        KDMapModRefreshList = [KDMapMods.SpiderlingsInfestation];
+        KDRandom = () => 0.01;
+        KDMapModRefreshList = [KDMapMods.None];
         KDJourneySlotTypes.basic(null, 0, 3, "grv");
     `,
         c,
     );
     assert.equal(eligible.MapMod, "SpiderlingsInfestation");
     assert.equal(eligible.EscapeMethod, "SpiderlingsInfestation");
-    assert.equal(eligible.Faction, "Maidforce", "new infestations select maids even in a Bandit biome");
+    assert.equal(eligible.Faction, "Bandit", "Infestation preserves the native primary faction");
 });
 
-test("infestation uses the native Slime and Mold modifier weight", () => {
+test("infestation defaults to weight fifty without forcing a faction", () => {
     const r = nativeJourneyRuntime();
     const mods = r.context.KDMapMods;
     assert.equal(mods.SpiderlingsInfestation.weight, mods.Slime.weight);
     assert.equal(mods.SpiderlingsInfestation.weight, mods.Mold.weight);
-    assert.equal(mods.SpiderlingsInfestation.faction, "Maidforce");
+    assert.equal(mods.SpiderlingsInfestation.faction, undefined);
 });
 test("repeated native new journeys cannot reuse deep-floor infestation candidates on floor two", () => {
     let seed = 1;

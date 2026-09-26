@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,Los nidos que primero ocuparon este lu
 SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/5
 SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/5)
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
+KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
+KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)

@@ -10,6 +10,7 @@ const csvFiles = ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((locale) => `Spi
 const scripts = [
     "SpiderlingsCore.js",
     "SpiderlingsEncounters.js",
+    "SpiderlingsFloorSelection.js",
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
@@ -351,13 +352,15 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 212, `${csv}: both floor modifiers, physical web names and current NPC wrapping`);
+        assert.equal(entries.size, 214, `${csv}: both floor modifiers and weights, physical webs and NPC wrapping`);
         for (const key of [
             "KDMapMod_SpiderlingsInfestation",
             "KDMapMod_SpiderlingsHuntingGrounds",
             "SpiderlingsInfestationProgress",
             "SpiderlingsHuntingGroundsProgress",
             "KDModButtonspiderlingsEnableHood",
+            "KDModButtonspiderlingsInfestationWeight",
+            "KDModButtonspiderlingsHuntingGroundsWeight",
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",

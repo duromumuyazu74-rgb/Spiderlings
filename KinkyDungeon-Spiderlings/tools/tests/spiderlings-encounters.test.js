@@ -1867,6 +1867,22 @@ test("native wandering respawn queues stop at the map cap without consuming defe
     );
 });
 
+test("floor weight config defaults and saved zero survive native settings events", () => {
+    const kd = nativePopulationRuntime();
+    for (const [refvar, fallback] of [
+        ["spiderlingsInfestationWeight", "50"],
+        ["spiderlingsHuntingGroundsWeight", "750"],
+    ]) {
+        const config = kd.KDModConfigs.Spiderlings.find((entry) => entry.type === "string" && entry.refvar === refvar);
+        assert.equal(config.default, fallback);
+        assert.equal(kd.Spiderlings.getSetting(refvar), fallback);
+        kd.KDModSettings.Spiderlings[refvar] = "0";
+        kd.KDEventMapGeneric.afterModConfig.Spiderlings();
+        kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
+        assert.equal(kd.Spiderlings.getSetting(refvar), "0");
+    }
+});
+
 test("new settings allow exactly 25 living spiders by default", () => {
     const kd = nativePopulationRuntime();
     assert.equal(kd.Spiderlings.getMapPopulationCap(), 25);

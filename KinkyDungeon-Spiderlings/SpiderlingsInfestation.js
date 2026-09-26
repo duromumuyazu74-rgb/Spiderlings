@@ -595,22 +595,6 @@
     }
 
     function registerJourneySelection() {
-        if (
-            typeof KDJourneySlotTypes !== "undefined" &&
-            KDJourneySlotTypes.basic &&
-            !KDJourneySlotTypes.basic.SpiderlingsInfestationWrapped
-        ) {
-            const original = KDJourneySlotTypes.basic;
-            KDJourneySlotTypes.basic = function (...args) {
-                // KD's three-entry pool survives journey initialization and only
-                // filters at refill. Recheck our cached entry for this actual floor.
-                if (args[2] < MIN_FLOOR && typeof KDMapModRefreshList !== "undefined") {
-                    KDMapModRefreshList = KDMapModRefreshList.filter((mod) => mod.name !== MOD);
-                }
-                return original.apply(this, args);
-            };
-            KDJourneySlotTypes.basic.SpiderlingsInfestationWrapped = true;
-        }
         repairEarlyJourneyPreviews();
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", MOD, repairEarlyJourneyPreviews);
     }
@@ -806,14 +790,15 @@
         KDAddEvent(KDEventMapGeneric, "tickAfter", MOD, retireQuietSpiders);
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", MOD, recordTaskNestDamage);
         if (typeof KDOndeath !== "undefined") KDOndeath[ESCAPE_DEATH] = evacuateTaskNest;
-        // Native journey selection reads faction before escape methods and side rooms.
+        // FloorSelection draws this only after the native primary faction is known.
         KDMapMods[MOD] = {
             name: MOD,
             roomType: "",
             altRoom: "",
-            weight: 50,
-            faction: "Maidforce",
-            filter: (slot) => (slot?.y >= MIN_FLOOR && !slot?.RoomType ? 1 : 0),
+            get weight() {
+                return api.FloorSelection.weight(MOD);
+            },
+            filter: (slot) => (slot?.y >= MIN_FLOOR && !slot.RoomType && slot.Faction ? 1 : 0),
             tags: [],
             bonusTags: {},
             escapeMethod: MOD,

@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,この場所に最初から巣くっ�
 SpiderlingsInfestationProgress,破壊した目標の巣穴：CURRENT/5
 SpiderlingsInfestationBlocked,階段の前で足が止まる。巣穴の奥のかさかさという音は、まだ静まっていない。（CURRENT/5）
 SpiderlingsInfestationComplete,この場所に最初からあった巣穴はすべて崩れた。さらに深くへ続く階段が目の前にある。（5/5）
+KDModButtonspiderlingsInfestationWeight,幼蛛侵扰の重み（0：無効）
+KDModButtonspiderlingsHuntingGroundsWeight,幼蛛猟場の重み・Maidforce限定（0：無効）
