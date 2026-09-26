@@ -26,7 +26,7 @@ test.31 完成总规格 #90：侵扰楼层改为全图开阔地形与狭道，�
 
 test.32 将楼层显示名改为“幼蛛猎场”／Spiderling Hunting Grounds，保留 `SpiderlingsInfestation` 内部 ID 与旧存档兼容。缠裹复审修复三处问题：蜘蛛离场后继续按施丝来源的阵营和幼蛛类型判定敌意；只有自有蛛丝足以造成原生无力反抗时才进入无人缠裹回退；原生挣扎未破坏完全黏住状态时保留已支付的缠裹行动。相关单元与原生场景复验以本测试版交付记录为准。
 
-test.34 将五巢“幼蛛侵扰”（`SpiderlingsInfestation`，权重 50）与三巢“幼蛛猎场”（`SpiderlingsHuntingGrounds`，权重 100）作为两个独立地图修饰符装入同一包。test.32 的三巢旧存档按 `garrisonVersion: 2` 迁移到猎场 ID。test.35 起，猎场野生幼蛛会发现并攻击所有 NPC，包括其他幼蛛、友方、商人、任务和 `nocapture` 角色；静态巢穴结构不算 NPC 猎物。最终缠裹仍遵守原生 `KDCapturable` 与持久角色 `alwaysEscape` 限制。旧侵扰层保留原生人口，不受猎场的额外索敌规则影响。
+test.34 将五巢“幼蛛侵扰”（`SpiderlingsInfestation`，权重 50）与三巢“幼蛛猎场”（`SpiderlingsHuntingGrounds`，权重 100）作为两个独立地图修饰符装入同一包。test.32 的三巢旧存档按 `garrisonVersion: 2` 迁移到猎场 ID。test.36 修正 test.35 的同阵营幼蛛误锁：猎场幼蛛巡逻并追捕遇到的其他 NPC，包括友方、商人、任务和 `nocapture` 角色；同阵营幼蛛不会互相锁定。最终缠裹仍遵守原生 `KDCapturable` 与持久角色 `alwaysEscape` 限制。旧侵扰层保留原生人口，不受猎场的额外索敌规则影响。
 
 ## 当前测试扩展
 

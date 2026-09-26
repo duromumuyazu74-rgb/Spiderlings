@@ -181,17 +181,22 @@ test("Hunting Grounds spiders acquire neutral and Natural NPC prey while the old
     assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
 });
 
-test("Hunting Grounds spiders also pursue other spiderling NPCs but leave static nests alone", () => {
+test("Hunting Grounds spiders seek other NPCs without locking onto their own faction", () => {
     const { context: kd, make } = loadRuntime();
     const hunter = make("Spinner", { x: 6 });
-    const spider = make("Jumper", { x: 7, allied: 1 });
-    const nest = make("NestEntrance", { x: 8 });
-    kd.KDMapData.Entities = [hunter, spider, nest];
+    const spider = make("Jumper", { x: 7 });
+    const nest = make("NestEntrance", { x: 9 });
+    const prey = make("NeutralPrey", {
+        x: 8,
+        Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
+    });
+    kd.KDMapData.Entities = [hunter, spider, nest, prey];
     kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
     kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
-    assert.equal(kd.KDHostile(hunter, spider), true);
-    assert.equal(kd.KinkyDungeonNearestPlayer(hunter, false, true), spider);
+    assert.equal(kd.KDHostile(hunter, spider), false);
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(hunter, spider), false);
     assert.equal(kd.KDHostile(hunter, nest), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(hunter, false, true), prey);
 });
 
 test("a WebCaster prioritizes visible pending Cocoon reinforcement then returns to its rival", () => {
