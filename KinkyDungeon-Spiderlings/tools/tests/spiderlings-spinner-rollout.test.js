@@ -76,7 +76,7 @@ test("rollout eligibility records every exclusion reason and keeps infestation e
     const decide = (room = {}, map = {}, settingEnabled = true) => r.api.eligibility({ room, map, settingEnabled });
     assert.deepEqual({ ...decide() }, { enabled: true, kind: "ordinary", reason: "eligible" });
     assert.deepEqual(
-        { ...decide({}, { MapMod: "SpiderlingsInfestation" }) },
+        { ...decide({}, { MapMod: "SpiderlingsHuntingGrounds" }) },
         { enabled: true, kind: "infestation", reason: "eligible" },
     );
     for (const [reason, room, map] of [

@@ -6,7 +6,7 @@
 
 (() => {
     const spiderlings = (globalThis.Spiderlings = globalThis.Spiderlings || {});
-    const layout = (spiderlings.InfestationLayout = spiderlings.InfestationLayout || {});
+    const layout = (spiderlings.HuntingGroundsLayout = spiderlings.HuntingGroundsLayout || {});
     if (layout.SpiderlingsLayoutLoaded) return;
     const pointKey = (point) => `${point.x},${point.y}`;
     const chebyshev = (left, right) => Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y));
@@ -453,11 +453,11 @@
     function register() {
         if (typeof KinkyDungeonCreateMapGenType === "undefined" || !KinkyDungeonCreateMapGenType.TileMaze) return;
         const original = KinkyDungeonCreateMapGenType.TileMaze;
-        if (original.SpiderlingsInfestationLayoutWrapped) return;
+        if (original.SpiderlingsHuntingGroundsLayoutWrapped) return;
         // Several native placement passes ignore OL metadata. Expose reserved
         // floor as wall only while their candidate pickers run.
         const shield = (original) => {
-            if (typeof original !== "function" || original.SpiderlingsInfestationLayoutWrapped) return original;
+            if (typeof original !== "function" || original.SpiderlingsHuntingGroundsLayoutWrapped) return original;
             const wrapped = function (...args) {
                 const reserved = reservations.get(KDMapData);
                 if (!reserved?.size) return original.apply(this, args);
@@ -472,7 +472,7 @@
                     KinkyDungeonMapGet = nativeGet;
                 }
             };
-            wrapped.SpiderlingsInfestationLayoutWrapped = true;
+            wrapped.SpiderlingsHuntingGroundsLayoutWrapped = true;
             return wrapped;
         };
         if (typeof KinkyDungeonPlaceBrickwork === "function")
@@ -523,9 +523,9 @@
         }
         KinkyDungeonCreateMapGenType.TileMaze = function (...args) {
             const eligible =
-                KDMapData.MapMod === "SpiderlingsInfestation" &&
+                KDMapData.MapMod === "SpiderlingsHuntingGrounds" &&
                 !KDMapData.RoomType &&
-                !KDMapData.SpiderlingsInfestation;
+                !KDMapData.SpiderlingsHuntingGrounds;
             const originalMap = eligible ? cloneValue(KDMapData) : null;
             const originalArgs = eligible ? args.map((arg) => cloneValue(arg)) : null;
             let result;
@@ -581,7 +581,7 @@
             }
             return result;
         };
-        KinkyDungeonCreateMapGenType.TileMaze.SpiderlingsInfestationLayoutWrapped = true;
+        KinkyDungeonCreateMapGenType.TileMaze.SpiderlingsHuntingGroundsLayoutWrapped = true;
     }
 
     Object.assign(layout, {

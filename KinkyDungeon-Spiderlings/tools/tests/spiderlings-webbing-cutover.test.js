@@ -13,8 +13,9 @@ const scripts = [
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
-    "SpiderlingsInfestationLayout.js",
+    "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
+    "SpiderlingsHuntingGrounds.js",
     "SpiderlingsCombat.js",
     "SpiderlingsNPCAdhesion.js",
     "SpiderlingsNPCWrapping.js",
@@ -43,6 +44,7 @@ const scripts = [
 ];
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
+    "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
     "Bullets/SpiderlingsMageRuneIcon.png",
@@ -345,8 +347,12 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 205, `${csv}: current release text set including NPC wrapping`);
+        assert.equal(entries.size, 212, `${csv}: both floor modifiers and current NPC wrapping`);
         for (const key of [
+            "KDMapMod_SpiderlingsInfestation",
+            "KDMapMod_SpiderlingsHuntingGrounds",
+            "SpiderlingsInfestationProgress",
+            "SpiderlingsHuntingGroundsProgress",
             "KDModButtonspiderlingsEnableHood",
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",

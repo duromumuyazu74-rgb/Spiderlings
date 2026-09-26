@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const layout = require("../../SpiderlingsInfestationLayout.js");
+const layout = require("../../SpiderlingsHuntingGroundsLayout.js");
 
 function fixture(size = 30, seed = 0.5, blocked = new Set()) {
     const grid = Array.from({ length: size }, () => Array(size).fill("1"));
@@ -168,12 +168,12 @@ test("failed supported and undersized layouts publish no partial terrain", () =>
 });
 
 test("native TileMaze wrapper runs after terrain creation and only on new Infestation maps", () => {
-    const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsInfestationLayout.js"), "utf8");
+    const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8");
     const calls = [];
     const context = {
         Spiderlings: {},
         KDMapData: {
-            MapMod: "SpiderlingsInfestation",
+            MapMod: "SpiderlingsHuntingGrounds",
             RoomType: "",
             GridWidth: 30,
             GridHeight: 30,
@@ -208,10 +208,10 @@ test("native TileMaze wrapper runs after terrain creation and only on new Infest
         context.KinkyDungeonPlaceChargers,
         context.KinkyDungeonPlaceSetPieces,
     ];
-    const originalLayout = context.Spiderlings.InfestationLayout;
+    const originalLayout = context.Spiderlings.HuntingGroundsLayout;
     vm.runInContext(source, context);
-    assert.equal(context.Spiderlings.InfestationLayout, originalLayout);
-    context.Spiderlings.InfestationLayout.register();
+    assert.equal(context.Spiderlings.HuntingGroundsLayout, originalLayout);
+    context.Spiderlings.HuntingGroundsLayout.register();
     assert.deepEqual(
         [
             context.KinkyDungeonCreateMapGenType.TileMaze,
@@ -224,12 +224,12 @@ test("native TileMaze wrapper runs after terrain creation and only on new Infest
     );
     context.KinkyDungeonCreateMapGenType.TileMaze();
     assert.equal(calls[0], "native");
-    assert.ok(context.Spiderlings.InfestationLayout.earlyPlan(context.KDMapData));
+    assert.ok(context.Spiderlings.HuntingGroundsLayout.earlyPlan(context.KDMapData));
     assert.ok(Object.keys(context.KDMapData.Tiles).length > 0);
-    context.Spiderlings.InfestationLayout.release(context.KDMapData);
+    context.Spiderlings.HuntingGroundsLayout.release(context.KDMapData);
     assert.equal(Object.keys(context.KDMapData.Tiles).length, 0);
     assert.equal(calls.at(-1), "nav");
     context.KDMapData = { ...context.KDMapData, MapMod: "None" };
     context.KinkyDungeonCreateMapGenType.TileMaze();
-    assert.equal(context.Spiderlings.InfestationLayout.earlyPlan(context.KDMapData), undefined);
+    assert.equal(context.Spiderlings.HuntingGroundsLayout.earlyPlan(context.KDMapData), undefined);
 });

@@ -603,7 +603,8 @@
             const floor = typeof MiniGameKinkyDungeonLevel !== "undefined" ? MiniGameKinkyDungeonLevel : args[1];
             if (!mageEligible(floor, security)) args[7] = [...(args[7] || []), MAGE];
             else {
-                const infestation = typeof KDMapData !== "undefined" && KDMapData?.MapMod === "SpiderlingsInfestation";
+                const infestation =
+                    typeof KDMapData !== "undefined" && KDMapData?.MapMod === "SpiderlingsHuntingGrounds";
                 const callerMageBonus = args[6]?.[MAGE];
                 args[6] = {
                     ...(args[6] || {}),
@@ -996,7 +997,7 @@
             return 0;
 
         const cap = api.getNestReinforcementCap();
-        const infestation = KDMapData.SpiderlingsInfestation;
+        const infestation = KDMapData.SpiderlingsHuntingGrounds;
         const tunnelerCap = api.getNestTunnelerCap();
         const interval = api.getNestReinforcementInterval();
         const weights = normalizeSpiderlingWeights(api.getSharedSpiderlingWeights());

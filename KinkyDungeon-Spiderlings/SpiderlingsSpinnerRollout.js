@@ -19,7 +19,7 @@
         if (roomType) return { enabled: false, kind: "excluded", reason: "scripted" };
         if (room.enemies === false || room.spawns === false)
             return { enabled: false, kind: "excluded", reason: "noncombat" };
-        const kind = map.MapMod === "SpiderlingsInfestation" ? "infestation" : "ordinary";
+        const kind = map.MapMod === "SpiderlingsHuntingGrounds" ? "infestation" : "ordinary";
         if (input.settingEnabled !== true) return { enabled: false, kind, reason: "setting" };
         return { enabled: true, kind, reason: "eligible" };
     }

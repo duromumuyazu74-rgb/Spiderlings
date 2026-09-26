@@ -16,6 +16,7 @@
   "KDBulletCanHitEntity",
   "KDBulletHitEnemy",
   "KDBoundEffects",
+  "KDCapturable",
   "KDCanAddRestraint",
   "KDCheckCollideableBullets",
   "KDCanDetect",

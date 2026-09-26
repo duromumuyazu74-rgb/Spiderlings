@@ -57,6 +57,11 @@ function fixture() {
         KDBoundEffects: () => 0,
         KDHostile: (sourceEntity, prey) => sourceEntity.faction !== prey.faction && !prey.peaceful,
         KDHelpless: (entity) => !!entity.helpless,
+        KDCapturable: (entity) =>
+            !!entity?.Enemy?.bound &&
+            !entity.Enemy.allied &&
+            !["skeleton", "construct", "nobrain", "nocapture"].some((tag) => entity.Enemy.tags?.[tag]),
+        KDIsInParty: (entity) => !!entity.party,
         KinkyDungeonIsDisabled: (entity) => !!entity.disabled,
         KinkyDungeonCheckPath: (x, y) => !map.Entities.find((entity) => entity.x === x && entity.y === y)?.blocked,
         KinkyDungeonTransparentMovableObjects: "0",
@@ -309,6 +314,32 @@ test("protected roles, nonhostile prey and foreign or absent silk cannot be wrap
         exclusion(r.target);
         assert.equal(r.act(r.spiders[0]), undefined);
         assert.equal(r.wrap.record(r.target), undefined);
+    }
+});
+
+test("Hunting Grounds wraps eligible shop, quest and party NPCs but respects native capture limits", () => {
+    for (const decorate of [
+        (target) => (target.data = { shop: "Shop" }),
+        (target) => (target.Enemy.specialdialogue = "Story"),
+        (target) => (target.Enemy.tags.quest = true),
+        (target) => (target.party = true),
+        (target) => (target.runSpawnAI = true),
+    ]) {
+        const r = fixture();
+        r.context.Spiderlings.HuntingGrounds = { active: () => true };
+        decorate(r.target);
+        assert.ok(r.act(r.spiders[0]));
+        assert.equal(r.wrap.record(r.target).progress, 1);
+    }
+    for (const decorate of [
+        (target) => (target.Enemy.tags.nocapture = true),
+        (target) => (target.Enemy.bound = undefined),
+        (target) => (target.Enemy.allied = true),
+    ]) {
+        const r = fixture();
+        r.context.Spiderlings.HuntingGrounds = { active: () => true };
+        decorate(r.target);
+        assert.equal(r.act(r.spiders[0]), undefined);
     }
 });
 

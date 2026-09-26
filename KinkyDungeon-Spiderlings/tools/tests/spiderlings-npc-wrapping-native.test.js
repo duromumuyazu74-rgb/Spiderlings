@@ -20,6 +20,35 @@ function nativeFunction(name, file = "enemy/KinkyDungeonEnemies.ts") {
     throw Error(`unclosed native ${name}`);
 }
 
+test("Hunting Grounds uses KD's capturable limit while allowing shop and quest NPCs", () => {
+    const spider = { id: 1, hp: 5, faction: "Enemy", Enemy: { name: "Spinner" } };
+    const target = {
+        id: 2,
+        hp: 8,
+        faction: "Maidforce",
+        data: { shop: "Merchant" },
+        Enemy: { name: "QuestMerchant", bound: "Merchant", tags: { quest: true } },
+    };
+    const context = {
+        Spiderlings: {
+            HuntingGrounds: { active: () => true },
+            NPCAdhesion: { silkSource: () => undefined },
+        },
+        KDMapData: { Entities: [spider, target] },
+        KDHostile: () => true,
+        KDNoCaptureTypes: ["skeleton", "construct", "nobrain", "nocapture"],
+    };
+    vm.createContext(context);
+    vm.runInContext(nativeFunction("KDCapturable", "collection/KinkyDungeonCollection.ts"), context);
+    vm.runInContext(
+        fs.readFileSync(require("node:path").join(__dirname, "../..", "SpiderlingsNPCWrapping.js"), "utf8"),
+        context,
+    );
+    assert.equal(context.Spiderlings.NPCWrapping.targetEligible(target), true);
+    target.Enemy.tags.nocapture = true;
+    assert.equal(context.Spiderlings.NPCWrapping.targetEligible(target), false);
+});
+
 test("native KD helpless entry never receives the player or an entity without Enemy during NPC wrapping", () => {
     const player = { player: true, id: 999, x: 1, y: 1, hp: 10 };
     const spider = { id: 1, x: 3, y: 3, hp: 5, Enemy: { name: "WebCaster", maxhp: 5 } };

@@ -2,7 +2,7 @@
 
 (() => {
     const api = (globalThis.Spiderlings = globalThis.Spiderlings || {});
-    const infestation = (api.Infestation = api.Infestation || {});
+    const infestation = (api.HuntingGrounds = api.HuntingGrounds || {});
     const key = (point) => `${point.x},${point.y}`;
     const distance = (left, right) => Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y));
     const neighbors = (point) => [
@@ -135,71 +135,21 @@
         return null;
     }
 
-    function planGroupedNestPlacement(options) {
-        const baseline = reachableCells(options.start, options.passable);
-        const candidates = options.candidates.filter((point) => baseline.has(key(point)));
-        const random = options.random || Math.random;
-        for (let index = candidates.length - 1; index > 0; index--) {
-            const other = Math.min(index, Math.floor(Math.max(0, random()) * (index + 1)));
-            [candidates[index], candidates[other]] = [candidates[other], candidates[index]];
-        }
-        // Match the reinforcement bonus's Euclidean radius, not tile distance:
-        // all members of each group must be four to five tiles apart.
-        const near = candidates.map((point, index) =>
-            candidates.flatMap((other, next) => {
-                const squared = (point.x - other.x) ** 2 + (point.y - other.y) ** 2;
-                return next > index && squared >= 16 && squared <= 25 ? [next] : [];
-            }),
-        );
-        const pairs = [],
-            triples = [];
-        for (let i = 0; i < candidates.length; i++)
-            for (const j of near[i]) {
-                pairs.push([candidates[i], candidates[j]]);
-                for (const k of near[j])
-                    if (near[i].includes(k)) {
-                        triples.push([candidates[i], candidates[j], candidates[k]]);
-                    }
-            }
-        // Reuse the placement connectivity contract for each group and their
-        // union; a valid group alone can still jointly block a corridor.
-        const valid = (points) =>
-            planNestPlacement({
-                ...options,
-                candidates: points,
-                count: points.length,
-                minimumDistance: 0,
-                random: () => 1,
-            }) !== null;
-        const tripleValidity = new Map();
-        for (const pair of pairs) {
-            if (!valid(pair)) continue;
-            for (const triple of triples) {
-                const gapSquared = Math.min(
-                    ...pair.flatMap((left) => triple.map((right) => (left.x - right.x) ** 2 + (left.y - right.y) ** 2)),
-                );
-                // Nearby separate groups: no cross-group five-tile bonus, and
-                // neither group is sent to the opposite end of the map.
-                if (gapSquared < 36 || gapSquared > 64) continue;
-                if (!tripleValidity.has(triple)) tripleValidity.set(triple, valid(triple));
-                if (!tripleValidity.get(triple)) continue;
-                const plan = [...triple, ...pair];
-                if (valid(plan)) return plan;
-            }
-        }
-        return null;
+    function planIndependentNestPlacement(options) {
+        return planNestPlacement({ ...options, count: 3, minimumDistance: 9 });
     }
 
-    // Open the ordinary terrain through and one tile beyond each nest group.
+    // Open ordinary walls through each nest's building area.
     // Interactive tiles, authored off-limits areas and the map border retain
     // their native identity; only plain walls/debris become ordinary floor.
     function planNestClearing(plan, options) {
         const cells = [];
         if (!plan?.length) return cells;
-        const minX = Math.max(1, Math.min(...plan.map((p) => p.x)) - 1);
-        const maxX = Math.min(options.width - 2, Math.max(...plan.map((p) => p.x)) + 1);
-        const minY = Math.max(1, Math.min(...plan.map((p) => p.y)) - 1);
-        const maxY = Math.min(options.height - 2, Math.max(...plan.map((p) => p.y)) + 1);
+        const radius = options.radius ?? 1;
+        const minX = Math.max(1, Math.min(...plan.map((p) => p.x)) - radius);
+        const maxX = Math.min(options.width - 2, Math.max(...plan.map((p) => p.x)) + radius);
+        const minY = Math.max(1, Math.min(...plan.map((p) => p.y)) - radius);
+        const maxY = Math.min(options.height - 2, Math.max(...plan.map((p) => p.y)) + radius);
         for (let x = minX; x <= maxX; x++)
             for (let y = minY; y <= maxY; y++) {
                 const tile = options.tile(x, y);
@@ -262,6 +212,7 @@
                       )
                     : undefined,
             interactable: typeof KDInteractableTiles !== "undefined" ? KDInteractableTiles : KinkyDungeonMovableTiles,
+            radius: 3,
         };
         let cells = [
             ...new Map(
@@ -297,26 +248,109 @@
         return cells.length;
     }
 
-    const MOD = "SpiderlingsInfestation";
-    const FIELD = "SpiderlingsInfestation";
+    const MOD = "SpiderlingsHuntingGrounds";
+    const FIELD = "SpiderlingsHuntingGrounds";
     const MIN_FLOOR = 3;
-    const TARGET = 5;
+    const TARGET = 3;
     const QUIET_TURNS = 15;
-    const GARRISON = 5;
+    const WILD_QUIET_CAP = 5;
     const NEARBY_RADIUS = 12;
     const MOBILE = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]);
+    const POPULATION_TAG = MOD + "Population";
+    const POPULATION_MULTIPLIERS = { Spider: 1, Maid: 3, Dressmaker: 0.5, Nurse: 1 };
+    const INFESTATION_MULTIPLIERS = { Spider: 3, Maid: 0.35, Dressmaker: 0.2, Nurse: 0.2 };
+    const NEST_PARENT_ID = "SpiderlingsNestParentID";
+    const POPULATION_TAGS = ["spiderlings", "maid", "dressmaker"];
+    const PRESET_TAG = MOD + "Preset";
+    let selectingPopulation = false;
+    const populationBonuses = () =>
+        Object.fromEntries(
+            Object.entries(KDMapData.MapMod === MOD ? INFESTATION_MULTIPLIERS : POPULATION_MULTIPLIERS).map(
+                ([group, mult]) => [MOD + group, { bonus: 0, mult }],
+            ),
+        );
+
+    function populationGroup(enemy) {
+        if (["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"].includes(enemy?.name))
+            return "Spider";
+        if (enemy?.faction === "Maidforce" && enemy.tags?.human) return "Maid";
+        if (enemy?.name === "Nurse" && enemy.faction === "Dressmaker") return "Nurse";
+        if (enemy?.faction === "Dressmaker" || enemy?.applyFaction === "Dressmaker") return "Dressmaker";
+        return null;
+    }
+
+    function usesMaidPopulation(room = {}) {
+        return (
+            KDMapData.MapFaction === "Maidforce" &&
+            KDMapData.MapMod !== "SpiderlingsInfestation" &&
+            !KDMapData.RoomType &&
+            api.EncounterRules.isEligibleOrdinaryMap(room)
+        );
+    }
+
+    function rival(entity) {
+        return ["Maidforce", "Dressmaker"].includes(KDGetFaction(entity));
+    }
+
+    function patrolRival(entity) {
+        const activeShop = typeof KDEnemyHasFlag === "function" ? KDEnemyHasFlag(entity, "Shop") : !!entity.flags?.Shop;
+        return rival(entity) && !activeShop && entity.runSpawnAI !== true;
+    }
+
+    function trimNewRivals(previous, maximum, protectedPositions = new Set()) {
+        let retained = 0;
+        for (const entity of [...KDMapData.Entities]) {
+            if (previous.has(entity) || protectedPositions.has(key(entity)) || !patrolRival(entity)) continue;
+            if (retained++ >= maximum) KDRemoveEntity(entity, false);
+        }
+    }
+
+    function trimInfestationPatrol() {
+        if (!activeState() || KDMapData.MapMod !== MOD) return;
+        const patrol = KDMapData.Entities.filter(patrolRival);
+        for (const enemy of patrol.slice(3)) KDRemoveEntity(enemy, false);
+    }
+
+    function registerPopulation() {
+        if (typeof KinkyDungeonEnemies === "undefined" || typeof KinkyDungeonGetEnemy !== "function") return;
+        for (const enemy of KinkyDungeonEnemies) {
+            const group = populationGroup(enemy);
+            if (group) Object.assign(enemy.tags, { [POPULATION_TAG]: true, [MOD + group]: true });
+        }
+        if (KinkyDungeonGetEnemy.SpiderlingsHuntingGroundsWrapped) return;
+        const original = KinkyDungeonGetEnemy;
+        KinkyDungeonGetEnemy = function (...args) {
+            if (selectingPopulation && !args[7]?.includes(PRESET_TAG)) {
+                // Native selection owns level, tile, rank and cap eligibility.
+                // A required owned tag also survives its minimum-weight fallback.
+                args[0] = [...new Set([...(args[0] || []), ...POPULATION_TAGS])];
+                args[4] = [...new Set([...(args[4] || []), POPULATION_TAG])];
+                args[6] = { ...(args[6] || {}), ...populationBonuses() };
+                // Native initial population spends the neutral allowance on preset
+                // NPCs too, then excludes default-neutral maids/Dressmaker entirely.
+                // This floor's ecology includes them regardless of player hostility;
+                // keep the population budget and all other selection constraints.
+                if (selectingPopulation === "initial" && args[5]?.requireHostile === "Player") {
+                    args[5] = { ...args[5], requireHostile: "" };
+                }
+            }
+            return original.apply(this, args);
+        };
+        KinkyDungeonGetEnemy.SpiderlingsHuntingGroundsWrapped = true;
+    }
 
     const texts = {
-        KDMapMod_SpiderlingsInfestation: "Spiderling Infestation",
-        KinkyDungeonMapModSpiderlingsInfestation:
-            "Soft webs line the corners. Spiderlings step lightly along the threads, filling the room with delicate rustling.",
-        KDEscapeMethod_SpiderlingsInfestation: "Destroy the marked nests",
-        KDEscapeMethodDesc_SpiderlingsInfestation:
+        KDMapMod_SpiderlingsHuntingGrounds: "Spiderling Hunting Grounds",
+        KinkyDungeonMapModSpiderlingsHuntingGrounds:
+            "Soft webs spread across the floor. Spiderlings move between their nests, and rustling follows you through the passages.",
+        KDEscapeMethod_SpiderlingsHuntingGrounds: "Destroy the marked nests",
+        KDEscapeMethodDesc_SpiderlingsHuntingGrounds:
             "Soft threads fringe the nests first built here. Destroy these marked nests to continue downstairs.",
-        SpiderlingsInfestationProgress: "Marked nests destroyed: CURRENT/5",
-        SpiderlingsInfestationBlocked: "Some marked nests remain. You cannot take the stairs down yet. (CURRENT/5)",
-        SpiderlingsInfestationComplete:
-            "All marked nests are destroyed. Loose threads settle, and you can continue down the stairs. (5/5)",
+        SpiderlingsHuntingGroundsProgress: "Marked nests destroyed: CURRENT/TARGET",
+        SpiderlingsHuntingGroundsBlocked:
+            "Some marked nests remain. You cannot take the stairs down yet. (CURRENT/TARGET)",
+        SpiderlingsHuntingGroundsComplete:
+            "All marked nests are destroyed. Loose threads settle, and you can continue down the stairs. (TARGET/TARGET)",
     };
 
     function activeState(map = typeof KDMapData !== "undefined" ? KDMapData : null) {
@@ -342,11 +376,11 @@
         const anchors = (state.clearing ||= nests.map((e) => ({ x: e.x, y: e.y })));
         if (!anchors.length) return;
         const near = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) <= NEARBY_RADIUS;
-        const spiders = entities.filter((e) => wildSpider(e) && anchors.some((p) => near(e, p)));
+        const spiders = entities.filter((e) => wildSpider(e) && !e[NEST_PARENT_ID] && anchors.some((p) => near(e, p)));
         // Only a capable, perceptible opponent keeps the garrison in combat.
         // Partial binding still counts; native helplessness does not. Recovery
         // is rechecked at both turn boundaries, just like a newly arrived enemy.
-        const defenders = [...nests, ...spiders];
+        const defenders = [...nests, ...entities.filter((e) => wildSpider(e) && anchors.some((p) => near(e, p)))];
         const opponents = entities.filter(
             (e) =>
                 e.hp > 0 &&
@@ -390,23 +424,25 @@
         state.quietTurns =
             threatened || state.threatThisTurn ? 0 : Math.min(QUIET_TURNS, (state.quietTurns || 0) + data.delta);
         delete state.threatThisTurn;
-        if (state.quietTurns < QUIET_TURNS || spiders.length <= GARRISON) return;
+        if (state.quietTurns < QUIET_TURNS || spiders.length <= WILD_QUIET_CAP) return;
         // Keep the five closest to the original nest positions. Use non-kill native removal
         // for the rest: no death burst, loot, objective progress or quota refund.
         const range = (e) => Math.min(...anchors.map((p) => Math.hypot(e.x - p.x, e.y - p.y)));
         spiders.sort((a, b) => range(a) - range(b) || a.id - b.id);
-        for (const enemy of spiders.slice(GARRISON)) KDRemoveEntity(enemy, false);
+        for (const enemy of spiders.slice(WILD_QUIET_CAP)) KDRemoveEntity(enemy, false);
     }
 
     function progressText(blocked = false, compact = false) {
         const state = activeState();
         const name =
             state?.complete && !compact
-                ? "SpiderlingsInfestationComplete"
+                ? "SpiderlingsHuntingGroundsComplete"
                 : blocked
-                  ? "SpiderlingsInfestationBlocked"
-                  : "SpiderlingsInfestationProgress";
-        return TextGet(name).replace("CURRENT", String(state?.destroyedIds.length || 0));
+                  ? "SpiderlingsHuntingGroundsBlocked"
+                  : "SpiderlingsHuntingGroundsProgress";
+        return TextGet(name)
+            .replace("CURRENT", String(state?.destroyedIds.length || 0))
+            .replaceAll("TARGET", String(state?.target || TARGET));
     }
 
     function cancelInfestation(reason) {
@@ -423,6 +459,25 @@
 
     function repairEarlyJourneyPreviews() {
         if (typeof KDGameData === "undefined") return;
+        // test.32 saved the three-nest floor under the old Infestation ID.
+        // The garrison marker distinguishes those maps from genuine five-nest
+        // Infestation saves, so only those maps move to the independent ID.
+        if (
+            typeof KDMapData !== "undefined" &&
+            KDMapData.MapMod === "SpiderlingsInfestation" &&
+            KDMapData.SpiderlingsInfestation?.garrisonVersion === 2
+        ) {
+            KDMapData[FIELD] = KDMapData.SpiderlingsInfestation;
+            delete KDMapData.SpiderlingsInfestation;
+            KDMapData.MapMod = MOD;
+            if (KDMapData.EscapeMethod === "SpiderlingsInfestation") KDMapData.EscapeMethod = MOD;
+            if (KDGameData.MapMod === "SpiderlingsInfestation") KDGameData.MapMod = MOD;
+            const current = KDGameData.JourneyMap?.[`${KDGameData.JourneyX},${KDGameData.JourneyY}`];
+            if (current?.MapMod === "SpiderlingsInfestation") {
+                current.MapMod = MOD;
+                if (current.EscapeMethod === "SpiderlingsInfestation") current.EscapeMethod = MOD;
+            }
+        }
         for (const slot of Object.values(KDGameData.JourneyMap || {})) {
             if (slot.MapMod !== MOD || slot.visited || !(slot.y < MIN_FLOOR)) continue;
             slot.MapMod = "None";
@@ -434,7 +489,7 @@
         if (
             typeof KDJourneySlotTypes !== "undefined" &&
             KDJourneySlotTypes.basic &&
-            !KDJourneySlotTypes.basic.SpiderlingsInfestationWrapped
+            !KDJourneySlotTypes.basic.SpiderlingsHuntingGroundsWrapped
         ) {
             const original = KDJourneySlotTypes.basic;
             KDJourneySlotTypes.basic = function (...args) {
@@ -445,10 +500,58 @@
                 }
                 return original.apply(this, args);
             };
-            KDJourneySlotTypes.basic.SpiderlingsInfestationWrapped = true;
+            KDJourneySlotTypes.basic.SpiderlingsHuntingGroundsWrapped = true;
         }
         repairEarlyJourneyPreviews();
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", MOD, repairEarlyJourneyPreviews);
+    }
+
+    function reserveInitialGuards(plan, passable, occupied, spawnPoints, accessibleOverride) {
+        const blocked = new Set([...occupied, ...plan.map(key)]);
+        const accessible =
+            accessibleOverride || reachableCells(KDMapData.StartPosition, passable, new Set(plan.map(key)));
+        const protectedPoints = [
+            KDMapData.StartPosition,
+            KDMapData.EndPosition,
+            KinkyDungeonPlayerEntity,
+            ...Object.values(KDMapData.ShortcutPositions || {}),
+            ...(KDMapData.JailPoints || []),
+            ...spawnPoints,
+        ].filter(Boolean);
+        const movable =
+            typeof KinkyDungeonMovableTilesEnemy !== "undefined"
+                ? KinkyDungeonMovableTilesEnemy
+                : KinkyDungeonMovableTiles;
+        const placements = [];
+        for (const nest of plan) {
+            const cells = [];
+            for (let dx = -2; dx <= 2; dx += 1)
+                for (let dy = -2; dy <= 2; dy += 1) {
+                    const point = { x: nest.x + dx, y: nest.y + dy };
+                    const name = key(point);
+                    const meta = KinkyDungeonTilesGet(name);
+                    if (
+                        Math.hypot(dx, dy) > 2.5 ||
+                        blocked.has(name) ||
+                        !accessible.has(name) ||
+                        !movable.includes(KinkyDungeonMapGet(point.x, point.y)) ||
+                        meta?.OL ||
+                        meta?.Lock ||
+                        meta?.Type ||
+                        protectedPoints.some((protectedPoint) => distance(protectedPoint, point) < 2) ||
+                        (typeof globalThis.KinkyDungeonNoEnemy === "function" &&
+                            !globalThis.KinkyDungeonNoEnemy(point.x, point.y, true))
+                    )
+                        continue;
+                    cells.push(point);
+                }
+            cells.sort((a, b) => Math.hypot(a.x - nest.x, a.y - nest.y) - Math.hypot(b.x - nest.x, b.y - nest.y));
+            if (cells.length < 4) return null;
+            const guards = cells.slice(0, 4);
+            for (const point of guards) blocked.add(key(point));
+            placements.push(guards);
+        }
+        return placements;
     }
 
     function placeNests(spawnPoints, floor, room = {}) {
@@ -463,6 +566,7 @@
             cancelInfestation("ineligible");
             return false;
         }
+        api.HuntingGroundsLayout?.release(KDMapData);
         const passable = new Set();
         const candidates = [];
         const start = KDMapData.StartPosition;
@@ -489,12 +593,42 @@
                 candidates.push(point);
             }
         }
-        const plan = planGroupedNestPlacement({ start, passable, candidates, random: KDRandom });
-        if (!plan || !KinkyDungeonGetEnemyByName("NestEntrance") || KDMapData.Entities.length + TARGET > 300) {
+        const earlyLayout = api.HuntingGroundsLayout?.earlyPlan(KDMapData);
+        const encounter =
+            earlyLayout && !earlyLayout.failed
+                ? api.HuntingGroundsLayout.planEncounter({
+                      width: KDMapData.GridWidth,
+                      height: KDMapData.GridHeight,
+                      tile: KinkyDungeonMapGet,
+                      meta: (x, y) => KinkyDungeonTilesGet(`${x},${y}`),
+                      start,
+                      exits,
+                      spawnPoints,
+                      entities: KDMapData.Entities,
+                      movable: KinkyDungeonMovableTiles,
+                      anchors: earlyLayout.anchors,
+                      huntingSites: earlyLayout.huntingSites,
+                      acceptNest: (point, reached) =>
+                          !!reserveInitialGuards([point], passable, occupied, spawnPoints, reached),
+                      random: KDRandom,
+                  })
+                : null;
+        const plan = earlyLayout
+            ? encounter?.nests
+            : planIndependentNestPlacement({ start, passable, candidates, random: KDRandom });
+        const guards = plan && reserveInitialGuards(plan, passable, occupied, spawnPoints);
+        if (
+            !guards ||
+            !["NestEntrance", "Spinner", "WebCaster", "MageSpiderlings"].every((name) =>
+                KinkyDungeonGetEnemyByName(name),
+            ) ||
+            KDMapData.Entities.length + TARGET * 5 > 300
+        ) {
             cancelInfestation("insufficient-space");
             return false;
         }
         const created = [];
+        const nests = [];
         for (const point of plan) {
             const batch = KinkyDungeonSummonEnemy(
                 point.x,
@@ -518,25 +652,78 @@
                 cancelInfestation("creation-failed");
                 return false;
             }
+            nests.push(batch[0]);
         }
-        for (const entity of created) {
+        for (let index = 0; index < nests.length; index += 1) {
+            const nest = nests[index];
+            for (const [guardIndex, name] of ["Spinner", "Spinner", "WebCaster", "MageSpiderlings"].entries()) {
+                const position = guards[index][guardIndex];
+                const batch = KinkyDungeonSummonEnemy(
+                    position.x,
+                    position.y,
+                    name,
+                    1,
+                    0,
+                    false,
+                    undefined,
+                    false,
+                    false,
+                    KDGetFaction(nest),
+                    true,
+                    undefined,
+                    true,
+                    false,
+                );
+                const guard = batch?.[0];
+                if (batch?.length !== 1 || guard.x !== position.x || guard.y !== position.y) {
+                    for (const entity of batch || []) KDRemoveEntity(entity, false, false, true);
+                    for (const entity of created) KDRemoveEntity(entity, false, false, true);
+                    cancelInfestation("garrison-failed");
+                    return false;
+                }
+                guard[NEST_PARENT_ID] = nest.id;
+                created.push(guard);
+            }
+        }
+        for (const entity of nests) {
             KinkyDungeonSetEnemyFlag(entity, "no_pers_wander", -1);
             KinkyDungeonSetEnemyFlag(entity, "questtarget", -1);
         }
         KDMapData[FIELD] = {
             status: "active",
             target: TARGET,
-            targetIds: created.map((entity) => entity.id),
+            targetIds: nests.map((entity) => entity.id),
             destroyedIds: [],
             complete: false,
+            garrisonVersion: 2,
             clearing: plan.map((point) => ({ ...point })),
-            clearedTiles: openNestClearing([plan.slice(0, 3), plan.slice(3)], spawnPoints),
+            layout: encounter
+                ? {
+                      ...encounter.metrics,
+                      sites: encounter.sites,
+                      opened: earlyLayout.opened,
+                      attempts: earlyLayout.attempts,
+                      retries: earlyLayout.attempts - 1,
+                      fallback: !!earlyLayout.fallback,
+                      relocatedShrines: earlyLayout.relocatedShrines || 0,
+                      relocatedChargers: earlyLayout.relocatedChargers || 0,
+                  }
+                : undefined,
+            clearedTiles: earlyLayout
+                ? 0
+                : openNestClearing(
+                      plan.map((point) => [point]),
+                      spawnPoints,
+                  ),
         };
         return true;
     }
 
     const MAID_FINISHER = "SpiderlingsTaskNestMaidFinisher";
     const ESCAPE_DEATH = "SpiderlingsTaskNestEscape";
+    const NEST_ATTACKER = "SpiderlingsTaskNestAttacker";
+    const DEFENDER_TARGET = "SpiderlingsTaskNestDefenderTarget";
+    const DEFENSE_TURNS = 4;
     function isObjectiveNest(map, enemy) {
         const state = activeState(map);
         return !!(
@@ -550,6 +737,13 @@
     function recordTaskNestDamage(_event, data) {
         const nest = data.enemy;
         if (!isObjectiveNest(KDMapData, nest)) return;
+        if (
+            data.dmgDealt > 0 &&
+            nest.hp > 0 &&
+            data.attacker?.id !== undefined &&
+            KDGetFaction(data.attacker) === "Maidforce"
+        )
+            nest[NEST_ATTACKER] = { id: data.attacker.id, tick: KinkyDungeonCurrentTick };
         // Record the lethal HP crossing, never the last nonlethal attacker or a
         // later hit against an already dead nest. Native bullet faction survives
         // when its shooter has already left the entity list.
@@ -558,6 +752,42 @@
             if (nest.hp <= 0 && faction === "Maidforce") nest[MAID_FINISHER] = true;
             else delete nest[MAID_FINISHER];
         } else if (nest.hp > 0) delete nest[MAID_FINISHER];
+    }
+
+    function resolveNestDefenderTarget(enemy, nativeTarget) {
+        delete enemy?.[DEFENDER_TARGET];
+        const state = activeState();
+        if (
+            !state ||
+            enemy?.hp <= 0 ||
+            (!enemy?.SpiderlingsNestParentID && !enemy?.Enemy?.tags?.spiderlings) ||
+            enemy?.Enemy?.name === "NestEntrance"
+        )
+            return nativeTarget;
+        let chosen;
+        let nearest = Infinity;
+        for (const nest of KDMapData.Entities) {
+            if (!state.targetIds.includes(nest.id) || nest.hp <= 0 || !nest[NEST_ATTACKER]) continue;
+            const alert = nest[NEST_ATTACKER];
+            if (KinkyDungeonCurrentTick < alert.tick || KinkyDungeonCurrentTick - alert.tick > DEFENSE_TURNS) continue;
+            const range = distance(enemy, nest);
+            if (range > 8 || range >= nearest) continue;
+            const attacker = KDMapData.Entities.find((entity) => entity.id === alert.id);
+            if (!attacker || attacker.hp <= 0 || !attacker.Enemy || !KDHostile(enemy, attacker)) continue;
+            chosen = attacker;
+            nearest = range;
+        }
+        if (!chosen) return nativeTarget;
+        enemy[DEFENDER_TARGET] = chosen.id;
+        enemy.aware = true;
+        enemy.tx = chosen.x;
+        enemy.ty = chosen.y;
+        enemy.target = chosen.id;
+        return chosen;
+    }
+
+    function isNestAttacker(enemy, target) {
+        return target?.id !== undefined && enemy?.[DEFENDER_TARGET] === target.id;
     }
 
     function evacuateTaskNest(enemy, _entry, map) {
@@ -623,11 +853,12 @@
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", MOD, recordTaskNestDamage);
         if (typeof KDOndeath !== "undefined") KDOndeath[ESCAPE_DEATH] = evacuateTaskNest;
         // Native journey selection reads faction before escape methods and side rooms.
+        // Pair newly selected infestations with the existing maid population profile.
         KDMapMods[MOD] = {
             name: MOD,
             roomType: "",
             altRoom: "",
-            weight: 50,
+            weight: 100,
             faction: "Maidforce",
             filter: (slot) => (slot?.y >= MIN_FLOOR && !slot?.RoomType ? 1 : 0),
             tags: [],
@@ -635,6 +866,12 @@
             escapeMethod: MOD,
         };
         registerJourneySelection();
+        registerPopulation();
+        KDAddEvent(KDEventMapGeneric, "afterGetSpawnBoxes", MOD, (_event, data) => {
+            // Basic maids are native "minor" enemies. Let them fill ordinary
+            // slots too, rather than confining the main faction to the minor box.
+            if (selectingPopulation) data.filterTagsBase = data.filterTagsBase.filter((tag) => tag !== "minor");
+        });
         KinkyDungeonEscapeTypes[MOD] = {
             selectValid: false,
             filterRandom: () => 0,
@@ -653,18 +890,57 @@
         KDCancelEvents[MOD] = () => KinkyDungeonSendActionMessage(10, progressText(true), "#ff88ff", 3);
         // Rooms with enemies:false never invoke population; clear their modifier too.
         KDAddEvent(KDEventMapGeneric, "postMapgen", MOD, () => {
+            api.HuntingGroundsLayout?.release(KDMapData);
             if (KDMapData.MapMod === MOD && !KDMapData[FIELD]) cancelInfestation("ineligible");
+            else trimInfestationPatrol();
         });
-        if (!KinkyDungeonPlaceEnemies.SpiderlingsInfestationWrapped) {
+        if (!KinkyDungeonPlaceEnemies.SpiderlingsHuntingGroundsWrapped) {
             const original = KinkyDungeonPlaceEnemies;
             KinkyDungeonPlaceEnemies = function (...args) {
                 const room = args[7] || {};
                 placeNests(args[0], args[4], room);
-                return original.apply(this, args);
+                // The nest objective belongs to the modifier; population belongs
+                // to the map's main faction, even when the objective is absent.
+                const themed = usesMaidPopulation(room);
+                // Native population processes preset spawnpoints through the
+                // same selector. Mark only their copied filter lists to opt out.
+                if (themed)
+                    args[0] = args[0].map((point) => ({ ...point, ftags: [...(point.ftags || []), PRESET_TAG] }));
+                const previous = selectingPopulation;
+                selectingPopulation = themed ? "initial" : false;
+                const previousEntities = new Set(KDMapData.Entities);
+                const presetPositions = new Set(args[0].map(key));
+                try {
+                    const result = original.apply(this, args);
+                    if (activeState() && KDMapData.MapMod === MOD) trimNewRivals(previousEntities, 3, presetPositions);
+                    return result;
+                } finally {
+                    selectingPopulation = previous;
+                }
             };
-            KinkyDungeonPlaceEnemies.SpiderlingsInfestationWrapped = true;
+            KinkyDungeonPlaceEnemies.SpiderlingsHuntingGroundsWrapped = true;
         }
-        if (!KDRemoveEntity.SpiderlingsInfestationWrapped) {
+        if (
+            typeof KinkyDungeonHandleWanderingSpawns === "function" &&
+            !KinkyDungeonHandleWanderingSpawns.SpiderlingsHuntingGroundsWrapped
+        ) {
+            const original = KinkyDungeonHandleWanderingSpawns;
+            KinkyDungeonHandleWanderingSpawns = function () {
+                const previous = selectingPopulation;
+                const room = typeof KDGetAltType === "function" ? KDGetAltType(MiniGameKinkyDungeonLevel) : {};
+                selectingPopulation = usesMaidPopulation(room || {}) ? "wandering" : false;
+                const previousEntities = new Set(KDMapData.Entities);
+                try {
+                    const result = original.apply(this, arguments);
+                    if (activeState() && KDMapData.MapMod === MOD) trimNewRivals(previousEntities, 0);
+                    return result;
+                } finally {
+                    selectingPopulation = previous;
+                }
+            };
+            KinkyDungeonHandleWanderingSpawns.SpiderlingsHuntingGroundsWrapped = true;
+        }
+        if (!KDRemoveEntity.SpiderlingsHuntingGroundsWrapped) {
             const original = KDRemoveEntity;
             KDRemoveEntity = function (enemy, kill, capture, noEvent, forceIndex, mapData) {
                 const map = mapData || KDMapData;
@@ -686,16 +962,19 @@
                 }
                 return result;
             };
-            KDRemoveEntity.SpiderlingsInfestationWrapped = true;
+            KDRemoveEntity.SpiderlingsHuntingGroundsWrapped = true;
         }
     }
 
     Object.assign(infestation, {
         planNestPlacement,
-        planGroupedNestPlacement,
+        planIndependentNestPlacement,
         planNestClearing,
         reachableCells,
+        populationGroup,
         activeState,
+        resolveNestDefenderTarget,
+        isNestAttacker,
         register,
     });
     register();

@@ -12,7 +12,7 @@
             (native) =>
                 function (enemy, target, delta) {
                     target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
-                    target = api.Infestation?.resolveNestDefenderTarget?.(enemy, target) || target;
+                    target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target) || target;
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };

@@ -20,8 +20,9 @@ const runtimeScripts = [
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
-    "SpiderlingsInfestationLayout.js",
+    "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
+    "SpiderlingsHuntingGrounds.js",
     "SpiderlingsCombat.js",
     "SpiderlingsNPCAdhesion.js",
     "SpiderlingsNPCWrapping.js",
@@ -69,6 +70,7 @@ const soundAssets = [
 ];
 const runtimeAssets = [
     "UI/MapMod/SpiderlingsInfestation.png",
+    "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
     "Bullets/SpiderlingsMageRuneIcon.png",

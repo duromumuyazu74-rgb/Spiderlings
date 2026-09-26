@@ -158,6 +158,29 @@ test("visible Maidforce and Spiderlings prefer each other even with the player c
     }
 });
 
+test("Hunting Grounds spiders acquire neutral and Natural NPC prey while the old modifier keeps native relations", () => {
+    const { context: kd, make } = loadRuntime();
+    kd.KinkyDungeonPlayerEntity.x = 5;
+    kd.KinkyDungeonPlayerEntity.y = 4;
+    const spider = make("Spinner", { x: 6 });
+    const neutral = make("NeutralPrey", {
+        x: 7,
+        Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, bound: "Slime", tags: {} },
+    });
+    kd.KDMapData.Entities = [spider, neutral];
+    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    assert.equal(kd.KDHostile(spider, neutral), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    assert.equal(kd.KDHostile(spider, neutral), true);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), neutral);
+    assert.equal(spider.aware, true);
+    kd.KDMapData.MapMod = "Elsewhere";
+    assert.equal(kd.KDHostile(spider, neutral), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+});
+
 test("a WebCaster prioritizes visible pending Cocoon reinforcement then returns to its rival", () => {
     const { context: kd, make } = loadRuntime();
     kd.KinkyDungeonPlayerEntity.x = 5;
