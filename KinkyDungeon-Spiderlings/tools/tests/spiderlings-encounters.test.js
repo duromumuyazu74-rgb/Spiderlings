@@ -1867,19 +1867,21 @@ test("native wandering respawn queues stop at the map cap without consuming defe
     );
 });
 
-test("floor weight config defaults and saved zero survive native settings events", () => {
+test("floor weight defaults preserve saved zero, previous defaults and custom values", () => {
     const kd = nativePopulationRuntime();
     for (const [refvar, fallback] of [
         ["spiderlingsInfestationWeight", "50"],
-        ["spiderlingsHuntingGroundsWeight", "750"],
+        ["spiderlingsHuntingGroundsWeight", "1000"],
     ]) {
         const config = kd.KDModConfigs.Spiderlings.find((entry) => entry.type === "string" && entry.refvar === refvar);
         assert.equal(config.default, fallback);
         assert.equal(kd.Spiderlings.getSetting(refvar), fallback);
-        kd.KDModSettings.Spiderlings[refvar] = "0";
-        kd.KDEventMapGeneric.afterModConfig.Spiderlings();
-        kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
-        assert.equal(kd.Spiderlings.getSetting(refvar), "0");
+        for (const saved of ["0", "750", "120"]) {
+            kd.KDModSettings.Spiderlings[refvar] = saved;
+            kd.KDEventMapGeneric.afterModConfig.Spiderlings();
+            kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
+            assert.equal(kd.Spiderlings.getSetting(refvar), saved);
+        }
     }
 });
 

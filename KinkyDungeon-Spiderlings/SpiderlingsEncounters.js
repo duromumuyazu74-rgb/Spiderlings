@@ -48,7 +48,7 @@
             type: "string",
             name: "spiderlingsHuntingGroundsWeight",
             refvar: "spiderlingsHuntingGroundsWeight",
-            default: "750",
+            default: "1000",
             block: undefined,
         },
         { type: "text", refvar: "spiderlingsNestSummonWeights" },

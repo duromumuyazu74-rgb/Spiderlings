@@ -7,7 +7,7 @@
     const KEEP_WEIGHT = 800;
     const settings = {
         SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 50 },
-        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 750 },
+        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 1000 },
     };
 
     function weight(name) {

@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.41 维护说明
+# Spiderlings 0.92.36-test.42 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -29,6 +29,8 @@ test.32 将楼层显示名改为“幼蛛猎场”／Spiderling Hunting Grounds�
 test.34 将五巢“幼蛛侵扰”（`SpiderlingsInfestation`，权重 50）与三巢“幼蛛猎场”（`SpiderlingsHuntingGrounds`，权重 100）作为两个独立地图修饰符装入同一包。test.32 的三巢旧存档按 `garrisonVersion: 2` 迁移到猎场 ID。test.36 修正 test.35 的同阵营幼蛛误锁。test.37 明确猎场是普通幼蛛占领的楼层，沿用其他楼层的幼蛛定义；该层野生幼蛛会巡逻并追捕不同阵营的 NPC，包括友方、商人、任务和 `nocapture` 角色，同阵营目标不会互相锁定。12 格巡逻搜索不再漏掉 `noAttack` NPC，也不会把场景实体当作猎物。最终缠裹仍遵守原生 `KDCapturable` 与持久角色 `alwaysEscape` 限制。旧侵扰层保留原生人口，不受猎场的额外索敌规则影响。
 
 ## 当前测试扩展
+
+test.42 修正 test.41 四区域等量抽样高估女仆占比的问题，改用完整原生普通旅程校准。猎场默认权重从 750 调整为 1000，侵扰保持 50，保留原修饰符保持 800。KD 5.4.92 和本地 KD 5.5 参考运行时各模拟 5,000 局，每套参数各统计 325,000 个合格节点，两种标签均约 5.35%。加入完整旅程概率回归，覆盖原生区域分布。设置需在新开局前调整；现有旅程与已保存配置均保留，旧值 750 可手动改为 1000。
 
 test.39 将 Spinner 捕获场地统一为 `SpiderlingsSpinnerTrap` 的边缘与拐角，按场地几何绘制并支持 Normal/Pink。移除独立地面陷阱及踩点减速，NPC 压盾仍由蛛丝攻击和闭合围场触发。旧 `SpiderlingsSpinnerWebCell` 仅用于原生读档解析，随后迁移为 `SpiderlingsSpinnerTrap`；旧踩点记录及自有减速 Buff 清除，场地归属、耐久和施工状态保留。
 
