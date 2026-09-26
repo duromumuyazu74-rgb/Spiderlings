@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.39 维护说明
+# Spiderlings 0.92.36-test.40 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
@@ -31,6 +31,8 @@ test.34 将五巢“幼蛛侵扰”（`SpiderlingsInfestation`，权重 50）与
 ## 当前测试扩展
 
 test.39 将 Spinner 捕获场地统一为 `SpiderlingsSpinnerTrap` 的边缘与拐角，按场地几何绘制并支持 Normal/Pink。移除独立地面陷阱及踩点减速，NPC 压盾仍由蛛丝攻击和闭合围场触发。旧 `SpiderlingsSpinnerWebCell` 仅用于原生读档解析，随后迁移为 `SpiderlingsSpinnerTrap`；旧踩点记录及自有减速 Buff 清除，场地归属、耐久和施工状态保留。
+
+test.40 修复 PR #97 中两个楼层共用巢穴死亡回调的问题，侵扰和猎场各自保留女仆击破后的额外 Tunneler。猎场按预设实体 ID 保留守卫，避免 postMapgen 第二次人口裁剪误删。test.32 三巢猎场的迁移覆盖 KDWorldMap 缓存地图及其旅程标签，侧房读档后返回也能保留三巢进度；真正的五巢侵扰不变。
 
 test.38 修复 Spinner 施工拥堵：附近没有合法 3×3 围场时搜索更远的可达位置，普通地图不再回退为孤立堵路线。施工路径避开其他角色；实体蛛网带原生结构物标记，使幼蛛通过 KD 的路径条件与占格检查。围场与扩建圈只留同侧入口，猎物进入核心后付费封口，离开后付费重开入口。`SpiderlingsSpinnerWebCell` 是实体蛛网格，现提供本地化名称。旧自主堵路线在规划时改选围场，既有封闭围场保留。
 

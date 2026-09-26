@@ -138,6 +138,72 @@ test("test.32 three-nest save migrates to Hunting Grounds without changing old I
     assert.equal(r.context.KDMapData.SpiderlingsInfestation.target, 5);
 });
 
+test("both loaded modifiers retain their own maid-finished objective death behavior", () => {
+    for (const mod of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
+        const r = runtime({}, [], true),
+            c = r.context;
+        c.KDMapData.MapMod = c.KDGameData.MapMod = mod;
+        r.generate();
+        const nest = c.KDMapData.Entities.find((entity) => entity.id === c.KDMapData[mod].targetIds[0]);
+        const born = [],
+            summon = c.KinkyDungeonSummonEnemy;
+        c.KinkyDungeonSummonEnemy = function (...args) {
+            born.push(args[2]);
+            return summon.apply(this, args);
+        };
+        c.KDOndeath.summon = (enemy, entry) => c.KinkyDungeonSummonEnemy(enemy.x, enemy.y, entry.enemy);
+        nest.Enemy.ondeath = [{ type: "summon", enemy: "Spinner" }];
+        nest.hp -= 20;
+        for (const handler of Object.values(c.KDEventMapGeneric.afterDamageEnemy))
+            handler({}, { enemy: nest, dmgDealt: 20, faction: "Maidforce" });
+        c.KDRemoveEntity(nest, true);
+        assert.deepEqual(born, ["Tunneler", "Spinner"], mod);
+        assert.equal(c.KDMapData[mod].destroyedIds.length, 1);
+    }
+});
+
+test("loading in a side room migrates stored three-nest floors and their own journey slots", () => {
+    const r = runtime({}, [], true),
+        c = r.context;
+    const oldMap = () => ({
+        MapMod: "SpiderlingsInfestation",
+        EscapeMethod: "SpiderlingsInfestation",
+        SpiderlingsInfestation: {
+            status: "active",
+            garrisonVersion: 2,
+            target: 3,
+            targetIds: [1, 2, 3],
+            destroyedIds: [1],
+            complete: false,
+        },
+    });
+    const stored = oldMap();
+    c.KDMapData = { MapMod: "None", RoomType: "Shop" };
+    c.KDGameData.MapMod = "None";
+    c.KDGameData.JourneyX = 8;
+    c.KDGameData.JourneyY = 6;
+    c.KDGameData.JourneyMap = {
+        "2,3": { y: 3, MapMod: "SpiderlingsInfestation", EscapeMethod: "SpiderlingsInfestation", visited: true },
+        "8,6": { y: 6, MapMod: "SpiderlingsInfestation", EscapeMethod: "SpiderlingsInfestation", visited: true },
+    };
+    const five = { MapMod: "SpiderlingsInfestation", SpiderlingsInfestation: { status: "active", target: 5 } };
+    c.KDWorldMap = {
+        "0,3": { jx: 2, jy: 3, data: { "": stored } },
+        "0,6": { jx: 8, jy: 6, data: { "": five, Shop: c.KDMapData } },
+    };
+    r.event("afterLoadGame");
+    assert.equal(stored.MapMod, "SpiderlingsHuntingGrounds");
+    assert.equal(stored.EscapeMethod, "SpiderlingsHuntingGrounds");
+    assert.deepEqual(stored.SpiderlingsHuntingGrounds.destroyedIds, [1]);
+    assert.equal(c.KDGameData.JourneyMap["2,3"].MapMod, "SpiderlingsHuntingGrounds");
+    assert.equal(c.KDGameData.JourneyMap["8,6"].MapMod, "SpiderlingsInfestation");
+    assert.equal(five.MapMod, "SpiderlingsInfestation");
+    assert.equal(c.KDGameData.MapMod, "None");
+    c.KDMapData = JSON.parse(JSON.stringify(stored));
+    assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.minimaptext(), /1\/3/);
+    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), false);
+});
+
 test("native modifier adds three independent nests and twelve attributable guards", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;
@@ -193,7 +259,7 @@ test("task nest damage makes nearby spiders target the maid attacker for a short
     assert.equal(c.Spiderlings.HuntingGrounds.resolveNestDefenderTarget(guard, original), original);
 });
 
-function nativeJourneyRuntime(overrides = {}) {
+function nativeJourneyRuntime(overrides = {}, withOld = false) {
     const game = require("../reference-inputs.js").gamePath("Game/src/map");
     return runtime(
         {
@@ -221,8 +287,41 @@ function nativeJourneyRuntime(overrides = {}) {
                 .replace("let KDMapMods: Record<string, MapMod>", "globalThis.KDMapMods"),
             fs.readFileSync(path.join(game, "KDJourney.ts"), "utf8"),
         ],
+        withOld,
     );
 }
+
+test("both floor labels obey native journey selection together", (t) => {
+    let seed = 1;
+    const r = nativeJourneyRuntime(
+        {
+            CommonRandomItemFromList: () => "Bandit",
+            KDRandom: () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296,
+        },
+        true,
+    );
+    const counts = vm.runInContext(
+        `(() => {
+        KDMapModRefreshList = [KDMapMods.SpiderlingsInfestation, KDMapMods.SpiderlingsHuntingGrounds, KDMapMods.Mold];
+        const early = KDJourneySlotTypes.basic(null, 0, 2, "grv");
+        if (early.MapMod !== "Mold") throw new Error("Early floor reused a spider modifier");
+        KDMapModRefreshList = [];
+        const counts = {};
+        for (let i = 0; i < 30000; i++) {
+            const slot = KDJourneySlotTypes.basic(null, 0, 5, "grv");
+            counts[slot.MapMod] = (counts[slot.MapMod] || 0) + 1;
+            if (slot.MapMod.startsWith("Spiderlings") &&
+                (slot.Faction !== "Maidforce" || slot.EscapeMethod !== slot.MapMod))
+                throw new Error("Spider modifier lost its faction or objective");
+        }
+        return counts;
+    })()`,
+        r.context,
+    );
+    assert.ok(counts.SpiderlingsHuntingGrounds > counts.SpiderlingsInfestation);
+    assert.ok(counts.SpiderlingsInfestation > 0 && counts.Bandit > 0 && counts.None > 0);
+    t.diagnostic(JSON.stringify(counts));
+});
 
 test("native journey rejects a cached infestation below floor three and preserves the maid modifier", () => {
     const r = nativeJourneyRuntime({ CommonRandomItemFromList: () => "Bandit" });
@@ -862,9 +961,9 @@ test("infestation has at most three initial rivals and no wandering rivals", () 
     assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 6);
     assert.ok(c.KDMapData.Entities.includes(shop) && c.KDMapData.Entities.includes(scripted));
     r.event("postMapgen");
-    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 5);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 6);
     c.KinkyDungeonHandleWanderingSpawns();
-    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 5);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 6);
     const ordinary = runtime();
     ordinary.context.KDMapData.MapMod = "None";
     ordinary.context.KDMapData.MapFaction = "Maidforce";
@@ -874,6 +973,23 @@ test("infestation has at most three initial rivals and no wandering rivals", () 
     };
     ordinary.generate();
     assert.equal(ordinary.context.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 6);
+});
+
+test("postMapgen keeps preset maid guards even when they follow three random patrols", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.MapFaction = "Maidforce";
+    let preset;
+    c.populationAction = () => {
+        for (let i = 0; i < 5; i++) c.KinkyDungeonSummonEnemy(10 + i, 10, "MaidforceMini")[0].faction = "Maidforce";
+        preset = c.KinkyDungeonSummonEnemy(20, 20, "MaidforceMini")[0];
+        preset.faction = "Maidforce";
+        preset.runSpawnAI = false;
+    };
+    c.KinkyDungeonPlaceEnemies([{ x: 20, y: 20, AI: "guard", force: true }], false, [], {}, 3, 30, 30, {}, []);
+    r.event("postMapgen");
+    assert.ok(c.KDMapData.Entities.includes(preset), "native preset is not a random patrol");
+    assert.equal(c.KDMapData.Entities.filter((e) => e.faction === "Maidforce").length, 4);
 });
 
 test("post-map generation caps earlier patrols while preserving a shop actor", () => {

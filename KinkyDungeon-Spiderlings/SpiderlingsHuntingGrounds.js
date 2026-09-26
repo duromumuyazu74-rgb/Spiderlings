@@ -262,6 +262,7 @@
     const NEST_PARENT_ID = "SpiderlingsNestParentID";
     const POPULATION_TAGS = ["spiderlings", "maid", "dressmaker"];
     const PRESET_TAG = MOD + "Preset";
+    const presetActorIds = new WeakMap();
     let selectingPopulation = false;
     const populationBonuses = () =>
         Object.fromEntries(
@@ -307,7 +308,8 @@
 
     function trimInfestationPatrol() {
         if (!activeState() || KDMapData.MapMod !== MOD) return;
-        const patrol = KDMapData.Entities.filter(patrolRival);
+        const protectedIds = presetActorIds.get(KDMapData);
+        const patrol = KDMapData.Entities.filter((enemy) => !protectedIds?.has(enemy.id) && patrolRival(enemy));
         for (const enemy of patrol.slice(3)) KDRemoveEntity(enemy, false);
     }
 
@@ -457,27 +459,41 @@
         if (KDMapData.EscapeMethod === MOD) KDMapData.EscapeMethod = "Key";
     }
 
+    function migrateHuntingGrounds(map, slot) {
+        // test.32 saved the three-nest floor under the old Infestation ID.
+        // The garrison marker leaves genuine five-nest saves unchanged.
+        if (map?.MapMod === "SpiderlingsInfestation" && map.SpiderlingsInfestation?.garrisonVersion === 2) {
+            map[FIELD] = map.SpiderlingsInfestation;
+            delete map.SpiderlingsInfestation;
+            map.MapMod = MOD;
+            if (map.EscapeMethod === "SpiderlingsInfestation") map.EscapeMethod = MOD;
+        }
+        if (map?.MapMod !== MOD || map[FIELD]?.garrisonVersion !== 2) return false;
+        if (slot?.MapMod === "SpiderlingsInfestation") {
+            slot.MapMod = MOD;
+            if (slot.EscapeMethod === "SpiderlingsInfestation") slot.EscapeMethod = MOD;
+        }
+        return true;
+    }
+
     function repairEarlyJourneyPreviews() {
         if (typeof KDGameData === "undefined") return;
-        // test.32 saved the three-nest floor under the old Infestation ID.
-        // The garrison marker distinguishes those maps from genuine five-nest
-        // Infestation saves, so only those maps move to the independent ID.
+        // Native room returns restore KDWorldMap without afterLoadGame or
+        // postMapgen. Migrate cached rooms now, including when loading in a shop.
+        if (typeof KDWorldMap !== "undefined")
+            for (const location of Object.values(KDWorldMap)) {
+                const slot = KDGameData.JourneyMap?.[`${location.jx},${location.jy}`];
+                for (const map of Object.values(location.data || {})) migrateHuntingGrounds(map, slot);
+            }
         if (
             typeof KDMapData !== "undefined" &&
-            KDMapData.MapMod === "SpiderlingsInfestation" &&
-            KDMapData.SpiderlingsInfestation?.garrisonVersion === 2
-        ) {
-            KDMapData[FIELD] = KDMapData.SpiderlingsInfestation;
-            delete KDMapData.SpiderlingsInfestation;
-            KDMapData.MapMod = MOD;
-            if (KDMapData.EscapeMethod === "SpiderlingsInfestation") KDMapData.EscapeMethod = MOD;
-            if (KDGameData.MapMod === "SpiderlingsInfestation") KDGameData.MapMod = MOD;
-            const current = KDGameData.JourneyMap?.[`${KDGameData.JourneyX},${KDGameData.JourneyY}`];
-            if (current?.MapMod === "SpiderlingsInfestation") {
-                current.MapMod = MOD;
-                if (current.EscapeMethod === "SpiderlingsInfestation") current.EscapeMethod = MOD;
-            }
-        }
+            migrateHuntingGrounds(
+                KDMapData,
+                KDGameData.JourneyMap?.[`${KDGameData.JourneyX},${KDGameData.JourneyY}`],
+            ) &&
+            KDGameData.MapMod === "SpiderlingsInfestation"
+        )
+            KDGameData.MapMod = MOD;
         for (const slot of Object.values(KDGameData.JourneyMap || {})) {
             if (slot.MapMod !== MOD || slot.visited || !(slot.y < MIN_FLOOR)) continue;
             slot.MapMod = "None";
@@ -720,7 +736,7 @@
     }
 
     const MAID_FINISHER = "SpiderlingsTaskNestMaidFinisher";
-    const ESCAPE_DEATH = "SpiderlingsTaskNestEscape";
+    const ESCAPE_DEATH = "SpiderlingsHuntingGroundsTaskNestEscape";
     const NEST_ATTACKER = "SpiderlingsTaskNestAttacker";
     const DEFENDER_TARGET = "SpiderlingsTaskNestDefenderTarget";
     const DEFENSE_TURNS = 4;
@@ -912,7 +928,19 @@
                 const presetPositions = new Set(args[0].map(key));
                 try {
                     const result = original.apply(this, args);
-                    if (activeState() && KDMapData.MapMod === MOD) trimNewRivals(previousEntities, 3, presetPositions);
+                    if (activeState() && KDMapData.MapMod === MOD) {
+                        // Native postMapgen runs a second cap after population.
+                        // Keep preset identities through that pass, even if they move.
+                        presetActorIds.set(
+                            KDMapData,
+                            new Set(
+                                KDMapData.Entities.filter((enemy) => presetPositions.has(key(enemy))).map(
+                                    (enemy) => enemy.id,
+                                ),
+                            ),
+                        );
+                        trimNewRivals(previousEntities, 3, presetPositions);
+                    }
                     return result;
                 } finally {
                     selectingPopulation = previous;
