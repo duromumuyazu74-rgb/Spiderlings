@@ -73,6 +73,7 @@ const assets = [
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
     "Enemies/MageSpiderlings.png",
+    "Enemies/MageSpiderlingsRegular.png",
     "Enemies/MageSpiderlingsSpellParticles.png",
     "Enemies/MageSpiderlingsSubtleGlow.png",
     "Enemies/MageSpiderlingsReallyGlowy.png",
