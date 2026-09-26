@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Du brauchst 10 Ausdauer. Warten oder einen Trank nutzen 
 SpiderlingsSpinnerWrap,Die Beine werden fünf Weltrunden lang eingewickelt; Arme bleiben unverändert.
 SpiderlingsSpinnerDone,Fertig. Du kannst angreifen, Gegenstände nutzen, langsam gehen oder den Beutel lösen.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Spinner-Probelauf
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Betritt ein flaches Testfeld. Spinner legen Bodenfallen und verbinden sie über Fluchtwege. Erprobe den Wettstreit und fünf Runden Einwickeln.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Betritt ein flaches Testfeld. Spinner bauen ein Fangfeld und schließen den Eingang nach deinem Eintritt. Erprobe den Wettstreit und fünf Runden Einwickeln.
 NameSpiderlingsSilkAnchor,Netzknoten
 KillSpiderlingsSilkAnchor,Die Netzgrenze reißt auf.
-SpiderlingsFieldPreparing,Spinner legen Fallen und verbinden sie über deinen Rückweg. Fliehe vor dem Schließen oder zerschneide eine Verbindung.
-SpiderlingsFieldReady,Zwei Fallen sind verbunden. Die Spinner sperren einen weiteren Fluchtweg.
-SpiderlingsFieldSprung,Die Verbindungen umschließen das Gebiet. Wer noch innen steht kann gefangen werden.
+SpiderlingsFieldPreparing,Spinner bauen die Grenze des Fangfelds. Verlasse es vor dem Schließen des Eingangs oder zerschneide eine Verbindung.
+SpiderlingsFieldReady,Ein Grenzabschnitt ist verbunden. Die Spinner bauen das Fangfeld weiter.
+SpiderlingsFieldSprung,Das Fangfeld ist geschlossen. Spieler im Inneren können gefangen werden.
 SpiderlingsFieldBroken,Ein Knoten reißt. Die Falle und ihre Fäden lösen sich.
 SpiderlingsFieldReset,Versuch zurücksetzen
 SpiderlingsFieldJumper,Springer freilassen
-SpiderlingsFieldStatus,Netzfeld: {phase} · Fallen {count}/4 · Verbindungen {links}/4
+SpiderlingsFieldStatus,Fangfeld: {phase} · Ecken {count}/4 · Verbindungen {links}/4
 SpiderlingsFieldPhasepreparing,Aufbau
 SpiderlingsFieldPhaseready,Verbindung bereit
 SpiderlingsFieldPhasesprung,Geschlossen
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,Abgeschlossen
 SpiderlingsSpinnerWeave,Fesselung: {value}/100
 SpiderlingsSpinnerEscape,Flucht: {value}/{goal}
 SpiderlingsFieldAddSpinner,Spinner hinzufügen
-SpiderlingsFieldTrap,Bodenseide hält deine Füße kurz auf.
 SpiderlingsFieldRebuild,Spinner beginnen in {turns} Weltrunden erneut zu bauen.
-SpiderlingsFieldWaiting,Fallen bereit. Der Westeingang bleibt bis zu deinem Eintritt offen.
+SpiderlingsFieldWaiting,Das Fangfeld ist bereit. Der Westeingang bleibt bis zu deinem Eintritt offen.
 NameMageSpiderlings,Spiderling Mage
-NameSpiderlingsSpinnerWebCell,Gewebtes Netz
+NameSpiderlingsSpinnerTrap,Grenze des Fangfelds
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.

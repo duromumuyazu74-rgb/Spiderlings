@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,체력이 10 필요하다. 기다리거나 물약을 사
 SpiderlingsSpinnerWrap,다리를 감싸는 데 세계 턴 다섯 번이 걸립니다. 팔 상태는 유지됩니다.
 SpiderlingsSpinnerDone,주머니가 완성됐다. 공격, 아이템 사용, 느린 이동 또는 제거가 가능하다.
 KinkyDungeonStatSpiderlingsSpinnerDemo,거미줄 짜기 체험
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,평평한 시험장에서 거미가 바닥 덫을 놓고 서로 연결하여 퇴로를 막는다. 대항과 5턴 감싸기를 시험한다.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,평평한 시험장에서 거미가 포획 구역을 짓고 들어온 뒤 입구를 닫는다. 대항과 5턴 감싸기를 시험한다.
 NameSpiderlingsSilkAnchor,거미줄 매듭
 KillSpiderlingsSilkAnchor,거미줄 경계가 찢어집니다.
-SpiderlingsFieldPreparing,거미는 덫을 놓은 뒤 연결하여 퇴로를 막는다. 닫히기 전에 나가거나 연결을 끊자.
-SpiderlingsFieldReady,두 덫이 연결되었다. 거미는 다른 퇴로를 막는다.
-SpiderlingsFieldSprung,연결된 덫이 구역을 둘러쌌다. 안에 남으면 포획될 수 있다.
+SpiderlingsFieldPreparing,거미가 포획 구역의 경계를 짓고 있다. 입구가 닫히기 전에 나가거나 연결을 끊자.
+SpiderlingsFieldReady,경계 일부가 연결되었다. 거미는 포획 구역을 계속 짓는다.
+SpiderlingsFieldSprung,포획 구역이 닫혔다. 안에 남은 플레이어는 포획될 수 있다.
 SpiderlingsFieldBroken,매듭이 끊어져 덫과 구속이 풀립니다.
 SpiderlingsFieldReset,시험 초기화
 SpiderlingsFieldJumper,도약 거미 풀기
-SpiderlingsFieldStatus,거미줄 구역: {phase} · 덫 {count}/4 · 연결 {links}/4
+SpiderlingsFieldStatus,포획 구역: {phase} · 모서리 {count}/4 · 연결 {links}/4
 SpiderlingsFieldPhasepreparing,준비 중
 SpiderlingsFieldPhaseready,연결 준비
 SpiderlingsFieldPhasesprung,폐쇄 완료
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,완료
 SpiderlingsSpinnerWeave,구속: {value}/100
 SpiderlingsSpinnerEscape,탈출: {value}/{goal}
 SpiderlingsFieldAddSpinner,Spinner 추가
-SpiderlingsFieldTrap,바닥 거미줄이 발을 붙잡아 잠시 이동을 늦춘다.
 SpiderlingsFieldRebuild,{turns} 월드 턴 후 거미들이 다시 설치를 시작한다.
-SpiderlingsFieldWaiting,함정 준비 완료. 들어올 때까지 서쪽 입구는 열려 있다.
+SpiderlingsFieldWaiting,포획 구역 준비 완료. 들어올 때까지 서쪽 입구는 열려 있다.
 NameMageSpiderlings,Spiderling Mage
-NameSpiderlingsSpinnerWebCell,짜인 거미줄
+NameSpiderlingsSpinnerTrap,포획 구역 경계
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.

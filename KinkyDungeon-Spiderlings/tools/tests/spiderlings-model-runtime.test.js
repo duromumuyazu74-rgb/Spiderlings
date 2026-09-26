@@ -218,18 +218,18 @@ test("Pink mode selects matching art for Spinner web-cell enemies", () => {
             return {};
         },
     });
-    for (const name of ["SpiderlingsSpinnerWebCell", "SpiderlingsSilkAnchor"])
+    for (const name of ["SpiderlingsSpinnerTrap", "SpiderlingsSilkAnchor"])
         context.KDDraw({}, new Map(), `spr_${name}`, `Game/Enemies/${name}.png`);
     assert.deepEqual(images, [
-        "Game/Enemies/SpiderlingsSpinnerWebCellPink.png",
+        "Game/Enemies/SpiderlingsSpinnerTrapPink.png",
         "Game/Enemies/SpiderlingsSilkAnchorPink.png",
     ]);
     images.length = 0;
     context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     context.KDEventMapGeneric.afterModConfig.Spiderlings();
-    for (const name of ["SpiderlingsSpinnerWebCell", "SpiderlingsSilkAnchor"])
+    for (const name of ["SpiderlingsSpinnerTrap", "SpiderlingsSilkAnchor"])
         context.KDDraw({}, new Map(), `spr_${name}`, `Game/Enemies/${name}.png`);
-    assert.deepEqual(images, ["Game/Enemies/SpiderlingsSpinnerWebCell.png", "Game/Enemies/SpiderlingsSilkAnchor.png"]);
+    assert.deepEqual(images, ["Game/Enemies/SpiderlingsSpinnerTrap.png", "Game/Enemies/SpiderlingsSilkAnchor.png"]);
 });
 
 test("both color atlases preload before equipment, reuse textures on switching, and fail independently", async () => {

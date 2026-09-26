@@ -110,6 +110,7 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             api.WebMobility?.invalidateNavigation(true);
             api.SpinnerAI?.restoreAfterLoad();
+            api.SpinnerNativeField.afterLoad?.();
             api.SpinnerNativeField.reconcile();
             api.SpinnerRecovery?.afterLoad();
             api.SpinnerNPCCapture?.afterLoad();

@@ -4,9 +4,9 @@
 (() => {
     const api = globalThis.Spiderlings,
         KEY = "SpiderlingsSpinnerEncounter",
-        PROXY = "SpiderlingsSpinnerWebCell",
-        PATH = "SpiderlingsWebTraversal",
-        SNARE = "SpiderlingsSpinnerSnaringSilk";
+        PROXY = "SpiderlingsSpinnerTrap",
+        LEGACY_PROXY = "SpiderlingsSpinnerWebCell",
+        PATH = "SpiderlingsWebTraversal";
     const topology = () => api.SpinnerTopology;
     const state = (map = KDMapData) => map?.[KEY];
     const cellKey = (cell) => `${cell.x},${cell.y}`;
@@ -39,7 +39,7 @@
     }
 
     function isOwnedProxy(entity) {
-        return entity?.Enemy?.name === PROXY && !!proxyMarker(entity);
+        return [PROXY, LEGACY_PROXY].includes(entity?.Enemy?.name) && !!proxyMarker(entity);
     }
 
     function invalidateNavigation() {
@@ -116,6 +116,7 @@
             }
             enemy.x = physical.x;
             enemy.y = physical.y;
+            enemy.Enemy = KinkyDungeonEnemies.find((definition) => definition.name === PROXY);
             enemy.hp = hpAtCell(field, physical);
             enemy.maxhp = enemy.hp;
             enemy.hostile = 999;
@@ -472,29 +473,26 @@
         }
     }
 
-    function onEntry(entity, x, y) {
+    function onEntry(entity) {
         const encounter = state(),
             id = targetId(entity);
         if (!encounter?.topology || id === undefined) return false;
         updatePreyTargets(encounter.topology);
-        const consumed = topology().consumeSnare(encounter.topology, id, { x, y });
-        encounter.topology = consumed.state;
-        if (!consumed.outcome.snared) return false;
-        KinkyDungeonApplyBuffToEntity(entity, { id: SNARE, type: "MoveSpeed", power: -1, duration: 2 });
-        if (!entity.player && entity.shield > 0) {
-            const anchorId = consumed.effects.find((effect) => effect.type === "snareTarget")?.anchorId;
-            const anchor = encounter.topology.anchors.find((candidate) => candidate.id === anchorId);
-            if (
-                anchor?.owners.some((fieldId) =>
-                    fieldOwners(fieldId).some((ownerId) => {
-                        const owner = KDMapData.Entities.find((candidate) => candidate.id === ownerId);
-                        return owner?.hp > 0 && isSpiderling(owner) && KDHostile(owner, entity);
-                    }),
-                )
-            )
-                api.Combat?.pressureNPCShield(entity);
+        return false;
+    }
+
+    function afterLoad() {
+        const encounter = state();
+        if (encounter?.topology) encounter.topology = topology().restore(encounter.topology);
+        if (typeof KinkyDungeonPlayerBuffs !== "undefined") {
+            delete KinkyDungeonPlayerBuffs.SpiderlingsSpinnerSnaringSilk;
+            delete KinkyDungeonPlayerBuffs.SpiderlingsSpinnerGroundTrap;
         }
-        return true;
+        for (const entity of [KinkyDungeonPlayerEntity, ...KDMapData.Entities]) {
+            if (!entity?.buffs) continue;
+            delete entity.buffs.SpiderlingsSpinnerSnaringSilk;
+            delete entity.buffs.SpiderlingsSpinnerGroundTrap;
+        }
     }
 
     function activeOwnerIds(field) {
@@ -632,37 +630,119 @@
         );
     }
 
-    if (typeof KinkyDungeonEnemies !== "undefined" && !KinkyDungeonEnemies.some((enemy) => enemy.name === PROXY)) {
-        const base = KinkyDungeonEnemies.find((enemy) => enemy.name === "IceWall") || {};
-        KinkyDungeonEnemies.push({
-            ...base,
-            name: PROXY,
-            faction: "Enemy",
-            regen: 0,
-            maxhp: 2,
-            armor: 0,
-            evasion: -100,
-            immobile: false,
-            pathcondition: PATH,
-            AI: "wander",
-            attack: "",
-            attackRange: 0,
-            visionRadius: 0,
-            movePoints: 1000,
-            attackPoints: 0,
-            weight: 0,
-            dropTable: [],
-            events: [],
-            // Native CanSwapWith still needs structure admission after a successful pathcondition query.
-            tags: KDMapInit(["scenery", "construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
-        });
+    // Select border pieces from the declared perimeter; drawing never edits construction or HP.
+    function borderArtwork(graph, cell) {
+        const parts = new Map();
+        const add = (part, rotation) => parts.set(`${part}:${rotation}`, { part, rotation });
+        for (const field of [...Object.values(graph.fields || {}), ...Object.values(graph.lineFields || {})]) {
+            const area = field.vertices.reduce((sum, vertex, index, vertices) => {
+                const next = vertices[(index + 1) % vertices.length];
+                return sum + vertex.x * next.y - next.x * vertex.y;
+            }, 0);
+            const vertices = field.kind !== "line" && area < 0 ? [...field.vertices].reverse() : field.vertices,
+                corner = vertices.findIndex((vertex) => cellKey(vertex) === cellKey(cell));
+            if (field.kind !== "line" && corner >= 0) {
+                const here = vertices[corner],
+                    neighbors = [
+                        vertices[(corner + vertices.length - 1) % vertices.length],
+                        vertices[(corner + 1) % vertices.length],
+                    ],
+                    directions = neighbors.map(
+                        (vertex) => `${Math.sign(vertex.x - here.x)},${Math.sign(vertex.y - here.y)}`,
+                    );
+                // The unrotated corner has legs facing up and right.
+                const rotations = [
+                    ["0,-1", "1,0"],
+                    ["1,0", "0,1"],
+                    ["0,1", "-1,0"],
+                    ["-1,0", "0,-1"],
+                ];
+                const quarter = rotations.findIndex((legs) => legs.every((leg) => directions.includes(leg)));
+                if (quarter >= 0) add("Corner", (quarter * Math.PI) / 2);
+                continue;
+            }
+            const edges = field.kind === "line" ? vertices.length - 1 : vertices.length;
+            for (let i = 0; i < edges; i++) {
+                const a = vertices[i],
+                    b = vertices[(i + 1) % vertices.length];
+                if (
+                    cell.x < Math.min(a.x, b.x) ||
+                    cell.x > Math.max(a.x, b.x) ||
+                    cell.y < Math.min(a.y, b.y) ||
+                    cell.y > Math.max(a.y, b.y)
+                )
+                    continue;
+                add(a.y === b.y ? "Top" : "Side", a.y === b.y ? (b.x < a.x ? Math.PI : 0) : b.y > a.y ? Math.PI : 0);
+            }
+        }
+        return [...parts.values()];
     }
+
+    if (typeof KDDrawEnemySprite === "function") {
+        const nativeDraw = KDDrawEnemySprite;
+        KDDrawEnemySprite = function (board, enemy, tx, ty, CamX, CamY, StaticView, zIndex = 0, id = "") {
+            let graph = state()?.topology;
+            const legacy = api.SpinnerField?.field?.();
+            const owned = isOwnedProxy(enemy) && proxyMarker(enemy).fieldId === graph?.fieldId;
+            const trainingNode =
+                enemy?.Enemy?.name === "SpiderlingsSilkAnchor" && legacy?.nodes?.some((node) => node.id === enemy.id);
+            if (!owned && !trainingNode) return nativeDraw.apply(this, arguments);
+            if (trainingNode) graph = { fields: { training: { kind: "enclosure", vertices: legacy.traps } } };
+            const size = KinkyDungeonGridSizeDisplay,
+                color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
+                parts = borderArtwork(graph, enemy);
+            for (const [index, art] of parts.entries())
+                KDDraw(
+                    board,
+                    kdpixisprites,
+                    `spr_${enemy.id}${id}_border_${index}`,
+                    KinkyDungeonRootDirectory + `Bullets/SpiderlingsSpinnerTrap${art.part}${color}.png`,
+                    (tx - CamX + 0.5) * size,
+                    (ty - CamY + 0.5) * size,
+                    size,
+                    size,
+                    art.rotation,
+                    { zIndex },
+                    true,
+                );
+            return enemy.Enemy.name;
+        };
+    }
+
+    // The old name is registered only so native save hydration can resolve it before migration.
+    for (const name of [PROXY, LEGACY_PROXY])
+        if (typeof KinkyDungeonEnemies !== "undefined" && !KinkyDungeonEnemies.some((enemy) => enemy.name === name)) {
+            const base = KinkyDungeonEnemies.find((enemy) => enemy.name === "IceWall") || {};
+            KinkyDungeonEnemies.push({
+                ...base,
+                name,
+                faction: "Enemy",
+                regen: 0,
+                maxhp: 2,
+                armor: 0,
+                evasion: -100,
+                immobile: false,
+                pathcondition: PATH,
+                AI: "wander",
+                attack: "",
+                attackRange: 0,
+                visionRadius: 0,
+                movePoints: 1000,
+                attackPoints: 0,
+                weight: 0,
+                dropTable: [],
+                events: [],
+                // Native CanSwapWith still needs structure admission after a successful pathcondition query.
+                tags: KDMapInit(["scenery", "construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
+            });
+        }
     if (typeof KDModFiles !== "undefined") {
         for (const prefix of ["", typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : ""])
             for (const color of ["", "Pink"])
-                KDModFiles[prefix + "Enemies/" + PROXY + color + ".png"] =
-                    KDModFiles[prefix + "Bullets/WebSprayTrail" + color + ".png"] ||
-                    KDModFiles["Bullets/WebSprayTrail" + color + ".png"];
+                for (const name of [PROXY, LEGACY_PROXY])
+                    KDModFiles[prefix + "Enemies/" + name + color + ".png"] =
+                        KDModFiles[prefix + "Bullets/SpiderlingsSpinnerTrapTop" + color + ".png"] ||
+                        KDModFiles["Bullets/SpiderlingsSpinnerTrapTop" + color + ".png"];
     }
     if (typeof KDPathConditions !== "undefined")
         KDPathConditions[PATH] = { query: canTraverse, doPassthrough: passThrough };
@@ -671,7 +751,6 @@
         KEY,
         PROXY,
         PATH,
-        SNARE,
         state,
         snapshot,
         fieldById,
@@ -688,6 +767,7 @@
         handleEnemyTurn,
         onNativeDamage,
         onEntry,
+        afterLoad,
         tick,
         reconcile,
         invalidateNavigation,

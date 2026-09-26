@@ -37,7 +37,7 @@ test("native swap admission allows an owned web structure after its spider-only 
             hp: 2,
             x: 3,
             y: 3,
-            Enemy: c.KinkyDungeonEnemies.find((enemy) => enemy.name === "SpiderlingsSpinnerWebCell"),
+            Enemy: c.KinkyDungeonEnemies.find((enemy) => enemy.name === "SpiderlingsSpinnerTrap"),
             SpiderlingsSpinnerProxy: { fieldId: "native-admission", cell: "3,3" },
         },
         spider = { id: 1, hp: 3, x: 2, y: 3, idle: true, Enemy: { tags: { spiderlings: true } } },

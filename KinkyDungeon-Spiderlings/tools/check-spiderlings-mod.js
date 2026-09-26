@@ -1772,7 +1772,6 @@ function checkTranslations(state) {
         "SpiderlingsFieldRebuild",
         "SpiderlingsFieldWaiting",
         "SpiderlingsFieldAddSpinner",
-        "SpiderlingsFieldTrap",
         ...["preparing", "ready", "sprung", "broken", "complete"].map((p) => "SpiderlingsFieldPhase" + p),
     );
     const pairedGateKey = "KinkyDungeonSpiderlingsWebbingLv1Covered";

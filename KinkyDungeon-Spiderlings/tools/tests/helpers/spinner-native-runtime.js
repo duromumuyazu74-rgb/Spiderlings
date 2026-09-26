@@ -8,7 +8,7 @@ const { modRoot } = require("./lifecycle-runtime.js");
 const load = (context, file) =>
     vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
 
-function runtime() {
+function runtime(overrides = {}) {
     let nextId = 100;
     const tiles = new Map(),
         buffs = [],
@@ -38,7 +38,11 @@ function runtime() {
             KinkyDungeonCurrentTick: 5,
             KinkyDungeonRootDirectory: "Game/",
             KinkyDungeonFlags: new Map(),
-            KDModFiles: { "Bullets/WebSprayTrail.png": {}, "Bullets/WebSprayTrailPink.png": {} },
+            KDModFiles: Object.fromEntries(
+                ["Top", "Side", "Corner"].flatMap((part) =>
+                    ["", "Pink"].map((color) => [`Bullets/SpiderlingsSpinnerTrap${part}${color}.png`, {}]),
+                ),
+            ),
             KDPathConditions: {},
             KDInputTypes: {},
             KDEventMapGeneric: {},
@@ -96,6 +100,7 @@ function runtime() {
                 map[trigger][name] = handler;
             },
         };
+    Object.assign(context, overrides);
     context.globalThis = context;
     context.window = context;
     vm.createContext(context);

@@ -6,7 +6,6 @@
         ROOM = "SpiderlingsSpinnerTraining",
         KEY = "SpiderlingsSpinnerField";
     const WALL = "SpiderlingsSilkAnchor",
-        TRAP = "SpiderlingsSpinnerGroundTrap",
         CONFIG = Object.freeze({
             width: 31,
             height: 21,
@@ -22,17 +21,16 @@
         NameSpiderlingsSilkAnchor: "Web knot",
         KillSpiderlingsSilkAnchor: "The web boundary tears open.",
         SpiderlingsFieldPreparing:
-            "Spinners place ground traps, then connect pairs across your retreat. Leave before the web closes, or cut a connection.",
-        SpiderlingsFieldReady: "A pair of traps is connected. The Spinners prepare another escape route.",
-        SpiderlingsFieldSprung: "The trap connections enclose the area. Players still inside can be captured.",
-        SpiderlingsFieldTrap: "Ground silk catches your feet, briefly slowing your movement.",
+            "Spinners build the capture field boundary. Leave through its entrance before it closes, or cut a connection.",
+        SpiderlingsFieldReady: "A boundary connection is complete. The Spinners continue building the capture field.",
+        SpiderlingsFieldSprung: "The capture field is enclosed. Players still inside can be captured.",
         SpiderlingsFieldBroken: "A knot breaks. The trap collapses and the threads release you.",
         SpiderlingsFieldReset: "Reset trial",
         SpiderlingsFieldJumper: "Release Jumper",
         SpiderlingsFieldAddSpinner: "Add Spinner",
-        SpiderlingsFieldStatus: "Web field: {phase} · traps {count}/4 · connections {links}/4",
+        SpiderlingsFieldStatus: "Capture field: {phase} · corners {count}/4 · connections {links}/4",
         SpiderlingsFieldRebuild: "Spinners resume building in {turns} world turns.",
-        SpiderlingsFieldWaiting: "Traps prepared. The western entrance stays open until you enter.",
+        SpiderlingsFieldWaiting: "The capture field is ready. The western entrance stays open until you enter.",
     };
     for (const [key, text] of Object.entries(messages)) if (typeof addTextKey === "function") addTextKey(key, text);
     function say(key) {
@@ -66,8 +64,8 @@
         for (const prefix of ["", typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : ""])
             for (const color of ["", "Pink"])
                 KDModFiles[prefix + "Enemies/" + WALL + color + ".png"] =
-                    KDModFiles[prefix + "Bullets/WebSprayTrail" + color + ".png"] ||
-                    KDModFiles["Bullets/WebSprayTrail" + color + ".png"];
+                    KDModFiles[prefix + "Bullets/SpiderlingsSpinnerTrapTop" + color + ".png"] ||
+                    KDModFiles["Bullets/SpiderlingsSpinnerTrapTop" + color + ".png"];
     }
     function clearDrawing() {
         if (drawing && !drawing.destroyed) {
@@ -222,13 +220,6 @@
             !(e.channel > 0)
         );
     }
-    if (typeof KDTrapTypes !== "undefined")
-        KDTrapTypes[TRAP] = (tile, entity) => {
-            if (entity !== KinkyDungeonPlayerEntity || tile.SpinnerSpent) return { triggered: false, msg: "" };
-            tile.SpinnerSpent = true;
-            KinkyDungeonApplyBuffToEntity(entity, { id: TRAP, type: "MoveSpeed", power: -1, duration: 2 });
-            return { triggered: true, msg: TextGet("SpiderlingsFieldTrap") };
-        };
     function linkCells(f, link) {
         const a = f.traps[link.a],
             b = f.traps[link.b],
@@ -316,7 +307,7 @@
             ) {
                 const key = missing.x + "," + missing.y;
                 if (!KinkyDungeonTilesGet(key)) {
-                    KinkyDungeonTilesSet(key, { Type: "Trap", Trap: TRAP, SpinnerTrap: KEY });
+                    KinkyDungeonTilesSet(key, { SpinnerTrap: KEY });
                     missing.placed = true;
                     missing.owner = enemy.id;
                     missing.turn = KinkyDungeonCurrentTick;
@@ -523,6 +514,14 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             clearDrawing();
             const f = field();
+            for (const corner of f?.traps || []) {
+                const tile = KinkyDungeonTilesGet(corner.x + "," + corner.y);
+                if (tile?.SpinnerTrap === KEY && tile.Trap === "SpiderlingsSpinnerGroundTrap") {
+                    delete tile.Type;
+                    delete tile.Trap;
+                    delete tile.SpinnerSpent;
+                }
+            }
             if (f?.links?.length === 4) f.links[3].entrance = true;
             audit();
         });
@@ -601,20 +600,12 @@
                     }
                 for (let i = 0; i < f.traps.length; i++)
                     if (f.links[i]?.built && f.links[(i + f.traps.length - 1) % f.traps.length]?.built)
-                        // Source corner has its straight legs on the left and bottom.
+                        // Source corner has its straight legs facing up and right.
                         // The first trap is the top-left corner, so rotate it once.
                         border(f.traps[i], "Corner", ((i + 1) * Math.PI) / 2);
                 for (const n of f.nodes.filter((n) => n.weak)) {
                     const [x, y] = xy(n);
                     drawing.lineStyle(3, 0xffd76a, 1).drawCircle(x + size / 2, y + size / 2, size * 0.22);
-                }
-                for (const t of f.traps.filter((t) => t.placed)) {
-                    const [x, y] = xy(t);
-                    drawing.lineStyle(2, 0xffffff, 0.8);
-                    for (let i = 1; i < 4; i++) {
-                        drawing.moveTo(x + 5, y + (i * size) / 4).lineTo(x + size - 5, y + (i * size) / 4);
-                        drawing.moveTo(x + (i * size) / 4, y + 5).lineTo(x + (i * size) / 4, y + size - 5);
-                    }
                 }
             }
             DrawTextKD(
