@@ -123,13 +123,13 @@ RestraintSpiderlingsWebbingCocoonDesc,Gęsty jedwab otacza ciało grubym kokonem
 RestraintSpiderlingsWebbingCocoonDesc2,Ściana kokonu drży przy każdym skręcie. Wleczone nici szeleszczą po podłodze, jakby niosły w ciemność poruszenia z jego wnętrza.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 leży pod TargetLv2; dotykasz jedynie lepkiego jedwabiu na wierzchu.
 KinkyDungeonSpiderlingsCocoonAnchored,Młode pająki rozpinają sieci wokół kokonu i mocno przytwierdzają cię do miejsca!
-KDMapMod_SpiderlingsInfestation,Inwazja małych pająków
-KinkyDungeonMapModSpiderlingsInfestation,Jedwab pełznie po kątach, a w cieniach szelest odpowiada szelestowi. To miejsce od dawna ma innych mieszkańców.
-KDEscapeMethod_SpiderlingsInfestation,Zniszcz oznaczone gniazda
-KDEscapeMethodDesc_SpiderlingsInfestation,Gniazda, które jako pierwsze zajęły to miejsce, wciąż poruszają się w ciemności; z głębi wejść dobiega ciche skrobanie.
-SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/TARGET
-SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/TARGET)
-SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (TARGET/TARGET)
+KDMapMod_SpiderlingsHuntingGrounds,Teren łowiecki małych pająków
+KinkyDungeonMapModSpiderlingsHuntingGrounds,Miękka pajęczyna pokrywa całe piętro. Małe pająki krążą między gniazdami, a szelest podąża za tobą wąskimi korytarzami.
+KDEscapeMethod_SpiderlingsHuntingGrounds,Zniszcz oznaczone gniazda
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Gniazda, które jako pierwsze zajęły to miejsce, wciąż poruszają się w ciemności; z głębi wejść dobiega ciche skrobanie.
+SpiderlingsHuntingGroundsProgress,Zniszczone oznaczone gniazda: CURRENT/TARGET
+SpiderlingsHuntingGroundsBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Różowa pajęczyna (wył.: oryginalna)
 KDModButtonspiderlingsEnableHood,Jedwabny kaptur pająków (wył.: nie zakładaj)
 KinkyDungeonSpiderlingsWebbingInterwoven,Krzyżujące się nici zaciskają się i krępują kolejną część twojego ciała.
@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Potrzebujesz 10 wytrzymałości. Możesz czekać lub uż
 SpiderlingsSpinnerWrap,Owijanie nóg trwa pięć tur świata; stan ramion pozostaje bez zmian.
 SpiderlingsSpinnerDone,Worek gotowy. Możesz atakować, używać przedmiotów, powoli chodzić lub go zdjąć.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Próba tkających pająków
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Wejdź na płaskie pole prób. Tkacze kładą pułapki i łączą je przez drogi odwrotu. Wypróbuj walkę i pięć tur owijania.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Wejdź na płaskie pole prób. Tkacze budują pole schwytania i zamykają wejście po twoim wejściu. Wypróbuj walkę i pięć tur owijania.
 NameSpiderlingsSilkAnchor,Węzeł pajęczyny
 KillSpiderlingsSilkAnchor,Granica pajęczyny pęka.
-SpiderlingsFieldPreparing,Tkacze kładą pułapki i łączą je na drodze odwrotu. Ucieknij przed zamknięciem lub przetnij połączenie.
-SpiderlingsFieldReady,Dwie pułapki połączone. Tkacze blokują kolejną drogę odwrotu.
-SpiderlingsFieldSprung,Połączenia otaczają obszar. Gracz wewnątrz może zostać schwytany.
+SpiderlingsFieldPreparing,Tkacze budują granicę pola schwytania. Wyjdź przed zamknięciem wejścia lub przetnij połączenie.
+SpiderlingsFieldReady,Część granicy jest połączona. Tkacze kontynuują budowę pola.
+SpiderlingsFieldSprung,Pole schwytania jest zamknięte. Gracz wewnątrz może zostać schwytany.
 SpiderlingsFieldBroken,Węzeł pęka; pułapka uwalnia cię.
 SpiderlingsFieldReset,Zresetuj próbę
 SpiderlingsFieldJumper,Wypuść skoczka
-SpiderlingsFieldStatus,Pole: {phase} · pułapki {count}/4 · połączenia {links}/4
+SpiderlingsFieldStatus,Pole schwytania: {phase} · narożniki {count}/4 · połączenia {links}/4
 SpiderlingsFieldPhasepreparing,Budowa
 SpiderlingsFieldPhaseready,Łączenie
 SpiderlingsFieldPhasesprung,Zamknięte
@@ -186,10 +186,10 @@ SpiderlingsFieldPhasecomplete,Ukończona
 SpiderlingsSpinnerWeave,Więzy: {value}/100
 SpiderlingsSpinnerEscape,Ucieczka: {value}/{goal}
 SpiderlingsFieldAddSpinner,Dodaj Spinnera
-SpiderlingsFieldTrap,Jedwab na ziemi na chwilę spowalnia twoje kroki.
 SpiderlingsFieldRebuild,Tkacze zaczną odbudowę za {turns} tur świata.
-SpiderlingsFieldWaiting,Pułapki gotowe. Zachodnie wejście pozostaje otwarte aż wejdziesz.
+SpiderlingsFieldWaiting,Pole jest gotowe. Zachodnie wejście pozostaje otwarte aż wejdziesz.
 NameMageSpiderlings,Spiderling Mage
+NameSpiderlingsSpinnerTrap,Granica pola schwytania
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
@@ -199,3 +199,16 @@ KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
 KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage traces a wide sigil across the ground.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers at the edge of a broad spell circle.
+SpiderlingsNPCAdhesionInitial,Unieruchomiony
+SpiderlingsNPCAdhesionFull,Spętany jedwabiem
+SpiderlingsNPCAdhesionHelpless,Bezbronny
+SpiderlingsNPCWrapping,Owijanie
+KDMapMod_SpiderlingsInfestation,Inwazja małych pająków
+KinkyDungeonMapModSpiderlingsInfestation,Jedwab pełznie po kątach, a w cieniach szelest odpowiada szelestowi. To miejsce od dawna ma innych mieszkańców.
+KDEscapeMethod_SpiderlingsInfestation,Zniszcz oznaczone gniazda
+KDEscapeMethodDesc_SpiderlingsInfestation,Gniazda, które jako pierwsze zajęły to miejsce, wciąż poruszają się w ciemności; z głębi wejść dobiega ciche skrobanie.
+SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/5
+SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/5)
+SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (5/5)
+KDModButtonspiderlingsInfestationWeight,Waga inwazji (0: wyłączona)
+KDModButtonspiderlingsHuntingGroundsWeight,Waga łowiska - tylko Maidforce (0: wyłączone)

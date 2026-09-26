@@ -35,6 +35,22 @@
             default: "25",
             block: undefined,
         },
+        { type: "text", refvar: "spiderlingsInfestationWeight" },
+        {
+            type: "string",
+            name: "spiderlingsInfestationWeight",
+            refvar: "spiderlingsInfestationWeight",
+            default: "50",
+            block: undefined,
+        },
+        { type: "text", refvar: "spiderlingsHuntingGroundsWeight" },
+        {
+            type: "string",
+            name: "spiderlingsHuntingGroundsWeight",
+            refvar: "spiderlingsHuntingGroundsWeight",
+            default: "1000",
+            block: undefined,
+        },
         { type: "text", refvar: "spiderlingsNestSummonWeights" },
         {
             type: "range",
@@ -603,7 +619,8 @@
             const floor = typeof MiniGameKinkyDungeonLevel !== "undefined" ? MiniGameKinkyDungeonLevel : args[1];
             if (!mageEligible(floor, security)) args[7] = [...(args[7] || []), MAGE];
             else {
-                const infestation = typeof KDMapData !== "undefined" && KDMapData?.MapMod === "SpiderlingsInfestation";
+                const infestation =
+                    typeof KDMapData !== "undefined" && KDMapData?.MapMod === "SpiderlingsHuntingGrounds";
                 const callerMageBonus = args[6]?.[MAGE];
                 args[6] = {
                     ...(args[6] || {}),
@@ -729,6 +746,8 @@
         addTextKey("KDModButtonspiderlingsSquad", "Fixed spiderling squad");
         addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Autonomous Spinner encounters");
         addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiders per map (0: unlimited)");
+        addTextKey("KDModButtonspiderlingsInfestationWeight", "Infestation weight (0: off)");
+        addTextKey("KDModButtonspiderlingsHuntingGroundsWeight", "Hunting Grounds weight - Maidforce only (0: off)");
         addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement type weights");
         addTextKey("KDModButtonspiderlingsNestSpinnerWeight", "Spinner weight");
         addTextKey("KDModButtonspiderlingsNestJumperWeight", "Jumper weight");
@@ -996,7 +1015,7 @@
             return 0;
 
         const cap = api.getNestReinforcementCap();
-        const infestation = KDMapData.SpiderlingsInfestation;
+        const infestation = KDMapData.SpiderlingsHuntingGrounds;
         const tunnelerCap = api.getNestTunnelerCap();
         const interval = api.getNestReinforcementInterval();
         const weights = normalizeSpiderlingWeights(api.getSharedSpiderlingWeights());
@@ -1026,7 +1045,7 @@
                 interval,
                 cap:
                     infestation?.status === "active" &&
-                    infestation.garrisonVersion === 1 &&
+                    infestation.garrisonVersion >= 1 &&
                     infestation.targetIds?.includes(nest.id)
                         ? Math.min(cap, 4)
                         : cap,

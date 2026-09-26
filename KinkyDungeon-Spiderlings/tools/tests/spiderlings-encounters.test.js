@@ -205,7 +205,7 @@ test("Mage selector preserves native tags and filters its unique ID below both t
     kd.KinkyDungeonGetEnemy([], 4, "grv", ".", [], undefined, { MageSpiderlings: { bonus: 2, mult: 0.5 } });
     assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 5);
     assert.equal(calls.at(-1)[6].MageSpiderlings.mult, 0.5);
-    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
     kd.KinkyDungeonGetEnemy([], 4, "grv", ".");
     assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 4);
     kd.MiniGameKinkyDungeonLevel = 5;
@@ -1558,8 +1558,8 @@ test("only original three-nest objectives have a four-guard living cap", () => {
     let nextId = 200;
     const c = loadCoreRuntime({
         KDMapData: {
-            Entities: [task, ...children(11, 3)],
-            SpiderlingsInfestation: { status: "active", garrisonVersion: 1, targetIds: [11] },
+            Entities: [task, ...children(11, 4)],
+            SpiderlingsHuntingGrounds: { status: "active", garrisonVersion: 2, targetIds: [11] },
         },
         KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
         KDHostile: () => true,
@@ -1574,7 +1574,10 @@ test("only original three-nest objectives have a four-guard living cap", () => {
         },
     });
     const tick = () => c.Spiderlings.runNestReinforcements("afterEnemyTick", { allied: false, delta: 2 });
-    assert.equal(tick(), 1);
+    c.KDMapData.Entities[1].x = 30;
+    assert.equal(tick(), 0, "a guard leaving the nest still occupies its parent quota");
+    c.KDMapData.Entities.splice(1, 1);
+    assert.equal(tick(), 1, "removing a guard frees one slot");
     assert.equal(c.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === 11).length, 4);
     assert.equal(tick(), 0);
     c.KDMapData.Entities = [ordinary, ...children(12, 4)];
@@ -1862,6 +1865,24 @@ test("native wandering respawn queues stop at the map cap without consuming defe
         "Spinner",
         "ordinary definition lookup remains available at cap",
     );
+});
+
+test("floor weight defaults preserve saved zero, previous defaults and custom values", () => {
+    const kd = nativePopulationRuntime();
+    for (const [refvar, fallback] of [
+        ["spiderlingsInfestationWeight", "50"],
+        ["spiderlingsHuntingGroundsWeight", "1000"],
+    ]) {
+        const config = kd.KDModConfigs.Spiderlings.find((entry) => entry.type === "string" && entry.refvar === refvar);
+        assert.equal(config.default, fallback);
+        assert.equal(kd.Spiderlings.getSetting(refvar), fallback);
+        for (const saved of ["0", "750", "120"]) {
+            kd.KDModSettings.Spiderlings[refvar] = saved;
+            kd.KDEventMapGeneric.afterModConfig.Spiderlings();
+            kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
+            assert.equal(kd.Spiderlings.getSetting(refvar), saved);
+        }
+    }
 });
 
 test("new settings allow exactly 25 living spiders by default", () => {

@@ -123,13 +123,13 @@ RestraintSpiderlingsWebbingCocoonDesc,Dichte Seide hüllt deinen Körper in eine
 RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand zittert, wenn du dich windest. Nachschleifende Fäden rascheln über den Boden, als trügen sie die Regungen im Inneren in die Dunkelheit.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 liegt unter TargetLv2 begraben; du berührst nur die klebrige Seide darüber.
 KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Kokon und halten dich fest an Ort und Stelle!
-KDMapMod_SpiderlingsInfestation,Spinnenbefall
-KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
-KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
-KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
-SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/TARGET
-SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
-SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
+KDMapMod_SpiderlingsHuntingGrounds,Jagdrevier der Jungspinnen
+KinkyDungeonMapModSpiderlingsHuntingGrounds,Weiche Netze ziehen sich durch die ganze Etage. Jungspinnen huschen zwischen ihren Nestern umher und ein leises Rascheln folgt dir durch die Gänge.
+KDEscapeMethod_SpiderlingsHuntingGrounds,Markierte Nester zerstören
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
+SpiderlingsHuntingGroundsProgress,Markierte Nester zerstört: CURRENT/TARGET
+SpiderlingsHuntingGroundsBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Rosa Spinnweben (aus: Original)
 KDModButtonspiderlingsEnableHood,Seidene Spinnenhaube (aus: nie anlegen)
 KinkyDungeonSpiderlingsWebbingInterwoven,Die sich kreuzenden Fäden ziehen sich zu und fesseln einen weiteren Teil deines Körpers.
@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Du brauchst 10 Ausdauer. Warten oder einen Trank nutzen 
 SpiderlingsSpinnerWrap,Die Beine werden fünf Weltrunden lang eingewickelt; Arme bleiben unverändert.
 SpiderlingsSpinnerDone,Fertig. Du kannst angreifen, Gegenstände nutzen, langsam gehen oder den Beutel lösen.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Spinner-Probelauf
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Betritt ein flaches Testfeld. Spinner legen Bodenfallen und verbinden sie über Fluchtwege. Erprobe den Wettstreit und fünf Runden Einwickeln.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Betritt ein flaches Testfeld. Spinner bauen ein Fangfeld und schließen den Eingang nach deinem Eintritt. Erprobe den Wettstreit und fünf Runden Einwickeln.
 NameSpiderlingsSilkAnchor,Netzknoten
 KillSpiderlingsSilkAnchor,Die Netzgrenze reißt auf.
-SpiderlingsFieldPreparing,Spinner legen Fallen und verbinden sie über deinen Rückweg. Fliehe vor dem Schließen oder zerschneide eine Verbindung.
-SpiderlingsFieldReady,Zwei Fallen sind verbunden. Die Spinner sperren einen weiteren Fluchtweg.
-SpiderlingsFieldSprung,Die Verbindungen umschließen das Gebiet. Wer noch innen steht kann gefangen werden.
+SpiderlingsFieldPreparing,Spinner bauen die Grenze des Fangfelds. Verlasse es vor dem Schließen des Eingangs oder zerschneide eine Verbindung.
+SpiderlingsFieldReady,Ein Grenzabschnitt ist verbunden. Die Spinner bauen das Fangfeld weiter.
+SpiderlingsFieldSprung,Das Fangfeld ist geschlossen. Spieler im Inneren können gefangen werden.
 SpiderlingsFieldBroken,Ein Knoten reißt. Die Falle und ihre Fäden lösen sich.
 SpiderlingsFieldReset,Versuch zurücksetzen
 SpiderlingsFieldJumper,Springer freilassen
-SpiderlingsFieldStatus,Netzfeld: {phase} · Fallen {count}/4 · Verbindungen {links}/4
+SpiderlingsFieldStatus,Fangfeld: {phase} · Ecken {count}/4 · Verbindungen {links}/4
 SpiderlingsFieldPhasepreparing,Aufbau
 SpiderlingsFieldPhaseready,Verbindung bereit
 SpiderlingsFieldPhasesprung,Geschlossen
@@ -186,10 +186,10 @@ SpiderlingsFieldPhasecomplete,Abgeschlossen
 SpiderlingsSpinnerWeave,Fesselung: {value}/100
 SpiderlingsSpinnerEscape,Flucht: {value}/{goal}
 SpiderlingsFieldAddSpinner,Spinner hinzufügen
-SpiderlingsFieldTrap,Bodenseide hält deine Füße kurz auf.
 SpiderlingsFieldRebuild,Spinner beginnen in {turns} Weltrunden erneut zu bauen.
-SpiderlingsFieldWaiting,Fallen bereit. Der Westeingang bleibt bis zu deinem Eintritt offen.
+SpiderlingsFieldWaiting,Das Fangfeld ist bereit. Der Westeingang bleibt bis zu deinem Eintritt offen.
 NameMageSpiderlings,Spiderling Mage
+NameSpiderlingsSpinnerTrap,Grenze des Fangfelds
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
@@ -199,3 +199,16 @@ KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
 KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage traces a wide sigil across the ground.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers at the edge of a broad spell circle.
+SpiderlingsNPCAdhesionInitial,Fixiert
+SpiderlingsNPCAdhesionFull,Vollständig gefesselt
+SpiderlingsNPCAdhesionHelpless,Hilflos
+SpiderlingsNPCWrapping,Einspinnen
+KDMapMod_SpiderlingsInfestation,Spinnenbefall
+KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
+KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
+KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
+SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/5
+SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/5)
+SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
+KDModButtonspiderlingsInfestationWeight,Befall-Gewichtung (0: aus)
+KDModButtonspiderlingsHuntingGroundsWeight,Jagdgebiet-Gewichtung - nur Maidforce (0: aus)

@@ -400,7 +400,7 @@
                     "Tunneler",
                     "WebCaster",
                     "NestEntrance",
-                    "SpiderlingsSpinnerWebCell",
+                    "SpiderlingsSpinnerTrap",
                     "SpiderlingsSilkAnchor",
                 ].map((name) => `Enemies/${name}`),
             ].map((path) => [`${root}${path}.png`, `${root}${path}Pink.png`]),

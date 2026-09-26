@@ -158,6 +158,79 @@ test("visible Maidforce and Spiderlings prefer each other even with the player c
     }
 });
 
+test("Hunting Grounds spiders acquire neutral and Natural NPC prey while the old modifier keeps native relations", () => {
+    const { context: kd, make } = loadRuntime();
+    kd.KinkyDungeonPlayerEntity.x = 5;
+    kd.KinkyDungeonPlayerEntity.y = 4;
+    const spider = make("Spinner", { x: 6 });
+    const neutral = make("NeutralPrey", {
+        x: 7,
+        Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, bound: "Slime", tags: {} },
+    });
+    kd.KDMapData.Entities = [spider, neutral];
+    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    assert.equal(kd.KDHostile(spider, neutral), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    assert.equal(kd.KDHostile(spider, neutral), true);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), neutral);
+    assert.equal(spider.aware, true);
+    kd.KDMapData.MapMod = "Elsewhere";
+    assert.equal(kd.KDHostile(spider, neutral), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+});
+
+test("Hunting Grounds spiders seek other NPCs without locking onto their own faction", () => {
+    const { context: kd, make } = loadRuntime();
+    const hunter = make("Spinner", { x: 6 });
+    const spider = make("Jumper", { x: 7 });
+    const nest = make("NestEntrance", { x: 9 });
+    const sameFaction = make("EnemyScout", {
+        x: 6,
+        y: 5,
+        Enemy: { name: "EnemyScout", faction: "Enemy", visionRadius: 6, tags: {} },
+    });
+    const prey = make("NeutralPrey", {
+        x: 8,
+        Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
+    });
+    kd.KDMapData.Entities = [hunter, spider, nest, sameFaction, prey];
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    assert.equal(kd.KDHostile(hunter, spider), false);
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(hunter, spider), false);
+    assert.equal(kd.KDHostile(hunter, nest), false);
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(hunter, sameFaction), false);
+    assert.equal(kd.KDHostile(hunter, sameFaction), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(hunter, false, true), prey);
+});
+
+test("Hunting Grounds patrol seeks different-faction noAttack NPCs but ignores scenery", () => {
+    const { context: kd, make } = loadRuntime();
+    const spider = make("Spinner", { aware: false });
+    const scenery = make("ExplosiveBarrel", {
+        x: 5,
+        Enemy: { name: "ExplosiveBarrel", faction: "Barrel", tags: { scenery: true } },
+    });
+    const prey = make("NeutralPrey", {
+        x: 12,
+        Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
+    });
+    kd.KDMapData.Entities = [spider, scenery, prey];
+    kd.KinkyDungeonFindPath = (_x, _y, x, y) => [{ x, y }];
+    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), false);
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(spider, scenery), false);
+    assert.equal(kd.KDHostile(spider, scenery), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true), kd.KinkyDungeonPlayerEntity);
+    assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), true);
+    assert.deepEqual([spider.gx, spider.gy], [prey.x, prey.y]);
+    assert.equal(spider.aware, false, "patrol search does not grant extra vision");
+});
+
 test("a WebCaster prioritizes visible pending Cocoon reinforcement then returns to its rival", () => {
     const { context: kd, make } = loadRuntime();
     kd.KinkyDungeonPlayerEntity.x = 5;

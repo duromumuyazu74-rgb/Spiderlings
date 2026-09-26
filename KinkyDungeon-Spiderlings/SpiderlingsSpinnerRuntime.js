@@ -12,7 +12,7 @@
             (native) =>
                 function (enemy, target, delta) {
                     target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
-                    target = api.Infestation?.resolveNestDefenderTarget?.(enemy, target) || target;
+                    target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target) || target;
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
@@ -20,10 +20,13 @@
                     if (recovery) return recovery;
                     const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
                     if (capture) return capture;
+                    if (delta > 0) api.NPCWrapping?.preemptNativeCapture?.();
                     const npcCapture = api.SpinnerNPCCapture?.handleEnemyTurn(enemy, target, delta);
                     if (npcCapture) return npcCapture;
                     const npcRecovery = api.SpinnerNPCRecovery?.handleEnemyTurn(enemy, target, delta);
                     if (npcRecovery) return npcRecovery;
+                    const npcWrapping = api.NPCWrapping?.handleEnemyTurn(enemy, target, delta);
+                    if (npcWrapping) return npcWrapping;
                     const nativeField = api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
                     if (nativeField) return nativeField;
                     const legacyField = api.SpinnerField.handleEnemyTurn(enemy, target, delta);
@@ -71,18 +74,21 @@
             api.SpinnerAI?.preparePositiveTurn(data?.delta);
             if (data?.delta > 0) api.SpinnerRollout?.preparePositiveTurn();
             api.SpinnerNPCCapture?.prepareTurn(data?.delta);
+            api.NPCWrapping?.prepareTurn(data?.delta);
         });
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) =>
             api.SpinnerNativeField.onNativeDamage(data),
         );
         KDAddEvent(KDEventMapGeneric, "playerMove", KEY, (_event, data) => {
             if (!data?.cancelmove) {
+                api.WebMobility?.invalidateNavigation();
                 api.SpinnerRecovery?.onPlayerMove(data);
                 api.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity, data.moveX, data.moveY);
             }
         });
         KDAddEvent(KDEventMapGeneric, "enemyMove", KEY, (_event, data) => {
             if (!data?.cancelmove) {
+                api.WebMobility?.invalidateNavigation();
                 api.SpinnerNPCRecovery?.onEnemyMove(data);
                 api.SpinnerNativeField.onEntry(data.enemy, data.moveX, data.moveY);
             }
@@ -93,28 +99,35 @@
             api.SpinnerRecovery?.audit();
             api.SpinnerNPCCapture?.settleTurn(data?.delta);
             if (data?.delta > 0) api.SpinnerNPCRecovery?.audit();
+            api.NPCWrapping?.tickAfter(data?.delta);
         });
         KDAddEvent(KDEventMapGeneric, "postRemoval", KEY, () => {
             api.SpinnerRecovery?.audit();
             api.SpinnerNPCCapture?.auditSources();
             api.SpinnerNPCRecovery?.audit();
+            api.NPCWrapping?.audit();
         });
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
+            api.WebMobility?.invalidateNavigation(true);
             api.SpinnerAI?.restoreAfterLoad();
+            api.SpinnerNativeField.afterLoad?.();
             api.SpinnerNativeField.reconcile();
             api.SpinnerRecovery?.afterLoad();
             api.SpinnerNPCCapture?.afterLoad();
             api.SpinnerNPCRecovery?.afterLoad();
+            api.NPCWrapping?.afterLoad();
         });
         KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
             api.SpinnerNPCCapture?.draw(data);
             api.SpinnerNPCRecovery?.draw(data);
+            api.NPCWrapping?.draw(data);
         });
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
             KDAddEvent(KDEventMapGeneric, trigger, KEY, () => {
                 api.SpinnerRecovery?.clearControl();
                 api.SpinnerNPCCapture?.clearTemporary();
                 api.SpinnerNPCRecovery?.clearTemporary();
+                api.NPCWrapping?.clearTemporary();
             });
     }
 

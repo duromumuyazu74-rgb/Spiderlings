@@ -123,13 +123,13 @@ RestraintSpiderlingsWebbingCocoonDesc,La seda densa envuelve tu cuerpo en un cap
 RestraintSpiderlingsWebbingCocoonDesc2,La pared del capullo tiembla al retorcerte. Las hebras arrastradas susurran sobre el suelo, como si llevaran hacia la oscuridad el movimiento de su interior.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 yace bajo TargetLv2; solo alcanzas la seda pegajosa que lo cubre.
 KinkyDungeonSpiderlingsCocoonAnchored,Las crías de araña tienden redes alrededor del capullo y te fijan firmemente al sitio.
-KDMapMod_SpiderlingsInfestation,Infestación de arañitas
-KinkyDungeonMapModSpiderlingsInfestation,La seda invade los rincones y unos susurros responden a otros en las sombras. Este lugar lleva tiempo teniendo otros habitantes.
-KDEscapeMethod_SpiderlingsInfestation,Destruir los nidos marcados
-KDEscapeMethodDesc_SpiderlingsInfestation,Los nidos que primero ocuparon este lugar aún se agitan en la oscuridad; se oyen leves arañazos en el fondo de sus entradas.
-SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/TARGET
-SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/TARGET)
-SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
+KDMapMod_SpiderlingsHuntingGrounds,Coto de caza de las arañitas
+KinkyDungeonMapModSpiderlingsHuntingGrounds,La seda se extiende por todo el piso. Las arañitas cruzan entre sus nidos y el roce de sus patas te sigue por los pasillos.
+KDEscapeMethod_SpiderlingsHuntingGrounds,Destruir los nidos marcados
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Los nidos que primero ocuparon este lugar aún se agitan en la oscuridad; se oyen leves arañazos en el fondo de sus entradas.
+SpiderlingsHuntingGroundsProgress,Nidos marcados destruidos: CURRENT/TARGET
+SpiderlingsHuntingGroundsBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Telaraña rosa (no: original)
 KDModButtonspiderlingsEnableHood,Capucha de seda arácnida (no: nunca equipar)
 KinkyDungeonSpiderlingsWebbingInterwoven,Los hilos entrecruzados se tensan y atan otra parte de tu cuerpo.
@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Necesitas 10 de energía. Aún puedes esperar o beber un
 SpiderlingsSpinnerWrap,La envoltura dura cinco turnos del mundo; los brazos conservan su estado.
 SpiderlingsSpinnerDone,El saco está listo. Puedes atacar, usar objetos, moverte despacio o quitártelo.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Prueba de tejedoras
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Entra en un campo plano. Las tejedoras colocan trampas y conectan rutas de escape. Prueba el duelo y cinco turnos de envoltura.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Entra en un campo plano. Las tejedoras construyen un campo de captura y cierran la entrada cuando entras. Prueba el duelo y cinco turnos de envoltura.
 NameSpiderlingsSilkAnchor,Nudo de telaraña
 KillSpiderlingsSilkAnchor,La barrera de seda se rompe.
-SpiderlingsFieldPreparing,Las tejedoras colocan trampas y las conectan para cortar la retirada. Sal antes del cierre o corta una conexión.
-SpiderlingsFieldReady,Dos trampas están conectadas. Las tejedoras bloquean otra salida.
-SpiderlingsFieldSprung,Las conexiones rodean la zona. Quienes sigan dentro pueden ser capturados.
+SpiderlingsFieldPreparing,Las tejedoras construyen el límite del campo de captura. Sal antes de que se cierre la entrada o corta una conexión.
+SpiderlingsFieldReady,Una sección del límite está conectada. Las tejedoras siguen construyendo el campo.
+SpiderlingsFieldSprung,El campo de captura está cerrado. Quienes sigan dentro pueden ser capturados.
 SpiderlingsFieldBroken,Un nudo se rompe y la trampa te libera.
 SpiderlingsFieldReset,Reiniciar prueba
 SpiderlingsFieldJumper,Soltar saltadora
-SpiderlingsFieldStatus,Campo: {phase} · trampas {count}/4 · conexiones {links}/4
+SpiderlingsFieldStatus,Campo de captura: {phase} · esquinas {count}/4 · conexiones {links}/4
 SpiderlingsFieldPhasepreparing,Preparando
 SpiderlingsFieldPhaseready,Conexión lista
 SpiderlingsFieldPhasesprung,Cerrado
@@ -186,10 +186,10 @@ SpiderlingsFieldPhasecomplete,Completada
 SpiderlingsSpinnerWeave,Atadura: {value}/100
 SpiderlingsSpinnerEscape,Escape: {value}/{goal}
 SpiderlingsFieldAddSpinner,Añadir Spinner
-SpiderlingsFieldTrap,La seda del suelo frena tus pies brevemente.
 SpiderlingsFieldRebuild,Las tejedoras volverán a construir en {turns} turnos del mundo.
-SpiderlingsFieldWaiting,Trampas listas. La entrada oeste queda abierta hasta que entres.
+SpiderlingsFieldWaiting,El campo está listo. La entrada oeste queda abierta hasta que entres.
 NameMageSpiderlings,Spiderling Mage
+NameSpiderlingsSpinnerTrap,Límite del campo de captura
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
@@ -199,3 +199,16 @@ KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
 KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage traces a wide sigil across the ground.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers at the edge of a broad spell circle.
+SpiderlingsNPCAdhesionInitial,Inmovilizado
+SpiderlingsNPCAdhesionFull,Atado con seda
+SpiderlingsNPCAdhesionHelpless,Indefenso
+SpiderlingsNPCWrapping,Envolviendo
+KDMapMod_SpiderlingsInfestation,Infestación de arañitas
+KinkyDungeonMapModSpiderlingsInfestation,La seda invade los rincones y unos susurros responden a otros en las sombras. Este lugar lleva tiempo teniendo otros habitantes.
+KDEscapeMethod_SpiderlingsInfestation,Destruir los nidos marcados
+KDEscapeMethodDesc_SpiderlingsInfestation,Los nidos que primero ocuparon este lugar aún se agitan en la oscuridad; se oyen leves arañazos en el fondo de sus entradas.
+SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/5
+SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/5)
+SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
+KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
+KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)

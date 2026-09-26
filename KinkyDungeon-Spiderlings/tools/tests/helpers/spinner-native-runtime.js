@@ -8,7 +8,7 @@ const { modRoot } = require("./lifecycle-runtime.js");
 const load = (context, file) =>
     vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
 
-function runtime() {
+function runtime(overrides = {}) {
     let nextId = 100;
     const tiles = new Map(),
         buffs = [],
@@ -38,7 +38,11 @@ function runtime() {
             KinkyDungeonCurrentTick: 5,
             KinkyDungeonRootDirectory: "Game/",
             KinkyDungeonFlags: new Map(),
-            KDModFiles: { "Bullets/WebSprayTrail.png": {}, "Bullets/WebSprayTrailPink.png": {} },
+            KDModFiles: Object.fromEntries(
+                ["Top", "Side", "Corner"].flatMap((part) =>
+                    ["", "Pink"].map((color) => [`Bullets/SpiderlingsSpinnerTrap${part}${color}.png`, {}]),
+                ),
+            ),
             KDPathConditions: {},
             KDInputTypes: {},
             KDEventMapGeneric: {},
@@ -51,13 +55,21 @@ function runtime() {
             KinkyDungeonEntityAt(x, y) {
                 if (context.KinkyDungeonPlayerEntity.x === x && context.KinkyDungeonPlayerEntity.y === y)
                     return context.KinkyDungeonPlayerEntity;
-                return context.KDMapData.Entities.find((entity) => entity.x === x && entity.y === y);
+                return context.KDMapData.Entities.findLast((entity) => entity.x === x && entity.y === y);
             },
             DialogueCreateEnemy(x, y, name) {
                 if (context.KinkyDungeonEntityAt(x, y)) return undefined;
                 const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
                 if (!definition) return undefined;
                 const entity = { id: nextId++, x, y, hp: definition.maxhp, Enemy: definition };
+                context.KDMapData.Entities.push(entity);
+                return entity;
+            },
+            DialogueGetEnemy(name) {
+                const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
+                return { id: nextId++, x: 1, y: 1, hp: definition.maxhp, Enemy: definition };
+            },
+            KDAddNewEntity(entity) {
                 context.KDMapData.Entities.push(entity);
                 return entity;
             },
@@ -73,8 +85,8 @@ function runtime() {
                 entity.buffs[buff.id] = buff;
                 buffs.push({ entity, buff });
             },
-            KDMoveEntity(entity, x, y) {
-                if (context.KinkyDungeonEntityAt(x, y)) return false;
+            KDMoveEntity(entity, x, y, _willing, _dash, _forceHitBullets, ignoreBlocked) {
+                if (!ignoreBlocked && context.KinkyDungeonEntityAt(x, y)) return false;
                 entity.x = x;
                 entity.y = y;
                 return true;
@@ -88,6 +100,7 @@ function runtime() {
                 map[trigger][name] = handler;
             },
         };
+    Object.assign(context, overrides);
     context.globalThis = context;
     context.window = context;
     vm.createContext(context);

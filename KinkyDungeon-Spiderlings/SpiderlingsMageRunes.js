@@ -62,18 +62,20 @@
 
     function hostileMaid(bullet, target) {
         const source = mageRuneSource(bullet);
+        const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
         return !!(
             source &&
             bullet.bullet.faction === "Enemy" &&
             target?.hp > 0 &&
             target.Enemy &&
-            !target.allied &&
-            !target.Enemy.allied &&
-            !(target.ceasefire > 0) &&
-            !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
-            !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
-            typeof KDGetFaction === "function" &&
-            KDGetFaction(target) === "Maidforce" &&
+            (huntingPrey ||
+                (!target.allied &&
+                    !target.Enemy.allied &&
+                    !(target.ceasefire > 0) &&
+                    !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
+                    !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
+                    typeof KDGetFaction === "function" &&
+                    KDGetFaction(target) === "Maidforce")) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
@@ -157,7 +159,18 @@
                 spell: { ...original.spell, playerEffect: undefined },
             };
             try {
-                return nativeHit.apply(this, arguments);
+                const before = target.specialBoundLevel?.Slime || 0;
+                const result = nativeHit.apply(this, arguments);
+                const added = Math.max(0, (target.specialBoundLevel?.Slime || 0) - before);
+                if (added > 0)
+                    api.NPCAdhesion?.recordNativeSilk(
+                        mageRuneSource(bullet),
+                        target,
+                        added,
+                        "mage-rune",
+                        bullet.spriteID || `${bullet.bullet.source}:${bullet.x}:${bullet.y}`,
+                    );
+                return result;
             } finally {
                 bullet.bullet = original;
             }

@@ -63,6 +63,7 @@
             flags: [FLAG],
             spiderlingsAttack: attack,
             spiderlingsSource: source,
+            spiderlingsActionId: api.NPCAdhesion?.actionId(source),
             spiderlingsSuppressContact: !contact,
         };
     }
@@ -211,15 +212,10 @@
         if (!eligible(source, target) || !(amount > 0)) return { progressed: false, boundAdded: 0, slimeAdded: 0 };
         const boundBefore = target.boundLevel || 0,
             slimeBefore = target.specialBoundLevel?.Slime || 0;
-        KinkyDungeonDamageEnemy(
-            target,
-            silkPayload(source, amount, options.attack || "capture", options.contact === true),
-            false,
-            true,
-            undefined,
-            undefined,
-            source,
-        );
+        const silk = silkPayload(source, amount, options.attack || "capture", options.contact === true);
+        if (options.actionId) silk.spiderlingsActionId = options.actionId;
+        if (options.contributors) silk.spiderlingsContributors = options.contributors;
+        KinkyDungeonDamageEnemy(target, silk, false, true, undefined, undefined, source);
         const boundAdded = Math.max(0, (target.boundLevel || 0) - boundBefore),
             slimeAdded = Math.max(0, (target.specialBoundLevel?.Slime || 0) - slimeBefore);
         return { progressed: slimeAdded > 0, boundAdded, slimeAdded };

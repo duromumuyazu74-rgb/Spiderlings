@@ -26,16 +26,18 @@
     }
 
     function hostileMaid(source, target) {
+        const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
         return !!(
             target?.hp > 0 &&
             target.Enemy &&
-            !target.allied &&
-            !target.Enemy.allied &&
-            !(target.ceasefire > 0) &&
-            !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
-            !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
-            typeof KDGetFaction === "function" &&
-            KDGetFaction(target) === "Maidforce" &&
+            (huntingPrey ||
+                (!target.allied &&
+                    !target.Enemy.allied &&
+                    !(target.ceasefire > 0) &&
+                    !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
+                    !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
+                    typeof KDGetFaction === "function" &&
+                    KDGetFaction(target) === "Maidforce")) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
@@ -180,20 +182,21 @@
         for (let i = 0; i < attempts; i++) api.Webbing?.applyEnemyProgression("WebCaster", source, "Enemy");
     }
 
-    function bindMaid(source, target, attempts) {
+    function bindMaid(source, target, attempts, actionId) {
         for (let i = 0; i < attempts; i++) {
             if (!(target.hp > 0)) break;
-            api.Combat?.applySilkBinding(source, target, 3, { attack: "mage-spell", contact: false });
+            api.Combat?.applySilkBinding(source, target, 3, { attack: "mage-spell", contact: false, actionId });
         }
     }
 
     function resolveBlast(blast) {
         const source = mageSource(blast.ownerId);
+        const actionId = api.NPCAdhesion?.actionId(source);
         const radius = blast.stacks - 1;
         for (const target of eligibleTargets(source)) {
             if (Math.max(Math.abs(target.x - blast.x), Math.abs(target.y - blast.y)) > radius) continue;
             if (target.player) bindPlayer(source, blast.stacks);
-            else bindMaid(source, target, blast.stacks);
+            else bindMaid(source, target, blast.stacks, actionId);
         }
         state().blasts.push({ x: blast.x, y: blast.y, radius, expiresAt: state().clock + 1 });
     }
@@ -201,6 +204,7 @@
     function resolveCollapse(collapse) {
         const source = mageById(collapse.ownerId);
         if (!source) return;
+        const actionId = api.NPCAdhesion?.actionId(source);
         for (const target of eligibleTargets(source)) {
             const distance = collapseDistance(collapse.x, collapse.y, target);
             if (distance < 0) continue;
@@ -220,7 +224,7 @@
                     source,
                 );
             if (target.player) bindPlayer(source, attempts);
-            else bindMaid(source, target, attempts);
+            else bindMaid(source, target, attempts, actionId);
         }
         source.SpiderlingsCollapseCooldown = COLLAPSE_COOLDOWN;
         state().blasts.push({ x: collapse.x, y: collapse.y, radius: 2, corners: false, expiresAt: state().clock + 1 });

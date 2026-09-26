@@ -4,9 +4,9 @@
 (() => {
     const api = globalThis.Spiderlings,
         KEY = "SpiderlingsSpinnerEncounter",
-        PROXY = "SpiderlingsSpinnerWebCell",
-        PATH = "SpiderlingsWebTraversal",
-        SNARE = "SpiderlingsSpinnerSnaringSilk";
+        PROXY = "SpiderlingsSpinnerTrap",
+        LEGACY_PROXY = "SpiderlingsSpinnerWebCell",
+        PATH = "SpiderlingsWebTraversal";
     const topology = () => api.SpinnerTopology;
     const state = (map = KDMapData) => map?.[KEY];
     const cellKey = (cell) => `${cell.x},${cell.y}`;
@@ -15,7 +15,7 @@
     function fieldById(encounter, fieldId) {
         const graph = encounter?.topology;
         if (!graph || !fieldId) return undefined;
-        if (graph.fieldId === fieldId && !graph.lineFields?.[fieldId]) return graph;
+        if (graph.fields?.[fieldId] || (graph.fieldId === fieldId && !graph.lineFields?.[fieldId])) return graph;
         const line = graph.lineFields?.[fieldId];
         if (!line || line.retired) return undefined;
         return {
@@ -39,13 +39,14 @@
     }
 
     function isOwnedProxy(entity) {
-        return entity?.Enemy?.name === PROXY && !!proxyMarker(entity);
+        return [PROXY, LEGACY_PROXY].includes(entity?.Enemy?.name) && !!proxyMarker(entity);
     }
 
     function invalidateNavigation() {
         KDUpdateEnemyCache = true;
         KDPathCache = new Map();
         KDPathCacheIgnoreLocks = new Map();
+        api.WebMobility?.invalidateNavigation(true);
     }
 
     function topologyCell(field, cell) {
@@ -63,7 +64,20 @@
     }
 
     function createProxy(field, physical) {
-        const enemy = DialogueCreateEnemy(physical.x, physical.y, PROXY);
+        // DialogueCreateEnemy kicks an occupant before spawning. A web is allowed under a spider.
+        const occupied = KDMapData.Entities.some(
+                (entity) => !isOwnedProxy(entity) && entity.hp > 0 && cellKey(entity) === cellKey(physical),
+            ),
+            enemy = occupied
+                ? typeof globalThis.DialogueGetEnemy === "function" && typeof globalThis.KDAddNewEntity === "function"
+                    ? globalThis.KDAddNewEntity(
+                          { ...globalThis.DialogueGetEnemy(PROXY), x: physical.x, y: physical.y },
+                          false,
+                          false,
+                          true,
+                      )
+                    : undefined
+                : DialogueCreateEnemy(physical.x, physical.y, PROXY);
         if (!enemy) return undefined;
         enemy.hostile = 999;
         enemy.targetedForAttack = true;
@@ -71,6 +85,13 @@
         enemy.hp = hpAtCell(field, physical);
         enemy.maxhp = enemy.hp;
         return enemy;
+    }
+
+    function prioritizeActors(map) {
+        const proxies = map.Entities.filter(isOwnedProxy);
+        if (!proxies.length || map.Entities.slice(0, proxies.length).every(isOwnedProxy)) return;
+        map.Entities = [...proxies, ...map.Entities.filter((entity) => !isOwnedProxy(entity))];
+        invalidateNavigation();
     }
 
     function reconcile(map = KDMapData) {
@@ -95,6 +116,7 @@
             }
             enemy.x = physical.x;
             enemy.y = physical.y;
+            enemy.Enemy = KinkyDungeonEnemies.find((definition) => definition.name === PROXY);
             enemy.hp = hpAtCell(field, physical);
             enemy.maxhp = enemy.hp;
             enemy.hostile = 999;
@@ -103,6 +125,7 @@
             reused++;
         }
         for (const [key, physical] of expected) if (!kept.has(key) && createProxy(field, physical)) created++;
+        prioritizeActors(map);
         if (created || removed) invalidateNavigation();
         return { created, removed, reused };
     }
@@ -133,30 +156,37 @@
                     key = cellKey(cell),
                     tile = KinkyDungeonTilesGet(key);
                 if (KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y))) floor.push(key);
-                if (
-                    tile?.OL ||
-                    tile?.OffLimits ||
-                    tile?.Jail ||
-                    tile?.Protected ||
-                    tile?.Priority ||
-                    ["Shrine", "Chest", "Door", "JailPoint", "Stairs"].includes(tile?.Type) ||
-                    [
-                        KDMapData.StartPosition,
-                        KDMapData.EndPosition,
-                        ...Object.values(KDMapData.ShortcutPositions || {}),
-                        ...(KDMapData.JailPoints || []),
-                    ].some((candidate) => candidate?.x === x && candidate?.y === y)
-                )
-                    protectedCells.push(key);
+                if (protectedCell(cell, tile)) protectedCells.push(key);
             }
         return {
             width: KDMapData.GridWidth,
             height: KDMapData.GridHeight,
             floor,
             protected: protectedCells,
-            occupied: KDMapData.Entities.filter((entity) => !isOwnedProxy(entity)).map(cellKey),
+            occupied: [
+                ...KDMapData.Entities.filter((entity) => !isOwnedProxy(entity) && !isSpiderling(entity)).map(cellKey),
+                cellKey(KinkyDungeonPlayerEntity),
+            ],
             exit: KDMapData.EndPosition,
         };
+    }
+
+    function protectedCell(cell, tile = KinkyDungeonTilesGet(cellKey(cell))) {
+        return !!(
+            tile?.OL ||
+            tile?.OffLimits ||
+            tile?.Jail ||
+            tile?.Protected ||
+            tile?.Priority ||
+            tile?.Lock ||
+            ["Shrine", "Chest", "Door", "JailPoint", "Stairs"].includes(tile?.Type) ||
+            [
+                KDMapData.StartPosition,
+                KDMapData.EndPosition,
+                ...Object.values(KDMapData.ShortcutPositions || {}),
+                ...(KDMapData.JailPoints || []),
+            ].some((candidate) => candidate?.x === cell.x && candidate?.y === cell.y)
+        );
     }
 
     function initializeEnclosure(input) {
@@ -201,6 +231,33 @@
         return fieldById(encounter, input.fieldId);
     }
 
+    function addEnclosure(input) {
+        const encounter = ensureMap(input),
+            owners = input.owners.map((owner) => (typeof owner === "object" ? owner.id : owner)),
+            added = topology().addEnclosure(encounter.topology, {
+                ...input,
+                owners,
+                map: input.map || mapSnapshot(),
+            });
+        if (!added.added) return { added: false, reason: added.reason };
+        encounter.topology = added.state;
+        reconcile();
+        return { added: true, compositeId: input.compositeId };
+    }
+
+    function addEnclosureLayer(input) {
+        const encounter = state();
+        if (!encounter?.topology) return { added: false, reason: "inactive" };
+        const added = topology().addEnclosureLayer(encounter.topology, {
+            ...input,
+            map: input.map || mapSnapshot(),
+        });
+        if (!added.added) return { added: false, reason: added.reason };
+        encounter.topology = added.state;
+        reconcile();
+        return { added: true, fieldId: input.layer.id };
+    }
+
     function retireField(fieldId) {
         const encounter = state(),
             field = fieldById(encounter, fieldId);
@@ -221,20 +278,24 @@
 
     function snapshot(cell) {
         const tile = KinkyDungeonTilesGet(cellKey(cell)),
-            occupant = KinkyDungeonEntityAt(cell.x, cell.y),
+            occupants = KDMapData.Entities.filter(
+                (entity) => entity.hp > 0 && !isOwnedProxy(entity) && cellKey(entity) === cellKey(cell),
+            ),
             player = KinkyDungeonPlayerEntity.x === cell.x && KinkyDungeonPlayerEntity.y === cell.y;
         return {
             cell: { x: cell.x, y: cell.y },
             inBounds: cell.x > 0 && cell.y > 0 && cell.x < KDMapData.GridWidth - 1 && cell.y < KDMapData.GridHeight - 1,
             floor: KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y)),
-            protected: !!(tile?.OL || tile?.OffLimits || tile?.Jail || tile?.Protected || tile?.Lock),
+            protected: protectedCell(cell, tile),
             locked: !!tile?.Lock,
-            occupied: !!occupant || player,
+            occupied: occupants.some((entity) => !isSpiderling(entity)) || player,
+            actorOccupied: occupants.length > 0 || player,
+            web: !!KDMapData.Entities.find((entity) => isOwnedProxy(entity) && cellKey(entity) === cellKey(cell)),
         };
     }
 
     function actionCell(field, action) {
-        if (action.type === "placeAnchor") {
+        if (["placeAnchor", "rebuildAnchor"].includes(action.type)) {
             const anchor = field.anchors.find((candidate) => candidate.id === action.anchorId);
             return anchor && { x: anchor.x, y: anchor.y };
         }
@@ -260,6 +321,7 @@
         if (
             Math.hypot(cell.x - actor.x, cell.y - actor.y) > 5 ||
             (!action.type.startsWith("repair") &&
+                Math.max(Math.abs(cell.x - actor.x), Math.abs(cell.y - actor.y)) > 1 &&
                 !KinkyDungeonCheckPath(actor.x, actor.y, cell.x, cell.y, false, true, 1, false))
         )
             return { paid: true, applied: false, reason: "range" };
@@ -386,29 +448,51 @@
         return entity?.player ? "player" : entity?.id;
     }
 
-    function onEntry(entity, x, y) {
+    function updatePreyTargets(graph) {
+        for (const composite of Object.values(graph.composites || {})) {
+            if (composite.autoSeal) continue;
+            const owners = fieldOwners(composite.id)
+                .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                .filter((entity) => entity?.hp > 0 && isSpiderling(entity));
+            const prey = [KinkyDungeonPlayerEntity, ...KDMapData.Entities].find(
+                (entity) =>
+                    entity &&
+                    (entity.player || entity.hp > 0) &&
+                    !isSpiderling(entity) &&
+                    !isOwnedProxy(entity) &&
+                    entity.Enemy?.name !== "NestEntrance" &&
+                    !entity.Enemy?.tags?.scenery &&
+                    topology().isInsideCommonCore(graph, composite.id, entity) &&
+                    owners.some((owner) => (entity.player ? KDHostile(owner) : KDHostile(owner, entity))),
+            );
+            topology().updateTarget(
+                graph,
+                prey ? { id: targetId(prey), x: prey.x, y: prey.y } : { x: -1, y: -1 },
+                composite.id,
+            );
+        }
+    }
+
+    function onEntry(entity) {
         const encounter = state(),
             id = targetId(entity);
         if (!encounter?.topology || id === undefined) return false;
-        topology().updateTarget(encounter.topology, { id, x, y });
-        const consumed = topology().consumeSnare(encounter.topology, id, { x, y });
-        encounter.topology = consumed.state;
-        if (!consumed.outcome.snared) return false;
-        KinkyDungeonApplyBuffToEntity(entity, { id: SNARE, type: "MoveSpeed", power: -1, duration: 2 });
-        if (!entity.player && entity.shield > 0) {
-            const anchorId = consumed.effects.find((effect) => effect.type === "snareTarget")?.anchorId;
-            const anchor = encounter.topology.anchors.find((candidate) => candidate.id === anchorId);
-            if (
-                anchor?.owners.some((fieldId) =>
-                    fieldOwners(fieldId).some((ownerId) => {
-                        const owner = KDMapData.Entities.find((candidate) => candidate.id === ownerId);
-                        return owner?.hp > 0 && isSpiderling(owner) && KDHostile(owner, entity);
-                    }),
-                )
-            )
-                api.Combat?.pressureNPCShield(entity);
+        updatePreyTargets(encounter.topology);
+        return false;
+    }
+
+    function afterLoad() {
+        const encounter = state();
+        if (encounter?.topology) encounter.topology = topology().restore(encounter.topology);
+        if (typeof KinkyDungeonPlayerBuffs !== "undefined") {
+            delete KinkyDungeonPlayerBuffs.SpiderlingsSpinnerSnaringSilk;
+            delete KinkyDungeonPlayerBuffs.SpiderlingsSpinnerGroundTrap;
         }
-        return true;
+        for (const entity of [KinkyDungeonPlayerEntity, ...KDMapData.Entities]) {
+            if (!entity?.buffs) continue;
+            delete entity.buffs.SpiderlingsSpinnerSnaringSilk;
+            delete entity.buffs.SpiderlingsSpinnerGroundTrap;
+        }
     }
 
     function activeOwnerIds(field) {
@@ -426,15 +510,16 @@
             delta,
         });
         encounter.topology = settled.state;
+        updatePreyTargets(encounter.topology);
         for (const enemy of KDMapData.Entities) {
             if (!(enemy.hp > 0) || !(enemy.shield > 0) || enemy.player || isOwnedProxy(enemy)) continue;
             const inside = Object.values(encounter.topology.composites || {}).some((composite) => {
-                const outer = composite.layerIds.at(-1);
-                if (
-                    encounter.topology.fields?.[outer]?.phase !== "sealed" ||
-                    !topology().containsDeclaredField(encounter.topology, outer, enemy)
-                )
-                    return false;
+                const sealed = composite.layerIds.some(
+                    (fieldId) =>
+                        encounter.topology.fields?.[fieldId]?.phase === "sealed" &&
+                        topology().containsDeclaredField(encounter.topology, fieldId, enemy),
+                );
+                if (!sealed) return false;
                 return fieldOwners(composite.id).some((ownerId) => {
                     const owner = KDMapData.Entities.find((candidate) => candidate.id === ownerId);
                     return owner?.hp > 0 && isSpiderling(owner) && KDHostile(owner, enemy);
@@ -451,18 +536,16 @@
 
     function passThrough(mover, proxy, map) {
         if (!canTraverse(mover, proxy) || !map) return 0;
-        const dx = Math.sign(proxy.x - mover.x),
-            dy = Math.sign(proxy.y - mover.y),
-            x = proxy.x + dx,
-            y = proxy.y + dy;
         if (
-            (!dx && !dy) ||
-            !KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y)) ||
-            KinkyDungeonEntityAt(x, y)
+            map.Entities.some(
+                (entity) =>
+                    !isOwnedProxy(entity) && entity !== mover && entity.hp > 0 && cellKey(entity) === cellKey(proxy),
+            ) ||
+            (KinkyDungeonPlayerEntity.x === proxy.x && KinkyDungeonPlayerEntity.y === proxy.y)
         )
             return 0;
-        if (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y) return 0;
-        KDMoveEntity(mover, x, y, true, undefined, true, false);
+        prioritizeActors(map);
+        KDMoveEntity(mover, proxy.x, proxy.y, true, undefined, true, true);
         return 2;
     }
 
@@ -530,12 +613,11 @@
         if (!graph || !from || !to) return undefined;
         const candidate = Object.values(graph.composites || {})
             .filter((composite) => {
-                const outerId = composite.layerIds.at(-1),
-                    outer = graph.fields?.[outerId];
-                return (
-                    outer?.phase === "breached" &&
-                    topology().containsDeclaredField(graph, outerId, from) &&
-                    !topology().containsDeclaredField(graph, outerId, to)
+                return composite.layerIds.some(
+                    (fieldId) =>
+                        graph.fields?.[fieldId]?.phase === "breached" &&
+                        topology().containsDeclaredField(graph, fieldId, from) &&
+                        !topology().containsDeclaredField(graph, fieldId, to),
                 );
             })
             .sort((left, right) => String(left.id).localeCompare(String(right.id)))[0];
@@ -548,36 +630,119 @@
         );
     }
 
-    if (typeof KinkyDungeonEnemies !== "undefined" && !KinkyDungeonEnemies.some((enemy) => enemy.name === PROXY)) {
-        const base = KinkyDungeonEnemies.find((enemy) => enemy.name === "IceWall") || {};
-        KinkyDungeonEnemies.push({
-            ...base,
-            name: PROXY,
-            faction: "Enemy",
-            regen: 0,
-            maxhp: 2,
-            armor: 0,
-            evasion: -100,
-            immobile: false,
-            pathcondition: PATH,
-            AI: "wander",
-            attack: "",
-            attackRange: 0,
-            visionRadius: 0,
-            movePoints: 1000,
-            attackPoints: 0,
-            weight: 0,
-            dropTable: [],
-            events: [],
-            tags: KDMapInit(["construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
-        });
+    // Select border pieces from the declared perimeter; drawing never edits construction or HP.
+    function borderArtwork(graph, cell) {
+        const parts = new Map();
+        const add = (part, rotation) => parts.set(`${part}:${rotation}`, { part, rotation });
+        for (const field of [...Object.values(graph.fields || {}), ...Object.values(graph.lineFields || {})]) {
+            const area = field.vertices.reduce((sum, vertex, index, vertices) => {
+                const next = vertices[(index + 1) % vertices.length];
+                return sum + vertex.x * next.y - next.x * vertex.y;
+            }, 0);
+            const vertices = field.kind !== "line" && area < 0 ? [...field.vertices].reverse() : field.vertices,
+                corner = vertices.findIndex((vertex) => cellKey(vertex) === cellKey(cell));
+            if (field.kind !== "line" && corner >= 0) {
+                const here = vertices[corner],
+                    neighbors = [
+                        vertices[(corner + vertices.length - 1) % vertices.length],
+                        vertices[(corner + 1) % vertices.length],
+                    ],
+                    directions = neighbors.map(
+                        (vertex) => `${Math.sign(vertex.x - here.x)},${Math.sign(vertex.y - here.y)}`,
+                    );
+                // The unrotated corner has legs facing up and right.
+                const rotations = [
+                    ["0,-1", "1,0"],
+                    ["1,0", "0,1"],
+                    ["0,1", "-1,0"],
+                    ["-1,0", "0,-1"],
+                ];
+                const quarter = rotations.findIndex((legs) => legs.every((leg) => directions.includes(leg)));
+                if (quarter >= 0) add("Corner", (quarter * Math.PI) / 2);
+                continue;
+            }
+            const edges = field.kind === "line" ? vertices.length - 1 : vertices.length;
+            for (let i = 0; i < edges; i++) {
+                const a = vertices[i],
+                    b = vertices[(i + 1) % vertices.length];
+                if (
+                    cell.x < Math.min(a.x, b.x) ||
+                    cell.x > Math.max(a.x, b.x) ||
+                    cell.y < Math.min(a.y, b.y) ||
+                    cell.y > Math.max(a.y, b.y)
+                )
+                    continue;
+                add(a.y === b.y ? "Top" : "Side", a.y === b.y ? (b.x < a.x ? Math.PI : 0) : b.y > a.y ? Math.PI : 0);
+            }
+        }
+        return [...parts.values()];
     }
+
+    if (typeof KDDrawEnemySprite === "function") {
+        const nativeDraw = KDDrawEnemySprite;
+        KDDrawEnemySprite = function (board, enemy, tx, ty, CamX, CamY, StaticView, zIndex = 0, id = "") {
+            let graph = state()?.topology;
+            const legacy = api.SpinnerField?.field?.();
+            const owned = isOwnedProxy(enemy) && proxyMarker(enemy).fieldId === graph?.fieldId;
+            const trainingNode =
+                enemy?.Enemy?.name === "SpiderlingsSilkAnchor" && legacy?.nodes?.some((node) => node.id === enemy.id);
+            if (!owned && !trainingNode) return nativeDraw.apply(this, arguments);
+            if (trainingNode) graph = { fields: { training: { kind: "enclosure", vertices: legacy.traps } } };
+            const size = KinkyDungeonGridSizeDisplay,
+                color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
+                parts = borderArtwork(graph, enemy);
+            for (const [index, art] of parts.entries())
+                KDDraw(
+                    board,
+                    kdpixisprites,
+                    `spr_${enemy.id}${id}_border_${index}`,
+                    KinkyDungeonRootDirectory + `Bullets/SpiderlingsSpinnerTrap${art.part}${color}.png`,
+                    (tx - CamX + 0.5) * size,
+                    (ty - CamY + 0.5) * size,
+                    size,
+                    size,
+                    art.rotation,
+                    { zIndex },
+                    true,
+                );
+            return enemy.Enemy.name;
+        };
+    }
+
+    // The old name is registered only so native save hydration can resolve it before migration.
+    for (const name of [PROXY, LEGACY_PROXY])
+        if (typeof KinkyDungeonEnemies !== "undefined" && !KinkyDungeonEnemies.some((enemy) => enemy.name === name)) {
+            const base = KinkyDungeonEnemies.find((enemy) => enemy.name === "IceWall") || {};
+            KinkyDungeonEnemies.push({
+                ...base,
+                name,
+                faction: "Enemy",
+                regen: 0,
+                maxhp: 2,
+                armor: 0,
+                evasion: -100,
+                immobile: false,
+                pathcondition: PATH,
+                AI: "wander",
+                attack: "",
+                attackRange: 0,
+                visionRadius: 0,
+                movePoints: 1000,
+                attackPoints: 0,
+                weight: 0,
+                dropTable: [],
+                events: [],
+                // Native CanSwapWith still needs structure admission after a successful pathcondition query.
+                tags: KDMapInit(["scenery", "construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
+            });
+        }
     if (typeof KDModFiles !== "undefined") {
         for (const prefix of ["", typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : ""])
             for (const color of ["", "Pink"])
-                KDModFiles[prefix + "Enemies/" + PROXY + color + ".png"] =
-                    KDModFiles[prefix + "Bullets/WebSprayTrail" + color + ".png"] ||
-                    KDModFiles["Bullets/WebSprayTrail" + color + ".png"];
+                for (const name of [PROXY, LEGACY_PROXY])
+                    KDModFiles[prefix + "Enemies/" + name + color + ".png"] =
+                        KDModFiles[prefix + "Bullets/SpiderlingsSpinnerTrapTop" + color + ".png"] ||
+                        KDModFiles["Bullets/SpiderlingsSpinnerTrapTop" + color + ".png"];
     }
     if (typeof KDPathConditions !== "undefined")
         KDPathConditions[PATH] = { query: canTraverse, doPassthrough: passThrough };
@@ -586,12 +751,13 @@
         KEY,
         PROXY,
         PATH,
-        SNARE,
         state,
         snapshot,
         fieldById,
         ensureMap,
         addLine,
+        addEnclosure,
+        addEnclosureLayer,
         retireField,
         setOwners,
         initializeMap,
@@ -601,6 +767,7 @@
         handleEnemyTurn,
         onNativeDamage,
         onEntry,
+        afterLoad,
         tick,
         reconcile,
         invalidateNavigation,

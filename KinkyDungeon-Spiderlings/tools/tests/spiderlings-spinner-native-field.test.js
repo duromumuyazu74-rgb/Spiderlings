@@ -4,13 +4,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { runtime } = require("./helpers/spinner-native-runtime.js");
 
-test("native Spinner web cells expose matching Normal and Pink artwork aliases", () => {
+test("capture boundaries and legacy load aliases use SpinnerTrap artwork in both colors", () => {
     const c = runtime().context;
     for (const prefix of ["", "Game/"])
         for (const color of ["", "Pink"])
             assert.equal(
-                c.KDModFiles[`${prefix}Enemies/SpiderlingsSpinnerWebCell${color}.png`],
-                c.KDModFiles[`Bullets/WebSprayTrail${color}.png`],
+                c.KDModFiles[`${prefix}Enemies/SpiderlingsSpinnerTrap${color}.png`],
+                c.KDModFiles[`Bullets/SpiderlingsSpinnerTrapTop${color}.png`],
             );
 });
 
@@ -46,6 +46,74 @@ function buildAll(
     }
     return { owners, encounter: started.encounter, handled };
 }
+
+test("native capture boundaries draw SpinnerTrap sides and corners without changing saved authority", () => {
+    for (const [pink, clockwise] of [
+        [false, true],
+        [true, true],
+        [false, false],
+        [true, false],
+    ]) {
+        const draws = [],
+            native = [];
+        const r = runtime({
+                KinkyDungeonGridSizeDisplay: 72,
+                kdpixisprites: new Map(),
+                KDDraw: (...args) => {
+                    draws.push(args);
+                    return {};
+                },
+                KDDrawEnemySprite: (...args) => {
+                    native.push(args);
+                    return "Bandit";
+                },
+            }),
+            c = r.context;
+        c.Spiderlings.getSetting = () => pink;
+        const encounter = c.Spiderlings.SpinnerNativeField.initializeEnclosure({
+            compositeId: "art",
+            owners: [1],
+            built: true,
+            layers: [
+                {
+                    id: "art-ring",
+                    vertices: [
+                        { x: 4, y: 4 },
+                        { x: 8, y: 4 },
+                        { x: 8, y: 8 },
+                        { x: 4, y: 8 },
+                    ],
+                    gate: { x: 6, y: 4 },
+                },
+            ],
+        });
+        if (!clockwise) encounter.topology.fields["art-ring"].vertices.reverse();
+        const before = JSON.stringify({ encounter, entities: c.KDMapData.Entities });
+        const expected = [
+            [4, 4, "Corner", Math.PI / 2],
+            [8, 4, "Corner", Math.PI],
+            [8, 8, "Corner", (3 * Math.PI) / 2],
+            [4, 8, "Corner", 0],
+            [5, 4, "Top", 0],
+            [8, 5, "Side", Math.PI],
+            [5, 8, "Top", Math.PI],
+            [4, 5, "Side", 0],
+        ];
+        for (const [x, y, part, rotation] of expected) {
+            const enemy = c.KDMapData.Entities.find((entity) => entity.x === x && entity.y === y);
+            assert.ok(enemy, `${x},${y}`);
+            c.KDDrawEnemySprite({}, enemy, x, y, 2, 3, false, 5, "test");
+            const call = draws.at(-1);
+            assert.equal(call[3], `Game/Bullets/SpiderlingsSpinnerTrap${part}${pink ? "Pink" : ""}.png`);
+            assert.deepEqual(call.slice(4, 9), [(x - 1.5) * 72, (y - 2.5) * 72, 72, 72, rotation]);
+            assert.equal(call[10], true);
+        }
+        c.KDDrawEnemySprite({}, { Enemy: { name: "Bandit" } }, 1, 2, 0, 0);
+        assert.equal(native.length, 1);
+        assert.equal(JSON.stringify({ encounter, entities: c.KDMapData.Entities }), before);
+        assert.ok(draws.every((call) => !call[3].includes("WebSprayTrail")));
+    }
+});
 
 test("pure topology requires paid anchor and connection operations and rejects action-boundary blockers", () => {
     const c = runtime().context,
@@ -93,6 +161,60 @@ test("pure topology requires paid anchor and connection operations and rejects a
     }
 });
 
+test("independent Spinner owners finish their own enclosures in one topology graph", () => {
+    const rules = runtime().context.Spiderlings.SpinnerTopology,
+        layer = (id, x) => ({
+            id,
+            vertices: [
+                { x: x - 1, y: 4 },
+                { x: x + 1, y: 4 },
+                { x: x + 1, y: 6 },
+                { x: x - 1, y: 6 },
+            ],
+            gate: { x, y: 4 },
+        });
+    let graph = rules.createEnclosure({
+        compositeId: "one",
+        owners: [1],
+        layers: [layer("one-field", 5)],
+        autoSeal: true,
+    });
+    graph = rules.addEnclosure(graph, {
+        compositeId: "two",
+        owners: [2],
+        layers: [layer("two-field", 14)],
+        autoSeal: true,
+    }).state;
+    const expected = new Map([
+        [1, "one-field"],
+        [2, "two-field"],
+    ]);
+    for (let turn = 0; turn < 30; turn++) {
+        for (const [ownerId, fieldId] of expected) {
+            const action = rules.nextWorkAction(graph, ownerId, { x: ownerId === 1 ? 5 : 14, y: 7 });
+            if (!action) continue;
+            assert.equal(action.fieldId, fieldId);
+            const result = rules.applyAction(
+                graph,
+                { ...action, ownerId },
+                {
+                    cell: action.cell,
+                    inBounds: true,
+                    floor: true,
+                    protected: false,
+                    occupied: false,
+                },
+            );
+            assert.equal(result.outcome.legal, true, `${fieldId}: ${JSON.stringify(result.outcome)}`);
+            graph = result.state;
+        }
+    }
+    for (const fieldId of expected.values()) {
+        assert.equal(graph.fields[fieldId].phase, "sealed");
+        assert.ok(graph.actionLog.some((action) => action.fieldId === fieldId && action.type === "closeGate"));
+    }
+});
+
 test("two supplied Spinners construct one cell per paid action without moving", () => {
     const r = runtime(),
         built = buildAll(r),
@@ -105,7 +227,7 @@ test("two supplied Spinners construct one cell per paid action without moving", 
     assert.ok(proxies.every((proxy) => proxy.targetedForAttack && proxy.Enemy.immobile === false));
 });
 
-test("native pathcondition lets only Spiderlings cross without moving or duplicating the proxy", () => {
+test("native pathcondition lets a spider stand on a web while preserving both identities", () => {
     const r = runtime();
     buildAll(r, [
         { x: 5, y: 4 },
@@ -121,9 +243,33 @@ test("native pathcondition lets only Spiderlings cross without moving or duplica
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(spiderling, proxy), true);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(bandit, proxy), false);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.doPassthrough(spiderling, proxy, c.KDMapData), 2);
-    assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 6, y: 5 });
+    assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 5, y: 5 });
     assert.deepEqual({ x: proxy.x, y: proxy.y }, { x: 5, y: 5 });
-    assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 1);
+    assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 2);
+    assert.equal(c.KinkyDungeonEntityAt(5, 5), spiderling);
+    assert.equal(c.Spiderlings.SpinnerNativeField.snapshot({ x: 5, y: 5 }).occupied, false);
+    assert.equal(c.Spiderlings.SpinnerNativeField.snapshot({ x: 5, y: 5 }).actorOccupied, true);
+});
+
+test("a builder places web beneath a spider without kicking it or redirecting its hit", () => {
+    const r = runtime(),
+        c = r.context,
+        standing = { id: 77, x: 5, y: 5, hp: 5, Enemy: { name: "Jumper", tags: { spiderlings: true } } };
+    c.KDMapData.Entities.push(standing);
+    const built = buildAll(r);
+    assert.equal(
+        built.encounter.topology.links[0].builtCells.some((cell) => cell.x === 5 && cell.y === 5),
+        true,
+    );
+    const proxy = c.KDMapData.Entities.find(
+        (entity) => c.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5,
+    );
+    assert.ok(proxy);
+    assert.deepEqual({ x: standing.x, y: standing.y, hp: standing.hp }, { x: 5, y: 5, hp: 5 });
+    assert.equal(c.KinkyDungeonEntityAt(5, 5), standing);
+    const hp = built.encounter.topology.links[0].hp;
+    assert.equal(c.Spiderlings.SpinnerNativeField.onNativeDamage({ enemy: standing, dmgDealt: 1 }), false);
+    assert.equal(built.encounter.topology.links[0].hp, hp);
 });
 
 test("native planning snapshot protects object shortcuts, jail points, and required interaction tiles", () => {
@@ -187,24 +333,18 @@ test("native area hits contribute once per covered proxy and a middle-cell breac
     assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 2);
 });
 
-test("anchor snare is once per target and never creates capture or restraint state", () => {
+test("touching a capture boundary never creates a ground snare or a capture", () => {
     const r = runtime();
     buildAll(r);
     const c = r.context,
         target = { id: 44, x: 5, y: 3, hp: 5, Enemy: { tags: {} } };
-    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(target, 5, 3), true);
     assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(target, 5, 3), false);
-    assert.equal(r.buffs.length, 1);
-    assert.deepEqual(JSON.parse(JSON.stringify(r.buffs[0].buff)), {
-        id: "SpiderlingsSpinnerSnaringSilk",
-        type: "MoveSpeed",
-        power: -1,
-        duration: 2,
-    });
+    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(target, 5, 3), false);
+    assert.equal(r.buffs.length, 0);
     assert.equal(c.KDGameData.SpiderlingsSpinnerCapture, undefined);
 });
 
-test("a hostile shielded NPC touching an owned ground trap receives shield pressure", () => {
+test("touching a boundary cannot bypass the sealed-field requirement for shield pressure", () => {
     const r = runtime();
     buildAll(r);
     const c = r.context;
@@ -212,13 +352,13 @@ test("a hostile shielded NPC touching an owned ground trap receives shield press
     c.Spiderlings.Combat = { pressureNPCShield: (enemy) => pressured.push(enemy.id) };
     const maid = { id: 71, x: 5, y: 3, hp: 8, shield: 8, Enemy: { name: "MaidforceMini", tags: {} } };
     c.KDMapData.Entities.push(maid);
-    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3), true);
-    assert.deepEqual(pressured, [71]);
+    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3), false);
+    assert.deepEqual(pressured, []);
     c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3);
-    assert.deepEqual(pressured, [71]);
+    assert.deepEqual(pressured, []);
 });
 
-test("runtime movement events apply Snaring on voluntary, forced, and NPC anchor entry", () => {
+test("voluntary, forced, and NPC boundary entry never applies the retired ground-trap buff", () => {
     for (const entry of [
         { event: "playerMove", willing: true, npc: false },
         { event: "playerMove", willing: false, npc: false },
@@ -230,18 +370,17 @@ test("runtime movement events apply Snaring on voluntary, forced, and NPC anchor
             target = entry.npc ? { id: 71, x: 5, y: 3, hp: 2, Enemy: { tags: {} } } : c.KinkyDungeonPlayerEntity,
             data = { enemy: target, moveX: 5, moveY: 3, willing: entry.willing, cancelmove: false };
         c.KDEventMapGeneric[entry.event].SpiderlingsSpinnerRuntime({}, data);
-        assert.equal(r.buffs.length, 1);
-        assert.equal(r.buffs[0].entity, target);
+        assert.equal(r.buffs.length, 0);
     }
 });
 
-test("JSON save roundtrip reconciles one proxy per solid cell and preserves owners, HP, and snare IDs", () => {
+test("old saves retain field owners and HP while retiring WebCell names and snare state", () => {
     const r = runtime();
     buildAll(r);
     const c = r.context,
         field = c.Spiderlings.SpinnerNativeField,
         encounter = field.state();
-    field.onEntry({ id: 55, Enemy: {} }, 5, 3);
+    encounter.topology.anchors[0].snaredTargetIds = [55];
     encounter.topology.links[0].hp -= 0.25;
     encounter.topology.ownerlessAge = 7;
     const saved = JSON.parse(JSON.stringify(encounter));
@@ -250,15 +389,31 @@ test("JSON save roundtrip reconciles one proxy per solid cell and preserves owne
         proxy = proxies[0];
     c.KDMapData.Entities.push({ ...proxy, id: 999 });
     c.KDMapData.Entities.splice(c.KDMapData.Entities.indexOf(proxies[1]), 1);
+    const oldDefinition = c.KinkyDungeonEnemies.find((enemy) => enemy.name === "SpiderlingsSpinnerWebCell");
+    for (const entity of c.KDMapData.Entities.filter(field.isOwnedProxy)) entity.Enemy = oldDefinition;
+    proxy.buffs = { SpiderlingsSpinnerSnaringSilk: {}, ForeignBuff: { duration: 9 } };
+    c.KinkyDungeonPlayerEntity.buffs = { SpiderlingsSpinnerGroundTrap: {} };
+    c.KinkyDungeonPlayerBuffs = { SpiderlingsSpinnerSnaringSilk: {}, ForeignBuff: { duration: 7 } };
     c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
     const reconciled = field.reconcile();
-    const solids = c.Spiderlings.SpinnerTopology.solidCells(saved.topology);
+    const restored = field.state().topology,
+        solids = c.Spiderlings.SpinnerTopology.solidCells(restored);
     assert.equal(reconciled.created, 0);
     assert.equal(reconciled.removed, 0);
     assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, solids.length);
-    assert.deepEqual(Array.from(saved.topology.owners), [1, 2]);
-    assert.deepEqual(Array.from(saved.topology.anchors[0].snaredTargetIds), [55]);
-    assert.equal(saved.topology.ownerlessAge, 7);
+    assert.deepEqual(Array.from(restored.owners), [1, 2]);
+    assert.equal(restored.anchors[0].snaredTargetIds, undefined);
+    assert.equal(restored.ownerlessAge, 7);
+    assert.equal(restored.links[0].hp, saved.topology.links[0].hp);
+    assert.equal(proxy.id, proxies[0].id);
+    assert.equal(proxy.buffs.SpiderlingsSpinnerSnaringSilk, undefined);
+    assert.equal(proxy.buffs.ForeignBuff.duration, 9);
+    assert.equal(c.KinkyDungeonPlayerEntity.buffs.SpiderlingsSpinnerGroundTrap, undefined);
+    assert.equal(c.KinkyDungeonPlayerBuffs.SpiderlingsSpinnerSnaringSilk, undefined);
+    assert.equal(c.KinkyDungeonPlayerBuffs.ForeignBuff.duration, 7);
+    assert.ok(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).every((enemy) => enemy.Enemy.name === "SpiderlingsSpinnerTrap"),
+    );
 });
 
 test("one surviving owner retains the line and final-owner collapse occurs on active turn twenty", () => {

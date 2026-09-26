@@ -17,13 +17,19 @@ const localeFiles = ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((locale) => `
 const runtimeScripts = [
     "SpiderlingsCore.js",
     "SpiderlingsEncounters.js",
+    "SpiderlingsFloorSelection.js",
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
+    "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
+    "SpiderlingsHuntingGrounds.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsNPCAdhesion.js",
+    "SpiderlingsNPCWrapping.js",
     "SpiderlingsMage.js",
     "SpiderlingsMageRunes.js",
+    "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -37,6 +43,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerNPCCapture.js",
     "SpiderlingsSpinnerField.js",
     "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsWebMobility.js",
     "SpiderlingsSpinnerRecovery.js",
     "SpiderlingsSpinnerNPCRecovery.js",
     "SpiderlingsSpinnerAI.js",
@@ -65,6 +72,7 @@ const soundAssets = [
 ];
 const runtimeAssets = [
     "UI/MapMod/SpiderlingsInfestation.png",
+    "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
     "Bullets/SpiderlingsMageRuneIcon.png",
@@ -91,6 +99,9 @@ const runtimeAssets = [
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
     "Enemies/MageSpiderlings.png",
+    "Enemies/MageSpiderlingsSpellParticles.png",
+    "Enemies/MageSpiderlingsSubtleGlow.png",
+    "Enemies/MageSpiderlingsReallyGlowy.png",
     "Enemies/NestEntrancePink.png",
     "Enemies/SpinnerPink.png",
     "Enemies/TunnelerPink.png",
@@ -1762,7 +1773,6 @@ function checkTranslations(state) {
         "SpiderlingsFieldRebuild",
         "SpiderlingsFieldWaiting",
         "SpiderlingsFieldAddSpinner",
-        "SpiderlingsFieldTrap",
         ...["preparing", "ready", "sprung", "broken", "complete"].map((p) => "SpiderlingsFieldPhase" + p),
     );
     const pairedGateKey = "KinkyDungeonSpiderlingsWebbingLv1Covered";

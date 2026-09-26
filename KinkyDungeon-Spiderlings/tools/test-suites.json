@@ -13,10 +13,15 @@
     "spiderlings-spinner-enclosure.test.js",
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-spinner-ai.test.js",
+    "spiderlings-web-mobility.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-mage-combat.test.js",
+    "spiderlings-mage-visuals.test.js",
     "spiderlings-mage-runes.test.js",
     "spiderlings-mage-spells.test.js",
+    "spiderlings-npc-adhesion.test.js",
+    "spiderlings-npc-wrapping.test.js",
+    "spiderlings-hunting-grounds-layout.test.js",
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",
@@ -25,16 +30,20 @@
   "local": [
     "spiderlings-encounters.test.js",
     "spiderlings-combat.test.js",
+    "spiderlings-npc-adhesion-native.test.js",
+    "spiderlings-npc-wrapping-native.test.js",
     "spiderlings-mage-runes-native.test.js",
     "spiderlings-mage-spells-native.test.js",
     "spiderlings-maid-hostility.test.js",
     "spiderlings-infestation.test.js",
+    "spiderlings-hunting-grounds.test.js",
     "spiderlings-webbing-lv1.test.js",
     "spiderlings-webbing-lifecycle.test.js",
     "spiderlings-jumper-dash.test.js",
     "spiderlings-webbing-webspray.test.js",
     "spiderlings-webbing-atlas.test.js",
     "spiderlings-new-save-smoke.test.js",
-    "spiderlings-spinner-native-contract.test.js"
+    "spiderlings-spinner-native-contract.test.js",
+    "spiderlings-web-mobility-native.test.js"
   ]
 }

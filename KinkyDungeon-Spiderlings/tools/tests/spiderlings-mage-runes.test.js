@@ -108,6 +108,30 @@ test("rune replaces one native Mage cast, chooses an empty nearby tile and stops
     assert.equal(r.choose(), r.spell.name, "expired runes free capacity");
 });
 
+test("Hunting Grounds rune can trigger on allied neutral NPC prey", () => {
+    const r = fixture();
+    r.c.Spiderlings.HuntingGrounds = { isPrey: (_source, target) => target.Enemy?.name === "Neutral" };
+    r.c.KDHostile = () => true;
+    r.cast();
+    const bullet = r.map.Bullets[0];
+    r.tick();
+    r.tick();
+    const neutral = {
+        id: 11,
+        x: bullet.x,
+        y: bullet.y,
+        hp: 8,
+        faction: "Enemy",
+        allied: true,
+        Enemy: { name: "Neutral" },
+    };
+    r.map.Entities.push(neutral);
+    r.tick();
+    assert.equal(bullet.SpiderlingsRunePhase, "triggered");
+    r.tick();
+    assert.equal(neutral.slime, 6);
+});
+
 test("rune icon places for one turn, then the triggered rune warns 3x3 and binds after one turn", () => {
     const r = fixture();
     r.cast();

@@ -85,7 +85,7 @@ function fixture(overrides = {}) {
             .replace(/function [^{]+\{/, `function ${name}(bullet, enemy, inWarningOnly, overrideCollide) {`);
         vm.runInContext(body, c);
     }
-    for (const file of ["SpiderlingsCombat.js", "SpiderlingsJumperDash.js"])
+    for (const file of ["SpiderlingsCombat.js", "SpiderlingsNPCAdhesion.js", "SpiderlingsJumperDash.js"])
         vm.runInContext(fs.readFileSync(path.join(__dirname, "../..", file), "utf8"), c);
     const spawn = (id, name, faction) => {
         const e = { id, Enemy: { name }, faction, hp: 8, boundLevel: 0, equipment: 0, x: 0, y: 0 };
@@ -465,6 +465,20 @@ test("two successful NPC direct sources add binding only, at most once per targe
     assert.equal(target.equipment, 0);
     const other = c.KDMapData.Entities[2];
     assert.equal(other, target);
+});
+
+test("native spray adapter opens adhesion only after Slime and crossfire adds no paid pressure", () => {
+    const { c, a, b, target, shot } = cooperationFixture();
+    target.shield = 5;
+    shot(a);
+    assert.equal(c.Spiderlings.NPCAdhesion.status(target), "free");
+    delete target.shield;
+    shot(a);
+    assert.equal(c.Spiderlings.NPCAdhesion.status(target), "initial");
+    shot(b);
+    assert.equal(target.specialBoundLevel.Slime, 8);
+    assert.equal(c.Spiderlings.NPCAdhesion.pressure(target), 6);
+    assert.equal(c.Spiderlings.NPCAdhesion.status(target), "full");
 });
 
 test("NPC cooperation excludes repeats, trails, stale or disabled partners, blocked hits and reused bullets", () => {

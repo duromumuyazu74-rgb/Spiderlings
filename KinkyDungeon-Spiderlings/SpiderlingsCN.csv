@@ -123,13 +123,13 @@ RestraintSpiderlingsWebbingCocoonDesc,层层蛛丝贴合身体织成厚软的丝
 RestraintSpiderlingsWebbingCocoonDesc2,茧壁随着身体的动作泛起浅褶，垂落的丝缕沿地面轻轻拂过，发出细柔的窸窣声。
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1覆在TargetLv2下面。先移除外层，才能处理里面的蛛丝。
 KinkyDungeonSpiderlingsCocoonAnchored,幼蛛沿着丝茧牵好层层蛛网，将茧身固定在原地，你暂时无法移动。
-KDMapMod_SpiderlingsInfestation,幼蛛侵扰
-KinkyDungeonMapModSpiderlingsInfestation,角落铺着细软的蛛网，幼蛛沿丝缕轻巧地来往，四下响着轻细的窸窣声。
-KDEscapeMethod_SpiderlingsInfestation,摧毁目标巢穴
-KDEscapeMethodDesc_SpiderlingsInfestation,最初筑在这里的几处蛛巢，洞边垂着细软的丝缕。摧毁这些目标巢穴后，便可继续下行。
-SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/TARGET
-SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/TARGET）
-SpiderlingsInfestationComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（TARGET/TARGET）
+KDMapMod_SpiderlingsHuntingGrounds,幼蛛猎场
+KinkyDungeonMapModSpiderlingsHuntingGrounds,细软的蛛网铺过整层，幼蛛在巢穴间穿行，狭道里一路跟着轻细的窸窣声。
+KDEscapeMethod_SpiderlingsHuntingGrounds,摧毁目标巢穴
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,最初筑在这里的几处蛛巢，洞边垂着细软的丝缕。摧毁这些目标巢穴后，便可继续下行。
+SpiderlingsHuntingGroundsProgress,目标巢穴已摧毁：CURRENT/TARGET
+SpiderlingsHuntingGroundsBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/TARGET）
+SpiderlingsHuntingGroundsComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（TARGET/TARGET）
 KDModButtonspiderlingsPinkWebbing,粉色蛛丝（关闭为原色）
 KDModButtonspiderlingsEnableHood,幼蛛丝质头套（关闭后不再穿戴）
 KinkyDungeonSpiderlingsWebbingInterwoven,两束蛛丝相互交织，贴着身体铺好，又缠住了一处。
@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,挣开需要 10 精力。你仍可等待或使用药水�
 SpiderlingsSpinnerWrap,结网幼蛛开始包裹双腿，持续五个世界回合；上身和手臂保持原有状态。
 SpiderlingsSpinnerDone,腿袋已织成。你可以攻击、用物、缓慢移动或解除腿袋。
 KinkyDungeonStatSpiderlingsSpinnerDemo,结网幼蛛试玩
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,进入平坦场地，观看幼蛛放置地面陷阱并连接封路，体验双进度对抗、五回合包裹和跳跃幼蛛避让。
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,进入平坦场地，观看幼蛛建造捕获场地并在你进入后封住入口，体验双进度对抗、五回合包裹和跳跃幼蛛避让。
 NameSpiderlingsSilkAnchor,蛛网结点
 KillSpiderlingsSilkAnchor,蛛网边界裂开了。
-SpiderlingsFieldPreparing,幼蛛先放地面陷阱，再连接陷阱拦截退路。可以在封闭前离开，或切断连接。
-SpiderlingsFieldReady,两个陷阱已连接。幼蛛继续拦截其他退路。
-SpiderlingsFieldSprung,陷阱连接已围住区域，仍在内部的玩家可能被捕获。
+SpiderlingsFieldPreparing,幼蛛正在建造捕获场地边界。可以在入口封闭前离开，或切断连接。
+SpiderlingsFieldReady,一段边界已连接，幼蛛继续建造捕获场地。
+SpiderlingsFieldSprung,捕获场地已封闭，仍在内部的玩家可能被捕获。
 SpiderlingsFieldBroken,结点断裂，围网瓦解，牵制解除。
 SpiderlingsFieldReset,重置试玩
 SpiderlingsFieldJumper,放出跳跃幼蛛
-SpiderlingsFieldStatus,蛛网场地：{phase} · 陷阱 {count}/4 · 连接 {links}/4
+SpiderlingsFieldStatus,捕获场地：{phase} · 拐角 {count}/4 · 连接 {links}/4
 SpiderlingsFieldPhasepreparing,织网准备
 SpiderlingsFieldPhaseready,连接准备
 SpiderlingsFieldPhasesprung,连接完整
@@ -186,10 +186,10 @@ SpiderlingsFieldPhasecomplete,已完成
 SpiderlingsSpinnerWeave,拘束进度：{value}/100
 SpiderlingsSpinnerEscape,挣脱进度：{value}/{goal}
 SpiderlingsFieldAddSpinner,加入一只 Spinner
-SpiderlingsFieldTrap,地面蛛丝缠住脚步，短暂减缓移动。
 SpiderlingsFieldRebuild,幼蛛将在 {turns} 个世界回合后重新开始布场。
-SpiderlingsFieldWaiting,陷阱已备好。西侧入口在你进入前保持开放。
+SpiderlingsFieldWaiting,捕获场地已备好。西侧入口在你进入前保持开放。
 NameMageSpiderlings,法师幼蛛
+NameSpiderlingsSpinnerTrap,捕获场地边界
 KillMageSpiderlings,法师幼蛛收拢细腿，退入阴影。
 KinkyDungeonSpellSpiderlingsMageBolt,幼蛛魔法丝弹
 KinkyDungeonSpellCastSpiderlingsMageBolt,法师幼蛛聚起一团发亮的蛛丝，向你掷来。
@@ -199,3 +199,16 @@ KinkyDungeonSpellSpiderlingsMageHex,蚀盾咒印
 KinkyDungeonSpellCastSpiderlingsMageHex,法师幼蛛在地面画出一片蚀盾咒印。
 KinkyDungeonSpellSpiderlingsMageCollapse,千丝坠牢
 KinkyDungeonSpellCastSpiderlingsMageCollapse,层层蛛丝从法阵外缘向中心收拢。
+SpiderlingsNPCAdhesionInitial,黏住
+SpiderlingsNPCAdhesionFull,蛛丝缠牢
+SpiderlingsNPCAdhesionHelpless,无力反抗
+SpiderlingsNPCWrapping,结茧中
+KDMapMod_SpiderlingsInfestation,幼蛛侵扰
+KinkyDungeonMapModSpiderlingsInfestation,角落铺着细软的蛛网，幼蛛沿丝缕轻巧地来往，四下响着轻细的窸窣声。
+KDEscapeMethod_SpiderlingsInfestation,摧毁目标巢穴
+KDEscapeMethodDesc_SpiderlingsInfestation,最初筑在这里的几处蛛巢，洞边垂着细软的丝缕。摧毁这些目标巢穴后，便可继续下行。
+SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/5
+SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/5）
+SpiderlingsInfestationComplete,目标巢穴已尽数摧毁，散落的丝缕渐渐落定，可以沿楼梯继续前行了。（5/5）
+KDModButtonspiderlingsInfestationWeight,幼蛛侵扰权重（0：关闭）
+KDModButtonspiderlingsHuntingGroundsWeight,幼蛛猎场权重，仅女仆主派系（0：关闭）

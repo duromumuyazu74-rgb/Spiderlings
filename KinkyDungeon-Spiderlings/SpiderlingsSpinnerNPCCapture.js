@@ -99,6 +99,14 @@
         if (!Object.keys(container.records).length) delete KDGameData[STATE];
     }
 
+    function releaseForWrapping(target) {
+        const existing = recordForTarget(target);
+        if (!existing) return false;
+        deleteRecord(existing);
+        struggleReduction.delete(target.id);
+        return true;
+    }
+
     function holdSources(sources) {
         for (const source of sources) {
             source.stun = Math.max(source.stun || 0, HOLD_TURNS);
@@ -224,7 +232,7 @@
                     contributors[0],
                     target,
                     BIND_PER_SOURCE * contributors.length,
-                    { contact: false, attack: "capture" },
+                    { contact: false, attack: "capture", contributors: contributors.map((source) => source.id) },
                 );
                 record.strandDebt += result.slimeAdded;
             }
@@ -340,6 +348,7 @@
         targetEligible,
         sourceEligible,
         onSuccessfulNativeSpinnerHit,
+        releaseForWrapping,
         handleEnemyTurn,
         auditSources,
         observeNativeStruggle,

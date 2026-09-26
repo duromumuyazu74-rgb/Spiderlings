@@ -10,7 +10,7 @@ Original Spiderlings Mod author: **anthropocentricity**. Revival and maintenance
 
 The matching four `Pink.png` border and tether assets were supplied by T_Swizzle as standalone PNGs. The four `SpiderWeb`, `SpiderWebHit`, `WebSpray`, and `WebSprayTrail` Normal assets use the v2 layers of `Enemy Webs.psd`; their `Pink.png` counterparts use T_Swizzle's corresponding standalone v2 PNGs. Source filenames are preserved in the local handoff, while the Mod keeps its existing runtime filenames.
 
-`Enemies/MageSpiderlings.png` is an unchanged copy of the existing T_Swizzle `Enemies/WebCaster.png`, used as temporary Mage artwork. The credit and CC BY-NC 4.0 terms above apply to both files.
+T_Swizzle created `Enemies/MageSpiderlings.png`, `Enemies/MageSpiderlingsSpellParticles.png`, `Enemies/MageSpiderlingsSubtleGlow.png`, and `Enemies/MageSpiderlingsReallyGlowy.png`. They preserve the four PNG files supplied in `T's Enemies (1).zip` without changing their bytes. The maintainer confirmed the existing CC BY-NC 4.0 artwork license for all four files. The runtime keys out their opaque blue export matte during drawing.
 
 `Bullets/SpiderlingsMageRuneHit.png` and `Bullets/SpiderlingsMageBoltHit.png` are byte-for-byte copies of the existing `Bullets/SpiderlingsMageRune.png` glyph for KD's native hit effects; they add no separate external artwork source.
 
