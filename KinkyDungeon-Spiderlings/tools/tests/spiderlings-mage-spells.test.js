@@ -123,6 +123,28 @@ test("Shield Hex warns twice, covers 4x4 for three turns and extends mark and sh
     assert.equal(r.c.Spiderlings.MageSpells.markFor(r.maid).fragileUntil, 8);
 });
 
+test("Hunting Grounds Hex pressures neutral allied NPCs", () => {
+    const r = fixture();
+    r.c.Spiderlings.HuntingGrounds = { isPrey: (_source, target) => target.Enemy?.name === "Neutral" };
+    r.c.KDHostile = () => true;
+    const neutral = {
+        id: 3,
+        x: 7,
+        y: 7,
+        hp: 20,
+        shield: 10,
+        faction: "Enemy",
+        allied: true,
+        Enemy: { name: "Neutral" },
+    };
+    r.map.Entities = [r.mage, neutral];
+    r.cast("SpiderlingsMageHex");
+    r.tick();
+    r.tick();
+    r.tick();
+    assert.equal(neutral.shield, 7);
+});
+
 test("fragility adds half of actual shield damage without HP overflow, and an ally hit detonates next turn", () => {
     const r = fixture();
     r.cast("SpiderlingsMageHex");

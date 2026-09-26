@@ -123,13 +123,13 @@ RestraintSpiderlingsWebbingCocoonDesc,Dichte Seide hüllt deinen Körper in eine
 RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand zittert, wenn du dich windest. Nachschleifende Fäden rascheln über den Boden, als trügen sie die Regungen im Inneren in die Dunkelheit.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 liegt unter TargetLv2 begraben; du berührst nur die klebrige Seide darüber.
 KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Kokon und halten dich fest an Ort und Stelle!
-KDMapMod_SpiderlingsInfestation,Jagdrevier der Jungspinnen
-KinkyDungeonMapModSpiderlingsInfestation,Weiche Netze ziehen sich durch die ganze Etage. Jungspinnen huschen zwischen ihren Nestern umher und ein leises Rascheln folgt dir durch die Gänge.
-KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
-KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
-SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/TARGET
-SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
-SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
+KDMapMod_SpiderlingsHuntingGrounds,Jagdrevier der Jungspinnen
+KinkyDungeonMapModSpiderlingsHuntingGrounds,Weiche Netze ziehen sich durch die ganze Etage. Jungspinnen huschen zwischen ihren Nestern umher und ein leises Rascheln folgt dir durch die Gänge.
+KDEscapeMethod_SpiderlingsHuntingGrounds,Markierte Nester zerstören
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
+SpiderlingsHuntingGroundsProgress,Markierte Nester zerstört: CURRENT/TARGET
+SpiderlingsHuntingGroundsBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Rosa Spinnweben (aus: Original)
 KDModButtonspiderlingsEnableHood,Seidene Spinnenhaube (aus: nie anlegen)
 KinkyDungeonSpiderlingsWebbingInterwoven,Die sich kreuzenden Fäden ziehen sich zu und fesseln einen weiteren Teil deines Körpers.
@@ -203,3 +203,10 @@ SpiderlingsNPCAdhesionInitial,Fixiert
 SpiderlingsNPCAdhesionFull,Vollständig gefesselt
 SpiderlingsNPCAdhesionHelpless,Hilflos
 SpiderlingsNPCWrapping,Einspinnen
+KDMapMod_SpiderlingsInfestation,Spinnenbefall
+KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
+KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
+KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
+SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/5
+SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/5)
+SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)

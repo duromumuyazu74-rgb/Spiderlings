@@ -39,6 +39,22 @@
             typeof globalThis.KDIsNPCPersistent === "function" && globalThis.KDIsNPCPersistent(target?.id)
                 ? globalThis.KDGetPersistentNPC(target.id)
                 : undefined;
+        if (api.HuntingGrounds?.active?.()) {
+            const capturable =
+                typeof KDCapturable === "function"
+                    ? KDCapturable(target)
+                    : target?.Enemy?.bound &&
+                      !target.Enemy.allied &&
+                      !["skeleton", "construct", "nobrain", "nocapture"].some((tag) => tags[tag]);
+            return !!(
+                !target ||
+                target.player ||
+                !(target.hp > 0) ||
+                !capturable ||
+                persistent?.alwaysEscape ||
+                api.SpinnerNativeField?.isOwnedProxy?.(target)
+            );
+        }
         return !!(
             !target ||
             target.player ||

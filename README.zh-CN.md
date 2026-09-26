@@ -14,15 +14,15 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 ## 版本
 
-| 分支                                                                                  | 版本              | 用途                                                            |
-| ------------------------------------------------------------------------------------- | ----------------- | --------------------------------------------------------------- |
-| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)                 | `0.92.38`         | 正式版                                                          |
-| [侵扰楼层 PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)          | `0.92.36-test.24` | 修复 Spinner 施工和守巢反击的普通侵扰楼层测试版                 |
-| [头套与符文 Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84)   | `0.92.36-test.26` | 可关闭幼蛛头套、延迟一回合的 3×3 法师符文，取消法师手臂拘束     |
-| [敌方蛛网素材 Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86) | `0.92.36-test.29` | Spinner 双配色、四角方向校正、WebCaster v2 效果及蛛网格颜色修复 |
-| [幼蛛猎场总规格 #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)     | `0.92.36-test.32` | 三巢四守卫、全图布局、可扩展 Spinner 围场、蛛网移动与非致命缠裹 |
+| 分支                                                                                  | 版本              | 用途                                                                                |
+| ------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------- |
+| [`main`](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/main)                 | `0.92.38`         | 正式版                                                                              |
+| [侵扰楼层 PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)          | `0.92.36-test.24` | 修复 Spinner 施工和守巢反击的普通侵扰楼层测试版                                     |
+| [头套与符文 Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84)   | `0.92.36-test.26` | 可关闭幼蛛头套、延迟一回合的 3×3 法师符文，取消法师手臂拘束                         |
+| [敌方蛛网素材 Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86) | `0.92.36-test.29` | Spinner 双配色、四角方向校正、WebCaster v2 效果及蛛网格颜色修复                     |
+| [幼蛛猎场总规格 #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)     | `0.92.36-test.34` | 五巢“幼蛛侵扰”（权重 50）与三巢“幼蛛猎场”（权重 100）独立存在；猎场幼蛛捕猎所有 NPC |
 
-这个测试包包含三巢“幼蛛猎场”楼层改动，不包含独立开发的巢穴监狱。监狱实验版使用自己的 `prison.alpha.N` 版本序列；游戏中一次只启用一个 Spiderlings 包。
+这个测试包同时包含五巢“幼蛛侵扰”和三巢“幼蛛猎场”。猎场幼蛛会追捕所有 NPC，包括友方、商人和任务角色；`nocapture` 等原生不可捕获目标仍不会被缠走。独立开发的巢穴监狱不在此包内，使用自己的 `prison.alpha.N` 版本序列；游戏中一次只启用一个 Spiderlings 包。
 
 test.31 为三个原始侵扰任务巢各配四名守卫，三巢全部击破后才能下楼。Spinner 按真实行动建造最小 3×3 围场，并可逐圈扩展；移动幼蛛通过自有蛛网时加速。WebCaster 蛛丝可黏住敌对 NPC，相邻幼蛛随后可支付三次行动，非致命缠走合格目标。BlindZombie 可以被黏住，但不会被缠走。
 

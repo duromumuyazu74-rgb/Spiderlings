@@ -1508,7 +1508,7 @@
         if (!group || !eligibleSpinner(enemy)) return false;
         if (group.source?.type === "nest") clearEngagement(group);
         else auditEngagement(encounter, group);
-        if (api.Infestation?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
+        if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
         const observed = group.source?.type === "nest" ? false : observeTarget(encounter, group, enemy, target, aiData),
             perceivedThreat = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
             actualSight = !!(

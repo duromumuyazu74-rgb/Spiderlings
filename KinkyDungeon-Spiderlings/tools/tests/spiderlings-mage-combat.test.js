@@ -90,6 +90,15 @@ test("Mage bonus does not affect allies or unrelated NPC targets", () => {
     );
 });
 
+test("Hunting Grounds Mage bolts try to subdue allied neutral NPCs", () => {
+    const r = fixture();
+    r.c.Spiderlings = { HuntingGrounds: { isPrey: (_source, target) => target.Enemy?.name === "Neutral" } };
+    r.c.KDHostile = () => true;
+    const neutral = { id: 14, faction: "Enemy", allied: true, Enemy: { name: "Neutral" }, hp: 8 };
+    r.c.KDBulletHitEnemy(r.bullet(), neutral);
+    assert.equal(neutral.hp, 4);
+});
+
 test("Mage combat module adds no arm restraint or custom player effect", () => {
     const r = fixture();
     assert.equal(r.bullet().bullet.playerEffect.name, "Damage");

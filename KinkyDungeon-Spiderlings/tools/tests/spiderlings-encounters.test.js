@@ -205,7 +205,7 @@ test("Mage selector preserves native tags and filters its unique ID below both t
     kd.KinkyDungeonGetEnemy([], 4, "grv", ".", [], undefined, { MageSpiderlings: { bonus: 2, mult: 0.5 } });
     assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 5);
     assert.equal(calls.at(-1)[6].MageSpiderlings.mult, 0.5);
-    kd.KDMapData.MapMod = "SpiderlingsInfestation";
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
     kd.KinkyDungeonGetEnemy([], 4, "grv", ".");
     assert.equal(calls.at(-1)[6].MageSpiderlings.bonus, 4);
     kd.MiniGameKinkyDungeonLevel = 5;
@@ -1559,7 +1559,7 @@ test("only original three-nest objectives have a four-guard living cap", () => {
     const c = loadCoreRuntime({
         KDMapData: {
             Entities: [task, ...children(11, 4)],
-            SpiderlingsInfestation: { status: "active", garrisonVersion: 2, targetIds: [11] },
+            SpiderlingsHuntingGrounds: { status: "active", garrisonVersion: 2, targetIds: [11] },
         },
         KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
         KDHostile: () => true,

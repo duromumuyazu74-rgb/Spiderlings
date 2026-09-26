@@ -358,7 +358,7 @@ test("a reported nest attacker interrupts Spinner construction and becomes the n
         ai = start(r),
         group = Object.values(ai.groups)[0],
         worker = actors.find((actor) => group.assignments[actor.id]);
-    r.context.Spiderlings.Infestation = {
+    r.context.Spiderlings.HuntingGrounds = {
         resolveNestDefenderTarget: () => maid,
         isNestAttacker: (_enemy, target) => target === maid,
     };

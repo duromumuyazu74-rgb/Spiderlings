@@ -15,6 +15,28 @@ const SPIDERLINGS = globalThis.Spiderlings;
     const provokedFlag = "SpiderlingsPlayerProvoked";
     const provokedTurns = 10;
     let rivalSelection = null;
+    // The three-nest Hunting Grounds uses the former modifier ID in existing
+    // saves. Its garrison marker distinguishes it from the separate five-nest
+    // Spiderling Infestation while the two floors are developed independently.
+    function onHuntingGrounds() {
+        return (
+            typeof KDMapData !== "undefined" &&
+            KDMapData.MapMod === "SpiderlingsHuntingGrounds" &&
+            KDMapData.SpiderlingsHuntingGrounds?.garrisonVersion === 2
+        );
+    }
+    function isHuntingPrey(enemy, other) {
+        return (
+            onHuntingGrounds() &&
+            isHostileSpiderlingTarget(enemy) &&
+            other?.Enemy &&
+            other.hp > 0 &&
+            !other.player &&
+            !targets.has(other.Enemy.name) &&
+            !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other)
+        );
+    }
+    SPIDERLINGS.HuntingGrounds = { active: onHuntingGrounds, isPrey: isHuntingPrey };
     function isHostileSpiderlingTarget(entity) {
         return (
             entity &&
@@ -42,7 +64,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             other?.hp > 0 &&
             ((isMaidRival(enemy) && isHostileSpiderlingTarget(other)) ||
-                (isHostileSpiderlingTarget(enemy) && isMaidRival(other)))
+                (isHostileSpiderlingTarget(enemy) && isMaidRival(other)) ||
+                isHuntingPrey(enemy, other))
         );
     }
     KDHostile = function (enemy, other) {
@@ -51,6 +74,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         // and let the native selector consider this pair, with its normal perception.
         if (rivalSelection === enemy && !isRivalPair(enemy, other)) return false;
         if (original || !other || enemy === other) return original;
+        if (isHuntingPrey(enemy, other)) return true;
         if (enemy.ceasefire > 0 || other.ceasefire > 0) return original;
         return (
             (KDGetFaction(enemy) === "Maidforce" && isHostileSpiderlingTarget(other)) ||
@@ -81,6 +105,30 @@ const SPIDERLINGS = globalThis.Spiderlings;
                 )
             )
                 return player;
+            if (onHuntingGrounds() && isHostileSpiderlingTarget(enemy)) {
+                const prey = KDNearbyEnemies(enemy.x, enemy.y, radius)
+                    .filter(
+                        (other) =>
+                            isHuntingPrey(enemy, other) &&
+                            !KDHelpless(other) &&
+                            !KDIsImprisoned(other) &&
+                            KinkyDungeonCheckLOS(
+                                enemy,
+                                other,
+                                Math.hypot(other.x - enemy.x, other.y - enemy.y),
+                                radius,
+                                true,
+                                true,
+                            ),
+                    )
+                    .sort(
+                        (a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y),
+                    )[0];
+                if (prey) {
+                    enemy.aware = true;
+                    return prey;
+                }
+            }
             // Native NPC acquisition rejects two unaware offscreen actors. Let a
             // spider's own perception wake it, including immobile nests and old saves.
             if (

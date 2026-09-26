@@ -20,7 +20,7 @@
             !target.player &&
             target.Enemy &&
             typeof KDGetFaction === "function" &&
-            KDGetFaction(target) === "Maidforce" &&
+            (KDGetFaction(target) === "Maidforce" || globalThis.Spiderlings?.HuntingGrounds?.isPrey(source, target)) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );

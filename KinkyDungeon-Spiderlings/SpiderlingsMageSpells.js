@@ -26,16 +26,18 @@
     }
 
     function hostileMaid(source, target) {
+        const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
         return !!(
             target?.hp > 0 &&
             target.Enemy &&
-            !target.allied &&
-            !target.Enemy.allied &&
-            !(target.ceasefire > 0) &&
-            !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
-            !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
-            typeof KDGetFaction === "function" &&
-            KDGetFaction(target) === "Maidforce" &&
+            (huntingPrey ||
+                (!target.allied &&
+                    !target.Enemy.allied &&
+                    !(target.ceasefire > 0) &&
+                    !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
+                    !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
+                    typeof KDGetFaction === "function" &&
+                    KDGetFaction(target) === "Maidforce")) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
