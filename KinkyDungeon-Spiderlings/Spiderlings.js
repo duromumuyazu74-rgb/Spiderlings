@@ -33,7 +33,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             other?.Enemy &&
             other.hp > 0 &&
             !other.player &&
-            other.Enemy.name !== "NestEntrance" &&
+            !targets.has(other.Enemy.name) &&
             !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other)
         );
     }
