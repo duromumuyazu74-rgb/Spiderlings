@@ -210,3 +210,5 @@ KDEscapeMethodDesc_SpiderlingsInfestation,Гнёзда первых обитат
 SpiderlingsInfestationProgress,Уничтожено отмеченных гнёзд: CURRENT/5
 SpiderlingsInfestationBlocked,Ты останавливаешься перед лестницей. Шорох в глубине гнёзд всё ещё не стих. (CURRENT/5)
 SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (5/5)
+KDModButtonspiderlingsInfestationWeight,Вес нашествия (0: выкл.)
+KDModButtonspiderlingsHuntingGroundsWeight,Вес охотничьих угодий - только Maidforce (0: выкл.)

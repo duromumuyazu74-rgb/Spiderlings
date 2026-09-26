@@ -2,6 +2,10 @@
 
 This guide collects the official KD 5.5 source locations and patterns that should be checked before changing or adapting the Spiderlings mod. The official game package is reference-only: do not edit `KinkiestDungeon-5.5/`.
 
+## Journey modifier selection
+
+KD 5.4.92 and 5.5.3 `KDJourneySlotTypes.basic` resolve the native modifier and its primary faction before the first `KDGetSideRoom` call. Spiderlings uses that call inside the basic-slot wrapper to draw its replacement modifier once, update the escape objective and preserve `slot.Faction`. Both side-room filters therefore see the final modifier and objective. Calls outside basic-slot generation are unchanged. Spider modifier filters reject slots with an unresolved faction, keeping them out of the native three-entry refill pool; the wrapper also removes stale Spiderlings candidates from that pool. Native journey regressions cover the timing, non-Maidforce rejection, special/early/Hell exclusions, zero weights and existing previews.
+
 ## Summary
 
 KD 5.5 does not include a single official "how to create a new restraint" tutorial. The guidance is spread across:

@@ -17,6 +17,7 @@ const localeFiles = ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((locale) => `
 const runtimeScripts = [
     "SpiderlingsCore.js",
     "SpiderlingsEncounters.js",
+    "SpiderlingsFloorSelection.js",
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
