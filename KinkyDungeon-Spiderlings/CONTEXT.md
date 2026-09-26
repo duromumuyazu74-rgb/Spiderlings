@@ -8,7 +8,7 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 The whole-floor map modifier with three original objective nests, roaming Spiderlings, and narrow passages. Its independent saved and scripted identifier is `SpiderlingsHuntingGrounds`. Earlier three-nest saves under `SpiderlingsInfestation` migrate when loaded.
 
 **Spiderling Infestation (幼蛛侵扰)**:
-The separate five-nest modifier, saved as `SpiderlingsInfestation`, with native population and weight 50. Hunting Grounds has weight 100. Spiderlings on Hunting Grounds pursue all non-Spiderling NPCs, including allies, shops and quest actors. Native `KDCapturable` limits and persistent `alwaysEscape` still prevent final wrapping.
+The separate five-nest modifier, saved as `SpiderlingsInfestation`, with native population and weight 50. Hunting Grounds has weight 100. Spiderlings on Hunting Grounds pursue all NPCs, including other Spiderlings, allies, shops and quest actors. Static nest structures are not NPC prey. Native `KDCapturable` limits and persistent `alwaysEscape` still prevent final wrapping.
 
 **Map Spiderling population cap**:
 The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
