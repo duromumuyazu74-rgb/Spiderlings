@@ -123,8 +123,8 @@ RestraintSpiderlingsWebbingCocoonDesc,Dichte Seide hüllt deinen Körper in eine
 RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand zittert, wenn du dich windest. Nachschleifende Fäden rascheln über den Boden, als trügen sie die Regungen im Inneren in die Dunkelheit.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 liegt unter TargetLv2 begraben; du berührst nur die klebrige Seide darüber.
 KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Kokon und halten dich fest an Ort und Stelle!
-KDMapMod_SpiderlingsInfestation,Spinnenbefall
-KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
+KDMapMod_SpiderlingsInfestation,Jagdrevier der Jungspinnen
+KinkyDungeonMapModSpiderlingsInfestation,Weiche Netze ziehen sich durch die ganze Etage. Jungspinnen huschen zwischen ihren Nestern umher und ein leises Rascheln folgt dir durch die Gänge.
 KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
 KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
 SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/TARGET

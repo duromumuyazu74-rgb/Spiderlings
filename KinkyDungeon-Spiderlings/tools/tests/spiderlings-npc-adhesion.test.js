@@ -23,6 +23,9 @@ function fixture() {
         DrawTextFitKDTo: (_board, text) => calls.labels.push(text),
         KDAddEvent: (_map, trigger, key, handler) => ((events[trigger] ||= {})[key] = handler),
         KDHelpless: (enemy) => (enemy.boundLevel || 0) > 20,
+        KDGetFaction: (enemy) => enemy.faction || "Enemy",
+        KDGetBindEffectMult: (enemy) => (enemy.Enemy.tags.unstoppable ? 3 : enemy.Enemy.tags.unflinching ? 2 : 1),
+        KDNPCStruggleThreshMult: () => 1,
         KinkyDungeonEnemyLoop: (enemy, target) => {
             if (enemy.moveTo) c.KDMoveEntity(enemy, ...enemy.moveTo);
             if (enemy.tryMove) c.KinkyDungeonEnemyTryMove(enemy);
@@ -161,6 +164,23 @@ test("native removal proportionally reduces pressure and leaves unrelated bindin
     assert.equal(r.adhesion.status(r.target), "free");
     assert.equal(r.adhesion.hasAttributedSilk(r.target), false);
     assert.equal(r.target.boundLevel, 1);
+});
+
+test("saved silk source and owned strength gate native helplessness after reload", () => {
+    const r = fixture();
+    r.sourceSpider.faction = "Enemy";
+    r.bind(r.sourceSpider, 3);
+    r.target.boundLevel = 100;
+    assert.equal(r.adhesion.hasSpiderHelplessness(r.target), false);
+    assert.equal(r.adhesion.silkSource(r.target)?.faction, "Enemy");
+    assert.equal(r.adhesion.silkSource(r.target)?.Enemy.name, "WebCaster");
+    r.bind(r.sourceSpider, 6);
+    assert.equal(r.adhesion.hasSpiderHelplessness(r.target), true);
+    r.target.SpiderlingsNPCAdhesion = JSON.parse(JSON.stringify(r.target.SpiderlingsNPCAdhesion));
+    r.emit("afterLoadGame", {});
+    assert.equal(r.adhesion.silkSource(r.target)?.faction, "Enemy");
+    assert.equal(r.adhesion.silkSource(r.target)?.Enemy.name, "WebCaster");
+    assert.equal(r.adhesion.hasSpiderHelplessness(r.target), true);
 });
 
 test("explicit benchmarks override HP, and fallback uses the binding threshold tag", () => {

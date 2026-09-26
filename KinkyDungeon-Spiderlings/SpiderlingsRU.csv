@@ -123,8 +123,8 @@ RestraintSpiderlingsWebbingCocoonDesc,Плотный шёлк оборачива
 RestraintSpiderlingsWebbingCocoonDesc2,Стенка кокона вздрагивает от движений. Волочащиеся нити шуршат по полу, словно передавая в темноту шевеление внутри.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 скрывается под TargetLv2; пальцы касаются лишь липкого шёлка снаружи.
 KinkyDungeonSpiderlingsCocoonAnchored,Паучата протягивают паутину вокруг кокона и крепко пришпиливают тебя к месту!
-KDMapMod_SpiderlingsInfestation,Нашествие паучат
-KinkyDungeonMapModSpiderlingsInfestation,Шёлк расползается по углам, и в тени шорох отвечает шороху. У этого места давно появились другие обитатели.
+KDMapMod_SpiderlingsInfestation,Охотничьи угодья паучат
+KinkyDungeonMapModSpiderlingsInfestation,Мягкая паутина тянется по всему этажу. Паучата снуют между гнёздами, и шорох следует за тобой по узким проходам.
 KDEscapeMethod_SpiderlingsInfestation,Уничтожить отмеченные гнёзда
 KDEscapeMethodDesc_SpiderlingsInfestation,Гнёзда первых обитателей всё ещё шевелятся во тьме; из глубины входов доносится мелкое царапанье.
 SpiderlingsInfestationProgress,Уничтожено отмеченных гнёзд: CURRENT/TARGET

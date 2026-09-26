@@ -20,9 +20,9 @@ Use the attached installable ZIP. GitHub's automatic Source code archives contai
 | [Infestation PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)        | `0.92.36-test.24` | Infestation playtest with active Spinner construction and nest defense                                              |
 | [Hood and rune Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84) | `0.92.36-test.26` | Optional Spiderlings Hood, delayed 3-by-3 Mage runes, and no Mage arm restraint                                     |
 | [Enemy Webs Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86)    | `0.92.36-test.29` | Paired Spinner art, v2 WebCaster effects, and Pink Spinner web cells                                                |
-| [Infestation spec #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)    | `0.92.36-test.31` | Three guarded objective nests, full-floor layout, expanding Spinner fields, web mobility and nonlethal NPC wrapping |
+| [Infestation spec #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)    | `0.92.36-test.32` | Three guarded objective nests, full-floor layout, expanding Spinner fields, web mobility and nonlethal NPC wrapping |
 
-This test package covers the three-nest Infestation redesign and does not include the separate Nest prison experiment. Install only one Spiderlings package at a time. The Nest prison experiment uses its own `prison.alpha.N` version series.
+This test package covers the three-nest Spiderling Hunting Grounds redesign and does not include the separate Nest prison experiment. Install only one Spiderlings package at a time. The Nest prison experiment uses its own `prison.alpha.N` version series.
 
 Test.31 gives each of the three original Infestation nests four guards and keeps descent locked until all three are destroyed. Spinner fields start at a 3-by-3 footprint and can expand with paid construction actions. Mobile spiders traverse owned webs faster. WebCaster silk can pin hostile NPCs; nearby spiders can then spend three actions to wrap eligible prey without killing it. BlindZombie can be pinned but cannot be wrapped away.
 

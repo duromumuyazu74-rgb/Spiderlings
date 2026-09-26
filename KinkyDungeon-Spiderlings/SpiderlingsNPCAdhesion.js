@@ -1,4 +1,5 @@
 "use strict";
+/* global KDGetBindEffectMult */
 
 // NPC adhesion is separate from KD binding. The enemy owns the saved silk ledger;
 // the map owns its clock, so a revisited floor does not age while it is away.
@@ -79,6 +80,25 @@
         return (record(target)?.ownedSilk || 0) > 0;
     }
 
+    function silkSource(target) {
+        reconcile(target);
+        const value = record(target);
+        if (!value?.sourceFaction || !value.sourceName) return undefined;
+        return { id: -1, hp: 1, faction: value.sourceFaction, Enemy: { name: value.sourceName } };
+    }
+
+    function hasSpiderHelplessness(target) {
+        if (!hasAttributedSilk(target) || typeof KDHelpless !== "function" || !KDHelpless(target)) return false;
+        const owned = Math.min(record(target).ownedSilk, Math.max(0, Number(target.boundLevel || 0)));
+        const maxhp = target.Enemy?.maxhp;
+        if (!(maxhp > 0) || typeof KDNPCStruggleThreshMult !== "function" || typeof KDGetBindEffectMult !== "function")
+            return false;
+        const fullyBound =
+            owned >= maxhp * KDGetBindEffectMult(target) ||
+            (target.hp <= 0.1 * maxhp && Math.max(owned, 0.1) > target.hp);
+        return fullyBound && (target.hp <= 0.52 || owned > KDNPCStruggleThreshMult(target) * maxhp);
+    }
+
     function status(target) {
         if (!target || target.player || !(target.hp > 0)) return "free";
         if (typeof KDHelpless === "function" && KDHelpless(target)) return "native-helpless";
@@ -122,6 +142,10 @@
         }
         value.lastSlime = actual;
         value.ownedSilk = Math.min(actual, value.ownedSilk + amount);
+        if (source?.Enemy && typeof KDGetFaction === "function") {
+            value.sourceFaction = KDGetFaction(source);
+            value.sourceName = source.Enemy.name;
+        }
         value.contributions = value.contributions.filter((entry) => entry.amount > 0 && now() - entry.time < WINDOW);
         if (!value.contributions.length) value.opened = false;
         if (attack === "direct" && source?.Enemy?.name === "WebCaster") value.opened = true;
@@ -301,6 +325,8 @@
         status,
         pressure,
         hasAttributedSilk,
+        hasSpiderHelplessness,
+        silkSource,
         blocksVoluntaryMove,
         canWrap: (target) => status(target) === "full",
         onDisplacement,
