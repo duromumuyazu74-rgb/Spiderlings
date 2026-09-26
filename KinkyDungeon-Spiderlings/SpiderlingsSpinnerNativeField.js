@@ -447,11 +447,36 @@
         return entity?.player ? "player" : entity?.id;
     }
 
+    function updatePreyTargets(graph) {
+        for (const composite of Object.values(graph.composites || {})) {
+            if (composite.autoSeal) continue;
+            const owners = fieldOwners(composite.id)
+                .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                .filter((entity) => entity?.hp > 0 && isSpiderling(entity));
+            const prey = [KinkyDungeonPlayerEntity, ...KDMapData.Entities].find(
+                (entity) =>
+                    entity &&
+                    (entity.player || entity.hp > 0) &&
+                    !isSpiderling(entity) &&
+                    !isOwnedProxy(entity) &&
+                    entity.Enemy?.name !== "NestEntrance" &&
+                    !entity.Enemy?.tags?.scenery &&
+                    topology().isInsideCommonCore(graph, composite.id, entity) &&
+                    owners.some((owner) => (entity.player ? KDHostile(owner) : KDHostile(owner, entity))),
+            );
+            topology().updateTarget(
+                graph,
+                prey ? { id: targetId(prey), x: prey.x, y: prey.y } : { x: -1, y: -1 },
+                composite.id,
+            );
+        }
+    }
+
     function onEntry(entity, x, y) {
         const encounter = state(),
             id = targetId(entity);
         if (!encounter?.topology || id === undefined) return false;
-        topology().updateTarget(encounter.topology, { id, x, y });
+        updatePreyTargets(encounter.topology);
         const consumed = topology().consumeSnare(encounter.topology, id, { x, y });
         encounter.topology = consumed.state;
         if (!consumed.outcome.snared) return false;
@@ -487,6 +512,7 @@
             delta,
         });
         encounter.topology = settled.state;
+        updatePreyTargets(encounter.topology);
         for (const enemy of KDMapData.Entities) {
             if (!(enemy.hp > 0) || !(enemy.shield > 0) || enemy.player || isOwnedProxy(enemy)) continue;
             const inside = Object.values(encounter.topology.composites || {}).some((composite) => {
@@ -627,7 +653,8 @@
             weight: 0,
             dropTable: [],
             events: [],
-            tags: KDMapInit(["construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
+            // Native CanSwapWith still needs structure admission after a successful pathcondition query.
+            tags: KDMapInit(["scenery", "construct", "notalk", "nobrain", "nosignal", "noknockback", "temporary"]),
         });
     }
     if (typeof KDModFiles !== "undefined") {

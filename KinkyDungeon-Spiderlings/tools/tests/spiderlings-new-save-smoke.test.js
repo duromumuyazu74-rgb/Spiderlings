@@ -49,6 +49,7 @@ const scripts = [
     "SpiderlingsNPCWrapping.js",
     "SpiderlingsMage.js",
     "SpiderlingsMageRunes.js",
+    "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
@@ -86,6 +87,7 @@ function freshNewSaveRuntime() {
     const context = {
         console,
         KinkyDungeonEnemies: [],
+        KinkyDungeonRootDirectory: "Game/",
         KinkyDungeonRestraints: [],
         KinkyDungeonSpellListEnemies: [],
         KDEventMapGeneric: {},

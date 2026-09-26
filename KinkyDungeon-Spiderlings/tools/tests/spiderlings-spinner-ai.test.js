@@ -141,11 +141,22 @@ function runtime(entities = []) {
                 entity.y = y;
                 return true;
             },
-            KinkyDungeonFindPath(fromX, fromY, toX, toY) {
+            KinkyDungeonFindPath(fromX, fromY, toX, toY, blockEnemy) {
+                const blocked = new Set(
+                    blockEnemy
+                        ? context.KDMapData.Entities.filter(
+                              (entity) =>
+                                  entity.hp > 0 &&
+                                  !context.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) &&
+                                  (entity.x !== fromX || entity.y !== fromY),
+                          ).map((entity) => `${entity.x},${entity.y}`)
+                        : [],
+                );
                 return context.Spiderlings.SpinnerAI.routeOnSnapshot(
                     mapSnapshot(),
                     { x: fromX, y: fromY },
                     { x: toX, y: toY },
+                    blocked,
                 ).slice(1);
             },
             KinkyDungeonEnemyTryMove(enemy, direction, _delta, x, y) {
@@ -199,7 +210,7 @@ function start(r, snapshot = mapSnapshot()) {
     return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
 }
 
-test("a lone Spinner plans and pays for a 3x3 outer field before expanding", () => {
+test("a lone Spinner builds one-entry rings and pays to seal them after prey enters", () => {
     const worker = spinner(1, 8, 6),
         r = runtime([worker]),
         snapshot = mapSnapshot();
@@ -222,10 +233,103 @@ test("a lone Spinner plans and pays for a 3x3 outer field before expanding", () 
     const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
     assert.equal(ai.plannerWorkLast.candidateCells, 0);
     assert.ok(ai.plannerWorkPeak.expansionCells <= 24);
-    assert.equal(graph.fields[plan.fieldId].phase, "sealed", JSON.stringify(group.metrics));
+    assert.equal(graph.fields[plan.fieldId].phase, "ready", JSON.stringify(group.metrics));
     assert.equal(graph.composites[plan.compositeId].layerIds.length, 3, JSON.stringify(group.metrics));
-    assert.ok(graph.composites[plan.compositeId].layerIds.every((id) => graph.fields[id].phase === "sealed"));
-    assert.ok(graph.actionLog.filter((action) => action.fieldId === plan.fieldId).length >= 9);
+    assert.ok(graph.composites[plan.compositeId].layerIds.every((id) => graph.fields[id].phase === "ready"));
+    const solids = new Set(r.context.Spiderlings.SpinnerTopology.solidCells(graph).map(cellKeyForTest));
+    for (const id of graph.composites[plan.compositeId].layerIds) {
+        const field = graph.fields[id];
+        assert.deepEqual(
+            plain(field.boundaryCells.filter((cell) => !solids.has(cellKeyForTest(cell)))),
+            plain([field.gateCell]),
+        );
+    }
+    const player = r.context.KinkyDungeonPlayerEntity;
+    player.x = plan.center.x;
+    player.y = plan.center.y;
+    worker.aware = true;
+    worker.testSense = true;
+    r.context.Spiderlings.SpinnerNativeField.onEntry(player, player.x, player.y);
+    r.context.Spiderlings.SpinnerNativeField.onEntry(worker, worker.x, worker.y);
+    assert.equal(
+        r.context.Spiderlings.SpinnerNativeField.state().topology.composites[plan.compositeId].closureArmed,
+        true,
+    );
+    for (let turn = 0; turn < 100; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const sealed = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    assert.ok(sealed.composites[plan.compositeId].layerIds.every((id) => sealed.fields[id].phase === "sealed"));
+    player.x = 16;
+    player.y = 10;
+    r.context.Spiderlings.SpinnerNativeField.onEntry(player, player.x, player.y);
+    for (let turn = 0; turn < 80; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const reopened = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    assert.ok(reopened.composites[plan.compositeId].layerIds.every((id) => reopened.fields[id].phase === "ready"));
+    assert.ok(reopened.actionLog.some((action) => action.type === "reopenGate"));
+});
+
+test("loaded autonomous roadblocks are replaced with a reachable enclosure without moving existing actors", () => {
+    const actors = [spinner(1, 5, 4), spinner(2, 5, 8)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        oldPlan = ai.plans[group.planId];
+    assert.equal(oldPlan.kind, "line");
+    const positions = actors.map((actor) => [actor.x, actor.y]);
+    delete snapshot.candidateLines;
+    start(r, snapshot);
+    assert.equal(ai.plans[group.planId].kind, "enclosure");
+    assert.equal(oldPlan.status, "invalid");
+    assert.deepEqual(
+        actors.map((actor) => [actor.x, actor.y]),
+        positions,
+    );
+});
+
+test("ordinary Spinner construction searches beyond the corridor instead of building an isolated roadblock", () => {
+    const actors = [spinner(1, 2, 6), spinner(2, 3, 6), spinner(3, 4, 6)],
+        r = runtime(actors),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    for (const cell of snapshot.cells)
+        cell.floor = cell.y === 6 || (cell.x >= 11 && cell.x <= 15 && cell.y >= 3 && cell.y <= 9);
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan?.kind, "enclosure");
+    assert.ok(plan.center.x >= 12);
+    assert.equal(Object.keys(r.context.Spiderlings.SpinnerNativeField.state().topology.lineFields).length, 0);
+});
+
+test("assigned builders route around a live coworker instead of waiting on its occupied cell", () => {
+    const actors = [spinner(1, 2, 4), spinner(2, 3, 4)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            plan.fieldId,
+        );
+    group.assignments[1] = {
+        type: "placeAnchor",
+        anchorId: field.anchors[0].id,
+        target: { x: field.anchors[0].x, y: field.anchors[0].y },
+        workCell: { x: 4, y: 4 },
+        fieldId: plan.fieldId,
+    };
+    r.context.KinkyDungeonEnemyLoop(actors[0], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 2, y: 4 });
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 3, y: 4 });
+    assert.equal(group.lastAction, "travel");
 });
 
 test("separate Spinner groups perform paid work on their own enclosures", () => {
@@ -273,10 +377,7 @@ test("an unavailable site is retried after geometry changes without idle rerolls
     const ai = start(r, snapshot),
         group = Object.values(ai.groups)[0];
     assert.equal(group.planId, null);
-    assert.equal(
-        ai.plannerWorkLast.candidateCells,
-        snapshot.cells.filter((cell) => Math.max(Math.abs(cell.x - worker.x), Math.abs(cell.y - worker.y)) <= 6).length,
-    );
+    assert.equal(ai.plannerWorkLast.candidateCells, snapshot.cells.length);
     start(r, snapshot);
     assert.equal(ai.plannerWorkLast.candidateCells, 0);
     for (const cell of snapshot.cells)

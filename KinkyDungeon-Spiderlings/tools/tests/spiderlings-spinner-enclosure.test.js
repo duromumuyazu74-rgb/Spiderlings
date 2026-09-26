@@ -93,6 +93,31 @@ test("one owner may build concentric 3x3, 5x5 and 7x7 outer rings", () => {
     assert.equal(one.fields.outer.spacing, 1);
 });
 
+test("a coworker's reserved reopening keeps the paid gate task pending", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "reserved-gate",
+        owners: [1, 2],
+        map: floorMap(),
+        layers: [{ id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } }],
+    });
+    topology.updateTarget(state, { id: "prey", x: 13, y: 10 });
+    for (let turn = 0; turn < 20; turn++) {
+        const action = topology.nextWorkAction(state, 1, { x: 13, y: 10 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    assert.equal(state.fields.inner.phase, "sealed");
+    topology.updateTarget(state, { x: 1, y: 1 });
+    const claimed = topology.nextWorkAction(state, 1, { x: 13, y: 10 });
+    assert.equal(claimed.type, "reopenGate");
+    topology.nextWorkAction(state, 2, { x: 13, y: 10 }, [topology.workKey(claimed)]);
+    assert.equal(state.fields.inner.reopenPending, true);
+    state = topology.applyAction(state, { ...claimed, ownerId: 1 }, clear(claimed.cell)).state;
+    assert.equal(state.fields.inner.phase, "ready");
+});
+
 test("a boundary actor blocks a site while an interior prey actor does not", () => {
     const topology = rules(),
         input = {

@@ -136,6 +136,7 @@
     }
 
     function planGroupedNestPlacement(options) {
+        if (options.groupSizes) return planDistributedNests(options);
         const baseline = reachableCells(options.start, options.passable);
         const candidates = options.candidates.filter((point) => baseline.has(key(point)));
         const random = options.random || Math.random;
@@ -186,6 +187,70 @@
                 const plan = [...triple, ...pair];
                 if (valid(plan)) return plan;
             }
+        }
+        return null;
+    }
+
+    function nestDistribution(floor) {
+        const five = Math.min(30, 2 + Math.max(0, Math.floor(floor) - 3));
+        return [
+            { sizes: [2, 2, 1], weight: 82 - five },
+            { sizes: [2, 3], weight: 18 },
+            { sizes: [5], weight: five },
+        ];
+    }
+
+    function selectNestDistribution(floor, random) {
+        let roll = Math.max(0, Math.min(0.999999, random())) * 100;
+        for (const option of nestDistribution(floor)) {
+            roll -= option.weight;
+            if (roll < 0) return [...option.sizes];
+        }
+        return [5];
+    }
+
+    function planDistributedNests(options) {
+        const baseline = reachableCells(options.start, options.passable),
+            candidates = options.candidates.filter((point) => baseline.has(key(point))),
+            squared = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2,
+            random = options.random || Math.random;
+        for (let index = candidates.length - 1; index > 0; index--) {
+            const other = Math.min(index, Math.floor(Math.max(0, random()) * (index + 1)));
+            [candidates[index], candidates[other]] = [candidates[other], candidates[index]];
+        }
+        // Retry different seeds without combinatorial enumeration of five-nest cliques.
+        for (let attempt = 0; attempt < Math.min(32, candidates.length); attempt++) {
+            const groups = [],
+                selected = [];
+            for (const size of options.groupSizes) {
+                let group;
+                for (let offset = 0; offset < candidates.length; offset++) {
+                    const seed = candidates[(attempt + offset) % candidates.length];
+                    if (selected.some((point) => squared(seed, point) < 64)) continue;
+                    const proposed = [seed];
+                    for (const point of candidates) {
+                        if (proposed.length >= size) break;
+                        if (
+                            selected.some((other) => squared(point, other) < 64) ||
+                            proposed.some((other) => squared(point, other) < 16) ||
+                            squared(seed, point) > 64 ||
+                            !proposed.some((other) => squared(point, other) <= 25)
+                        )
+                            continue;
+                        proposed.push(point);
+                    }
+                    if (proposed.length === size) {
+                        group = proposed;
+                        break;
+                    }
+                }
+                if (!group) break;
+                groups.push(group);
+                selected.push(...group);
+            }
+            if (groups.length !== options.groupSizes.length) continue;
+            if (planNestPlacement({ ...options, candidates: selected, count: 5, minimumDistance: 0, random: () => 1 }))
+                return selected;
         }
         return null;
     }
@@ -332,6 +397,105 @@
             !(typeof KDIsInParty === "function" && KDIsInParty(enemy)) &&
             !(typeof KDIsImprisoned === "function" && KDIsImprisoned(enemy))
         );
+    }
+
+    function seekPatrol(enemy, target, aiData = {}) {
+        const state = activeState();
+        if (
+            !state ||
+            !wildSpider(enemy) ||
+            !target?.player ||
+            enemy.Enemy.immobile ||
+            enemy.IntentAction ||
+            enemy.CurrentAction ||
+            enemy.action ||
+            enemy.leash ||
+            enemy.goToDespawn ||
+            enemy.Enemy.master ||
+            (typeof KinkyDungeonIsDisabled === "function" && KinkyDungeonIsDisabled(enemy)) ||
+            KDHelpless(enemy) ||
+            KDIsImprisoned(enemy) ||
+            aiData.canSensePlayer ||
+            aiData.moveTowardPlayer ||
+            api.SpinnerNPCCapture?.usesSource?.(enemy.id) ||
+            api.NPCWrapping?.usesSource?.(enemy.id)
+        )
+            return false;
+        const nests = KDMapData.Entities.filter((entity) => entity.hp > 0 && state.targetIds.includes(entity.id));
+        if (!nests.length) return false;
+        const nearestNest = Math.min(...nests.map((nest) => distance(enemy, nest)));
+        const marker = enemy.SpiderlingsInfestationPatrol;
+        const tick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : 0;
+        if (marker && marker.lastPosition !== key(enemy)) {
+            marker.lastPosition = key(enemy);
+            marker.lastProgress = tick;
+        }
+        if (
+            marker &&
+            distance(enemy, marker.goal) > 1 &&
+            tick - marker.lastProgress < 8 &&
+            KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(marker.goal.x, marker.goal.y)) &&
+            !KinkyDungeonTilesGet(key(marker.goal))?.Lock
+        ) {
+            enemy.gx = marker.goal.x;
+            enemy.gy = marker.goal.y;
+            return true;
+        }
+        if (!marker && nearestNest > 5) return false;
+        const occupied = new Set(KDMapData.Entities.filter((entity) => entity.hp > 0 && entity !== enemy).map(key)),
+            reserved = new Set(
+                KDMapData.Entities.filter((entity) => entity !== enemy).flatMap((entity) =>
+                    entity.SpiderlingsInfestationPatrol ? [key(entity.SpiderlingsInfestationPatrol.goal)] : [],
+                ),
+            ),
+            goals = [];
+        for (let x = Math.max(1, enemy.x - 14); x < Math.min(KDMapData.GridWidth - 1, enemy.x + 15); x++)
+            for (let y = Math.max(1, enemy.y - 14); y < Math.min(KDMapData.GridHeight - 1, enemy.y + 15); y++) {
+                const point = { x, y },
+                    name = key(point),
+                    tile = KinkyDungeonTilesGet(name);
+                if (
+                    !KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y)) ||
+                    tile?.OL ||
+                    tile?.OffLimits ||
+                    tile?.Lock ||
+                    tile?.Type ||
+                    occupied.has(name) ||
+                    reserved.has(name) ||
+                    distance(enemy, point) < 6 ||
+                    nests.some((nest) => distance(nest, point) < 6)
+                )
+                    continue;
+                goals.push(point);
+            }
+        const ordinal = state.patrolOrdinal || 0;
+        for (let index = 0; index < goals.length; index++) {
+            const goal = goals[(enemy.id * 17 + ordinal + index) % goals.length],
+                route = KinkyDungeonFindPath(
+                    enemy.x,
+                    enemy.y,
+                    goal.x,
+                    goal.y,
+                    true,
+                    true,
+                    false,
+                    KinkyDungeonMovableTilesEnemy,
+                    undefined,
+                    undefined,
+                    undefined,
+                    enemy,
+                    true,
+                );
+            if (!route?.length || route.length > 24) continue;
+            state.patrolOrdinal = ordinal + 1;
+            enemy.SpiderlingsInfestationPatrol = { goal: { ...goal }, lastPosition: key(enemy), lastProgress: tick };
+            enemy.gx = goal.x;
+            enemy.gy = goal.y;
+            enemy.path = route;
+            return true;
+        }
+        delete enemy.SpiderlingsInfestationPatrol;
+        return false;
     }
 
     function retireQuietSpiders(_event, data, sampleOnly = false) {
@@ -489,7 +653,15 @@
                 candidates.push(point);
             }
         }
-        const plan = planGroupedNestPlacement({ start, passable, candidates, random: KDRandom });
+        const requestedGroupSizes = selectNestDistribution(floor, KDRandom);
+        let groupSizes = requestedGroupSizes,
+            plan = planGroupedNestPlacement({ start, passable, candidates, groupSizes, random: KDRandom });
+        // Terrain can reject a sampled shape. Preserve all five objectives with a legal alternate distribution.
+        for (const sizes of [[2, 2, 1], [2, 3], [5]]) {
+            if (plan) break;
+            groupSizes = sizes;
+            plan = planGroupedNestPlacement({ start, passable, candidates, groupSizes, random: KDRandom });
+        }
         if (!plan || !KinkyDungeonGetEnemyByName("NestEntrance") || KDMapData.Entities.length + TARGET > 300) {
             cancelInfestation("insufficient-space");
             return false;
@@ -523,14 +695,26 @@
             KinkyDungeonSetEnemyFlag(entity, "no_pers_wander", -1);
             KinkyDungeonSetEnemyFlag(entity, "questtarget", -1);
         }
+        let offset = 0;
+        const groups = groupSizes.map((size) => {
+            const group = plan.slice(offset, offset + size);
+            offset += size;
+            return group;
+        });
         KDMapData[FIELD] = {
             status: "active",
             target: TARGET,
             targetIds: created.map((entity) => entity.id),
             destroyedIds: [],
             complete: false,
+            distributionVersion: 1,
+            requestedGroupSizes,
+            groupSizes,
+            nestGroups: groups.map((group) =>
+                group.map((point) => created.find((entity) => key(entity) === key(point)).id),
+            ),
             clearing: plan.map((point) => ({ ...point })),
-            clearedTiles: openNestClearing([plan.slice(0, 3), plan.slice(3)], spawnPoints),
+            clearedTiles: openNestClearing(groups, spawnPoints),
         };
         return true;
     }
@@ -693,6 +877,9 @@
     Object.assign(infestation, {
         planNestPlacement,
         planGroupedNestPlacement,
+        nestDistribution,
+        selectNestDistribution,
+        seekPatrol,
         planNestClearing,
         reachableCells,
         activeState,

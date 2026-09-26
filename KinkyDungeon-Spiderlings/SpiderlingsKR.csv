@@ -190,6 +190,7 @@ SpiderlingsFieldTrap,바닥 거미줄이 발을 붙잡아 잠시 이동을 늦�
 SpiderlingsFieldRebuild,{turns} 월드 턴 후 거미들이 다시 설치를 시작한다.
 SpiderlingsFieldWaiting,함정 준비 완료. 들어올 때까지 서쪽 입구는 열려 있다.
 NameMageSpiderlings,Spiderling Mage
+NameSpiderlingsSpinnerWebCell,짜인 거미줄
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.

@@ -190,6 +190,7 @@ SpiderlingsFieldTrap,地面の蛛糸に足が引っ掛かり、一時的に移�
 SpiderlingsFieldRebuild,あと {turns} ワールドターンで幼グモが再設置を始める。
 SpiderlingsFieldWaiting,罠の準備完了。入るまで西側の入口は開いている。
 NameMageSpiderlings,Spiderling Mage
+NameSpiderlingsSpinnerWebCell,織られた蛛網
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
