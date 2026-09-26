@@ -54,7 +54,9 @@ _Avoid_: every Spiderling near a nest
 
 ## Spiderlings Webbing
 
-**Spinner physical field**:
+**Spinner capture field (捕获场地)**:
+Spinners first build an enclosed web boundary with an open entrance, then close that entrance after prey enters and attempt capture. The boundary consists of connected edges and corners and can be broken by attacks. Independent placed ground traps and stepping-triggered slowing are retired.
+
 Tagged mobile spiders of either faction traverse any intact Spiderlings-owned web at 1.5 times ordinary movement credit and prefer its 2/3-cost path. This changes movement only; work and offensive actions keep their native cadence.
 A saved, paid enclosure whose first complete perimeter is a 3-by-3 outer footprint with one interior cell and eight web cells. One capable Spinner can build it; completed inner rings remain when new 5-by-5 and 7-by-7 rings are built. The web proxy and one actual spider may share a cell, but two actual actors may not. Non-spiders breach the web through ordinary attacks. Field construction and player Capture strands are separate capabilities.
 _Avoid_: a required 3-by-3 interior, four-owner expansion gate, free planned segments, a new restraint from lone construction
@@ -139,7 +141,7 @@ Thousand-Silk Collapse charges for three turns. Its warning web moves through th
 **Temporary silk subdual**:
 Spiderling attacks use shared light tickle damage profiles for players and hostile NPCs: melee 0.05, dash 0.10, direct spray 0.05 and trail 0.01. Players receive eligible Webbing equipment; NPCs receive native Slime binding. Damage and binding have separate native resistance checks. NPC contact amplification is capped at twice its scaled input to prevent flat weakness bonuses overwhelming these tiny amounts. Native immunity, shields and struggling remain effective. Subdual means native helplessness, not permanent capture, recruitment or collection. Successful melee binding consumes the attacking Jumper; Spinners and WebCasters remain for repeated support.
 
-Hostile NPC silk contact applies a short native ShieldDrain buff while a shield remains; owned ground traps apply it on contact, and sealed Spinner fields refresh it each turn on shielded hostile NPCs inside. Its power exceeds native shield regeneration by two, allowing shield to run down before normal native binding. Shielded targets still block binding, and breaking a web field ends its sustained pressure.
+Hostile NPC silk contact applies a short native ShieldDrain buff while a shield remains; sealed Spinner fields refresh it each turn on shielded hostile NPCs inside. Its power exceeds native shield regeneration by two, allowing shield to run down before normal native binding. Shielded targets still block binding, and breaking a web field ends its sustained pressure.
 _Avoid_: guaranteed capture, player Webbing equipment on NPCs, HP damage as binding
 
 **NPC adhesion**:

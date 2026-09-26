@@ -593,7 +593,7 @@ addTextKey(
 );
 
 addTextKey("NameMageSpiderlings", "Spiderling Mage");
-addTextKey("NameSpiderlingsSpinnerWebCell", "Woven Web");
+addTextKey("NameSpiderlingsSpinnerTrap", "Capture field boundary");
 addTextKey("KillMageSpiderlings", "The Spiderling Mage draws back its legs and retreats into the shadows.");
 
 //Enemy Spells--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

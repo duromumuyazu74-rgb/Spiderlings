@@ -351,7 +351,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 213, `${csv}: both floor modifiers, physical web names and current NPC wrapping`);
+        assert.equal(entries.size, 212, `${csv}: both floor modifiers, physical web names and current NPC wrapping`);
         for (const key of [
             "KDMapMod_SpiderlingsInfestation",
             "KDMapMod_SpiderlingsHuntingGrounds",
@@ -362,7 +362,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
             "NameMageSpiderlings",
-            "NameSpiderlingsSpinnerWebCell",
+            "NameSpiderlingsSpinnerTrap",
             "KillMageSpiderlings",
             "KinkyDungeonSpellSpiderlingsMageBolt",
             "KinkyDungeonSpellCastSpiderlingsMageBolt",

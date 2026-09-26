@@ -269,7 +269,6 @@
                 cooldown: 0,
                 ownerlessAge: 0,
                 collapsed: false,
-                snaredTargetIds: [],
             });
         }
         const junctions = [];
@@ -1048,19 +1047,6 @@
         return { state: next, effects, outcome: { damage: applied, anchorId: anchor?.id, linkIds: [...damagedLinks] } };
     }
 
-    function consumeSnare(state, targetId, cell) {
-        const next = clone(state),
-            anchor = next.anchors.find((candidate) => candidate.built && candidate.hp > 0 && sameCell(candidate, cell));
-        if (!anchor || anchor.snaredTargetIds.includes(targetId))
-            return { state: next, effects: [], outcome: { snared: false } };
-        anchor.snaredTargetIds.push(targetId);
-        return {
-            state: next,
-            effects: [{ type: "snareTarget", targetId, anchorId: anchor.id }],
-            outcome: { snared: true },
-        };
-    }
-
     function structureHasOwner(state, structure, active) {
         return structure.owners.some(
             (fieldId) =>
@@ -1159,7 +1145,9 @@
     }
 
     function restore(saved) {
-        return clone(saved);
+        const restored = clone(saved);
+        for (const anchor of restored.anchors) delete anchor.snaredTargetIds;
+        return restored;
     }
 
     function inspect(state) {
@@ -1189,7 +1177,6 @@
         updateTarget,
         refresh,
         damageAt,
-        consumeSnare,
         tickOwnerless,
         containsDeclaredField,
         isLayerClosed,

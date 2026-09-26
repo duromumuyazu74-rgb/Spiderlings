@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,挣开需要 10 精力。你仍可等待或使用药水�
 SpiderlingsSpinnerWrap,结网幼蛛开始包裹双腿，持续五个世界回合；上身和手臂保持原有状态。
 SpiderlingsSpinnerDone,腿袋已织成。你可以攻击、用物、缓慢移动或解除腿袋。
 KinkyDungeonStatSpiderlingsSpinnerDemo,结网幼蛛试玩
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,进入平坦场地，观看幼蛛放置地面陷阱并连接封路，体验双进度对抗、五回合包裹和跳跃幼蛛避让。
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,进入平坦场地，观看幼蛛建造捕获场地并在你进入后封住入口，体验双进度对抗、五回合包裹和跳跃幼蛛避让。
 NameSpiderlingsSilkAnchor,蛛网结点
 KillSpiderlingsSilkAnchor,蛛网边界裂开了。
-SpiderlingsFieldPreparing,幼蛛先放地面陷阱，再连接陷阱拦截退路。可以在封闭前离开，或切断连接。
-SpiderlingsFieldReady,两个陷阱已连接。幼蛛继续拦截其他退路。
-SpiderlingsFieldSprung,陷阱连接已围住区域，仍在内部的玩家可能被捕获。
+SpiderlingsFieldPreparing,幼蛛正在建造捕获场地边界。可以在入口封闭前离开，或切断连接。
+SpiderlingsFieldReady,一段边界已连接，幼蛛继续建造捕获场地。
+SpiderlingsFieldSprung,捕获场地已封闭，仍在内部的玩家可能被捕获。
 SpiderlingsFieldBroken,结点断裂，围网瓦解，牵制解除。
 SpiderlingsFieldReset,重置试玩
 SpiderlingsFieldJumper,放出跳跃幼蛛
-SpiderlingsFieldStatus,蛛网场地：{phase} · 陷阱 {count}/4 · 连接 {links}/4
+SpiderlingsFieldStatus,捕获场地：{phase} · 拐角 {count}/4 · 连接 {links}/4
 SpiderlingsFieldPhasepreparing,织网准备
 SpiderlingsFieldPhaseready,连接准备
 SpiderlingsFieldPhasesprung,连接完整
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,已完成
 SpiderlingsSpinnerWeave,拘束进度：{value}/100
 SpiderlingsSpinnerEscape,挣脱进度：{value}/{goal}
 SpiderlingsFieldAddSpinner,加入一只 Spinner
-SpiderlingsFieldTrap,地面蛛丝缠住脚步，短暂减缓移动。
 SpiderlingsFieldRebuild,幼蛛将在 {turns} 个世界回合后重新开始布场。
-SpiderlingsFieldWaiting,陷阱已备好。西侧入口在你进入前保持开放。
+SpiderlingsFieldWaiting,捕获场地已备好。西侧入口在你进入前保持开放。
 NameMageSpiderlings,法师幼蛛
-NameSpiderlingsSpinnerWebCell,织成的蛛网
+NameSpiderlingsSpinnerTrap,捕获场地边界
 KillMageSpiderlings,法师幼蛛收拢细腿，退入阴影。
 KinkyDungeonSpellSpiderlingsMageBolt,幼蛛魔法丝弹
 KinkyDungeonSpellCastSpiderlingsMageBolt,法师幼蛛聚起一团发亮的蛛丝，向你掷来。

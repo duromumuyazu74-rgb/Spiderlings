@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Necesitas 10 de energía. Aún puedes esperar o beber un
 SpiderlingsSpinnerWrap,La envoltura dura cinco turnos del mundo; los brazos conservan su estado.
 SpiderlingsSpinnerDone,El saco está listo. Puedes atacar, usar objetos, moverte despacio o quitártelo.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Prueba de tejedoras
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Entra en un campo plano. Las tejedoras colocan trampas y conectan rutas de escape. Prueba el duelo y cinco turnos de envoltura.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Entra en un campo plano. Las tejedoras construyen un campo de captura y cierran la entrada cuando entras. Prueba el duelo y cinco turnos de envoltura.
 NameSpiderlingsSilkAnchor,Nudo de telaraña
 KillSpiderlingsSilkAnchor,La barrera de seda se rompe.
-SpiderlingsFieldPreparing,Las tejedoras colocan trampas y las conectan para cortar la retirada. Sal antes del cierre o corta una conexión.
-SpiderlingsFieldReady,Dos trampas están conectadas. Las tejedoras bloquean otra salida.
-SpiderlingsFieldSprung,Las conexiones rodean la zona. Quienes sigan dentro pueden ser capturados.
+SpiderlingsFieldPreparing,Las tejedoras construyen el límite del campo de captura. Sal antes de que se cierre la entrada o corta una conexión.
+SpiderlingsFieldReady,Una sección del límite está conectada. Las tejedoras siguen construyendo el campo.
+SpiderlingsFieldSprung,El campo de captura está cerrado. Quienes sigan dentro pueden ser capturados.
 SpiderlingsFieldBroken,Un nudo se rompe y la trampa te libera.
 SpiderlingsFieldReset,Reiniciar prueba
 SpiderlingsFieldJumper,Soltar saltadora
-SpiderlingsFieldStatus,Campo: {phase} · trampas {count}/4 · conexiones {links}/4
+SpiderlingsFieldStatus,Campo de captura: {phase} · esquinas {count}/4 · conexiones {links}/4
 SpiderlingsFieldPhasepreparing,Preparando
 SpiderlingsFieldPhaseready,Conexión lista
 SpiderlingsFieldPhasesprung,Cerrado
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,Completada
 SpiderlingsSpinnerWeave,Atadura: {value}/100
 SpiderlingsSpinnerEscape,Escape: {value}/{goal}
 SpiderlingsFieldAddSpinner,Añadir Spinner
-SpiderlingsFieldTrap,La seda del suelo frena tus pies brevemente.
 SpiderlingsFieldRebuild,Las tejedoras volverán a construir en {turns} turnos del mundo.
-SpiderlingsFieldWaiting,Trampas listas. La entrada oeste queda abierta hasta que entres.
+SpiderlingsFieldWaiting,El campo está listo. La entrada oeste queda abierta hasta que entres.
 NameMageSpiderlings,Spiderling Mage
-NameSpiderlingsSpinnerWebCell,Telaraña tejida
+NameSpiderlingsSpinnerTrap,Límite del campo de captura
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.

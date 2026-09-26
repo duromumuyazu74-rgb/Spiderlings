@@ -71,15 +71,15 @@ test("capture strands use the selected tether art", () => {
 test("the Spinner training boundary uses both art colors and correctly oriented corners", () => {
     const r = contestRuntime();
     r.c.KDModFiles = {
-        "Bullets/WebSprayTrail.png": { color: "normal" },
-        "Bullets/WebSprayTrailPink.png": { color: "pink" },
+        "Bullets/SpiderlingsSpinnerTrapTop.png": { color: "normal" },
+        "Bullets/SpiderlingsSpinnerTrapTopPink.png": { color: "pink" },
     };
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerField.js"), "utf8"), r.c);
     for (const prefix of ["", "Game/"])
         for (const color of ["", "Pink"])
             assert.equal(
                 r.c.KDModFiles[`${prefix}Enemies/SpiderlingsSilkAnchor${color}.png`],
-                r.c.KDModFiles[`Bullets/WebSprayTrail${color}.png`],
+                r.c.KDModFiles[`Bullets/SpiderlingsSpinnerTrapTop${color}.png`],
             );
     const traps = [
         { x: 3, y: 3, placed: true },
@@ -143,6 +143,35 @@ test("drawing an invalid source cannot mutate capture before a native audit", ()
     r.send("afterEnemyTick");
     assert.equal(r.api.state(), undefined);
     assert.equal(r.c.KDGameData.SpiderlingsSpinnerRetries, undefined);
+});
+
+test("legacy training saves retire ground-trap triggers while retaining their field markers", () => {
+    const owned = {
+        Type: "Trap",
+        Trap: "SpiderlingsSpinnerGroundTrap",
+        SpinnerTrap: "SpiderlingsSpinnerField",
+        SpinnerSpent: true,
+        sentinel: 7,
+    };
+    const unrelated = { Type: "Trap", Trap: "NativeTrap", sentinel: 8 };
+    const tiles = new Map([
+        ["3,3", owned],
+        ["9,3", unrelated],
+    ]);
+    const r = contestRuntime(2, { KDTrapTypes: {}, KinkyDungeonTilesGet: (key) => tiles.get(key) });
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerField.js"), "utf8"), r.c);
+    assert.equal(r.c.KDTrapTypes.SpiderlingsSpinnerGroundTrap, undefined);
+    r.c.KDMapData.SpiderlingsSpinnerField = {
+        phase: "broken",
+        traps: [
+            { x: 3, y: 3 },
+            { x: 9, y: 3 },
+        ],
+        links: [],
+    };
+    r.c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerField({}, {});
+    assert.deepEqual(owned, { SpinnerTrap: "SpiderlingsSpinnerField", sentinel: 7 });
+    assert.deepEqual(unrelated, { Type: "Trap", Trap: "NativeTrap", sentinel: 8 });
 });
 
 // Reuse the equipment/event fixture; native AI and field geometry have separate browser probes.

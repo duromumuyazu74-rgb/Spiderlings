@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Potrzebujesz 10 wytrzymałości. Możesz czekać lub uż
 SpiderlingsSpinnerWrap,Owijanie nóg trwa pięć tur świata; stan ramion pozostaje bez zmian.
 SpiderlingsSpinnerDone,Worek gotowy. Możesz atakować, używać przedmiotów, powoli chodzić lub go zdjąć.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Próba tkających pająków
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Wejdź na płaskie pole prób. Tkacze kładą pułapki i łączą je przez drogi odwrotu. Wypróbuj walkę i pięć tur owijania.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Wejdź na płaskie pole prób. Tkacze budują pole schwytania i zamykają wejście po twoim wejściu. Wypróbuj walkę i pięć tur owijania.
 NameSpiderlingsSilkAnchor,Węzeł pajęczyny
 KillSpiderlingsSilkAnchor,Granica pajęczyny pęka.
-SpiderlingsFieldPreparing,Tkacze kładą pułapki i łączą je na drodze odwrotu. Ucieknij przed zamknięciem lub przetnij połączenie.
-SpiderlingsFieldReady,Dwie pułapki połączone. Tkacze blokują kolejną drogę odwrotu.
-SpiderlingsFieldSprung,Połączenia otaczają obszar. Gracz wewnątrz może zostać schwytany.
+SpiderlingsFieldPreparing,Tkacze budują granicę pola schwytania. Wyjdź przed zamknięciem wejścia lub przetnij połączenie.
+SpiderlingsFieldReady,Część granicy jest połączona. Tkacze kontynuują budowę pola.
+SpiderlingsFieldSprung,Pole schwytania jest zamknięte. Gracz wewnątrz może zostać schwytany.
 SpiderlingsFieldBroken,Węzeł pęka; pułapka uwalnia cię.
 SpiderlingsFieldReset,Zresetuj próbę
 SpiderlingsFieldJumper,Wypuść skoczka
-SpiderlingsFieldStatus,Pole: {phase} · pułapki {count}/4 · połączenia {links}/4
+SpiderlingsFieldStatus,Pole schwytania: {phase} · narożniki {count}/4 · połączenia {links}/4
 SpiderlingsFieldPhasepreparing,Budowa
 SpiderlingsFieldPhaseready,Łączenie
 SpiderlingsFieldPhasesprung,Zamknięte
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,Ukończona
 SpiderlingsSpinnerWeave,Więzy: {value}/100
 SpiderlingsSpinnerEscape,Ucieczka: {value}/{goal}
 SpiderlingsFieldAddSpinner,Dodaj Spinnera
-SpiderlingsFieldTrap,Jedwab na ziemi na chwilę spowalnia twoje kroki.
 SpiderlingsFieldRebuild,Tkacze zaczną odbudowę za {turns} tur świata.
-SpiderlingsFieldWaiting,Pułapki gotowe. Zachodnie wejście pozostaje otwarte aż wejdziesz.
+SpiderlingsFieldWaiting,Pole jest gotowe. Zachodnie wejście pozostaje otwarte aż wejdziesz.
 NameMageSpiderlings,Spiderling Mage
-NameSpiderlingsSpinnerWebCell,Utkana pajęczyna
+NameSpiderlingsSpinnerTrap,Granica pola schwytania
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.

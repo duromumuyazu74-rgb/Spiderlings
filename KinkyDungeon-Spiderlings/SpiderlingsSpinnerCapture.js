@@ -236,7 +236,7 @@
         SpiderlingsSpinnerDone: "The leg bag is complete. You can attack, use items, move slowly, or remove it.",
         KinkyDungeonStatSpiderlingsSpinnerDemo: "Spinner field trial",
         KinkyDungeonStatDescSpiderlingsSpinnerDemo:
-            "Enter a flat training ground. Spinners place traps and connect them across escape routes. Try the contest, five-turn capture and Jumper response.",
+            "Enter a flat training ground. Spinners build a capture field and close its entrance after you enter. Try the contest, five-turn capture and Jumper response.",
     };
     if (typeof addTextKey === "function") for (const [key, text] of Object.entries(messages)) addTextKey(key, text);
     if (typeof KinkyDungeonStatsPresets !== "undefined" && typeof KDPerkStart !== "undefined") {

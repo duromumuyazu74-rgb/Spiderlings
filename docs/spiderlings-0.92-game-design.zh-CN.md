@@ -1,6 +1,6 @@
 # Spiderlings 0.92 设计基线
 
-`0.92` 是玩法设计基线，当前正式版为 `0.92.38`，当前开发版为 `0.92.36-test.38`。正式安装包从 [GitHub Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38) 下载，开发包由 `test` 分支 CI 提供；已验证游戏环境为 KD 5.4.92 和 KD 5.5.3。详细数值以 [参数说明](../KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md) 为当前参考；Spinner 测试玩法见[试玩说明](spiderlings-spinner-capture/PLAYTEST.zh-CN.md)，模型、加载和发行约束见 [维护说明](../KinkyDungeon-Spiderlings/MAINTENANCE.md)。
+`0.92` 是玩法设计基线，当前正式版为 `0.92.38`，当前开发版为 `0.92.36-test.39`。正式安装包从 [GitHub Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38) 下载，开发包由 `test` 分支 CI 提供；已验证游戏环境为 KD 5.4.92 和 KD 5.5.3。test.39 将 Spinner 捕获场地统一为 `SpiderlingsSpinnerTrap` 边缘与拐角，移除独立地面陷阱及踩点减速，保留旧场地的施工与耐久。详细数值以 [参数说明](../KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md) 为当前参考；Spinner 测试玩法见[试玩说明](spiderlings-spinner-capture/PLAYTEST.zh-CN.md)，模型、加载和发行约束见 [维护说明](../KinkyDungeon-Spiderlings/MAINTENANCE.md)。
 
 0.92.36 补齐丝茧玩家的安静驻守条件：在丝茧中停止反抗且没有待完成加固时，玩家不再阻止据点十五回合后留五只，任务巢穴采用同一判定；不额外等待二十五回合散开警戒。玩家恢复攻击、挣扎、施法、尝试移动或附近可反抗 NPC 出现时重新计时。旧侵扰地图直接生效。
 
@@ -40,7 +40,7 @@ Test.38 的新五巢侵扰地图默认分成 2+2+1，小概率为 2+3 或五巢�
 
 0.92.27 起，玩家与 NPC 共用“轻微伤害＋绑定”：普通有效命中基础 0.05 tickle，跃击 0.10，喷网直击 0.05，轨迹 0.01，不因未推进追加伤害。对玩家成功推进蛛丝才消耗近战幼蛛。
 
-对敌对 NPC，普通近战、跃击、喷网直击和轨迹同时分别提供基础 1.5、3、3、0.5 束缚。保留原生抗性、护盾、Slime 材料和挣脱，不生成实体装备；实际增加束缚才消耗近战或跃击幼蛛。蛛丝轻触、有归属的地面陷阱以及闭合蛛网围场可给仍有护盾的敌对 NPC 施加短时原生 `ShieldDrain`；围场内每回合刷新，强度比当前原生护盾回复高 2，破盾后才按原生规则绑定。蛛网破口会停止持续压盾。伤害与束缚分别受 tickle 与 glue 抗性影响；自有伤害增幅限制为原生倍率调整后输入的两倍，防止固定弱点奖励压过基础轻伤。轨迹按来源和目标每回合最多接触结算一次；对 NPC 无交叉喷网奖励。NPC 跃击锁定身份与原格，移开可躲避。目标是暂时制服；原生高阶 NPC 门槛仍然较高。
+对敌对 NPC，普通近战、跃击、喷网直击和轨迹同时分别提供基础 1.5、3、3、0.5 束缚。保留原生抗性、护盾、Slime 材料和挣脱，不生成实体装备；实际增加束缚才消耗近战或跃击幼蛛。蛛丝轻触以及闭合蛛网围场可给仍有护盾的敌对 NPC 施加短时原生 `ShieldDrain`；围场内每回合刷新，强度比当前原生护盾回复高 2，破盾后才按原生规则绑定。蛛网破口会停止持续压盾。伤害与束缚分别受 tickle 与 glue 抗性影响；自有伤害增幅限制为原生倍率调整后输入的两倍，防止固定弱点奖励压过基础轻伤。轨迹按来源和目标每回合最多接触结算一次；对 NPC 无交叉喷网奖励。NPC 跃击锁定身份与原格，移开可躲避。目标是暂时制服；原生高阶 NPC 门槛仍然较高。
 
 ## 蛛丝进阶与操作
 

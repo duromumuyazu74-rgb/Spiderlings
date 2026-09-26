@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,体力が10必要。待機やポーションの使用は
 SpiderlingsSpinnerWrap,五つの世界ターンをかけて脚を包みます。腕の状態は維持されます。
 SpiderlingsSpinnerDone,脚袋が完成。攻撃、アイテム使用、ゆっくりした移動、解除ができる。
 KinkyDungeonStatSpiderlingsSpinnerDemo,紡ぎ子グモの体験
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,平坦な試験場で幼グモが地面に罠を置き、罠同士を糸で結んで退路を塞ぐ。対抗と5ターンの巻き付けを試せる。
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,平坦な試験場で幼グモが捕獲場を作り、入った後に入口を閉じる。対抗と5ターンの巻き付けを試せる。
 NameSpiderlingsSilkAnchor,蛛糸の結び目
 KillSpiderlingsSilkAnchor,蛛糸の囲いが裂けた。
-SpiderlingsFieldPreparing,幼グモは地面に罠を置いてから結び、退路を塞ぐ。閉鎖前に逃げるか接続を切ろう。
-SpiderlingsFieldReady,2つの罠が結ばれた。別の退路を塞ごうとしている。
-SpiderlingsFieldSprung,罠の接続が区域を囲んだ。内部に残ると捕獲される可能性がある。
+SpiderlingsFieldPreparing,幼グモは捕獲場の境界を作っている。入口が閉じる前に離れるか接続を切ろう。
+SpiderlingsFieldReady,境界の一部がつながった。幼グモは捕獲場の建造を続ける。
+SpiderlingsFieldSprung,捕獲場が閉鎖された。内部に残ると捕獲される可能性がある。
 SpiderlingsFieldBroken,結び目が切れ、罠と牽制が解除されました。
 SpiderlingsFieldReset,試遊リセット
 SpiderlingsFieldJumper,跳躍幼蛛を放す
-SpiderlingsFieldStatus,蛛糸の区域：{phase} · 罠 {count}/4 · 接続 {links}/4
+SpiderlingsFieldStatus,捕獲場：{phase} · 角 {count}/4 · 接続 {links}/4
 SpiderlingsFieldPhasepreparing,準備中
 SpiderlingsFieldPhaseready,接続準備
 SpiderlingsFieldPhasesprung,閉鎖完了
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,完了
 SpiderlingsSpinnerWeave,拘束：{value}/100
 SpiderlingsSpinnerEscape,脱出：{value}/{goal}
 SpiderlingsFieldAddSpinner,Spinner を追加
-SpiderlingsFieldTrap,地面の蛛糸に足が引っ掛かり、一時的に移動が遅くなる。
 SpiderlingsFieldRebuild,あと {turns} ワールドターンで幼グモが再設置を始める。
-SpiderlingsFieldWaiting,罠の準備完了。入るまで西側の入口は開いている。
+SpiderlingsFieldWaiting,捕獲場の準備完了。入るまで西側の入口は開いている。
 NameMageSpiderlings,Spiderling Mage
-NameSpiderlingsSpinnerWebCell,織られた蛛網
+NameSpiderlingsSpinnerTrap,捕獲場の境界
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.

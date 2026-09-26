@@ -168,16 +168,16 @@ SpiderlingsSpinnerTired,Нужно 10 выносливости. Можно по�
 SpiderlingsSpinnerWrap,Опутывание ног длится пять мировых ходов; состояние рук сохраняется.
 SpiderlingsSpinnerDone,Мешок готов. Можно атаковать, применять предметы, медленно двигаться или снять его.
 KinkyDungeonStatSpiderlingsSpinnerDemo,Проба паучьего плетения
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Плоское поле: паучки ставят ловушки и соединяют их поперёк путей отхода. Испытайте противоборство и пять ходов обматывания.
+KinkyDungeonStatDescSpiderlingsSpinnerDemo,Плоское поле: паучки строят поле захвата и закрывают вход после вашего входа. Испытайте противоборство и пять ходов обматывания.
 NameSpiderlingsSilkAnchor,Узел паутины
 KillSpiderlingsSilkAnchor,Граница паутины рвётся.
-SpiderlingsFieldPreparing,Паучки ставят ловушки и соединяют их поперёк пути отхода. Уйдите до замыкания или разрежьте связь.
-SpiderlingsFieldReady,Две ловушки соединены. Паучки перекрывают следующий путь отхода.
-SpiderlingsFieldSprung,Связи окружили область. Оставшегося внутри игрока могут поймать.
+SpiderlingsFieldPreparing,Паучки строят границу поля захвата. Выйдите до закрытия входа или разрежьте связь.
+SpiderlingsFieldReady,Часть границы соединена. Паучки продолжают строить поле захвата.
+SpiderlingsFieldSprung,Поле захвата замкнуто. Игрок внутри может быть пойман.
 SpiderlingsFieldBroken,Узел разорван. Ловушка и удержание исчезают.
 SpiderlingsFieldReset,Повторить опыт
 SpiderlingsFieldJumper,Выпустить прыгуна
-SpiderlingsFieldStatus,Поле: {phase} · ловушки {count}/4 · связи {links}/4
+SpiderlingsFieldStatus,Поле захвата: {phase} · углы {count}/4 · связи {links}/4
 SpiderlingsFieldPhasepreparing,Строится
 SpiderlingsFieldPhaseready,Соединение
 SpiderlingsFieldPhasesprung,Замкнуто
@@ -186,11 +186,10 @@ SpiderlingsFieldPhasecomplete,Завершена
 SpiderlingsSpinnerWeave,Путы: {value}/100
 SpiderlingsSpinnerEscape,Освобождение: {value}/{goal}
 SpiderlingsFieldAddSpinner,Добавить Spinner
-SpiderlingsFieldTrap,Шёлк на земле ненадолго замедляет ваши шаги.
 SpiderlingsFieldRebuild,Паучки начнут строить заново через {turns} ходов мира.
-SpiderlingsFieldWaiting,Ловушки готовы. Западный вход открыт пока вы не войдёте.
+SpiderlingsFieldWaiting,Поле готово. Западный вход открыт пока вы не войдёте.
 NameMageSpiderlings,Spiderling Mage
-NameSpiderlingsSpinnerWebCell,Сплетённая паутина
+NameSpiderlingsSpinnerTrap,Граница поля захвата
 KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
 KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
 KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
