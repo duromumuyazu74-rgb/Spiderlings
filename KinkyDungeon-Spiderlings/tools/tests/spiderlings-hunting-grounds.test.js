@@ -96,7 +96,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
 test("old Infestation and Hunting Grounds register independently in one Mod", () => {
     const r = runtime({}, [], true);
     assert.equal(r.context.KDMapMods.SpiderlingsInfestation.weight, 50);
-    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 750);
+    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 1000);
     r.generate();
     assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.targetIds.length, 3);
     assert.equal(r.context.KDMapData.SpiderlingsInfestation, undefined);
@@ -208,7 +208,7 @@ test("loading in a side room migrates stored three-nest floors and their own jou
 test("native modifier adds three independent nests and twelve attributable guards", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;
-    assert.equal(mod.weight, 750);
+    assert.equal(mod.weight, 1000);
     assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
     assert.equal(mod.filter({ y: 3 }), 0);
@@ -292,6 +292,80 @@ function nativeJourneyRuntime(overrides = {}, withOld = false) {
         withOld,
     );
 }
+
+test("default spider weights stay comparable across complete native journeys", (t) => {
+    const game = require("../reference-inputs.js").gamePath();
+    const read = (name) => fs.readFileSync(path.join(game, name), "utf8").replaceAll("\r", "");
+    const declaration = (text, name) => {
+        const start = text.indexOf("function " + name);
+        const end = text.indexOf("\n}", start);
+        assert.ok(start >= 0 && end > start, name);
+        return text.slice(start, end + 2);
+    };
+    const gameCode = read("Game/src/base/game/KinkyDungeonGame.ts");
+    const r = runtime(
+        {
+            PIXI: { Graphics: class {} },
+            KDBaseWhite: "#fff",
+            KinkyDungeonNewGame: 0,
+            KDLevelsPerCheckpoint: 4,
+            KinkyDungeonMaxLevel: 21,
+            KDNoDragonLairCheckpoints: ["lib"],
+            KinkyDungeonAltFloor: () => undefined,
+            // Terrain, escape and side-room generation are outside this probability regression.
+            KDGetRandomEscapeMethod: () => "Key",
+            KDGetSideRoom: () => undefined,
+            KDSideRooms: { ElevatorEgyptian: { name: "ElevatorEgyptian" } },
+            KinkyDungeonMapIndex: Object.fromEntries(
+                ["grv", "cat", "jng", "tmp", "bel", "tmb", "lib", "cry", "ore"].map((name) => [name, name]),
+            ),
+            KDGameData: { Journey: "", JourneyProgression: ["grv", "cat", "jng", "tmp", "bel"] },
+        },
+        [
+            read("Game/src/map/KinkyDungeonParams.ts"),
+            read("Game/src/map/KinkyDungeonMapMods.ts").replace(
+                "let KDMapMods: Record<string, MapMod>",
+                "globalThis.KDMapMods",
+            ),
+            read("Game/src/map/KinkyDungeonBoss.ts"),
+            read("Game/src/map/KDJourney.ts"),
+            declaration(read("Scripts/Common.ts"), "CommonRandomItemFromList"),
+            declaration(gameCode, "KDGetByWeight"),
+            declaration(gameCode, "KDIsHellFloor"),
+        ],
+        true,
+    );
+    const counts = vm.runInContext(
+        `(() => {
+        const counts = { nodes: 0, infestation: 0, hunting: 0, biomes: {} };
+        for (let run = 0; run < 4000; run++) {
+            let seed = (0x974200 + Math.imul(run + 1, 0x9e3779b9)) >>> 0;
+            KDRandom = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+            Math.random = KDRandom;
+            KDMapModRefreshList = [];
+            KDInitJourneyMap(0);
+            for (const slot of Object.values(KDGameData.JourneyMap)) {
+                if (slot.type !== "basic" || slot.y < 3 || slot.RoomType || KDIsHellFloor(slot.y)) continue;
+                counts.nodes++;
+                counts.biomes[slot.Checkpoint] = (counts.biomes[slot.Checkpoint] || 0) + 1;
+                if (slot.MapMod === "SpiderlingsInfestation") counts.infestation++;
+                if (slot.MapMod === "SpiderlingsHuntingGrounds") {
+                    if (slot.Faction !== "Maidforce") throw new Error("Hunting Grounds changed faction");
+                    counts.hunting++;
+                }
+            }
+        }
+        return counts;
+    })()`,
+        r.context,
+    );
+    assert.equal(counts.nodes, 260000);
+    assert.ok(Object.keys(counts.biomes).length > 4, "retain the native biome distribution");
+    assert.ok(counts.infestation / counts.nodes > 0.045 && counts.infestation / counts.nodes < 0.065);
+    const ratio = counts.hunting / counts.infestation;
+    assert.ok(ratio > 0.9 && ratio < 1.1, JSON.stringify(counts));
+    t.diagnostic(JSON.stringify(counts));
+});
 
 test("both floor labels obey native journey selection together", (t) => {
     let seed = 1;
@@ -417,7 +491,7 @@ test("floor weights take effect on the next draw, zero disables, and invalid inp
     for (const bad of ["", "-1", "1.5", "Infinity", "garbage", "9007199254740992"]) {
         settings.spiderlingsInfestationWeight = settings.spiderlingsHuntingGroundsWeight = bad;
         assert.equal(c.KDMapMods.SpiderlingsInfestation.weight, 50, bad);
-        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 750, bad);
+        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 1000, bad);
     }
 });
 
