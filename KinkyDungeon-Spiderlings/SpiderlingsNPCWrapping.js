@@ -65,10 +65,13 @@
 
     function targetEligible(target) {
         const rivals = entities().filter((candidate) => SPIDERS.has(candidate.Enemy?.name));
+        const silkSource = api.NPCAdhesion?.silkSource?.(target);
         return (
             entity(target?.id) === target &&
             !protectedTarget(target) &&
-            (!rivals.length || rivals.some((rival) => KDHostile(rival, target)))
+            (rivals.length
+                ? rivals.some((rival) => KDHostile(rival, target))
+                : !!silkSource && KDHostile(silkSource, target))
         );
     }
 
@@ -118,7 +121,7 @@
             target.hp > 0 &&
             typeof KDHelpless === "function" &&
             KDHelpless(target) &&
-            api.NPCAdhesion?.hasAttributedSilk(target)
+            api.NPCAdhesion?.hasSpiderHelplessness(target)
         );
     }
 
@@ -138,15 +141,10 @@
             }
             if (value.progress > 0) {
                 if (!fullPin(target) && !helpless(target)) value.progress = 0;
-                if (slime(target) < value.lastSlime) {
-                    value.progress = 0;
-                    value.helplessTurns = 0;
-                }
                 value.sourceIds = (value.sourceIds || []).filter((id) => sourceEligible(entity(id), target));
                 if (!value.sourceIds.length) value.progress = 0;
                 if (!value.progress) value.sourceIds = [];
             }
-            if (slime(target) < value.lastSlime) value.helplessTurns = 0;
             value.lastSlime = slime(target);
             if (!value.progress && !helpless(target)) clear(value.targetId);
         }
@@ -339,27 +337,6 @@
             }
         }
     }
-
-    if (typeof KDEnemyStruggleTurn === "function")
-        KDEnemyStruggleTurn = api.Hooks.wrap(
-            "NPCWrapping.struggle",
-            KDEnemyStruggleTurn,
-            (native) =>
-                function (target) {
-                    const before = slime(target);
-                    const nativeResult = native.apply(this, arguments);
-                    if (slime(target) < before) {
-                        const value = record(target);
-                        if (value) {
-                            value.progress = 0;
-                            value.helplessTurns = 0;
-                            value.sourceIds = [];
-                            value.lastSlime = slime(target);
-                        }
-                    }
-                    return nativeResult;
-                },
-        );
 
     api.NPCWrapping = Object.freeze({
         KEY,

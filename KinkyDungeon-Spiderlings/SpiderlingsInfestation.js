@@ -339,9 +339,9 @@
     }
 
     const texts = {
-        KDMapMod_SpiderlingsInfestation: "Spiderling Infestation",
+        KDMapMod_SpiderlingsInfestation: "Spiderling Hunting Grounds",
         KinkyDungeonMapModSpiderlingsInfestation:
-            "Soft webs line the corners. Spiderlings step lightly along the threads, filling the room with delicate rustling.",
+            "Soft webs spread across the floor. Spiderlings move between their nests, and rustling follows you through the passages.",
         KDEscapeMethod_SpiderlingsInfestation: "Destroy the marked nests",
         KDEscapeMethodDesc_SpiderlingsInfestation:
             "Soft threads fringe the nests first built here. Destroy these marked nests to continue downstairs.",

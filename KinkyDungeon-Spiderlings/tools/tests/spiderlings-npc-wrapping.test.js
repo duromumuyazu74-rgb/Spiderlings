@@ -21,6 +21,8 @@ function fixture() {
         faction: "Maidforce",
         full: true,
         silk: true,
+        silkFaction: "Enemy",
+        silkSufficient: true,
         specialBoundLevel: { Slime: 7 },
         Enemy: { name: "Maidforce", bound: "Maidforce", tags: {} },
     };
@@ -40,6 +42,11 @@ function fixture() {
             NPCAdhesion: {
                 status: (entity) => (entity.full ? "full" : entity.helpless ? "native-helpless" : "free"),
                 hasAttributedSilk: (entity) => !!entity.silk,
+                hasSpiderHelplessness: (entity) => !!entity.helpless && !!entity.silkSufficient,
+                silkSource: (entity) =>
+                    entity.silk
+                        ? { id: -1, hp: 1, faction: entity.silkFaction, Enemy: { name: "WebCaster" } }
+                        : undefined,
             },
             getSetting: () => context.pink === true,
         },
@@ -168,7 +175,7 @@ test("wrapping status and strands follow Normal and Pink settings", () => {
     assert.equal(r.calls.colors.at(-1), 0xffc2df);
 });
 
-test("pin loss, successful native strand break, displacement, and carrier loss reset progress", () => {
+test("pin loss, displacement, and carrier loss reset progress", () => {
     const r = fixture();
     r.act(r.spiders[0]);
     r.target.full = false;
@@ -176,11 +183,6 @@ test("pin loss, successful native strand break, displacement, and carrier loss r
     assert.equal(r.wrap.record(r.target), undefined);
     r.target.full = true;
     r.act(r.spiders[1]);
-    r.target.struggle = 1;
-    r.context.KDEnemyStruggleTurn(r.target);
-    assert.equal(r.wrap.record(r.target).progress, 0);
-    r.wrap.prepareTurn(1);
-    r.act(r.spiders[0]);
     r.wrap.onDisplacement(r.target);
     assert.equal(r.wrap.record(r.target), undefined);
     r.wrap.prepareTurn(1);
@@ -188,6 +190,19 @@ test("pin loss, successful native strand break, displacement, and carrier loss r
     for (const spider of r.spiders) spider.x = 20;
     r.wrap.prepareTurn(1);
     assert.equal(r.wrap.record(r.target), undefined);
+});
+
+test("partial native struggle retains paid wrapping while the target remains fully pinned", () => {
+    const r = fixture();
+    for (let turn = 1; turn <= 3; turn++) {
+        assert.ok(r.act(r.spiders[0]));
+        if (turn === 3) break;
+        r.target.struggle = 0.5;
+        r.context.KDEnemyStruggleTurn(r.target);
+        r.wrap.prepareTurn(1);
+        assert.equal(r.wrap.record(r.target).progress, turn);
+    }
+    assert.equal(r.map.Entities.includes(r.target), false);
 });
 
 test("a nearby replacement cannot inherit strands after every contributing spider is lost", () => {
@@ -217,6 +232,40 @@ test("attributed native helplessness requires three consecutive positive world t
     r.wrap.tickAfter(1);
     assert.equal(r.map.Entities.includes(r.target), true);
     r.wrap.tickAfter(1);
+    assert.equal(r.map.Entities.includes(r.target), false);
+});
+
+test("unrelated binding cannot turn a small spider silk hit into fallback capture", () => {
+    const r = fixture();
+    r.target.full = false;
+    r.target.helpless = true;
+    r.target.silkSufficient = false;
+    for (const spider of r.spiders) spider.x = 20;
+    for (let turn = 0; turn < 3; turn++) r.wrap.tickAfter(1);
+    assert.equal(r.map.Entities.includes(r.target), true);
+    assert.equal(r.wrap.record(r.target), undefined);
+});
+
+test("a target that joins the silk source faction stays protected after all spiders leave", () => {
+    const r = fixture();
+    r.target.full = false;
+    r.target.helpless = true;
+    r.target.faction = "Enemy";
+    r.map.Entities.splice(0, 3);
+    for (let turn = 0; turn < 3; turn++) r.wrap.tickAfter(1);
+    assert.equal(r.map.Entities.includes(r.target), true);
+    assert.equal(r.wrap.targetEligible(r.target), false);
+});
+
+test("saved Spiderling identity keeps faction-specific rivalry after all spiders leave", () => {
+    const r = fixture();
+    r.context.KDHostile = (source, target) =>
+        source.faction !== target.faction && source.Enemy?.name === "WebCaster" && target.faction === "Maidforce";
+    r.target.full = false;
+    r.target.helpless = true;
+    r.map.Entities.splice(0, 3);
+    assert.equal(r.wrap.targetEligible(r.target), true);
+    for (let turn = 0; turn < 3; turn++) r.wrap.tickAfter(1);
     assert.equal(r.map.Entities.includes(r.target), false);
 });
 

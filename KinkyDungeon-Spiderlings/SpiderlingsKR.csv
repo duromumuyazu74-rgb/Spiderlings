@@ -123,8 +123,8 @@ RestraintSpiderlingsWebbingCocoonDesc,촘촘한 거미줄이 몸을 두꺼운 �
 RestraintSpiderlingsWebbingCocoonDesc2,몸을 비틀면 고치 벽이 미세하게 떨린다. 바닥에 끌리는 실이 바스락거리며 안쪽의 움직임을 어둠 속으로 전하는 듯하다.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1은 TargetLv2 아래에 묻혀 있다. 손에 닿는 것은 겉을 덮은 끈끈한 실뿐이다.
 KinkyDungeonSpiderlingsCocoonAnchored,새끼 거미들이 고치 둘레에 거미줄을 겹겹이 당겨 당신을 그 자리에 단단히 고정한다!
-KDMapMod_SpiderlingsInfestation,새끼 거미 창궐
-KinkyDungeonMapModSpiderlingsInfestation,구석마다 실이 뻗고 그림자 속에서 바스락거림이 서로 답한다. 이곳에는 오래전부터 다른 주민이 있었다.
+KDMapMod_SpiderlingsInfestation,새끼 거미 사냥터
+KinkyDungeonMapModSpiderlingsInfestation,부드러운 거미줄이 층 전체에 퍼져 있다. 새끼 거미들이 둥지 사이를 오가고 좁은 통로마다 바스락거리는 소리가 따라온다.
 KDEscapeMethod_SpiderlingsInfestation,목표 둥지 파괴
 KDEscapeMethodDesc_SpiderlingsInfestation,처음부터 이곳에 자리 잡은 둥지들이 아직 어둠 속에서 꿈틀거린다. 입구 깊은 곳에서 자잘하게 긁는 소리가 난다.
 SpiderlingsInfestationProgress,파괴한 목표 둥지: CURRENT/TARGET

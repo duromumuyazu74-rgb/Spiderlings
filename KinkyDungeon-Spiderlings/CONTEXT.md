@@ -4,6 +4,9 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 
 ## Spiderlings encounters
 
+**Spiderling Hunting Grounds (幼蛛猎场)**:
+The player-facing name of the whole-floor map modifier with three original objective nests, roaming Spiderlings, and narrow passages. Its saved and scripted identifier remains `SpiderlingsInfestation` for compatibility with existing maps.
+
 **Map Spiderling population cap**:
 The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
 _Avoid_: per-nest offspring cap, total spawns over a floor, nest count limit
