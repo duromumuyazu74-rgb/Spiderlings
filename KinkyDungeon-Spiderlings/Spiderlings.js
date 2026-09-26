@@ -29,10 +29,11 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             onHuntingGrounds() &&
             isHostileSpiderlingTarget(enemy) &&
+            other !== enemy &&
             other?.Enemy &&
             other.hp > 0 &&
             !other.player &&
-            !targets.has(other.Enemy.name) &&
+            other.Enemy.name !== "NestEntrance" &&
             !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other)
         );
     }
