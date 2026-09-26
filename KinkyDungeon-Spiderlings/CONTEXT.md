@@ -5,10 +5,10 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 ## Spiderlings encounters
 
 **Spiderling Hunting Grounds (幼蛛猎场)**:
-The whole-floor map modifier with three original objective nests, roaming Spiderlings, and narrow passages. Its independent saved and scripted identifier is `SpiderlingsHuntingGrounds`. Earlier three-nest saves under `SpiderlingsInfestation` migrate when loaded.
+A floor occupied by Spiderlings, with three original objective nests, roaming Spiderlings, and narrow passages. Its independent saved and scripted identifier is `SpiderlingsHuntingGrounds`. Earlier three-nest saves under `SpiderlingsInfestation` migrate when loaded.
 
 **Spiderling Infestation (幼蛛侵扰)**:
-The separate five-nest modifier, saved as `SpiderlingsInfestation`, with native population and weight 50. Hunting Grounds has weight 100. Roaming Spiderlings on Hunting Grounds pursue encountered non-Spiderling NPCs, including allies, shops and quest actors. Spiderlings do not lock onto their own faction. Native `KDCapturable` limits and persistent `alwaysEscape` still prevent final wrapping.
+The separate five-nest modifier, saved as `SpiderlingsInfestation`, with native population and weight 50. Hunting Grounds has weight 100.
 
 **Map Spiderling population cap**:
 The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
@@ -35,12 +35,12 @@ A recurring child spawn owned and capped by one living hostile NestEntrance. It 
 _Avoid_: global reinforcement budget, NestEntrance spell list, death summon
 
 **Independent Hunting Grounds nests**:
-Three original objectives are at least nine tiles apart in Chebyshev distance. Their blocked cells retain map connectivity and an attackable neighbor for each nest. Each starts with two Spinners and one WebCaster attributed to that nest; recurring reinforcement has at most four living attributed guards per task nest. Other spiders can roam the floor. A failed complete placement cancels the objective. Existing saved maps retain their original target IDs and count, including five-nest maps.
+Three original objectives are at least nine tiles apart in Chebyshev distance. Their blocked cells retain map connectivity and an attackable neighbor for each nest. Each starts with two Spinners, one WebCaster and one Mage Spiderling attributed to that nest; recurring reinforcement has at most four living attributed guards per task nest. Other spiders can roam the floor. A failed complete placement cancels the objective. Existing saved maps retain their original target IDs and count, including five-nest maps.
 The two attributed Spinners form a separate construction group. A Maidforce hit against a living task nest makes nearby Spiderlings prioritize the attacker for four ticks; this does not add a reinforcement or change the nest's death burst. Spinner construction keeps native movement credit between turns, and unassigned Spinners use native AI.
 _Avoid_: grouped task nests, a movement leash for wild spiders, relocating saved objectives
 
 **Hunting Grounds population and prey**:
-The Maidforce main faction pairs with newly selected Hunting Grounds maps. Random initial population weights favor spiders at 3 over maids at 0.35, Dressmaker at 0.2 and Nurse at 0.2. After generation, at most three Maidforce or Dressmaker patrol NPCs remain on Hunting Grounds; shopkeepers and scripted spawn actors retain their native placement. Wandering arrivals of those factions are removed without death. The separate five-nest Infestation uses native population. Ordinary Maidforce floors retain their original population weights and wandering.
+The floor is occupied by ordinary Spiderlings, using the same enemy definitions as other floors. On this modifier, wild spiders patrol for NPCs of a different KD faction within twelve tiles; actual target lock still requires native vision and line of sight. Same-faction actors and scenery are not prey, and final wrapping follows native `KDCapturable` and persistent `alwaysEscape` limits. The Maidforce main faction is a native population selection setting, not ownership of the floor. Random initial population weights favor spiders at 3 over maids at 0.35, Dressmaker at 0.2 and Nurse at 0.2. After generation, at most three Maidforce or Dressmaker patrol NPCs remain on Hunting Grounds; shopkeepers and scripted spawn actors retain their native placement. Wandering arrivals of those factions are removed without death. The separate five-nest Infestation uses native population. Ordinary Maidforce floors retain their original population weights and wandering.
 
 **Nest lifetime Tunneler budget**:
 The configurable number of successful Tunneler reinforcements from one nest over its lifetime. Defaults to 3; zero disables that species for recurring reinforcement. Its entity counter survives saves and map revisits; child death or nest construction does not refund it. New nests have independent budgets. It coexists with the living offspring and map caps. Legacy nests initialize from attributable Tunnelers still present, without reconstructing removed historical entities.
