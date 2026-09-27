@@ -76,9 +76,14 @@
         const data = bullet?.bullet;
         const effect = data?.playerEffect || data?.spell?.playerEffect;
         if (effect?.provenance !== "WebCaster.WebSpray" || !["direct", "trail"].includes(effect.triggerSource)) return;
-        const source =
+        const live =
             typeof KDMapData !== "undefined" ? KDMapData.Entities.find((e) => e.id === data.source) : undefined;
-        return source?.Enemy?.name === "WebCaster" ? { source, effect } : undefined;
+        // Native projectiles outlive their caster and retain source/faction in saves.
+        const source =
+            live?.hp > 0 && live.Enemy?.name === "WebCaster"
+                ? live
+                : { id: data.source, hp: 1, faction: data.faction || "Enemy", Enemy: { name: "WebCaster" } };
+        return { source, effect };
     }
 
     // Native faction favorability can disagree with our entity-pair hostility

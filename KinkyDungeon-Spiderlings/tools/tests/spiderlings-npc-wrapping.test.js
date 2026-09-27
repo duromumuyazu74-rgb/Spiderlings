@@ -12,7 +12,7 @@ const nativeField = fs.readFileSync(path.join(__dirname, "../..", "SpiderlingsSp
 const oldCapture = fs.readFileSync(path.join(__dirname, "../..", "SpiderlingsSpinnerNPCCapture.js"), "utf8");
 
 function fixture() {
-    const calls = { native: 0, removed: [], colors: [], labels: [] };
+    const calls = { native: 0, removed: [], colors: [], labels: [], lines: 0 };
     const target = {
         id: 10,
         x: 4,
@@ -51,6 +51,8 @@ function fixture() {
             getSetting: () => context.pink === true,
         },
         KDMapData: map,
+        KDCanSeeEnemy: (entity) => !entity.hidden,
+        KinkyDungeonVisionGet: () => 1,
         KDGameData: { Collection: {}, SleepTurns: 0 },
         KinkyDungeonGetBuffedStat: () => 0,
         KinkyDungeonMultiplicativeStat: () => 1,
@@ -88,6 +90,7 @@ function fixture() {
                     return this;
                 }
                 lineTo() {
+                    calls.lines++;
                     return this;
                 }
             },
@@ -110,6 +113,32 @@ function fixture() {
     }
     return { calls, context, map, target, spiders, wrap, act, blockedTiles };
 }
+
+test("wrapping visuals follow target and source visibility without clearing capture progress", () => {
+    const r = fixture();
+    r.act(r.spiders[0]);
+    const draw = () => {
+        r.calls.labels.length = 0;
+        r.calls.lines = 0;
+        r.wrap.draw({ CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+        return [r.calls.labels.length, r.calls.lines];
+    };
+    assert.deepEqual(draw(), [1, 1]);
+    r.target.hidden = true;
+    assert.deepEqual(draw(), [0, 0]);
+    r.target.hidden = false;
+    r.context.KinkyDungeonVisionGet = () => 0;
+    assert.deepEqual(draw(), [0, 0]);
+    r.context.KinkyDungeonVisionGet = () => 1;
+    r.spiders[0].hidden = true;
+    assert.deepEqual(draw(), [1, 0]);
+    r.spiders[0].hidden = false;
+    r.context.KinkyDungeonVisionGet = (x, y) => (x === r.spiders[0].x && y === r.spiders[0].y ? 0 : 1);
+    assert.deepEqual(draw(), [1, 0]);
+    r.context.KinkyDungeonVisionGet = () => 1;
+    assert.deepEqual(draw(), [1, 1]);
+    assert.equal(r.wrap.record(r.target).progress, 1);
+});
 
 test("three different adjacent spiders pay three actions in one world turn, without native retaliation", () => {
     const r = fixture();

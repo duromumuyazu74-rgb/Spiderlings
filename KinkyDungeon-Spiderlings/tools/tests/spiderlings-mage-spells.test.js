@@ -14,7 +14,7 @@ function fixture() {
     const calls = { casts: [], playerDamage: [], playerWeb: [], npcDamage: [], npcWeb: [], draws: [] };
     const mage = { id: 1, x: 5, y: 5, hp: 3, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
     const maid = { id: 2, x: 7, y: 7, hp: 20, shield: 10, faction: "Maidforce", Enemy: { name: "Maid" } };
-    const player = { player: true, x: 7, y: 8 };
+    const player = { player: true, faction: "Player", x: 7, y: 8 };
     const map = { Entities: [mage, maid], Bullets: [] };
     let random = 0;
     let pink = false;
@@ -73,6 +73,43 @@ function fixture() {
         pink: (value) => (pink = value),
     };
 }
+
+test("friendly Collapse attacks hostile NPCs without damaging or binding the nearby player", () => {
+    const r = fixture();
+    r.mage.faction = "Player";
+    r.cast("SpiderlingsMageCollapse");
+    for (let i = 0; i < 3; i++) r.tick();
+    assert.equal(r.calls.npcDamage.length, 1);
+    assert.equal(r.calls.npcWeb.length, 5);
+    assert.equal(r.calls.playerDamage.length, 0);
+    assert.equal(r.calls.playerWeb.length, 0);
+});
+
+test("friendly Hex and its delayed blast preserve allegiance after the caster leaves and state reloads", () => {
+    for (const removeAt of ["field", "blast"]) {
+        const r = fixture();
+        r.mage.faction = "Player";
+        r.cast("SpiderlingsMageHex");
+        if (removeAt === "field") r.map.Entities = [r.maid];
+        r.map.SpiderlingsMageSpells = JSON.parse(JSON.stringify(r.map.SpiderlingsMageSpells));
+        for (let i = 0; i < 5; i++) r.tick();
+        assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player), undefined, removeAt);
+        assert.equal(r.maid.shield, 7);
+        assert.equal(r.c.Spiderlings.MageSpells.markFor(r.maid).stacks, 3);
+        r.events.afterDamageEnemy(null, {
+            enemy: r.maid,
+            attacker: { Enemy: { name: "Spinner" } },
+            incomingDamage: { spiderlingsAttack: "melee" },
+            dmgDealt: 1,
+        });
+        r.map.Entities = [r.maid];
+        r.map.SpiderlingsMageSpells = JSON.parse(JSON.stringify(r.map.SpiderlingsMageSpells));
+        r.tick();
+        r.tick();
+        assert.equal(r.calls.npcWeb.length, 3);
+        assert.equal(r.calls.playerWeb.length, 0, removeAt);
+    }
+});
 
 test("Mage chooses each available spell and respects active-field and collapse limits", () => {
     const r = fixture();

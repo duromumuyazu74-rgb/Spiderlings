@@ -303,6 +303,50 @@ test("failed and unrelated NPC melee retain their native outcomes", () => {
     assert.equal(target.hp, 6);
 });
 
+test("orphaned direct and trail spray retain saved faction, collision and native binding", () => {
+    for (const departed of ["removed", "dead"]) {
+        const { c, spawn, events } = fixture();
+        const source = spawn(1, "WebCaster", "Player");
+        const target = spawn(2, "Maidforce", "Maidforce");
+        const friend = spawn(3, "Ally", "Player");
+        const make = (kind) =>
+            JSON.parse(
+                JSON.stringify({
+                    x: 0,
+                    y: 0,
+                    time: 10,
+                    bullet: {
+                        name: "WebSpray",
+                        source: source.id,
+                        faction: "Player",
+                        damage: { type: "inert" },
+                        spell: {
+                            noUniqueHits: true,
+                            playerEffect: { provenance: "WebCaster.WebSpray", triggerSource: kind },
+                        },
+                    },
+                }),
+            );
+        if (departed === "removed") c.KDMapData.Entities.splice(0, 1);
+        else source.hp = 0;
+        const direct = make("direct");
+        assert.equal(c.KDBulletCanHitEntity(direct, target), true, departed);
+        assert.equal(c.KDBulletAoECanHitEntity(direct, target), true);
+        assert.equal(c.KDBulletCanHitEntity(direct, friend), false);
+        c.KDBulletHitEnemy(direct, target);
+        c.KDBulletHitEnemy(direct, target);
+        assert.equal(target.boundLevel, 3);
+        c.KDBulletHitEnemy(make("trail"), target);
+        c.KDBulletHitEnemy(make("trail"), target);
+        assert.equal(target.boundLevel, 3.5);
+        events("tickAfter", { delta: 1 });
+        c.KDBulletHitEnemy(make("trail"), target);
+        assert.equal(target.boundLevel, 4);
+        assert.equal(target.equipment, 0);
+        assert.equal(friend.boundLevel, 0);
+    }
+});
+
 test("spray preserves the real bullet bookkeeping and shared player effects without creating NPC equipment", () => {
     const { c, spawn, events } = fixture();
     const source = spawn(1, "WebCaster", "Enemy"),

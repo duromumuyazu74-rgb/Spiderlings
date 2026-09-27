@@ -37,6 +37,9 @@ async function verifyGame(game, packagePath, output) {
             ["webcaster", "webcaster.js"],
             ["rune-hit", "01-rune-hit.js"],
             ["target-overlay", "02-target-overlay.js"],
+            ["orphan-spray", "orphan-spray.js"],
+            ["friendly-mage", "friendly-mage.js"],
+            ["hidden-wrapping", "hidden-wrapping.js"],
         ];
         for (const [name, file, scenario] of checks) {
             if (scenario)
@@ -122,7 +125,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster flight/settled webs, Rune impacts and target overlays",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster flight/settled webs and orphaned hits, Rune impacts, friendly Mage targeting, target overlays and hidden NPC wrapping",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

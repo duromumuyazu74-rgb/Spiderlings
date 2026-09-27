@@ -55,9 +55,10 @@
     function mageRuneSource(bullet) {
         if (!isRune(bullet)) return;
         const id = bullet.bullet.source;
-        const live = KDMapData.Entities.find((entity) => entity.id === id && entity.Enemy?.name === MAGE);
-        // The cast belongs to a hostile Mage even after its entity has been removed.
-        return live || { id, hp: 1, faction: "Enemy", Enemy: { name: MAGE } };
+        const live = KDMapData.Entities.find(
+            (entity) => entity.id === id && entity.hp > 0 && entity.Enemy?.name === MAGE,
+        );
+        return live || { id, hp: 1, faction: bullet.bullet.faction || "Enemy", Enemy: { name: MAGE } };
     }
 
     function hostileMaid(bullet, target) {
@@ -65,7 +66,6 @@
         const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
         return !!(
             source &&
-            bullet.bullet.faction === "Enemy" &&
             target?.hp > 0 &&
             target.Enemy &&
             (huntingPrey ||
@@ -186,8 +186,9 @@
 
     function resolveRune(bullet) {
         const player = KinkyDungeonPlayerEntity;
-        if (inBlast(bullet, player)) {
-            const outcome = api.Webbing?.applyEnemyProgression("WebCaster", mageRuneSource(bullet), "Enemy");
+        const source = mageRuneSource(bullet);
+        if (inBlast(bullet, player) && KDHostile(source, player)) {
+            const outcome = api.Webbing?.applyEnemyProgression("WebCaster", source, KDGetFaction(source));
             if (outcome?.progressed) api.SpellVisuals?.hit(player);
         }
         if (typeof KDBulletHitEnemy === "function") {
@@ -218,6 +219,7 @@
                 if (--bullet[TURNS] <= 0) setPhase(bullet, "armed", 0);
             } else if (phase === "armed") {
                 const playerOnRune =
+                    KDHostile(mageRuneSource(bullet), KinkyDungeonPlayerEntity) &&
                     inBlast(bullet, KinkyDungeonPlayerEntity) &&
                     KinkyDungeonPlayerEntity.x === bullet.x &&
                     KinkyDungeonPlayerEntity.y === bullet.y;

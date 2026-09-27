@@ -45,6 +45,7 @@ export default [
                         ...nativeGlobals,
                         "KinkyDungeonStartNewGame",
                         "KDMovePlayer",
+                        "KDAllySpeaker",
                         "KinkyDungeonGetImmunity",
                         "KinkyDungeonVisionSet",
                         "KinkyDungeonUpdateVisualPosition",

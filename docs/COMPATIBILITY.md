@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.53.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.54.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.54 review fixes and dual-version evidence
+
+On 2026-09-27, the final test.54 ZIP passed ten native scenarios on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `f330c98e394e1e1a00b0662ae1fb815a6f9cad15`, reporting KD 5.5.3. The fetch at 10:14:51 UTC found no new upstream commit. The seven existing scenarios remain in place, with three additions:
+
+- WebCaster projectiles bind NPCs after the caster dies or leaves. The live, dead and removed controls each added 6 Slime and reduced HP from 8 to 7.85 through actual native bullet updates.
+- Friendly Mage Collapse, Hex and Rune affect hostile NPCs while leaving the nearby player's Will at 10 and adding no restraints. Hex and Rune also retain their faction after caster removal; Hex fields and pending blasts survive a JSON state round trip.
+- Visible NPC wrapping renders normally. Hidden enemies and enemies behind a wall show neither the wrapping label nor strands; wrapping progress stays at one action.
+
+Repository checks, 12 policy tests, 331 public tests and the complete 627-test local watcher passed. ZIP verification matched all 148 allowlisted entries to source. The package is 25,518,631 bytes, SHA-256 `a10f4973c183db6a695beb879cd7921292b6095640ff71ccfe898451070d7d08`. Five new regression tests failed on test.53 and pass after the fixes. Re-review against `ffe058438266bd0b04e3d3439fe90dbdda722a2e` found no further actionable defect in these changes.
+
+Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-27T10-14-51-173Z-0.92.36-test.54/acceptance.json` and `.scratch/mod-review-fixes-20260927/`. Both versions' wrapping screenshots were inspected. KD 5.4.92 retained known native audio play/pause messages and the native `/Game/Locks/Red.png` missing request; KD 5.5.3 had no page errors or missing resources. These are controlled Chrome runs using native game resources and the final ZIP. Online deployment, the desktop executable shell, user saves, other Mods and complete playthroughs were not retested.
 
 ## Test.53 dual-version evidence
 
