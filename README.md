@@ -12,6 +12,8 @@ Spiderlings is a Kinkiest Dungeon Mod for KD 5.4.x / 5.5.x, with spider encounte
 
 Use the attached installable ZIP. GitHub's automatic Source code archives contain the development repository and cannot be loaded directly as a Mod.
 
+The current test package, `0.92.36-test.48`, was verified on 2026-09-27 in both the [itch.io browser game](https://ada18980.itch.io/kinky-dungeon) and the maintainer's Windows installation, each running KD 5.4.92. Both use the same ZIP. See [verified environments and coverage](docs/COMPATIBILITY.md).
+
 ## Versions
 
 | Branch                                                                                  | Version           | Purpose                                                                                                                                                                                                         |

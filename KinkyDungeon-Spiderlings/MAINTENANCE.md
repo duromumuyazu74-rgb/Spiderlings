@@ -2,6 +2,8 @@
 
 test.48 修复法术表现复审发现的三处问题：Rune 原生绑定 NPC 后补齐命中网，施法者已离场仍可触发；目标印记按目标所在格判断可见性，不再因头顶一格不可见而缺失图标；印记、层数点与命中网跟随原生插值坐标，移动途中保持与角色对齐。护盾或免疫阻止绑定时不增加假命中，范围和战斗结算不变。
 
+同一 test.48 ZIP 已于 2026-09-27 在用户指定的 itch 网页版和本地 Windows 可执行程序分别通过法术表现与三项修复回归。两端实际版本均为 KD 5.4.92，主脚本字节一致；桌面测试使用独立用户目录且只加载该 ZIP。此前的 KD 5.5.0 源码参考验证继续保留。精确环境、包哈希和覆盖限度见[兼容记录](../docs/COMPATIBILITY.md)。
+
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
