@@ -643,7 +643,7 @@ SPIDERLINGS.addSpells([
     {
         enemySpell: true,
         name: "SpiderlingsMageBolt",
-        noSprite: true,
+        noSprite: false,
         color: "#a77bdc",
         sfx: "Miss",
         school: "Latex",

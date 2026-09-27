@@ -184,7 +184,8 @@
     function resolveRune(bullet) {
         const player = KinkyDungeonPlayerEntity;
         if (inBlast(bullet, player)) {
-            api.Webbing?.applyEnemyProgression("WebCaster", mageRuneSource(bullet), "Enemy");
+            const outcome = api.Webbing?.applyEnemyProgression("WebCaster", mageRuneSource(bullet), "Enemy");
+            if (outcome?.progressed) api.SpellVisuals?.hit(player);
         }
         if (typeof KDBulletHitEnemy === "function") {
             for (const target of KDMapData.Entities) {

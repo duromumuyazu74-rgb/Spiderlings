@@ -179,7 +179,10 @@
     }
 
     function bindPlayer(source, attempts) {
-        for (let i = 0; i < attempts; i++) api.Webbing?.applyEnemyProgression("WebCaster", source, "Enemy");
+        for (let i = 0; i < attempts; i++) {
+            const result = api.Webbing?.applyEnemyProgression("WebCaster", source, "Enemy");
+            if (result?.progressed) api.SpellVisuals?.hit(KinkyDungeonPlayerEntity);
+        }
     }
 
     function bindMaid(source, target, attempts, actionId) {
@@ -210,6 +213,7 @@
             if (distance < 0) continue;
             const attempts = 5 - distance * 2;
             const damage = target.player ? Math.max(0, 2 - distance) : attempts;
+            const willBefore = typeof KinkyDungeonStatWill === "number" ? KinkyDungeonStatWill : undefined;
             if (damage > 0 && target.player && typeof KinkyDungeonDealDamage === "function")
                 // KD halves Will loss for glue. Arcane deals the stated 1/2 Will damage.
                 KinkyDungeonDealDamage({ damage, type: "arcane" });
@@ -225,6 +229,8 @@
                 );
             if (target.player) bindPlayer(source, attempts);
             else bindMaid(source, target, attempts, actionId);
+            if (target.player && typeof KinkyDungeonStatWill === "number" && KinkyDungeonStatWill < willBefore)
+                api.SpellVisuals?.hit(target);
         }
         source.SpiderlingsCollapseCooldown = COLLAPSE_COOLDOWN;
         state().blasts.push({ x: collapse.x, y: collapse.y, radius: 2, corners: false, expiresAt: state().clock + 1 });
@@ -235,6 +241,7 @@
         const mark = markFor(target);
         if (!key || !mark?.stacks || mark.expiresAt < state().clock || mark.pendingUntil >= state().clock) return;
         const s = state();
+        api.SpellVisuals?.hit(target, "mark");
         s.blasts.push({
             x: target.x,
             y: target.y,
@@ -319,77 +326,6 @@
         s.blasts = s.blasts.filter((blast) => !blast.expiresAt || blast.expiresAt > s.clock);
         for (const [key, mark] of Object.entries(s.marks))
             if (mark.expiresAt < s.clock && mark.fragileUntil < s.clock) delete s.marks[key];
-    });
-
-    KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
-        if (typeof KDDraw !== "function" || typeof kdpixisprites === "undefined" || !data) return;
-        const s = state();
-        const size = KinkyDungeonGridSizeDisplay;
-        const root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
-        const pink = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "";
-        const offset = typeof StandalonePatched !== "undefined" && StandalonePatched ? 0 : data.CamX_offset;
-        const draw = (id, x, y, art) =>
-            KDDraw(
-                kdgameboard,
-                kdpixisprites,
-                id,
-                root + `Bullets/${art}.png`,
-                (x - data.CamX - offset + 0.5) * size,
-                (y -
-                    data.CamY -
-                    (typeof StandalonePatched !== "undefined" && StandalonePatched ? 0 : data.CamY_offset) +
-                    0.5) *
-                    size,
-                size,
-                size,
-                0,
-                undefined,
-                true,
-            );
-        for (const field of s.fields)
-            for (let dx = 0; dx < 4; dx++)
-                for (let dy = 0; dy < 4; dy++)
-                    draw(
-                        `${KEY}_hex_${field.ownerId}_${dx}_${dy}`,
-                        field.x + dx,
-                        field.y + dy,
-                        field.activateAt > s.clock ? "SpiderlingsMageRuneIcon" : `SpiderWeb${pink}`,
-                    );
-        for (const collapse of s.collapses) {
-            const ring = Math.min(2, s.clock - collapse.startAt);
-            for (let dx = -2; dx <= 2; dx++)
-                for (let dy = -2; dy <= 2; dy++)
-                    if (
-                        collapseDistance(0, 0, { x: dx, y: dy }) >= 0 &&
-                        Math.max(Math.abs(dx), Math.abs(dy)) === 2 - ring
-                    )
-                        draw(
-                            `${KEY}_collapse_${collapse.ownerId}_${dx}_${dy}`,
-                            collapse.x + dx,
-                            collapse.y + dy,
-                            `SpiderWeb${pink}`,
-                        );
-        }
-        for (const blast of s.blasts)
-            if (blast.detonateAt > s.clock)
-                for (let dx = -(blast.stacks - 1); dx <= blast.stacks - 1; dx++)
-                    for (let dy = -(blast.stacks - 1); dy <= blast.stacks - 1; dy++)
-                        draw(
-                            `${KEY}_warn_${blast.x}_${blast.y}_${dx}_${dy}`,
-                            blast.x + dx,
-                            blast.y + dy,
-                            `SpiderWeb${pink}`,
-                        );
-            else if (blast.expiresAt > s.clock)
-                for (let dx = -blast.radius; dx <= blast.radius; dx++)
-                    for (let dy = -blast.radius; dy <= blast.radius; dy++)
-                        if (blast.corners !== false || collapseDistance(0, 0, { x: dx, y: dy }) >= 0)
-                            draw(
-                                `${KEY}_hit_${blast.x}_${blast.y}_${dx}_${dy}`,
-                                blast.x + dx,
-                                blast.y + dy,
-                                `SpiderWebHit${pink}`,
-                            );
     });
 
     for (const event of ["postMapgen", "defeat", "passout", "postPrisonIntro"])

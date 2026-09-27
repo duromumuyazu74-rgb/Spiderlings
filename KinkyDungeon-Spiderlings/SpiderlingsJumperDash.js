@@ -333,6 +333,7 @@
             );
         },
         moveSource(source, landing) {
+            api.SpellVisuals?.dash(source, landing);
             source.x = landing.x;
             source.y = landing.y;
             source.gx = landing.x;
@@ -343,6 +344,7 @@
         damagePlayer(_source, damage) {
             if (typeof KinkyDungeonDealDamage == "function") {
                 KinkyDungeonDealDamage({ damage: damage.damage, type: damage.type });
+                api.SpellVisuals?.hit(KinkyDungeonPlayerEntity);
             }
         },
         progressWebbing(source) {
