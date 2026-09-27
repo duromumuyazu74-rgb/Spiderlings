@@ -274,7 +274,8 @@
             currentMap();
             args[9] = { ...args[9] };
             if (trail) {
-                args[9].alpha = (args[9].alpha ?? 1) * 0.32;
+                // Lingering ground silk is a settled web, not a moving strand or a fading hit flash.
+                args[3] = root + `SpiderWebHit${name.endsWith("Pink.png") ? "Pink" : ""}.png`;
                 args[8] = 0;
                 return nativeDraw.apply(this, args);
             }
@@ -290,7 +291,7 @@
                     args[6] *= 0.55;
                     args[7] *= 0.55;
                     args[8] = 0;
-                } else args[8] = (args[8] || 0) + Math.PI;
+                }
                 const visual = typeof KinkyDungeonBulletsVisual !== "undefined" && KinkyDungeonBulletsVisual.get(id);
                 const size = KinkyDungeonGridSizeDisplay;
                 const point = visual

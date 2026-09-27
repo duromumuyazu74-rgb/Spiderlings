@@ -283,7 +283,7 @@ test("Mage bolts have a compact upright head and at most two world-aligned after
     assert.equal(r.draws.length, 1, "a stationary head does not regenerate expired afterimages");
 });
 
-test("WebSpray faces along its flight and retains faint native lingering trails", () => {
+test("WebSpray keeps its open edge facing forward in every flight direction", () => {
     const r = fixture();
     const draw = (name, rotation) =>
         r.c.KDDraw(
@@ -299,15 +299,82 @@ test("WebSpray faces along its flight and retains faint native lingering trails"
             { alpha: 0.8 },
             true,
         );
-    draw("WebSpray", 0.4);
-    assert.equal(r.draws.at(-1)[8], Math.PI + 0.4);
-    draw("WebSprayTrail", 3);
-    assert.equal(r.draws.at(-1)[9].alpha, 0.8 * 0.32);
-    assert.equal(r.draws.at(-1)[8], 0);
+    for (const name of ["WebSpray", "WebSprayPink"]) {
+        for (const direction of [0, Math.PI / 2, Math.PI, -Math.PI / 2, Math.PI / 4]) {
+            draw(name, direction);
+            assert.equal(r.draws.at(-1)[8], direction);
+            assert.equal(r.draws.at(-1)[3], `Game/Bullets/${name}.png`);
+            assert.equal(r.draws.at(-1)[9].alpha, 0.8);
+        }
+    }
     const before = r.draws.length;
     draw("Unrelated", 0.2);
     assert.equal(r.draws.length, before + 1);
     assert.equal(r.draws.at(-1)[8], 0.2);
+});
+
+test("settled WebSpray uses the complete web at native opacity for its entire native lifetime", () => {
+    const r = fixture();
+    const options = { alpha: 0.8, zIndex: 2 };
+    for (const color of ["", "Pink"]) {
+        for (const time of [0, 240, 2000]) {
+            r.time(time);
+            r.c.KDDraw(
+                r.c.kdbulletboard,
+                r.c.kdpixisprites,
+                `ground${color}`,
+                `Game/Bullets/WebSprayTrail${color}.png`,
+                72,
+                144,
+                72,
+                72,
+                3,
+                options,
+                true,
+            );
+            const draw = r.draws.at(-1);
+            assert.equal(draw[2], `ground${color}`);
+            assert.equal(draw[3], `Game/Bullets/SpiderWebHit${color}.png`);
+            assert.deepEqual(draw.slice(4, 9), [72, 144, 72, 72, 0]);
+            assert.equal(draw[9].alpha, 0.8);
+            assert.equal(draw[9].zIndex, 2);
+        }
+    }
+    assert.deepEqual(options, { alpha: 0.8, zIndex: 2 });
+});
+
+test("moving silk afterimages remain stretched and expire without creating settled webs", () => {
+    const r = fixture();
+    r.pink(true);
+    const shot = { visual_x: 3, visual_y: 4 };
+    r.c.KinkyDungeonBulletsVisual.set("spray", shot);
+    const draw = () =>
+        r.c.KDDraw(
+            r.c.kdbulletboard,
+            r.c.kdpixisprites,
+            "spray",
+            "Game/Bullets/WebSprayPink.png",
+            shot.visual_x * 72,
+            shot.visual_y * 72,
+            72,
+            72,
+            Math.PI / 2,
+            { alpha: 1 },
+            true,
+        );
+    draw();
+    shot.visual_y++;
+    r.draws.length = 0;
+    draw();
+    assert.equal(r.draws.length, 2);
+    assert.equal(r.draws[0][3], "Game/Bullets/WebSprayTrailPink.png");
+    assert.equal(r.draws[0][8], Math.PI / 2);
+    assert.ok(r.draws[0][9].alpha < 1);
+    r.time(240);
+    r.draws.length = 0;
+    draw();
+    assert.equal(r.draws.length, 1);
+    assert.equal(r.draws[0][3], "Game/Bullets/WebSprayPink.png");
 });
 
 test("dash ghosts and construction highlights expire without spending another game turn", () => {

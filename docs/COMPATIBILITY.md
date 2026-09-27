@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.51.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
+The current package is `Spiderlings_0.92.36-test.52.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
 
 ```json
 {
@@ -12,6 +12,14 @@ The current package is `Spiderlings_0.92.36-test.51.zip`. Its `mod.json` declare
 ```
 
 The native Mod manager compares the major/minor fields for equality and uses inclusive patch bounds. It shows a compatibility warning for other versions rather than prohibiting loading. The 5.5.0 evidence below is a historical reference check, not the current manifest target.
+
+## Test.52 WebCaster artwork evidence
+
+Test.52 removes the extra 180-degree rotation from WebSpray so the web's open edge faces forward. Native lingering WebSpray trails now draw the existing complete `SpiderWebHit` web at native opacity instead of stretched silk multiplied by 0.32. Short moving afterimages still use stretched silk; damage, binding, collision, lifetime and Mage collapse strands are unchanged.
+
+The final ZIP was loaded through the native Mod manager in Chrome using read-only local KD 5.4.92 resources. Real WebSpray casts in all four cardinal directions passed for original and pink artwork. Visible settled webs used the expected complete-web texture at alpha 1, compared with stretched webs at alpha 0.32 in test.51. All tracked webs expired through native turns and the native render-time fade, leaving no live bullets or visible sprites. No page errors or unhandled rejections occurred. Screenshots, before/after results and the runner are retained at `.scratch/webcaster-visuals-20260927/` in the parent workspace.
+
+Repository checks, 12 policy tests, 326 public tests, the complete 621-test local watcher and final 148-entry ZIP verification passed. The package is 25,518,429 bytes, SHA-256 `f6665292ceeec2b5af9c59f66e319296f8bfca85c25ba3a2f44234c282f1b03c`. It includes the test.50 and test.51 Spinner fixes. This visual change was not separately tested in the online game, Windows executable shell or the user's save.
 
 ## Test.51 web traversal regression evidence
 
