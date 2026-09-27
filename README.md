@@ -12,7 +12,7 @@ Spiderlings is a Kinkiest Dungeon Mod for KD 5.4.92, with spider encounters, lay
 
 Use the attached installable ZIP. GitHub's automatic Source code archives contain the development repository and cannot be loaded directly as a Mod.
 
-The current test package, `0.92.36-test.49`, declares KD 5.4.92 in its manifest for both the [itch.io browser game](https://ada18980.itch.io/kinky-dungeon) and the maintainer's Windows installation, which were verified with test.48 on 2026-09-27. Test.49 updates the version metadata and uses the same runtime scripts and assets. Both environments use the same ZIP. See [verified environments and coverage](docs/COMPATIBILITY.md).
+The current test package, `0.92.36-test.50`, declares KD 5.4.92 for the [itch.io browser game](https://ada18980.itch.io/kinky-dungeon) and the maintainer's Windows installation. It fixes Spinner lure oscillation and restores pursuit and melee after prey enters the field core. These changes were checked through native world turns using the local 5.4.92 game resources; test.48 previously passed browser and Windows executable checks on 2026-09-27. Both environments use the same ZIP. See [verified environments and coverage](docs/COMPATIBILITY.md).
 
 ## Versions
 
@@ -22,7 +22,7 @@ The current test package, `0.92.36-test.49`, declares KD 5.4.92 in its manifest 
 | [Infestation PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)         | `0.92.36-test.24` | Infestation playtest with active Spinner construction and nest defense                                                                                                                                          |
 | [Hood and rune Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84)  | `0.92.36-test.26` | Optional Spiderlings Hood, delayed 3-by-3 Mage runes, and no Mage arm restraint                                                                                                                                 |
 | [Enemy Webs Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86)     | `0.92.36-test.29` | Paired Spinner art, v2 WebCaster effects, and Pink Spinner web cells                                                                                                                                            |
-| [Hunting Grounds spec #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90) | `0.92.36-test.49` | Separate five-nest Infestation (default weight 50; any primary faction) and three-nest Hunting Grounds (default weight 1000; Maidforce only), where ordinary Spiderlings patrol for NPCs of a different faction |
+| [Hunting Grounds spec #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90) | `0.92.36-test.50` | Separate five-nest Infestation (default weight 50; any primary faction) and three-nest Hunting Grounds (default weight 1000; Maidforce only), where ordinary Spiderlings patrol for NPCs of a different faction |
 
 This test package includes both the five-nest Spiderling Infestation and the three-nest Spiderling Hunting Grounds. Hunting Grounds is occupied by the same ordinary Spiderlings found elsewhere. On this floor they patrol for NPCs of a different faction, including allies, shops and quest characters; same-faction actors are not prey. Native sight still governs combat, and native capture limits still prevent wrapping `nocapture` targets. It does not include the separate Nest prison experiment. Install only one Spiderlings package at a time. The Nest prison experiment uses its own `prison.alpha.N` version series.
 

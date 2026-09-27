@@ -262,6 +262,17 @@ test("a lone Spinner builds one-entry rings and pays to seal them after prey ent
     }
     const sealed = r.context.Spiderlings.SpinnerNativeField.state().topology;
     assert.ok(sealed.composites[plan.compositeId].layerIds.every((id) => sealed.fields[id].phase === "sealed"));
+    r.context.KinkyDungeonCurrentTick++;
+    r.phaseCalls.length = 0;
+    r.context.KinkyDungeonEnemyLoop(worker, player, 1);
+    assert.deepEqual(
+        plain(r.phaseCalls),
+        [
+            { phase: "attack", id: worker.id },
+            { phase: "spell", id: worker.id },
+        ],
+        "the Spinner must resume native pursuit and attacks after sealing prey inside",
+    );
     player.x = 16;
     player.y = 10;
     r.context.Spiderlings.SpinnerNativeField.onEntry(player, player.x, player.y);
@@ -741,6 +752,55 @@ test("a fighting group retains its field plan while construction approach is blo
 function cellKeyForTest(cell) {
     return `${cell.x},${cell.y}`;
 }
+
+test("a lure holds its best safe tile instead of oscillating around the waypoint", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        worker = actors[0];
+    worker.x = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.x, 0) / plan.anchors.length);
+    worker.y = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.y, 0) / plan.anchors.length);
+    worker.aware = true;
+    worker.testSense = true;
+    group.assignments = {};
+    const original = { x: worker.x, y: worker.y };
+    for (let turn = 0; turn < 12; turn++) {
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        assert.deepEqual({ x: worker.x, y: worker.y }, original);
+    }
+    assert.equal(r.movement.length, 0);
+    assert.equal(r.phaseCalls.length, 0, "waiting for prey outside the field does not spend an attack");
+
+    const target = r.context.KinkyDungeonPlayerEntity;
+    target.x = worker.x + 1;
+    target.y = worker.y;
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.ok(
+        Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)) > 1,
+        "holding still must not prevent retreat from a nearby target outside the core",
+    );
+    assert.equal(r.movement.length, 1);
+});
+
+test("a Spinner without a field plan leaves movement and attacks to native AI", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    group.planId = null;
+    group.assignments = {};
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    r.context.KinkyDungeonEnemyLoop(actors[0], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.engagement, undefined);
+    assert.equal(r.movement.length, 0, "no aimless custom lure step");
+    assert.equal(r.phaseCalls.length, 2);
+});
 
 test("live native perception establishes one lure without a construction action", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
