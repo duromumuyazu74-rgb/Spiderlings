@@ -35,6 +35,35 @@ export default [
         },
     },
     {
+        files: ["KinkyDungeon-Spiderlings/tools/compatibility/browser/*.js"],
+        languageOptions: {
+            sourceType: "script",
+            globals: {
+                ...globals.browser,
+                ...Object.fromEntries(
+                    [
+                        ...nativeGlobals,
+                        "KinkyDungeonStartNewGame",
+                        "KDMovePlayer",
+                        "KinkyDungeonGetImmunity",
+                        "KinkyDungeonVisionSet",
+                        "KinkyDungeonUpdateVisualPosition",
+                        "KinkyDungeonGoddessRep",
+                        "KDGetGenericDialogueParams",
+                        "KDPlayer",
+                        "UpdateModels",
+                        "DrawCharacter",
+                        "KinkyDungeonSaveGame",
+                        "KinkyDungeonLoadGame",
+                        "LZString",
+                        "KinkyDungeonUpdateBullets",
+                        "Spiderlings",
+                    ].map((name) => [name, "writable"]),
+                ),
+            },
+        },
+    },
+    {
         files: ["docs/**/*.js"],
         languageOptions: { globals: globals.browser },
     },

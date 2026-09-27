@@ -9,12 +9,15 @@
     "test": "node --test .github/scripts/check-repository.test.mjs",
     "test:public": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js public",
     "test:local": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js all",
+    "test:compatibility": "node KinkyDungeon-Spiderlings/tools/verify-kd-compatibility.js",
     "report:delivery": "node KinkyDungeon-Spiderlings/tools/report-spiderlings-delivery.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.11.0",
     "globals": "17.12.0",
-    "prettier": "3.9.8"
+    "playwright": "1.63.0",
+    "prettier": "3.9.8",
+    "typescript": "5.9.3"
   }
 }

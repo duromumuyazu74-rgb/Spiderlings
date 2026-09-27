@@ -42,6 +42,30 @@ To verify an existing package against the checked-out commit without rebuilding 
 powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
 ```
 
+## Dual-version runtime acceptance
+
+Runtime deliveries require the same final ZIP to pass KD 5.4.92 and the latest official GitHub `5.5` commit, as specified in [CONTRIBUTING.md](../CONTRIBUTING.md#verification). Install the locked maintenance dependencies with `npm ci` and have Google Chrome available. Configure two absolute paths outside the Mod checkout:
+
+```powershell
+git config --local spiderlings.baselineGame 'C:/Game1/kinky-dungeon-win_64 (2)/resources/app'
+git config --local spiderlings.compatibilityCache 'D:/KD-reference-inputs/kd-compatibility'
+npm run test:compatibility
+```
+
+The baseline remains read-only and must report exactly 5.4.92. The cache holds a separate official clone, builds by commit, and timestamped acceptance results. Each invocation fetches `https://github.com/Ada18980/KinkiestDungeon.git` branch `5.5` and checks out its fetched commit, including updates that retain the same `KDVersionStr`. It refuses a different origin or local changes. The historical `KinkiestDungeon-5.5/` reference and artwork inputs remain unchanged. On Windows, the Git calls use OpenSSL and HTTP/1.1 with a stalled-transfer timeout.
+
+Compilation uses the upstream tsconfig file order and TypeScript `noCheck` emission into the cache build directory. This produces a native runtime for compatibility tests; it does not certify upstream type-check cleanliness. The upstream texture packer reads the new checkout's assets and writes all atlases into that same external build directory. No assets are borrowed from 5.4.92 or the historical 5.5.0 snapshot. A completed build is reused only for its exact commit.
+
+The command loads the final package through the native Mod manager in isolated Chrome sessions. Shared scenarios exercise Webbing progression and save/reload, Spinner waiting/capture/wall traversal, original and pink WebCaster visuals and expiry, and Rune impacts/target overlays. Extend these scenarios or supply additional native evidence for a change outside their coverage. Current scenarios do not replace testing the live online deployment, desktop shell, user saves or other Mods.
+
+Results are in `<cache>/runs/<timestamp>-<Mod version>/`, including screenshots, per-version results and `acceptance.json`. Attach the latter to the delivery report:
+
+```powershell
+npm run report:delivery -- --evidence '<cache>/runs/<run>/acceptance.json'
+```
+
+`--baseline`, `--cache` and `--package` override configured/default paths. `--prepare-only` fetches and prepares the current upstream runtime without claiming gameplay acceptance. A network, build or native-test failure is a failed validation, not permission to label an older cache as current. Native audio play/pause interruptions are retained in the results but excluded from gameplay-error assertions.
+
 ## Worktrees and cleanup
 
 Create worktrees without game, artwork or dependency junctions. Install locked maintenance dependencies with `npm ci` in each checkout. Lock any checkout that retains packages, evidence or ongoing work using `git worktree lock --reason <reason> <absolute-path>`; this makes ordinary Git removal refuse the directory.
