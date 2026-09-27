@@ -44,6 +44,7 @@ async function verifyGame(game, packagePath, output) {
             ["squad-perk", "squad-perk.js"],
             ["mage-body", "mage-body.js"],
             ["weapons", "weapons.js"],
+            ["owned-effects", "owned-effects.js"],
         ];
         for (const [name, file, scenario] of checks) {
             if (scenario)
@@ -129,7 +130,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster visuals and orphaned hits, Rune impacts, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk, Mage body layers and player weapon combat/save/loot",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster visuals and orphaned hits, Rune impacts and caster ownership, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk, Mage body layers, player weapon combat/save/loot and exclusion of the Spinner leash from generic restraint selection",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

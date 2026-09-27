@@ -668,7 +668,8 @@
                 struggleMinSpeed: { Cut: 0.05 },
                 limitChance: { Struggle: 0.3 },
                 escapeChance: { Struggle: 0, Cut: 0.2, Remove: 0.5, Pick: 1.25 },
-                enemyTags: { leashing: 1 },
+                // Recovery equips this carrier by exact ID; generic leashing must not select it.
+                enemyTags: {},
                 playerTags: { ItemNeckRestraintsFull: -2, ItemNeckFull: 99 },
                 minLevel: 0,
                 allFloors: true,
