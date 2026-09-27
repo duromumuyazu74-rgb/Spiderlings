@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.49.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
+The current package is `Spiderlings_0.92.36-test.50.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
 
 ```json
 {
@@ -11,7 +11,21 @@ The current package is `Spiderlings_0.92.36-test.49.zip`. Its `mod.json` declare
 }
 ```
 
-The native Mod manager compares the major/minor fields for equality and uses inclusive patch bounds. It shows a compatibility warning for other versions rather than prohibiting loading. Test.49 changes only `mod.json` inside the ZIP; its runtime scripts and artwork match test.48. The 5.5.0 evidence below is a historical reference check, not the current manifest target.
+The native Mod manager compares the major/minor fields for equality and uses inclusive patch bounds. It shows a compatibility warning for other versions rather than prohibiting loading. The 5.5.0 evidence below is a historical reference check, not the current manifest target.
+
+## Test.50 Spinner regression evidence
+
+Test.50 fixes repeated lure movement between tiles and resumes native pursuit and melee when sensed prey enters the common field core, after assigned gate work. A web boundary does not automatically equip restraints on an idle player; capture still requires a real melee hit and at least two eligible Spinners.
+
+The final ZIP passed controlled KD 5.4.92 world-turn checks in Chrome using the read-only Windows installation's game resources over an isolated local HTTP server. Test.49 alternated between two positions for 40 turns in the outside-prey scene; test.50 stayed on the safe lure tile for all 40 turns. In the inside-prey scene, test.49 sealed the field but its lure stayed outside and no capture started over 40 turns. Test.50 completed paid sealing, approached the player, and started capture through a native melee hit at turn 7. A separate lone-Spinner scene confirmed ordinary binding attacks after sealing, without starting the two-source capture. The new package was not separately rechecked in the online game or desktop executable; their earlier test.48 results remain below.
+
+Repository checks, 12 policy tests, 324 public tests and the complete 618-test local watcher passed. Final ZIP verification matched all 148 allowlisted entries to source. Native result logs retain the game's audio play/pause interruption messages; no other page errors occurred in the final scenarios.
+
+Package SHA-256: `b30a4640a627f29ef311e30acb22658f2a9abf64795a00df67b8dd14cb2b8170`. Local evidence and the repeatable runner are in the parent workspace at `.scratch/spinner-bugs-20260927/`. The reported recordings' precise game/Mod versions and other enabled Mods have not been confirmed.
+
+## Test.49 version declaration evidence
+
+Test.49 changed only `mod.json` inside the ZIP; its runtime scripts and artwork match test.48.
 
 Test.49 is 25,560,453 bytes, with SHA-256 `7091094376f59b5b345928e9c935f9690e8f99225d8b920d4696ac813bf16bbe`. Native Mod-manager evidence for its version declaration is retained in the parent workspace at `.scratch/manifest-versions-20260927/`. The comparison includes the real 5.4.92 runtime and simulated version values passed through the same native warning UI; those simulated values are not additional gameplay compatibility tests.
 

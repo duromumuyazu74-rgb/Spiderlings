@@ -58,6 +58,7 @@ _Avoid_: every Spiderling near a nest
 
 **Spinner capture field (捕获场地)**:
 Spinners first build an enclosed web boundary with an open entrance, then close that entrance after prey enters and attempt capture. The boundary consists of connected edges and corners and can be broken by attacks. Independent placed ground traps and stepping-triggered slowing are retired.
+An ordinary group's lure can wait on its best safe tile. Sensing prey inside the common core ends evasion: assigned gate work takes priority, then native pursuit and melee deliver the hit required for capture. Without a valid field plan, the Spinner uses native AI.
 
 Tagged mobile spiders of either faction traverse any intact Spiderlings-owned web at 1.5 times ordinary movement credit and prefer its 2/3-cost path. This changes movement only; work and offensive actions keep their native cadence.
 A saved, paid enclosure whose first complete perimeter is a 3-by-3 outer footprint with one interior cell and eight web cells. One capable Spinner can build it; completed inner rings remain when new 5-by-5 and 7-by-7 rings are built. The web proxy and one actual spider may share a cell, but two actual actors may not. Non-spiders breach the web through ordinary attacks. Field construction and player Capture strands are separate capabilities.

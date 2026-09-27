@@ -1506,13 +1506,25 @@
             known = engagement.lastKnown,
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             mustYield = required.has(cellKey(enemy)),
-            candidates = DIRECTIONS.map((direction) => ({ x: enemy.x + direction.x, y: enemy.y + direction.y }))
+            candidates = [
+                { x: enemy.x, y: enemy.y },
+                ...DIRECTIONS.map((direction) => ({
+                    x: enemy.x + direction.x,
+                    y: enemy.y + direction.y,
+                })),
+            ]
                 .filter((cell) => {
                     const snapshot = api.SpinnerNativeField.snapshot(cell);
-                    return snapshot.inBounds && snapshot.floor && !snapshot.protected && !snapshot.actorOccupied;
+                    return (
+                        snapshot.inBounds &&
+                        snapshot.floor &&
+                        !snapshot.protected &&
+                        (!snapshot.actorOccupied || cellKey(cell) === cellKey(enemy))
+                    );
                 })
                 .map((cell) => ({
                     cell,
+                    staying: cellKey(cell) === cellKey(enemy),
                     required: required.has(cellKey(cell)),
                     melee: known ? distance(cell, known) <= 1 : false,
                     visible: !actualSight || cellVisibleFrom(enemy, cell, target),
@@ -1524,10 +1536,11 @@
                         Number(a.melee) - Number(b.melee) ||
                         Number(b.visible) - Number(a.visible) ||
                         a.route - b.route ||
+                        Number(b.staying) - Number(a.staying) ||
                         cellKey(a.cell).localeCompare(cellKey(b.cell)),
                 );
         const chosen = candidates[0];
-        if (!chosen) {
+        if (!chosen || chosen.staying) {
             record(group, "wait");
             return "wait";
         }
@@ -1549,6 +1562,11 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
+        const plan = state.plans[group.planId];
+        if (!plan || ["invalid", "abandoned"].includes(plan.status) || !planWaypoint(encounter, group)) {
+            clearEngagement(group);
+            return decide(enemy, group, "delegate-native", false);
+        }
         if (group.source?.type === "nest") clearEngagement(group);
         else auditEngagement(encounter, group);
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
@@ -1564,6 +1582,14 @@
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
         if (hasGateWork(encounter, group) && ["closeGate", "connectGate", "reopenGate"].includes(assignment?.type))
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
+        // Luring has finished when sensed prey reaches the core. Native melee must
+        // deliver the hit that admits capture; evading it here leaves a harmless cage.
+        if (
+            observed &&
+            plan.compositeId &&
+            api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target)
+        )
+            return decide(enemy, group, "delegate-native", false);
         if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
             if (group.engagement.mode === "pursuit") return decide(enemy, group, "delegate-native", false);
             return decide(
