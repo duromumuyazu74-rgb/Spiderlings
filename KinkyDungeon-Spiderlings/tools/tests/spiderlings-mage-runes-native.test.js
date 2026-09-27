@@ -138,8 +138,9 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
     const maid = { id: 32, x: 6, y: 5, hp: 8, faction: "Maidforce", Enemy: { name: "Maid", bound: true } };
     let tied = 0;
     let converted = 0;
+    const hitFlashes = [];
     const context = {
-        Spiderlings: {},
+        Spiderlings: { SpellVisuals: { hit: (target) => hitFlashes.push(target.id) } },
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { player: true },
         KinkyDungeonMovableTilesEnemy: ["0"],
@@ -162,6 +163,7 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
         KDTieUpEnemy: (enemy, amount, type) => {
             tied++;
             enemy.slime = (enemy.slime || 0) + amount;
+            enemy.specialBoundLevel = { Slime: enemy.slime };
             assert.equal(type, "Slime");
         },
     };
@@ -191,9 +193,14 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
     context.KDBulletHitEnemy(bullet, maid, 0, true);
     assert.equal(tied, 1);
     assert.equal(maid.slime, 6);
+    assert.deepEqual(hitFlashes, [maid.id], "native Rune binding flashes even after its caster has gone");
     assert.equal(converted, 0);
     assert.equal(bullet.bullet.spell.playerEffect, undefined);
-    const shielded = { ...maid, shield: 1, slime: 0 };
+    const shielded = { ...maid, id: 33, shield: 1, slime: 0, specialBoundLevel: {} };
     context.KDBulletHitEnemy(bullet, shielded, 0, true);
     assert.equal(shielded.slime, 0);
+    const immune = { ...maid, id: 34, immune: true, slime: 0, specialBoundLevel: {} };
+    context.KDBulletHitEnemy(bullet, immune, 0, true);
+    assert.equal(immune.slime, 0);
+    assert.deepEqual(hitFlashes, [maid.id], "shielded and immune NPCs do not receive fake impact art");
 });

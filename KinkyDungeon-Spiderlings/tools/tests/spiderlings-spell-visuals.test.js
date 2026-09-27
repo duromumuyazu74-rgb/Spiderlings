@@ -191,6 +191,38 @@ test("hit feedback coalesces per target, fades in real time and disappears on ma
     assert.equal(r.draw().length, 0);
 });
 
+test("a visible target keeps its complete mark beside an unseen tile", () => {
+    const r = fixture();
+    const enemy = { id: 2, hp: 5, x: 3, y: 4, Enemy: { name: "Maid" } };
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.KinkyDungeonVisionGet = (x, y) => (x === enemy.x && y === enemy.y ? 1 : 0);
+    r.state({ marks: { "npc:2": { stacks: 2, expiresAt: 4 } } });
+    r.draw();
+    assert.equal(r.dots.length, 2);
+    assert.equal(r.draws.length, 1, "the icon uses the target's visibility, not the tile above its head");
+    enemy.hidden = true;
+    r.draw();
+    assert.equal(r.dots.length, 0);
+    assert.equal(r.draws.length, 0);
+});
+
+test("marks, stack dots and hit flashes follow native entity interpolation", () => {
+    const r = fixture();
+    const enemy = { id: 2, hp: 5, x: 4, y: 4, visual_x: 3.25, visual_y: 3.8, Enemy: { name: "Maid" } };
+    r.c.KDMapData.Entities.push(enemy);
+    r.state({ marks: { "npc:2": { stacks: 1, expiresAt: 4 } } });
+    r.c.Spiderlings.SpellVisuals.hit(enemy);
+    r.draw();
+    const mark = r.draws.find((d) => d[2].endsWith("mark_npc:2"));
+    const hit = r.draws.find((d) => d[2].endsWith("hit_2:web"));
+    assert.equal(mark[4], (enemy.visual_x + 0.5) * 72);
+    assert.equal(mark[5], (enemy.visual_y - 0.55 + 0.5) * 72);
+    assert.equal(r.dots[0][0], mark[4]);
+    assert.equal(r.dots[0][1], (enemy.visual_y - 0.23 + 0.5) * 72);
+    assert.equal(hit[4], mark[4]);
+    assert.equal(hit[5], (enemy.visual_y + 0.5) * 72);
+});
+
 test("fully resisted NPC hits and ground-trail contacts do not create false hit flashes", () => {
     const r = fixture();
     const enemy = { id: 2, hp: 5, x: 3, y: 4, Enemy: { name: "Maid" } };

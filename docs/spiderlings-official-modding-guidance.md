@@ -210,6 +210,8 @@ Since test.46, `SpiderlingsSpellVisuals.js` renders field boundaries and target 
 
 The Mage body normally draws with Regular. Successful casting briefly substitutes particles and the corresponding glow for 240 ms, then restores Regular without a game turn. Mage bolts now expose their native sprite under `Bullets/SpiderlingsMageBolt.png`, a copy of the delivered spider icon; physical size, speed, hit handling and damage are unchanged. The older purple BoltHit glyph is a procedurally drawn development asset retained with the maintainer's approval, not T_Swizzle artwork.
 
+Target-attached artwork uses the entity's native `visual_x/visual_y`, falling back to logical coordinates before interpolation initializes. Test visibility at the target's logical cell, not the shifted position of its overhead icon. In KD 5.5.0, `KDBulletHitEnemy` calls `KinkyDungeonDamageEnemy` without an attacker; the generic `afterDamageEnemy` event therefore cannot identify a Rune's caster. Report Rune NPC impact feedback at the owned bullet-hit wrapper after confirming a positive native Slime increase. This also handles a previously cast Rune after its caster has left, without showing impacts on shielded or immune NPCs.
+
 ### Enemy artwork color selection
 
 Spiderlings `0.92.36-test.11` extends the existing draw-time color selection to the exact rooted `Enemies/Spinner.png`, `Tunneler.png`, `WebCaster.png` and `NestEntrance.png` paths. The supplied body and silk layers are composited at their original coordinates into separate normal and pink PNGs. Jumper has one delivered image shared by both settings. Register all nine enemy PNGs before scripts and keep them outside the restraint atlas.

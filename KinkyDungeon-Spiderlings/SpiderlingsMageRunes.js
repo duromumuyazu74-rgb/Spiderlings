@@ -162,7 +162,9 @@
                 const before = target.specialBoundLevel?.Slime || 0;
                 const result = nativeHit.apply(this, arguments);
                 const added = Math.max(0, (target.specialBoundLevel?.Slime || 0) - before);
-                if (added > 0)
+                if (added > 0) {
+                    // KD's bullet hit does not populate the generic damage event's attacker.
+                    api.SpellVisuals?.hit(target);
                     api.NPCAdhesion?.recordNativeSilk(
                         mageRuneSource(bullet),
                         target,
@@ -170,6 +172,7 @@
                         "mage-rune",
                         bullet.spriteID || `${bullet.bullet.source}:${bullet.x}:${bullet.y}`,
                     );
+                }
                 return result;
             } finally {
                 bullet.bullet = original;
