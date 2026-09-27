@@ -12,6 +12,8 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.x / 5.5.x 的 Mod，包含幼蛛�
 
 请使用 Release 附件中的安装包。GitHub 自动生成的 Source code 压缩包包含开发仓库，不能直接作为 Mod 载入。
 
+当前测试包 `0.92.36-test.48` 已于 2026-09-27 分别在 [itch.io 网页游戏](https://ada18980.itch.io/kinky-dungeon)和维护者的 Windows 安装版通过验证，两端实际游戏版本均为 KD 5.4.92，使用同一个 ZIP。详见[已验证环境及覆盖范围](docs/COMPATIBILITY.md)。
+
 ## 版本
 
 | 分支                                                                                  | 版本              | 用途                                                                                                                                     |
