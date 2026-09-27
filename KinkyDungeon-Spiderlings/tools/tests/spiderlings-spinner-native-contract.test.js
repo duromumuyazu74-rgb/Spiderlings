@@ -46,6 +46,74 @@ test("native swap admission allows an owned web structure after its spider-only 
     assert.equal(c.KinkyDungeonCanSwapWith(web, maid), false);
 });
 
+test("native TryMove enters one owned web cell once without crossing into the wall behind it", () => {
+    const { runtime, load } = require("./helpers/spinner-native-runtime.js"),
+        { stripTypeScriptTypes } = require("node:module"),
+        vm = require("node:vm"),
+        source = read("Game/src/enemy/KinkyDungeonEnemies.ts"),
+        start = source.indexOf("function KinkyDungeonEnemyTryMove ("),
+        end = source.indexOf("function KinkyDungeonEnemyTryAttack (", start);
+    assert.ok(start >= 0 && end > start);
+    for (const obstruction of ["wall", "empty", "actor", "cancelled"]) {
+        const { context: c } = runtime(),
+            moves = [];
+        Object.assign(c, {
+            KinkyDungeonLastAction: "",
+            KinkyDungeonLeashingEnemy: () => undefined,
+            KinkyDungeonSetEnemyFlag() {},
+            KinkyDungeonEnemyAt: (x, y) => c.KDMapData.Entities.findLast((entity) => entity.x === x && entity.y === y),
+            KinkyDungeonCanSwapWith: (proxy, actor) => c.Spiderlings.SpinnerNativeField.canTraverse(actor, proxy),
+            KinkyDungeonMapGet: (x, y) => (obstruction === "wall" && x === 6 && y === 4 ? "1" : "."),
+            KDMoveEntity(actor, x, y) {
+                if (obstruction !== "cancelled") {
+                    actor.x = x;
+                    actor.y = y;
+                    moves.push({ x, y });
+                }
+                // Native KDMoveEntity returns the effect-tile returnvalue, not movement success.
+                return obstruction === "cancelled";
+            },
+        });
+        vm.runInContext(stripTypeScriptTypes(source.slice(start, end)), c);
+        load(c, "SpiderlingsSpinnerNativeField.js");
+        load(c, "SpiderlingsWebMobility.js");
+        const spider = {
+            id: 1,
+            x: 4,
+            y: 4,
+            hp: 2,
+            movePoints: 0,
+            Enemy: { name: "Spinner", tags: { spiderlings: true }, movePoints: 1.5 },
+        };
+        c.KDMapData.Entities.push(spider);
+        const encounter = c.Spiderlings.SpinnerNativeField.initializeMap({
+            fieldId: "wall-regression",
+            owners: [1],
+            anchors: [
+                { x: 5, y: 4 },
+                { x: 5, y: 6 },
+            ],
+        });
+        c.Spiderlings.SpinnerNativeField.applyPaidAction(spider, {
+            type: "placeAnchor",
+            ownerId: 1,
+            anchorId: encounter.topology.anchors[0].id,
+        });
+        if (obstruction === "actor") c.KDMapData.Entities.push({ id: 2, x: 6, y: 4, hp: 2, Enemy: { tags: {} } });
+        const moved = c.KinkyDungeonEnemyTryMove(spider, { x: 1, y: 0, delta: 1 }, 1, 5, 4, false);
+        assert.equal(moved, obstruction !== "cancelled", obstruction);
+        assert.deepEqual({ x: spider.x, y: spider.y }, { x: obstruction === "cancelled" ? 4 : 5, y: 4 }, obstruction);
+        assert.deepEqual(moves, obstruction === "cancelled" ? [] : [{ x: 5, y: 4 }], obstruction);
+        assert.equal(spider.movePoints, 0, "one paid step with no refunded web bonus");
+        assert.equal(
+            c.KDMapData.Entities.filter(
+                (e) => c.Spiderlings.SpinnerNativeField.isOwnedProxy(e) && e.x === 5 && e.y === 4,
+            ).length,
+            1,
+        );
+    }
+});
+
 test("pinned KD 5.5.0 preserves the native Spinner traversal projection contract", () => {
     const version = read("Screens/MiniGame/KinkyDungeon/Text_KinkyDungeon.csv"),
         enemies = read("Game/src/enemy/KinkyDungeonEnemies.ts"),
