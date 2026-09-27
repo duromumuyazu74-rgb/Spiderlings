@@ -378,8 +378,13 @@ function loadManifest() {
     } catch (error) {
         fail(error.message);
     }
-    if (manifest.gamemajor !== 5 || manifest.gameminor !== 4)
-        fail("mod.json must retain the 5.4/5.5 compatibility window.");
+    if (
+        manifest.gamemajor !== 5 ||
+        manifest.gameminor !== 4 ||
+        manifest.gamepatch_min !== 92 ||
+        manifest.gamepatch_max !== 92
+    )
+        fail("mod.json must declare the verified KD 5.4.92 web and Windows target.");
     const expected = [...runtimeAssets, ...runtimeScripts];
     if (JSON.stringify(manifest.fileorder) !== JSON.stringify(expected))
         fail("mod.json fileorder is not the exact atlas-first/direct-fallback allowlist.");

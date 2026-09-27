@@ -1,5 +1,22 @@
 # Verified game environments
 
+The current package is `Spiderlings_0.92.36-test.49.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
+
+```json
+{
+  "gamemajor": 5,
+  "gameminor": 4,
+  "gamepatch_min": 92,
+  "gamepatch_max": 92
+}
+```
+
+The native Mod manager compares the major/minor fields for equality and uses inclusive patch bounds. It shows a compatibility warning for other versions rather than prohibiting loading. Test.49 changes only `mod.json` inside the ZIP; its runtime scripts and artwork match test.48. The 5.5.0 evidence below is a historical reference check, not the current manifest target.
+
+Test.49 is 25,560,453 bytes, with SHA-256 `7091094376f59b5b345928e9c935f9690e8f99225d8b920d4696ac813bf16bbe`. Native Mod-manager evidence for its version declaration is retained in the parent workspace at `.scratch/manifest-versions-20260927/`. The comparison includes the real 5.4.92 runtime and simulated version values passed through the same native warning UI; those simulated values are not additional gameplay compatibility tests.
+
+## Test.48 behavior evidence
+
 `Spiderlings_0.92.36-test.48.zip` was verified on 2026-09-27 in both requested environments. Use the same ZIP in the game's Mod manager and enable only one Spiderlings version.
 
 | Environment                                                                                  | Observed game version                               | Result                                                           |

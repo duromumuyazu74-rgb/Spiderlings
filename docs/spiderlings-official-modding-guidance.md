@@ -34,7 +34,7 @@ The itch tutorials are useful, but some examples are older than the local 5.5 so
   - Keep `mod.json` populated with `modname`, `moddesc`, `author`, `modbuild`, `gamemajor`, `gameminor`, `gamepatch_min`, `gamepatch_max`, and `priority`.
   - `gamepatch_max: -1` and other `-1` game version fields are official "ignore this datedness field" values.
   - The tutorial example shows numeric `modbuild`, but KD 5.5 types it as a string in `Scripts/KDMods.ts`. Spiderlings' string build value is compatible with the local 5.5 loader.
-  - Spiderlings intentionally keeps `gameminor: 4` so the same package can target 5.4 and 5.5; do not change this to `5` unless the checker and compatibility policy are updated together.
+  - The KD 5.4.92 native `KDDrawMods` compares major and minor versions for equality and checks the patch against inclusive minimum/maximum bounds. `gameminor: 4` does not declare compatibility with 5.5; it produces a minor-version warning there. Starting with test.49, the manifest and checker declare the requested, verified web and Windows target exactly: `gamemajor: 5`, `gameminor: 4`, `gamepatch_min: 92`, `gamepatch_max: 92`. Other native-version evidence remains documented separately in [compatibility](COMPATIBILITY.md). These fields control native compatibility warnings, not a hard loading prohibition.
 - **Asset Packing**: <https://itch.io/t/3869107/asset-packing>
   - Custom model assets should live under `Models/` in the mod zip root unless there is a deliberate custom loader path.
   - KD 5.5 still supports `TextureAtlas/` mod atlases through `modAtlasLoader` in `Data/Preload.ts`.
