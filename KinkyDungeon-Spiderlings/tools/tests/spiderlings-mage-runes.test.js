@@ -13,7 +13,7 @@ function fixture() {
     const events = {};
     const calls = { casts: [], binds: [], npcHits: [], visuals: [] };
     const mage = { id: 10, x: 5, y: 5, hp: 3, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
-    const player = { player: true, x: 9, y: 5 };
+    const player = { player: true, faction: "Player", x: 9, y: 5 };
     const map = { Entities: [mage], Bullets: [] };
     let random = 0;
     const c = {
@@ -83,6 +83,30 @@ function fixture() {
     const tick = () => events.tickAfter(null, { delta: 1 });
     return { c, mage, player, map, calls, spell, choose, cast, tick, random: (value) => (random = value) };
 }
+
+test("friendly runes ignore the player but still trigger on hostile NPCs after caster removal", () => {
+    for (const remove of [false, true]) {
+        const r = fixture();
+        r.mage.faction = "Player";
+        r.cast();
+        r.map.Bullets = JSON.parse(JSON.stringify(r.map.Bullets));
+        const bullet = r.map.Bullets[0];
+        if (remove) r.map.Entities = [];
+        r.tick();
+        r.tick();
+        Object.assign(r.player, { x: bullet.x, y: bullet.y });
+        r.tick();
+        assert.equal(bullet.SpiderlingsRunePhase, "armed", "friendly player cannot trigger the rune");
+        r.player.x++;
+        const maid = { id: 11, hp: 8, x: bullet.x, y: bullet.y, faction: "Maidforce", Enemy: { name: "Maidforce" } };
+        r.map.Entities.push(maid);
+        r.tick();
+        assert.equal(bullet.SpiderlingsRunePhase, "triggered");
+        r.tick();
+        assert.equal(maid.slime, 6);
+        assert.equal(r.calls.binds.length, 0, "the friendly player within the blast is unaffected");
+    }
+});
 
 test("rune replaces one native Mage cast, chooses an empty nearby tile and stops at three active runes", () => {
     const r = fixture();

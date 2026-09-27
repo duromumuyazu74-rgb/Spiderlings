@@ -21,8 +21,8 @@
         return KDMapData.Entities.find((entity) => entity.id === id && entity.hp > 0 && entity.Enemy?.name === MAGE);
     }
 
-    function mageSource(id) {
-        return mageById(id) || { id, hp: 1, faction: "Enemy", Enemy: { name: MAGE } };
+    function mageSource(id, faction = "Enemy") {
+        return mageById(id) || { id, hp: 1, faction, Enemy: { name: MAGE } };
     }
 
     function hostileMaid(source, target) {
@@ -63,7 +63,7 @@
         return Math.max(dx, dy);
     }
 
-    function addMark(target, ownerId) {
+    function addMark(target, ownerId, ownerFaction) {
         const now = state().clock;
         const key = markKey(target);
         if (!key) return;
@@ -80,6 +80,7 @@
         state().marks[key] = {
             stacks,
             ownerId,
+            ownerFaction,
             lastStackAt: now,
             expiresAt: now + 2 + stacks,
             fragileUntil: now + 3,
@@ -137,6 +138,7 @@
                     x: Math.floor(x) - 1,
                     y: Math.floor(y) - 1,
                     ownerId: caster.id,
+                    ownerFaction: KDGetFaction(caster),
                     activateAt: s.clock + HEX_WARNING + 1,
                     endAt: s.clock + HEX_WARNING + 1 + HEX_ACTIVE,
                 });
@@ -154,7 +156,7 @@
     }
 
     function eligibleTargets(source) {
-        const targets = [KinkyDungeonPlayerEntity];
+        const targets = KDHostile(source, KinkyDungeonPlayerEntity) ? [KinkyDungeonPlayerEntity] : [];
         for (const entity of KDMapData.Entities) if (hostileMaid(source, entity)) targets.push(entity);
         return targets;
     }
@@ -171,7 +173,7 @@
     }
 
     function activateField(field) {
-        const source = mageSource(field.ownerId);
+        const source = mageSource(field.ownerId, field.ownerFaction);
         for (const target of eligibleTargets(source)) {
             if (!contains(field, target)) continue;
             if (!target.player) damageShieldOnly(target, 3);
@@ -180,7 +182,7 @@
 
     function bindPlayer(source, attempts) {
         for (let i = 0; i < attempts; i++) {
-            const result = api.Webbing?.applyEnemyProgression("WebCaster", source, "Enemy");
+            const result = api.Webbing?.applyEnemyProgression("WebCaster", source, KDGetFaction(source));
             if (result?.progressed) api.SpellVisuals?.hit(KinkyDungeonPlayerEntity);
         }
     }
@@ -193,7 +195,7 @@
     }
 
     function resolveBlast(blast) {
-        const source = mageSource(blast.ownerId);
+        const source = mageSource(blast.ownerId, blast.ownerFaction);
         const actionId = api.NPCAdhesion?.actionId(source);
         const radius = blast.stacks - 1;
         for (const target of eligibleTargets(source)) {
@@ -246,6 +248,7 @@
             x: target.x,
             y: target.y,
             ownerId: mark.ownerId,
+            ownerFaction: mark.ownerFaction,
             stacks: mark.stacks,
             detonateAt: s.clock + 2,
         });
@@ -310,10 +313,10 @@
         for (const field of s.fields) {
             if (field.activateAt === s.clock) activateField(field);
             if (field.activateAt > s.clock || field.endAt <= s.clock) continue;
-            const source = mageSource(field.ownerId);
+            const source = mageSource(field.ownerId, field.ownerFaction);
             for (const target of eligibleTargets(source))
                 if (contains(field, target)) {
-                    addMark(target, field.ownerId);
+                    addMark(target, field.ownerId, KDGetFaction(source));
                     refreshFragility(target);
                 }
         }

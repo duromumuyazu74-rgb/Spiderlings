@@ -311,10 +311,18 @@
         lines = undefined;
     }
 
+    function visible(subject) {
+        return (
+            subject &&
+            (typeof KDCanSeeEnemy !== "function" || KDCanSeeEnemy(subject)) &&
+            (typeof KinkyDungeonVisionGet !== "function" || KinkyDungeonVisionGet(subject.x, subject.y) > 0)
+        );
+    }
+
     function draw(data) {
         if (!data || typeof PIXI === "undefined" || typeof kdgameboard === "undefined") return;
         const active = Object.values(records()).filter(
-            (value) => (value.progress > 0 || value.helplessTurns > 0) && entity(value.targetId),
+            (value) => (value.progress > 0 || value.helplessTurns > 0) && visible(entity(value.targetId)),
         );
         if (!active.length) {
             if (lines) lines.visible = false;
@@ -336,7 +344,7 @@
             const target = entity(value.targetId);
             for (const id of value.sourceIds) {
                 const source = entity(id);
-                if (source) lines.moveTo(...point(source)).lineTo(...point(target));
+                if (visible(source)) lines.moveTo(...point(source)).lineTo(...point(target));
             }
             if (typeof DrawTextFitKDTo === "function" && typeof kdenemystatusboard !== "undefined") {
                 const [x, y] = point(target);

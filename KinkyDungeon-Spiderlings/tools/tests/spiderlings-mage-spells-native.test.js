@@ -43,6 +43,7 @@ test("KD 5.5 inert casts spend one native Mage action and leave only the saved s
         KDMapData: map,
         KinkyDungeonPlayerEntity: { x: 7, y: 7, player: true },
         KDGameData: { Collection: {} },
+        KDGetFaction: (entity) => entity.faction,
         KDEventMapGeneric: {},
         KDAddEvent: (_map, name, _id, fn) => (events[name] = fn),
         KinkyDungeonSendEvent: () => {},
