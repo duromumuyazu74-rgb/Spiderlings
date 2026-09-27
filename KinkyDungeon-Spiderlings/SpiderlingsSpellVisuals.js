@@ -47,8 +47,8 @@
         ];
     }
 
-    function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1) {
-        if (!visible(x, y) || alpha <= 0) return;
+    function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1, target) {
+        if (!visible(target?.x ?? x, target?.y ?? y, target) || alpha <= 0) return;
         const [left, top] = xy(x, y);
         return KDDraw(
             kdgameboard,
@@ -182,17 +182,21 @@
                         ? KinkyDungeonPlayerEntity
                         : KDMapData.Entities.find((enemy) => `npc:${enemy.id}` === key && enemy.hp > 0);
                 if (!target || !visible(target.x, target.y, target)) continue;
+                // Native actors interpolate between cells; visibility still belongs to the occupied cell.
+                const visualX = target.visual_x ?? target.x,
+                    visualY = target.visual_y ?? target.y;
                 sprite(
                     `mark_${key}`,
                     "Bullets/SpiderlingsMageRuneIcon.png",
-                    target.x,
-                    target.y - 0.55,
+                    visualX,
+                    visualY - 0.55,
                     0.75,
                     1,
                     0,
                     2.5,
+                    target,
                 );
-                const [x, y] = xy(target.x, target.y - 0.23);
+                const [x, y] = xy(visualX, visualY - 0.23);
                 const g = graphics();
                 g.lineStyle(0).beginFill(PURPLE, 1);
                 for (let i = 0; i < mark.stacks; i++) g.drawCircle(x + (i - (mark.stacks - 1) / 2) * 7, y, 2);
@@ -221,12 +225,13 @@
                 sprite(
                     `hit_${id}`,
                     effect.art === "mark" ? "Bullets/SpiderlingsMageRuneIcon.png" : `Bullets/SpiderWebHit${pink()}.png`,
-                    target.x,
-                    target.y,
+                    target.visual_x ?? target.x,
+                    target.visual_y ?? target.y,
                     0.9 + age * 0.1,
                     1 - age,
                     0,
                     2.6,
+                    target,
                 );
         }
         for (let i = dashes.length - 1; i >= 0; i--) {
