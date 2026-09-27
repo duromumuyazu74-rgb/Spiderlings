@@ -38,9 +38,10 @@ KinkyDungeonSpellCastSpiderWeb,질긴 실이 바닥으로 내려앉아 주위에
 KinkyDungeonSpellSpiderWebDamage,거미줄을 밟자 끈끈한 실이 두 발을 휘감는다!(DamageDealt)
 KinkyDungeonSpellSpiderWebBind,거미줄에 들어서자 발치의 끈끈한 실이 곧바로 감겨 올라온다!
 KDModButtonSpiderlings,새끼 거미
-KDModButtonspiderlingsSquad,고정 새끼 거미 분대
+KinkyDungeonStatSpiderlingsSquad,새끼 거미 분대
+KinkyDungeonStatDescSpiderlingsSquad,조건을 충족하는 새 일반 지도마다 적대 분대가 등장합니다. Spinner 2마리와 Tunneler·Web Caster·Jumper·Mage 각 1마리입니다. 공간과 거미 개체 수 여유가 필요합니다.
 KDModButtonspiderlingsSpinnerEncounters,자율 Spinner 조우
-KDModButtonspiderlingsNestSummonWeights,둥지 지원 종류 가중치
+KDModButtonspiderlingsNestSummonWeights,둥지 증원 가중치 (0: 비활성화)
 KDModButtonspiderlingsNestSpinnerWeight,방적자 가중치
 KDModButtonspiderlingsNestJumperWeight,도약자 가중치
 KDModButtonspiderlingsNestWebCasterWeight,거미줄 투사자 가중치

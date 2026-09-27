@@ -20,6 +20,8 @@ function loadCoreRuntime(overrides = {}, nativeSources = []) {
         KDEventMapGeneric: {},
         KDModConfigs: {},
         KDModSettings: {},
+        KinkyDungeonStatsPresets: {},
+        KinkyDungeonStatsChoice: new Map(),
         KDAddEvent(map, trigger, type, handler) {
             map[trigger] = map[trigger] || {};
             map[trigger][type] = handler;
@@ -160,13 +162,20 @@ test("ordinary Spiderlings use the confirmed native weights without the minor ta
     }
 });
 
-test("guaranteed squads use one fixed four-role composition on eligible ordinary maps", () => {
+test("guaranteed squads use one fixed six-member composition on eligible ordinary maps", () => {
     assert.equal(EncounterRules.isEligibleOrdinaryMap({}), true);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ enemies: true, spawns: true, bossroom: false }), true);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ bossroom: true }), false);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ enemies: false }), false);
     assert.equal(EncounterRules.isEligibleOrdinaryMap({ spawns: false }), false);
-    assert.deepEqual(EncounterRules.SQUAD_MEMBERS, ["Jumper", "WebCaster", "Tunneler", "Spinner"]);
+    assert.deepEqual(EncounterRules.SQUAD_MEMBERS, [
+        "Spinner",
+        "Spinner",
+        "Tunneler",
+        "WebCaster",
+        "Jumper",
+        "MageSpiderlings",
+    ]);
 });
 
 test("Mage eligibility and natural weight cover the floor, security and infestation boundaries", () => {
@@ -236,18 +245,22 @@ function candidateKeys(candidate) {
     return candidate.cells.map(cellKey).sort();
 }
 
-test("placement planning enumerates every legal square and never mixes compact fallbacks into tier one", () => {
+test("placement planning enumerates every legal 3x2 or 2x3 rectangle and never mixes compact fallbacks into tier one", () => {
     const firstSquare = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
+        { x: 14, y: 12 },
         { x: 12, y: 13 },
         { x: 13, y: 13 },
+        { x: 14, y: 13 },
     ];
     const secondSquare = [
         { x: 20, y: 20 },
         { x: 21, y: 20 },
+        { x: 22, y: 20 },
         { x: 20, y: 21 },
         { x: 21, y: 21 },
+        { x: 22, y: 21 },
     ];
     const fallbackLine = [
         { x: 30, y: 10 },
@@ -257,13 +270,13 @@ test("placement planning enumerates every legal square and never mixes compact f
     ];
     const options = placementOptions([...firstSquare, ...secondSquare, ...fallbackLine], { random: () => 0.99 });
 
-    const squares = EncounterRules.enumerateSquareCandidates(options);
+    const squares = EncounterRules.enumerateRectangleCandidates(options);
     const plan = EncounterRules.planSquadPlacement(options);
 
     assert.equal(squares.length, 2);
     assert.deepEqual(squares.map(candidateKeys), [firstSquare.map(cellKey).sort(), secondSquare.map(cellKey).sort()]);
     assert.equal(plan.outcome, "placeable");
-    assert.equal(plan.tier, "square");
+    assert.equal(plan.tier, "rectangle");
     assert.equal(plan.candidateCount, 2);
     assert.deepEqual(
         plan.placements.map((placement) => cellKey(placement.cell)).sort(),
@@ -271,19 +284,19 @@ test("placement planning enumerates every legal square and never mixes compact f
     );
 });
 
-test("compact fallback enumeration covers every four-cell corridor window and accepts L shapes", () => {
-    const corridor = [12, 13, 14, 15, 16].map((x) => ({ x, y: 12 }));
+test("compact fallback enumeration covers every six-cell corridor window and accepts L shapes", () => {
+    const corridor = [12, 13, 14, 15, 16, 17, 18].map((x) => ({ x, y: 12 }));
     const candidates = EncounterRules.enumerateCompactCandidates(placementOptions(corridor));
     assert.deepEqual(candidates.map(candidateKeys), [
-        corridor.slice(0, 4).map(cellKey),
-        corridor.slice(1, 5).map(cellKey),
+        corridor.slice(0, 6).map(cellKey),
+        corridor.slice(1, 7).map(cellKey),
     ]);
 
     const linePlan = EncounterRules.planSquadPlacement(placementOptions(corridor));
     assert.equal(linePlan.tier, "compact");
     assert.deepEqual(
         linePlan.placements.map((placement) => cellKey(placement.cell)).sort(),
-        corridor.slice(0, 4).map(cellKey).sort(),
+        corridor.slice(0, 6).map(cellKey).sort(),
     );
 
     const lShape = [
@@ -291,21 +304,25 @@ test("compact fallback enumeration covers every four-cell corridor window and ac
         { x: 20, y: 13 },
         { x: 20, y: 14 },
         { x: 21, y: 14 },
+        { x: 22, y: 14 },
+        { x: 23, y: 14 },
     ];
     const lPlan = EncounterRules.planSquadPlacement(placementOptions(lShape));
     assert.equal(lPlan.tier, "compact");
     assert.deepEqual(lPlan.placements.map((placement) => cellKey(placement.cell)).sort(), lShape.map(cellKey).sort());
 });
 
-test("compact candidates require four distinct connected cells within anchor radius two", () => {
+test("compact candidates require six distinct connected cells within anchor radius three", () => {
     const line = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
         { x: 14, y: 12 },
         { x: 15, y: 12 },
+        { x: 16, y: 12 },
+        { x: 17, y: 12 },
     ];
     assert.equal(EncounterRules.isConnectedCandidate(line), true);
-    assert.deepEqual(EncounterRules.findCompactAnchor(line), { x: 13, y: 12 });
+    assert.deepEqual(EncounterRules.findCompactAnchor(line), { x: 14, y: 12 });
     assert.equal(EncounterRules.isConnectedCandidate([line[0], line[1], line[2], line[2]]), false);
     assert.equal(EncounterRules.isConnectedCandidate([line[0], line[1], { x: 20, y: 20 }, { x: 21, y: 20 }]), false);
 });
@@ -347,15 +364,19 @@ test("the same seeded random sequence reproduces candidate choice and member ass
     const cells = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
+        { x: 14, y: 12 },
         { x: 12, y: 13 },
         { x: 13, y: 13 },
+        { x: 14, y: 13 },
         { x: 20, y: 20 },
         { x: 21, y: 20 },
+        { x: 22, y: 20 },
         { x: 20, y: 21 },
         { x: 21, y: 21 },
+        { x: 22, y: 21 },
     ];
     const seeded = () => {
-        const values = [0.75, 0.1, 0.9, 0.4];
+        const values = [0.75, 0.1, 0.9, 0.4, 0.2, 0.6];
         let index = 0;
         return () => values[index++];
     };
@@ -365,6 +386,8 @@ test("the same seeded random sequence reproduces candidate choice and member ass
     assert.deepEqual(first, second);
     assert.deepEqual(first.placements.map((placement) => placement.enemy).sort(), [
         "Jumper",
+        "MageSpiderlings",
+        "Spinner",
         "Spinner",
         "Tunneler",
         "WebCaster",
@@ -384,18 +407,20 @@ test("placement planning returns unplaceable without a smaller fallback", () => 
     );
 });
 
-test("the squad setting defaults on and the retired one-enemy fallback API stays absent", () => {
+test("squad is an optional native Enemies perk granting two displayed points instead of a global toggle", () => {
     const texts = {};
     const context = loadCoreRuntime({
         addTextKey(key, value) {
             texts[key] = value;
         },
     });
-    const toggle = context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsSquad");
-
-    assert.deepEqual({ type: toggle.type, default: toggle.default }, { type: "boolean", default: true });
-    assert.equal(context.KDModSettings.Spiderlings.spiderlingsSquad, true);
-    assert.equal(texts.KDModButtonspiderlingsSquad, "Fixed spiderling squad");
+    assert.equal(
+        context.KDModConfigs.Spiderlings.some((entry) => entry.refvar === "spiderlingsSquad"),
+        false,
+    );
+    assert.equal(context.KinkyDungeonStatsPresets.SpiderlingsSquad.category, "Enemies");
+    assert.equal(context.KinkyDungeonStatsPresets.SpiderlingsSquad.cost, -1);
+    assert.equal(texts.KinkyDungeonStatSpiderlingsSquad, "Spiderling Squad");
     const spinnerEncounters = context.KDModConfigs.Spiderlings.find(
         (entry) => entry.refvar === "spiderlingsSpinnerEncounters",
     );
@@ -473,16 +498,19 @@ function squadRuntime(overrides = {}) {
     const square = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
+        { x: 14, y: 12 },
         { x: 12, y: 13 },
         { x: 13, y: 13 },
+        { x: 14, y: 13 },
     ];
     const definitions = Object.fromEntries(
-        ["Jumper", "WebCaster", "Tunneler", "Spinner"].map((name) => [
+        ["Jumper", "WebCaster", "Tunneler", "Spinner", "MageSpiderlings"].map((name) => [
             name,
             { name, AI: name === "Tunneler" ? "wander" : "hunt", marker: `${name}-native` },
         ]),
     );
     const context = loadCoreRuntime({
+        KinkyDungeonStatsChoice: new Map([["SpiderlingsSquad", true]]),
         KDMapData: {
             Entities: [],
             GridWidth: 20,
@@ -547,13 +575,16 @@ function mageMapRuntime(overrides = {}) {
     const cells = [
         { x: 12, y: 12 },
         { x: 13, y: 12 },
+        { x: 14, y: 12 },
         { x: 12, y: 13 },
         { x: 13, y: 13 },
+        { x: 14, y: 13 },
         { x: 15, y: 12 },
     ];
     let security = -50;
     const beforePopulation = [];
     const kd = loadCoreRuntime({
+        KinkyDungeonStatsChoice: new Map([["SpiderlingsSquad", true]]),
         KDMapData: {
             Entities: [],
             RoomType: "",
@@ -599,9 +630,9 @@ function mageMapRuntime(overrides = {}) {
     };
 }
 
-test("eligible maps reserve a Mage before native population without changing the four-role squad", () => {
+test("eligible maps reserve a Mage before native population without changing the six-member squad", () => {
     const r = mageMapRuntime();
-    r.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "5";
+    r.kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "7";
     assert.equal(r.generate(5), "native-population");
     assert.deepEqual(r.beforePopulation[0], ["MageSpiderlings"]);
     assert.equal(r.kd.KDMapData.SpiderlingsGuaranteedMageState, "spawned");
@@ -611,10 +642,10 @@ test("eligible maps reserve a Mage before native population without changing the
         r.kd.KDMapData.Entities.slice(1)
             .map((entity) => entity.Enemy.name)
             .sort(),
-        ["Jumper", "Spinner", "Tunneler", "WebCaster"],
+        ["Jumper", "MageSpiderlings", "Spinner", "Spinner", "Tunneler", "WebCaster"],
     );
     assert.equal(r.generate(5), "native-population");
-    assert.equal(r.kd.KDMapData.Entities.length, 5, "a revisit does not add another Mage or squad");
+    assert.equal(r.kd.KDMapData.Entities.length, 7, "a revisit does not add another Mage or squad");
 });
 
 test("Mage guarantee uses floor OR security and leaves ineligible and excluded maps alone", () => {
@@ -683,7 +714,7 @@ test("Mage guarantee leaves authored native spawn points vacant", () => {
     assert.equal(noFreeCell.kd.KDMapData.Entities.length, 0);
 });
 
-test("runtime registration keeps native weights and spawns one complete unaware 2x2 squad", () => {
+test("runtime registration keeps native weights and spawns one complete unaware 3x2 squad", () => {
     const summons = [];
     const natural = { id: 1, x: 11, y: 11, hp: 3, Enemy: { name: "NaturalEnemy" } };
     const { context, definitions, square } = squadRuntime();
@@ -707,12 +738,19 @@ test("runtime registration keeps native weights and spawns one complete unaware 
     assert.equal(typeof handler, "function");
     assert.equal(handler(), true);
     assert.equal(handler(), false);
-    assert.equal(summons.length, 4);
+    assert.equal(summons.length, 6);
     assert.deepEqual(
         summons.map((args) => ({ x: args[0], y: args[1] })),
         square,
     );
-    assert.deepEqual(summons.map((args) => args[2]).sort(), ["Jumper", "Spinner", "Tunneler", "WebCaster"]);
+    assert.deepEqual(summons.map((args) => args[2]).sort(), [
+        "Jumper",
+        "MageSpiderlings",
+        "Spinner",
+        "Spinner",
+        "Tunneler",
+        "WebCaster",
+    ]);
     assert.equal(
         summons.every(
             (args) =>
@@ -728,7 +766,14 @@ test("runtime registration keeps native weights and spawns one complete unaware 
     const squad = context.KDMapData.Entities.filter(
         (entity) => entity.SpiderlingsSquadProvenance === "guaranteed-squad",
     );
-    assert.deepEqual(squad.map((entity) => entity.Enemy.name).sort(), ["Jumper", "Spinner", "Tunneler", "WebCaster"]);
+    assert.deepEqual(squad.map((entity) => entity.Enemy.name).sort(), [
+        "Jumper",
+        "MageSpiderlings",
+        "Spinner",
+        "Spinner",
+        "Tunneler",
+        "WebCaster",
+    ]);
     assert.deepEqual(
         squad.map((entity) => ({ x: entity.x, y: entity.y })),
         square,
@@ -767,10 +812,11 @@ test("disabled, excluded, and unplaceable new maps become terminal without backf
 
     const disabled = squadRuntime().context;
     const disabledHandler = disabled.KDEventMapGeneric.postMapgen.SpiderlingsGuaranteedSquad;
-    disabled.KDModSettings.Spiderlings.spiderlingsSquad = false;
+    disabled.KinkyDungeonStatsChoice.delete("SpiderlingsSquad");
+    disabled.KDModSettings.Spiderlings.spiderlingsSquad = true; // old global preference is ignored
     assert.equal(disabledHandler(), false);
     assert.equal(disabled.KDMapData.SpiderlingsGuaranteedSquadState, "disabled");
-    disabled.KDModSettings.Spiderlings.spiderlingsSquad = true;
+    disabled.KinkyDungeonStatsChoice.set("SpiderlingsSquad", true);
     assert.equal(disabledHandler(), false);
     assert.equal(disabled.KDMapData.Entities.length, 0);
 
@@ -798,9 +844,9 @@ test("state-less stored maps have no load or transition hook that can backfill a
     assert.equal(context.KDMapData.Entities.length, 0);
 });
 
-test("runtime placement uses a compact corridor only when no legal square exists", () => {
+test("runtime placement uses a compact corridor only when no legal rectangle exists", () => {
     const { context } = squadRuntime();
-    const corridor = [12, 13, 14, 15].map((x) => ({ x, y: 12 }));
+    const corridor = [12, 13, 14, 15, 16, 17].map((x) => ({ x, y: 12 }));
     context.KDMapData.RandomPathablePoints = Object.fromEntries(corridor.map((point) => [cellKey(point), point]));
 
     const handler = context.KDEventMapGeneric.postMapgen.SpiderlingsGuaranteedSquad;
@@ -1604,7 +1650,8 @@ test("NestEntrance registration removes recurring spells but preserves death sum
 
 test("every Spiderlings translation CSV includes squad and controlled reinforcement settings", () => {
     const keys = [
-        "KDModButtonspiderlingsSquad",
+        "KinkyDungeonStatSpiderlingsSquad",
+        "KinkyDungeonStatDescSpiderlingsSquad",
         "KDModButtonspiderlingsSpinnerEncounters",
         "KDModButtonspiderlingsMapPopulationCap",
         "KDModButtonspiderlingsNestReinforcementControl",
@@ -1698,7 +1745,7 @@ test("the default map cap limits native batch summons and releases slots after d
     assert.equal(summon("Spinner", 1).length, 0);
 });
 
-test("nests offer Mage at Tunneler's default weight only after the Mage threshold", () => {
+test("nest Mage weights apply below the natural Mage threshold and saved zero disables reinforcements", () => {
     let security = -1;
     const nest = { id: 1, x: 2, y: 2, hp: 5, aware: true, Enemy: { name: "NestEntrance", visionRadius: 20 } };
     const kd = loadCoreRuntime({
@@ -1720,12 +1767,16 @@ test("nests offer Mage at Tunneler's default weight only after the Mage threshol
     for (const name of ["Spinner", "Jumper", "WebCaster", "Tunneler"]) settings[`spiderlingsNest${name}Weight`] = 0;
     const tick = () => kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 1 });
     assert.equal(tick(), 0);
-    assert.equal(tick(), 0);
-    assert.equal(nest.SpiderlingsNestReinforcementTimer, 2);
-    security = 0;
     assert.equal(tick(), 1);
     assert.equal(kd.KDMapData.Entities.at(-1).Enemy.name, "MageSpiderlings");
     assert.equal(kd.KDMapData.Entities.at(-1).SpiderlingsNestParentID, nest.id);
+    settings.spiderlingsNestMageWeight = 0;
+    kd.KDEventMapGeneric.afterModConfig.Spiderlings();
+    kd.KDModSettings = JSON.parse(JSON.stringify(kd.KDModSettings));
+    kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
+    security = 0;
+    for (let i = 0; i < 20; i++) assert.equal(tick(), 0);
+    assert.equal(kd.KDMapData.Entities.length, 2);
 });
 
 test("the native selector admits Mage at floor five or security zero and keeps it out before both", () => {
@@ -1769,7 +1820,7 @@ test("native population selection excludes capped mobile Spiderlings and recover
     assert.equal(choose().name, "WebCaster", "new map has its own full quota, including Mage");
 });
 
-test("a fixed squad is skipped atomically when fewer than four map slots remain", () => {
+test("a fixed squad is skipped atomically when fewer than six map slots remain", () => {
     const { context: kd } = squadRuntime();
     kd.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "4";
     const existing = { id: 1, x: 5, y: 5, hp: 2, Enemy: { name: "Spinner" } };
@@ -1780,9 +1831,9 @@ test("a fixed squad is skipped atomically when fewer than four map slots remain"
     kd.KDMapData.Entities = [];
     assert.equal(kd.Spiderlings.runGuaranteedSpiderlingSquad(), false, "no late backfill on a visited map");
     const fresh = squadRuntime().context;
-    fresh.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "4";
+    fresh.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "6";
     assert.equal(fresh.Spiderlings.runGuaranteedSpiderlingSquad(), true);
-    assert.equal(fresh.KDMapData.Entities.length, 4);
+    assert.equal(fresh.KDMapData.Entities.length, 6);
 });
 
 test("multiple nests share the last map slot and a capped nest keeps its due timer", () => {

@@ -47,7 +47,7 @@
             if (!base?.texture || base.parent !== board) return spriteName;
             const visual = active.get(enemy);
             const fade = visual ? Math.max(0, 1 - (now() - visual.started) / DISPLAY_MS) : 0;
-            const layers = fade > 0 ? [PARTICLES, GLOWS[visual.kind]] : [REGULAR];
+            const layers = fade > 0 ? [REGULAR, PARTICLES, GLOWS[visual.kind]] : [REGULAR];
 
             for (const [index, path] of layers.entries()) {
                 const layer = KDDraw(
@@ -62,7 +62,7 @@
                     undefined,
                     {
                         zIndex: (base.zIndex ?? zIndex) + 0.001 * (index + 1),
-                        blendMode: index === 1 ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL,
+                        blendMode: path === GLOWS[visual?.kind] ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL,
                         alpha: path === REGULAR ? 1 : fade,
                     },
                     undefined,
@@ -70,7 +70,9 @@
                     undefined,
                     true,
                 );
-                if (layer && base.scale.x < 0 && layer.scale.x > 0) layer.scale.x = -layer.scale.x;
+                // KDDraw reuses sprites; assigning width preserves the previous scale sign.
+                // Reset both facings, otherwise a left-to-right turn leaves the pattern mirrored off-body.
+                if (layer) layer.scale.x = Math.abs(layer.scale.x) * (base.scale.x < 0 ? -1 : 1);
             }
             return spriteName;
         };

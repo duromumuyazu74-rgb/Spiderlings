@@ -23,19 +23,19 @@ Spiderlings selected by KD's ordinary enemy population system. It coexists with 
 _Avoid_: guaranteed spawn, single-enemy fallback
 
 **Guaranteed Mage Spiderling**:
-One Mage placed before native random population on a newly generated ordinary map at floor 5 or effective security 0, if a legal cell outside authored spawn points and a mobile population slot exist. The map records its one-time outcome. This Mage is separate from the unchanged four-member squad; natural rolls may add more within the shared cap.
-_Avoid_: adding Mage to the fixed squad, spawning on every revisit
+One Mage placed before native random population on a newly generated ordinary map at floor 5 or effective security 0, if a legal cell outside authored spawn points and a mobile population slot exist. The map records its one-time outcome. This Mage is separate from the optional six-member squad; natural rolls may add more within the shared cap.
+_Avoid_: treating the squad Mage as this independent guarantee, spawning on every revisit
 
 **Guaranteed Spiderling squad**:
-A default-enabled, one-shot encounter of exactly one Jumper, WebCaster, Tunneler, and Spinner on an eligible newly generated ordinary map. The group is additional to native population and is created only as a complete atomic unit.
-_Avoid_: random four Spiderlings, natural spawn replacement, one-enemy fallback
+An optional native Enemies perk, `SpiderlingsSquad`, displaying cost -2 and granting two points through internal cost -1. It adds a one-shot encounter of two Spinners and one each of Jumper, WebCaster, Tunneler and Mage on an eligible newly generated ordinary map. The former global toggle does not select the perk. The group is additional to native population and is created only as a complete atomic unit.
+_Avoid_: random six Spiderlings, natural spawn replacement, one-enemy fallback
 
 **Compact squad placement**:
-A complete four-cell placement selected from legal `2×2` squares first, or from other connected four-cell neighborhoods only when no legal square exists. It never reduces the squad size to fit a map.
+A complete six-cell placement selected from legal `3×2` or `2×3` rectangles first, or connected six-cell neighborhoods within Chebyshev radius three of an anchor when no legal rectangle exists. It never reduces the squad size to fit a map.
 _Avoid_: partial squad, arbitrary scatter, single-member fallback
 
 **Nest reinforcement**:
-A recurring child spawn owned and capped by one living hostile NestEntrance. It runs when the nest is aware of a visible player, natively perceives a hostile Maidforce target, or retains its short native alert flag from a hostile NPC attack. The attack alert spans one configured interval plus the current tick; it does not grant an immediate spawn. It is separate from native population, the guaranteed squad, Tunneler-created entrances, and the entrance's death burst.
+A recurring child spawn owned and capped by one living hostile NestEntrance. It runs when the nest is aware of a visible player, natively perceives a hostile Maidforce target, or retains its short native alert flag from a hostile NPC attack. The attack alert spans one configured interval plus the current tick; it does not grant an immediate spawn. It is separate from native population, the guaranteed squad, Tunneler-created entrances, and the entrance's death burst. Configured zero excludes that species; an all-zero pool pauses spawning. Mage reinforcement uses its configured weight without the natural floor/security restriction.
 _Avoid_: global reinforcement budget, NestEntrance spell list, death summon
 
 **Independent Hunting Grounds nests**:
@@ -131,7 +131,7 @@ _Avoid_: global removal lock, consumed inner layers, inner-layer escape through 
 ## NPC silk combat
 
 **Mage Spiderlings combat**:
-The summonable Mage can cast `SpiderlingsMageBolt`, `SpiderlingsMageRune`, `SpiderlingsMageHex` and `SpiderlingsMageCollapse`. Its direct bolt applies base 4 native glue HP damage only to hostile Maidforce NPCs, targeting an ordinary 8-HP maid in two unresisted hits. Native shields, resistance and immunity still resolve the hit. The player takes base 0.5 glue damage through KD's native `Damage` player effect and receives no separate arm restraint. The Mage enemy sprite has its dedicated artwork. Natural, nest and guaranteed Mage spawning follow the shared population cap and the floor or security threshold.
+The summonable Mage can cast `SpiderlingsMageBolt`, `SpiderlingsMageRune`, `SpiderlingsMageHex` and `SpiderlingsMageCollapse`. Its direct bolt applies base 4 native glue HP damage only to hostile Maidforce NPCs, targeting an ordinary 8-HP maid in two unresisted hits. Native shields, resistance and immunity still resolve the hit. The player takes base 0.5 glue damage through KD's native `Damage` player effect and receives no separate arm restraint. The Mage enemy sprite has its dedicated artwork. All Mage spawning shares the mobile population cap. Natural and guaranteed spawning follow the floor or security threshold; nest reinforcement uses its configured weight independently. The selected squad includes its Mage from floor one.
 
 **Mage runes**:
 Each available Mage spell action has a one-in-four chance to select `SpiderlingsMageRune`; otherwise the Mage chooses among the bolt and its two larger spells when available. A glowing spider icon marks the rune's one-turn placement; the icon disappears once the stationary rune is armed. A player or hostile Maidforce NPC stepping on the center triggers a glowing 3-by-3 warning, which resolves one turn later against those still inside. The player receives one normal random Webbing progression, including the current Hood preference and Cocoon condition. Each hostile Maidforce NPC receives base 6 native Slime binding with native shield and resistance checks. The rune occupies one tile for up to 300 turns, carries its caster ID and phase through save/load, triggers once, survives caster death, and keeps the native `rune` tag for NegateRune. No more than three live runes belong to one Mage; friendly Spiderlings and other NPCs do not trigger it.

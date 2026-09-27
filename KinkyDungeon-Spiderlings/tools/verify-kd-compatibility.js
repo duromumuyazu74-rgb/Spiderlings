@@ -40,6 +40,9 @@ async function verifyGame(game, packagePath, output) {
             ["orphan-spray", "orphan-spray.js"],
             ["friendly-mage", "friendly-mage.js"],
             ["hidden-wrapping", "hidden-wrapping.js"],
+            ["nest-weights", "nest-weights.js"],
+            ["squad-perk", "squad-perk.js"],
+            ["mage-body", "mage-body.js"],
         ];
         for (const [name, file, scenario] of checks) {
             if (scenario)
@@ -125,7 +128,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster flight/settled webs and orphaned hits, Rune impacts, friendly Mage targeting, target overlays and hidden NPC wrapping",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster visuals and orphaned hits, Rune impacts, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk and Mage body layers",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

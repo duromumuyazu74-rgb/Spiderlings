@@ -19,7 +19,6 @@
             default: true,
             block: undefined,
         },
-        { type: "boolean", name: "spiderlingsSquad", refvar: "spiderlingsSquad", default: true, block: undefined },
         {
             type: "boolean",
             name: "spiderlingsSpinnerEncounters",
@@ -148,7 +147,7 @@
         Tunneler: 4,
         NestEntrance: 2,
     });
-    const SQUAD_MEMBERS = Object.freeze(["Jumper", "WebCaster", "Tunneler", "Spinner"]);
+    const SQUAD_MEMBERS = Object.freeze(["Spinner", "Spinner", "Tunneler", "WebCaster", "Jumper", "MageSpiderlings"]);
     const MOBILE_SPIDERLINGS = new Set([...SQUAD_MEMBERS, "MageSpiderlings"]);
     const MAGE = "MageSpiderlings";
     const MAGE_STATE_FIELD = "SpiderlingsGuaranteedMageState";
@@ -279,18 +278,19 @@
         return canonicalCells(cells).map(pointKey).join("|");
     }
 
-    function enumerateSquareCandidates(options = {}) {
+    function enumerateRectangleCandidates(options = {}) {
         const result = [];
-        for (let y = 1; y < options.height - 1; y += 1) {
-            for (let x = 1; x < options.width - 1; x += 1) {
-                const cells = [
-                    { x, y },
-                    { x: x + 1, y },
-                    { x, y: y + 1 },
-                    { x: x + 1, y: y + 1 },
-                ];
-                if (cells.every((cell) => isSquadCellLegal(cell, options))) {
-                    result.push({ anchor: { x, y }, cells });
+        for (let y = 1; y < options.height - 1; y++) {
+            for (let x = 1; x < options.width - 1; x++) {
+                for (const [width, height] of [
+                    [3, 2],
+                    [2, 3],
+                ]) {
+                    const cells = [];
+                    for (let dy = 0; dy < height; dy++)
+                        for (let dx = 0; dx < width; dx++) cells.push({ x: x + dx, y: y + dy });
+                    if (cells.every((cell) => isSquadCellLegal(cell, options)))
+                        result.push({ anchor: { x, y }, cells });
                 }
             }
         }
@@ -298,7 +298,12 @@
     }
 
     function isConnectedCandidate(cells) {
-        if (!Array.isArray(cells) || cells.length !== 4 || new Set(cells.map(pointKey)).size !== 4) return false;
+        if (
+            !Array.isArray(cells) ||
+            cells.length !== SQUAD_MEMBERS.length ||
+            new Set(cells.map(pointKey)).size !== SQUAD_MEMBERS.length
+        )
+            return false;
         const remaining = new Map(cells.map((cell) => [pointKey(cell), cell]));
         const pending = [cells[0]];
         remaining.delete(pointKey(cells[0]));
@@ -318,62 +323,33 @@
     function findCompactAnchor(cells) {
         if (!isConnectedCandidate(cells)) return null;
         const ordered = canonicalCells(cells);
-        const anchor = ordered.find((candidate) => ordered.every((cell) => chebyshevDistance(candidate, cell) <= 2));
+        const anchor = ordered.find((candidate) => ordered.every((cell) => chebyshevDistance(candidate, cell) <= 3));
         return anchor ? { x: anchor.x, y: anchor.y } : null;
-    }
-
-    function isSquareCandidate(cells) {
-        const xs = [...new Set(cells.map((cell) => cell.x))].sort((left, right) => left - right);
-        const ys = [...new Set(cells.map((cell) => cell.y))].sort((left, right) => left - right);
-        return xs.length === 2 && ys.length === 2 && xs[1] - xs[0] === 1 && ys[1] - ys[0] === 1;
     }
 
     function enumerateCompactCandidates(options = {}) {
         const legal = legalSquadCells(options);
-        const indexByKey = new Map(legal.map((cell, index) => [pointKey(cell), index]));
+        const byKey = new Map(legal.map((cell) => [pointKey(cell), cell]));
         const candidates = new Map();
-
-        function enumerateConnectedSubsets(rootIndex, candidateIndexes, visited) {
-            const partialKey = candidateIndexes.join(",");
-            if (visited.has(partialKey)) return;
-            visited.add(partialKey);
-            if (candidateIndexes.length === 4) {
-                const cells = candidateIndexes.map((index) => legal[index]);
-                const anchor = findCompactAnchor(cells);
-                if (anchor && !isSquareCandidate(cells)) {
-                    candidates.set(candidateKey(cells), { anchor, cells: canonicalCells(cells) });
-                }
-                return;
-            }
-
-            const frontier = new Set();
-            for (const index of candidateIndexes) {
-                const cell = legal[index];
-                for (let dx = -1; dx <= 1; dx += 1) {
-                    for (let dy = -1; dy <= 1; dy += 1) {
-                        if (dx === 0 && dy === 0) continue;
-                        const neighborIndex = indexByKey.get(pointKey(cell.x + dx, cell.y + dy));
-                        if (
-                            neighborIndex != null &&
-                            neighborIndex > rootIndex &&
-                            !candidateIndexes.includes(neighborIndex)
-                        ) {
-                            frontier.add(neighborIndex);
-                        }
+        // One connected candidate per anchor keeps six-member placement bounded
+        // on corridor maps instead of enumerating every six-cell subset.
+        for (const anchor of legal) {
+            const cells = [anchor];
+            const visited = new Set([pointKey(anchor)]);
+            for (let head = 0; head < cells.length && cells.length < SQUAD_MEMBERS.length; head++) {
+                const current = cells[head];
+                for (let dy = -1; dy <= 1 && cells.length < SQUAD_MEMBERS.length; dy++) {
+                    for (let dx = -1; dx <= 1 && cells.length < SQUAD_MEMBERS.length; dx++) {
+                        const key = pointKey(current.x + dx, current.y + dy);
+                        const next = byKey.get(key);
+                        if (!next || visited.has(key) || chebyshevDistance(anchor, next) > 3) continue;
+                        visited.add(key);
+                        cells.push(next);
                     }
                 }
             }
-            for (const neighborIndex of [...frontier].sort((left, right) => left - right)) {
-                enumerateConnectedSubsets(
-                    rootIndex,
-                    [...candidateIndexes, neighborIndex].sort((left, right) => left - right),
-                    visited,
-                );
-            }
-        }
-
-        for (let rootIndex = 0; rootIndex < legal.length; rootIndex += 1) {
-            enumerateConnectedSubsets(rootIndex, [rootIndex], new Set());
+            if (cells.length === SQUAD_MEMBERS.length)
+                candidates.set(candidateKey(cells), { anchor, cells: canonicalCells(cells) });
         }
         return [...candidates.entries()]
             .sort(([left], [right]) => left.localeCompare(right))
@@ -385,9 +361,9 @@
     }
 
     function planSquadPlacement(options = {}) {
-        const squares = enumerateSquareCandidates(options);
-        const tier = squares.length > 0 ? "square" : "compact";
-        const candidates = squares.length > 0 ? squares : enumerateCompactCandidates(options);
+        const rectangles = enumerateRectangleCandidates(options);
+        const tier = rectangles.length > 0 ? "rectangle" : "compact";
+        const candidates = rectangles.length > 0 ? rectangles : enumerateCompactCandidates(options);
         if (candidates.length === 0) return { outcome: "unplaceable" };
 
         const random = options.random || Math.random;
@@ -425,7 +401,7 @@
         SQUAD_STATES,
         SQUAD_STATE_FIELD,
         enumerateCompactCandidates,
-        enumerateSquareCandidates,
+        enumerateRectangleCandidates,
         findCompactAnchor,
         isConnectedCandidate,
         isEligibleOrdinaryMap,
@@ -743,12 +719,16 @@
         addTextKey("KDModButtonSpiderlings", "Spiderlings");
         addTextKey("KDModButtonspiderlingsPinkWebbing", "Pink webbing (off: original)");
         addTextKey("KDModButtonspiderlingsEnableHood", "Spiderlings silk hood (off: never equip)");
-        addTextKey("KDModButtonspiderlingsSquad", "Fixed spiderling squad");
+        addTextKey("KinkyDungeonStatSpiderlingsSquad", "Spiderling Squad");
+        addTextKey(
+            "KinkyDungeonStatDescSpiderlingsSquad",
+            "Each new eligible ordinary map adds a hostile squad: two Spinners, one Tunneler, one Web Caster, one Jumper, and one Mage. Requires space and the spider population allowance.",
+        );
         addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Autonomous Spinner encounters");
         addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiders per map (0: unlimited)");
         addTextKey("KDModButtonspiderlingsInfestationWeight", "Infestation weight (0: off)");
         addTextKey("KDModButtonspiderlingsHuntingGroundsWeight", "Hunting Grounds weight - Maidforce only (0: off)");
-        addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement type weights");
+        addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement weights (0: disabled)");
         addTextKey("KDModButtonspiderlingsNestSpinnerWeight", "Spinner weight");
         addTextKey("KDModButtonspiderlingsNestJumperWeight", "Jumper weight");
         addTextKey("KDModButtonspiderlingsNestWebCasterWeight", "Web Caster weight");
@@ -879,7 +859,7 @@
     function runGuaranteedSpiderlingSquad() {
         if (typeof KDMapData == "undefined" || !KDMapData) return false;
         if (TERMINAL_SQUAD_STATES.has(KDMapData[SQUAD_STATE_FIELD])) return false;
-        if (api.getSetting("spiderlingsSquad") !== true) {
+        if (typeof KinkyDungeonStatsChoice === "undefined" || !KinkyDungeonStatsChoice.get("SpiderlingsSquad")) {
             setSquadState(SQUAD_STATES.DISABLED);
             return false;
         }
@@ -1019,14 +999,7 @@
         const tunnelerCap = api.getNestTunnelerCap();
         const interval = api.getNestReinforcementInterval();
         const weights = normalizeSpiderlingWeights(api.getSharedSpiderlingWeights());
-        const security = typeof KDGetEffSecurityLevel === "function" ? KDGetEffSecurityLevel() : -Infinity;
-        if (
-            !mageEligible(
-                typeof MiniGameKinkyDungeonLevel !== "undefined" ? MiniGameKinkyDungeonLevel : -Infinity,
-                security,
-            )
-        )
-            weights[MAGE] = 0;
+        // Explicit nest weights are independent of natural Mage population eligibility.
         const index = indexReinforcementState(KDMapData.Entities);
         let successfulSummons = 0;
 
@@ -1120,6 +1093,10 @@
             KDEventMapGeneric.afterEnemyTick.SpiderlingsNestReinforcement = runNestReinforcements;
         }
     };
+
+    if (typeof KinkyDungeonStatsPresets !== "undefined")
+        // KD displays twice the internal cost: -1 is a two-point disadvantage.
+        KinkyDungeonStatsPresets.SpiderlingsSquad = { id: "SpiderlingsSquad", category: "Enemies", cost: -1 };
 
     api.registerModConfig();
     api.registerModConfigText();

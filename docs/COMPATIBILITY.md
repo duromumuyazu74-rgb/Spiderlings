@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.54.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.55.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.55 player-feedback fixes and dual-version evidence
+
+On 2026-09-27, the final test.55 ZIP passed thirteen native scenarios on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `f330c98e394e1e1a00b0662ae1fb815a6f9cad15`, reporting KD 5.5.3. The fetch at 10:45:11 UTC found no new upstream commit. The ten existing scenarios remain in place, with three additions:
+
+- Saved nest reinforcement weights survive native settings reload. At floor one with low security, Tunneler=1 and Mage=1 allow both types; Tunneler=0 excludes Tunnelers; all five weights at zero spawn nothing. Other generation sources retain their own rules.
+- Spiderling Squad is an optional negative Perk displaying −2 points and returning two available points. It adds exactly two Spinners and one each of Tunneler, WebCaster, Jumper and Mage on a fresh eligible map, independently of nest weights. The old global setting does not activate it, and the same map does not receive a second squad.
+- Mage body layers follow both facings through fifteen native transform checks per game version, covering idle, Rune and Bolt states. The regular abdomen pattern stays visible at alpha 1 while particles and glow fade. Screenshots from both versions were inspected.
+
+Repository checks, 12 policy tests, 332 public tests and the complete 628-test local watcher passed. ZIP verification matched all 148 allowlisted entries to source. The package is 25,519,542 bytes, SHA-256 `a049fcc7e7a9c1602caa8ab82715d037976d208005053e6367aefb25d2af4e1a`. The previous ZIP reproduced the detached Mage layer in both native versions; the nest-weight probe also demonstrated that the old low-floor Mage filter could leave Tunneler as the only eligible reinforcement.
+
+Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-27T10-45-11-029Z-0.92.36-test.55/acceptance.json` and `.scratch/player-feedback-20260927/`. KD 5.4.92 retained known native audio play/pause messages and the native `/Game/Locks/Red.png` missing request; KD 5.5.3 had no page errors or missing resources. These controlled Chrome runs use native game resources and the final ZIP. The player's exact fifty-nest scene, online deployment, desktop executable shell, user saves, other Mods and complete playthroughs were not reproduced. Tunneler construction and each new nest's independent reinforcement allowance remain unchanged.
 
 ## Test.54 review fixes and dual-version evidence
 
