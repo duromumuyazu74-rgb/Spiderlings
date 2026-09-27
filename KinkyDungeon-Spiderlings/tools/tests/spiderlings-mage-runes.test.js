@@ -84,6 +84,18 @@ function fixture() {
     return { c, mage, player, map, calls, spell, choose, cast, tick, random: (value) => (random = value) };
 }
 
+test("Mage runes reject non-Mage and ownerless casts while preserving other spells", () => {
+    const r = fixture();
+    const webCaster = { id: 11, x: 5, y: 5, hp: 3, faction: "Enemy", Enemy: { name: "WebCaster" } };
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, r.spell, webCaster).result, "Fail");
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, r.spell, undefined, r.player).result, "Fail");
+    assert.equal(r.calls.casts.length, 0);
+    assert.equal(r.map.Bullets.length, 0);
+    const spray = { name: "WebSpray" };
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, spray, webCaster).result, "Cast");
+    assert.equal(r.calls.casts[0].spell.name, "WebSpray");
+});
+
 test("friendly runes ignore the player but still trigger on hostile NPCs after caster removal", () => {
     for (const remove of [false, true]) {
         const r = fixture();

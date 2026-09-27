@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.56.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.57.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.57 owned effects and dual-version evidence
+
+On 2026-09-27, the published test.56 ZIP reproduced both #78 omissions on KD 5.4.92 and official GitHub KD 5.5.3: a direct WebCaster call cast a Mage rune, and generic `leashing` admitted `SpiderlingsSilkLeash` alongside `BasicLeash` under collared-player tags. This tests the direct cast boundary, not a claim that the native WebCaster spell chooser selected a rune.
+
+The final test.57 ZIP passed fifteen native scenarios on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `f330c98e394e1e1a00b0662ae1fb815a6f9cad15`, reporting KD 5.5.3. The fetch at 15:48:55 UTC found no new upstream commit. The new `owned-effects` scenario rejects non-Mage and player rune casts without creating bullets, preserves WebCaster spray and Mage rune placement, excludes the silk leash from the real generic candidate pool, and equips the carrier by exact ID. Existing native scenarios cover friendly and orphaned runes; recovery unit regressions cover successful native-effect entry, carrier identity and reload.
+
+Repository checks, 12 policy tests, 340 public tests and the complete 636-test local watcher passed. ZIP verification matched all 151 allowlisted entries to source. The package is 25,530,304 bytes, SHA-256 `7d63b7a04d2d12efd20a5ac8e1f878c412f43bf5efa1cc3895cdd74e25c7ddca`.
+
+Evidence is retained in the parent workspace at `.scratch/issue78-fix-20260927/before/` and `.scratch/kd-compatibility/runs/2026-09-27T15-48-55-866Z-0.92.36-test.57/acceptance.json`; the implementation worktree retains `.scratch/issue78-build.log`. These controlled Chrome runs do not cover a full playthrough, user saves, other Mods, online deployment or the desktop shell. No runtime artwork or gameplay balance was changed.
 
 ## Test.56 Mage weapon drops and dual-version evidence
 
