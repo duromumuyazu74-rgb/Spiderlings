@@ -27,7 +27,8 @@
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",
-    "spiderlings-delivery-evidence.test.js"
+    "spiderlings-delivery-evidence.test.js",
+    "spiderlings-weapons.test.js"
   ],
   "local": [
     "spiderlings-encounters.test.js",

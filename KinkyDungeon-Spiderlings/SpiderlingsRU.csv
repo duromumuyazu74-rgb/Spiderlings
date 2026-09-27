@@ -213,3 +213,19 @@ SpiderlingsInfestationBlocked,Ты останавливаешься перед �
 SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (5/5)
 KDModButtonspiderlingsInfestationWeight,Вес нашествия (0: выкл.)
 KDModButtonspiderlingsHuntingGroundsWeight,Вес охотничьих угодий - только Maidforce (0: выкл.)
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Книга шёлковых уз
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Посох ткача шёлка
+KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Схождение кокона
+KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Шёлковая петля
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Тонкий шёлк пронизывает корешок и обвивает раскрытые страницы. Прочитанные слова стягивают рассеянные нити к центру.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"В паутине на навершии теплится свет. Один взмах выпускает тонкие нити, оплетающие цель."
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,В основной или второй руке: +15% к силе связывания. 4 маны; дальность 6; срабатывание через два хода после применения; перезарядка 8 ходов. Область из 21 клетки: урон и связывание усиливаются к центру. Стены блокируют эффект.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 маны; дальность 6; перезарядка 3 хода. Связывает первого поражённого врага, затем замедляет его на 2 хода. Стены останавливают нить."
+ItemPickupSpiderlingsSilkenBindingTome,Вы подбираете книгу шёлковых уз.
+ItemPickupSpiderlingsSilkweaverStaff,Вы подбираете посох ткача шёлка.
+KDPrereqFailSpiderlingsCocoonConvergence,Нужно 4 маны и завершение перезарядки в 8 ходов.
+KDPrereqFailSpiderlingsSilkenSnare,Нужно 2 маны и завершение перезарядки в 3 хода.
+KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Вы сплетаете круг из шёлка. Нити начинают сходиться к центру.
+KinkyDungeonSpellCastSpiderlingsSilkenSnare,Вы выпускаете липкую шёлковую нить в сторону цели.
+KinkyDungeonSpellSpiderlingsCocoonConvergence,Схождение кокона
+KinkyDungeonSpellSpiderlingsSilkenSnare,Шёлковая петля

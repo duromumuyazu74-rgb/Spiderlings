@@ -36,6 +36,7 @@ const runtimeScripts = [
     "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
     "SpiderlingsMageSpells.js",
+    "SpiderlingsWeapons.js",
     "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
@@ -72,6 +73,8 @@ const soundAssets = [
     "Sounds/webs-sweep-away-by-hand-004_01.ogg",
 ];
 const runtimeAssets = [
+    "Items/SpiderlingsSilkenBindingTome.png",
+    "Items/SpiderlingsSilkweaverStaff.png",
     "UI/MapMod/SpiderlingsInfestation.png",
     "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",
@@ -405,6 +408,7 @@ function checkRuntimeTrees() {
         ...walkNames(path.join(modRoot, "DisplacementMaps"), "DisplacementMaps"),
         ...walkNames(path.join(modRoot, "TextureAtlas"), "TextureAtlas"),
         ...walkNames(path.join(modRoot, "Sounds"), "Sounds"),
+        ...walkNames(path.join(modRoot, "Items"), "Items"),
     ]
         .filter((entry) => /\.(png|json|wav|ogg)$/i.test(entry))
         .sort();
@@ -594,6 +598,13 @@ function createMockState() {
         KDModelDefs: {},
         KinkyDungeonRestraints: restraints,
         KinkyDungeonEnemies: enemies,
+        KinkyDungeonWeapons: {},
+        KDPrereqs: {},
+        KinkyDungeonSpellSpecials: {},
+        KinkyDungeonCastSpell() {},
+        KDBulletCanHitEntity() {},
+        KDBulletAoECanHitEntity() {},
+        KDDropItems() {},
         KinkyDungeonSpellListEnemies: spells,
         KinkyDungeonStatsPresets: {},
         KDPerkStart: {},
@@ -602,7 +613,6 @@ function createMockState() {
         KDEventMapSpell: {},
         KDCastConditions: {},
         KDPlayerEffects: { TrapBindings: nativeTrapBindings },
-        KinkyDungeonSpellSpecials: {},
         KDModConfigs: {},
         KDModSettings: {},
         KDModFiles: {},

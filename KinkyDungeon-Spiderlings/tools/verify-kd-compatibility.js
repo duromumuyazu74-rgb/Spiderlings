@@ -43,6 +43,7 @@ async function verifyGame(game, packagePath, output) {
             ["nest-weights", "nest-weights.js"],
             ["squad-perk", "squad-perk.js"],
             ["mage-body", "mage-body.js"],
+            ["weapons", "weapons.js"],
         ];
         for (const [name, file, scenario] of checks) {
             if (scenario)
@@ -128,7 +129,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster visuals and orphaned hits, Rune impacts, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk and Mage body layers",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster visuals and orphaned hits, Rune impacts, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk, Mage body layers and player weapon combat/save/loot",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

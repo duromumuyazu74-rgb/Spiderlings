@@ -213,3 +213,19 @@ SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nester
 SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
 KDModButtonspiderlingsInfestationWeight,Befall-Gewichtung (0: aus)
 KDModButtonspiderlingsHuntingGroundsWeight,Jagdgebiet-Gewichtung - nur Maidforce (0: aus)
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Foliant der Seidenfessel
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Seidenweberstab
+KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Kokonkonvergenz
+KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Seidenfessel
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Feine Seide durchzieht den Buchrücken und umschlingt die offenen Seiten. Die gewobenen Worte ziehen verstreute Fäden nach innen.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,Ein schwaches Leuchten ruht im Netz an der Stabspitze. Mit einem Schwung winden sich feine Fäden um das Ziel.
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Haupt- oder Nebenhand: +15% Fesselstärke. 4 Mana; Reichweite 6; zwei Runden Vorbereitung; 8 Runden Abklingzeit. Auf 21 Feldern nehmen Schaden und Fesselung zum Zentrum hin zu. Wände blockieren die Wirkung.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 Mana; Reichweite 6; 3 Runden Abklingzeit. Fesselt das erste getroffene feindliche Ziel und verlangsamt es anschließend 2 Runden. Wände stoppen den Faden.
+ItemPickupSpiderlingsSilkenBindingTome,Du hebst den Folianten der Seidenfessel auf.
+ItemPickupSpiderlingsSilkweaverStaff,Du hebst den Seidenweberstab auf.
+KDPrereqFailSpiderlingsCocoonConvergence,Benötigt 4 Mana und eine abgeschlossene Abklingzeit von 8 Runden.
+KDPrereqFailSpiderlingsSilkenSnare,Benötigt 2 Mana und eine abgeschlossene Abklingzeit von 3 Runden.
+KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Du webst einen Kreis aus Seide. Die Fäden ziehen sich nach innen.
+KinkyDungeonSpellCastSpiderlingsSilkenSnare,Du schleuderst einen klebrigen Seidenfaden auf dein Ziel.
+KinkyDungeonSpellSpiderlingsCocoonConvergence,Kokonkonvergenz
+KinkyDungeonSpellSpiderlingsSilkenSnare,Seidenfessel

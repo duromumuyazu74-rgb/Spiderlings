@@ -213,3 +213,19 @@ SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo pro
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
 KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
 KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Tomo de ataduras de seda
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Bastón del tejedor de seda
+KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Convergencia del capullo
+KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Lazo de seda
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Mano principal o secundaria: +15% de fuerza de atadura. 4 de maná; alcance 6; carga de dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza durante 2 turnos. Las paredes detienen el hilo.
+ItemPickupSpiderlingsSilkenBindingTome,Recoges un tomo de ataduras de seda.
+ItemPickupSpiderlingsSilkweaverStaff,Recoges un bastón del tejedor de seda.
+KDPrereqFailSpiderlingsCocoonConvergence,Requiere 4 de maná y que termine la recarga de 8 turnos.
+KDPrereqFailSpiderlingsSilkenSnare,Requiere 2 de maná y que termine la recarga de 3 turnos.
+KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tejes un círculo de seda. Los hilos empiezan a recogerse hacia el centro.
+KinkyDungeonSpellCastSpiderlingsSilkenSnare,Lanzas un hilo de seda pegajosa hacia tu objetivo.
+KinkyDungeonSpellSpiderlingsCocoonConvergence,Convergencia del capullo
+KinkyDungeonSpellSpiderlingsSilkenSnare,Lazo de seda
