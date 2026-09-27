@@ -38,9 +38,10 @@ KinkyDungeonSpellCastSpiderWeb,Las hebras pegajosas caen al suelo y tienden una 
 KinkyDungeonSpellSpiderWebDamage,Pisas la telaraña y las hebras pegajosas se enrollan en tus pies. (DamageDealt)
 KinkyDungeonSpellSpiderWebBind,Pisas la telaraña y las hebras junto a tus pies empiezan a enredarse en ellos.
 KDModButtonSpiderlings,Crías de araña
-KDModButtonspiderlingsSquad,Escuadrón fijo de crías de araña
+KinkyDungeonStatSpiderlingsSquad,Escuadrón de crías de araña
+KinkyDungeonStatDescSpiderlingsSquad,Cada mapa normal nuevo y apto añade un escuadrón hostil: dos Spinner y un Tunneler; Web Caster; Jumper y Mage. Requiere espacio y población disponible.
 KDModButtonspiderlingsSpinnerEncounters,Encuentros autónomos de Spinner
-KDModButtonspiderlingsNestSummonWeights,Pesos de los tipos de refuerzo
+KDModButtonspiderlingsNestSummonWeights,Pesos de refuerzo del nido (0: desactivado)
 KDModButtonspiderlingsNestSpinnerWeight,Peso de hiladora
 KDModButtonspiderlingsNestJumperWeight,Peso de saltadora
 KDModButtonspiderlingsNestWebCasterWeight,Peso de escupidora

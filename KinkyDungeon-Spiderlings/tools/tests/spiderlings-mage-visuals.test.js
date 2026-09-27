@@ -30,13 +30,14 @@ function runtime() {
                 return { result: context.castResult || "Cast" };
             },
             KDDraw(parent, map, id, image, x, y, width, height, _rotation, options) {
+                const previous = map.get(id);
                 const sprite = {
                     parent,
                     texture: { baseTexture: {} },
                     position: { x, y },
                     width,
                     height,
-                    scale: { x: id === "spr_7" && mage.flip ? -1 : 1 },
+                    scale: { x: previous?.scale.x || 1 },
                     zIndex: options?.zIndex || 0,
                     blendMode: options?.blendMode,
                     alpha: options?.alpha,
@@ -56,6 +57,7 @@ function runtime() {
                     72,
                     72,
                 );
+                sprites.get(`spr_${enemy.id}${id}`).scale.x = enemy.flip ? -1 : 1;
                 return enemy.Enemy.name;
             },
         };
@@ -87,6 +89,7 @@ test("Mage uses the regular rune at rest and transparent cast layers without chr
     context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageRune" }, mage);
     assert.deepEqual(draw(), [
         "Game/Enemies/MageSpiderlings.png",
+        "Game/Enemies/MageSpiderlingsRegular.png",
         "Game/Enemies/MageSpiderlingsSpellParticles.png",
         "Game/Enemies/MageSpiderlingsSubtleGlow.png",
     ]);
@@ -94,7 +97,8 @@ test("Mage uses the regular rune at rest and transparent cast layers without chr
     assert.ok(draws.every((entry) => entry.sprite.position.x === 144 && entry.sprite.position.y === 216));
     assert.ok(draws[0].sprite.zIndex < draws[1].sprite.zIndex && draws[1].sprite.zIndex < draws[2].sprite.zIndex);
     assert.equal(draws[1].sprite.blendMode, 0);
-    assert.equal(draws[2].sprite.blendMode, 1);
+    assert.equal(draws[2].sprite.blendMode, 0);
+    assert.equal(draws[3].sprite.blendMode, 1);
 
     context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageBolt" }, mage);
     assert.deepEqual(draw().at(-1), "Game/Enemies/MageSpiderlingsReallyGlowy.png");
@@ -119,9 +123,10 @@ test("failed casts do not light Mage and cast layers fade without advancing game
     draws.length = 0;
     context.time = 120;
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
-    assert.equal(draws.length, 3);
-    assert.equal(draws[2].image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
-    assert.equal(draws[2].sprite.alpha, 0.5);
+    assert.equal(draws.length, 4);
+    assert.equal(draws[3].image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
+    assert.equal(draws[1].sprite.alpha, 1, "abdomen pattern stays fully visible during casting");
+    assert.equal(draws[3].sprite.alpha, 0.5);
 
     draws.length = 0;
     context.time = 240;
@@ -144,5 +149,16 @@ test("the supplied Mage artwork and each cast layer retain 72-pixel native enemy
         assert.equal(bytes.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
         assert.equal(bytes.readUInt32BE(16), 72);
         assert.equal(bytes.readUInt32BE(20), 72);
+    }
+});
+
+test("cached abdomen layers follow both facing changes and stay on the body's transform", () => {
+    const { context, board, draws, mage } = runtime();
+    for (const flip of [false, true, false, true, false]) {
+        mage.flip = flip;
+        draws.length = 0;
+        context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+        assert.ok(draws.every(({ sprite }) => sprite.scale.x === draws[0].sprite.scale.x));
+        assert.ok(draws.every(({ sprite }) => sprite.position.x === draws[0].sprite.position.x));
     }
 });

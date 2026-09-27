@@ -38,9 +38,10 @@ KinkyDungeonSpellCastSpiderWeb,Липкие нити опускаются на �
 KinkyDungeonSpellSpiderWebDamage,Ты ступаешь в паутину, и липкие нити обвивают стопы! (DamageDealt)
 KinkyDungeonSpellSpiderWebBind,Ты ступаешь в паутину, и липкие нити у ног тут же начинают обвиваться вокруг них!
 KDModButtonSpiderlings,Паучата
-KDModButtonspiderlingsSquad,Постоянный отряд паучат
+KinkyDungeonStatSpiderlingsSquad,Отряд паучат
+KinkyDungeonStatDescSpiderlingsSquad,На каждой новой подходящей обычной карте появляется враждебный отряд: два Spinner и по одному Tunneler; Web Caster; Jumper и Mage. Требуются свободное место и лимит пауков.
 KDModButtonspiderlingsSpinnerEncounters,Автономные встречи со Spinner
-KDModButtonspiderlingsNestSummonWeights,Веса видов подкреплений гнезда
+KDModButtonspiderlingsNestSummonWeights,Веса подкреплений гнезда (0: отключено)
 KDModButtonspiderlingsNestSpinnerWeight,Вес прядильщика
 KDModButtonspiderlingsNestJumperWeight,Вес прыгуна
 KDModButtonspiderlingsNestWebCasterWeight,Вес плевателя
