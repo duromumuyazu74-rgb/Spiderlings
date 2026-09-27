@@ -1,12 +1,12 @@
 {
   "modname": "Spiderlings",
-  "moddesc": "Meet nimble spiderlings that weave soft silk into layered bindings and a close-fitting cocoon, with web-spray encounters for Kinkiest Dungeon 5.4.92 (web and Windows).",
+  "moddesc": "Meet nimble spiderlings that weave soft silk into layered bindings and a close-fitting cocoon. Tested on KD 5.4.92 and official GitHub 5.5 development builds; see compatibility notes for the exact tested commit.",
   "author": "Art assets: T_Swizzle; Original mod author: anthropocentricity; Reset author: Chlorlne",
-  "modbuild": "0.92.36-test.52",
+  "modbuild": "0.92.36-test.53",
   "gamemajor": 5,
-  "gameminor": 4,
-  "gamepatch_min": 92,
-  "gamepatch_max": 92,
+  "gameminor": -1,
+  "gamepatch_min": -1,
+  "gamepatch_max": -1,
   "priority": 0,
   "fileorder": [
     "UI/MapMod/SpiderlingsInfestation.png",

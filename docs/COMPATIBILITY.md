@@ -1,17 +1,36 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.52.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
+The current package is `Spiderlings_0.92.36-test.53.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+
+Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
 ```json
 {
   "gamemajor": 5,
-  "gameminor": 4,
-  "gamepatch_min": 92,
-  "gamepatch_max": 92
+  "gameminor": -1,
+  "gamepatch_min": -1,
+  "gamepatch_max": -1
 }
 ```
 
-The native Mod manager compares the major/minor fields for equality and uses inclusive patch bounds. It shows a compatibility warning for other versions rather than prohibiting loading. The 5.5.0 evidence below is a historical reference check, not the current manifest target.
+The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.53 dual-version evidence
+
+On 2026-09-27, the same final ZIP passed seven controlled native scenarios in each environment:
+
+| Environment                                                                                                                                                   | Exact runtime                                                                                     | Result           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------- |
+| Read-only installed game resources, served locally to Chrome                                                                                                  | KD 5.4.92; main script SHA-256 `2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4` | All seven passed |
+| Freshly fetched [official GitHub `5.5` source](https://github.com/Ada18980/KinkiestDungeon/commit/f330c98e394e1e1a00b0662ae1fb815a6f9cad15), built separately | KD 5.5.3; commit `f330c98e394e1e1a00b0662ae1fb815a6f9cad15`                                       | All seven passed |
+
+The scenarios cover native ZIP loading, Webbing progression through Cocoon and save/reload, Spinner waiting without oscillation, capture after prey enters the field, wall rejection after owned-web traversal, original/pink WebCaster flight and settled-web textures with expiry, Rune impacts after the caster leaves, and target-overlay visibility/interpolation. The seven scenario files group these checks into basic, wall, outside-prey, inside-prey, WebCaster, Rune and target-overlay runs. Retained screenshots were also inspected for model and effect rendering.
+
+Repository checks, 12 policy tests, 327 public tests, the complete 622-test local watcher and final 148-entry ZIP verification passed. The package is 25,518,452 bytes, SHA-256 `ceb5032a3c9fab583574983379fa1287a50e4741c316c2cf16dfedfa9d19cc2d`. Only `mod.json` differs from test.52 inside the ZIP; its gameplay scripts and artwork are unchanged.
+
+The final upstream fetch was recorded at `2026-09-27T08:17:34.779Z`. TypeScript 5.9.3 emitted the upstream tsconfig with `noCheck`, preserving source order; the resulting main script hash is `2fd6e4d15f7c06a2d7799a301071e86ed80dd631e1ccf66e4b7a932c45cae9d9`. This is native runtime acceptance, not an upstream type-check result. All four atlas groups were built from that commit's own assets, outside the source checkout. No game or art files were borrowed from the baseline or historical snapshot.
+
+Local evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-27T08-17-34-794Z-0.92.36-test.53/acceptance.json`, its per-version result files and screenshots, with check logs and the Chinese acceptance record in `.scratch/kd-compatibility/`. Known native audio play/pause interruptions remain in the logs. These controlled Chrome runs do not revalidate the online deployment, Windows executable shell, the user's saves, other Mods or a complete playthrough.
 
 ## Test.52 WebCaster artwork evidence
 

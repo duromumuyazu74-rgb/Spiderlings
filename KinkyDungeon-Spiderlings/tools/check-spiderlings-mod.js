@@ -380,11 +380,13 @@ function loadManifest() {
     }
     if (
         manifest.gamemajor !== 5 ||
-        manifest.gameminor !== 4 ||
-        manifest.gamepatch_min !== 92 ||
-        manifest.gamepatch_max !== 92
+        manifest.gameminor !== -1 ||
+        manifest.gamepatch_min !== -1 ||
+        manifest.gamepatch_max !== -1
     )
-        fail("mod.json must declare the verified KD 5.4.92 web and Windows target.");
+        fail(
+            "mod.json must allow both KD 5.4.92 and GitHub 5.5; exact verified commits are recorded in compatibility evidence.",
+        );
     const expected = [...runtimeAssets, ...runtimeScripts];
     if (JSON.stringify(manifest.fileorder) !== JSON.stringify(expected))
         fail("mod.json fileorder is not the exact atlas-first/direct-fallback allowlist.");

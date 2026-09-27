@@ -30,6 +30,8 @@ The final `Repository checks` job always evaluates the Windows safety and delive
 
 ## Game acceptance records
 
+For runtime delivery, first run `npm run test:compatibility` using the [dual-version setup](DEVELOPMENT.md#dual-version-runtime-acceptance). It fetches the official GitHub `5.5` branch and tests that commit plus fixed KD 5.4.92 with the same final ZIP. Pass its generated `<cache>/runs/<run>/acceptance.json` to the collector's `--evidence` option. The collector does not fetch upstream or perform those gameplay checks itself.
+
 Supply a JSON record for the exact tested ZIP. Paths in `evidence` resolve relative to this JSON file:
 
 ```json

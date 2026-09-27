@@ -4,6 +4,8 @@ Read `KinkyDungeon-Spiderlings/AGENTS.md` before changing the Mod and its docume
 
 For implementation, formatting, commits, PRs or publication, read `CONTRIBUTING.md`. It defines the JavaScript runtime and JavaScript/Python/PowerShell tool language policy, incremental code conventions, single-maintainer PR gates and verification scope. Changes to `main` and `test` go through PRs; no second-person approval is required. Keep formatting cleanup in separate commits.
 
+For runtime delivery, follow its mandatory dual-version acceptance: KD 5.4.92 plus a freshly fetched official GitHub `5.5` commit. Setup and the repeatable command are in `docs/DEVELOPMENT.md#dual-version-runtime-acceptance`.
+
 Markdown-only changes may use descriptive commit/PR titles without Conventional Commit prefixes or Issue boilerplate. Apply this exception to each documentation commit even when it is carried into a mixed PR; code/configuration changes retain the full metadata checks.
 
 `KinkiestDungeon-5.5/` is a read-only local game reference. Never edit, generate files or install dependencies there. Logs and temporary output belong in `.scratch/`. Original artwork reference directories are local inputs, excluded from Git.
