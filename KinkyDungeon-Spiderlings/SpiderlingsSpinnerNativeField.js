@@ -11,6 +11,7 @@
     const state = (map = KDMapData) => map?.[KEY];
     const cellKey = (cell) => `${cell.x},${cell.y}`;
     const result = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
+    let activeMove;
 
     function fieldById(encounter, fieldId) {
         const graph = encounter?.topology;
@@ -549,8 +550,14 @@
         )
             return 0;
         prioritizeActors(map);
+        const from = { x: mover.x, y: mover.y };
         KDMoveEntity(mover, proxy.x, proxy.y, true, undefined, true, true);
-        return 2;
+        if (activeMove?.actor === mover && (mover.x !== from.x || mover.y !== from.y))
+            activeMove.moved = mover.x === proxy.x && mover.y === proxy.y;
+        // KD 5.4.92 and 5.5.0 continue TryMove after a return value of 2 and
+        // recompute the destination from the actor's new position. Stop that
+        // second step here; the wrapper reports the completed, paid move.
+        return 0;
     }
 
     function nativeReachability(compositeId, target) {
@@ -766,6 +773,23 @@
     }
     if (typeof KDPathConditions !== "undefined")
         KDPathConditions[PATH] = { query: canTraverse, doPassthrough: passThrough };
+    if (typeof KinkyDungeonEnemyTryMove === "function")
+        KinkyDungeonEnemyTryMove = api.Hooks.wrap(
+            "Spinner.webTraversal",
+            KinkyDungeonEnemyTryMove,
+            (native) =>
+                function (actor) {
+                    const previous = activeMove,
+                        move = { actor, moved: false };
+                    activeMove = move;
+                    try {
+                        const moved = native.apply(this, arguments);
+                        return move.moved || moved;
+                    } finally {
+                        activeMove = previous;
+                    }
+                },
+        );
 
     api.SpinnerNativeField = {
         KEY,

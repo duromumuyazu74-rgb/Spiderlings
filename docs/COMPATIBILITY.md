@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.50.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
+The current package is `Spiderlings_0.92.36-test.51.zip`. Its `mod.json` declares exactly KD 5.4.92 for the requested web and Windows environments:
 
 ```json
 {
@@ -12,6 +12,14 @@ The current package is `Spiderlings_0.92.36-test.50.zip`. Its `mod.json` declare
 ```
 
 The native Mod manager compares the major/minor fields for equality and uses inclusive patch bounds. It shows a compatibility warning for other versions rather than prohibiting loading. The 5.5.0 evidence below is a historical reference check, not the current manifest target.
+
+## Test.51 web traversal regression evidence
+
+Test.51 fixes an extra movement step after a spider enters an owned web cell. In KD 5.4.92, test.50 moved from `(10,8)` to the web at `(10,7)` and then into the wall at `(10,6)` during one native `KinkyDungeonEnemyTryMove` call, emitting two movement events. Test.51 stops on `(10,7)`, emits one event, spends the same movement credit and rejects the next step into the wall. The final ZIP was loaded through the native Mod manager using read-only local 5.4.92 resources in Chrome. It also passed the previous 40-turn lure-waiting scene and started capture through native melee in the enclosed-prey scene at turn 7.
+
+The regression executes the pinned 5.5.0 movement function with the real Spiderlings field and mobility modules, covering a wall, empty space or another actor behind the web and effect-tile cancellation. Repository checks, 12 policy tests, 324 public tests, the complete 619-test local watcher and final ZIP verification passed.
+
+The package is 25,518,363 bytes, SHA-256 `7f10408f210b64e7101ba0b3af226ddf04a10d32aee95faccd048cc37da79614`. Evidence is retained in the parent workspace at `.scratch/spinner-wall-20260927/`. The wall probe had no page errors; the world-turn capture run retained only the known native audio play/pause messages. This version was not separately rechecked in the online game, the Windows executable shell or the user's save.
 
 ## Test.50 Spinner regression evidence
 

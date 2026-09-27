@@ -242,7 +242,11 @@ test("native pathcondition lets a spider stand on a web while preserving both id
     c.KDMapData.Entities.push(spiderling, bandit);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(spiderling, proxy), true);
     assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(bandit, proxy), false);
-    assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.doPassthrough(spiderling, proxy, c.KDMapData), 2);
+    assert.equal(
+        c.KDPathConditions.SpiderlingsWebTraversal.doPassthrough(spiderling, proxy, c.KDMapData),
+        0,
+        "stop the native continuation after moving onto the web",
+    );
     assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 5, y: 5 });
     assert.deepEqual({ x: proxy.x, y: proxy.y }, { x: 5, y: 5 });
     assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 2);
