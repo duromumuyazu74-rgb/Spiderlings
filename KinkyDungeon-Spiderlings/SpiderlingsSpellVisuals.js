@@ -121,6 +121,27 @@
         impacts.set(`${target.player ? "player" : target.id}:${art}`, { target, art, start: now() });
     }
 
+    function drawCollapse(collapse, clock, id, speed = 1) {
+        outline(square(collapse.x - 2, collapse.y - 2, 5, 5, false));
+        const stage = Math.min(2, Math.max(0, (clock - collapse.startAt) * speed));
+        // The step follows saved turns; only the small silk drift uses render time.
+        const drift = (now() % 800) / 800;
+        const radius = Math.max(0.15, 2 - stage * 0.65 - drift * 0.45);
+        sprite(`collapse_${id}`, "Bullets/SpiderlingsMageRune.png", collapse.x, collapse.y, 1, 0.4 + stage * 0.25);
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            sprite(
+                `silk_${id}_${i}`,
+                `Bullets/WebSprayTrail${pink()}.png`,
+                collapse.x + Math.cos(angle) * radius,
+                collapse.y + Math.sin(angle) * radius,
+                0.7,
+                0.35 + drift * 0.3,
+                angle,
+            );
+        }
+    }
+
     function drawMage() {
         const state = KDMapData.SpiderlingsMageSpells;
         if (state) {
@@ -135,33 +156,7 @@
                     field.activateAt > state.clock ? 0.45 : 0.8,
                 );
             }
-            for (const collapse of state.collapses) {
-                outline(square(collapse.x - 2, collapse.y - 2, 5, 5, false));
-                const stage = Math.min(2, Math.max(0, state.clock - collapse.startAt));
-                // The step follows saved turns; only the small silk drift uses render time.
-                const drift = (now() % 800) / 800;
-                const radius = Math.max(0.15, 2 - stage * 0.65 - drift * 0.45);
-                sprite(
-                    `collapse_${collapse.ownerId}`,
-                    "Bullets/SpiderlingsMageRune.png",
-                    collapse.x,
-                    collapse.y,
-                    1,
-                    0.4 + stage * 0.25,
-                );
-                for (let i = 0; i < 8; i++) {
-                    const angle = (i * Math.PI) / 4;
-                    sprite(
-                        `silk_${collapse.ownerId}_${i}`,
-                        `Bullets/WebSprayTrail${pink()}.png`,
-                        collapse.x + Math.cos(angle) * radius,
-                        collapse.y + Math.sin(angle) * radius,
-                        0.7,
-                        0.35 + drift * 0.3,
-                        angle,
-                    );
-                }
-            }
+            for (const collapse of state.collapses) drawCollapse(collapse, state.clock, collapse.ownerId);
             for (const blast of state.blasts)
                 if (blast.detonateAt > state.clock) {
                     const radius = blast.stacks - 1;
@@ -214,6 +209,9 @@
         frame = data;
         drawing?.clear();
         drawMage();
+        const weapons = api.Weapons?.visualState();
+        for (const collapse of weapons?.collapses || [])
+            drawCollapse(collapse, weapons.clock, `weapon_${collapse.ownerId}`, 2);
         for (const [id, effect] of impacts) {
             const age = (now() - effect.start) / DURATION;
             if (age >= 1) {

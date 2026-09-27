@@ -543,3 +543,11 @@ Native `KDCanSeeEnemy` and positive `KinkyDungeonVisionGet` are both required fo
 KD 5.4.92 and 5.5.3 reuse `KDDraw` sprites. Setting their width preserves the existing scale sign. A body-following Mage layer must synchronize both negative and positive X scale with the freshly drawn body every frame; correcting only negative facing leaves a cached mirror after turning back. Keep the Regular abdomen layer present during both cast glow levels. The native `mage-body` scenario covers repeated facing changes at rest and during Rune/Bolt casts.
 
 Both versions display perk cost using `KDPERKCOSTMULT = 2`. An Enemies perk with `cost: -1` displays -2 and adds two displayed points when selected through `KinkyDungeonStatsChoice`. A recurring per-map perk needs no `KDPerkStart` callback: consult the native choice in the existing one-shot `postMapgen` handler. The `squad-perk` scenario checks native point accounting, opt-in, legacy-setting isolation, six-member composition and no repeated spawn.
+
+## Player Mage weapons (test.56)
+
+- Native player melee copies the weapon definition’s explicit `bind` and `bindType` into `KDDoAttack`; use these for fixed base binding instead of approximating through `bindEff`.
+- A `KinkyDungeonSpellSpecials` handler returning `"Cast"` exits before native mana debit. Successful delayed player casts return undefined to reach native payment and player-cast events. `tryCastSpell` advances the casting action itself; a two-subsequent-action effect therefore resolves at saved clock + 3.
+- `KDDropItems` marks `droppedItems` only after its native eligibility gate. Append the 15% Mage weapon roll only on that transition; wrapping a death event would miss captures and could repeat loot.
+- Native weapon inventory icons use `Items/<weapon.name>.png`. Direct images precede scripts in the manifest. Player Snare keeps its own spell identity while its bullet name reuses the existing Mage Bolt visual path.
+- Weapon binding and delayed attacks remain native player damage. They do not invoke Spiderlings NPC capture/wrapping services. The registered weapon regression suite and dual-version `weapons` scenario cover these contracts.

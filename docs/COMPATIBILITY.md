@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.55.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.56.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.56 Mage weapon drops and dual-version evidence
+
+On 2026-09-27, the final test.56 ZIP passed fourteen native scenarios on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `f330c98e394e1e1a00b0662ae1fb815a6f9cad15`, reporting KD 5.5.3. The fetch at 14:22:04 UTC found no new upstream commit. The new weapons scenario checks native weapon activation, melee input, spell casting, bullet collision, saving/loading, loot pickup and 72×72 inventory textures.
+
+- Cocoon Convergence spends 4 base mana once and consumes a casting action, then resolves after two subsequent actions. Native save/reload preserves the pending circle; moving and switching weapons preserve its position and cooldown. The three rings receive base damage/binding inputs 2/8, 4/16 and 6/24. The corner, wall-protected target, ally and player are excluded.
+- Silken Snare spends 2 base mana, passes an ally and strikes the first hostile target only. The hit enters native binding with no pre-applied slow; slow is applied afterward. A wall blocks the projectile and no ground web is created. Native ManaRegen discounts a first spell, so the cost probe applies its native suspension buff to measure undiscounted costs.
+- Native melee receives explicit base binding 3 and 5. The tome's 15% binding buff uses one ID across main/off hand. A Mage with eligible native loot drops the missing staff exactly once under a forced successful roll, and native pickup adds it to the inventory. Unit regressions cover the strict 15% boundary, ineligible loot and owned-item selection.
+
+Repository checks, 12 policy tests, 339 public tests and the complete 635-test local watcher passed. ZIP verification matched all 151 allowlisted entries to source. The package is 25,530,215 bytes, SHA-256 `4001bd90a18b9bede7f8b037cc2512e40adebe38ea0f2d712d67df8a975621e8`. Both inward-collapse screenshots were inspected.
+
+Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-27T14-22-04-298Z-0.92.36-test.56/acceptance.json` and the weapon worktree's `.scratch/weapon-watcher.log`. KD 5.4.92 retains known native audio play/pause messages and `/Game/Locks/Red.png`; KD 5.5.3 has no page errors or missing resources. These controlled Chrome runs do not cover a full playthrough, the player's saves, other Mods, online deployment or the desktop shell. The agreed numbers are initial balance values, not playtest conclusions.
 
 ## Test.55 player-feedback fixes and dual-version evidence
 
