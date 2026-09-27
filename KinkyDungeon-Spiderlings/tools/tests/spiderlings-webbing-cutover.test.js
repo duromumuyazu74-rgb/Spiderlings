@@ -43,6 +43,7 @@ const scripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsSpellVisuals.js",
 ];
 const assets = [
     "UI/MapMod/SpiderlingsInfestation.png",
@@ -52,6 +53,7 @@ const assets = [
     "Bullets/SpiderlingsMageRuneIcon.png",
     "Bullets/SpiderlingsMageRuneHit.png",
     "Bullets/SpiderlingsMageBoltHit.png",
+    "Bullets/SpiderlingsMageBolt.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",

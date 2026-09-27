@@ -14,6 +14,7 @@ function runtime() {
         mage = { id: 7, hp: 3, Enemy: { name: "MageSpiderlings" } },
         webCaster = { id: 8, hp: 1, Enemy: { name: "WebCaster" } },
         context = {
+            CommonTime: () => context.time || 0,
             KinkyDungeonRootDirectory: "Game/",
             KDMapData: { Entities: [mage, webCaster] },
             KDEventMapGeneric: {},
@@ -38,6 +39,7 @@ function runtime() {
                     scale: { x: id === "spr_7" && mage.flip ? -1 : 1 },
                     zIndex: options?.zIndex || 0,
                     blendMode: options?.blendMode,
+                    alpha: options?.alpha,
                 };
                 map.set(id, sprite);
                 draws.push({ id, image, sprite });
@@ -104,7 +106,7 @@ test("Mage uses the regular rune at rest and transparent cast layers without chr
     assert.deepEqual(draw().at(-1), "Game/Enemies/MageSpiderlingsReallyGlowy.png");
 });
 
-test("failed casts do not light Mage and the cast layers expire after their turn window", () => {
+test("failed casts do not light Mage and cast layers fade without advancing game turns", () => {
     const { context, board, draws, mage } = runtime();
     context.castResult = "Fail";
     context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageRune" }, mage);
@@ -115,13 +117,14 @@ test("failed casts do not light Mage and the cast layers expire after their turn
     context.castResult = "Cast";
     context.KinkyDungeonCastSpell(5, 5, { name: "AnotherMageSpell" }, mage);
     draws.length = 0;
-    context.KDEventMapGeneric.tickAfter.SpiderlingsMageVisuals(null, { delta: 1 });
+    context.time = 120;
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
     assert.equal(draws.length, 3);
     assert.equal(draws[2].image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
+    assert.equal(draws[2].sprite.alpha, 0.5);
 
     draws.length = 0;
-    context.KDEventMapGeneric.tickAfter.SpiderlingsMageVisuals(null, { delta: 1 });
+    context.time = 240;
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
     assert.deepEqual(
         draws.map((entry) => entry.image),

@@ -1,8 +1,10 @@
-# Spiderlings 0.92.36-test.45 维护说明
+# Spiderlings 0.92.36-test.47 维护说明
 
 `KinkyDungeon-Spiderlings/` 是当前开发 Mod 根目录，已移除旧目录名中的版本号。正式版本是 [GitHub Release v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)，本测试版本保留 `0.92.36` 的版本基线。test.13 原生验收覆盖本地只读参考的 KD 5.5.0 和安装版 KD 5.4.92；5.4.92 本轮未覆盖存档恢复，不据此扩大为所有 5.4.x / 5.5.x 版本均已验证。
 
 玩法和数值见 [参数说明](Spiderlings_0.9_Parameter_Guide.md)，正式范围见 [0.92 设计基线](../docs/spiderlings-0.92-game-design.zh-CN.md)，当前 Spinner 场景与验证入口见[运行时说明](../docs/RUNTIME.md)，术语与边界见 [CONTEXT.md](CONTEXT.md)。旧[试玩说明](../docs/spiderlings-spinner-capture/PLAYTEST.zh-CN.md)保留 test.10 的历史记录。
+
+test.46 采用已确认的法术表现方案。Mage 丝弹使用小蜘蛛符印及两道残影，命中保留紫色圆环符文；4×4 诅咒场和 21 格收束术显示完整范围边界与一个中心符印，收束丝束逐回合向内，印记层数随目标显示。单格 rune 触发时补充 3×3 边界，连锁爆发按印记层数显示 1×1／3×3／5×5 预警，命中网只落在受影响目标上。WebCaster 飞行网转向并保留淡地面丝迹，Jumper 保留固定落点预警并增加短残影，Spinner 已完成的建造格短暂变亮。Mage 施法覆盖层及瞬时反馈在 240 ms 内淡出；范围、绑定、伤害和回合结算不变。`SpiderlingsSpellVisuals.js` 只保存未入档的显示状态，切图或读档清空瞬时层，持续范围从原有存档状态重绘。
 
 test.43 采用维护者提供的透明背景 `Spider Rune.png` 和 `Spider Rune Spider Icon.png`，逐字节替换地面符文及放置图标；旧存档原生命中路径使用的 `SpiderlingsMageRuneHit.png` 同步采用透明符文图。保留 72×72 原画布、符文阶段、警示范围和战斗结算，其他法术特效维持现状。
 

@@ -74,18 +74,6 @@ function fixture() {
     };
 }
 
-test("Collapse warning and burst switch between existing Normal and Pink web textures", () => {
-    const r = fixture();
-    r.cast("SpiderlingsMageCollapse");
-    assert.ok(r.draw().every((call) => call[3].endsWith("SpiderWeb.png")));
-    r.pink(true);
-    assert.ok(r.draw().every((call) => call[3].endsWith("SpiderWebPink.png")));
-    r.tick();
-    r.tick();
-    r.tick();
-    assert.ok(r.draw().every((call) => call[3].endsWith("SpiderWebHitPink.png")));
-});
-
 test("Mage chooses each available spell and respects active-field and collapse limits", () => {
     const r = fixture();
     assert.equal(r.c.Spiderlings.MageSpells.choose(r.mage), "SpiderlingsMageHex");
@@ -105,7 +93,7 @@ test("Shield Hex warns twice, covers 4x4 for three turns and extends mark and sh
     const r = fixture();
     assert.equal(r.cast("SpiderlingsMageHex").result, "Cast");
     assert.equal(r.map.Bullets.length, 0, "the native action leaves no extra inert projectile");
-    assert.equal(r.draw().length, 16);
+    assert.equal(r.map.SpiderlingsMageSpells.fields.length, 1);
     r.tick();
     r.tick();
     assert.equal(r.c.Spiderlings.MageSpells.markFor(r.maid), undefined);
@@ -174,8 +162,7 @@ test("fragility adds half of actual shield damage without HP overflow, and an al
     assert.equal(r.calls.npcWeb.length, 0, "the target has a full warning turn");
     r.tick();
     assert.equal(r.calls.npcWeb.length, 3, "three stacks produce three native Slime attempts");
-    const hitArt = r.draw().filter((call) => call[3].includes("SpiderWebHit"));
-    assert.equal(hitArt.length, 25, "three stacks reach the full 5x5 square");
+    assert.equal(r.map.SpiderlingsMageSpells.blasts.at(-1).radius, 2, "three stacks reach the full 5x5 square");
 });
 
 test("player direct Spiderling contact triggers a mark, while trail contact does not", () => {
@@ -218,11 +205,8 @@ test("Collapse uses the 21-cell inward ring and center-to-edge damage and bindin
     r.player.x = 8;
     r.player.y = 7;
     assert.equal(r.cast("SpiderlingsMageCollapse").result, "Cast");
-    assert.equal(r.draw().length, 12, "outer ring has twelve tiles");
     r.tick();
-    assert.equal(r.draw().length, 8, "the warning moves to the inner ring");
     r.tick();
-    assert.equal(r.draw().length, 1, "the third stage marks the center");
     assert.equal(r.calls.npcDamage.length, 0);
     r.tick();
     assert.equal(r.calls.npcDamage[0].damage.damage, 5);
@@ -230,7 +214,6 @@ test("Collapse uses the 21-cell inward ring and center-to-edge damage and bindin
     assert.equal(r.calls.playerDamage[0].damage, 1);
     assert.equal(r.calls.playerDamage[0].type, "arcane");
     assert.equal(r.calls.playerWeb.length, 3);
-    assert.equal(r.draw().length, 21, "the blast excludes four corners");
     assert.equal(r.mage.SpiderlingsCollapseCooldown, 7);
     for (let i = 0; i < 6; i++) r.tick();
     assert.equal(r.c.Spiderlings.MageSpells.choose(r.mage), "SpiderlingsMageHex");

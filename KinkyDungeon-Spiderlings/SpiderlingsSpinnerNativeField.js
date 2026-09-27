@@ -327,7 +327,11 @@
             return { paid: true, applied: false, reason: "range" };
         const applied = topology().applyAction(graph, action, snapshot(cell));
         encounter.topology = applied.state;
-        if (applied.outcome.legal) reconcile();
+        if (applied.outcome.legal) {
+            reconcile();
+            const proxy = KDMapData.Entities.find((enemy) => isOwnedProxy(enemy) && cellKey(enemy) === cellKey(cell));
+            if (proxy) api.SpellVisuals?.built(proxy);
+        }
         return { paid: true, applied: applied.outcome.legal, reason: applied.outcome.reason, effects: applied.effects };
     }
 
@@ -691,7 +695,7 @@
             const size = KinkyDungeonGridSizeDisplay,
                 color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
                 parts = borderArtwork(graph, enemy);
-            for (const [index, art] of parts.entries())
+            for (const [index, art] of parts.entries()) {
                 KDDraw(
                     board,
                     kdpixisprites,
@@ -705,6 +709,22 @@
                     { zIndex },
                     true,
                 );
+                const flash = api.SpellVisuals?.constructionFlash(enemy) || 0;
+                if (flash > 0)
+                    KDDraw(
+                        board,
+                        kdpixisprites,
+                        `spr_${enemy.id}${id}_border_${index}_flash`,
+                        KinkyDungeonRootDirectory + `Bullets/SpiderlingsSpinnerTrap${art.part}${color}.png`,
+                        (tx - CamX + 0.5) * size,
+                        (ty - CamY + 0.5) * size,
+                        size,
+                        size,
+                        art.rotation,
+                        { zIndex: zIndex + 0.001, alpha: flash, blendMode: PIXI.BLEND_MODES.ADD },
+                        true,
+                    );
+            }
             return enemy.Enemy.name;
         };
     }

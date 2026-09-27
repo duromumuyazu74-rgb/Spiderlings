@@ -3,7 +3,7 @@
 (() => {
     const MAGE = "MageSpiderlings";
     const RUNE = "SpiderlingsMageRune";
-    const DISPLAY_TURNS = 2;
+    const DISPLAY_MS = 240;
     const BODY = "Enemies/MageSpiderlings.png";
     const REGULAR = "Enemies/MageSpiderlingsRegular.png";
     const PARTICLES = "Enemies/MageSpiderlingsSpellParticles.png";
@@ -12,6 +12,7 @@
         attack: "Enemies/MageSpiderlingsReallyGlowy.png",
     });
     const active = new WeakMap();
+    const now = () => (typeof CommonTime === "function" ? CommonTime() : Date.now());
     const magePaths = new Set(
         [BODY, REGULAR, PARTICLES, ...Object.values(GLOWS)].map((path) => KinkyDungeonRootDirectory + path),
     );
@@ -32,20 +33,10 @@
         KinkyDungeonCastSpell = function (x, y, spell, caster) {
             const outcome = nativeCast.apply(this, arguments);
             if (outcome?.result === "Cast" && caster?.Enemy?.name === MAGE && caster.hp > 0)
-                active.set(caster, { kind: spell?.name === RUNE ? "rune" : "attack", remaining: DISPLAY_TURNS });
+                active.set(caster, { kind: spell?.name === RUNE ? "rune" : "attack", started: now() });
             return outcome;
         };
     }
-
-    KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsMageVisuals", (_event, data) => {
-        if (!(data?.delta > 0)) return;
-        for (const enemy of KDMapData.Entities) {
-            const visual = active.get(enemy);
-            if (!visual) continue;
-            visual.remaining -= data.delta;
-            if (visual.remaining <= 0) active.delete(enemy);
-        }
-    });
 
     if (typeof KDDrawEnemySprite === "function") {
         const nativeDraw = KDDrawEnemySprite;
@@ -55,7 +46,8 @@
             const base = kdpixisprites.get(`spr_${enemy.id}${id}`);
             if (!base?.texture || base.parent !== board) return spriteName;
             const visual = active.get(enemy);
-            const layers = visual?.remaining > 0 ? [PARTICLES, GLOWS[visual.kind]] : [REGULAR];
+            const fade = visual ? Math.max(0, 1 - (now() - visual.started) / DISPLAY_MS) : 0;
+            const layers = fade > 0 ? [PARTICLES, GLOWS[visual.kind]] : [REGULAR];
 
             for (const [index, path] of layers.entries()) {
                 const layer = KDDraw(
@@ -71,6 +63,7 @@
                     {
                         zIndex: (base.zIndex ?? zIndex) + 0.001 * (index + 1),
                         blendMode: index === 1 ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL,
+                        alpha: path === REGULAR ? 1 : fade,
                     },
                     undefined,
                     undefined,

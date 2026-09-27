@@ -50,6 +50,7 @@ const runtimeScripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsSpellVisuals.js",
 ];
 const atlasAssets = [
     "TextureAtlas/spiderlings-webbing-0.png",
@@ -78,6 +79,7 @@ const runtimeAssets = [
     "Bullets/SpiderlingsMageRuneIcon.png",
     "Bullets/SpiderlingsMageRuneHit.png",
     "Bullets/SpiderlingsMageBoltHit.png",
+    "Bullets/SpiderlingsMageBolt.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
