@@ -101,6 +101,8 @@ Only formal versions receive a `v<modbuild>` tag and GitHub Release. After the a
 
 Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Read the Release and download its attachment again to confirm the filename, size and SHA-256. Test versions remain workflow artifacts from `test`; do not create a test Release.
 
+Prepare the notes file in UTF-8 with `## 简体中文` and `## English` sections, following the [bilingual Release requirements](../CONTRIBUTING.md#formal-promotion-and-releases). Compare the two sections against the delivered changes and verified compatibility evidence. Pass that reviewed file to `--notes-file`, then confirm both language sections are present in the published Release.
+
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
 
 For a manual verification after repository maintenance, run the `Repository checks` workflow on the selected maintained branch. Manual runs compare against their own checked-out commit and still run policy/public tests and package verification. An unchanged root-directory move is exempt from retroactive content formatting/linting; modified files and all path, manifest and delivery checks remain enforced.
