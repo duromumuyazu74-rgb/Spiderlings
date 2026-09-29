@@ -216,6 +216,12 @@
             };
             ensureState().records[String(target.id)] = value;
         }
+        if (value.progress >= ACTIONS) {
+            // The completed wrap is already paid; a cancelled removal only needs retrying.
+            acted.add(source.id);
+            tryExit(target);
+            return result(source);
+        }
         // Construction uses this same native movement credit. Waiting for the
         // threshold still occupies this loop opportunity, so no second action
         // can spend the accrued credit in the same world turn.
