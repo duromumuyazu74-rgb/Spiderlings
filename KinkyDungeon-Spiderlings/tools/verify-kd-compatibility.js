@@ -23,7 +23,7 @@ function outside(parent, child) {
 async function verifyGame(game, packagePath, output) {
     fs.mkdirSync(output, { recursive: true });
     const report = { game, packageSha256: hash(packagePath), checks: [] };
-    let runtime;
+    let runtime, currentCheck;
     try {
         runtime = await createRuntime(game, output);
         const { page } = runtime;
@@ -50,8 +50,20 @@ async function verifyGame(game, packagePath, output) {
             ["web-mobility", "web-mobility.js"],
             ["hunting-grounds", "hunting-grounds.js"],
             ["owned-effects", "owned-effects.js"],
+            ["normal-helpers", "normal-helpers.js"],
+            ["adhesion-offense", "adhesion-offense.js"],
+            ["adhesion-recovery", "adhesion-recovery.js"],
+            ["spinner-work", "spinner-work.js"],
+            ["web-breach", "web-breach.js"],
+            ["wrapping-lifecycle", "wrapping-lifecycle.js"],
+            ["mage-timing", "mage-timing.js"],
+            ["player-recovery", "player-recovery.js"],
+            ["action-cadence", "action-cadence.js"],
+            ["normal-integration", "normal-integration.js"],
+            ["normal-visuals", "normal-visuals.js"],
         ];
         for (const [name, file, scenario] of checks) {
+            currentCheck = name;
             if (scenario)
                 await page.evaluate((value) => {
                     globalThis.spinnerScenario = value;
@@ -86,6 +98,9 @@ async function verifyGame(game, packagePath, output) {
     } catch (error) {
         report.status = "failed";
         report.error = error.stack;
+        report.failedCheck = currentCheck;
+        if (runtime && !runtime.page.isClosed())
+            report.failureTrace = await runtime.page.evaluate(() => globalThis.normalTrace);
         console.error(`${game.version}: ${error.message}`);
     } finally {
         report.errors = runtime?.errors;

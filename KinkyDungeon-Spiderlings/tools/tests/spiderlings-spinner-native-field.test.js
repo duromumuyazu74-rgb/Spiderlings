@@ -224,7 +224,8 @@ test("two supplied Spinners construct one cell per paid action without moving", 
     assert.equal(solids.length, 5);
     assert.equal(proxies.length, 5);
     assert.equal(new Set(proxies.map((proxy) => `${proxy.x},${proxy.y}`)).size, 5);
-    assert.ok(proxies.every((proxy) => proxy.targetedForAttack && proxy.Enemy.immobile === false));
+    assert.ok(proxies.every((proxy) => proxy.flags.targetedForAttack === -1 && proxy.Enemy.immobile === false));
+    assert.ok(proxies.every((proxy) => proxy.Enemy.lowpriority === false));
 });
 
 test("native pathcondition lets a spider stand on a web while preserving both identities", () => {

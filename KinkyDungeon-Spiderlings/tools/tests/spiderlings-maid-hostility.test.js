@@ -134,6 +134,24 @@ function loadRuntime() {
     return { context, nativeHostile, nativeNearest, make };
 }
 
+test("Maidforce can select and damage an owned web without changing unrelated scenery hostility", () => {
+    const { context: kd, make, nativeHostile } = loadRuntime();
+    const maid = make("Maidforce", { x: 4, hostile: 30 });
+    const web = make("SpiderlingsSpinnerTrap", { x: 5, SpiderlingsSpinnerProxy: { fieldId: "current" } });
+    web.Enemy.tags.scenery = true;
+    kd.Spiderlings.SpinnerNativeField = {
+        isOwnedProxy: (entity) => entity?.Enemy?.name === "SpiderlingsSpinnerTrap" && !!entity.SpiderlingsSpinnerProxy,
+    };
+    const spinner = make("Spinner", { x: 8 });
+    kd.KDMapData.Entities = [maid, web, spinner];
+    assert.equal(kd.KDHostile(maid, web), true);
+    assert.equal(kd.KDFactionFavorable("Maidforce", web), false);
+    assert.equal(kd.KinkyDungeonNearestPlayer(maid, true, true, 6), web);
+    delete web.SpiderlingsSpinnerProxy;
+    assert.equal(kd.KDHostile(maid, web), nativeHostile(maid, web));
+    assert.equal(kd.KinkyDungeonNearestPlayer(maid, true, true, 6), spinner);
+});
+
 test("visible Maidforce and Spiderlings prefer each other even with the player closer to both", () => {
     const { context: kd, nativeNearest, make } = loadRuntime();
     kd.KinkyDungeonPlayerEntity.x = 5;

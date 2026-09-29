@@ -378,6 +378,44 @@ test("source loss leaves real equipment slack and requires another successful hi
     assert.deepEqual(Array.from(r.api.sourceIds()), [41]);
 });
 
+test("recovery uses an open breach before the spider's cheaper web-corner route", () => {
+    const r = recoveryRuntime();
+    r.player.x = 6;
+    r.leave();
+    r.hit();
+    const actors = [];
+    r.c.KinkyDungeonFindPath = (
+        _x,
+        _y,
+        x,
+        y,
+        _blockEnemy,
+        _blockPlayer,
+        _ignoreLocks,
+        _tiles,
+        _light,
+        _doors,
+        _memory,
+        actor,
+    ) => {
+        actors.push(actor?.id);
+        return actor
+            ? [
+                  { x: 6, y: 4 },
+                  { x, y },
+              ]
+            : [
+                  { x: 6, y: 5 },
+                  { x, y },
+              ];
+    };
+    r.webCells.add("6,4");
+    r.c.KinkyDungeonCurrentTick = 20;
+    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
+    assert.deepEqual({ x: r.player.x, y: r.player.y }, { x: 6, y: 5 });
+    assert.ok(actors.length > 0 && actors.every((actor) => actor === undefined));
+});
+
 test("the executor pays before pulling once toward the live core or surviving source", () => {
     const r = recoveryRuntime();
     r.player.x = 6;

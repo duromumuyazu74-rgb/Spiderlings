@@ -1557,6 +1557,9 @@
     }
 
     function handleBeforeMove(enemy, target, aiData = {}) {
+        // Native load refreshes run the enemy loop with delta 0. They must not
+        // spend saved credit, move builders or commit another work decision.
+        if (enemy?.SpiderlingsSpinnerRuntimeDelta <= 0) return false;
         const encounter = api.SpinnerNativeField.state(),
             state = encounter?.ai;
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;

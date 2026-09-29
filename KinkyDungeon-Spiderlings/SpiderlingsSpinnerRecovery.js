@@ -362,20 +362,28 @@
     function nativePath(goal, source) {
         if (!goal || typeof KinkyDungeonFindPath !== "function") return undefined;
         if (goal.x === player().x && goal.y === player().y) return [];
-        return KinkyDungeonFindPath(
-            player().x,
-            player().y,
-            goal.x,
-            goal.y,
-            true,
-            false,
-            false,
-            KinkyDungeonMovableTilesEnemy,
-            undefined,
-            undefined,
-            undefined,
-            source,
-        );
+        const route = (actor, taxicab) =>
+            KinkyDungeonFindPath(
+                player().x,
+                player().y,
+                goal.x,
+                goal.y,
+                true,
+                false,
+                false,
+                KinkyDungeonMovableTilesEnemy,
+                undefined,
+                undefined,
+                undefined,
+                actor,
+                undefined,
+                undefined,
+                taxicab,
+            );
+        // Pull the player through an open breach before considering paid web
+        // crossings. Spider movement discounts otherwise prefer a blocked corner
+        // over the open cell; recovery can cross webs only along a cardinal run.
+        return route(undefined, false) || route(source, true);
     }
 
     function destination(recovery) {
