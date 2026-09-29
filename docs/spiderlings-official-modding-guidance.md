@@ -557,6 +557,12 @@ Both versions display perk cost using `KDPERKCOSTMULT = 2`. An Enemies perk with
 - Native weapon inventory icons use `Items/<weapon.name>.png`. Direct images precede scripts in the manifest. Player Snare keeps its own spell identity while its bullet name reuses the existing Mage Bolt visual path.
 - Weapon binding and delayed attacks remain native player damage. They do not invoke Spiderlings NPC capture/wrapping services. The registered weapon regression suite and dual-version `weapons` scenario cover these contracts.
 
+## Native scenery targets and load refreshes (test.60)
+
+KD 5.4.92 and GitHub 5.5.3 read `targetedForAttack` through `KDEnemyHasFlag`; setting an entity property with that name does not admit allied NPC attacks on scenery. Set it with `KinkyDungeonSetEnemyFlag(entity, "targetedForAttack", -1)`. A Mod proxy copied from IceWall also inherits `lowpriority`, which native target selection can reject whenever the player is visible. Override that property only on the owned proxy definition when it must be an ordinary attack target. Pair hostility and projectile faction favorability must agree. The Spinner native-field and Maid hostility regressions enforce these contracts; the dual-version `web-breach` scenario verifies actual autonomous attacks.
+
+`KinkyDungeonLoadGame` performs a zero-time native refresh. Enemy-loop extensions must not replace delta 0 with a positive default before moving or spending construction credit. The Spinner before-move regression and native partial-field reload comparison protect this observed contract.
+
 ## Native NPC equipment and player weapon silk (test.59)
 
 Verified on KD 5.4.92 and GitHub 5.5.3 `12a77c8b`: `KDInputSetNPCRestraint` pays binding as part of manual equipment application. For a spell whose native Slime is already present, follow the native conjured-binding path: preflight `KDCanEquipItemOnNPC`, blockers, `KDGetNPCBindingSlotForItem`, encasing and every required layer, then assign a `conjured: true` item through `KDSetNPCRestraint`. Use its destructive-blocker bypass only after confirming every destination is empty. Reuse `KDGetRestraintBondageStats` and `KDGetExpectedBondageAmount`; the two versions give different binding values, so do not hardcode costs. Native manual removal debits binding once and does not return conjured inventory.
