@@ -12,7 +12,7 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.92 的 Mod，包含幼蛛遭遇、
 
 请使用 Release 附件中的安装包。GitHub 自动生成的 Source code 压缩包包含开发仓库，不能直接作为 Mod 载入。
 
-当前测试包 `0.92.36-test.58` 已在 KD 5.4.92 和官方 GitHub `5.5` 分支提交 `12a77c8b` 上验证，后者版本标记为 5.5.3。每次运行时交付现在都会 fetch 该分支并完成双版本原生验收。test.58 接入两种颜色的七阶段 Spinner 缠腿原画，角色恢复操作后继续播完最后 500 毫秒动画并收起拖尾。test.57 限制法师符文只能由 Mage 施放，并将 Spinner 丝质牵引移出通用拘束选择池，保留正常法术及 Recovery 的精确 ID 装备。test.56 增加两件 Mage 稀有掉落：织缚魔典与缠丝法杖。千丝归茧基础消耗 4 魔力，施法后再过两回合向内收束；缠丝束先绑定首个命中的敌人，再施加减速。每次有效 Mage 战利品结算有 15% 概率掉落尚未持有的一件武器。本测试包保留 test.55 的修复：幼蛛小队改为 −2 点负面 Perk，编队为六只；Mage 巢穴增援在任意楼层按配置权重参与，腹部图案在转向和施法时保持贴合身体。本版包含此前修复。Mod 管理器的 major 5 提示兼容两条版本线，不代表所有 5.x 均已验证。公开 [itch.io 网页游戏](https://ada18980.itch.io/kinky-dungeon)和维护者已安装的 Windows 游戏此前均确认为 5.4.92。详见[已验证环境及覆盖范围](docs/COMPATIBILITY.md)。
+当前测试包 `0.92.36-test.59` 已在 KD 5.4.92 和官方 GitHub `5.5` 分支提交 `12a77c8b` 上验证，后者版本标记为 5.5.3。每次运行时交付现在都会 fetch 该分支并完成双版本原生验收。test.59 增加敌人持续缠丝与魔典四件原生拘束，修复 NPC 两种颜色的腿袋，并修复缠裹完成后重试捕获仍扣行动的问题。开局试玩 Perk 已移除，控制台仍可进入复用测试场地。test.58 接入两种颜色的七阶段 Spinner 缠腿原画，角色恢复操作后继续播完最后 500 毫秒动画并收起拖尾。test.57 限制法师符文只能由 Mage 施放，并将 Spinner 丝质牵引移出通用拘束选择池，保留正常法术及 Recovery 的精确 ID 装备。test.56 增加两件 Mage 稀有掉落：织缚魔典与缠丝法杖。千丝归茧基础消耗 4 魔力，施法后再过两回合向内收束；缠丝束先绑定首个命中的敌人，再施加减速。每次有效 Mage 战利品结算有 15% 概率掉落尚未持有的一件武器。本测试包保留 test.55 的修复：幼蛛小队改为 −2 点负面 Perk，编队为六只；Mage 巢穴增援在任意楼层按配置权重参与，腹部图案在转向和施法时保持贴合身体。本版包含此前修复。Mod 管理器的 major 5 提示兼容两条版本线，不代表所有 5.x 均已验证。公开 [itch.io 网页游戏](https://ada18980.itch.io/kinky-dungeon)和维护者已安装的 Windows 游戏此前均确认为 5.4.92。详见[已验证环境及覆盖范围](docs/COMPATIBILITY.md)。
 
 ## 版本
 
@@ -22,7 +22,7 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.92 的 Mod，包含幼蛛遭遇、
 | [侵扰楼层 PR #83](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/83)          | `0.92.36-test.24` | 修复 Spinner 施工和守巢反击的普通侵扰楼层测试版                                                                                          |
 | [头套与符文 Issue #84](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/84)   | `0.92.36-test.26` | 可关闭幼蛛头套、延迟一回合的 3×3 法师符文，取消法师手臂拘束                                                                              |
 | [敌方蛛网素材 Issue #86](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/86) | `0.92.36-test.29` | Spinner 双配色、四角方向校正、WebCaster v2 效果及蛛网格颜色修复                                                                          |
-| [幼蛛猎场总规格 #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)     | `0.92.36-test.58` | 五巢“幼蛛侵扰”（默认权重 50，任意主派系）与三巢“幼蛛猎场”（默认权重 1000，仅女仆主派系）独立存在；普通幼蛛占领猎场，巡逻捕猎不同阵营 NPC |
+| [幼蛛猎场总规格 #90](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/90)     | `0.92.36-test.59` | 五巢“幼蛛侵扰”（默认权重 50，任意主派系）与三巢“幼蛛猎场”（默认权重 1000，仅女仆主派系）独立存在；普通幼蛛占领猎场，巡逻捕猎不同阵营 NPC |
 
 这个测试包同时包含五巢“幼蛛侵扰”和三巢“幼蛛猎场”。幼蛛猎场由普通幼蛛占领，使用其他楼层同样的幼蛛种类和属性。它们在这一层巡逻、搜索不同阵营的 NPC，包括友方、商人和任务角色；同阵营目标不会互相锁定，实际交战仍受原生视距和视线限制。`nocapture` 等原生不可捕获目标仍不会被缠走。独立开发的巢穴监狱不在此包内，使用自己的 `prison.alpha.N` 版本序列；游戏中一次只启用一个 Spiderlings 包。
 
