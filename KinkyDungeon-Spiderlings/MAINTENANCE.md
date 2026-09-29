@@ -1,4 +1,6 @@
-# Spiderlings 0.92.36-test.59 维护说明
+# Spiderlings 0.92.36-test.60 维护说明
+
+test.60 修复 NPC 不主动破坏 Spinner 蛛网、Recovery 拉回玩家时绕向网角而忽略缺口，以及原生读档零时间刷新多施工一次的问题。普通 test 收尾补齐施工、维修、主动破网、牵引、敌人攻击、法术时序、持续运行和原生楼梯验收；范围与证据见 [普通测试验收](../docs/normal-test-acceptance.md)。
 
 test.59 修复 NPC 腿袋的 Stage7 显示与两色刷新，新增武器丝量账本、持续缠丝及魔典四件原生拘束，并修复 NPC 捕获取消后的重复扣费。试玩开局 Perk 已删除；`Spiderlings.SpinnerField.enter()` 与场地重置／加敌人控件保留，供后续快速测试。
 
