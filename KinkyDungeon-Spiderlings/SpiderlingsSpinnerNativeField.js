@@ -98,6 +98,7 @@
     function reconcile(map = KDMapData) {
         const encounter = state(map);
         if (!encounter?.topology || map !== KDMapData) return { created: 0, removed: 0, reused: 0 };
+        auditPassageTerrain();
         const expected = new Map(),
             owned = map.Entities.filter(isOwnedProxy),
             kept = new Map();
@@ -150,19 +151,27 @@
 
     function mapSnapshot() {
         const floor = [],
+            walls = [],
+            locked = [],
             protectedCells = [];
         for (let y = 0; y < KDMapData.GridHeight; y++)
             for (let x = 0; x < KDMapData.GridWidth; x++) {
                 const cell = { x, y },
                     key = cellKey(cell),
                     tile = KinkyDungeonTilesGet(key);
-                if (KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y))) floor.push(key);
+                const mapTile = KinkyDungeonMapGet(x, y);
+                if (KinkyDungeonMovableTilesEnemy.includes(mapTile) || (mapTile === "D" && !tile?.Lock))
+                    floor.push(key);
+                if (isNativeWall(cell)) walls.push(key);
+                if (tile?.Lock) locked.push(key);
                 if (protectedCell(cell, tile)) protectedCells.push(key);
             }
         return {
             width: KDMapData.GridWidth,
             height: KDMapData.GridHeight,
             floor,
+            walls,
+            locked,
             protected: protectedCells,
             occupied: [
                 ...KDMapData.Entities.filter((entity) => !isOwnedProxy(entity) && !isSpiderling(entity)).map(cellKey),
@@ -174,6 +183,7 @@
 
     function protectedCell(cell, tile = KinkyDungeonTilesGet(cellKey(cell))) {
         return !!(
+            ["D", "d"].includes(KinkyDungeonMapGet(cell.x, cell.y)) ||
             tile?.OL ||
             tile?.OffLimits ||
             tile?.Jail ||
@@ -188,6 +198,35 @@
                 ...(KDMapData.JailPoints || []),
             ].some((candidate) => candidate?.x === cell.x && candidate?.y === cell.y)
         );
+    }
+
+    function isNativeWall(cell) {
+        const tile = KinkyDungeonMapGet(cell.x, cell.y);
+        return (
+            !KinkyDungeonMovableTilesEnemy.includes(tile) &&
+            (typeof KinkyDungeonWallTiles === "string" ? KinkyDungeonWallTiles : "14,6f").includes(tile)
+        );
+    }
+
+    function auditPassageTerrain() {
+        const graph = state()?.topology;
+        if (!graph) return;
+        let changed = false;
+        for (const field of Object.values(graph.fields || {}))
+            if (field.kind === "passage" && !field.retired) {
+                const valid =
+                    field.nativeWallCells.every(isNativeWall) &&
+                    [...field.interiorCells, ...field.gates.flatMap((gate) => gate.cells)].every(
+                        (cell) =>
+                            KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y)) &&
+                            !protectedCell(cell),
+                    );
+                if (field.nativeTerrainValid !== valid) {
+                    field.nativeTerrainValid = valid;
+                    changed = true;
+                }
+            }
+        if (changed) topology().refresh(graph);
     }
 
     function initializeEnclosure(input) {
@@ -246,6 +285,24 @@
         return { added: true, compositeId: input.compositeId };
     }
 
+    function addPassage(input) {
+        const encounter = ensureMap(input),
+            owners = input.owners.map((owner) => (typeof owner === "object" ? owner.id : owner)),
+            added = topology().addPassage(encounter.topology, { ...input, owners, map: input.map || mapSnapshot() });
+        if (!added.added) return { added: false, reason: added.reason };
+        encounter.topology = added.state;
+        reconcile();
+        return { added: true, compositeId: input.compositeId, fieldId: input.fieldId };
+    }
+
+    function setPassageOpenGates(fieldId, gateIds) {
+        const encounter = state();
+        if (!encounter?.topology) return { changed: false, reason: "inactive" };
+        const changed = topology().setPassageOpenGates(encounter.topology, fieldId, gateIds);
+        if (changed.changed) encounter.topology = changed.state;
+        return { changed: changed.changed, reason: changed.reason };
+    }
+
     function addEnclosureLayer(input) {
         const encounter = state();
         if (!encounter?.topology) return { added: false, reason: "inactive" };
@@ -287,6 +344,7 @@
             cell: { x: cell.x, y: cell.y },
             inBounds: cell.x > 0 && cell.y > 0 && cell.x < KDMapData.GridWidth - 1 && cell.y < KDMapData.GridHeight - 1,
             floor: KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y)),
+            wall: isNativeWall(cell),
             protected: protectedCell(cell, tile),
             locked: !!tile?.Lock,
             occupied: occupants.some((entity) => !isSpiderling(entity)) || player,
@@ -314,6 +372,7 @@
     }
 
     function applyPaidAction(actor, action) {
+        auditPassageTerrain();
         const encounter = state(),
             graph = encounter?.topology,
             field = fieldById(encounter, action.fieldId) || graph;
@@ -510,6 +569,7 @@
     function tick(delta) {
         const encounter = state();
         if (!encounter?.topology || !(delta > 0)) return;
+        auditPassageTerrain();
         const settled = topology().tickOwnerless(encounter.topology, {
             activeOwnerIds: activeOwnerIds(encounter.topology),
             delta,
@@ -575,6 +635,7 @@
     }
 
     function captureGeometryReady(target) {
+        auditPassageTerrain();
         const composite = containingComposite(target),
             encounter = state();
         return !!composite && topology().captureGeometryReady(encounter.topology, composite.id, target);
@@ -646,6 +707,21 @@
         const parts = new Map();
         const add = (part, rotation) => parts.set(`${part}:${rotation}`, { part, rotation });
         for (const field of [...Object.values(graph.fields || {}), ...Object.values(graph.lineFields || {})]) {
+            if (field.kind === "passage") {
+                const gate = field.gates.find((candidate) =>
+                    candidate.cells.some((position) => cellKey(position) === cellKey(cell)),
+                );
+                if (gate) {
+                    const horizontal =
+                        gate.cells.length > 1
+                            ? gate.cells.every((position) => position.y === gate.cells[0].y)
+                            : field.interiorCells.some(
+                                  (position) => position.x === cell.x && Math.abs(position.y - cell.y) === 1,
+                              );
+                    add(horizontal ? "Top" : "Side", 0);
+                }
+                continue;
+            }
             const area = field.vertices.reduce((sum, vertex, index, vertices) => {
                 const next = vertices[(index + 1) % vertices.length];
                 return sum + vertex.x * next.y - next.x * vertex.y;
@@ -688,6 +764,45 @@
         }
         return [...parts.values()];
     }
+
+    // Prepared silk at an open passage is a visual cue only, never an entity or obstruction.
+    KDAddEvent(KDEventMapGeneric, "draw", "SpiderlingsSpinnerNativeFieldOpenGates", (_event, frame) => {
+        const graph = state()?.topology;
+        if (!graph || graph.collapsed || !frame || typeof KDDraw !== "function") return;
+        const size = KinkyDungeonGridSizeDisplay,
+            color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
+            pans = typeof StandalonePatched !== "undefined" && StandalonePatched,
+            camX = frame.CamX + (pans ? 0 : frame.CamX_offset || 0),
+            camY = frame.CamY + (pans ? 0 : frame.CamY_offset || 0);
+        for (const field of Object.values(graph.fields || {})) {
+            if (field.kind !== "passage" || field.retired || field.nativeTerrainValid === false) continue;
+            for (const gate of field.gates) {
+                const link = graph.links.find((candidate) => candidate.id === gate.linkId);
+                if (!link?.prepared || link.hp <= 0 || link.collapsed || link.builtCells.length) continue;
+                for (const cell of gate.cells) {
+                    if (typeof KinkyDungeonVisionGet === "function" && KinkyDungeonVisionGet(cell.x, cell.y) <= 0)
+                        continue;
+                    const art = borderArtwork({ fields: { [field.id]: field } }, cell)[0];
+                    KDDraw(
+                        kdgameboard,
+                        kdpixisprites,
+                        `SpiderlingsSpinnerOpenGate_${field.id}_${gate.id}_${cellKey(cell)}`,
+                        KinkyDungeonRootDirectory + `Bullets/SpiderlingsSpinnerTrap${art.part}${color}.png`,
+                        (cell.x - camX + 0.5) * size,
+                        (cell.y - camY + 0.5) * size,
+                        size,
+                        size,
+                        art.rotation,
+                        { zIndex: -0.05, alpha: 0.28 },
+                        true,
+                        undefined,
+                        undefined,
+                        true,
+                    );
+                }
+            }
+        }
+    });
 
     if (typeof KDDrawEnemySprite === "function") {
         const nativeDraw = KDDrawEnemySprite;
@@ -804,6 +919,9 @@
         ensureMap,
         addLine,
         addEnclosure,
+        addPassage,
+        setPassageOpenGates,
+        auditPassageTerrain,
         addEnclosureLayer,
         retireField,
         setOwners,

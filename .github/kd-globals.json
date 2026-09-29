@@ -282,5 +282,6 @@
   "KinkyDungeonMove",
   "KinkyDungeonHandleStairs",
   "KDDamageQueue",
-  "KinkyDungeonFloaters"
+  "KinkyDungeonFloaters",
+  "KinkyDungeonWallTiles"
 ]

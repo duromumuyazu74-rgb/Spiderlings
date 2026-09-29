@@ -68,7 +68,7 @@
             decisions[group.id] = {
                 groupId: group.id,
                 planId: plan.id,
-                kind: plan.kind === "enclosure" ? "enclosure" : "line-fallback",
+                kind: ["enclosure", "passage"].includes(plan.kind) ? plan.kind : "line-fallback",
                 ...(plan.center ? { core: { x: plan.center.x, y: plan.center.y } } : {}),
                 vertices: plan.anchors?.map((cell) => ({ x: cell.x, y: cell.y })) || [],
             };
