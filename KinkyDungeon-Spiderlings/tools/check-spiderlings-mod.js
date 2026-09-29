@@ -58,6 +58,10 @@ const atlasAssets = [
     "TextureAtlas/spiderlings-webbing-0.json",
     "TextureAtlas/spiderlings-webbing-pink-0.png",
     "TextureAtlas/spiderlings-webbing-pink-0.json",
+    "TextureAtlas/spiderlings-spinner-0.png",
+    "TextureAtlas/spiderlings-spinner-0.json",
+    "TextureAtlas/spiderlings-spinner-pink-0.png",
+    "TextureAtlas/spiderlings-spinner-pink-0.json",
 ];
 const displacementAssets = [
     "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
@@ -162,10 +166,22 @@ const runtimeAssets = [
     "Models/SpiderlingsWebbingLv3Pink/Hood.png",
     "Models/SpiderlingsWebbingCocoonPink/Cocoon.png",
     "Models/SpiderlingsWebbingCocoonPink/OuterWebs.png",
-    "Models/SpiderlingsSpinnerLegbinder/Band.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage1.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage2.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage3.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage4.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage5.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage6.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage7.png",
     "Models/SpiderlingsSpinnerLegbinder/Tail.png",
-    "Models/SpiderlingsSpinnerLegbinder/Finished.png",
-    "Models/SpiderlingsSpinnerLegbinder/Closure.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage1.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage2.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage3.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage4.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage5.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage6.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage7.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Tail.png",
     ...displacementAssets,
     ...atlasAssets,
     ...soundAssets,
@@ -453,15 +469,21 @@ function checkOfficialSkirtBoundary() {
     } else pass("KD 5.5 places OverSkirt, SkirtOver, and Skirt above the Lv1 Legs WrappingLegsOver boundary.");
 }
 
-function checkTextureAtlas(pink = false) {
+function checkTextureAtlas(pink = false, spinner = false) {
+    const offset = spinner ? 4 : 0;
+    const size = spinner ? 2048 : 4096;
     const initialErrorCount = errors.length;
-    const atlasJsonPath = atlasAssets[pink ? 3 : 1];
-    const atlasPngPath = atlasAssets[pink ? 2 : 0];
+    const atlasJsonPath = atlasAssets[offset + (pink ? 3 : 1)];
+    const atlasPngPath = atlasAssets[offset + (pink ? 2 : 0)];
     const builderPath = "tools/build-spiderlings-atlas.py";
-    const expectedFrames = [...families, ...lv2Families, ...lv3Families]
-        .map((entry) => entry.path)
-        .concat(cocoon.path, "Models/SpiderlingsWebbingCocoon/OuterWebs.png")
-        .map((path) => (pink ? path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/") : path));
+    const expectedFrames = spinner
+        ? ["Stage1", "Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7", "Tail"].map(
+              (name) => `Models/SpiderlingsSpinnerLegbinder${pink ? "Pink" : ""}/${name}.png`,
+          )
+        : [...families, ...lv2Families, ...lv3Families]
+              .map((entry) => entry.path)
+              .concat(cocoon.path, "Models/SpiderlingsWebbingCocoon/OuterWebs.png")
+              .map((path) => (pink ? path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/") : path));
     let atlas;
     try {
         atlas = JSON.parse(readModText(atlasJsonPath));
@@ -473,7 +495,7 @@ function checkTextureAtlas(pink = false) {
     if (!exists(atlasPngPath)) fail(`${atlasPngPath} is missing.`);
     const frameNames = Object.keys(atlas.frames || {});
     if (JSON.stringify(frameNames) !== JSON.stringify(expectedFrames))
-        fail(`${atlasJsonPath} does not contain the exact twenty-five Webbing frame aliases.`);
+        fail(`${atlasJsonPath} does not contain the exact ${expectedFrames.length} frame aliases.`);
     if (
         !atlas.meta ||
         atlas.meta.image !== path.basename(atlasPngPath) ||
@@ -481,10 +503,10 @@ function checkTextureAtlas(pink = false) {
         atlas.meta.scale !== "1" ||
         atlas.meta.related_multi_packs !== undefined ||
         !atlas.meta.size ||
-        atlas.meta.size.w !== 4096 ||
-        atlas.meta.size.h !== 4096
+        atlas.meta.size.w !== size ||
+        atlas.meta.size.h !== size
     ) {
-        fail(`${atlasJsonPath} metadata is not the exact single-page 4096 contract.`);
+        fail(`${atlasJsonPath} metadata is not the exact single-page ${size} contract.`);
     }
 
     const rectangles = [];
@@ -521,8 +543,8 @@ function checkTextureAtlas(pink = false) {
             sprite.y < 0 ||
             sprite.w !== frame.w ||
             sprite.h !== frame.h ||
-            frame.x + frame.w > 4096 ||
-            frame.y + frame.h > 4096 ||
+            frame.x + frame.w > size ||
+            frame.y + frame.h > size ||
             sprite.x + sprite.w > source.w ||
             sprite.y + sprite.h > source.h
         ) {
@@ -561,7 +583,7 @@ function checkTextureAtlas(pink = false) {
 
     if (errors.length === initialErrorCount) {
         pass(
-            `${pink ? "pink" : "original"} Webbing atlas exposes twenty-five Lv1/Lv2/Lv3/Cocoon aliases; PNG payloads were not inspected by the checker.`,
+            `${pink ? "pink" : "original"} ${spinner ? "Spinner" : "Webbing"} atlas exposes ${expectedFrames.length} aliases; PNG payloads were not inspected by the checker.`,
         );
     }
 }
@@ -1879,6 +1901,8 @@ function main() {
     checkOfficialSkirtBoundary();
     checkTextureAtlas();
     checkTextureAtlas(true);
+    checkTextureAtlas(false, true);
+    checkTextureAtlas(true, true);
     checkSyntax();
     const state = loadRuntime();
     checkRuntime(state);

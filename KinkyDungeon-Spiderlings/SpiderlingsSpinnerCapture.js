@@ -203,7 +203,8 @@
         driver,
         inputContext;
     let tween = { from: 0, to: 0, start: 0 },
-        lastAnimationFrame = 0;
+        lastAnimationFrame = 0,
+        finishingItemId;
     const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
     function visualProgress() {
         const t = Math.min(1, Math.max(0, (now() - tween.start) / 500));
@@ -325,6 +326,7 @@
     }
     function clearTemporary(reason, announce = true) {
         const s = state();
+        if (reason !== "complete") finishingItemId = undefined;
         delete KDGameData[STATE];
         pendingPull = undefined;
         turnState = undefined;
@@ -505,8 +507,10 @@
         if (!deposited)
             bag.data.wrapProgress = Math.min(1, Math.round((progress(bag) + 1 / CONFIG.wrapTurns) * 1000) / 1000);
         animate(bag.data.wrapProgress);
-        if (bag.data.wrapProgress >= 1) clearTemporary("complete");
-        else refresh();
+        if (bag.data.wrapProgress >= 1) {
+            finishingItemId = bag.id;
+            clearTemporary("complete");
+        } else refresh();
     }
     function finishTurn(delta) {
         for (const e of entities()) if (e[REWARD] > 0) e[REWARD] = Math.max(0, e[REWARD] - 1);
@@ -576,6 +580,7 @@
             acted = new Set();
             inputContext = undefined;
             automatic = false;
+            finishingItemId = undefined;
             tween = { from: 0, to: 0, start: now() };
             lastAnimationFrame = 0;
             clearLines();
@@ -852,11 +857,15 @@
             return;
         }
         const s = state();
-        const saved = progress(s?.itemId === undefined ? item() : item(s.itemId));
-        const amount = s?.phase === "wrap" && tween.to === saved ? visualProgress() : saved;
+        const bag = s?.itemId === undefined ? item() : item(s.itemId);
+        const saved = progress(bag);
+        // Equipment/control commit on the paid turn; its last visual tween outlives temporary capture state.
+        const finishing = bag?.id === finishingItemId && saved === 1 && visualProgress() < 1;
+        const wrapping = s?.phase === "wrap";
+        const amount = (wrapping || finishing) && tween.to === saved ? visualProgress() : saved;
         api.SpinnerArt?.render(c, {
             amount,
-            active: !!s,
+            active: wrapping || finishing,
             contest: s?.phase === "contest",
             pink: api.getSetting?.("spiderlingsPinkWebbing") === true,
             scale: c.Zoom * MODEL_SCALE,

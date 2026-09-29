@@ -39,9 +39,44 @@ const atlasFiles = [
     "TextureAtlas/spiderlings-webbing-0.json",
     "TextureAtlas/spiderlings-webbing-pink-0.png",
     "TextureAtlas/spiderlings-webbing-pink-0.json",
+    "TextureAtlas/spiderlings-spinner-0.png",
+    "TextureAtlas/spiderlings-spinner-0.json",
+    "TextureAtlas/spiderlings-spinner-pink-0.png",
+    "TextureAtlas/spiderlings-spinner-pink-0.json",
 ];
 
 const pinkFrames = expectedFrames.map((path) => path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/"));
+
+test("Spinner sheets restore all sixteen full-canvas sources without changing their visible RGBA pixels", () => {
+    const script = `
+import json
+import sys
+from pathlib import Path
+from PIL import Image
+root = Path(sys.argv[1])
+for color, suffix in [("", ""), ("-pink", "Pink")]:
+    atlas = json.loads((root / f"TextureAtlas/spiderlings-spinner{color}-0.json").read_text())
+    names = [f"Models/SpiderlingsSpinnerLegbinder{suffix}/{part}.png"
+             for part in ["Stage1", "Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7", "Tail"]]
+    assert list(atlas["frames"]) == names
+    with Image.open(root / f"TextureAtlas/spiderlings-spinner{color}-0.png") as sheet:
+        assert sheet.size == (2048, 2048)
+        sheet = sheet.convert("RGBA")
+        for name, entry in atlas["frames"].items():
+            assert entry["rotated"] is False
+            assert entry["sourceSize"] == {"w": 2480, "h": 3508}
+            frame, offset = entry["frame"], entry["spriteSourceSize"]
+            assert frame["w"] == offset["w"] and frame["h"] == offset["h"]
+            with Image.open(root / name) as source:
+                assert source.size == (2480, 3508) and source.mode == "RGBA"
+                bounds = source.getchannel("A").getbbox()
+                assert bounds == (offset["x"], offset["y"], offset["x"] + offset["w"], offset["y"] + offset["h"])
+                packed = sheet.crop((frame["x"], frame["y"], frame["x"] + frame["w"], frame["y"] + frame["h"]))
+                assert packed.tobytes() == source.crop(bounds).tobytes(), name
+`;
+    execFileSync("python", ["-B", "-c", script, modRoot], { encoding: "utf8" });
+});
+
 for (const [atlasName, frames] of [
     ["spiderlings-webbing-0", expectedFrames],
     ["spiderlings-webbing-pink-0", pinkFrames],
