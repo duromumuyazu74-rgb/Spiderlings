@@ -251,6 +251,7 @@ test("Collapse uses the 21-cell inward ring and center-to-edge damage and bindin
     assert.equal(r.calls.playerDamage[0].damage, 1);
     assert.equal(r.calls.playerDamage[0].type, "arcane");
     assert.equal(r.calls.playerWeb.length, 3);
+    assert.ok(r.calls.playerWeb.every(([profile, source]) => profile === "MageSpiderlings" && source === r.mage));
     assert.equal(r.mage.SpiderlingsCollapseCooldown, 7);
     for (let i = 0; i < 6; i++) r.tick();
     assert.equal(r.c.Spiderlings.MageSpells.choose(r.mage), "SpiderlingsMageHex");

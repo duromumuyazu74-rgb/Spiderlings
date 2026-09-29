@@ -236,7 +236,7 @@ test("saved delayed rune survives caster death, player receives normal Webbing, 
     r.player.x += 1;
     r.tick();
     assert.equal(r.calls.binds.length, 1);
-    assert.equal(r.calls.binds[0][0], "WebCaster");
+    assert.equal(r.calls.binds[0][0], "MageSpiderlings");
     assert.equal(r.map.Bullets.length, 0);
     r.cast();
     const dispelled = r.map.Bullets[0];

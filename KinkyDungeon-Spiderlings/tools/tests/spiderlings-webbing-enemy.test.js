@@ -254,9 +254,85 @@ test("enemy profiles preserve canonical family weights and exclude Tunneler/Nest
         Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     });
     assert.equal(profiles.Tunneler, undefined);
     assert.equal(profiles.NestEntrance, undefined);
+});
+
+function mageBoltHit(runtime) {
+    const context = runtime.context;
+    const mage = { id: 48, hp: 3, Enemy: { name: "MageSpiderlings" } };
+    const spell = context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "SpiderlingsMageBolt");
+    const nativeResult = { effect: true };
+    let damageCalls = 0;
+    context.KDPlayerEffects.Damage = () => {
+        damageCalls++;
+        return nativeResult;
+    };
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsMage.js"), "utf8"), context);
+    return {
+        mage,
+        nativeResult,
+        damageCalls: () => damageCalls,
+        hit: () =>
+            context.KDPlayerEffects.Damage(
+                context.KinkyDungeonPlayerEntity,
+                spell.damage,
+                spell.playerEffect,
+                spell,
+                "Enemy",
+                { bullet: { source: mage.id, spell } },
+                mage,
+            ),
+    };
+}
+
+test("Mage bolts select exactly one normal Webbing item using equipment from each hit", () => {
+    const runtime = loadRuntime();
+    const bolt = mageBoltHit(runtime);
+    for (let stage = 1; stage <= 3; stage++) {
+        assert.equal(bolt.hit(), bolt.nativeResult);
+        assert.equal(runtime.addCalls.length, stage);
+        assert.equal(runtime.addCalls.at(-1)[0].name, id(stage, "Arm"));
+        assert.equal(runtime.addCalls.at(-1)[13], bolt.mage);
+    }
+    assert.equal(bolt.damageCalls(), 3);
+    assert.equal(bolt.mage.hp, 3, "casting a bolt never consumes the Mage");
+});
+
+test("Mage bolt selection honors live blockers and does not retry native add failures", () => {
+    const runtime = loadRuntime({
+        blockers: (restraint) => (restraint.Group === "ItemArms" ? [{ name: "OtherArmbinder" }] : []),
+    });
+    const bolt = mageBoltHit(runtime);
+    assert.equal(bolt.hit(), bolt.nativeResult);
+    assert.equal(runtime.addCalls[0][0].name, id(1, "MittenLeft"));
+    runtime.state.addResult = 0;
+    assert.equal(bolt.hit(), bolt.nativeResult);
+    assert.equal(runtime.addCalls.length, 2, "one failed add does not reroll");
+    assert.equal(runtime.addCalls[1][0].name, id(1, "MittenRight"));
+    runtime.state.canAdd = false;
+    assert.equal(bolt.hit(), bolt.nativeResult, "native damage remains successful with no eligible restraint");
+    assert.equal(runtime.addCalls.length, 2);
+    assert.equal(bolt.damageCalls(), 3);
+});
+
+test("Mage bolts repair an existing Cocoon without WebCaster anchoring", () => {
+    const runtime = loadRuntime();
+    const bolt = mageBoltHit(runtime);
+    const cocoon = {
+        name: "SpiderlingsWebbingCocoon",
+        group: "ItemDevices",
+        cutProgress: 0.2,
+        data: { SpiderlingsCocoonOuterWebs: { anchored: false, reinforcementPending: true, attemptAges: [0, 1, 2] } },
+    };
+    runtime.equipment.set("ItemDevices", cocoon);
+    assert.equal(bolt.hit(), bolt.nativeResult);
+    assert.equal(cocoon.cutProgress, 0.1);
+    assert.equal(cocoon.data.SpiderlingsCocoonOuterWebs.anchored, false);
+    assert.equal(cocoon.data.SpiderlingsCocoonOuterWebs.reinforcementPending, true);
+    assert.equal(runtime.addCalls.length, 0);
 });
 
 test("Spinner player bindings stop at the three lower families and never create Cocoon", () => {

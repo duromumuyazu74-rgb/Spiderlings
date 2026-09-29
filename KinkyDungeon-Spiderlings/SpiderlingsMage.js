@@ -4,6 +4,20 @@
     const ENEMY = "MageSpiderlings";
     const SPELL = "SpiderlingsMageBolt";
 
+    if (typeof KDPlayerEffects !== "undefined" && typeof KDPlayerEffects.Damage === "function") {
+        const nativeDamage = KDPlayerEffects.Damage;
+        KDPlayerEffects.Damage = function (target, _damage, _effect, spell, faction, bullet, entity) {
+            const result = nativeDamage.apply(this, arguments);
+            // Native Damage delegates shield and already-hit rejection to KinkyDungeonDealDamage.
+            if (spell?.name === SPELL && target?.player && result?.effect) {
+                const source = entity?.Enemy?.name === ENEMY ? entity : mageShot(bullet);
+                const outcome = globalThis.Spiderlings?.Webbing?.applyEnemyProgression(ENEMY, source, faction);
+                if (outcome?.progressed) globalThis.Spiderlings?.SpellVisuals?.hit(target);
+            }
+            return result;
+        };
+    }
+
     function mageShot(bullet) {
         if (bullet?.bullet?.spell?.name !== SPELL) return;
         const id = bullet.bullet.source ?? bullet.bullet.spell?.source;

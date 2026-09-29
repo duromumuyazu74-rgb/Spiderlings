@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.64.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.65.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -26,6 +26,14 @@ Runtime acceptance exposed and verifies fixes for workers blocking each other in
 Repository checks, 12 policy tests, 399 public tests and the complete 697-test local watcher passed. The package checker reports zero errors, warnings or notes. Both final native reports contain 32 passing checks. Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-29T15-29-50-035Z-0.92.36-test.64/acceptance.json`; final HUD click evidence is in `.scratch/spinner-chokepoint-delivery-20260929/2026-09-29T15-30-14-460Z-hud-baseline/` and `2026-09-29T15-30-14-475Z-hud-github/`. Prepared, closed and breached Normal/Pink artwork and the final HUD screenshots were visually inspected.
 
 KD 5.4.92 records its known native audio play/pause interruptions and two native `Locks/Red.png` requests, with no missing Mod asset. KD 5.5.3 records no page errors, unhandled rejections or missing resources. These controlled browser scenarios do not cover every generated map, user save or interaction with other Mods. The independent prison experiment remains excluded. [Passage algorithms](spinner-passage-algorithms.md) records primary sources, cache limits and paired coordination measurements against test.60, including preprocessing; those measurements do not represent whole-game frame time.
+
+## Test.61 Mage spell feedback and silk-bolt binding
+
+On 2026-09-29, `Spiderlings_0.92.36-test.61.zip` passed all 31 native checks on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`, reporting 5.5.3. The fetch completed at `2026-09-29T14:38:25.786Z`. The package contains 168 allowlisted entries, is 24,788,628 bytes, and has SHA-256 `13408475e89160b7e2466346afdf69154844c6be0580e24df697764641a38206`.
+
+The extended `mage-timing` scenario launches real Mage silk bolts through native movement and collision in both web colors. A hit applies exactly one ordinary Lv1 Webbing item and native damage; a shot passing the player applies neither. The equipped item survives native save/reload. Existing Hex and Collapse timing, escape, caster loss and cooldown checks remain. Captured images show gold warning areas and countdowns, purple/pink active fields, nested Collapse intensity and the resolved burst. Screenshots from both versions were inspected.
+
+Repository checks, 12 policy tests, 361 public tests and all 660 local tests passed. The final ZIP checker reports zero errors, warnings or notes. Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-29T14-38-25-801Z-0.92.36-test.61/acceptance.json`; local check logs are in `.scratch/mage-spell-feedback-20260929/.scratch/`. KD 5.4.92 retains the known native audio interruptions and two missing native `Locks/Red.png` requests; no Spiderlings assets are missing. KD 5.5.3 reports no page errors, unhandled rejections or missing resources. These are isolated Chrome game runs, without the desktop shell, user saves or other Mods.
 
 ## Test.60 completed normal-test acceptance
 

@@ -368,7 +368,7 @@ function resolve(runtime, state, action, catalog) {
     return runtime.context.Spiderlings.Webbing.resolveWebbingAction(request);
 }
 
-test("fresh manifest VM exposes active restraints and a damage-only Mage bolt", async () => {
+test("fresh manifest VM exposes active restraints and a Mage bolt with native Damage", async () => {
     const runtime = freshNewSaveRuntime();
     const restraintIds = runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort();
     const modelIds = runtime.models.map((entry) => entry.Name).sort();
@@ -507,6 +507,7 @@ test("new-save resolver keeps profiles, no-op, WebSpray provenance, cap, and tim
         Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     });
     assert.equal(api.ENEMY_PROFILES.Tunneler, undefined);
     assert.equal(api.ENEMY_PROFILES.NestEntrance, undefined);

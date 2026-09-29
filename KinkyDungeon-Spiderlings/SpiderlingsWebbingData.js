@@ -110,6 +110,7 @@
         Spinner: Object.freeze([0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0]),
         Jumper: Object.freeze([1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1]),
         WebCaster: Object.freeze([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]),
+        MageSpiderlings: Object.freeze([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]),
     });
     const FAMILY_GROUPS = Object.freeze({
         Arm: "ItemArms",

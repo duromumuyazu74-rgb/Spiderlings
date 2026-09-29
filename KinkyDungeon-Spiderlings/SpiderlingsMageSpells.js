@@ -182,7 +182,7 @@
 
     function bindPlayer(source, attempts) {
         for (let i = 0; i < attempts; i++) {
-            const result = api.Webbing?.applyEnemyProgression("WebCaster", source, KDGetFaction(source));
+            const result = api.Webbing?.applyEnemyProgression("MageSpiderlings", source, KDGetFaction(source));
             if (result?.progressed) api.SpellVisuals?.hit(KinkyDungeonPlayerEntity);
         }
     }

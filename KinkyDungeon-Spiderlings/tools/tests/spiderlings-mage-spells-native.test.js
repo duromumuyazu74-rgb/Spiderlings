@@ -100,3 +100,87 @@ test("KD 5.5 arcane player damage uses full Will loss while glue uses half", () 
     assert.match(source, /if \(data\.willTypesStrong\.includes\(data\.type\)\) \{\s*let amt = -data\.dmg;/);
     assert.match(source, /if \(data\.willTypesWeak\.includes\(data\.type\)\) \{\s*let amt = -data\.dmg\/2;/);
 });
+
+test("KD native bolt collision and Damage gate one Mage progression on accepted damage", () => {
+    const fight = readNative("fight/KinkyDungeonFight.ts");
+    const effects = readNative("magic/KinkyDungeonPlayerEffects.ts");
+    const stats = readNative("player/KinkyDungeonStats.ts");
+    const damageStart = effects.indexOf('"Damage":');
+    const damageEnd = effects.indexOf("LeashBolt:", damageStart);
+    assert.ok(damageStart >= 0 && damageEnd > damageStart);
+    const mage = { id: 9, hp: 3, Enemy: { name: "MageSpiderlings" }, faction: "Enemy" };
+    const player = { player: true, id: 1, x: 5, y: 5 };
+    const binds = [];
+    const damageCalls = [];
+    let dealt = 0.5;
+    const context = {
+        Spiderlings: { Webbing: { applyEnemyProgression: (...args) => binds.push(args) } },
+        KDMapData: { Entities: [mage] },
+        KinkyDungeonPlayerEntity: player,
+        KinkyDungeonFindID: (id) => (mage.id === id ? mage : undefined),
+        KDBulletID: (bullet, entity) => `${bullet.id}:${entity.id}`,
+        KDUniqueBulletHits: new Map(),
+        KDFactionFavorable: (faction) => faction === "Player",
+        KDFactionHostile: (faction) => faction !== "Player",
+        KDPlayerHitBy: [],
+        KinkyDungeonRootDirectory: "",
+        KinkyDungeonPlaySound: () => {},
+        KinkyDungeonInterruptSleep: () => {},
+        KinkyDungeonSendTextMessage: () => {},
+        TextGet: () => ({ KDReplaceOrAddDmg: () => "damage" }),
+        KDBaseRed: "red",
+        KinkyDungeonDealDamage: (damage, bullet) => {
+            damageCalls.push(damage);
+            return { happened: context.KDBulletAlreadyHit(bullet, player) ? 0 : dealt, string: "damage" };
+        },
+    };
+    vm.createContext(context);
+    for (const [source, declaration] of [
+        [fight, "function KDBulletCanHitEntity("],
+        [fight, "function KDBulletHitPlayer("],
+        [effects, "function KinkyDungeonPlayerEffect("],
+        [stats, "function KDBulletAlreadyHit("],
+    ])
+        vm.runInContext(stripTypeScriptTypes(functionAt(source, declaration)), context);
+    vm.runInContext(`globalThis.KDPlayerEffects = {${effects.slice(damageStart, damageEnd)}};`, context);
+    vm.runInContext(fs.readFileSync(path.join(root, "SpiderlingsMage.js"), "utf8"), context);
+    const shot = () => ({
+        id: damageCalls.length + 1,
+        x: 5,
+        y: 5,
+        bullet: {
+            source: mage.id,
+            faction: "Enemy",
+            spell: {
+                name: "SpiderlingsMageBolt",
+                enemySpell: true,
+                power: 0.5,
+                damage: "glue",
+                playerEffect: { name: "Damage", power: 0.5 },
+            },
+            damage: { damage: 0.5, type: "glue" },
+        },
+    });
+    const collide = (bullet) => {
+        if (context.KDBulletCanHitEntity(bullet, player)) context.KDBulletHitPlayer(bullet, player);
+    };
+    const first = shot();
+    collide(first);
+    assert.deepEqual(binds, [["MageSpiderlings", mage, "Enemy"]]);
+    assert.deepEqual(JSON.parse(JSON.stringify(damageCalls[0])), { damage: 0.5, type: "glue" });
+    collide(first);
+    assert.equal(binds.length, 1, "native alreadyHit prevents repeated progression from one bolt");
+    const missed = shot();
+    missed.x++;
+    collide(missed);
+    const allied = shot();
+    allied.bullet.faction = "Player";
+    collide(allied);
+    assert.equal(damageCalls.length, 2, "movement and friendly collision rejection never invoke Damage");
+    dealt = 0;
+    collide(shot());
+    assert.equal(binds.length, 1, "zero damage reported by shields or immunity rejects Webbing");
+    dealt = 0.1;
+    collide(shot());
+    assert.equal(binds.length, 2, "reduced positive damage still applies one Webbing hit");
+});

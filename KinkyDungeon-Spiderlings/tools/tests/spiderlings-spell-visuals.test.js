@@ -11,16 +11,22 @@ function fixture() {
     const events = {},
         draws = [],
         lines = [],
-        dots = [];
+        dots = [],
+        fills = [],
+        labels = [],
+        lineStyles = [];
     let clock = 0,
         pink = false;
     class Graphics {
         clear() {
             lines.length = 0;
             dots.length = 0;
+            fills.length = 0;
+            lineStyles.length = 0;
             return this;
         }
-        lineStyle() {
+        lineStyle(width, color, alpha) {
+            this.stroke = { width, color, alpha };
             return this;
         }
         moveTo(x, y) {
@@ -29,9 +35,11 @@ function fixture() {
         }
         lineTo(x, y) {
             lines.push([...this.start, x, y]);
+            lineStyles.push(this.stroke);
             return this;
         }
-        beginFill() {
+        beginFill(color, alpha) {
+            this.fill = { color, alpha };
             return this;
         }
         endFill() {
@@ -39,6 +47,10 @@ function fixture() {
         }
         drawCircle(x, y, radius) {
             dots.push([x, y, radius]);
+            return this;
+        }
+        drawRect(x, y, width, height) {
+            fills.push({ x, y, width, height, ...this.fill });
             return this;
         }
         destroy() {
@@ -76,6 +88,7 @@ function fixture() {
             SpiderlingsWebbingEnemyBind: () => ({ effect: true }),
             SpiderlingsWebSprayHit: () => ({ effect: true }),
         },
+        DrawTextFitKDTo: (...args) => labels.push(args),
         KDDraw: (...args) => {
             draws.push(args);
             return { args };
@@ -84,6 +97,7 @@ function fixture() {
     vm.runInNewContext(source, c);
     function draw(camera = {}) {
         draws.length = 0;
+        labels.length = 0;
         events.draw(null, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0, ...camera });
         return draws;
     }
@@ -98,6 +112,9 @@ function fixture() {
         draws,
         lines,
         dots,
+        fills,
+        labels,
+        lineStyles,
         draw,
         state,
         time: (value) => {
@@ -109,16 +126,33 @@ function fixture() {
     };
 }
 
-test("Hex uses one center rune and a complete boundary; activation does not tile the floor", () => {
+test("Hex shows its full area and saved-turn countdown, then changes color and shape on activation", () => {
     const r = fixture();
-    const state = r.state({ fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3 }] });
+    const state = r.state({ fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }] });
     assert.equal(r.draw().length, 1);
     assert.equal(r.lines.length, 16 * 6, "four-cell sides show dashed edges, with no interior grid");
-    assert.deepEqual(r.draws[0].slice(4, 8), [288, 288, 72, 72]);
+    assert.deepEqual(r.draws[0].slice(4, 6), [288, 288]);
+    assert.equal(r.fills.length, 16);
+    assert.equal(r.labels[0][1], "3");
+    const warningColor = r.fills[0].color;
+    const warningArt = r.draws[0][3];
+    r.time(5000);
+    r.draw();
+    assert.equal(r.labels[0][1], "3", "render time cannot spend a spell turn");
+    state.clock = 2;
+    r.draw();
+    assert.equal(r.labels[0][1], "1");
     state.clock = 3;
     r.draw();
     assert.equal(r.lines.length, 16);
     assert.equal(r.draws.length, 1);
+    assert.equal(r.labels[0][1], "3");
+    assert.notEqual(r.fills[0].color, warningColor);
+    assert.notEqual(r.draws[0][3], warningArt);
+    assert.ok(r.fills.every((cell) => cell.alpha > 0 && cell.alpha < 0.2));
+    state.clock = 5;
+    r.draw();
+    assert.equal(r.labels[0][1], "1");
 });
 
 test("weapon silk follows the visible actor, thickens with surviving silk and clears on release", () => {
@@ -152,12 +186,20 @@ test("weapon silk follows the visible actor, thickens with surviving silk and cl
     assert.equal(r.lines.length, 0);
 });
 
-test("Collapse keeps the entire cut-corner outline through all three turns and switches silk color", () => {
+test("Collapse keeps its cut-corner area, highlights stronger inner cells and counts down while charging", () => {
     const r = fixture();
-    const state = r.state({ collapses: [{ x: 4, y: 4, startAt: 0, ownerId: 1 }] });
+    const state = r.state({ collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }] });
     r.draw();
     const boundary = JSON.stringify(r.lines);
-    assert.equal(r.lines.length, 20);
+    const cells = new Set(r.fills.map((fill) => `${fill.x / 72},${fill.y / 72}`));
+    assert.equal(cells.size, 21);
+    for (const corner of ["2,2", "2,6", "6,2", "6,6"]) assert.equal(cells.has(corner), false);
+    const opacity = (x, y) =>
+        r.fills.filter((fill) => fill.x === x * 72 && fill.y === y * 72).reduce((sum, fill) => sum + fill.alpha, 0);
+    assert.ok(opacity(4, 4) > opacity(3, 3));
+    assert.ok(opacity(3, 3) > opacity(4, 2));
+    const initialCenter = opacity(4, 4);
+    assert.equal(r.labels[0][1], "3");
     assert.equal(r.draws.filter((d) => d[3].endsWith("WebSprayTrail.png")).length, 8);
     for (const clock of [1, 2]) {
         state.clock = clock;
@@ -165,6 +207,8 @@ test("Collapse keeps the entire cut-corner outline through all three turns and s
         r.pink(true);
         r.draw();
         assert.equal(JSON.stringify(r.lines), boundary);
+        assert.equal(r.labels[0][1], String(3 - clock));
+        assert.ok(opacity(4, 4) > initialCenter);
         assert.equal(r.draws.filter((d) => d[3].endsWith("WebSprayTrailPink.png")).length, 8);
     }
     state.collapses = [];
@@ -173,17 +217,49 @@ test("Collapse keeps the entire cut-corner outline through all three turns and s
     assert.equal(r.draws.length, 0);
 });
 
-test("one-, two- and three-stack bursts retain exact warning footprints without floor-wide hit art", () => {
+test("mark bursts keep exact footprints and visibly resolve before fading without another game turn", () => {
     for (const stacks of [1, 2, 3]) {
         const r = fixture();
         const state = r.state({ blasts: [{ x: 4, y: 4, stacks, detonateAt: 2 }] });
         r.draw();
         assert.equal(r.lines.length, (stacks * 2 - 1) * 4 * 6);
         assert.equal(r.draws.length, 1);
+        assert.equal(r.fills.length, (stacks * 2 - 1) ** 2);
+        assert.equal(r.labels[0][1], "2");
         state.clock = 2;
         state.blasts = [{ x: 4, y: 4, radius: stacks - 1, expiresAt: 3 }];
-        assert.equal(r.draw().length, 0, "legacy saved blast art is not replayed across empty tiles");
+        assert.equal(r.draw().length, 1);
+        assert.ok(r.draws[0][3].endsWith("SpiderlingsMageRuneHit.png"));
+        assert.equal(r.fills.length, (stacks * 2 - 1) ** 2);
+        const initialAlpha = r.fills[0].alpha;
+        state.blasts = [];
+        r.time(260);
+        r.draw();
+        assert.ok(r.fills[0].alpha < initialAlpha, "the flash survives removal of its gameplay record");
+        r.time(600);
+        assert.equal(r.draw().length, 0);
+        assert.equal(r.fills.length, 0);
     }
+});
+
+test("Collapse impact excludes corner cells and every new area visual respects fog and map replacement", () => {
+    const r = fixture();
+    r.state({ blasts: [{ x: 4, y: 4, radius: 2, corners: false, expiresAt: 1 }] });
+    r.draw();
+    assert.equal(r.fills.length, 21);
+    assert.equal(r.lines.length, 20);
+    r.c.KinkyDungeonVisionGet = (x, y) => (x === 4 && y === 4 ? 1 : 0);
+    r.draw();
+    assert.equal(r.fills.length, 1);
+    r.c.KinkyDungeonVisionGet = () => 0;
+    r.draw();
+    assert.equal(r.fills.length, 0);
+    assert.equal(r.draws.length, 0);
+    assert.equal(r.labels.length, 0);
+    r.c.KinkyDungeonVisionGet = () => 1;
+    r.c.KDMapData = { Entities: [], Bullets: [] };
+    assert.equal(r.draw().length, 0);
+    assert.equal(r.fills.length, 0);
 });
 
 test("marks follow only visible marked targets, expire in game turns, and show their stack count", () => {
@@ -271,7 +347,7 @@ test("fully resisted NPC hits and ground-trail contacts do not create false hit 
     assert.equal(r.draw().length, 0);
 });
 
-test("Mage bolts have a compact upright head and at most two world-aligned afterimages during camera motion", () => {
+test("Mage bolts have a readable upright head and at most two world-aligned afterimages during camera motion", () => {
     const r = fixture();
     const options = { alpha: 0.8, zIndex: 2 };
     const shot = { visual_x: 3, visual_y: 4 };
@@ -291,7 +367,7 @@ test("Mage bolts have a compact upright head and at most two world-aligned after
             true,
         );
     draw(252, 324);
-    assert.equal(r.draws.at(-1)[6], 72 * 0.55);
+    assert.ok(r.draws.at(-1)[6] >= 72 * 0.8 && r.draws.at(-1)[6] <= 72);
     assert.equal(r.draws.at(-1)[8], 0);
     shot.visual_x = 4;
     r.draws.length = 0;
