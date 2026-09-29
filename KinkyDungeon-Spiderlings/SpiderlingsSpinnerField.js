@@ -25,7 +25,7 @@
         SpiderlingsFieldReady: "A boundary connection is complete. The Spinners continue building the capture field.",
         SpiderlingsFieldSprung: "The capture field is enclosed. Players still inside can be captured.",
         SpiderlingsFieldBroken: "A knot breaks. The trap collapses and the threads release you.",
-        SpiderlingsFieldReset: "Reset trial",
+        SpiderlingsFieldReset: "Reset test field",
         SpiderlingsFieldJumper: "Release Jumper",
         SpiderlingsFieldAddSpinner: "Add Spinner",
         SpiderlingsFieldStatus: "Capture field: {phase} · corners {count}/4 · connections {links}/4",

@@ -158,8 +158,8 @@ KinkyDungeonStatDescSpiderlingsCocoonStart,柔らかな繭の中で目覚める�
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跳躍する幼蜘蛛は相手の足元を見つめ、身を低くして跳ぶ構えを取る。
 KDModButtonspiderlingsNestTunnelerCap,巣ごとの掘穴幼蛛の累計上限（0：召喚しない）
 RestraintSpiderlingsSpinnerLegbinder,蛛糸の脚袋
-RestraintSpiderlingsSpinnerLegbinderDesc,足裏から太ももの上部までを包む蛛糸。両腕は自由に動かせる。
-RestraintSpiderlingsSpinnerLegbinderDesc2,幅広い帯状の蛛糸を螺旋状に巻くデモ。切断4回、解除／抵抗6回。半完成なら半分で進捗共有。
+RestraintSpiderlingsSpinnerLegbinderDesc,足首の上から太ももの上部までを蛛糸が包む。足先と両腕は露出したまま。
+RestraintSpiderlingsSpinnerLegbinderDesc2,切断4回、取り外しまたは抵抗6回で解除。織りかけなら半分の回数。異なる方法でも進行度を共有する。
 SpiderlingsSpinnerPull,糸を振りほどく · 体力10 · 1ターン
 SpiderlingsSpinnerContest,参加幼蛛：{count} · 毎ターン製織 +{rate}
 SpiderlingsSpinnerStart,完全な網が脚を捕らえた。拘束ゲージより先に脱出ゲージを満たそう。援軍は製織速度と脱出目標を増やす。
@@ -168,15 +168,13 @@ SpiderlingsSpinnerInterrupt,共同の糸紡ぎが中断した。行動できる�
 SpiderlingsSpinnerTired,体力が10必要。待機やポーションの使用はできる。
 SpiderlingsSpinnerWrap,五つの世界ターンをかけて脚を包みます。腕の状態は維持されます。
 SpiderlingsSpinnerDone,脚袋が完成。攻撃、アイテム使用、ゆっくりした移動、解除ができる。
-KinkyDungeonStatSpiderlingsSpinnerDemo,紡ぎ子グモの体験
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,平坦な試験場で幼グモが捕獲場を作り、入った後に入口を閉じる。対抗と5ターンの巻き付けを試せる。
 NameSpiderlingsSilkAnchor,蛛糸の結び目
 KillSpiderlingsSilkAnchor,蛛糸の囲いが裂けた。
 SpiderlingsFieldPreparing,幼グモは捕獲場の境界を作っている。入口が閉じる前に離れるか接続を切ろう。
 SpiderlingsFieldReady,境界の一部がつながった。幼グモは捕獲場の建造を続ける。
 SpiderlingsFieldSprung,捕獲場が閉鎖された。内部に残ると捕獲される可能性がある。
 SpiderlingsFieldBroken,結び目が切れ、罠と牽制が解除されました。
-SpiderlingsFieldReset,試遊リセット
+SpiderlingsFieldReset,テスト場をリセット
 SpiderlingsFieldJumper,跳躍幼蛛を放す
 SpiderlingsFieldStatus,捕獲場：{phase} · 角 {count}/4 · 接続 {links}/4
 SpiderlingsFieldPhasepreparing,準備中
@@ -219,8 +217,8 @@ KinkyDungeonSpecialSpiderlingsSilkenBindingTome,千糸の繭
 KinkyDungeonSpecialSpiderlingsSilkweaverStaff,絹糸の縛め
 KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,細い蛛糸が背表紙を貫き、開いた頁に絡みつく。織り込まれた呪文を唱えると、散らばった糸が中心へと収束する。
 KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,杖先の網に淡い光が宿る。杖を振ると細い糸が伸び、標的を幾重にも包み込む。
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,主手または副手で保持：拘束力+15%。魔力4、射程6、詠唱後2ターンで収束、再使用8ターン。21マスに作用し、中心ほどダメージと拘束が強い。壁に遮られる。
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,魔力2、射程6、再使用3ターン。最初に命中した敵を拘束し、その後2ターン減速させる。糸は壁を貫通しない。
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,主手または副手で保持：拘束力+15%。魔力4、射程6、詠唱後2ターンで収束、再使用8ターン。21マスに作用し、中心ほどダメージと拘束が強い。壁に遮られる。 糸は対象に絡みついたまま残る。魔典の糸だけで敵を無力化できると、空いている腕・腹部・脚・足首に拘束を織り上げる。
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,魔力2、射程6、再使用3ターン。最初に命中した敵を拘束し、その後2ターン減速させる。糸は壁を貫通しない。 糸は対象の動きに沿って残り、振りほどくと消えていく。
 ItemPickupSpiderlingsSilkenBindingTome,絹縛の魔典を拾った。
 ItemPickupSpiderlingsSilkweaverStaff,糸織りの杖を拾った。
 KDPrereqFailSpiderlingsCocoonConvergence,魔力4と、8ターンの再使用待ち時間の終了が必要。

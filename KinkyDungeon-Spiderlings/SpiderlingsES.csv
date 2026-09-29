@@ -158,8 +158,8 @@ KinkyDungeonStatDescSpiderlingsCocoonStart,Despiertas en un capullo suave, compl
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La arañita saltadora mira el suelo bajo su rival y se agacha para saltar.
 KDModButtonspiderlingsNestTunnelerCap,Tunneler totales por nido (0: ninguno)
 RestraintSpiderlingsSpinnerLegbinder,Saco de seda para las piernas
-RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve desde las plantas hasta la parte alta de los muslos. Los brazos quedan libres.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Demo de bandas anchas de seda en espiral. Cuatro cortes o seis acciones para soltar; a medio tejer requiere la mitad.
+RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve tus piernas desde encima de los tobillos hasta la parte alta de los muslos. Los pies y los brazos quedan descubiertos.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Corta cuatro veces o retira la seda o forcejea seis veces; a medio tejer requiere la mitad. Los métodos comparten el progreso.
 SpiderlingsSpinnerPull,Soltarse · 10 de energía · 1 turno
 SpiderlingsSpinnerContest,Spinner: {count} · tejido +{rate}/turno
 SpiderlingsSpinnerStart,La trampa intacta te sujeta. Completa la barra de escape primero; más Spinner aumentan la velocidad y la meta de escape.
@@ -168,15 +168,13 @@ SpiderlingsSpinnerInterrupt,Se interrumpe el tejido. Puedes actuar; la seda ya d
 SpiderlingsSpinnerTired,Necesitas 10 de energía. Aún puedes esperar o beber una poción.
 SpiderlingsSpinnerWrap,La envoltura dura cinco turnos del mundo; los brazos conservan su estado.
 SpiderlingsSpinnerDone,El saco está listo. Puedes atacar, usar objetos, moverte despacio o quitártelo.
-KinkyDungeonStatSpiderlingsSpinnerDemo,Prueba de tejedoras
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Entra en un campo plano. Las tejedoras construyen un campo de captura y cierran la entrada cuando entras. Prueba el duelo y cinco turnos de envoltura.
 NameSpiderlingsSilkAnchor,Nudo de telaraña
 KillSpiderlingsSilkAnchor,La barrera de seda se rompe.
 SpiderlingsFieldPreparing,Las tejedoras construyen el límite del campo de captura. Sal antes de que se cierre la entrada o corta una conexión.
 SpiderlingsFieldReady,Una sección del límite está conectada. Las tejedoras siguen construyendo el campo.
 SpiderlingsFieldSprung,El campo de captura está cerrado. Quienes sigan dentro pueden ser capturados.
 SpiderlingsFieldBroken,Un nudo se rompe y la trampa te libera.
-SpiderlingsFieldReset,Reiniciar prueba
+SpiderlingsFieldReset,Reiniciar campo de pruebas
 SpiderlingsFieldJumper,Soltar saltadora
 SpiderlingsFieldStatus,Campo de captura: {phase} · esquinas {count}/4 · conexiones {links}/4
 SpiderlingsFieldPhasepreparing,Preparando
@@ -219,8 +217,8 @@ KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Convergencia del capullo
 KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Lazo de seda
 KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
 KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Mano principal o secundaria: +15% de fuerza de atadura. 4 de maná; alcance 6; carga de dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza durante 2 turnos. Las paredes detienen el hilo.
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Mano principal o secundaria: +15% de fuerza de atadura. 4 de maná; alcance 6; carga de dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto. Los hilos permanecen visibles. Cuando la seda del tomo basta por sí sola para dejar al enemigo indefenso, forma ataduras en brazos, cintura, piernas y tobillos si están libres.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza durante 2 turnos. Las paredes detienen el hilo. Los hilos siguen al objetivo y desaparecen al liberarse.
 ItemPickupSpiderlingsSilkenBindingTome,Recoges un tomo de ataduras de seda.
 ItemPickupSpiderlingsSilkweaverStaff,Recoges un bastón del tejedor de seda.
 KDPrereqFailSpiderlingsCocoonConvergence,Requiere 4 de maná y que termine la recarga de 8 turnos.

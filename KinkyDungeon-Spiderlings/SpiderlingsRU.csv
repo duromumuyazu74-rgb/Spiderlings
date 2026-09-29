@@ -158,8 +158,8 @@ KinkyDungeonStatDescSpiderlingsCocoonStart,Вы просыпаетесь в мя
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Прыгающий паучок смотрит под ноги противнику и припадает к земле перед прыжком.
 KDModButtonspiderlingsNestTunnelerCap,Всего Tunneler на гнездо (0: не призывать)
 RestraintSpiderlingsSpinnerLegbinder,Шёлковый мешок для ног
-RestraintSpiderlingsSpinnerLegbinderDesc,Шёлк охватывает ноги от подошв до верхней части бёдер. Руки свободны.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Демо широких спиральных шёлковых лент. Четыре разреза или шесть попыток снять; для половины нужно вдвое меньше.
+RestraintSpiderlingsSpinnerLegbinderDesc,Шёлк охватывает ноги от места над щиколотками до верхней части бёдер. Ступни и руки остаются открытыми.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Четыре разреза либо шесть попыток снять или вырваться; для незавершённого плетения нужно вдвое меньше. Разные способы используют общий прогресс.
 SpiderlingsSpinnerPull,Разорвать нити · 10 выносливости · 1 ход
 SpiderlingsSpinnerContest,Spinner: {count} · плетение +{rate}/ход
 SpiderlingsSpinnerStart,Целая сеть удерживает ноги. Заполни шкалу освобождения первой; новые Spinner ускоряют плетение и повышают цель освобождения.
@@ -168,15 +168,13 @@ SpiderlingsSpinnerInterrupt,Плетение прервано. Можно дей
 SpiderlingsSpinnerTired,Нужно 10 выносливости. Можно подождать или выпить зелье.
 SpiderlingsSpinnerWrap,Опутывание ног длится пять мировых ходов; состояние рук сохраняется.
 SpiderlingsSpinnerDone,Мешок готов. Можно атаковать, применять предметы, медленно двигаться или снять его.
-KinkyDungeonStatSpiderlingsSpinnerDemo,Проба паучьего плетения
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Плоское поле: паучки строят поле захвата и закрывают вход после вашего входа. Испытайте противоборство и пять ходов обматывания.
 NameSpiderlingsSilkAnchor,Узел паутины
 KillSpiderlingsSilkAnchor,Граница паутины рвётся.
 SpiderlingsFieldPreparing,Паучки строят границу поля захвата. Выйдите до закрытия входа или разрежьте связь.
 SpiderlingsFieldReady,Часть границы соединена. Паучки продолжают строить поле захвата.
 SpiderlingsFieldSprung,Поле захвата замкнуто. Игрок внутри может быть пойман.
 SpiderlingsFieldBroken,Узел разорван. Ловушка и удержание исчезают.
-SpiderlingsFieldReset,Повторить опыт
+SpiderlingsFieldReset,Сбросить испытательное поле
 SpiderlingsFieldJumper,Выпустить прыгуна
 SpiderlingsFieldStatus,Поле захвата: {phase} · углы {count}/4 · связи {links}/4
 SpiderlingsFieldPhasepreparing,Строится
@@ -219,8 +217,8 @@ KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Схождение кокона
 KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Шёлковая петля
 KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Тонкий шёлк пронизывает корешок и обвивает раскрытые страницы. Прочитанные слова стягивают рассеянные нити к центру.
 KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"В паутине на навершии теплится свет. Один взмах выпускает тонкие нити, оплетающие цель."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,В основной или второй руке: +15% к силе связывания. 4 маны; дальность 6; срабатывание через два хода после применения; перезарядка 8 ходов. Область из 21 клетки: урон и связывание усиливаются к центру. Стены блокируют эффект.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 маны; дальность 6; перезарядка 3 хода. Связывает первого поражённого врага, затем замедляет его на 2 хода. Стены останавливают нить."
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,В основной или второй руке: +15% к силе связывания. 4 маны; дальность 6; срабатывание через два хода после применения; перезарядка 8 ходов. Область из 21 клетки: урон и связывание усиливаются к центру. Стены блокируют эффект. Нити остаются на цели. Когда шёлка самой книги достаточно для обездвиживания врага, он сплетает путы на свободных руках, талии, ногах и щиколотках.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 маны; дальность 6; перезарядка 3 хода. Связывает первого поражённого врага, затем замедляет его на 2 хода. Стены останавливают нить." Нити движутся вместе с целью и исчезают по мере освобождения.
 ItemPickupSpiderlingsSilkenBindingTome,Вы подбираете книгу шёлковых уз.
 ItemPickupSpiderlingsSilkweaverStaff,Вы подбираете посох ткача шёлка.
 KDPrereqFailSpiderlingsCocoonConvergence,Нужно 4 маны и завершение перезарядки в 8 ходов.

@@ -126,8 +126,8 @@
         },
         text: [
             "Silken Leg Bag",
-            "Silk encloses your legs from soles to upper thighs. Your arms remain free.",
-            "Demo: broad helical silk bands. Cut in four actions or peel/struggle free in six; half-woven silk takes half as many.",
+            "Silk encloses your legs from above the ankles to the upper thighs. Your feet and arms remain exposed.",
+            "Cut in four actions or peel/struggle free in six; half-woven silk takes half as many. Mixed methods share progress.",
         ],
     });
     if (typeof AddModel === "function")
@@ -136,13 +136,13 @@
             Folder: "SpiderlingsSpinnerLegbinder",
             TopLevel: true,
             Restraint: true,
-            Categories: ["Restraints", "Wrapping"],
+            Categories: ["Restraints", "Wrapping", "SpiderlingsSpinnerLegbinder"],
             AddPose: ["FeetLinked", "Closed"],
             RemovePoses: ["Spread", "Kneel", "KneelClosed", "Hogtie"],
             Layers: ToLayerMap([
                 {
                     Name: "Finished",
-                    Sprite: "Finished",
+                    Sprite: "Stage7",
                     Layer: "FurnitureFront",
                     Pri: 90,
                     Invariant: true,
@@ -235,70 +235,8 @@
         SpiderlingsSpinnerTired: "You need 10 stamina to pull. You can still wait or use a potion.",
         SpiderlingsSpinnerWrap: "The spinners begin weaving a leg bag. Five world turns; your arms remain free.",
         SpiderlingsSpinnerDone: "The leg bag is complete. You can attack, use items, move slowly, or remove it.",
-        KinkyDungeonStatSpiderlingsSpinnerDemo: "Spinner field trial",
-        KinkyDungeonStatDescSpiderlingsSpinnerDemo:
-            "Enter a flat training ground. Spinners build a capture field and close its entrance after you enter. Try the contest, five-turn capture and Jumper response.",
     };
     if (typeof addTextKey === "function") for (const [key, text] of Object.entries(messages)) addTextKey(key, text);
-    if (typeof KinkyDungeonStatsPresets !== "undefined" && typeof KDPerkStart !== "undefined") {
-        KinkyDungeonStatsPresets.SpiderlingsSpinnerDemo = {
-            id: "SpiderlingsSpinnerDemo",
-            category: "Start",
-            cost: 0,
-            startPriority: 1200,
-            tags: ["start"],
-        };
-        KDPerkStart.SpiderlingsSpinnerDemo = () => {
-            if (api.SpinnerField) {
-                api.SpinnerField.enter();
-                return;
-            }
-            KinkyDungeonInventoryAdd({
-                name: ID,
-                id: KinkyDungeonGetItemID(),
-                type: LooseRestraint,
-                quantity: 1,
-                events: KinkyDungeonGetRestraintByName(ID).events,
-            });
-            KinkyDungeonInventoryAddWeapon("Scissors");
-            KinkyDungeonChangeConsumable(KinkyDungeonConsumables.PotionStamina, 2);
-            const p = KinkyDungeonPlayerEntity,
-                points = [];
-            for (let dy = -4; dy <= 4; dy++)
-                for (let dx = -4; dx <= 4; dx++) {
-                    const x = p.x + dx,
-                        y = p.y + dy,
-                        d = Math.hypot(dx, dy);
-                    if (
-                        d > 0 &&
-                        d <= 4 &&
-                        KinkyDungeonMovableTilesSmartEnemy.includes(KinkyDungeonMapGet(x, y)) &&
-                        !KinkyDungeonEnemyAt(x, y) &&
-                        KinkyDungeonCheckPath(x, y, p.x, p.y, false, true, 1, false)
-                    )
-                        points.push({ x, y, d });
-                }
-            const chosen = [
-                ...points
-                    .filter((p) => p.d <= 1.5)
-                    .slice(0, 2)
-                    .map((p) => ({ ...p, name: "Spinner" })),
-                ...points
-                    .filter((p) => p.d > 2)
-                    .sort((a, b) => b.d - a.d)
-                    .slice(0, 1)
-                    .map((p) => ({ ...p, name: "Jumper" })),
-            ];
-            for (const p of chosen) {
-                const e = DialogueCreateEnemy(p.x, p.y, p.name);
-                if (e) {
-                    e.aware = true;
-                    e.vp = 1;
-                    e.hostile = 100;
-                }
-            }
-        };
-    }
     function eligible(enemy) {
         if (
             !enemy ||

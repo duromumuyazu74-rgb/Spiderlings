@@ -203,12 +203,42 @@
                 outline(square(bullet.x - 1, bullet.y - 1, 3), true);
     }
 
+    function drawWeaponWebbing() {
+        for (const target of KDMapData.Entities) {
+            if (!(target.hp > 0) || !visible(target.x, target.y, target)) continue;
+            const web = api.WeaponWebbing?.status(target);
+            if (!web) continue;
+            const [x, y] = xy(target.visual_x ?? target.x, target.visual_y ?? target.y);
+            const size = KinkyDungeonGridSizeDisplay;
+            const g = graphics();
+            const color = pink() ? 0xefb7df : 0xf4eef5;
+            const bands = 2 + Math.floor(web.coverage * 6);
+            // Bands occupy the actor's body; the head remains readable at every coverage.
+            for (let band = 0; band < bands; band++) {
+                const height = y + size * (0.31 - band * 0.065);
+                const width = size * (0.18 + Math.sin(((band + 1) / (bands + 1)) * Math.PI) * 0.07);
+                g.lineStyle(2 + web.coverage, 0x72586d, 0.65);
+                for (let pass = 0; pass < 2; pass++) {
+                    if (pass) g.lineStyle(1.1 + web.coverage, color, 0.9);
+                    for (let step = 0; step <= 12; step++) {
+                        const angle = (step / 12) * Math.PI * 2;
+                        const xx = x + Math.cos(angle) * width;
+                        const yy = height + Math.sin(angle) * size * 0.025;
+                        if (!step) g.moveTo(xx, yy);
+                        else g.lineTo(xx, yy);
+                    }
+                }
+            }
+        }
+    }
+
     KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
         currentMap();
         if (!data || typeof KDDraw !== "function") return;
         frame = data;
         drawing?.clear();
         drawMage();
+        drawWeaponWebbing();
         const weapons = api.Weapons?.visualState();
         for (const collapse of weapons?.collapses || [])
             drawCollapse(collapse, weapons.clock, `weapon_${collapse.ownerId}`, 2);

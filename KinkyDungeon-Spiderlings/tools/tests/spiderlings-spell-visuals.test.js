@@ -121,6 +121,37 @@ test("Hex uses one center rune and a complete boundary; activation does not tile
     assert.equal(r.draws.length, 1);
 });
 
+test("weapon silk follows the visible actor, thickens with surviving silk and clears on release", () => {
+    const r = fixture();
+    const enemy = { id: 7, hp: 20, x: 4, y: 5, visual_x: 4.25, visual_y: 5.5, Enemy: { name: "Maidforce" } };
+    let coverage = 0.1;
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.Spiderlings.WeaponWebbing = { status: () => (coverage === undefined ? undefined : { coverage }) };
+    r.draw();
+    const light = r.lines.map((line) => [...line]);
+    assert.ok(light.length > 0);
+    enemy.visual_x += 1;
+    enemy.visual_y += 2;
+    r.draw();
+    const moved = light.map(([x, y, xx, yy]) => [x + 72, y + 144, xx + 72, yy + 144]);
+    assert.equal(r.lines.length, moved.length);
+    assert.ok(r.lines.every((line, i) => line.every((value, n) => Math.abs(value - moved[i][n]) < 1e-8)));
+    coverage = 1;
+    r.draw();
+    assert.ok(r.lines.length > light.length);
+    enemy.hidden = true;
+    r.draw();
+    assert.equal(r.lines.length, 0);
+    enemy.hidden = false;
+    r.c.KinkyDungeonVisionGet = () => 0;
+    r.draw();
+    assert.equal(r.lines.length, 0);
+    r.c.KinkyDungeonVisionGet = () => 1;
+    coverage = undefined;
+    r.draw();
+    assert.equal(r.lines.length, 0);
+});
+
 test("Collapse keeps the entire cut-corner outline through all three turns and switches silk color", () => {
     const r = fixture();
     const state = r.state({ collapses: [{ x: 4, y: 4, startAt: 0, ownerId: 1 }] });

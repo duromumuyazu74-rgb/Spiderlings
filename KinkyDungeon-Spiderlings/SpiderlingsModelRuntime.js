@@ -11,6 +11,7 @@
         "SpiderlingsWebbingLv2",
         "SpiderlingsWebbingLv3",
         "SpiderlingsWebbingCocoon",
+        "SpiderlingsSpinnerLegbinder",
     ]);
     const DISPLACEMENT_ASSETS = Object.freeze([
         "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
@@ -433,9 +434,15 @@
         };
         Object.values(modelDefs()).forEach(apply);
         const player = typeof KinkyDungeonPlayer != "undefined" ? KinkyDungeonPlayer : undefined;
-        for (const item of (player && player.Appearance) || []) apply(item.Model);
-        const container = player && typeof KDCurrentModels != "undefined" && KDCurrentModels.get(player);
-        if (container && container.Models) for (const model of container.Models.values()) apply(model);
+        const characters = typeof KDCurrentModels != "undefined" ? [...KDCurrentModels.keys()] : [];
+        if (player && !characters.includes(player)) characters.push(player);
+        for (const character of characters) {
+            for (const item of character.Appearance || []) apply(item.Model);
+            const container = typeof KDCurrentModels != "undefined" && KDCurrentModels.get(character);
+            if (container?.Models) for (const model of container.Models.values()) apply(model);
+            if (changed && character !== player && typeof ForceRefreshModels === "function")
+                ForceRefreshModels(character);
+        }
         return changed;
     }
 

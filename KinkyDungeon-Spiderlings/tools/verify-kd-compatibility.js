@@ -45,6 +45,10 @@ async function verifyGame(game, packagePath, output) {
             ["squad-perk", "squad-perk.js"],
             ["mage-body", "mage-body.js"],
             ["weapons", "weapons.js"],
+            ["weapon-webbing", "weapon-webbing.js"],
+            ["npc-cooperation", "npc-cooperation.js"],
+            ["web-mobility", "web-mobility.js"],
+            ["hunting-grounds", "hunting-grounds.js"],
             ["owned-effects", "owned-effects.js"],
         ];
         for (const [name, file, scenario] of checks) {

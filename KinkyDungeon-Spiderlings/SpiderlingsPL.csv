@@ -158,8 +158,8 @@ KinkyDungeonStatDescSpiderlingsCocoonStart,Budzisz się w miękkim kokonie, od s
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Skaczący pajączek wpatruje się w ziemię pod przeciwnikiem i przyczaja do skoku.
 KDModButtonspiderlingsNestTunnelerCap,Łączny limit Tunneler na gniazdo (0: brak)
 RestraintSpiderlingsSpinnerLegbinder,Jedwabny worek na nogi
-RestraintSpiderlingsSpinnerLegbinderDesc,Jedwab otacza nogi od podeszew po górną część ud. Ręce pozostają wolne.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Demo szerokich spiralnych pasm jedwabiu. Cztery cięcia lub sześć prób zdjęcia; połowa wymaga połowy działań.
+RestraintSpiderlingsSpinnerLegbinderDesc,Jedwab otula nogi od miejsca nad kostkami po górną część ud. Stopy i ramiona pozostają odsłonięte.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Cztery cięcia albo sześć prób zdjęcia lub wyswobodzenia; częściowy splot wymaga połowy. Różne metody dzielą postęp.
 SpiderlingsSpinnerPull,Wyrwij się · 10 wytrzymałości · 1 tura
 SpiderlingsSpinnerContest,Spinner: {count} · tkanie +{rate}/turę
 SpiderlingsSpinnerStart,Cała sieć trzyma nogi. Najpierw wypełnij pasek ucieczki; kolejne Spinnery zwiększają tempo tkania i cel ucieczki.
@@ -168,15 +168,13 @@ SpiderlingsSpinnerInterrupt,Tkanie przerwane. Możesz działać; utkany jedwab p
 SpiderlingsSpinnerTired,Potrzebujesz 10 wytrzymałości. Możesz czekać lub użyć mikstury.
 SpiderlingsSpinnerWrap,Owijanie nóg trwa pięć tur świata; stan ramion pozostaje bez zmian.
 SpiderlingsSpinnerDone,Worek gotowy. Możesz atakować, używać przedmiotów, powoli chodzić lub go zdjąć.
-KinkyDungeonStatSpiderlingsSpinnerDemo,Próba tkających pająków
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,Wejdź na płaskie pole prób. Tkacze budują pole schwytania i zamykają wejście po twoim wejściu. Wypróbuj walkę i pięć tur owijania.
 NameSpiderlingsSilkAnchor,Węzeł pajęczyny
 KillSpiderlingsSilkAnchor,Granica pajęczyny pęka.
 SpiderlingsFieldPreparing,Tkacze budują granicę pola schwytania. Wyjdź przed zamknięciem wejścia lub przetnij połączenie.
 SpiderlingsFieldReady,Część granicy jest połączona. Tkacze kontynuują budowę pola.
 SpiderlingsFieldSprung,Pole schwytania jest zamknięte. Gracz wewnątrz może zostać schwytany.
 SpiderlingsFieldBroken,Węzeł pęka; pułapka uwalnia cię.
-SpiderlingsFieldReset,Zresetuj próbę
+SpiderlingsFieldReset,Zresetuj pole testowe
 SpiderlingsFieldJumper,Wypuść skoczka
 SpiderlingsFieldStatus,Pole schwytania: {phase} · narożniki {count}/4 · połączenia {links}/4
 SpiderlingsFieldPhasepreparing,Budowa
@@ -219,8 +217,8 @@ KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Splot kokonu
 KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Jedwabna pętla
 KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Cienki jedwab przenika grzbiet i oplata otwarte strony. Odczytane słowa ściągają rozproszone nici ku środkowi.
 KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"W sieci na końcu kostura tli się blask. Jeden ruch wysyła cienkie nici, które oplatają cel."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,W głównej lub drugiej ręce: +15% siły więzów. 4 many; zasięg 6; dwie tury przygotowania; odnowienie 8 tur. Działa na 21 polach; obrażenia i więzy rosną ku środkowi. Ściany blokują efekt.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 many; zasięg 6; odnowienie 3 tury. Wiąże pierwszego trafionego wroga, a następnie spowalnia go na 2 tury. Ściany zatrzymują nić."
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,W głównej lub drugiej ręce: +15% siły więzów. 4 many; zasięg 6; dwie tury przygotowania; odnowienie 8 tur. Działa na 21 polach; obrażenia i więzy rosną ku środkowi. Ściany blokują efekt. Nici pozostają widoczne na celu. Gdy jedwab księgi sam wystarcza do obezwładnienia wroga, tworzy więzy na wolnych ramionach, talii, nogach i kostkach.
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 many; zasięg 6; odnowienie 3 tury. Wiąże pierwszego trafionego wroga, a następnie spowalnia go na 2 tury. Ściany zatrzymują nić." Nici poruszają się wraz z celem i znikają w miarę uwalniania się.
 ItemPickupSpiderlingsSilkenBindingTome,Podnosisz księgę jedwabnych więzów.
 ItemPickupSpiderlingsSilkweaverStaff,Podnosisz kostur tkacza jedwabiu.
 KDPrereqFailSpiderlingsCocoonConvergence,Wymaga 4 many i zakończenia 8 tur odnowienia.
