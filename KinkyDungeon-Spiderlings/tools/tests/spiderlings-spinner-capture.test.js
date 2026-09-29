@@ -6,14 +6,17 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { loadLifecycleRuntime, item, modRoot } = require("./helpers/lifecycle-runtime.js");
 
-function drawCapture(runtime) {
+function drawCapture(runtime, details = false) {
     const c = runtime.c;
     const rendered = [];
     const container = { Mesh: { parent: {}, visible: true }, Container: { destroyed: false }, Zoom: 1 };
     c.KinkyDungeonPlayer = {};
     c.MODEL_SCALE = 1;
     c.KDCurrentModels = new Map([[c.KinkyDungeonPlayer, { Containers: new Map([["Body", container]]) }]]);
-    c.Spiderlings.SpinnerArt = { render: (_container, data) => rendered.push(data.amount), clear() {} };
+    c.Spiderlings.SpinnerArt = {
+        render: (_container, data) => rendered.push(details ? data : data.amount),
+        clear() {},
+    };
     c.PIXI = {
         Graphics: class {
             clear() {
@@ -554,6 +557,52 @@ test("wrapping waits for a paid source operation and zero sources interrupt befo
     r.send("afterEnemyTick");
     assert.equal(r.api.state(), undefined);
     assert.equal(r.api.item(), undefined);
+});
+
+test("the fifth paid turn releases control immediately while its final 500ms visual tween finishes", () => {
+    let time = 1000;
+    const r = contestRuntime(2, { performance: { now: () => time } });
+    r.start();
+    loseContest(r);
+    for (let n = 0; n < 4; n++) {
+        r.wait();
+        time += 650;
+    }
+    assert.equal(drawCapture(r).at(-1), 0.8);
+    r.wait();
+    assert.equal(r.api.item().data.wrapProgress, 1);
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.api.isControllingPlayer(), false);
+    time += 50;
+    const start = drawCapture(r, true).at(-1);
+    assert.ok(start.amount > 0.8 && start.amount < 0.81);
+    assert.equal(start.active, true, "the detached finish still renders its tail");
+    time += 200;
+    assert.equal(drawCapture(r).at(-1), 0.9);
+    time += 250;
+    const end = drawCapture(r, true).at(-1);
+    assert.equal(end.amount, 1);
+    assert.equal(end.active, false);
+    assert.equal(r.api.item().data.wrapProgress, 1, "draws never deposit extra silk");
+});
+
+test("interruption stops the tail and loading completed equipment does not replay the completion tween", () => {
+    let time = 1000;
+    const r = contestRuntime(2, { performance: { now: () => time } });
+    r.start();
+    loseContest(r);
+    r.wait();
+    time += 100;
+    r.api.cancel();
+    const interrupted = drawCapture(r, true).at(-1);
+    assert.equal(interrupted.amount, 0.2);
+    assert.equal(interrupted.active, false);
+    r.api.item().data.wrapProgress = 1;
+    r.send("afterLoadGame");
+    time += 100;
+    const loaded = drawCapture(r, true).at(-1);
+    assert.equal(loaded.amount, 1);
+    assert.equal(loaded.active, false);
 });
 
 test("source loss preserves the exact partial bag and a later contest resumes its deposited progress", () => {

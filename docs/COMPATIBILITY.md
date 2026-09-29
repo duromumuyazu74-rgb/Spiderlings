@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.57.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.58.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.58 Spinner artwork and completion animation
+
+On 2026-09-29, the final test.58 ZIP passed sixteen native scenarios on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`, reporting KD 5.5.3. The upstream commit changed from test.57's reference despite retaining the same game version string.
+
+The added `spinner-art` scenario starts from a real native Spinner capture. Five paid world turns deposit 0.2 each. On the fifth turn, saved progress reaches 1 and capture control ends immediately; actual render calls still report 0.8, 0.9 and 1 at 0, 250 and 500 ms of the final tween. The tail is hidden at completion. Both sheets load at 2048×2048 and restore the authored 2480×3508 canvas, including Stage7's `(906,1922)` trim offset. All fourteen color/stage combinations render on the native character. Completed equipment survives native save/reload without replaying the tween.
+
+Repository checks, 12 policy tests, 344 public tests and the complete 641-test local watcher passed. The checker reports zero errors or warnings. The ZIP contains 167 allowlisted entries, is 24,784,258 bytes, and has SHA-256 `5296aaebe56369938dd74a8a784e6eba2d2799c86daa659c6b4d06f9714ca21c`.
+
+Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-29T09-42-44-754Z-0.92.36-test.58/acceptance.json`, including per-version results and native character screenshots. The implementation worktree `.scratch/spinner-stage-animation-20260929/` retains build/check logs and `.scratch/Spinner捕获动画预览.gif`. That GIF samples the production renderer with the five-action timing curve on a native character; the paid-action and completion assertions come from the separate native scenario above. These controlled Chrome runs do not cover a full playthrough, other Mods or every outfit/pose. Broader human capture/breach acceptance remains under Issue #92.
 
 ## Test.57 owned effects and dual-version evidence
 

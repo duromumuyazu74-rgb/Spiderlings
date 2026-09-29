@@ -34,6 +34,7 @@ async function verifyGame(game, packagePath, output) {
             ["wall", "wall.js"],
             ["spinner-outside", "spinner.js", "outside"],
             ["spinner-inside", "spinner.js", "inside"],
+            ["spinner-art", "spinner-art.js"],
             ["webcaster", "webcaster.js"],
             ["rune-hit", "01-rune-hit.js"],
             ["target-overlay", "02-target-overlay.js"],
@@ -54,6 +55,15 @@ async function verifyGame(game, packagePath, output) {
             const result = await page.evaluate(
                 fs.readFileSync(path.join(__dirname, "compatibility/browser", file), "utf8"),
             );
+            if (result.images) {
+                result.imageFiles = [];
+                for (const [label, data] of Object.entries(result.images)) {
+                    const filename = `${name}-${label}.png`;
+                    fs.writeFileSync(path.join(output, filename), Buffer.from(data.split(",")[1], "base64"));
+                    result.imageFiles.push(filename);
+                }
+                delete result.images;
+            }
             report.checks.push({ name, status: "passed", result });
             await page.screenshot({ path: path.join(output, `${name}.png`) });
             fs.writeFileSync(path.join(output, "result.json"), JSON.stringify(report, null, 2) + "\n");
@@ -130,7 +140,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal, WebCaster visuals and orphaned hits, Rune impacts and caster ownership, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk, Mage body layers, player weapon combat/save/loot and exclusion of the Spinner leash from generic restraint selection",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal and seven-stage artwork with completion tween/save reload, WebCaster visuals and orphaned hits, Rune impacts and caster ownership, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk, Mage body layers, player weapon combat/save/loot and exclusion of the Spinner leash from generic restraint selection",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

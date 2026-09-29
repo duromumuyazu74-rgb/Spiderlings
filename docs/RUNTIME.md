@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.55` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.58` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                                      |
 | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -119,3 +119,7 @@ The lure uses native paid movement to vacate pending gates and work cells, avoid
 WebCaster direct and trail projectiles use their saved source ID and faction after the caster dies or leaves. Native hit bookkeeping, shield and resistance handling, and the per-turn trail allowance still apply; crossfire requires living participants. Mage area spells and runes check hostility before targeting the player. Hex fields, marks and delayed blasts retain the owner faction in map state; runes retain it on the native bullet. Living Mage sources use their current native hostility. Records predating test.54 without a saved faction retain the former Enemy fallback when their caster is absent.
 
 NPC wrapping labels require a visible target. Strands also require a visible source, using native enemy visibility and tile vision. Drawing does not clear wrapping progress when either endpoint is hidden.
+
+## Spinner capture artwork
+
+Five paid wrapping operations still deposit 0.2 each in the equipped item. Rendering maps this progress onto seven full-canvas stages; it never deposits silk. The fifth operation removes temporary capture control immediately, while an item-ID-bound visual finish continues the remaining 500 ms tween. Interruption clears that finish, and loading restores saved progress without replay. The tail follows the growing upper edge, passes behind the character and tucks away at completion. The completed Stage7 exposes the feet and supplies its own upper edge; the former Band, Finished and Closure images are retired. [Artwork sources and loading](spinner-stage-art.md) describe both colors and lossless sheets.
