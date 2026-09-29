@@ -177,6 +177,8 @@
         Object.freeze({
             family: "Belly",
             group: "ItemTorso",
+            // 5.4.92's Harness slot predates the separate WaistBelts tag in 5.5.
+            shrine: ["Harnesses", "WaistBelts"],
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Belly Wrap",

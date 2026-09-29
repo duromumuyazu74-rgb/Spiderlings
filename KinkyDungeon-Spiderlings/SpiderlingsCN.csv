@@ -158,8 +158,8 @@ KinkyDungeonStatDescSpiderlingsCocoonStart,你在柔软的丝茧中醒来，细�
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跃击幼蛛盯住对手脚下的地面，伏低身体，准备跃去。
 KDModButtonspiderlingsNestTunnelerCap,每巢累计掘穴幼蛛上限（0 为不召唤）
 RestraintSpiderlingsSpinnerLegbinder,蛛丝腿袋
-RestraintSpiderlingsSpinnerLegbinderDesc,蛛丝从脚底包裹至大腿上段，双臂仍可自由活动。
-RestraintSpiderlingsSpinnerLegbinderDesc2,试玩宽带螺旋蛛丝。完整切割四次或解开／挣脱六次；半程次数减半，混用共享进度。
+RestraintSpiderlingsSpinnerLegbinderDesc,蛛丝从脚踝上方包裹至大腿上段，双脚和双臂保持外露。
+RestraintSpiderlingsSpinnerLegbinderDesc2,完整切割四次或解开／挣脱六次；半程次数减半，混用共享进度。
 SpiderlingsSpinnerPull,挣开蛛丝 · 精力 10 · 1 回合
 SpiderlingsSpinnerContest,参与幼蛛：{count} · 每回合织网 +{rate}
 SpiderlingsSpinnerStart,完整围网牵住了你的双腿。在拘束进度填满前完成挣脱；加入的幼蛛会加快织网并提高挣脱目标。
@@ -168,15 +168,13 @@ SpiderlingsSpinnerInterrupt,协作结网被打断，你可以继续行动；已�
 SpiderlingsSpinnerTired,挣开需要 10 精力。你仍可等待或使用药水。
 SpiderlingsSpinnerWrap,结网幼蛛开始包裹双腿，持续五个世界回合；上身和手臂保持原有状态。
 SpiderlingsSpinnerDone,腿袋已织成。你可以攻击、用物、缓慢移动或解除腿袋。
-KinkyDungeonStatSpiderlingsSpinnerDemo,结网幼蛛试玩
-KinkyDungeonStatDescSpiderlingsSpinnerDemo,进入平坦场地，观看幼蛛建造捕获场地并在你进入后封住入口，体验双进度对抗、五回合包裹和跳跃幼蛛避让。
 NameSpiderlingsSilkAnchor,蛛网结点
 KillSpiderlingsSilkAnchor,蛛网边界裂开了。
 SpiderlingsFieldPreparing,幼蛛正在建造捕获场地边界。可以在入口封闭前离开，或切断连接。
 SpiderlingsFieldReady,一段边界已连接，幼蛛继续建造捕获场地。
 SpiderlingsFieldSprung,捕获场地已封闭，仍在内部的玩家可能被捕获。
 SpiderlingsFieldBroken,结点断裂，围网瓦解，牵制解除。
-SpiderlingsFieldReset,重置试玩
+SpiderlingsFieldReset,重置测试场地
 SpiderlingsFieldJumper,放出跳跃幼蛛
 SpiderlingsFieldStatus,捕获场地：{phase} · 拐角 {count}/4 · 连接 {links}/4
 SpiderlingsFieldPhasepreparing,织网准备
@@ -215,10 +213,10 @@ KDModButtonspiderlingsInfestationWeight,幼蛛侵扰权重（0：关闭）
 KDModButtonspiderlingsHuntingGroundsWeight,幼蛛猎场权重，仅女仆主派系（0：关闭）
 KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,织缚魔典
 KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,蛛丝穿过书脊，细细缠住翻起的书页。念出页间的咒文，散开的丝缕便向中央层层收拢。
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,主手或副手持有：绑定强度增加15%。千丝归茧：消耗4魔力，射程6格，两回合后收束21格内的敌人，越靠近中心伤害与绑定越强；墙体阻挡效果。冷却8回合。
+KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,主手或副手持有：绑定强度增加15%。千丝归茧：消耗4魔力，射程6格，两回合后收束21格内的敌人，越靠近中心伤害与绑定越强；墙体阻挡效果。冷却8回合。 丝缕持续留在目标身上。魔典自身的蛛丝足以制服敌人时，会在空闲部位织成手臂、腰腹、腿部和脚踝拘束。
 KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,缠丝法杖
 KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,杖头的细网托着微光。挥动时，丝束沿杖尖抽出，在目标身上一圈圈缠绕。
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,缠丝束：消耗2魔力，射程6格，缠住首个命中的敌人，随后减速2回合。丝束不能穿墙，冷却3回合。
+KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,缠丝束：消耗2魔力，射程6格，缠住首个命中的敌人，随后减速2回合。丝束不能穿墙，冷却3回合。 丝缕会随目标移动，挣脱后逐渐消散。
 ItemPickupSpiderlingsSilkenBindingTome,你拾起了织缚魔典。
 ItemPickupSpiderlingsSilkweaverStaff,你拾起了缠丝法杖。
 KinkyDungeonSpecialSpiderlingsSilkenBindingTome,千丝归茧

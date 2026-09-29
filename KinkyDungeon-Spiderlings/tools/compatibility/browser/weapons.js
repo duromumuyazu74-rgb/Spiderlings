@@ -129,6 +129,10 @@
             [outer, 2, 8],
         ]) {
             const hit = collapseHits.find((h) => h.id === e.id);
+            expect(
+                Spiderlings.WeaponWebbing.status(KDMapData.Entities.find((t) => t.id === e.id))?.amount > 0,
+                "Actual Convergence lost persistent silk",
+            );
             expect(hit?.damage === damage && hit?.bind === bind, "Incorrect collapse ring");
             expect(
                 KDMapData.Entities.find((t) => t.id === e.id)?.specialBoundLevel?.Slime > 0,
@@ -168,6 +172,7 @@
         const hits = trace.filter((t) => t.spell === SNARE);
         expect(hits.length === 1 && hits[0].id === first.id, `Snare first enemy collision: ${JSON.stringify(hits)}`);
         expect(hits[0].bind === 8 && hits[0].slow === 0, "Snare applied slow before binding");
+        expect(Spiderlings.WeaponWebbing.status(first)?.amount > 0, "Actual Snare lost persistent silk");
         expect(first.specialBoundLevel?.Slime > 0 && first.slow > 0, "Snare did not bind and slow");
         expect(!(behind.boundLevel > 0) && !(neutral.boundLevel > 0), "Snare pierced or hit ally");
         expect(Math.abs(costs.at(-1)?.actual - 2) < 0.01, "Snare mana cost was not 2");
@@ -201,6 +206,7 @@
             e.stun = 999;
             KinkyDungeonLaunchAttack(e);
             const hit = trace.find((h) => h.id === e.id && h.weapon === weapon);
+            expect(Spiderlings.WeaponWebbing.status(e)?.amount > 0, "Actual melee lost persistent silk");
             expect(hit?.bind === bind, `${weapon} native melee lost explicit binding`);
             KDMapData.Entities = [];
             KDUpdateEnemyCache = true;

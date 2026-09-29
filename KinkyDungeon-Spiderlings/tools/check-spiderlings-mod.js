@@ -37,6 +37,7 @@ const runtimeScripts = [
     "SpiderlingsWebbing.js",
     "SpiderlingsMageSpells.js",
     "SpiderlingsWeapons.js",
+    "SpiderlingsWeaponWebbing.js",
     "SpiderlingsSpinnerTopology.js",
     "SpiderlingsSpinnerArt.js",
     "SpiderlingsSpinnerCapture.js",
@@ -1801,8 +1802,6 @@ function checkTranslations(state) {
         ...["Pull", "Contest", "Start", "Win", "Interrupt", "Tired", "Wrap", "Done", "Weave", "Escape"].map(
             (s) => "SpiderlingsSpinner" + s,
         ),
-        "KinkyDungeonStatSpiderlingsSpinnerDemo",
-        "KinkyDungeonStatDescSpiderlingsSpinnerDemo",
         "NameSpiderlingsSilkAnchor",
         "KillSpiderlingsSilkAnchor",
         "SpiderlingsFieldPreparing",

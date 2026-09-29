@@ -184,7 +184,6 @@
         const before = target.slow || 0;
         target.slow = Math.max(before, tags.slowresist || resistance === 1 ? 1 : 2);
         if (target.slow > before) KinkyDungeonSendEvent("slow", data, undefined, data.forceWeapon);
-        api.SpellVisuals?.hit(target);
     });
 
     function resolve(collapse) {
@@ -215,7 +214,6 @@
                 undefined,
                 KinkyDungeonPlayerEntity,
             );
-            api.SpellVisuals?.hit(target);
         }
     }
 
@@ -253,12 +251,12 @@
         [`KinkyDungeonInventoryItem${TOME}Desc`]:
             "Fine silk runs through the spine and winds around the open pages. Read the woven words, and scattered threads draw inward.",
         [`KinkyDungeonInventoryItem${TOME}Desc2`]:
-            "Main or off hand: +15% binding strength. Cocoon Convergence: 4 mana, range 6, two-turn charge, 8-turn cooldown. Silk draws inward across 21 tiles, binding enemies more tightly near the center. Walls block the effect.",
+            "Main or off hand: +15% binding strength. Cocoon Convergence: 4 mana, range 6, two-turn charge, 8-turn cooldown. Silk draws inward across 21 tiles, binding enemies more tightly near the center. Walls block the effect. Silk remains visible; when this tome's own silk subdues an enemy, it forms arm, waist, leg and ankle restraints where those slots are free.",
         [`KinkyDungeonInventoryItem${STAFF}`]: "Silkweaver's Staff",
         [`KinkyDungeonInventoryItem${STAFF}Desc`]:
             "A faint glow rests in the web at the staff's tip. With a sweep, slender strands reach out and wind around their target.",
         [`KinkyDungeonInventoryItem${STAFF}Desc2`]:
-            "Silken Snare: 2 mana, range 6, 3-turn cooldown. A strand of silk binds the first hostile target it hits, then slows them for 2 turns. Walls stop the strand.",
+            "Silken Snare: 2 mana, range 6, 3-turn cooldown. A strand of silk binds the first hostile target it hits, then slows them for 2 turns. Walls stop the strand. Silk follows the target and fades as they free themselves.",
         [`ItemPickup${TOME}`]: "You pick up a Tome of Silken Binding.",
         [`ItemPickup${STAFF}`]: "You pick up a Silkweaver's Staff.",
         [`KinkyDungeonSpecial${TOME}`]: "Cocoon Convergence",
