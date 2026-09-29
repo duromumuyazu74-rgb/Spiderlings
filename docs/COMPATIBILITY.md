@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.58.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.59.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,33 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.59 enemy silk, NPC legbags and normal-line acceptance
+
+On 2026-09-29, `Spiderlings_0.92.36-test.59.zip` passed twenty native scenarios on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` (KD 5.5.3). The successful final fetch was at 11:14:58 UTC. The same ZIP was used on both games: 168 allowlisted entries, 24,787,259 bytes, SHA-256 `430e949410a5de13f7de2aecbec84d6ead48de15e511fffc40beb9998fa1296e`.
+
+The new `weapon-webbing` scenario verifies the four native conjured pieces, NPC dressing in both colors, both Stage7 legbag colors, native removal without inventory farming, save identity, resisted/foreign/staff exclusions, removal of the starting demo perk and the retained test-room entry. The existing `weapons` scenario now checks persistent silk from actual native Convergence, Snare and melee inputs. `npc-cooperation` uses real native AI for all six threat benchmarks and verifies paid-action exclusion, cancelled capture retry without another payment, persistent identity and exactly-once stolen-property return. `web-mobility` covers long pursuit, a faster web detour, reload, native breach and unchanged spray cooldown. `hunting-grounds` checks thirty seeded maps per game across floors 3, 7 and 12. Detailed coverage and remaining Issue rows are in [normal-test acceptance](normal-test-acceptance.md).
+
+Repository checks, 12 policy tests and the complete 650-test local watcher passed, including all 353 public tests. The package checker reports zero errors, warnings or notes. Native NPC set and legbag screenshots were inspected. Earlier test.58 animation evidence remains applicable and its scenario also passes on this final ZIP.
+
+The native acceptance is retained at `.scratch/kd-compatibility/runs/2026-09-29T11-14-58-120Z-0.92.36-test.59/acceptance.json` in the parent workspace. Per-game JSON includes every scenario and the package hash. Earlier failed runs are retained: the first fetch encountered a transient TLS EOF; a later full run exposed the upstream 5.5 `Windup` sound path defect. `KinkyDungeonMagicCode.ts` passes bare `MiniWind` to the sound player, and `KDWebAudio.ts` rejects the missing resource with an `AudioBufferSourceNode`. Cooperative combat and timing fixtures use the native Sound toggle to disable SFX; they do not suppress arbitrary errors or change gameplay functions. Audio is outside those fixtures. KD 5.4.92 still records its known native play/pause interruptions; the final 5.5.3 run records no page errors or unhandled rejections. No official game source was modified.
+
+### Paired performance on the final ZIP
+
+Test.57 and final test.59 each ran the same thirty zone/floor/seed inputs, serially on each game with SFX disabled. Measurements cover synchronous map generation, the first native turn and ten later native turns per map. Compare active pairs only: 30 on 5.4.92 and 29 on 5.5.3, where both packages cancel the same insufficient-space seed. Native unseeded generation may vary other actors; entity counts are retained rather than assumed identical. These are diagnostic timings on this machine, not a statistical speedup claim or a smoothness guarantee.
+
+All values below are milliseconds, written as median / p95 / worst. No aggregate ratio exceeds the existing 1.25 investigation threshold; both packages still show slow tail turns.
+
+| Game   | Measurement  | Test.57               | Test.59                | Ratios                |
+| ------ | ------------ | --------------------- | ---------------------- | --------------------- |
+| 5.4.92 | Generation   | 379.3 / 755.3 / 889.6 | 406.85 / 781.7 / 932.7 | 1.073 / 1.035 / 1.048 |
+| 5.4.92 | First turn   | 47.15 / 66.2 / 97     | 49.25 / 74.6 / 96.9    | 1.045 / 1.127 / 0.999 |
+| 5.4.92 | Steady turns | 9.8 / 402.5 / 1346.2  | 11.15 / 396.9 / 1129.5 | 1.138 / 0.986 / 0.839 |
+| 5.5.3  | Generation   | 467.8 / 688.6 / 850.6 | 428.3 / 649.6 / 835.2  | 0.916 / 0.943 / 0.982 |
+| 5.5.3  | First turn   | 55.2 / 75.4 / 80.9    | 50.3 / 72.3 / 76.1     | 0.911 / 0.959 / 0.941 |
+| 5.5.3  | Steady turns | 8.55 / 450.1 / 4493.7 | 10.05 / 453.1 / 4777.1 | 1.175 / 1.007 / 1.063 |
+
+Initial entity count median/p95/worst is 57/72/72 in both 5.4.92 runs; on 5.5.3 it is 57/75/79 before and 59/75/79 after. Raw measurements, exact package and scenario hashes, game commit and resource errors are retained in `.scratch/spinner-review-20260929/final-perf-{baseline,github}-{test57,test59}.json`; `final-performance-summary.json` contains the aggregates. These measurements do not substitute for the remaining human pacing and balance rows in #96.
 
 ## Test.58 Spinner artwork and completion animation
 

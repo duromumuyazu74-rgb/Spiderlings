@@ -73,14 +73,14 @@ The real neck-restraint carrier established by a fresh Spinner hit after the pla
 _Avoid_: leash on breach, outside-position admission, collar replacement, copied external item state, free pull, native-plus-owned double movement
 
 **Spinner leg bag**:
-The leg bag occupies ItemLegs and uses the existing broad helical ribbon on the original canvas. Losing a Capture strands contest starts five paid world turns of wrapping without creating an item. The first successful wrapping turn adds the bag through native compatibility checks and deposits 0.2; later turns update the same item's `data.wrapProgress`. One source can finish it. Zero sources end temporary control while the exact partial item, lock, escape work, events and compatible linked equipment remain unchanged. A later lost contest resumes that item, while a complete bag blocks admission. Full bags require four Cut or six Remove/Struggle actions; incomplete bags require two or three. Native costs and accessibility remain effective.
+The leg bag occupies ItemLegs and uses the authored seven-stage leg wrap on its original canvas, ending above the ankles with exposed feet. Losing a Capture strands contest starts five paid world turns of wrapping without creating an item. The first successful wrapping turn adds the bag through native compatibility checks and deposits 0.2; later turns update the same item's `data.wrapProgress`. One source can finish it. Zero sources end temporary control while the exact partial item, lock, escape work, events and compatible linked equipment remain unchanged. A later lost contest resumes that item, while a complete bag blocks admission. Full bags require four Cut or six Remove/Struggle actions; incomplete bags require two or three. Native costs and accessibility remain effective.
 _Avoid_: scaled full-body Cocoon, contest-owned wrap progress, forced replacement, animation frames as world turns
 
 **Spinner training field**:
-The legacy flat-room experiment retained for historical comparison, distinct from current map-aware Spinner encounters. Current acceptance uses ordinary/infestation maps and the ten native scenario fixtures in [runtime documentation](../docs/RUNTIME.md); the old fixed-training-room save and playtest flow are not current acceptance paths.
+The disposable flat room available through `Spiderlings.SpinnerField.enter()`, with reset and add-enemy controls for quick native tests. The starting demo perk is removed. Current map-aware encounters and the ten `SpinnerScenarios` fixtures remain separate; see [runtime documentation](../docs/RUNTIME.md).
 _Avoid_: decorative-only boundary, teleporting the player into a capture, immortal Spinner
 
-**Spinner demo reaction opportunity**:
+**Spinner reaction opportunity**:
 A real player input that advances time while a contest or leg bag is present, counted once even when the native action schedules multiple world turns. Jumper warnings still snapshot their target tile and resolve after two subsequent opportunities. Automatic weaving advances world effects without consuming player opportunities; NPC-targeted dashes retain world-time behavior.
 _Avoid_: every tick is a player action, frozen world during weaving
 
@@ -191,3 +191,7 @@ _Avoid_: recursive asset scan, TEST placeholder input, legacy three-page atlas
 **Full-coverage artwork**:
 The Lv3 and Cocoon artwork that hides covered inner model layers through cover poses while preserving the equipped inner restraints. Hidden inner displacement layers stop rendering. Hood covers the complete head independently; Cocoon covers the torso, limbs, and lower face, leaving the upper head exposed.
 _Avoid_: inner-item removal, cumulative duplicate rendering, Cocoon-implied Hood
+
+**Player weapon silk**:
+The surviving native Slime attributable to player tome/staff melee and their own spells. Its saved enemy ledger drives visible bands; native silk removal reduces ownership conservatively. When the tome's own silk independently subdues a hostile NPC, it may form the existing Lv1 Arm, Belly, Legs and Ankles in compatible free slots as conjured restraints against already-paid binding. This is separate from Spiderlings adhesion, wrapping and nonlethal collection.
+_Avoid_: spending unrelated Slime, adding binding again on equipment creation, automatic NPC collection, reissuing pieces on load

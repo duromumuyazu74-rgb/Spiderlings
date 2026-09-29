@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.58` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.59` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                                      |
 | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,6 +17,7 @@ The manifest owns script loading order. Runtime scripts remain plain JavaScript 
 | `SpiderlingsMageVisuals.js`                                 | Keeps the regular abdomen pattern attached in both facings, adding particles and the matching glow after a successful native Mage cast. All layers use supplied alpha; visual timers are not saved.               |
 | `SpiderlingsMageSpells.js`                                  | Runs the Mage's 4-by-4 shield hex and 21-cell inward silk collapse, including marks, shield fragility, delayed bursts and cooldown.                                                                               |
 | `SpiderlingsSpellVisuals.js`                                | Draws complete spell boundaries, center runes, target marks, inward silk, projectile trails and brief hit feedback. Uses saved gameplay state for persistent areas and render time for transient effects.         |
+| `SpiderlingsWeaponWebbing.js`                               | Owns the saved player-weapon silk ledger, compatible conjured NPC restraint set and physical-item dressing poses. `WeaponWebbing.status(enemy)` supplies surviving silk and coverage to `SpellVisuals`.           |
 | `SpiderlingsInfestation.js`                                 | Infestation objectives, depth-weighted five-nest grouping, idle dispersal patrols and exit conditions.                                                                                                            |
 | `SpiderlingsSpinnerTopology.js`                             | JSON-only lines, declared orthogonal enclosures, normalized shared durability, composite-layer scheduling, reachability queries and final-owner collapse rules.                                                   |
 | `SpiderlingsSpinnerNativeField.js`                          | Projects topology cells into attackable KD entities, validates paid movement and work, routes final native damage, reconciles saves and refreshes navigation caches.                                              |
@@ -123,3 +124,13 @@ NPC wrapping labels require a visible target. Strands also require a visible sou
 ## Spinner capture artwork
 
 Five paid wrapping operations still deposit 0.2 each in the equipped item. Rendering maps this progress onto seven full-canvas stages; it never deposits silk. The fifth operation removes temporary capture control immediately, while an item-ID-bound visual finish continues the remaining 500 ms tween. Interruption clears that finish, and loading restores saved progress without replay. The tail follows the growing upper edge, passes behind the character and tucks away at completion. The completed Stage7 exposes the feet and supplies its own upper edge; the former Band, Finished and Closure images are retired. [Artwork sources and loading](spinner-stage-art.md) describe both colors and lossless sheets.
+
+## Player weapon silk and the reusable field (test.59)
+
+Actual positive native Slime from tome/staff melee or their own spells feeds a saved enemy ledger. Visible map bands follow native interpolation and surviving silk, with the selected Normal/Pink palette. The staff never creates the tome set. A live hostile target receives the existing Lv1 Arm, Legs, Ankles and Belly pieces only when the tome's own silk independently meets native helplessness and can pay the native binding value of each available piece. Existing body groups, blockers and occupied native layers remain intact. Conjured pieces use already-applied binding; equipping adds no extra Slime, and removing them returns no inventory. Only a later successful tome hit may add pieces again. Native dressing selects the supplied wrist/closed-leg art only while those owned physical items exist.
+
+The NPC legbag uses the direct Stage7 asset through the native model path. Player animation retains the seven-stage renderer. Color changes refresh loaded NPC model copies as well as the player. The bag covers above the ankles through the thighs, leaving feet and arms exposed.
+
+`SpiderlingsSpinnerDemo` is no longer registered as a starting perk or start callback. Developers can still call `Spiderlings.SpinnerField.enter()` to enter the disposable flat field and reuse its reset/add controls; `SpinnerScenarios` retains the map-aware fixtures. These are test facilities, not an additional gameplay start.
+
+A completed NPC wrap whose native removal was cancelled retains progress 3. Its next eligible native operation retries removal without another construction payment. The wrapper still occupies that operation and does not also attack or cast.

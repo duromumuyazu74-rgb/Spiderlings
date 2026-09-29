@@ -556,3 +556,11 @@ Both versions display perk cost using `KDPERKCOSTMULT = 2`. An Enemies perk with
 - `KDDropItems` marks `droppedItems` only after its native eligibility gate. Append the 15% Mage weapon roll only on that transition; wrapping a death event would miss captures and could repeat loot.
 - Native weapon inventory icons use `Items/<weapon.name>.png`. Direct images precede scripts in the manifest. Player Snare keeps its own spell identity while its bullet name reuses the existing Mage Bolt visual path.
 - Weapon binding and delayed attacks remain native player damage. They do not invoke Spiderlings NPC capture/wrapping services. The registered weapon regression suite and dual-version `weapons` scenario cover these contracts.
+
+## Native NPC equipment and player weapon silk (test.59)
+
+Verified on KD 5.4.92 and GitHub 5.5.3 `12a77c8b`: `KDInputSetNPCRestraint` pays binding as part of manual equipment application. For a spell whose native Slime is already present, follow the native conjured-binding path: preflight `KDCanEquipItemOnNPC`, blockers, `KDGetNPCBindingSlotForItem`, encasing and every required layer, then assign a `conjured: true` item through `KDSetNPCRestraint`. Use its destructive-blocker bypass only after confirming every destination is empty. Reuse `KDGetRestraintBondageStats` and `KDGetExpectedBondageAmount`; the two versions give different binding values, so do not hardcode costs. Native manual removal debits binding once and does not return conjured inventory.
+
+The 5.4.92 Harness row accepts the `Harnesses` shrine; 5.5 also accepts `WaistBelts`. Belly Webbing carries both, without entering a broad enemy selection pool. Native NPC poses may otherwise select Boxtie or Spread, hiding the supplied Arm/Leg art. Override only the drawing poses of physically present, owned pieces after native dressing; do not overwrite the saved NPC preferred poses or replace conflicting restraints.
+
+Native NPCs do not use the player-only Spinner animation overlay. Their legbag model must reference the existing `Stage7.png` in the selected normal/pink folder. Refresh NPC model copies when changing colors. The `weapon-webbing` native scenario verifies all four set pieces and both legbag colors, native removal and saved identities.
