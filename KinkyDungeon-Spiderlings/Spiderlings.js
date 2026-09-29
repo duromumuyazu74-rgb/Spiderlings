@@ -63,10 +63,22 @@ const SPIDERLINGS = globalThis.Spiderlings;
             !(typeof KDIsServant == "function" && KDIsServant(KDGameData.Collection?.[entity.id + ""]))
         );
     }
+    function isHostileWebTarget(entity) {
+        return (
+            SPIDERLINGS.SpinnerNativeField?.isOwnedProxy(entity) === true &&
+            KDGetFaction(entity) === "Enemy" &&
+            !entity.allied &&
+            !entity.Enemy.allied &&
+            !(entity.ceasefire > 0)
+        );
+    }
+    function isMaidTarget(entity) {
+        return isHostileSpiderlingTarget(entity) || isHostileWebTarget(entity);
+    }
     function isRivalPair(enemy, other) {
         return (
             other?.hp > 0 &&
-            ((isMaidRival(enemy) && isHostileSpiderlingTarget(other)) ||
+            ((isMaidRival(enemy) && isMaidTarget(other)) ||
                 (isHostileSpiderlingTarget(enemy) && isMaidRival(other)) ||
                 isHuntingPrey(enemy, other))
         );
@@ -80,8 +92,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
         if (isHuntingPrey(enemy, other)) return true;
         if (enemy.ceasefire > 0 || other.ceasefire > 0) return original;
         return (
-            (KDGetFaction(enemy) === "Maidforce" && isHostileSpiderlingTarget(other)) ||
-            (KDGetFaction(other) === "Maidforce" && isHostileSpiderlingTarget(enemy)) ||
+            (KDGetFaction(enemy) === "Maidforce" && isMaidTarget(other)) ||
+            (KDGetFaction(other) === "Maidforce" && isMaidTarget(enemy)) ||
             original
         );
     };
@@ -268,7 +280,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
     if (typeof KDFactionFavorable == "function") {
         const nativeFavorable = KDFactionFavorable;
         KDFactionFavorable = function (faction, other) {
-            if (faction === "Maidforce" && isHostileSpiderlingTarget(other)) return false;
+            if (faction === "Maidforce" && isMaidTarget(other)) return false;
             return nativeFavorable.apply(this, arguments);
         };
     }

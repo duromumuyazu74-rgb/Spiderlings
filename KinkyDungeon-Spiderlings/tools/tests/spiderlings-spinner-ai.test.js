@@ -187,6 +187,9 @@ function runtime(entities = []) {
                     cast = context.KDAIType.hunt.spell(enemy, target, aiData);
                 return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
             },
+            KinkyDungeonSetEnemyFlag(enemy, flag, duration) {
+                (enemy.flags ||= {})[flag] = duration;
+            },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] ||= {};
                 map[trigger][name] = handler;
@@ -209,6 +212,29 @@ function runtime(entities = []) {
 function start(r, snapshot = mapSnapshot()) {
     return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
 }
+
+test("native zero-time load refresh preserves partial work, position and saved construction credit", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    const read = () =>
+        plain({
+            topology: r.context.Spiderlings.SpinnerNativeField.state().topology,
+            x: worker.x,
+            y: worker.y,
+            credit: worker.SpinnerConstructionPoints,
+        });
+    const before = read();
+    for (let n = 0; n < 3; n++) r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 0);
+    assert.deepEqual(read(), before);
+});
 
 test("a lone Spinner builds one-entry rings and pays to seal them after prey enters", () => {
     const worker = spinner(1, 8, 6),

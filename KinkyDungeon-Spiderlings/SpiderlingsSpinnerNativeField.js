@@ -81,7 +81,7 @@
                 : DialogueCreateEnemy(physical.x, physical.y, PROXY);
         if (!enemy) return undefined;
         enemy.hostile = 999;
-        enemy.targetedForAttack = true;
+        KinkyDungeonSetEnemyFlag(enemy, "targetedForAttack", -1);
         enemy.SpiderlingsSpinnerProxy = { fieldId: field.fieldId, cell: cellKey(physical) };
         enemy.hp = hpAtCell(field, physical);
         enemy.maxhp = enemy.hp;
@@ -121,7 +121,7 @@
             enemy.hp = hpAtCell(field, physical);
             enemy.maxhp = enemy.hp;
             enemy.hostile = 999;
-            enemy.targetedForAttack = true;
+            KinkyDungeonSetEnemyFlag(enemy, "targetedForAttack", -1);
             kept.set(expectedKey, enemy);
             reused++;
         }
@@ -744,6 +744,9 @@
                 ...base,
                 name,
                 faction: "Enemy",
+                // IceWall's low-priority rule rejects nearby walls whenever the
+                // player is visible, even while an NPC pursues a blocked rival.
+                lowpriority: false,
                 regen: 0,
                 maxhp: 2,
                 armor: 0,

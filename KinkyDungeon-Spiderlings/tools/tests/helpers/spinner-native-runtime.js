@@ -95,6 +95,9 @@ function runtime(overrides = {}) {
             KinkyDungeonEnemyTryMove(enemy, _direction, _points, x, y) {
                 return context.KDMoveEntity(enemy, x, y);
             },
+            KinkyDungeonSetEnemyFlag(enemy, flag, duration) {
+                (enemy.flags ||= {})[flag] = duration;
+            },
             KDAddEvent(map, trigger, name, handler) {
                 map[trigger] = map[trigger] || {};
                 map[trigger][name] = handler;
