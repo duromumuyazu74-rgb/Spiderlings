@@ -311,11 +311,18 @@ test("cancelled native removal retains paid completion and never charges another
     assert.equal(r.map.Entities.includes(r.target), true);
     r.target.cancelRemoval = false;
     r.wrap.tickAfter(1);
-    assert.equal(r.map.Entities.includes(r.target), true, "nonhelpless retry waits for a paid opportunity");
+    assert.equal(r.map.Entities.includes(r.target), true, "nonhelpless retry waits for an eligible native operation");
+    let extraPayments = 0;
+    const accrue = r.context.Spiderlings.SpinnerNativeField.accrueConstructionAction;
+    r.context.Spiderlings.SpinnerNativeField.accrueConstructionAction = (...args) => {
+        extraPayments++;
+        return accrue(...args);
+    };
     r.wrap.prepareTurn(1);
     r.act(r.spiders[0]);
     assert.equal(r.map.Entities.includes(r.target), false);
     assert.equal(r.calls.removed.length, 2);
+    assert.equal(extraPayments, 0, "a completed wrap must not pay again when native removal is retried");
 });
 
 test("protected roles, nonhostile prey and foreign or absent silk cannot be wrapped", () => {
