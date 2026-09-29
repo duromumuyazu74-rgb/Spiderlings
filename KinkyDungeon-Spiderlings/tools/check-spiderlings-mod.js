@@ -1525,6 +1525,7 @@ function checkRouting(state) {
         Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     };
     if (!webbing || JSON.stringify(plain(webbing.ENEMY_PROFILES)) !== JSON.stringify(expectedProfiles))
         fail("shared enemy profiles changed or gained another route.");

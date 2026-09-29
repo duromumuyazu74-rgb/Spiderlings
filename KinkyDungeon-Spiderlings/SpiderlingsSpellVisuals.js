@@ -4,8 +4,12 @@
     const api = globalThis.Spiderlings;
     const KEY = "SpiderlingsSpellVisuals";
     const PURPLE = 0xc9a0e0;
+    const WARNING = 0xf2c66f;
     const DURATION = 240;
+    const BURST_DURATION = 520;
     const impacts = new Map();
+    const bursts = new Map();
+    let seenBlasts = new WeakSet();
     const dashes = [];
     const bulletFrames = new Map();
     let built = new WeakMap();
@@ -17,6 +21,8 @@
 
     function reset() {
         impacts.clear();
+        bursts.clear();
+        seenBlasts = new WeakSet();
         dashes.length = 0;
         bulletFrames.clear();
         built = new WeakMap();
@@ -88,7 +94,46 @@
         return cells;
     }
 
-    function outline(cells, dashed = false) {
+    function silkColor() {
+        return pink() ? 0xefb7df : PURPLE;
+    }
+
+    function fill(cells, color, alpha) {
+        const g = graphics();
+        const size = KinkyDungeonGridSizeDisplay;
+        g.lineStyle(0).beginFill(color, alpha);
+        for (const cell of cells) {
+            if (!visible(cell.x, cell.y)) continue;
+            const [x, y] = xy(cell.x - 0.5, cell.y - 0.5);
+            g.drawRect(x, y, size, size);
+        }
+        g.endFill();
+    }
+
+    function countdown(x, y, turns, color) {
+        if (!(turns > 0) || !visible(x, y) || typeof DrawTextFitKDTo !== "function") return;
+        const [left, top] = xy(x, y - 0.16);
+        const size = KinkyDungeonGridSizeDisplay;
+        const g = graphics();
+        g.lineStyle(2, color, 1)
+            .beginFill(0x201727, 0.9)
+            .drawCircle(left, top, size * 0.18)
+            .endFill();
+        DrawTextFitKDTo(
+            kdgameboard,
+            String(Math.ceil(turns)),
+            left,
+            top,
+            size * 0.32,
+            "#" + color.toString(16).padStart(6, "0"),
+            "#201727",
+            size * 0.3,
+            "center",
+            2.6,
+        );
+    }
+
+    function outline(cells, dashed = false, color = silkColor(), alpha = 1, width = 2) {
         const keys = new Set(cells.map((cell) => `${cell.x},${cell.y}`));
         const edges = [
             [0, -1, -0.5, -0.5, 0.5, -0.5],
@@ -97,7 +142,7 @@
             [-1, 0, -0.5, 0.5, -0.5, -0.5],
         ];
         const g = graphics();
-        g.lineStyle(2, PURPLE, dashed ? 0.65 : 0.9);
+        g.lineStyle(width, color, alpha * (dashed ? 0.8 : 0.95));
         for (const cell of cells) {
             if (!visible(cell.x, cell.y)) continue;
             for (const [dx, dy, ax, ay, bx, by] of edges) {
@@ -122,12 +167,19 @@
     }
 
     function drawCollapse(collapse, clock, id, speed = 1) {
-        outline(square(collapse.x - 2, collapse.y - 2, 5, 5, false));
+        const cells = square(collapse.x - 2, collapse.y - 2, 5, 5, false);
+        const inner = square(collapse.x - 1, collapse.y - 1, 3);
         const stage = Math.min(2, Math.max(0, (clock - collapse.startAt) * speed));
+        fill(cells, WARNING, 0.055 + stage * 0.025);
+        fill(inner, WARNING, 0.05 + stage * 0.025);
+        fill([{ x: collapse.x, y: collapse.y }], WARNING, 0.09 + stage * 0.035);
+        outline(cells, true, WARNING, 1, 3);
+        outline(inner, false, WARNING, 0.6);
+        countdown(collapse.x - 1, collapse.y - 2, collapse.explodeAt - clock, WARNING);
         // The step follows saved turns; only the small silk drift uses render time.
         const drift = (now() % 800) / 800;
         const radius = Math.max(0.15, 2 - stage * 0.65 - drift * 0.45);
-        sprite(`collapse_${id}`, "Bullets/SpiderlingsMageRune.png", collapse.x, collapse.y, 1, 0.4 + stage * 0.25);
+        sprite(`collapse_${id}`, "Bullets/SpiderlingsMageRune.png", collapse.x, collapse.y, 1.3, 0.6 + stage * 0.2);
         for (let i = 0; i < 8; i++) {
             const angle = (i * Math.PI) / 4;
             sprite(
@@ -146,21 +198,29 @@
         const state = KDMapData.SpiderlingsMageSpells;
         if (state) {
             for (const field of state.fields) {
-                outline(square(field.x, field.y, 4), field.activateAt > state.clock);
+                const warning = field.activateAt > state.clock;
+                const color = warning ? WARNING : silkColor();
+                const cells = square(field.x, field.y, 4);
+                fill(cells, color, warning ? 0.08 : 0.14);
+                outline(cells, warning, color, 1, warning ? 2 : 3);
+                countdown(field.x, field.y, (warning ? field.activateAt : field.endAt) - state.clock, color);
                 sprite(
                     `hex_${field.ownerId}`,
-                    "Bullets/SpiderlingsMageRune.png",
+                    `Bullets/SpiderlingsMageRune${warning ? "" : "Hit"}.png`,
                     field.x + 1.5,
                     field.y + 1.5,
-                    1,
-                    field.activateAt > state.clock ? 0.45 : 0.8,
+                    warning ? 1.2 : 1.5,
+                    warning ? 0.65 : 0.9,
                 );
             }
             for (const collapse of state.collapses) drawCollapse(collapse, state.clock, collapse.ownerId);
             for (const blast of state.blasts)
                 if (blast.detonateAt > state.clock) {
                     const radius = blast.stacks - 1;
-                    outline(square(blast.x - radius, blast.y - radius, radius * 2 + 1), true);
+                    const cells = square(blast.x - radius, blast.y - radius, radius * 2 + 1);
+                    fill(cells, WARNING, 0.12);
+                    outline(cells, true, WARNING, 1, 3);
+                    countdown(blast.x - radius, blast.y - radius, blast.detonateAt - state.clock, WARNING);
                     sprite(
                         `mark_blast_${blast.x}_${blast.y}`,
                         "Bullets/SpiderlingsMageRuneIcon.png",
@@ -169,6 +229,9 @@
                         0.8,
                         0.8,
                     );
+                } else if (blast.expiresAt > state.clock && !seenBlasts.has(blast)) {
+                    seenBlasts.add(blast);
+                    bursts.set(blast, now());
                 }
             for (const [key, mark] of Object.entries(state.marks)) {
                 if (!(mark.stacks > 0) || mark.expiresAt < state.clock) continue;
@@ -199,8 +262,36 @@
             }
         }
         for (const bullet of KDMapData.Bullets)
-            if (bullet.time > 0 && bullet.SpiderlingsRunePhase === "triggered")
-                outline(square(bullet.x - 1, bullet.y - 1, 3), true);
+            if (bullet.time > 0 && bullet.SpiderlingsRunePhase === "triggered") {
+                const cells = square(bullet.x - 1, bullet.y - 1, 3);
+                fill(cells, WARNING, 0.12);
+                outline(cells, true, WARNING, 1, 3);
+                countdown(bullet.x - 1, bullet.y - 1, bullet.SpiderlingsRuneTurns, WARNING);
+            }
+        for (const [blast, started] of bursts) {
+            const age = (now() - started) / BURST_DURATION;
+            if (age >= 1) {
+                bursts.delete(blast);
+                continue;
+            }
+            const cells = square(
+                blast.x - blast.radius,
+                blast.y - blast.radius,
+                blast.radius * 2 + 1,
+                blast.radius * 2 + 1,
+                blast.corners !== false,
+            );
+            fill(cells, silkColor(), (1 - age) * 0.28);
+            outline(cells, false, silkColor(), 1 - age, 4);
+            sprite(
+                `burst_${blast.x}_${blast.y}_${started}`,
+                "Bullets/SpiderlingsMageRuneHit.png",
+                blast.x,
+                blast.y,
+                Math.min(blast.radius * 2 + 1, 1.2 + age * 0.8),
+                1 - age,
+            );
+        }
     }
 
     function drawWeaponWebbing() {
@@ -316,8 +407,8 @@
             if (impact) args[9].alpha = (args[9].alpha ?? 1) * Math.max(0, 1 - (now() - record.start) / DURATION);
             if (bolt || spray) {
                 if (bolt) {
-                    args[6] *= 0.55;
-                    args[7] *= 0.55;
+                    args[6] *= 0.9;
+                    args[7] *= 0.9;
                     args[8] = 0;
                 }
                 const visual = typeof KinkyDungeonBulletsVisual !== "undefined" && KinkyDungeonBulletsVisual.get(id);

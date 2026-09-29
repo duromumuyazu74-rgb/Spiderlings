@@ -1,9 +1,73 @@
 (async () => {
-    const { setup, spawn, turn, frame, expect, save, restore, enemy, photo } = globalThis.normalAcceptance;
+    const { setup: nativeSetup, spawn, turn, frame, expect, save, restore, enemy, photo } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []),
         images = {};
+    const setup = (seed) => {
+        nativeSetup(seed);
+        KinkyDungeonBulletsVisual.clear();
+        KDDamageQueue.length = 0;
+        KinkyDungeonFloaters.length = 0;
+    };
+    const gear = () => KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name);
+    const rendered = (prefix) =>
+        [...kdpixisprites.entries()]
+            .filter(([id, sprite]) => id.startsWith(`SpiderlingsSpellVisuals_${prefix}`) && sprite.visible)
+            .map(([id, sprite]) => ({ id, alpha: sprite.alpha, url: sprite.texture?.baseTexture?.resource?.url }));
+    const hasArt = (sprites, name) =>
+        sprites.some((sprite) => sprite.url === KDModFiles[KinkyDungeonRootDirectory + `Bullets/${name}.png`]);
     const cast = (name, mage, x = 12, y = 10) => KinkyDungeonCastSpell(x, y, KinkyDungeonFindSpell(name, true), mage);
     for (const pink of [false, true]) {
+        const color = pink ? "pink" : "normal";
+        for (const mode of ["hit", "miss"]) {
+            setup(`mage-bolt-${pink}-${mode}`);
+            KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
+            KDMovePlayer(12, mode === "hit" ? 10 : 12, false);
+            const caster = spawn("MageSpiderlings", 8, 10);
+            caster.stun = 999;
+            const bolt = { pink, kind: "bolt", mode, before: { will: KinkyDungeonStatWill, gear: gear() }, steps: [] };
+            rows.push(bolt);
+            expect(bolt.before.gear.length === 0, "Bolt fixture starts restrained");
+            expect(cast("SpiderlingsMageBolt", caster).result === "Cast", "Silk bolt cast failed");
+            expect(gear().length === 0, "Silk bolt applied restraints before collision");
+            expect(
+                KDMapData.Bullets.some((entry) => entry.bullet.spell?.name === "SpiderlingsMageBolt"),
+                "Native silk bolt projectile is missing",
+            );
+            images[`${color}-bolt-${mode}-flight`] = await photo();
+            for (let step = 0; step < 35; step++) {
+                // Use native movement and collision, including its per-update hit deduplication.
+                KinkyDungeonUpdateBullets(0.1, true);
+                KinkyDungeonUpdateBullets(0.1, false);
+                await frame();
+                const equipped = gear();
+                bolt.steps.push({ step, will: KinkyDungeonStatWill, gear: equipped });
+                if (equipped.length && !bolt.impact) {
+                    bolt.impact = { step, gear: equipped };
+                    await frame();
+                    await frame();
+                    images[`${color}-bolt-impact`] = document.querySelector("canvas").toDataURL("image/png");
+                    bolt.impact.sprites = rendered("hit_player:web");
+                }
+            }
+            bolt.after = { will: KinkyDungeonStatWill, gear: gear() };
+            if (mode === "hit") {
+                expect(
+                    bolt.after.gear.length === 1 && /^SpiderlingsWebbingLv1/.test(bolt.after.gear[0]),
+                    `Native silk bolt did not apply one ordinary Webbing restraint: ${JSON.stringify(bolt.after)}`,
+                );
+                expect(bolt.after.will < bolt.before.will, "Silk bolt lost its native contact damage");
+                expect(
+                    hasArt(bolt.impact.sprites, `SpiderWebHit${pink ? "Pink" : ""}`),
+                    "Silk bolt binding has no matching impact feedback",
+                );
+                const beforeReload = JSON.stringify(bolt.after.gear);
+                restore(save());
+                expect(JSON.stringify(gear()) === beforeReload, "Silk bolt Webbing changed after native reload");
+            } else {
+                expect(bolt.after.gear.length === 0, "Missed silk bolt applied Webbing");
+                expect(bolt.after.will === bolt.before.will, "Missed silk bolt damaged the player");
+            }
+        }
         setup(`mage-hex-${pink}`);
         KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
         KDMovePlayer(8, 10, false);
@@ -26,7 +90,14 @@
                 mark: structuredClone(Spiderlings.MageSpells.markFor(current)),
                 fields: structuredClone(state.fields),
             });
-            if ([1, 3, 5].includes(tick)) images[`${pink ? "pink" : "normal"}-hex-${tick}`] = await photo();
+            if ([1, 3, 5].includes(tick)) {
+                images[`${color}-hex-${tick}`] = await photo();
+                row.turns[tick].sprites = rendered(`hex_${mage.id}`);
+                expect(
+                    hasArt(row.turns[tick].sprites, tick < 3 ? "SpiderlingsMageRune" : "SpiderlingsMageRuneHit"),
+                    `Hex ${tick < 3 ? "warning" : "active"} artwork is missing`,
+                );
+            }
             if (tick === 2) {
                 await frame();
                 await frame();
@@ -58,7 +129,9 @@
                 for (let x = 10; x <= 14; x++)
                     if (Spiderlings.MageSpells.collapseDistance(12, 10, { x, y }) >= 0) affected.push({ x, y });
             expect(affected.length === 21, "Collapse footprint is not 21 cells");
-            images[`${pink ? "pink" : "normal"}-collapse`] = await photo();
+            images[`${color}-collapse-${mode}-warning`] = await photo();
+            collapse.warning = rendered(`collapse_${caster.id}`);
+            expect(hasArt(collapse.warning, "SpiderlingsMageRune"), "Collapse warning artwork is missing");
             if (mode === "owner-loss") KDRemoveEntity(caster, true, false);
             const initialWill = KinkyDungeonStatWill;
             for (let tick = 1; tick <= 3; tick++) {
@@ -72,8 +145,13 @@
                     will: KinkyDungeonStatWill,
                     pending: KDMapData.SpiderlingsMageSpells.collapses.length,
                     cooldown: caster.SpiderlingsCollapseCooldown,
-                    gear: KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name),
+                    gear: gear(),
                 });
+                if (mode === "impact" && tick === 3) {
+                    images[`${color}-collapse-burst`] = await photo();
+                    collapse.burst = rendered("burst_");
+                    expect(hasArt(collapse.burst, "SpiderlingsMageRuneHit"), "Collapse resolved without burst artwork");
+                }
             }
             expect(collapse.turns[1].gear.length === 0, "Collapse applied bindings before the third turn");
             if (mode === "impact") {

@@ -190,7 +190,7 @@
         const player = KinkyDungeonPlayerEntity;
         const source = mageRuneSource(bullet);
         if (inBlast(bullet, player) && KDHostile(source, player)) {
-            const outcome = api.Webbing?.applyEnemyProgression("WebCaster", source, KDGetFaction(source));
+            const outcome = api.Webbing?.applyEnemyProgression("MageSpiderlings", source, KDGetFaction(source));
             if (outcome?.progressed) api.SpellVisuals?.hit(player);
         }
         if (typeof KDBulletHitEnemy === "function") {

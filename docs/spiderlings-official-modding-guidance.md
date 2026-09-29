@@ -557,6 +557,12 @@ Both versions display perk cost using `KDPERKCOSTMULT = 2`. An Enemies perk with
 - Native weapon inventory icons use `Items/<weapon.name>.png`. Direct images precede scripts in the manifest. Player Snare keeps its own spell identity while its bullet name reuses the existing Mage Bolt visual path.
 - Weapon binding and delayed attacks remain native player damage. They do not invoke Spiderlings NPC capture/wrapping services. The registered weapon regression suite and dual-version `weapons` scenario cover these contracts.
 
+## Mage silk-bolt player binding (test.61)
+
+KD 5.4.92 and the official 5.5.3 source route a bolt collision through `KinkyDungeonPlayerEffect` to `KDPlayerEffects.Damage`. The latter reports `effect: false` when `KinkyDungeonDealDamage` reports no damage event; native projectile filtering and `alreadyHit` bookkeeping prevent missed, friendly or repeated collisions from applying the effect. There is no additional random spell-hit roll inside `Damage`.
+
+Keep that native route and its return value, then append one ordinary Webbing attempt only for a successful `SpiderlingsMageBolt` player effect. Use `MageSpiderlings` as the binding profile and source even when the caster has left, preserving normal eligibility and Mage's Cocoon rules. NPC bolt hits continue through their existing native damage wrapper without applying player equipment. The Mage combat, Webbing integration and native spell tests cover these paths; `mage-timing` exercises launched projectiles and retained equipment through save/load in both full game versions.
+
 ## Native scenery targets and load refreshes (test.60)
 
 KD 5.4.92 and GitHub 5.5.3 read `targetedForAttack` through `KDEnemyHasFlag`; setting an entity property with that name does not admit allied NPC attacks on scenery. Set it with `KinkyDungeonSetEnemyFlag(entity, "targetedForAttack", -1)`. A Mod proxy copied from IceWall also inherits `lowpriority`, which native target selection can reject whenever the player is visible. Override that property only on the owned proxy definition when it must be an ordinary attack target. Pair hostility and projectile faction favorability must agree. The Spinner native-field and Maid hostility regressions enforce these contracts; the dual-version `web-breach` scenario verifies actual autonomous attacks.
