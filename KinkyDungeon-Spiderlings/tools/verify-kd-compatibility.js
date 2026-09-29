@@ -61,6 +61,7 @@ async function verifyGame(game, packagePath, output) {
             ["action-cadence", "action-cadence.js"],
             ["normal-integration", "normal-integration.js"],
             ["normal-visuals", "normal-visuals.js"],
+            ["passage-sites", "passage-sites.js"],
         ];
         for (const [name, file, scenario] of checks) {
             currentCheck = name;
@@ -159,7 +160,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal and seven-stage artwork with completion tween/save reload, WebCaster visuals and orphaned hits, Rune impacts and caster ownership, friendly Mage targeting, target overlays and hidden NPC wrapping, saved nest weights, six-member squad perk, Mage body layers, player weapon combat/save/loot and exclusion of the Spinner leash from generic restraint selection",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal and seven-stage artwork, coordinated passage-site selection and recruitment with paid gates and native breach recovery, WebCaster and Rune effects, friendly Mage targeting, target overlays and NPC wrapping, nest weights, squad perk, Mage layers, weapon combat/save/loot and Spinner leash selection exclusion",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

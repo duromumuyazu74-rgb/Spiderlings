@@ -605,14 +605,14 @@
                         .replace("{count}", s.sourceIds.length)
                         .replace("{rate}", weaveRate(s.sourceIds.length)),
                     1000,
-                    725,
+                    635,
                     "#FFFFFF",
                     "#000000",
                     22,
                 );
                 for (const [key, value, goal, y, color] of [
-                    ["SpiderlingsSpinnerWeave", s.weaveProgress, CONFIG.weaveGoal, 750, "#FFFFFF"],
-                    ["SpiderlingsSpinnerEscape", s.escapeProgress, s.escapeGoal, 790, "#69E1CC"],
+                    ["SpiderlingsSpinnerWeave", s.weaveProgress, CONFIG.weaveGoal, 660, "#FFFFFF"],
+                    ["SpiderlingsSpinnerEscape", s.escapeProgress, s.escapeGoal, 700, "#69E1CC"],
                 ]) {
                     FillRectKD(kdcanvas, kdpixisprites, key + "Back", {
                         Left: 750,
@@ -651,7 +651,7 @@
                     },
                     true,
                     750,
-                    825,
+                    735,
                     500,
                     50,
                     TextGet("SpiderlingsSpinnerPull"),

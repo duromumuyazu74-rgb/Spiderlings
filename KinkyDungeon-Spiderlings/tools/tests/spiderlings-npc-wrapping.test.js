@@ -51,6 +51,10 @@ function fixture() {
             getSetting: () => context.pink === true,
         },
         KDMapData: map,
+        KDEventMapGeneric: {},
+        KDAddEvent: (map, event, id, handler) => {
+            (map[event] ||= {})[id] = handler;
+        },
         KDCanSeeEnemy: (entity) => !entity.hidden,
         KinkyDungeonVisionGet: () => 1,
         KDGameData: { Collection: {}, SleepTurns: 0 },

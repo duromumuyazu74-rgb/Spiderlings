@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.60.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.64.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.64 coordinated passage sites
+
+On 2026-09-29, the same final `Spiderlings_0.92.36-test.64.zip` passed all thirty-one native scenarios plus shared setup on KD 5.4.92 and official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`, reporting KD 5.5.3. Upstream was fetched at `2026-09-29T15:29:50.019Z`. The package contains 169 allowlisted entries and 24,800,687 bytes; SHA-256 is `fe924c873736743944bd399b3c031d2da85c4eb77b48e214d75cc61f89a890ca`.
+
+Spinners now select route-intercepting passages, share nearby sites, reserve incoming workers and prepare open mouths against native walls. Workers spend actual actions closing and connecting mouths, then approach fresh observed prey before native melee can admit capture. Prepared mouths show faint silk without collision. The passage scenarios cover a one-cell corridor, a native-door/branch map, recruitment from both rooms, queue movement, paid closure, actual native capture, unarmed breach and escape, repair, terrain-cache invalidation and native save/reload. The branch-map scenario naturally selects a three-cell-wide mandatory passage near the entrance room; unit tests separately reject a T-junction layout that permits a diagonal bypass around its interior.
+
+Runtime acceptance exposed and verifies fixes for workers blocking each other in narrow corridors, native stationed workers failing to take nearby capture positions, stale closure/connection assignments, failed site activation and old lure ownership blocking repairs. The capture HUD was moved upward to avoid native buff icons. Separate final-ZIP mouse tests on both games confirm that clicking the displayed Pull free button advances one world turn, applies the expected native stamina cost and increases escape progress.
+
+Repository checks, 12 policy tests, 399 public tests and the complete 697-test local watcher passed. The package checker reports zero errors, warnings or notes. Both final native reports contain 32 passing checks. Evidence is retained in the parent workspace at `.scratch/kd-compatibility/runs/2026-09-29T15-29-50-035Z-0.92.36-test.64/acceptance.json`; final HUD click evidence is in `.scratch/spinner-chokepoint-delivery-20260929/2026-09-29T15-30-14-460Z-hud-baseline/` and `2026-09-29T15-30-14-475Z-hud-github/`. Prepared, closed and breached Normal/Pink artwork and the final HUD screenshots were visually inspected.
+
+KD 5.4.92 records its known native audio play/pause interruptions and two native `Locks/Red.png` requests, with no missing Mod asset. KD 5.5.3 records no page errors, unhandled rejections or missing resources. These controlled browser scenarios do not cover every generated map, user save or interaction with other Mods. The independent prison experiment remains excluded. [Passage algorithms](spinner-passage-algorithms.md) records primary sources, cache limits and paired coordination measurements against test.60, including preprocessing; those measurements do not represent whole-game frame time.
 
 ## Test.60 completed normal-test acceptance
 

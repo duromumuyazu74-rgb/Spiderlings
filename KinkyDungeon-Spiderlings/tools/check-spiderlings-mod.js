@@ -48,6 +48,7 @@ const runtimeScripts = [
     "SpiderlingsWebMobility.js",
     "SpiderlingsSpinnerRecovery.js",
     "SpiderlingsSpinnerNPCRecovery.js",
+    "SpiderlingsSpinnerPassagePlanner.js",
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
