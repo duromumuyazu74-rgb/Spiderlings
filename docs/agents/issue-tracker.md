@@ -18,11 +18,29 @@ When a skill says "publish to the issue tracker", create or update a GitHub Issu
 
 Historical `.scratch/<feature>/PRD.md`, specs and `issues/*.md` retain their original versions and conclusions in the KD workspace. When resuming old unfinished work, first search GitHub for an existing Issue. If none exists, migrate the current unfinished scope, historical source reference and acceptance criteria into one Issue, then track its state there. Completed historical tickets remain closed history. Scratch stores drafts, logs and local verification evidence.
 
+## Scope and completion
+
+Use a finite feature Issue as a parent and native sub-issues for independently implementable or verifiable work. Read the existing parent before adding a relationship; `Part of #N` in the body alone is not a native relationship. Preserve the distinction between the original Mage scope, later Mage features, normal-game Hunting Grounds and the separate prison experiment.
+
+Use milestones to group Issues and PRs for a specific version or bounded delivery target. A long-lived branch such as `test` is not a completion milestone. Reuse existing milestones and record their finish criteria; do not invent release dates or a formal promotion merely to group work.
+
+Each Issue's current summary states:
+
+- Target branch or experiment and the integration state.
+- The actual completion boundary: accepted on `test`, an explicitly required formal release, or a named remaining acceptance task.
+- Evidence already available and the exact remaining work, including who can perform it.
+
+When later user decisions replace an old specification, record the replacement and its implementation. Keep the original text as history, clearly subordinate to the current summary. Move acceptance to another Issue only with an explicit scope transfer; renaming a ticket does not satisfy its original acceptance.
+
+After integration, check every related Issue against its finish criteria. Record the integrating PR/commit, applicable version and validation before closing as completed; remove pending triage labels while preserving category and relationships. `Refs` does not close Issues, and closing keywords in a PR targeting non-default `test` do not provide automatic closure. Parent/sub-issue and milestone relationships do not change this behavior. Keep a parent open while its own acceptance remains incomplete.
+
+Close an old PR as superseded only after all its intended changes are present or explicitly replaced in the target branch. Compare patch equivalence as well as ancestry because rebase changes SHAs. Link the actual integration PR and retain outstanding acceptance in its Issue. An open replacement PR, newer version number or matching feature name is not evidence that a missing fix has reached `test`.
+
 ## Branches and delivery
 
 `main` holds formal releases; `test` holds test development. Test deliveries retain their formal baseline and increment `-test.N`. A formal promotion uses the next version after the latest formal release, rather than reverting to the older test baseline. Promote test gameplay only when explicitly requested and accepted.
 
-Formal versions use `v<modbuild>` tags and GitHub Releases, attaching `Spiderlings_<modbuild>.zip` built from the explicit allowlist. Currently only formal Releases are published. Test source stays on `test`; successful CI runs retain test ZIPs as temporary workflow artifacts, and maintainers may also build them locally. GitHub's automatic Source code ZIP is not an installable Mod.
+Release scope and authorization follow [CONTRIBUTING.md](../../CONTRIBUTING.md#formal-promotion-and-releases). Attach `Spiderlings_<modbuild>.zip` built from the explicit allowlist. Test source stays on `test`; successful CI runs retain test ZIPs as temporary workflow artifacts, and maintainers may also build them locally or explicitly request a test Pre-release. GitHub's automatic Source code ZIP is not an installable Mod.
 
 ## Wayfinding operations
 
