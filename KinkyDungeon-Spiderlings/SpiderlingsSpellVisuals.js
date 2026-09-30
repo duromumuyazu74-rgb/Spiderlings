@@ -7,7 +7,8 @@
     const WARNING = 0xf2c66f;
     const DURATION = 240;
     const BURST_DURATION = 520;
-    const LAYERS = Object.freeze({ area: 2.4, actor: 2.5, feedback: 2.6 });
+    const LAYERS = Object.freeze({ ground: -0.05, area: 2.4, actor: 2.5, feedback: 2.6 });
+    let charging = new WeakMap();
     const MAX_SHAPES = 64;
     const shapes = new Map();
     let shapeEdges = new WeakMap();
@@ -28,6 +29,7 @@
         impacts.clear();
         bursts.clear();
         seenBursts = new WeakSet();
+        charging = new WeakMap();
         burstSerial = 0;
         dashes.length = 0;
         bulletFrames.clear();
@@ -61,7 +63,7 @@
         ];
     }
 
-    function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1, target) {
+    function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1, target, tint) {
         if (!visible(target?.x ?? x, target?.y ?? y, target) || alpha <= 0) return;
         const [left, top] = xy(x, y);
         return KDDraw(
@@ -74,7 +76,7 @@
             scale * KinkyDungeonGridSizeDisplay,
             scale * KinkyDungeonGridSizeDisplay,
             rotation,
-            { alpha, zIndex },
+            { alpha, zIndex, ...(tint === undefined ? {} : { tint }) },
             true,
             undefined,
             undefined,
@@ -137,43 +139,113 @@
         return pink() ? 0xefb7df : PURPLE;
     }
 
-    function fill(cells, color, alpha) {
-        const g = graphics();
-        const size = KinkyDungeonGridSizeDisplay;
-        g.lineStyle(0).beginFill(color, alpha);
+    function groundSilk(cells, alpha, center, wave) {
+        const g = graphics("ground"),
+            size = KinkyDungeonGridSizeDisplay;
         for (const cell of cells) {
             if (!visible(cell.x, cell.y)) continue;
-            const [x, y] = xy(cell.x - 0.5, cell.y - 0.5);
-            g.drawRect(x, y, size, size);
+            const distance = center ? Math.max(Math.abs(cell.x - center.x), Math.abs(cell.y - center.y)) : 0;
+            const age = wave === undefined ? undefined : wave * BURST_DURATION - distance * 70;
+            const opacity = age === undefined ? alpha : age < 0 ? 0 : alpha * Math.max(0, 1 - age / 380);
+            const [x, y] = xy(cell.x, cell.y);
+            // Small cell anchors keep the true footprint readable without a solid area panel.
+            g.lineStyle(0)
+                .beginFill(silkColor(), alpha * 0.12)
+                .drawRect(x - size * 0.04, y - size * 0.04, size * 0.08, size * 0.08)
+                .endFill();
+            if (opacity <= 0) continue;
+            g.lineStyle(1.25, silkColor(), opacity);
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                g.moveTo(x, y);
+                g.lineTo(x + Math.cos(angle) * size * 0.5, y + Math.sin(angle) * size * 0.5);
+            }
+            for (const radius of [0.17, 0.31]) {
+                for (let i = 0; i <= 8; i++) {
+                    const angle = (i * Math.PI) / 4,
+                        wobble = 1 + 0.07 * Math.sin(cell.x * 3 + cell.y * 7 + i * 2);
+                    const xx = x + Math.cos(angle) * radius * size * wobble,
+                        yy = y + Math.sin(angle) * radius * size * wobble;
+                    if (i === 0) g.moveTo(xx, yy);
+                    else g.lineTo(xx, yy);
+                }
+            }
         }
-        g.endFill();
     }
 
-    function countdown(x, y, turns, color) {
-        if (!(turns > 0) || !visible(x, y) || typeof DrawTextFitKDTo !== "function") return;
-        const [left, top] = xy(x, y - 0.16);
-        const size = KinkyDungeonGridSizeDisplay;
-        const g = graphics();
-        g.lineStyle(2, color, 1)
-            .beginFill(0x201727, 0.9)
-            .drawCircle(left, top, size * 0.18)
-            .endFill();
-        DrawTextFitKDTo(
-            kdgameboard,
-            String(Math.ceil(turns)),
-            left,
-            top,
-            size * 0.32,
-            "#" + color.toString(16).padStart(6, "0"),
-            "#201727",
-            size * 0.3,
-            "center",
-            LAYERS.feedback,
+    function warning(cells, id, effect, clock, start, end, x, y, core) {
+        outline(cells, false, WARNING, 0.12, 1);
+        for (const cell of cells) {
+            sprite(
+                `backing_${id}_${cell.x}_${cell.y}`,
+                "WarningBacking.png",
+                cell.x,
+                cell.y,
+                1,
+                0.18,
+                0,
+                -0.3,
+                undefined,
+                WARNING,
+            );
+            sprite(
+                `danger_${id}_${cell.x}_${cell.y}`,
+                "WarningColorSpell.png",
+                cell.x,
+                cell.y,
+                1,
+                0.48,
+                0,
+                2.22,
+                undefined,
+                WARNING,
+            );
+        }
+        let phase = charging.get(effect);
+        if (!phase || phase.clock !== clock) {
+            phase = { clock, at: now() };
+            charging.set(effect, phase);
+        }
+        const progress = Math.min(
+            0.96,
+            Math.max(0, (clock - start + Math.min(0.85, (now() - phase.at) / 900)) / Math.max(1, end - start)),
         );
+        const radius = Math.max(
+            0.12,
+            Math.max(...cells.map((cell) => Math.max(Math.abs(cell.x - x), Math.abs(cell.y - y)))) * (1 - progress),
+        );
+        sprite(
+            core,
+            "Bullets/SpiderlingsMageRune.png",
+            x,
+            y,
+            0.8 + progress * 0.3,
+            0.55 + progress * 0.35,
+            0,
+            -0.02,
+            undefined,
+            silkColor(),
+        );
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            const xx = x + Math.cos(angle) * radius,
+                yy = y + Math.sin(angle) * radius;
+            if (!visible(Math.round(xx), Math.round(yy))) continue;
+            sprite(
+                `silk_${id}_${i}`,
+                `Bullets/WebSprayTrail${pink()}.png`,
+                xx,
+                yy,
+                0.65,
+                0.45 + progress * 0.25,
+                angle,
+                -0.01,
+            );
+        }
     }
 
     function outline(cells, dashed = false, color = silkColor(), alpha = 1, width = 2) {
-        const g = graphics();
+        const g = graphics("ground");
         g.lineStyle(width, color, alpha * (dashed ? 0.8 : 0.95));
         for (const edge of boundaryEdges(cells)) {
             if (!visible(edge.cell.x, edge.cell.y)) continue;
@@ -215,68 +287,70 @@
         );
     }
 
-    function drawCollapse(collapse, clock, id, speed = 1) {
-        const cells = square(collapse.x - 2, collapse.y - 2, 5, 5, false);
-        const inner = square(collapse.x - 1, collapse.y - 1, 3);
-        const stage = Math.min(2, Math.max(0, (clock - collapse.startAt) * speed));
-        fill(cells, WARNING, 0.055 + stage * 0.025);
-        fill(inner, WARNING, 0.05 + stage * 0.025);
-        fill(square(collapse.x, collapse.y, 1), WARNING, 0.09 + stage * 0.035);
-        outline(cells, true, WARNING, 1, 3);
-        outline(inner, false, WARNING, 0.6);
-        countdown(collapse.x - 1, collapse.y - 2, collapse.explodeAt - clock, WARNING);
-        // The step follows saved turns; only the small silk drift uses render time.
-        const drift = (now() % 800) / 800;
-        const radius = Math.max(0.15, 2 - stage * 0.65 - drift * 0.45);
-        sprite(`collapse_${id}`, "Bullets/SpiderlingsMageRune.png", collapse.x, collapse.y, 1.3, 0.6 + stage * 0.2);
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4;
-            sprite(
-                `silk_${id}_${i}`,
-                `Bullets/WebSprayTrail${pink()}.png`,
-                collapse.x + Math.cos(angle) * radius,
-                collapse.y + Math.sin(angle) * radius,
-                0.7,
-                0.35 + drift * 0.3,
-                angle,
-            );
-        }
+    function drawCollapse(collapse, clock, id) {
+        warning(
+            square(collapse.x - 2, collapse.y - 2, 5, 5, false),
+            `collapse_${id}`,
+            collapse,
+            clock,
+            collapse.startAt,
+            collapse.explodeAt,
+            collapse.x,
+            collapse.y,
+            `collapse_${id}`,
+        );
     }
 
     function drawMage() {
         const state = KDMapData.SpiderlingsMageSpells;
         if (state) {
             for (const field of state.fields) {
-                const warning = field.activateAt > state.clock;
-                const color = warning ? WARNING : silkColor();
+                const pending = field.activateAt > state.clock;
                 const cells = square(field.x, field.y, 4);
-                fill(cells, color, warning ? 0.08 : 0.14);
-                outline(cells, warning, color, 1, warning ? 2 : 3);
-                countdown(field.x, field.y, (warning ? field.activateAt : field.endAt) - state.clock, color);
-                sprite(
-                    `hex_${field.ownerId}`,
-                    `Bullets/SpiderlingsMageRune${warning ? "" : "Hit"}.png`,
-                    field.x + 1.5,
-                    field.y + 1.5,
-                    warning ? 1.2 : 1.5,
-                    warning ? 0.65 : 0.9,
-                );
+                if (pending) {
+                    warning(
+                        cells,
+                        `hex_${field.ownerId}`,
+                        field,
+                        state.clock,
+                        field.activateAt - 3,
+                        field.activateAt,
+                        field.x + 1.5,
+                        field.y + 1.5,
+                        `hex_${field.ownerId}`,
+                    );
+                } else {
+                    groundSilk(cells, 0.32 + Math.sin(now() / 600) * 0.04);
+                    outline(cells, false, silkColor(), 0.2, 1);
+                    sprite(
+                        `hex_${field.ownerId}`,
+                        "Bullets/SpiderlingsMageRuneHit.png",
+                        field.x + 1.5,
+                        field.y + 1.5,
+                        0.8,
+                        0.55,
+                        0,
+                        -0.02,
+                        undefined,
+                        silkColor(),
+                    );
+                }
             }
             for (const collapse of state.collapses) drawCollapse(collapse, state.clock, collapse.ownerId);
             for (const blast of state.blasts)
                 if (blast.detonateAt > state.clock) {
                     const radius = blast.stacks - 1;
                     const cells = square(blast.x - radius, blast.y - radius, radius * 2 + 1);
-                    fill(cells, WARNING, 0.12);
-                    outline(cells, true, WARNING, 1, 3);
-                    countdown(blast.x - radius, blast.y - radius, blast.detonateAt - state.clock, WARNING);
-                    sprite(
-                        `mark_blast_${blast.x}_${blast.y}`,
-                        "Bullets/SpiderlingsMageRuneIcon.png",
+                    warning(
+                        cells,
+                        `mark_${blast.x}_${blast.y}`,
+                        blast,
+                        state.clock,
+                        blast.detonateAt - 2,
+                        blast.detonateAt,
                         blast.x,
                         blast.y,
-                        0.8,
-                        0.8,
+                        `mark_blast_${blast.x}_${blast.y}`,
                     );
                 }
             for (const [key, mark] of Object.entries(state.marks)) {
@@ -310,9 +384,18 @@
         for (const bullet of KDMapData.Bullets)
             if (bullet.time > 0 && bullet.SpiderlingsRunePhase === "triggered") {
                 const cells = square(bullet.x - 1, bullet.y - 1, 3);
-                fill(cells, WARNING, 0.12);
-                outline(cells, true, WARNING, 1, 3);
-                countdown(bullet.x - 1, bullet.y - 1, bullet.SpiderlingsRuneTurns, WARNING);
+                const clock = 1 - (bullet.SpiderlingsRuneTurns ?? 1);
+                warning(
+                    cells,
+                    `rune_${bullet.spriteID || `${bullet.x}_${bullet.y}`}`,
+                    bullet,
+                    clock,
+                    0,
+                    1,
+                    bullet.x,
+                    bullet.y,
+                    `rune_core_${bullet.x}_${bullet.y}`,
+                );
             }
         for (const [blast, started] of bursts) {
             const age = (now() - started) / BURST_DURATION;
@@ -327,14 +410,22 @@
                 blast.radius * 2 + 1,
                 blast.corners !== false,
             );
-            fill(cells, silkColor(), (1 - age) * 0.28);
-            outline(cells, false, silkColor(), 1 - age, 4);
+            groundSilk(cells, (1 - age) * 0.8, blast, age);
+            if (visible(blast.x, blast.y)) {
+                const [x, y] = xy(blast.x, blast.y),
+                    g = graphics();
+                g.lineStyle(2, silkColor(), Math.max(0, 1 - age * 1.5)).drawCircle(
+                    x,
+                    y,
+                    KinkyDungeonGridSizeDisplay * (0.14 + age * 0.48),
+                );
+            }
             sprite(
                 `burst_${blast.serial}`,
                 "Bullets/SpiderlingsMageRuneHit.png",
                 blast.x,
                 blast.y,
-                Math.min(blast.radius * 2 + 1, 1.2 + age * 0.8),
+                0.8 + age * 0.6,
                 1 - age,
             );
         }

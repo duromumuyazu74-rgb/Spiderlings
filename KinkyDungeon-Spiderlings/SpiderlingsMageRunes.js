@@ -199,6 +199,7 @@
     }
 
     function resolveRune(bullet) {
+        api.SpellVisuals?.burst({ x: bullet.x, y: bullet.y, radius: 1 });
         const player = KinkyDungeonPlayerEntity;
         const source = mageRuneSource(bullet);
         if (inBlast(bullet, player) && KDHostile(source, player)) {

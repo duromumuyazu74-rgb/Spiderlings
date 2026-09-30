@@ -130,6 +130,32 @@
                     if (Spiderlings.MageSpells.collapseDistance(12, 10, { x, y }) >= 0) affected.push({ x, y });
             expect(affected.length === 21, "Collapse footprint is not 21 cells");
             images[`${color}-collapse-${mode}-warning`] = await photo();
+            const danger = () => rendered(`danger_collapse_${caster.id}_`);
+            const trails = () =>
+                [...kdpixisprites.entries()]
+                    .filter(
+                        ([id, sprite]) =>
+                            id.startsWith(`SpiderlingsSpellVisuals_silk_collapse_${caster.id}_`) && sprite.visible,
+                    )
+                    .map(([id, sprite]) => ({ id, x: sprite.x, y: sprite.y }));
+            expect(danger().length === 21, "Collapse warning did not retain all 21 dangerous cells");
+            const before = trails(),
+                center = rendered(`collapse_${caster.id}`);
+            const centerSprite = kdpixisprites.get(center[0]?.id);
+            const initialDistance = before.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y));
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            await frame();
+            expect(danger().length === 21, "Inward gathering shrank the dangerous-cell mask");
+            const gathered = trails();
+            expect(
+                gathered.length === 8 &&
+                    gathered.every(
+                        (s, i) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y) < initialDistance[i],
+                    ),
+                "Charging silk did not move inward",
+            );
+            images[`${color}-collapse-${mode}-gathered`] = document.querySelector("canvas").toDataURL("image/png");
+            collapse.gathering = { dangerCells: danger().length, strands: gathered.length, inward: true };
             collapse.warning = rendered(`collapse_${caster.id}`);
             expect(hasArt(collapse.warning, "SpiderlingsMageRune"), "Collapse warning artwork is missing");
             if (mode === "owner-loss") KDRemoveEntity(caster, true, false);
