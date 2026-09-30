@@ -39,6 +39,45 @@ function loadCoreRuntime(overrides = {}, nativeSources = []) {
 
 // KD 5.5.3 out/main.js:134955. This helper is absent from the pinned 5.5
 // checkout; retain its failing player-as-enemy behavior in the regression.
+test("fresh nest settings reach the runtime selector while saved zero and custom weights survive", () => {
+    for (const [saved, expected, selected] of [
+        [{}, { Spinner: 4, Jumper: 1, WebCaster: 2, Tunneler: 1, MageSpiderlings: 1 }, "Spinner"],
+        [
+            { spiderlingsNestSpinnerWeight: 0, spiderlingsNestJumperWeight: 7 },
+            { Spinner: 0, Jumper: 7, WebCaster: 2, Tunneler: 1, MageSpiderlings: 1 },
+            "Jumper",
+        ],
+        [
+            { spiderlingsNestSpinnerWeight: 2, spiderlingsNestJumperWeight: 2 },
+            { Spinner: 2, Jumper: 2, WebCaster: 2, Tunneler: 1, MageSpiderlings: 1 },
+            "Jumper",
+        ],
+    ]) {
+        const nest = { id: 11, x: 2, y: 2, hp: 12, aware: true, Enemy: { name: "NestEntrance", visionRadius: 30 } };
+        const births = [];
+        let rolls = 0;
+        const kd = loadCoreRuntime({
+            KDModSettings: { Spiderlings: { ...saved } },
+            KDMapData: { Entities: [nest] },
+            KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
+            KDHostile: () => true,
+            KinkyDungeonCheckLOS: () => true,
+            KDGetFaction: () => "Enemy",
+            KDRandom: () => (rolls++ % 2 === 0 ? 0 : 0.35),
+            KinkyDungeonSummonEnemy(x, y, name) {
+                births.push(name);
+                return [{ id: 100, x, y, hp: 1, Enemy: { name } }];
+            },
+        });
+        kd.Spiderlings.ensureModSettings();
+        kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
+        assert.deepEqual(JSON.parse(JSON.stringify(kd.Spiderlings.getSharedSpiderlingWeights())), expected);
+        for (const [key, value] of Object.entries(saved)) assert.equal(kd.KDModSettings.Spiderlings[key], value);
+        assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 1);
+        assert.deepEqual(births, [selected]);
+    }
+});
+
 const native553Subbier = `function KDIsSubbier(player, enemy) {
   if (!enemy || KinkyDungeonGoddessRep.Ghost < -25 || KDCanDom(enemy)) return false;
   return KinkyDungeonGoddessRep.Ghost > -25 && !KDCanDom(enemy, false, -0.3);

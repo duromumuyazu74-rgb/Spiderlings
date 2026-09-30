@@ -124,7 +124,12 @@
                         targetPresent: target ? KDMapData.Entities.includes(target) : undefined,
                     });
                     if (action === "wrapping" && !KDMapData.Entities.includes(target)) break;
-                    if (action === "construction" && row.construction.filter((entry) => entry.applied).length >= 30)
+                    if (
+                        action === "construction" &&
+                        row.construction.filter((entry) => entry.applied).length >= 30 &&
+                        row.workOpportunities.filter((entry) => entry.web).length >= 5 &&
+                        row.workOpportunities.filter((entry) => !entry.web).length >= 5
+                    )
                         break;
                 }
                 expect(
