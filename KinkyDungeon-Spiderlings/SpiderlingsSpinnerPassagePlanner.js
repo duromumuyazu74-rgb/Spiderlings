@@ -278,7 +278,10 @@
         return result;
     }
 
-    function candidates(index, { routes, maxCandidates = 8, blockedKeys = [], reachableKeys } = {}) {
+    function candidates(
+        index,
+        { routes, maxCandidates = 8, blockedKeys = [], reachableKeys, preferLarge = false, focus } = {},
+    ) {
         const requested = Math.max(0, Math.min(MAX_VALIDATIONS, Math.floor(maxCandidates)));
         if (!requested) return [];
         const pairs = (routes || index.entrances.flatMap((from) => index.exits.map((to) => ({ from, to }))))
@@ -289,6 +292,8 @@
         const signature = JSON.stringify({
             pairs,
             requested,
+            preferLarge,
+            focus: focus && point(focus),
             occupied: [...occupied].sort(),
             reachable: reachable && [...reachable].sort(),
         });
@@ -328,7 +333,33 @@
                 );
                 return { candidate, relevant, onRoute, rank: candidate.roughScore + (onRoute.length ? 1000 : 0) };
             })
-            .sort((a, b) => b.rank - a.rank || a.candidate.id.localeCompare(b.candidate.id))
+            .sort(
+                (a, b) =>
+                    (focus
+                        ? Number(
+                              Math.max(
+                                  Math.abs(b.candidate.center.x - focus.x),
+                                  Math.abs(b.candidate.center.y - focus.y),
+                              ) <= 6,
+                          ) -
+                          Number(
+                              Math.max(
+                                  Math.abs(a.candidate.center.x - focus.x),
+                                  Math.abs(a.candidate.center.y - focus.y),
+                              ) <= 6,
+                          )
+                        : 0) ||
+                    (preferLarge
+                        ? Number(!!b.onRoute.length) - Number(!!a.onRoute.length) ||
+                          b.candidate.interiorCells.length - a.candidate.interiorCells.length
+                        : 0) ||
+                    (focus
+                        ? Math.max(Math.abs(a.candidate.center.x - focus.x), Math.abs(a.candidate.center.y - focus.y)) -
+                          Math.max(Math.abs(b.candidate.center.x - focus.x), Math.abs(b.candidate.center.y - focus.y))
+                        : 0) ||
+                    b.rank - a.rank ||
+                    a.candidate.id.localeCompare(b.candidate.id),
+            )
             .slice(0, MAX_VALIDATIONS);
         const result = [];
         for (const { candidate, relevant, onRoute } of shortlist) {
@@ -400,7 +431,20 @@
             if (index.proofCache.results.size > MAX_ROUTE_PROOFS)
                 index.proofCache.results.delete(index.proofCache.results.keys().next().value);
         }
-        result.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        result.sort(
+            (a, b) =>
+                (focus
+                    ? Number(Math.max(Math.abs(b.center.x - focus.x), Math.abs(b.center.y - focus.y)) <= 6) -
+                      Number(Math.max(Math.abs(a.center.x - focus.x), Math.abs(a.center.y - focus.y)) <= 6)
+                    : 0) ||
+                (preferLarge ? b.interiorCells.length - a.interiorCells.length : 0) ||
+                (focus
+                    ? Math.max(Math.abs(a.center.x - focus.x), Math.abs(a.center.y - focus.y)) -
+                      Math.max(Math.abs(b.center.x - focus.x), Math.abs(b.center.y - focus.y))
+                    : 0) ||
+                b.score - a.score ||
+                a.id.localeCompare(b.id),
+        );
         const selected = result.slice(0, requested);
         index.candidateCache = { signature, result: selected };
         return clone(selected);

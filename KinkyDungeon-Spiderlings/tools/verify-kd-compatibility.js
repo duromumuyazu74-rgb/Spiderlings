@@ -54,6 +54,7 @@ async function verifyGame(game, packagePath, output) {
             ["adhesion-offense", "adhesion-offense.js"],
             ["adhesion-recovery", "adhesion-recovery.js"],
             ["spinner-work", "spinner-work.js"],
+            ["spinner-perception", "spinner-perception.js"],
             ["web-breach", "web-breach.js"],
             ["wrapping-lifecycle", "wrapping-lifecycle.js"],
             ["mage-timing", "mage-timing.js"],
@@ -161,7 +162,7 @@ async function main() {
         records.push({
             gameVersion: game.version,
             status: result.status,
-            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal and seven-stage artwork, coordinated passage-site selection and recruitment with paid gates and native breach recovery, WebCaster and Rune effects, friendly Mage targeting, target overlays and NPC wrapping, nest weights, squad perk, Mage layers, weapon combat/save/loot and Spinner leash selection exclusion",
+            scope: "Native ZIP loading, Webbing progression and save/reload, Spinner lure/capture/wall traversal and seven-stage artwork, retained field crews and paid outer-to-inner construction, early recognized team observations with native stealth/LOS and bounded history, coordinated passage-site selection and recruitment with paid gates and full native breach recovery, WebCaster and Rune effects, friendly Mage targeting, target overlays and NPC wrapping, nest weights, squad perk, Mage layers, weapon combat/save/loot and Spinner leash selection exclusion",
             evidence: `${game.id}/result.json`,
             limitations: [
                 "Controlled native scenarios in Chrome; online deployment, desktop shell, user saves and other Mods are not covered.",

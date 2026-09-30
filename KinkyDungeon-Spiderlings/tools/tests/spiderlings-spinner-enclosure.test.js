@@ -239,6 +239,53 @@ test("an undersized enclosure falls back to the declared line or is saved as aba
     assert.equal(fallback.fallbackReason, "dimensions");
 });
 
+test("outer-first construction keeps inner-to-outer core declarations and paid gate closure", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "outer-first",
+        owners: [1, 2],
+        constructionOrder: "outer-first",
+        map: floorMap(),
+        layers: [
+            { id: "inner", vertices: rectangle(12, 9, 14, 11), gate: { x: 12, y: 10 } },
+            { id: "middle", vertices: rectangle(11, 8, 15, 12), gate: { x: 11, y: 10 } },
+            { id: "outer", vertices: rectangle(10, 7, 16, 13), gate: { x: 10, y: 10 } },
+        ],
+    });
+    assert.deepEqual(JSON.parse(JSON.stringify(state.composites["outer-first"].layerIds)), [
+        "inner",
+        "middle",
+        "outer",
+    ]);
+    assert.equal(topology.isInsideCommonCore(state, "outer-first", { x: 13, y: 10 }), true);
+    assert.equal(topology.isInsideCommonCore(state, "outer-first", { x: 11, y: 10 }), false);
+    let action = topology.nextWorkAction(state, 1, { x: 8, y: 10 }),
+        guard = 0;
+    assert.equal(action.fieldId, "outer");
+    while (action && guard++ < 300) {
+        const result = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell));
+        assert.equal(result.outcome.legal, true);
+        state = result.state;
+        action = topology.nextWorkAction(state, 1, action.cell);
+    }
+    assert.ok(guard < 300);
+    assert.ok(["inner", "middle", "outer"].every((id) => state.fields[id].phase === "ready"));
+    assert.deepEqual([...new Set(state.actionLog.map((entry) => entry.fieldId))], ["outer", "middle", "inner"]);
+    topology.updateTarget(state, { id: "player", x: 13, y: 10 });
+    action = topology.nextWorkAction(state, 1, { x: 8, y: 10 });
+    guard = 0;
+    while (action && guard++ < 30) {
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+        action = topology.nextWorkAction(state, 1, action.cell);
+    }
+    assert.ok(["inner", "middle", "outer"].every((id) => topology.isLayerClosed(state, id)));
+    assert.deepEqual(
+        [...new Set(state.actionLog.filter((entry) => entry.role === "gate").map((entry) => entry.fieldId))],
+        ["inner", "middle", "outer"],
+    );
+});
+
 test("body construction is inner-first and core entry closes gates inner-to-outer", () => {
     const topology = rules(),
         clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });

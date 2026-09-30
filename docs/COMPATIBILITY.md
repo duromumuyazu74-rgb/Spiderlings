@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.73.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.74.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,27 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.73 Spinner pressure, field staffing and recovery pursuit (2026-10-01)
+## Test.74 retained Spinner crews, outer-first fields and early observations (2026-10-01)
+
+Test.74 withdraws Test.73's ordinary worker eviction and dispersal. Original crews retain their invested or completed fields; legal waiting stations reserve distinct cells without limiting membership. Idle groups cannot abandon a field with paid work simply to merge into another crew. Old empty groups can recover only their exact saved field owners. No entity is deleted or moved instantly to reduce crowding.
+
+New plans prefer the largest suitable legal local passage or enclosure, with recent recognized prey coordinates guiding candidate relevance. A new enclosure declares its legal concentric layers together and pays for the outer body before progressively smaller inner bodies. Typical footprints are 7-by-7, 5-by-5 and 3-by-3; constrained terrain selects a smaller legal fallback. Layer IDs, the common core, sealing and Recovery keep their inner-to-outer semantics. A changed recognized approach can redirect an unpaid plan at a four-turn interval; invested plans keep their maintenance crew and adapt waiting stations, gates or lure duties.
+
+Spinner's configured native visual radius rises from five to eight. Before site and role planning, a detached observer samples native target selection, actual LOS/hearing and already accumulated recognition with zero detection delta. It does not grant awareness or increment native sneak tracking. Shared position/direction snapshots expire after four positive turns; unseen live movement does not refresh them. Native beforemove can publish a newly crossed recognition threshold later in the turn, so first-ever detection still depends on native processing. KillSquad, summoned vision, Vision buffs and blindness retain native or more conservative gates. Six no-progress turns still switch a visible lure to pressure, and automatic recovery still requires fresh melee and compatible collar/equipment admission with readable failure feedback.
+
+The final ZIP SHA-256 is `977bfc08943a1a549d3de3cf4497f79a9e0e486eb4d5a224bf4fca0f3d72dd46`, 24,816,030 bytes and 169 source-matching entries. Compared with Test.73, only `mod.json`, `Spiderlings.js`, Spinner AI, Topology and PassagePlanner change. The complete local watcher passes 765 tests; 12 policy tests and repository checks pass. Focused AI, enclosure, passage-planner and perception coverage passes 111 tests. The old Hunting Grounds search fixture now places its target beyond the expanded eight-cell radius instead of incorrectly treating a visible target as unseen.
+
+KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` each pass all 34 native checks with the same ZIP. Evidence is `2026-09-30T21-40-13-745Z-0.92.36-test.74` in the external compatibility cache. Initial direct fetch attempts failed with a connection reset and connection timeout; the normal configured connection then fetched upstream successfully and the unchanged compatibility runner completed both versions.
+
+Native construction finishes three layers in 124, 63, 49 and 42 turns for crews of one, two, four and eight, respectively, starting paid body work on layer 2 and then working inward. Each original crew remains assigned, save/reload preserves partial work, and actual native damage requires a paid repair at the damaged cell. A separate narrow-site scene retains all twelve nearby Spinners in one group. Passage fixtures deliberately use narrow rooms, while the spacious-room scene verifies larger enclosure selection.
+
+The native observation scene checks seven-cell contact, both scout/helper iteration orders, whole-entity and global-flag immutability during planning, native stealth and silent-wall rejection, historical direction, four-turn expiry and zero-time refresh. Both versions also pursue completed leg-bag prey automatically, deliver two real hits, attach two sources and return from (16,10) through the breach to core (14,10) within eight turns, preserving the same completed bag and its progress. Controlled scenes do not establish balance for every natural map, user save or combination of other Mods.
+
+One baseline Hunting Grounds timing sample reached 16.3 seconds with no recorded planner work. Two controlled reruns of that same graveyard floor and seed did not reproduce it: Test.74 maxima were 350.6 and 300.7 ms, versus 897.3 and 343.4 ms for the preserved Test.73 ZIP. The observed turn-four samples were 22.5/13.1 ms and 24.7/15.6 ms, respectively. These measurements do not establish a cause for the isolated delay or a general performance guarantee. Evidence is `hunting-turn-profile-2026-09-30T21-44-56-455Z` and `hunting-turn-profile-2026-09-30T21-45-19-735Z` under the owning worktree's scratch directory.
+
+## Test.73 Spinner pressure, field staffing and recovery pursuit (2026-10-01, historical)
+
+The ordinary staffing eviction described below was withdrawn in Test.74. Its pressure and recovery corrections remain part of the current package.
 
 Visible prey no longer keeps a Spinner lure waiting indefinitely: six positive turns without a closer approach or paid construction/repair progress switch the lure to pressure. Field geometry and legal exterior stations limit ordinary staffing, normally two at a short narrow passage, four at a 3-by-3 passage interior and up to eight at a spacious enclosure. Excess idle workers are reassigned without deleting or moving entities instantly; active capture/recovery sources remain protected. Gate allocation includes remaining mouth coverage, with repartition on membership changes or a saved partition made unreachable by a stationed coworker.
 

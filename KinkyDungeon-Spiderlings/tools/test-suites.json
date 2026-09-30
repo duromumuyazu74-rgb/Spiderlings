@@ -14,6 +14,7 @@
     "spiderlings-spinner-enclosure.test.js",
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-spinner-ai.test.js",
+    "spiderlings-spinner-perception.test.js",
     "spiderlings-spinner-passage-planner.test.js",
     "spiderlings-spinner-passage.test.js",
     "spiderlings-web-mobility.test.js",

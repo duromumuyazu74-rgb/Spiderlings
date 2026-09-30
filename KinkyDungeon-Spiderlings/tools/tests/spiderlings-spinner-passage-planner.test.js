@@ -65,6 +65,23 @@ test("two-cell corridors are recognized without inventing single-vertex articula
     assert.ok(passage.gates.every((gate) => gate.cells.length === 2));
 });
 
+test("large-site preference precedes both shortlists and has its own cached selection", () => {
+    const planner = rules(),
+        index = planner.buildIndex(ascii(["####################", "#S................E#", "####################"]));
+    const ordinary = planner.candidates(index, { maxCandidates: 1 });
+    assert.equal(ordinary[0].interiorCells.length, 1);
+    const spacious = planner.candidates(index, { maxCandidates: 1, preferLarge: true });
+    assert.equal(spacious[0].interiorCells.length, 3);
+    assert.equal(spacious[0].proof.kind, "mandatory");
+    const work = index.metrics.routeChecks;
+    assert.deepEqual(planner.candidates(index, { maxCandidates: 1, preferLarge: true }), spacious);
+    assert.equal(index.metrics.routeChecks, work);
+    assert.equal(planner.candidates(index, { maxCandidates: 1 })[0].id, ordinary[0].id);
+    const nearExit = planner.candidates(index, { maxCandidates: 1, preferLarge: true, focus: { x: 18, y: 2 } });
+    assert.equal(nearExit[0].interiorCells.length, 3);
+    assert.ok(nearExit[0].center.x >= 12, "A distant same-area site cannot consume the local shortlist");
+});
+
 test("a parallel loop remains a detour rather than a mandatory passage", () => {
     const planner = rules(),
         snapshot = ascii([

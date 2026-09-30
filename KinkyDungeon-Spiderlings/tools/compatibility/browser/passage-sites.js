@@ -125,8 +125,10 @@
                 KinkyDungeonTilesDelete(`${x},${y}`);
             }
         room(2, 2, 2, 2);
-        room(3, mode === "junction" ? 9 : 7, 8, mode === "junction" ? 11 : 13);
-        room(20, mode === "junction" ? 9 : 7, 27, mode === "junction" ? 11 : 13);
+        // Keep these fixtures corridor-shaped. Spacious-room enclosure selection
+        // and outer-first work are exercised separately by spinner-work.
+        room(3, 9, 8, 11);
+        room(20, 9, 27, 11);
         room(9, 10, 19, 10);
         if (mode === "junction") {
             room(9, 5, 19, 5);
@@ -149,11 +151,11 @@
         tick = 0;
         const positions =
             mode === "crowding"
-                ? Array.from({ length: 12 }, (_entry, index) => [3 + (index % 4), 7 + Math.floor(index / 4)])
+                ? Array.from({ length: 12 }, (_entry, index) => [3 + (index % 4), 9 + Math.floor(index / 4)])
                 : mode === "recruitment"
                   ? [
-                        [6, 8],
-                        [24, 12],
+                        [6, 9],
+                        [24, 11],
                     ]
                   : [
                         [7, 9],
@@ -533,7 +535,7 @@
             KDMapData.Grid =
                 Array.from({ length: 15 }, (_, y) =>
                     Array.from({ length: 65 }, (_, x) =>
-                        ((x >= 2 && x <= 7) || (x >= 57 && x <= 62)) && y >= 4 && y <= 10
+                        ((x >= 2 && x <= 7) || (x >= 57 && x <= 62)) && y >= 6 && y <= 8
                             ? "0"
                             : x >= 7 && x <= 57 && y === 7
                               ? "0"
@@ -593,7 +595,7 @@
                 row.initialActors.every((initial) =>
                     actors.some((actor) => actor.id === initial.id && actor.x === initial.x && actor.y === initial.y),
                 ),
-                "Staffing a crowded field moved an actor before a paid native turn",
+                "Planning a crowded field moved an actor before a paid native turn",
             );
             const staffingAudit = () => {
                 const groups = Object.values(state().ai.groups),
@@ -603,28 +605,19 @@
                     });
                 expect(active.length > 0, "Crowding fixture has no naturally planned field");
                 expect(
-                    active.every((group) => {
-                        const plan = state().ai.plans[group.planId];
-                        return (
-                            group.staffing.capacity <= 8 &&
-                            (plan.kind !== "passage" ||
-                                plan.interiorCells.length >= 4 ||
-                                group.staffing.capacity <= 2) &&
-                            group.memberIds.length - group.staffing.busy <= group.staffing.capacity
-                        );
-                    }),
-                    "A small native field recruited more workers than its legal space supports",
+                    active.some((group) => ids.every((id) => group.memberIds.includes(id))),
+                    "A crowded field dispersed its original team",
                 );
                 expect(
                     ids.every((id) => KDMapData.Entities.some((actor) => actor.id === id && actor.hp > 0)),
-                    "Crowding was reduced by removing an existing Spinner",
+                    "Field planning removed an existing Spinner",
                 );
                 const plans = active.map((group) => state().ai.plans[group.planId]);
                 expect(
                     plans.every((plan, index) =>
                         plans.slice(index + 1).every((other) => !other.cells.some((cell) => plan.cells.includes(cell))),
                     ),
-                    "Excess workers selected an overlapping field",
+                    "Retained teams selected overlapping fields",
                 );
                 (row.staffing ||= []).push(copy(groups));
             };
@@ -633,11 +626,11 @@
                 await advance();
                 staffingAudit();
             }
-            await snapshotReload("crowded field dispatch");
+            await snapshotReload("crowded field retained team");
             staffingAudit();
             expect(
                 row.moves?.some((move) => move.result),
-                "Dispatched workers never used native movement",
+                "Retained workers never used native movement",
             );
         }
         for (const mode of modes.filter((entry) => entry !== "breach" && entry !== "crowding")) {
@@ -679,9 +672,8 @@
                 for (let step = 0; step < 60 && !converged(); step++) await advance();
                 expect(converged(), "Recruited colleagues did not finish walking to their assigned waiting mouths");
                 expect(
-                    state().ai.groups[plan.groupId].memberIds.length <=
-                        state().ai.groups[plan.groupId].staffing.capacity,
-                    "Recruitment exceeded the shared passage's legal worker capacity",
+                    row.initialActors.every((actor) => state().ai.groups[plan.groupId].memberIds.includes(actor.id)),
+                    "Recruitment abandoned an existing field worker",
                 );
                 row.recruited = { ids: distantIds, group: copy(state().ai.groups[plan.groupId]) };
             }

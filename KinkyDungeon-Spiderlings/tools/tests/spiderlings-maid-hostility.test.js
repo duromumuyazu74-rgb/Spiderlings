@@ -232,7 +232,8 @@ test("Hunting Grounds patrol seeks different-faction noAttack NPCs but ignores s
         Enemy: { name: "ExplosiveBarrel", faction: "Barrel", tags: { scenery: true } },
     });
     const prey = make("NeutralPrey", {
-        x: 12,
+        // Keep this search fixture beyond Spinner's eight-cell visual radius.
+        x: 14,
         Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
     });
     kd.KDMapData.Entities = [spider, scenery, prey];
