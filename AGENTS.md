@@ -16,6 +16,8 @@ For issues, specs, implementation tickets, triage and wayfinding, read `docs/age
 
 `main` holds formal releases; `test` holds test development. Only formal versions receive GitHub Releases. Read `docs/DEVELOPMENT.md` for setup, validation, version promotion and publishing. Use project-local skills in `.agents/skills/` before same-name global skills.
 
+GitHub operations for this repository use **`duromumuyazu74-rgb` only**. Before remote writes to Issues, PRs, branches, workflow settings or Releases, verify the authenticated identity with `gh api user --jq .login`; it must equal `duromumuyazu74-rgb`. If another already logged-in account is active, switch to the named account and verify again before continuing. Commit author configuration does not establish the authenticated GitHub identity. Do not use `Korlne` for this repository's remote operations.
+
 Preserve unrelated working and staged changes. Complete authorized local work and relevant checks without repeated approval. Commit only the task changes after required checks. Communicate with the user in their preferred language.
 
 Maintain `README.md` in English and `README.zh-CN.md` in Simplified Chinese as equivalent versions, with reciprocal links at the top and matching installation, version and download information.
