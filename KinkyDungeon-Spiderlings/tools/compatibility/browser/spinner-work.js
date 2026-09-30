@@ -61,8 +61,7 @@
                         return { id, x: e?.x, y: e?.y, credit: e?.SpinnerConstructionPoints };
                     }),
                 });
-                // Capacity-limited teams can finish separate small fields before
-                // turn 20; reload while their paid construction is still partial.
+                // Reload while outer-first paid construction is still partial.
                 if (tick === 5) {
                     const before = JSON.stringify(state.topology);
                     restore(save());
@@ -80,8 +79,31 @@
             );
             expect(
                 Object.values(row.final.topology.fields).filter((field) => field.phase === "ready").length >= 3,
-                `${count} workers did not finish at least three retained fields or layers`,
+                `${count} workers did not finish the three retained layers`,
             );
+            const staffed = Object.values(row.final.ai.groups).find((group) =>
+                actors.every((actor) => group.memberIds.includes(actor.id)),
+            );
+            expect(staffed, `${count} workers dispersed instead of retaining their field team`);
+            const plan = row.final.ai.plans[staffed.planId],
+                composite = row.final.topology.composites[plan?.compositeId];
+            expect(
+                composite?.constructionOrder === "outer-first" && composite.layerIds.length === 3,
+                `${count} workers did not declare the largest three-ring enclosure`,
+            );
+            const bodyWork = row.actions.filter(
+                (action) => action.result.applied && !/Gate|repair/.test(action.action),
+            );
+            const layers = bodyWork.map((action) => row.final.topology.fields[action.fieldId]?.layer);
+            expect(
+                layers[0] === 2 && layers.includes(1) && layers.includes(0),
+                "Paid work did not start at the outer ring",
+            );
+            expect(
+                layers.every((layer, index) => index === 0 || layer <= layers[index - 1]),
+                "Paid construction started an inner ring before finishing its outer ring",
+            );
+            row.retainedTeam = { memberIds: staffed.memberIds, compositeId: composite.id, constructionLayers: layers };
             expect(
                 JSON.stringify(row.reload.before) === JSON.stringify(row.reload.after),
                 "Partial construction changed on reload",
@@ -89,8 +111,7 @@
             const beforeIdle = row.actions.length;
             KinkyDungeonAdvanceTime(0, true);
             expect(row.actions.length === beforeIdle, "A zero-time update paid construction");
-            // Dispersal can leave completed, ownerless webs in the graph. Repair
-            // acceptance damages a ready outer layer still staffed by a live team.
+            // The original crew maintains its completed outer perimeter.
             const state = Spiderlings.SpinnerNativeField.state(),
                 repairSites = Object.values(state.ai.groups).flatMap((group) => {
                     const plan = state.ai.plans[group.planId],

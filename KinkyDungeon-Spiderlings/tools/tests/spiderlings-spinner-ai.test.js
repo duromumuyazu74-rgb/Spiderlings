@@ -247,6 +247,10 @@ test("a lone Spinner builds one-entry rings and pays to seal them after prey ent
         plan = ai.plans[group.planId];
     assert.ok(ai.plannerWorkLast.candidateCells <= snapshot.cells.length);
     assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 3);
+    assert.equal(plan.constructionOrder, "outer-first");
+    assert.equal(plan.fieldIds.length, 3, "All legal layers are declared before any paid work");
+    assert.equal(group.assignments[worker.id].fieldId, plan.fieldIds[2]);
     assert.equal(
         r.context.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].boundaryCells.length,
         8,
@@ -263,6 +267,14 @@ test("a lone Spinner builds one-entry rings and pays to seal them after prey ent
     assert.equal(graph.fields[plan.fieldId].phase, "ready", JSON.stringify(group.metrics));
     assert.equal(graph.composites[plan.compositeId].layerIds.length, 3, JSON.stringify(group.metrics));
     assert.ok(graph.composites[plan.compositeId].layerIds.every((id) => graph.fields[id].phase === "ready"));
+    const bodyOrder = graph.actionLog
+        .filter((action) => plan.fieldIds.includes(action.fieldId))
+        .map((action) => graph.fields[action.fieldId].layer);
+    assert.deepEqual([...new Set(bodyOrder)], [2, 1, 0]);
+    assert.ok(
+        bodyOrder.every((layer, index) => !index || layer <= bodyOrder[index - 1]),
+        "Every body action is paid outer-to-inner",
+    );
     const solids = new Set(r.context.Spiderlings.SpinnerTopology.solidCells(graph).map(cellKeyForTest));
     for (const id of graph.composites[plan.compositeId].layerIds) {
         const field = graph.fields[id];
@@ -410,7 +422,7 @@ test("separate Spinner groups perform paid work on their own enclosures", () => 
     assert.ok(wrongAssignment);
     groups[1].assignments[workers[1].id] = plain(wrongAssignment);
     start(r, snapshot);
-    assert.equal(groups[1].assignments[workers[1].id]?.fieldId, fieldByWorker.get(workers[1].id));
+    assert.ok(ai.plans[groups[1].planId].fieldIds.includes(groups[1].assignments[workers[1].id]?.fieldId));
     for (let turn = 0; turn < 30; turn++) {
         start(r, snapshot);
         for (const group of groups)
@@ -421,8 +433,9 @@ test("separate Spinner groups perform paid work on their own enclosures", () => 
     }
     const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
     for (const [workerId, fieldId] of fieldByWorker) {
+        const ownedFields = ai.plans[groups.find((group) => group.memberIds.includes(workerId)).planId].fieldIds;
         assert.ok(
-            graph.actionLog.some((action) => action.fieldId === fieldId),
+            graph.actionLog.some((action) => ownedFields.includes(action.fieldId)),
             `${workerId}: ${fieldId}`,
         );
         assert.ok(
@@ -1231,7 +1244,165 @@ test("cooperative enclosure reuses the saved group and topology work scheduler",
     );
 });
 
-test("a spacious enclosure keeps at most eight ordinary workers without changing nest provenance", () => {
+test("a cramped map selects its largest reachable legal ring without inventing space", () => {
+    for (const side of [5, 7]) {
+        const worker = spinner(1, 7, 6),
+            r = runtime([worker]),
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        snapshot.cells = snapshot.cells.filter(
+            (cell) => cell.x >= 5 && cell.x < 5 + side && cell.y >= 2 && cell.y < 2 + side,
+        );
+        snapshot.entrances = [{ x: 5, y: 2 + Math.floor(side / 2) }];
+        snapshot.exits = [{ x: 4 + side, y: 2 + Math.floor(side / 2) }];
+        const ai = start(r, snapshot),
+            group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId];
+        assert.equal(plan.kind, "enclosure");
+        assert.equal(
+            plan.radius,
+            side === 5 ? 1 : 2,
+            "A usable outside approach is required as well as a fitting perimeter",
+        );
+        assert.equal(plan.fieldIds.length, plan.radius);
+        assert.ok(plan.cells.every((key) => snapshot.cells.some((cell) => cellKeyForTest(cell) === key)));
+    }
+});
+
+test("an empty saved crew restores only actors proven by its field ownership", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        c = r.context,
+        ai = r.begin();
+    const group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    group.memberIds = [];
+    r.begin();
+    assert.deepEqual(plain(group.memberIds).sort(), [1, 2]);
+    assert.equal(group.planId, plan.id);
+    assert.deepEqual(plain(c.Spiderlings.SpinnerNativeField.fieldOwners(plan.fieldId)).sort(), [1, 2]);
+    assert.equal(Object.keys(ai.groups).length, 1);
+});
+
+test("groups meeting after paid passage work keep both maintenance fields owned", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 50, 9)],
+        r = passageRuntime(workers, 1, 55),
+        c = r.context,
+        ai = r.begin();
+    const groups = Object.values(ai.groups),
+        native = c.Spiderlings.SpinnerNativeField;
+    assert.equal(groups.length, 2);
+    for (const group of groups) {
+        const worker = workers.find((entry) => group.memberIds.includes(entry.id)),
+            graph = native.state().topology,
+            action = c.Spiderlings.SpinnerTopology.nextWorkAction(graph, worker.id, worker);
+        assert.ok(action);
+        const paid = c.Spiderlings.SpinnerTopology.applyAction(
+            graph,
+            { ...action, ownerId: worker.id },
+            { inBounds: true, floor: true, cell: action.cell, protected: false, occupied: false },
+        );
+        assert.equal(paid.outcome.legal, true);
+        native.state().topology = paid.state;
+    }
+    // Stage a later native meeting; no plan or ownership changes accompany it.
+    workers[1].x = workers[0].x + 1;
+    workers[1].y = workers[0].y;
+    r.begin();
+    assert.equal(Object.keys(ai.groups).length, 2);
+    for (const group of groups) {
+        const plan = ai.plans[group.planId];
+        assert.notEqual(plan.status, "abandoned");
+        for (const fieldId of plan.fieldIds)
+            assert.deepEqual(plain(native.fieldOwners(fieldId)), plain(group.memberIds));
+    }
+});
+
+test("fresh native approach redirects an unpaid plan while hidden coordinates and paid fields stay stable", () => {
+    const worker = spinner(1, 4, 4),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        first = ai.plans[group.planId];
+    const player = c.KinkyDungeonPlayerEntity;
+    player.x = 15;
+    player.y = 7;
+    start(r, snapshot);
+    assert.equal(group.planId, first.id, "Moving an unseen global player is not a report");
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: worker.id,
+        lastKnown: { x: 15, y: 7, dx: -1, dy: 0, age: 0, source: "native" },
+    };
+    ai.coordinationTurn = 4;
+    start(r, snapshot);
+    const redirected = ai.plans[group.planId];
+    assert.notEqual(redirected.id, first.id);
+    assert.equal(first.invalidReason, "observed-approach");
+    assert.ok(Math.max(Math.abs(redirected.center.x - 15), Math.abs(redirected.center.y - 7)) <= 6);
+    assert.ok(redirected.cells.length > 0);
+    start(r, snapshot);
+    assert.equal(group.planId, redirected.id, "The same report cannot repeatedly reroll an unpaid approach");
+    // Pay a real topology operation, then change both target location and approach.
+    const native = c.Spiderlings.SpinnerNativeField,
+        graph = native.state().topology;
+    const action = c.Spiderlings.SpinnerTopology.nextWorkAction(graph, worker.id, worker);
+    const paid = c.Spiderlings.SpinnerTopology.applyAction(
+        graph,
+        { ...action, ownerId: worker.id },
+        { inBounds: true, floor: true, cell: action.cell, protected: false, occupied: false },
+    );
+    assert.equal(paid.outcome.legal, true);
+    native.state().topology = paid.state;
+    group.engagement.lastKnown = { x: 2, y: 7, dx: 1, dy: 0, age: 0, source: "native" };
+    ai.coordinationTurn = 8;
+    start(r, snapshot);
+    assert.equal(
+        group.planId,
+        redirected.id,
+        "Paid construction keeps its maintenance owners after prey changes sides",
+    );
+    assert.deepEqual(plain(native.fieldOwners(redirected.fieldIds[2])), [worker.id]);
+});
+
+test("terrain replacement and a new native report in the same audit leave every active field attributed", () => {
+    const worker = spinner(1, 4, 4),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        original = ai.plans[group.planId];
+    const key = original.initialCells[0];
+    snapshot.cells.find((cell) => cellKeyForTest(cell) === key).protected = true;
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: worker.id,
+        lastKnown: { x: 15, y: 7, dx: -1, dy: 0, age: 0, source: "native" },
+    };
+    ai.coordinationTurn = 4;
+    start(r, snapshot);
+    const active = Object.values(ai.plans).filter((plan) => !["invalid", "abandoned"].includes(plan.status));
+    assert.equal(active.length, 1);
+    assert.equal(group.planId, active[0].id);
+    assert.notEqual(group.planId, original.id);
+    assert.equal(original.invalidReason, "terrain");
+    const native = c.Spiderlings.SpinnerNativeField;
+    for (const plan of Object.values(ai.plans))
+        for (const fieldId of plan.fieldIds) {
+            const field = native.state().topology.fields[fieldId];
+            assert.ok(
+                field.retired || fieldId === active[0].fieldId || active[0].fieldIds.includes(fieldId),
+                "An intermediate replacement cannot be left live without a group plan",
+            );
+        }
+});
+
+test("a spacious enclosure retains its entire maintenance crew without changing nest provenance", () => {
     const actors = Array.from({ length: 12 }, (_, index) =>
         spinner(index + 1, 2 + (index % 4), 3 + Math.floor(index / 4)),
     );
@@ -1265,8 +1436,11 @@ test("a spacious enclosure keeps at most eight ordinary workers without changing
         }),
         group = Object.values(result.ai.groups)[0];
     assert.equal(result.started, true);
-    assert.equal(group.staffing.capacity, 8);
-    assert.equal(group.memberIds.length, 8);
+    assert.equal(group.memberIds.length, 12);
+    assert.deepEqual(
+        plain(r.context.Spiderlings.SpinnerNativeField.fieldOwners("large")),
+        actors.map((actor) => actor.id),
+    );
     assert.ok(actors.every((actor) => actor.SpiderlingsNestParentID === 90 && actor.hp > 0));
     assert.deepEqual(plain(group.source), { type: "nest", nestId: 90 });
 });
@@ -1477,10 +1651,9 @@ function largePassageRuntime(workers) {
     const r = passageRuntime(workers, 3, 25),
         planner = r.context.Spiderlings.SpinnerPassagePlanner,
         candidates = planner.candidates;
-    // Choose an actually validated 3x3 interior. The ordinary ranking prefers
-    // tiny interiors, which deliberately no longer recruit four workers.
+    // Keep this route/coordination fixture on an actually validated 3x3 interior.
     planner.candidates = (index, options) => {
-        const candidate = candidates(index, { ...options, maxCandidates: 24 }).find(
+        const candidate = candidates(index, { ...options, focus: undefined, maxCandidates: 24 }).find(
             (entry) => entry.interiorCells.length === 9,
         );
         return candidate ? [candidate] : [];
@@ -1516,7 +1689,7 @@ test("passage AI selects a proved capture interior on one- and two-cell native c
     }
 });
 
-test("small passages staff two Spinners and leave excess actors available for other fields", () => {
+test("small passages retain their original crew and field ownership across audits", () => {
     for (const width of [1, 2]) {
         const workers = Array.from({ length: 12 }, (_, index) =>
                 spinner(index + 1, 3 + (index % 4), 4 + Math.floor(index / 4)),
@@ -1526,7 +1699,8 @@ test("small passages staff two Spinners and leave excess actors available for ot
             ai = r.begin(),
             staffed = Object.values(ai.groups).filter((group) => group.planId);
         assert.ok(staffed.length > 0);
-        assert.ok(staffed.every((group) => group.memberIds.length <= 2));
+        assert.equal(staffed.length, 1);
+        assert.equal(staffed[0].memberIds.length, 12);
         assert.equal(workers.length, 12);
         assert.deepEqual(
             workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y })),
@@ -1537,8 +1711,14 @@ test("small passages staff two Spinners and leave excess actors available for ot
             assert.ok(
                 Object.values(ai.groups)
                     .filter((group) => group.planId)
-                    .every((group) => group.memberIds.length <= 2),
-                "Excess workers must not rejoin a full small field on the next audit",
+                    .every((group) => group.memberIds.length === 12),
+                "A small field retains its maintenance owners",
+            );
+            assert.deepEqual(
+                plain(r.context.Spiderlings.SpinnerNativeField.fieldOwners(ai.plans[staffed[0].planId].fieldId)).sort(
+                    (a, b) => a - b,
+                ),
+                workers.map((worker) => worker.id),
             );
         }
     }
@@ -1559,7 +1739,6 @@ test("passage AI recruits initially separated worker groups into one planned fie
         plan = ai.plans[group.planId];
     assert.equal(plan.kind, "passage");
     assert.deepEqual(plain(group.memberIds).sort(), [1, 2, 3, 4]);
-    assert.equal(group.staffing.capacity, 4, "A nine-cell core leaves room for two extra helpers");
     const graph = c.Spiderlings.SpinnerNativeField.state().topology;
     assert.deepEqual(plain(graph.fieldOwners[plan.fieldId]).sort(), [1, 2, 3, 4]);
     assert.equal(Object.values(ai.plans).filter((entry) => !["invalid", "abandoned"].includes(entry.status)).length, 1);
@@ -1567,7 +1746,7 @@ test("passage AI recruits initially separated worker groups into one planned fie
     assert.ok(ai.passageMetrics.candidateCacheHits >= 1, "The second group reuses route-interception proofs");
 });
 
-test("a saved oversized field releases idle workers while preserving active Capture and Recovery sources", () => {
+test("a saved oversized field retains idle maintenance owners and active Capture and Recovery sources", () => {
     const workers = Array.from({ length: 8 }, (_, index) =>
             spinner(index + 1, 3 + (index % 4), 4 + Math.floor(index / 4)),
         ),
@@ -1588,10 +1767,8 @@ test("a saved oversized field releases idle workers while preserving active Capt
     c.Spiderlings.SpinnerAI.restoreAfterLoad();
     assert.equal(group.memberIds.length, 8, "A zero-time load audits state without dispatching excess workers");
     r.begin();
-    assert.deepEqual(plain(group.memberIds), [1, 2, 6, 7, 8]);
-    assert.equal(group.staffing.capacity, 2);
-    assert.equal(group.staffing.busy, 3);
-    assert.deepEqual(plain(native.fieldOwners(plan.fieldId)), [1, 2, 6, 7, 8]);
+    assert.deepEqual(plain(group.memberIds), [1, 2, 3, 4, 5, 6, 7, 8]);
+    assert.deepEqual(plain(native.fieldOwners(plan.fieldId)), [1, 2, 3, 4, 5, 6, 7, 8]);
     assert.equal(JSON.stringify(native.state().topology.fields[plan.fieldId]), fieldBefore);
     assert.deepEqual(
         workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y, hp: worker.hp })),
@@ -1599,14 +1776,14 @@ test("a saved oversized field releases idle workers while preserving active Capt
     );
     r.begin();
     assert.ok([6, 7, 8].every((id) => group.memberIds.includes(id)));
-    assert.ok(group.memberIds.length - group.staffing.busy <= group.staffing.capacity);
+    assert.equal(group.memberIds.length, 8);
     const otherPlans = Object.values(ai.plans).filter(
         (entry) => entry !== plan && !["invalid", "abandoned"].includes(entry.status),
     );
     assert.ok(otherPlans.every((other) => !other.cells.some((key) => plan.cells.includes(key))));
 });
 
-test("field staffing shrinks to the actual legal stations and leaves the narrow mouth free", () => {
+test("protected waiting stations retain crew ownership and leave the narrow mouth free", () => {
     const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
         r = passageRuntime(workers),
         ai = r.begin(),
@@ -1615,16 +1792,16 @@ test("field staffing shrinks to the actual legal stations and leaves the narrow 
         gate = plan.gates.reduce((a, b) => (a.cells[0].x < b.cells[0].x ? a : b)),
         mouth = { x: gate.cells[0].x - 1, y: gate.cells[0].y },
         station = { x: mouth.x - 1, y: mouth.y };
-    assert.equal(group.staffing.capacity, 2);
     r.setMetadata(station.x, station.y, { OL: true });
     r.begin();
     assert.equal(group.planId, plan.id, "Protecting an outer station does not erase the valid field");
-    assert.equal(group.staffing.capacity, 1, "The gate mouth cannot substitute for the lost waiting station");
-    assert.equal(group.memberIds.length, 1);
+    assert.equal(group.memberIds.length, 2);
     assert.ok(
         Object.values(group.assignments)
             .filter((entry) => entry.type === "rally")
-            .every((entry) => cellKeyForTest(entry.workCell) !== cellKeyForTest(mouth)),
+            .every(
+                (entry) => ![cellKeyForTest(mouth), cellKeyForTest(station)].includes(cellKeyForTest(entry.workCell)),
+            ),
     );
 });
 
@@ -1794,7 +1971,12 @@ test("passage AI keeps remote workers independent even when their future candida
     const workers = [spinner(1, 5, 5), spinner(2, 100, 5)],
         r = passageRuntime(workers, 1, 105),
         c = r.context,
-        ai = r.begin(),
+        originalCandidates = c.Spiderlings.SpinnerPassagePlanner.candidates;
+    // Keep the authored nearby-site catalogue to reproduce the former false
+    // recruitment trigger; current production ranking uses each crew's local origin.
+    c.Spiderlings.SpinnerPassagePlanner.candidates = (index, options) =>
+        originalCandidates(index, { ...options, focus: undefined });
+    const ai = r.begin(),
         groups = Object.values(ai.groups);
     assert.equal(
         groups.length,
@@ -1844,7 +2026,12 @@ test("passage AI keeps its analysis and active field when paid gate work creates
     const worker = spinner(1, 5, 5),
         r = passageRuntime([worker]),
         c = r.context,
-        ai = r.begin(),
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    // A one-cell interior isolates collision-proxy caching from a lone worker's
+    // inability to cross a wider corridor occupied by prey.
+    planner.candidates = (index, options) => candidates(index, { ...options, focus: undefined, preferLarge: false });
+    const ai = r.begin(),
         group = Object.values(ai.groups)[0],
         plan = ai.plans[group.planId],
         native = c.Spiderlings.SpinnerNativeField,
@@ -1888,7 +2075,9 @@ test("ready staffing keeps a core worker opposite a remote colleague instead of 
         planner = c.Spiderlings.SpinnerPassagePlanner,
         candidates = planner.candidates;
     planner.candidates = (index, options) =>
-        candidates(index, { ...options, maxCandidates: 24 }).filter((entry) => entry.id === "passage:10,7:1x1");
+        candidates(index, { ...options, focus: undefined, preferLarge: false, maxCandidates: 24 }).filter(
+            (entry) => entry.id === "passage:10,7:1x1",
+        );
     const ai = r.begin(),
         group = Object.values(ai.groups)[0],
         plan = ai.plans[group.planId],
@@ -1939,7 +2128,10 @@ test("passage AI stations same-side helpers at both mouths after preparing a one
     const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
         r = passageRuntime(workers),
         c = r.context,
-        ai = r.begin(),
+        originalCandidates = c.Spiderlings.SpinnerPassagePlanner.candidates;
+    c.Spiderlings.SpinnerPassagePlanner.candidates = (index, options) =>
+        originalCandidates(index, { ...options, focus: undefined });
+    const ai = r.begin(),
         group = Object.values(ai.groups)[0],
         plan = ai.plans[group.planId],
         native = c.Spiderlings.SpinnerNativeField,
@@ -2114,7 +2306,13 @@ test("passage AI moves support beside sealed prey using fresh observations befor
             workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
             r = passageRuntime(workers, movedUnseen ? 3 : 1),
             c = r.context,
-            ai = r.begin(),
+            planner = c.Spiderlings.SpinnerPassagePlanner,
+            candidates = planner.candidates;
+        // Fix the horizontal interior at one cell so the post-closure support
+        // positions remain two steps from prey; the wide case allows an unseen y move.
+        planner.candidates = (index, options) =>
+            candidates(index, { ...options, focus: undefined, preferLarge: false });
+        const ai = r.begin(),
             group = Object.values(ai.groups)[0],
             plan = ai.plans[group.planId],
             native = c.Spiderlings.SpinnerNativeField,

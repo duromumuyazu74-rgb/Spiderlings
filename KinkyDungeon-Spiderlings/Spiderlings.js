@@ -318,7 +318,7 @@ SPIDERLINGS.addEnemies([
         AI: "hunt",
         sneakThreshold: 1,
         disarm: 0.25,
-        visionRadius: 5,
+        visionRadius: 8,
         maxhp: 2,
         minLevel: 0,
         weight: 10,

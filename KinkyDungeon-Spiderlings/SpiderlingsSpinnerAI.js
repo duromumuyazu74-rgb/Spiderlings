@@ -250,9 +250,9 @@
         );
     }
 
-    function fieldStaffing(ai, group, snapshot, graph) {
+    function fieldStandbyCells(ai, group, snapshot, graph) {
         const plan = ai.plans[group.planId];
-        if (!plan || ["invalid", "abandoned"].includes(plan.status) || plan.kind === "line") return undefined;
+        if (!plan || ["invalid", "abandoned"].includes(plan.status) || plan.kind === "line") return [];
         const field =
                 graph?.fields?.[
                     (graph?.composites?.[plan.compositeId]?.layerIds || plan.fieldIds || [plan.fieldId]).at(-1)
@@ -268,13 +268,8 @@
             ),
             byKey = new Map((snapshot?.cells || []).map((cell) => [cellKey(cell), cell])),
             stations = new Map(),
-            reachableGates = new Set(),
             mouths = new Set();
-        if (!snapshot)
-            return {
-                capacity: Math.min(8, Math.max(2, gates.length + Math.floor(Math.max(0, interior.size - 1) / 3))),
-                stationCells: [],
-            };
+        if (!snapshot) return [];
         for (const gate of gates) {
             const outside = new Map();
             for (const cell of gate.cells.filter(Boolean))
@@ -287,10 +282,8 @@
                 }
             if (outside.size === 1) mouths.add([...outside.keys()][0]);
         }
-        // One station per actor, outside the prey's interior and gate cells.
-        // The extra interior allowance reserves one prey cell and three cells
-        // of movement space per additional helper instead of filling the core.
-        for (const [index, gate] of gates.entries())
+        // Reserve distinct waiting cells without detaching any field owners.
+        for (const gate of gates)
             for (const cell of gate.cells.filter(Boolean))
                 for (let dy = -2; dy <= 2; dy++)
                     for (let dx = -2; dx <= 2; dx++) {
@@ -307,50 +300,9 @@
                             !otherFields.has(key)
                         ) {
                             stations.set(key, point);
-                            reachableGates.add(index);
                         }
                     }
-        return {
-            capacity: Math.min(
-                8,
-                Math.max(2, reachableGates.size + Math.floor(Math.max(0, interior.size - 1) / 3)),
-                stations.size,
-            ),
-            stationCells: [...stations.values()],
-        };
-    }
-
-    function releaseExcessStaff(encounter, snapshot) {
-        const ai = encounter.ai,
-            byId = new Map(KDMapData.Entities.map((entity) => [entity.id, entity]));
-        for (const group of Object.values(ai.groups)) {
-            const staffing = fieldStaffing(ai, group, snapshot, encounter.topology);
-            if (!staffing) continue;
-            const busy = group.memberIds.filter((id) => sourceBusy(byId.get(id))),
-                workers = group.memberIds.filter((id) => !busy.includes(id)),
-                retained = workers
-                    .sort(
-                        (a, b) =>
-                            Number(String(b) === String(group.engagement?.lureId)) -
-                                Number(String(a) === String(group.engagement?.lureId)) ||
-                            Number(!!group.assignments?.[b]) - Number(!!group.assignments?.[a]) ||
-                            group.memberIds.indexOf(a) - group.memberIds.indexOf(b),
-                    )
-                    .slice(0, staffing.capacity),
-                released = workers.filter((id) => !retained.includes(id));
-            group.memberIds = group.memberIds.filter((id) => busy.includes(id) || retained.includes(id));
-            for (const id of released) {
-                delete group.assignments?.[id];
-                delete group.rallyGates?.[id];
-            }
-            group.incomingIds = (group.incomingIds || []).filter((id) => group.memberIds.includes(id));
-            group.staffing = {
-                ...group.staffing,
-                capacity: staffing.capacity,
-                busy: busy.length,
-                released: released.length,
-            };
-        }
+        return [...stations.values()];
     }
 
     function mergeNearbyGroups(encounter, entities, distances, snapshot) {
@@ -379,8 +331,7 @@
                             group !== donor &&
                             ai.groups[group.id] &&
                             group.memberIds.length > 0 &&
-                            group.memberIds.filter((id) => !sourceBusy(byId.get(id))).length + donor.memberIds.length <=
-                                (fieldStaffing(ai, group, snapshot, encounter.topology)?.capacity ?? 8) &&
+                            (!donorPlan || !planHasPaidWork(encounter, donorPlan)) &&
                             groups.indexOf(group) < groups.indexOf(donor) &&
                             (!donorPlan || activePlan(group)?.kind === "passage") &&
                             (sameSource(byId.get(donor.memberIds[0]), group) || !api.HuntingGrounds?.activeState?.()),
@@ -426,11 +377,39 @@
             : entity.SpiderlingsNestParentID === undefined;
     }
 
+    function planHasPaidWork(encounter, plan) {
+        const graph = encounter?.topology,
+            fieldIds = new Set(plan?.fieldIds || [plan?.fieldId]);
+        return (
+            !!graph &&
+            (graph.actionLog?.some((entry) => fieldIds.has(entry.fieldId)) ||
+                graph.anchors?.some((anchor) => anchor.built && anchor.owners.some((id) => fieldIds.has(id))) ||
+                graph.links?.some(
+                    (link) => (link.prepared || link.builtCells.length) && link.owners.some((id) => fieldIds.has(id)),
+                ))
+        );
+    }
+
     function auditGroups(ai, entities, options = {}) {
         const byId = new Map(entities.map((entity) => [entity.id, entity])),
-            assigned = new Set();
+            assigned = new Set(),
+            claimed = new Set(Object.values(ai.groups).flatMap((group) => group.memberIds));
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             group.memberIds = group.memberIds.filter((id) => baseEligibility(byId.get(id), options));
+            if (!group.memberIds.length) {
+                const plan = ai.plans[group.planId],
+                    owners = [
+                        ...new Set(
+                            (plan?.fieldIds || [plan?.fieldId]).flatMap(
+                                (id) => options.topology?.fieldOwners?.[id] || [],
+                            ),
+                        ),
+                    ];
+                // Only saved field attribution can recover an empty crew. A
+                // nearby actor or an already assigned source is not evidence.
+                group.memberIds = owners.filter((id) => !claimed.has(id) && baseEligibility(byId.get(id), options));
+                for (const id of group.memberIds) claimed.add(id);
+            }
             for (const id of group.memberIds) assigned.add(id);
             for (const id of Object.keys(group.assignments || {}))
                 if (!group.memberIds.includes(Number(id)) && !group.memberIds.includes(id))
@@ -450,13 +429,7 @@
                             .map((member) => pathDistance(entity, member, options)),
                     ),
                 }))
-                .filter(
-                    (choice) =>
-                        choice.steps <= GROUP_RADIUS &&
-                        sameSource(entity, choice.group) &&
-                        choice.group.memberIds.filter((id) => !sourceBusy(byId.get(id))).length <
-                            (fieldStaffing(ai, choice.group, options.mapSnapshot, options.topology)?.capacity ?? 8),
-                )
+                .filter((choice) => choice.steps <= GROUP_RADIUS && sameSource(entity, choice.group))
                 .sort((a, b) => a.steps - b.steps || a.group.id.localeCompare(b.group.id));
             if (choices[0]) {
                 choices[0].group.memberIds.push(entity.id);
@@ -674,6 +647,8 @@
         // A supplied line catalogue is an explicit line-only scenario (used by authored fixtures).
         if (Object.hasOwn(snapshot, "candidateLines")) return [];
         const origin = (group.members || group.memberPositions || [])[0],
+            observation = api.SpinnerAI.groupObservation?.(group),
+            focus = observation || origin,
             byKey = geometry?.byKey || new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
             occupied = new Set([
                 ...KDMapData.Entities.filter(
@@ -691,19 +666,53 @@
                 geometry?.passable ||
                 new Set((snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             nests = snapshot.nests || [],
+            approach = observation ? routeOnSnapshot(snapshot, origin, observation) : [],
+            reserved = new Set(
+                Object.values(api.SpinnerNativeField.state()?.ai?.plans || {})
+                    .filter((plan) => plan.groupId !== group.id && !["invalid", "abandoned"].includes(plan.status))
+                    .flatMap((plan) => plan.cells || []),
+            ),
             candidates = [];
         if (!origin) return candidates;
         // Prefer nearby work, then search the connected map before abandoning enclosure construction.
         for (const nearby of [true, false]) {
             if (candidates.length) break;
             for (const center of snapshot.cells || []) {
-                if (distance(origin, center) <= 6 !== nearby) continue;
+                if (distance(focus, center) <= 6 !== nearby) continue;
+                if (observation && !nearby && !approach.some((cell) => distance(cell, center) <= 2)) continue;
                 if (work) {
                     work.candidateCells++;
                     work.candidatesExamined++;
                 }
                 if (!Number.isFinite(distances(origin, center))) continue;
-                const boundary = ringCells(center, 1),
+                const radius = [3, 2, 1].find(
+                        (size) =>
+                            [
+                                ...ringCells(center, size),
+                                ...Array.from({ length: size - 1 }, (_, index) => ringCells(center, index + 1)).flat(),
+                                center,
+                            ].every((cell) => {
+                                const tile = byKey.get(cellKey(cell));
+                                return (
+                                    tile?.floor &&
+                                    !tile.locked &&
+                                    !tile.protected &&
+                                    !reserved.has(cellKey(cell)) &&
+                                    (cellKey(cell) === cellKey(center) || !occupied.has(cellKey(cell)))
+                                );
+                            }) &&
+                            reachableGate(
+                                snapshot,
+                                center,
+                                size,
+                                work,
+                                byKey,
+                                passable,
+                                geometry?.gateCache,
+                                geometry?.neighbors,
+                            ),
+                    ),
+                    boundary = radius ? ringCells(center, radius) : [],
                     cells = [...boundary, center],
                     legal = cells.every((cell) => {
                         const tile = byKey.get(cellKey(cell));
@@ -714,11 +723,11 @@
                             (cellKey(cell) === cellKey(center) || !occupied.has(cellKey(cell)))
                         );
                     });
-                if (!legal) continue;
+                if (!radius || !legal) continue;
                 const gate = reachableGate(
                     snapshot,
                     center,
-                    1,
+                    radius,
                     work,
                     byKey,
                     passable,
@@ -733,22 +742,50 @@
                     routeHits = cells.filter((cell) => routeKeys.has(cellKey(cell))).length,
                     travelDistance = distances(origin, gate),
                     nestDistance = nest ? distance(center, nest) : 99,
-                    score = 300 + routeHits * 12 + Math.max(0, 12 - nestDistance * 2) - travelDistance * 2;
+                    score =
+                        300 +
+                        routeHits * 12 +
+                        Math.max(0, 12 - nestDistance * 2) -
+                        travelDistance * 2 -
+                        distance(focus, center) * 4;
                 if (!Number.isFinite(travelDistance)) continue;
                 candidates.push({
                     id: `enclosure:${cellKey(center)}`,
                     type: "enclosure",
                     center: { x: center.x, y: center.y },
                     anchors: rectangle(center, 1),
-                    gate,
-                    cells,
+                    radius,
+                    area: (radius * 2 - 1) ** 2,
+                    gate: { x: center.x + Math.sign(gate.x - center.x), y: center.y + Math.sign(gate.y - center.y) },
+                    layers: Array.from({ length: radius }, (_, index) => {
+                        const size = index + 1;
+                        return {
+                            vertices: rectangle(center, size),
+                            gate: {
+                                x: center.x + Math.sign(gate.x - center.x) * size,
+                                y: center.y + Math.sign(gate.y - center.y) * size,
+                            },
+                        };
+                    }),
+                    cells: [
+                        ...Array.from({ length: radius }, (_, index) => ringCells(center, index + 1)).flat(),
+                        center,
+                    ],
                     score,
                     travelDistance,
                     reasons: { route: routeHits, nest: nestDistance },
                 });
             }
         }
-        return candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        return candidates.sort(compareSites);
+    }
+
+    function compareSites(a, b) {
+        return (
+            (b.area || b.interiorCells?.length || 1) - (a.area || a.interiorCells?.length || 1) ||
+            b.score - a.score ||
+            a.id.localeCompare(b.id)
+        );
     }
 
     function selectSavedPlan(ai, group, candidates) {
@@ -763,7 +800,14 @@
                 (candidate) =>
                     !invalid.has(candidate.id) && !candidate.cells.some((cell) => occupied.has(cellKey(cell))),
             ),
-            shortlist = eligible.slice(0, SHORTLIST_SIZE);
+            largestArea = Math.max(
+                0,
+                ...eligible.map((candidate) => candidate.area || candidate.interiorCells?.length || 1),
+            ),
+            shortlist = eligible
+                .filter((candidate) => (candidate.area || candidate.interiorCells?.length || 1) === largestArea)
+                .sort(compareSites)
+                .slice(0, SHORTLIST_SIZE);
         if (!shortlist.length) return undefined;
         const random = seededRandom(`${ai.mapSeed}:${ai.mapIdentity}:${group.id}:${group.selectionOrdinal}`),
             floorScore = shortlist[shortlist.length - 1].score,
@@ -790,7 +834,20 @@
                       compositeId: fieldId,
                       center: clone(selected.center),
                       ...(selected.gate ? { gate: clone(selected.gate) } : {}),
-                      fieldIds: [fieldId],
+                      fieldIds:
+                          selected.type === "enclosure"
+                              ? selected.layers.map((_, index) => (index ? `${fieldId}:ring:${index + 1}` : fieldId))
+                              : [fieldId],
+                  }
+                : {}),
+            ...(selected.type === "enclosure"
+                ? {
+                      constructionOrder: "outer-first",
+                      radius: selected.radius,
+                      layers: selected.layers.map((layer, index) => ({
+                          ...clone(layer),
+                          id: index ? `${fieldId}:ring:${index + 1}` : fieldId,
+                      })),
                   }
                 : {}),
             ...(selected.type === "passage"
@@ -810,6 +867,8 @@
             invalidReason: null,
         };
         group.planId = planId;
+        const observation = api.SpinnerAI.groupObservation?.(group);
+        if (observation) group.planningObservation = { ...clone(observation), turn: ai.coordinationTurn || 0 };
         return ai.plans[planId];
     }
 
@@ -942,6 +1001,8 @@
             approaches = routeDistances(snapshot, undefined, occupied, true);
         const candidates = api.SpinnerPassagePlanner.candidates(index, {
             routes,
+            preferLarge: true,
+            focus: api.SpinnerAI.groupObservation?.(group) || members[0],
             maxCandidates: SHORTLIST_SIZE,
             blockedKeys: [...occupied],
             reachableKeys: index.nodes
@@ -967,12 +1028,20 @@
                         ),
                     ),
                 );
-                return { ...candidate, travelDistance, score: candidate.score - travelDistance * 2 };
+                const focus = api.SpinnerAI.groupObservation?.(group) || members[0];
+                return {
+                    ...candidate,
+                    area: candidate.interiorCells.length,
+                    travelDistance,
+                    focusDistance: distance(focus, candidate.center),
+                    score: candidate.score - travelDistance * 2 - distance(focus, candidate.center) * 4,
+                };
             })
             .filter((candidate) => Number.isFinite(candidate.travelDistance))
-            .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+            .sort(compareSites);
         ai.passageMetrics = { ...index.metrics };
-        return candidates;
+        const local = candidates.filter((candidate) => candidate.focusDistance <= 6);
+        return local.length ? local : candidates;
     }
 
     function activatePlan(plan, group) {
@@ -994,7 +1063,8 @@
                 compositeId: plan.compositeId,
                 groupId: group.id,
                 owners: group.memberIds,
-                layers: [{ id: plan.fieldId, vertices: plan.anchors, gate: plan.gate }],
+                layers: plan.layers || [{ id: plan.fieldId, vertices: plan.anchors, gate: plan.gate }],
+                constructionOrder: plan.constructionOrder,
                 autoSeal: false,
                 scenario: "autonomous-enclosure",
             });
@@ -1200,6 +1270,9 @@
                     retainedWork = previous?.workCell,
                     canRetain =
                         retainedTask &&
+                        (plan?.constructionOrder !== "outer-first" ||
+                            api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...reservedTasks])
+                                ?.fieldId === previous.fieldId) &&
                         retainedWork &&
                         !reservedTasks.has(assignmentKey(field ? retainedTask : previous)) &&
                         !reservedWork.has(cellKey(retainedWork)) &&
@@ -1284,7 +1357,7 @@
                     field.phase === "sealed" &&
                     api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, known),
                 points = new Map(
-                    fieldStaffing(encounter.ai, group, snapshot, encounter.topology).stationCells.map((cell) => [
+                    fieldStandbyCells(encounter.ai, group, snapshot, encounter.topology).map((cell) => [
                         cellKey(cell),
                         cell,
                     ]),
@@ -1393,7 +1466,6 @@
                 .filter((member) => member && distances(plan.center, member) > 3)
                 .map((member) => member.id);
             group.staffing = {
-                ...group.staffing,
                 available: members.filter((member) => eligibleSpinner(member) && !sourceBusy(member)).length,
                 incoming: group.incomingIds.length,
                 nearCore: members.filter((member) => eligibleSpinner(member) && distance(member, plan.center) <= 1)
@@ -1576,9 +1648,10 @@
                 .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity)),
             passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
-            enclosures = passages.length
-                ? passages
-                : analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work, enclosureGeometry?.()),
+            enclosures = [
+                ...passages,
+                ...analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work, enclosureGeometry?.()),
+            ].sort(compareSites),
             candidates =
                 enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
                     ? enclosures
@@ -1599,13 +1672,10 @@
             composite = graph?.composites?.[plan.compositeId],
             innerId = composite?.layerIds.at(-1),
             inner = graph?.fields?.[innerId];
-        if (
-            !inner ||
-            composite.layerIds.length >= 3 ||
-            composite.closureArmed ||
-            (!api.SpinnerTopology.isLayerClosed(graph, innerId) && (composite.autoSeal || inner.phase !== "ready"))
-        )
-            return;
+        if (!composite || !plan.center || !plan.gate) return;
+        composite.constructionOrder = "outer-first";
+        plan.constructionOrder = "outer-first";
+        if (!inner || composite.layerIds.length >= 3 || composite.closureArmed) return;
         const radius = composite.layerIds.length + 1,
             center = plan.center,
             boundary = ringCells(center, radius),
@@ -1656,6 +1726,19 @@
             plan.expansionBlockedSignature = signature;
             return;
         }
+        const exterior = { x: gate.x + Math.sign(gate.x - center.x), y: gate.y + Math.sign(gate.y - center.y) },
+            exteriorTile = byKey.get(cellKey(exterior)),
+            blockedBoundary = new Set(boundary.map(cellKey));
+        if (
+            !exteriorTile?.floor ||
+            exteriorTile.locked ||
+            [snapshot.entrances?.[0], snapshot.exits?.[0]]
+                .filter(Boolean)
+                .some((origin) => !routeOnSnapshot(snapshot, origin, exterior, blockedBoundary).length)
+        ) {
+            plan.expansionBlockedSignature = signature;
+            return;
+        }
         const fieldId = `${plan.fieldId}:ring:${radius}`,
             added = api.SpinnerNativeField.addEnclosureLayer({
                 compositeId: plan.compositeId,
@@ -1667,9 +1750,11 @@
                 },
             });
         if (added.added) {
+            plan.fieldIds ||= [...composite.layerIds.slice(0, -1)];
             plan.fieldIds.push(fieldId);
             plan.cells.push(...boundary.map(cellKey));
             delete plan.expansionBlockedSignature;
+            expandPlan(encounter, plan, group, snapshot, work);
         } else plan.expansionBlockedSignature = signature;
     }
 
@@ -1785,7 +1870,7 @@
             routeDistances: distances,
             topology: encounter.topology,
         });
-        releaseExcessStaff(encounter, snapshot);
+        refreshObservations(encounter);
         mergeNearbyGroups(encounter, entities, distances, snapshot);
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
@@ -1805,6 +1890,33 @@
                     work,
                     currentEnclosureGeometry,
                 );
+            const observedPlan = ai.plans[group.planId],
+                observation = api.SpinnerAI.groupObservation?.(group),
+                previousObservation = group.planningObservation,
+                observationChanged =
+                    observation &&
+                    (!previousObservation ||
+                        distance(observation, previousObservation) >= 4 ||
+                        observation.dx * previousObservation.dx + observation.dy * previousObservation.dy < 0 ||
+                        JSON.stringify(observation.target) !== JSON.stringify(previousObservation.target));
+            if (
+                observedPlan &&
+                observationChanged &&
+                !planHasPaidWork(encounter, observedPlan) &&
+                (ai.coordinationTurn || 0) - (previousObservation?.turn ?? -4) >= 4
+            ) {
+                // A fresh native report may redirect an unpaid approach. Paid
+                // bodies remain owned maintenance sites regardless of prey movement.
+                observedPlan.status = "abandoned";
+                observedPlan.invalidReason = "observed-approach";
+                for (const fieldId of observedPlan.fieldIds || [observedPlan.fieldId])
+                    api.SpinnerNativeField.retireField(fieldId);
+                group.planId = null;
+                group.assignments = {};
+                group.selectionOrdinal++;
+                group.planningObservation = { ...clone(observation), turn: ai.coordinationTurn || 0 };
+                delete group.noPlanSignature;
+            }
             if (group.planId) continue;
             const members = group.memberIds
                 .map((id) => entities.find((entity) => entity.id === id))
@@ -1812,15 +1924,16 @@
             const noPlanSignature = planningSignature(ai, members);
             if (group.noPlanSignature === noPlanSignature) continue;
             const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
-                enclosures = passages.length
-                    ? passages
-                    : analyzeEnclosureCandidates(
-                          snapshot,
-                          { ...group, members },
-                          distances,
-                          work,
-                          currentEnclosureGeometry(),
-                      ),
+                enclosures = [
+                    ...passages,
+                    ...analyzeEnclosureCandidates(
+                        snapshot,
+                        { ...group, members },
+                        distances,
+                        work,
+                        currentEnclosureGeometry(),
+                    ),
+                ].sort(compareSites),
                 candidates =
                     enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
                         ? enclosures
@@ -1835,7 +1948,6 @@
             else group.noPlanSignature = noPlanSignature;
             activatePlan(plan, group);
         }
-        releaseExcessStaff(encounter, snapshot);
         mergeNearbyGroups(encounter, entities, distances, snapshot);
         for (const group of Object.values(ai.groups)) {
             const plan = ai.plans[group.planId];
@@ -1959,6 +2071,74 @@
         delete group.engagement;
     }
 
+    function groupObservation(group) {
+        const known = group.engagement?.lastKnown;
+        return known?.source === "native" && known.age < 4
+            ? { ...clone(known), target: clone(group.engagement.target) }
+            : undefined;
+    }
+
+    function recognizedContact(enemy, target) {
+        return !!(
+            enemy.aware ||
+            (typeof globalThis.KinkyDungeonTrackSneak === "function" &&
+                globalThis.KinkyDungeonTrackSneak({ ...enemy }, 0, target) >= 0.5)
+        );
+    }
+
+    function nativeContact(enemy) {
+        if (
+            !eligibleSpinner(enemy) ||
+            enemy.Enemy.noAttack ||
+            [enemy.stun, enemy.freeze, enemy.channel, enemy.teleporting].some((value) => value > 0) ||
+            globalThis.KDIsDistracted?.(enemy) ||
+            typeof globalThis.KinkyDungeonNearestPlayer !== "function" ||
+            typeof globalThis.KinkyDungeonTrackSneak !== "function"
+        )
+            return undefined;
+        // Native acquisition and TrackSneak(delta 0) may initialize awareness or
+        // vp. Sample a detached observer so planning adds no detection progress.
+        const observer = { ...enemy },
+            target = globalThis.KinkyDungeonNearestPlayer(observer, false, true);
+        if (!targetIsLiving(target) || !KDHostile(enemy, target)) return undefined;
+        let radius = enemy.Enemy.visionRadius ? KDEnemyVisionRadius(enemy) : 0;
+        if (enemy.Enemy.visionRadius && enemy.lifetime > 0) radius += enemy.Enemy.visionSummoned || 0;
+        radius = Math.max(1.5, radius + KinkyDungeonGetBuffedStat(enemy.buffs, "Vision"));
+        if (KinkyDungeonStatsChoice.get("KillSquad"))
+            radius = Math.max(radius * 1.2, (enemy.Enemy.blindSight || 0) + 3.5);
+        if (enemy.blind && !enemy.aware) radius = 1.5;
+        const distance = Math.hypot(enemy.x - target.x, enemy.y - target.y),
+            visible = KinkyDungeonCheckLOS(enemy, target, distance, radius, true, true),
+            heard = globalThis.KDCanHearEnemy?.(enemy, target, 1) === true;
+        if (!visible && !heard) return undefined;
+        const recognized = recognizedContact(enemy, target);
+        if (!recognized) return undefined;
+        return {
+            target,
+            aiData: {
+                recognized: true,
+                hostile: true,
+                canSensePlayer: true,
+                canSeePlayer: visible && KinkyDungeonCheckLOS(enemy, target, distance, radius, false, false),
+            },
+        };
+    }
+
+    function refreshObservations(encounter = api.SpinnerNativeField.state(), delta = 1) {
+        if (!(delta > 0) || !encounter?.ai) return;
+        const byId = new Map(KDMapData.Entities.map((entity) => [String(entity.id), entity]));
+        for (const group of Object.values(encounter.ai.groups)) {
+            auditEngagement(encounter, group);
+            const members = [...group.memberIds].sort((left, right) => String(left).localeCompare(String(right)));
+            for (const id of members) {
+                const enemy = byId.get(String(id));
+                if (!enemy || sourceBusy(enemy)) continue;
+                const contact = nativeContact(enemy);
+                if (contact) observeTarget(encounter, group, enemy, contact.target, contact.aiData);
+            }
+        }
+    }
+
     function auditEngagement(encounter, group) {
         const engagement = group.engagement;
         if (!engagement) return;
@@ -1979,7 +2159,11 @@
     }
 
     function observeTarget(encounter, group, enemy, target, aiData) {
-        const sensed = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target);
+        const sensed =
+            aiData.canSensePlayer &&
+            aiData.hostile === true &&
+            targetIsLiving(target) &&
+            (aiData.recognized === true || recognizedContact(enemy, target));
         if (!sensed) return false;
         if (!group.engagement) {
             const reference = targetReference(target);
@@ -2008,7 +2192,7 @@
         observations.sensed.add(String(enemy.id));
         if (actualSight) observations.sight.add(String(enemy.id));
         observedGroups.set(group.id, observations);
-        if (firstObservation)
+        if (firstObservation || previous?.x !== target.x || previous?.y !== target.y)
             engagement.lastKnown = {
                 x: target.x,
                 y: target.y,
@@ -2470,6 +2654,8 @@
         seededRandom,
         eligibleSpinner,
         ensureAI,
+        groupObservation,
+        refreshObservations,
         auditGroups,
         analyzeLineCandidates,
         selectSavedPlan,
