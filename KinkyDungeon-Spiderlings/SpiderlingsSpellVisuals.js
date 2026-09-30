@@ -22,10 +22,15 @@
     let map;
     const drawings = new Map();
     let frame;
+    let visionCache;
+    const masks = new Map();
     const now = () => (typeof CommonTime === "function" ? CommonTime() : Date.now());
     const pink = () => (api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "");
 
     function reset() {
+        for (const mask of masks.values()) disposeMask(mask);
+        masks.clear();
+        visionCache = undefined;
         impacts.clear();
         bursts.clear();
         seenBursts = new WeakSet();
@@ -49,10 +54,69 @@
     }
 
     function visible(x, y, target) {
-        return (
-            (!target?.Enemy || typeof KDCanSeeEnemy !== "function" || KDCanSeeEnemy(target)) &&
-            (typeof KinkyDungeonVisionGet !== "function" || KinkyDungeonVisionGet(Math.round(x), Math.round(y)) > 0)
-        );
+        if (target?.Enemy && typeof KDCanSeeEnemy === "function" && !KDCanSeeEnemy(target)) return false;
+        if (typeof KinkyDungeonVisionGet !== "function") return true;
+        const xx = Math.round(x),
+            yy = Math.round(y),
+            key = `${xx},${yy}`;
+        if (visionCache?.has(key)) return visionCache.get(key);
+        const result = KinkyDungeonVisionGet(xx, yy) > 0;
+        visionCache?.set(key, result);
+        return result;
+    }
+
+    function disposeMask(mask) {
+        if (mask.sprite?.mask === mask.drawing) mask.sprite.mask = null;
+        mask.drawing.parent?.removeChild(mask.drawing);
+        mask.drawing.destroy();
+    }
+
+    function visibleSpriteRectangles(x, y, scale) {
+        const half = scale / 2,
+            rects = [];
+        let full = true;
+        for (let yy = Math.floor(y - half + 0.5); yy <= Math.floor(y + half + 0.5); yy++) {
+            for (let xx = Math.floor(x - half + 0.5); xx <= Math.floor(x + half + 0.5); xx++) {
+                const left = Math.max(x - half, xx - 0.5),
+                    top = Math.max(y - half, yy - 0.5);
+                const right = Math.min(x + half, xx + 0.5),
+                    bottom = Math.min(y + half, yy + 0.5);
+                if (right <= left || bottom <= top) continue;
+                if (visible(xx, yy)) rects.push({ left, top, right, bottom });
+                else full = false;
+            }
+        }
+        return { rects, full };
+    }
+
+    function clipSprite(id, rendered, bounds) {
+        if (!rendered) return;
+        if (bounds.full) {
+            rendered.mask = null;
+            return;
+        }
+        let mask = masks.get(id);
+        if (!mask) {
+            const drawing = new PIXI.Graphics();
+            drawing.name = `${KEY}_mask_${id}`;
+            kdgameboard.addChild(drawing);
+            mask = { drawing };
+            masks.set(id, mask);
+        }
+        mask.used = true;
+        mask.sprite = rendered;
+        mask.drawing.clear().beginFill(0xffffff, 1);
+        for (const rect of bounds.rects) {
+            const point = xy(rect.left, rect.top);
+            mask.drawing.drawRect(
+                point[0],
+                point[1],
+                (rect.right - rect.left) * KinkyDungeonGridSizeDisplay,
+                (rect.bottom - rect.top) * KinkyDungeonGridSizeDisplay,
+            );
+        }
+        mask.drawing.endFill();
+        rendered.mask = mask.drawing;
     }
 
     function xy(x, y) {
@@ -63,10 +127,12 @@
         ];
     }
 
-    function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1, target, tint) {
-        if (!visible(target?.x ?? x, target?.y ?? y, target) || alpha <= 0) return;
+    function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1, target, tint, clip = false) {
+        if (alpha <= 0 || (!clip && !visible(target?.x ?? x, target?.y ?? y, target))) return;
+        const bounds = clip ? visibleSpriteRectangles(x, y, scale) : undefined;
+        if (bounds && !bounds.rects.length) return;
         const [left, top] = xy(x, y);
-        return KDDraw(
+        const result = KDDraw(
             kdgameboard,
             kdpixisprites,
             `${KEY}_${id}`,
@@ -82,6 +148,8 @@
             undefined,
             true,
         );
+        if (bounds) clipSprite(id, kdpixisprites.get(`${KEY}_${id}`) || result, bounds);
+        return result;
     }
 
     function graphics(layer = "area") {
@@ -174,6 +242,7 @@
     }
 
     function warning(cells, id, effect, clock, start, end, x, y, core) {
+        if (!cells.some((cell) => visible(cell.x, cell.y))) return;
         outline(cells, false, WARNING, 0.12, 1);
         for (const cell of cells) {
             sprite(
@@ -221,6 +290,7 @@
             -0.02,
             undefined,
             silkColor(),
+            true,
         );
         const g = graphics("ground");
         const reach = Math.max(...cells.map((cell) => Math.max(Math.abs(cell.x - x), Math.abs(cell.y - y))));
@@ -312,6 +382,7 @@
             for (const field of state.fields) {
                 const pending = field.activateAt > state.clock;
                 const cells = square(field.x, field.y, 4);
+                if (!cells.some((cell) => visible(cell.x, cell.y))) continue;
                 if (pending) {
                     warning(
                         cells,
@@ -338,6 +409,7 @@
                         -0.02,
                         undefined,
                         silkColor(),
+                        true,
                     );
                 }
             }
@@ -464,6 +536,7 @@
                 LAYERS.feedback,
                 undefined,
                 pink() ? 0xffc9e8 : 0xead5ff,
+                true,
             );
         }
     }
@@ -497,9 +570,7 @@
         }
     }
 
-    KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
-        currentMap();
-        if (!data || typeof KDDraw !== "function") return;
+    function drawFrame(data) {
         frame = data;
         for (const drawing of drawings.values()) drawing.clear();
         drawMage();
@@ -549,6 +620,23 @@
             }
         }
         for (const [id, record] of bulletFrames) if (now() - record.last > 500) bulletFrames.delete(id);
+    }
+
+    KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
+        currentMap();
+        if (!data || typeof KDDraw !== "function") return;
+        visionCache = new Map();
+        for (const mask of masks.values()) mask.used = false;
+        try {
+            drawFrame(data);
+        } finally {
+            visionCache = undefined;
+            for (const [id, mask] of masks)
+                if (!mask.used) {
+                    disposeMask(mask);
+                    masks.delete(id);
+                }
+        }
     });
 
     // Native projectile interpolation and collision remain in charge of position and lifetime.

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.67.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.69.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.69 per-cell fog masks and hidden-warning early return
+
+On 2026-09-30 the final ZIP passed 32 native checks each on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` (5.5.3). SHA-256: `c75dd83a8039cf0e6be18cfce039b04ad7907c69438a9fa978ab242028af2569`; 24,804,402 bytes and 169 allowlisted entries match source.
+
+The 30 focused visual tests and 722 full local tests (including 423 public tests) pass; 12 policy tests and repository checks pass. Partial-visible Hex warning/active core sprites use per-cell PIXI masks with cleanup, and entirely hidden warnings return before creating geometry. Eight hidden Collapse warnings in the same synthetic fixture drop from 696 vision queries to 168, with zero sprites, line segments or Graphics allocated; these counts are not FPS measurements.
+
+Additional 5.5.3 native before/after crops cover both colors and warning/active Hex phases with only the lower-right cell visible. Against a core-disabled frame, test.68 shows 1,228 changed pixels in hidden quadrants and test.69 shows zero (RGB threshold >8, one-pixel boundary allowance). The visible quarter retains 383 changed pixels. Screenshots were inspected. The unit motion regression keeps all 24 segments fixed; native timing matches the same direction/normalized-brightness segment identities at both samples rather than comparing variable-set means. The initial stricter but ineffective visibility-pinning experiment failed and is retained in scratch logs; the final dual-version run passes.
+
+Gameplay, 16/21/9 footprints, no numeric countdown, inward gathering and burst timing retain test.68 semantics. Existing in-game English and localization wording remains accurate; README, maintenance and runtime/compatibility notes document this correction. Full six-variant animation recapture, additional 5.4.92 pixel-difference crops, user-save and other-Mod acceptance, subjective visual approval, and FPS profiling are not newly covered. Native runs use independent headless Chrome on the user's computer; CDP9237 is untouched.
+
+Evidence: `.scratch/kd-compatibility/runs/2026-09-30T05-33-06-863Z-0.92.36-test.69/acceptance.json` in the local KD workspace, and this checkout's `.scratch/test69-*` logs and fog crops. Prior versions are retained; this is a local delivery without push or publication.
 
 ## Test.67 inward gathering and ground silk
 

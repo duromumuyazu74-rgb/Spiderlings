@@ -135,45 +135,66 @@
                 const ground = kdgameboard.children.find((g) => g.name === "SpiderlingsSpellVisuals_ground");
                 return (ground?.geometry?.graphicsData || [])
                     .filter((shape) => shape.lineStyle.width === 1.4)
-                    .map((shape) => ({ x: shape.shape.points[0], y: shape.shape.points[1] }));
+                    .map((shape) => ({
+                        x: shape.shape.points[0],
+                        y: shape.shape.points[1],
+                        alpha: shape.lineStyle.alpha,
+                    }));
             };
             expect(danger().length === 21, "Collapse warning did not retain all 21 dangerous cells");
-            const before = trails(),
-                center = rendered(`collapse_${caster.id}`);
-            const centerSprite = kdpixisprites.get(center[0]?.id);
-            const initialDistance = before.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y));
-            await new Promise((resolve) => setTimeout(resolve, 350));
-            await frame();
-            expect(danger().length === 21, "Inward gathering shrank the dangerous-cell mask");
-            const gathered = trails();
-            collapse.gatheringDebug = {
-                before,
-                gathered,
-                initialDistance,
-                currentDistance: gathered.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y)),
-            };
-            const meanDistance = (positions) =>
-                positions.reduce(
-                    (sum, point) => sum + Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
-                    0,
-                ) / positions.length;
-            // Native vision clips individual filament segments, so its visible count can change during gathering.
-            expect(
-                before.length > 0 &&
-                    gathered.length > 0 &&
-                    gathered.length <= 24 &&
-                    meanDistance(gathered) < meanDistance(before),
-                "Visible charging silk did not move inward",
-            );
-            images[`${color}-collapse-${mode}-gathered`] = document.querySelector("canvas").toDataURL("image/png");
-            collapse.gathering = {
-                dangerCells: danger().length,
-                strands: 8,
-                visibleSegments: gathered.length,
-                meanBefore: meanDistance(before),
-                meanAfter: meanDistance(gathered),
-                inward: true,
-            };
+            {
+                await frame();
+                const before = trails(),
+                    center = rendered(`collapse_${caster.id}`);
+                const centerSprite = kdpixisprites.get(center[0]?.id);
+                const initialDistance = before.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y));
+                await new Promise((resolve) => setTimeout(resolve, 350));
+                await frame();
+                expect(danger().length === 21, "Inward gathering shrank the dangerous-cell mask");
+                const gathered = trails();
+                collapse.gatheringDebug = {
+                    before,
+                    gathered,
+                    initialDistance,
+                    currentDistance: gathered.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y)),
+                };
+                const meanDistance = (positions) =>
+                    positions.reduce(
+                        (sum, point) => sum + Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
+                        0,
+                    ) / positions.length;
+                // Match stable direction/brightness identities, never compare changing fog-set means.
+                const key = (point, maximum) =>
+                    `${Math.round(Math.atan2(point.y - centerSprite.y, point.x - centerSprite.x) / (Math.PI / 4))}:${Math.round((1 - point.alpha / maximum) * 5)}`;
+                const beforeAlpha = Math.max(...before.map((point) => point.alpha)),
+                    afterAlpha = Math.max(...gathered.map((point) => point.alpha));
+                const original = new Map(
+                    before.map((point) => [
+                        key(point, beforeAlpha),
+                        Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
+                    ]),
+                );
+                const common = gathered.filter((point) => original.has(key(point, afterAlpha)));
+                expect(
+                    common.length >= 8 &&
+                        common.every(
+                            (point) =>
+                                Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y) <
+                                original.get(key(point, afterAlpha)),
+                        ),
+                    "Visible charging silk did not move inward",
+                );
+                collapse.gatheringDebug.matchedSegments = common.length;
+                images[`${color}-collapse-${mode}-gathered`] = document.querySelector("canvas").toDataURL("image/png");
+                collapse.gathering = {
+                    dangerCells: danger().length,
+                    strands: 8,
+                    visibleSegments: gathered.length,
+                    meanBefore: meanDistance(before),
+                    meanAfter: meanDistance(gathered),
+                    inward: true,
+                };
+            }
             collapse.warning = rendered(`collapse_${caster.id}`);
             expect(hasArt(collapse.warning, "SpiderlingsMageRune"), "Collapse warning artwork is missing");
             if (mode === "owner-loss") KDRemoveEntity(caster, true, false);
