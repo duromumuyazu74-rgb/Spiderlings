@@ -23,7 +23,8 @@
     let ownedMovement = false;
     let nativeMoveTick;
     let selectedSourceId;
-    const armedRemoval = new WeakMap();
+    const armedRemoval = new WeakMap(),
+        strandVisuals = new Map();
 
     const player = () => KinkyDungeonPlayerEntity;
     const entities = () => KDMapData?.Entities || [];
@@ -166,7 +167,113 @@
         };
     }
 
+    function clearStrandVisuals(dispose = false) {
+        for (const entry of strandVisuals.values()) {
+            if (entry.sprite && !entry.sprite.destroyed) entry.sprite.visible = false;
+            if (entry.fallback && !entry.fallback.destroyed) entry.fallback.visible = false;
+            if (entry.mask && !entry.mask.destroyed) {
+                entry.mask.clear();
+                entry.mask.visible = false;
+            }
+            if (dispose) {
+                if (entry.sprite && !entry.sprite.destroyed) entry.sprite.mask = null;
+                if (!entry.mask?.destroyed) entry.mask?.destroy();
+                if (!entry.fallback?.destroyed) entry.fallback?.destroy();
+            }
+        }
+        if (dispose) strandVisuals.clear();
+    }
+
+    // Read-only rendering: the recovery controller retains movement ownership.
+    function drawStrands(data) {
+        clearStrandVisuals();
+        for (const [id, entry] of strandVisuals) {
+            if (sourceRecords()[id] && sourceById(id)?.hp > 0) continue;
+            if (entry.sprite && !entry.sprite.destroyed) entry.sprite.mask = null;
+            if (!entry.mask.destroyed) entry.mask.destroy();
+            if (entry.fallback && !entry.fallback.destroyed) entry.fallback.destroy();
+            strandVisuals.delete(id);
+        }
+        if (!state() || api.SpinnerCapture?.isControllingPlayer?.() || !carrierById(state().carrierId)) return;
+        if (typeof PIXI === "undefined" || typeof kdgameboard === "undefined") return;
+        const size = KinkyDungeonGridSizeDisplay,
+            pans = typeof StandalonePatched !== "undefined" && StandalonePatched,
+            point = (entity) => [
+                (entity.x - data.CamX - (pans ? 0 : data.CamX_offset) + 0.5) * size,
+                (entity.y - data.CamY - (pans ? 0 : data.CamY_offset) + 0.5) * size,
+            ],
+            target = point(player()),
+            color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
+            root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
+        for (const id of sourceIds()) {
+            const source = sourceById(id);
+            if (!source || !(source.hp > 0)) continue;
+            let entry = strandVisuals.get(String(id));
+            if (!entry || entry.mask.destroyed) {
+                entry = { mask: new PIXI.Graphics() };
+                kdgameboard.addChild(entry.mask);
+                strandVisuals.set(String(id), entry);
+            }
+            const from = point(source);
+            let visible = false;
+            entry.mask.beginFill(0xffffff);
+            // Per-cell pixel masking keeps the continuous silk inside visible
+            // tiles, including a partly hidden source-to-player segment.
+            for (
+                let y = Math.max(0, Math.min(source.y, player().y));
+                y <= Math.min(KDMapData.GridHeight - 1, Math.max(source.y, player().y));
+                y++
+            )
+                for (
+                    let x = Math.max(0, Math.min(source.x, player().x));
+                    x <= Math.min(KDMapData.GridWidth - 1, Math.max(source.x, player().x));
+                    x++
+                ) {
+                    if (!(KinkyDungeonVisionGet(x, y) > 0)) continue;
+                    const xy = point({ x, y });
+                    entry.mask.drawRect(xy[0] - size / 2, xy[1] - size / 2, size, size);
+                    visible = true;
+                }
+            entry.mask.endFill();
+            if (!visible) continue;
+            entry.mask.visible = true;
+            const dx = target[0] - from[0],
+                dy = target[1] - from[1];
+            entry.sprite =
+                typeof KDDraw === "function" &&
+                typeof kdpixisprites !== "undefined" &&
+                KDDraw(
+                    kdgameboard,
+                    kdpixisprites,
+                    `SpiderlingsRecoveryTether_${id}`,
+                    root + `Bullets/SpiderlingsPlayerTether${color}.png`,
+                    (from[0] + target[0]) / 2,
+                    (from[1] + target[1]) / 2,
+                    size,
+                    Math.hypot(dx, dy),
+                    Math.atan2(dy, dx) - Math.PI / 2,
+                    undefined,
+                    true,
+                );
+            if (entry.sprite) entry.sprite.mask = entry.mask;
+            else {
+                if (!entry.fallback || entry.fallback.destroyed) {
+                    entry.fallback = new PIXI.Graphics();
+                    kdgameboard.addChild(entry.fallback);
+                }
+                entry.fallback
+                    .clear()
+                    .lineStyle(2, color ? 0xff8bc5 : 0xb896ef, 1)
+                    .moveTo(...from)
+                    .lineTo(...target);
+                entry.fallback.mask = entry.mask;
+                entry.fallback.visible = true;
+            }
+        }
+    }
+
     function clearControl() {
+        clearStrandVisuals(true);
         delete KDGameData[STATE];
         delete KDGameData[DEPARTURE];
         ownedMovement = false;
@@ -323,6 +430,35 @@
         return true;
     }
 
+    if (typeof addTextKey === "function") {
+        addTextKey(
+            "SpiderlingsRecoveryAttached",
+            "Spinner attaches a recovery silk strand ({count}/8). Its next available action can pull you back.",
+        );
+        addTextKey(
+            "SpiderlingsRecoveryAttachBlocked",
+            "The recovery strand hits but cannot attach to compatible neck gear. A new silk leash needs a collar and normal equipment access; no pull is established.",
+        );
+    }
+
+    function feedback(attached) {
+        if (typeof KinkyDungeonSendTextMessage !== "function") return;
+        const key = attached ? "SpiderlingsRecoveryAttached" : "SpiderlingsRecoveryAttachBlocked",
+            fallback = attached
+                ? "Spinner attaches a recovery silk strand ({count}/8). Its next available action can pull you back."
+                : "The recovery strand hits but cannot attach to compatible neck gear. A new silk leash needs a collar and normal equipment access; no pull is established.",
+            localized = typeof TextGet === "function" ? TextGet(key) : key;
+        KinkyDungeonSendTextMessage(
+            8,
+            (localized !== key && !localized.startsWith("[NotFound]") ? localized : fallback).replace(
+                "{count}",
+                sourceIds().length,
+            ),
+            attached ? "#C4A1EF" : "#FFCC88",
+            3,
+        );
+    }
+
     // This is called only by the successful native Spinner player-effect entrance.
     function hit(source) {
         if (api.SpinnerCapture?.isControllingPlayer?.() || npcCaptureUsesSource(source?.id)) return false;
@@ -337,13 +473,14 @@
             if (upserted.added) {
                 delete recovery.sourceRemovalWork[key];
                 chooseExecutor(recovery);
+                feedback(true);
             }
             reconcilePendingCrossing(recovery);
             return true;
         }
         const eligibility = departure();
         if (!eligibility || !allowedSource(eligibility, source) || !sourceActionable(source)) return false;
-        attach(source, eligibility);
+        feedback(attach(source, eligibility));
         // A legal recovery hit is consumed even when native equipment rules reject the carrier.
         return true;
     }
@@ -622,6 +759,7 @@
     }
 
     function afterLoad() {
+        clearStrandVisuals(true);
         ownedMovement = false;
         nativeMoveTick = undefined;
         selectedSourceId = undefined;
@@ -630,6 +768,9 @@
         if (!audit()) return;
         reconcilePendingCrossing(state());
     }
+
+    if (typeof KDEventMapGeneric !== "undefined")
+        event(KDEventMapGeneric, "draw", STATE, (_event, data) => drawStrands(data));
 
     if (typeof KDEventMapInventory !== "undefined") {
         event(KDEventMapInventory, "beforeStruggleCalc", ESCAPE_EVENT, beforeStruggle);
@@ -685,8 +826,8 @@
             },
             text: [
                 "Spiderling Silk Leash",
-                "A real silk leash used by a Spinner to pull an escaped target back toward its web field.",
-                "The silk line trails slack when no Spinner controls it.",
+                "After leaving a breached field, a fresh eligible Spinner hit can attach this collar-mounted silk leash. An available Spinner action then pulls you back.",
+                "A compatible collar and native equipment access are needed for a new leash. Active sources show silk strands; no sources leaves the leash slack.",
             ],
         });
         if (typeof KinkyDungeonRefreshRestraintsCache === "function") KinkyDungeonRefreshRestraintsCache();

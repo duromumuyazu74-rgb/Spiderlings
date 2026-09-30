@@ -187,3 +187,21 @@ The eight-effect controlled prototype compares readability and samples frame int
 ## Mage fog correction (test.69)
 
 Cross-cell Mage core and burst sprites use camera-projected per-visible-cell Graphics masks. Fully visible sprites have no mask; entirely hidden sprites do not draw. Masks are Mod-owned and removed when unused, on map changes or load reset. Native fog cannot be assumed to hide these Mod sprites, because the native fog board is below their drawing layer. Warning masks stay fixed and silk still gathers inward. Frame-local vision caching never affects resolution-time burst visibility checks outside draw. Entirely hidden warnings return before geometry/sprite work. The unit regression compares all 24 segments under fixed visibility. Native gathering acceptance matches direction and normalized brightness identities for the same segments visible at both samples; it does not use a mean over changing fog sets. Partial-fog cropping receives separate evidence.
+
+### Explicit debug stair passage
+
+Teleport to stairs grants a transient session-backed token to the current active Infestation or Hunting Grounds map only after the actual native cheat callback/legacy HUD action succeeds and places the player at the end position. The shared Floor Selection adapter exposes `canBypassObjective()` to both the escape-method check and the downward-stair guard. Quest quotas are not a cheat detector; objective completion, target entities and rewards are untouched.
+
+KD 5.5.3 uses the named `debugtelestairs` button callback. KD 5.4.92 uses the original debug-only HUD click rectangle; the adapter verifies that native handler branch exists and wraps it rather than duplicating the cheat. A committed nonzero stair advance removes the map token and its session grant. A zero-advance side-room return retains it. Loading clears all session grants, so serialized tokens cannot leak debug access.
+
+### Player recovery strand rendering
+
+Recovery owns a separate draw event keyed by its controller, with the same normal/pink tether texture and camera-coordinate convention as Capture. It does not write `player.leash` or run a logic audit during drawing. Source sprites have per-visible-cell pixel masks; fully hidden or dead sources do not draw. A slack carrier has no controlled strand. Capture temporarily suppresses Recovery rendering. Control clearing and load dispose masks and fallback graphics; every frame hides unused sprites.
+
+A fresh eligible successful hit reports attached source count or rejected native equipment admission. Rejection still consumes the recovery hit, leaves departure eligibility available and establishes no pull. The new owned carrier still requires a compatible collar; existing usable external leashes retain native compatibility, lock/progress and movement ownership.
+
+### Hex mark world-turn continuity
+
+Active Hex still lasts three turns over its unchanged 4-by-4 cells. A mark gains at most one layer per actual world turn across overlapping fields, caps at three, and retains the existing `2 + stacks` expiry refresh (3/4/5 turns). Leaving or field expiry stops refresh. A consumed mark now accepts the next actual turn inside the active area; a queued older burst still resolves independently, and no same-turn rearm is granted.
+
+The saved spell state records `lastNativeTick` alongside its local clock. Repeated positive `tickAfter` events in the same native turn, including after load, do not advance spell timing or restack. Legacy states without this field admit their first genuine tick. Rendering never advances this state.

@@ -135,17 +135,31 @@
         return path.reverse();
     }
 
-    function routeDistances(snapshot, work) {
-        const passable = new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
+    function routeDistances(snapshot, work, blocked = new Set(), includeDoors = false) {
+        const passable = new Set(
+                (snapshot?.cells || [])
+                    .filter(
+                        (cell) =>
+                            (includeDoors ? (cell.walkable ?? cell.floor) : cell.floor) &&
+                            !cell.locked &&
+                            !blocked.has(cellKey(cell)),
+                    )
+                    .map(cellKey),
+            ),
             fields = new Map(),
             neighbors = new Map();
         for (const key of passable) {
             const [x, y] = key.split(",").map(Number);
             neighbors.set(
                 key,
-                DIRECTIONS.map((direction) => `${x + direction.x},${y + direction.y}`).filter((next) =>
-                    passable.has(next),
-                ),
+                DIRECTIONS.filter(
+                    (direction) =>
+                        !direction.x ||
+                        !direction.y ||
+                        (!blocked.has(`${x + direction.x},${y}`) && !blocked.has(`${x},${y + direction.y}`)),
+                )
+                    .map((direction) => `${x + direction.x},${y + direction.y}`)
+                    .filter((next) => passable.has(next)),
             );
         }
         return (from, to) => {
@@ -794,7 +808,7 @@
         return passageCache.index;
     }
 
-    function passageCandidates(snapshot, group, ai, distances) {
+    function passageCandidates(snapshot, group, ai) {
         const index = passageIndex(snapshot, ai);
         if (!index) return [];
         const routes = (snapshot.entrances || []).flatMap((from, ordinal) =>
@@ -813,8 +827,13 @@
                     .filter(Boolean)
                     .map(cellKey),
             ),
-            members = group.members || [];
-        const candidates = api.SpinnerPassagePlanner.candidates(index, { routes, maxCandidates: SHORTLIST_SIZE })
+            members = group.members || [],
+            approaches = routeDistances(snapshot, undefined, occupied, true);
+        const candidates = api.SpinnerPassagePlanner.candidates(index, {
+            routes,
+            maxCandidates: SHORTLIST_SIZE,
+            blockedKeys: [...occupied],
+        })
             .filter(
                 (candidate) =>
                     candidate.proof.kind === "mandatory" ||
@@ -827,7 +846,13 @@
                     !candidate.interiorCells.some((cell) => cellKey(cell) === cellKey(KinkyDungeonPlayerEntity)),
             )
             .map((candidate) => {
-                const travelDistance = Math.max(...members.map((member) => distances(candidate.center, member)));
+                const travelDistance = Math.max(
+                    ...members.map((member) =>
+                        Math.min(
+                            ...candidate.gates.flatMap((gate) => gate.cells).map((cell) => approaches(member, cell)),
+                        ),
+                    ),
+                );
                 return { ...candidate, travelDistance, score: candidate.score - travelDistance * 2 };
             })
             .filter((candidate) => Number.isFinite(candidate.travelDistance))
@@ -1884,7 +1909,23 @@
             // still approach its free prefix; the next-step occupancy check below
             // never permits walking through that coworker or the prey.
             if (!path.length && assignment.type === "rally") path = nativePath(enemy, assignment.workCell, false);
-            const next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+            let next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+            // Native faction pathing can return a route through a live ally even
+            // with blockEnemy set. Only retry such a blocked step; keep the
+            // native route for normal work and do not walk through actors.
+            if (assignment.type !== "rally" && next && api.SpinnerNativeField.snapshot(next).actorOccupied) {
+                const snapshot = nativeMapSnapshot(),
+                    blocked = new Set([
+                        ...KDMapData.Entities.filter(
+                            (entity) =>
+                                entity.hp > 0 && entity.id !== enemy.id && !api.SpinnerNativeField.isOwnedProxy(entity),
+                        ).map(cellKey),
+                        cellKey(KinkyDungeonPlayerEntity),
+                    ]),
+                    passable = new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey));
+                path = routeOnSnapshot(snapshot, enemy, assignment.workCell, blocked, passable);
+                next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+            }
             if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
                 record(group, "wait");
                 return "wait";

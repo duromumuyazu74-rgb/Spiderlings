@@ -271,3 +271,60 @@ test("Collapse charge ends if its Mage dies", () => {
     assert.equal(r.calls.playerDamage.length, 0);
     assert.equal(r.map.SpiderlingsMageSpells.collapses.length, 0);
 });
+
+test("active Hex replenishes a consumed mark on the next actual turn", () => {
+    const r = fixture();
+    r.cast("SpiderlingsMageHex");
+    for (let n = 0; n < 3; n++) r.tick();
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).stacks, 1);
+    r.c.KDPlayerEffects.SpiderlingsWebbingEnemyBind(r.player, 0, {}, {}, "Enemy", undefined, {
+        Enemy: { name: "Spinner" },
+    });
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).stacks, 0);
+    r.tick();
+    assert.equal(
+        r.c.Spiderlings.MageSpells.markFor(r.player).stacks,
+        1,
+        "Active area must add one fresh layer despite the prior queued burst",
+    );
+});
+
+test("Hex actual-turn identity survives overlap, repeated processing and reload; leaving stops refresh", () => {
+    const r = fixture();
+    r.c.KinkyDungeonCurrentTick = 0;
+    r.cast("SpiderlingsMageHex");
+    const next = () => {
+        r.c.KinkyDungeonCurrentTick++;
+        r.tick();
+    };
+    next();
+    next();
+    next();
+    const s = r.map.SpiderlingsMageSpells;
+    s.fields.push({ ...s.fields[0], ownerId: 4, endAt: 12 });
+    r.map.Entities.push({ ...r.mage, id: 4 });
+    s.fields[0].endAt = 12;
+    const clock = s.clock;
+    r.tick();
+    r.tick();
+    assert.equal(s.clock, clock, "Duplicate events do not advance the saved spell clock");
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).stacks, 1);
+    r.map.SpiderlingsMageSpells = JSON.parse(JSON.stringify(s));
+    r.tick();
+    assert.equal(r.map.SpiderlingsMageSpells.clock, clock, "Reload in the same turn cannot replay a layer");
+    next();
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).stacks, 2);
+    r.player.x = 20;
+    const expiry = r.c.Spiderlings.MageSpells.markFor(r.player).expiresAt;
+    next();
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).expiresAt, expiry);
+    r.player.x = 7;
+    next();
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).stacks, 3);
+    next();
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).stacks, 3, "Overlap and staying respect the cap");
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player).expiresAt, r.map.SpiderlingsMageSpells.clock + 5);
+    r.map.SpiderlingsMageSpells.fields = [];
+    for (let n = 0; n < 6; n++) next();
+    assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player), undefined, "Gone area never refreshes old marks");
+});

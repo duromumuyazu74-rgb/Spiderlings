@@ -195,7 +195,7 @@ KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
 KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage draws silk inward across a marked area of ground.
+KinkyDungeonSpellCastSpiderlingsMageHex,마법사가 표시된 지면의 비단을 안쪽으로 모은다. 활성 문양 안에서는 실제 턴마다 표식 한 층이 추가되고(최대 세 층) 지속 시간이 갱신된다. 겹친 문양도 같은 턴에 추가 층을 주지 않는다.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
 SpiderlingsNPCAdhesionInitial,발 묶임
@@ -227,3 +227,9 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,거미줄로 원을 짰다. �
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,끈끈한 비단실을 대상에게 날렸다.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,천 가닥 고치
 KinkyDungeonSpellSpiderlingsSilkenSnare,비단 올가미
+SpiderlingsDebugStairBypass,디버그 계단 통과가 활성화되었습니다. 표시된 둥지는 그대로 유지됩니다.
+RestraintSpiderlingsSilkLeash,거미 비단 리드
+RestraintSpiderlingsSilkLeashDesc,그물 구역의 틈으로 나온 뒤 조건에 맞는 Spinner가 다시 적중하면 목줄에 연결된다. 이후 가능한 행동으로 끌어당긴다.
+RestraintSpiderlingsSilkLeashDesc2,새 리드에는 호환되는 목줄과 기본 장비 조건이 필요하다. 활성 제어원은 비단 선으로 표시되며 없으면 느슨해진다.
+SpiderlingsRecoveryAttached,Spinner가 회수용 비단 선을 연결했다({count}/8). 다음 가능한 행동에서 끌어당길 수 있다.
+SpiderlingsRecoveryAttachBlocked,회수 선은 적중했지만 호환되는 목 장비에 연결할 수 없다. 새 리드에는 목줄과 기본 장비 조건이 필요하다. 이번에는 끌어당김이 성립하지 않았다.

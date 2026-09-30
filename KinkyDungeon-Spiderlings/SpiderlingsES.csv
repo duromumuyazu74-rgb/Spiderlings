@@ -195,7 +195,7 @@ KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
 KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage draws silk inward across a marked area of ground.
+KinkyDungeonSpellCastSpiderlingsMageHex,El mago atrae la seda hacia el centro del suelo marcado. Cada turno real dentro del sigilo activo añade una marca (hasta tres) y la renueva; los sigilos superpuestos no añaden capas extra ese turno.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
 SpiderlingsNPCAdhesionInitial,Inmovilizado
@@ -227,3 +227,9 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tejes un círculo de seda. Los
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Lanzas un hilo de seda pegajosa hacia tu objetivo.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Convergencia del capullo
 KinkyDungeonSpellSpiderlingsSilkenSnare,Lazo de seda
+SpiderlingsDebugStairBypass,Acceso de depuración a las escaleras activo; los nidos marcados no cambian.
+RestraintSpiderlingsSilkLeash,Correa de seda de araña
+RestraintSpiderlingsSilkLeashDesc,"Tras salir por una brecha del campo, otro impacto válido de Spinner puede unir esta correa al collar. Una acción disponible te arrastra de vuelta."
+RestraintSpiderlingsSilkLeashDesc2,Una correa nueva requiere un collar compatible y las condiciones normales de equipamiento. Las fuentes activas muestran hilos; sin fuentes queda floja.
+SpiderlingsRecoveryAttached,Spinner conecta un hilo de recuperación ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
+SpiderlingsRecoveryAttachBlocked,"El hilo impacta, pero no puede unirse al equipo de cuello compatible. Una correa nueva necesita un collar y las condiciones normales de equipamiento; no se establece el arrastre."

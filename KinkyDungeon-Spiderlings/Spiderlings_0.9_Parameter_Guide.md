@@ -233,12 +233,12 @@ NPC 跃击同时锁定实体 ID 与原地格，两次完整玩家行动后结算
 
 ## Encounter 设置
 
-`SpiderlingsEncounters.js` 的自然刷怪、固定六只小队与 NestEntrance 循环增援保持独立。自然刷怪权重为 Spinner/Jumper/WebCaster/Tunneler/NestEntrance `12/12/8/4/2`；选择 Enemies 分类的负面 Perk `Spiderling Squad` 后，每张新生成合格普通地图原子放置两只 Spinner，以及 Tunneler、WebCaster、Jumper、Mage 各一只。界面点数为 −2，原生内部 `cost: -1`，选择后返还两个点数。旧全局小队设置不再控制生成，旧地图和重访不补刷。
+`SpiderlingsEncounters.js` 的自然刷怪、固定六只小队与 NestEntrance 循环增援保持独立。自然刷怪权重为 Spinner/Jumper/WebCaster/Tunneler/NestEntrance `16/9/8/3/2`；选择 Enemies 分类的负面 Perk `Spiderling Squad` 后，每张新生成合格普通地图原子放置两只 Spinner，以及 Tunneler、WebCaster、Jumper、Mage 各一只。界面点数为 −2，原生内部 `cost: -1`，选择后返还两个点数。旧全局小队设置不再控制生成，旧地图和重访不补刷。
 
 | 设置                                        |      默认值 | 作用                                                                                        |
 | ------------------------------------------- | ----------: | ------------------------------------------------------------------------------------------- |
 | 单图幼蛛上限                                |        `25` | 非负整数；`0` 不限制。统计当前地图五类存活幼蛛，包含友方，巢穴不占名额                      |
-| Spinner/Jumper/WebCaster/Tunneler/Mage 权重 | `2/2/2/1/1` | 仅控制巢穴循环增援的单位选择，各项范围 `0..10`；0 禁用该种，Mage 不受自然生成的层数门槛限制 |
+| Spinner/Jumper/WebCaster/Tunneler/Mage 权重 | `4/1/2/1/1` | 仅控制巢穴循环增援的单位选择，各项范围 `0..10`；0 禁用该种，Mage 不受自然生成的层数门槛限制 |
 | 单巢穴存活子代上限                          |         `6` | 非负整数且无配置上限；`0` 停止后续循环增援                                                  |
 | 每巢累计掘穴幼蛛上限                        |         `3` | 非负整数；`0` 不召唤 Tunneler。成功召唤累计，死亡或造巢不返还，新巢独立计数                 |
 | 增援间隔                                    |         `2` | 合格敌方回合计时，范围 `2..20`                                                              |
@@ -280,3 +280,5 @@ test.56 增加 Mage 武器掉落：织缚魔典和缠丝法杖使用 T_Swizzle �
 掉落仅追加到原生允许结算的 Mage 战利品中：noDrop、无玩家伤害的召唤单位和已经结算过的实体不会追加。已持有一件时掉落另一件；两件都有时停止这组掉落，不设保底。
 
 `SpiderlingsWeapons.js` 注册武器与玩家法术。冷却时钟保存在 `KDGameData.SpiderlingsWeapons`，待结算法阵保存在 `KDMapData.SpiderlingsWeapons`。收束范围和动画复用 Mage 几何与视觉，伤害绑定通过原生 `KinkyDungeonDamageEnemy` 一次结算，不调用幼蛛捕猎或穿戴玩家 Webbing。其他幼蛛击中的咒印不会被这两件武器主动触发。
+
+test.70 调整自然生成的相对构成为更多 Spinner、更少 Jumper/Tunneler，四种普通移动蜘蛛合计权重仍为36，Mage、巢穴、固定六只小队与人口上限不变。巢穴增援新默认值只适用于未保存对应配置的安装；已有自定义权重保持原值，可在设置中手动调整。权重不是整层占比或建场成功率。通路选点在候选截断前排除已占用格，保持有界候选与确定性多样选择，不提高必经点奖励。原版 Teleport to stairs 调试按钮成功后可绕过当前特殊楼层出口；未完成目标保持原状，同层侧房间往返保留通行，真正离层或读档清除调试授权，普通通行仍需任务完成。

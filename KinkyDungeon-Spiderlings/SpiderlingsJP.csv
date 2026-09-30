@@ -195,7 +195,7 @@ KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
 KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage draws silk inward across a marked area of ground.
+KinkyDungeonSpellCastSpiderlingsMageHex,魔術師が印の地面から内向きに糸を集める。有効な紋章の範囲内では実際のターンごとに印が一層増え（最大三層）、持続時間を更新する。重なった紋章でも同じターンに追加されない。
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
 SpiderlingsNPCAdhesionInitial,足止め
@@ -227,3 +227,9 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,蛛糸の輪を織り上げた
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,粘り強い絹糸を標的に向けて放った。
 KinkyDungeonSpellSpiderlingsCocoonConvergence,千糸の繭
 KinkyDungeonSpellSpiderlingsSilkenSnare,絹糸の縛め
+SpiderlingsDebugStairBypass,デバッグによる階段の制限解除が有効です。印付きの巣はそのままです。
+RestraintSpiderlingsSilkLeash,蜘蛛の絹リード
+RestraintSpiderlingsSilkLeashDesc,網の破れ目から出た後、条件を満たす Spinner の再命中で首輪に接続される。次の行動可能な手番で引き戻される。
+RestraintSpiderlingsSilkLeashDesc2,新しいリードには対応する首輪と通常の装備条件が必要。制御中は糸が表示され、制御元がなくなると緩む。
+SpiderlingsRecoveryAttached,Spinner が回収の糸を接続した（{count}/8）。次の行動可能な手番で引き戻される可能性がある。
+SpiderlingsRecoveryAttachBlocked,回収の糸は命中したが、対応する首装備に接続できない。新しいリードには首輪と通常の装備条件が必要。今回は引き戻しが成立しなかった。

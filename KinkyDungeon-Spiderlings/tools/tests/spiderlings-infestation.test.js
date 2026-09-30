@@ -1068,3 +1068,32 @@ test("clearing cannot open a wall around a locked room, including diagonal acces
         "ordinary unrelated walls still open",
     );
 });
+
+test("debug stair bypass releases both exit gates without changing objective progress", () => {
+    const callbacks = {};
+    const r = runtime({
+        DrawButtonKDEx(name, callback) {
+            callbacks[name] = callback;
+        },
+    });
+    r.generate();
+    const c = r.context;
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), c);
+    const state = JSON.stringify(c.KDMapData),
+        objective = c.KinkyDungeonEscapeTypes.SpiderlingsInfestation;
+    assert.equal(objective.check(), false);
+    assert.equal(r.event("beforeStairCancel", { toTile: "s", AdvanceAmount: 1 }).cancelevent, "SpiderlingsInfestation");
+    const originalPosition = { x: c.KinkyDungeonPlayerEntity.x, y: c.KinkyDungeonPlayerEntity.y };
+    c.DrawButtonKDEx("debugtelestairs", () => {
+        Object.assign(c.KinkyDungeonPlayerEntity, c.KDMapData.EndPosition);
+        return true;
+    });
+    callbacks.debugtelestairs();
+    Object.assign(c.KinkyDungeonPlayerEntity, originalPosition);
+    assert.equal(objective.check(), true);
+    assert.equal(r.event("beforeStairCancel", { toTile: "s", AdvanceAmount: 1 }).cancelevent, undefined);
+    assert.match(objective.doortext(), /bypass active/);
+    delete c.KDMapData.SpiderlingsDebugStairBypass;
+    assert.equal(JSON.stringify(c.KDMapData), state);
+    assert.equal(objective.check(), false);
+});

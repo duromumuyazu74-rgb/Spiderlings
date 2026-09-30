@@ -55,6 +55,35 @@
                 Spiderlings.SpinnerRecovery.departure(),
                 "Leaving the breached field did not record recovery eligibility",
             );
+            const rejectionMessages = [],
+                nativeMessage = KinkyDungeonSendTextMessage;
+            actors[0].stun = 0;
+            KinkyDungeonSendTextMessage = function (_priority, text) {
+                rejectionMessages.push(text);
+                return nativeMessage.apply(this, arguments);
+            };
+            try {
+                KDPlayerEffects.SpiderlingsWebbingEnemyBind(
+                    KinkyDungeonPlayerEntity,
+                    "glue",
+                    { profile: "Spinner" },
+                    undefined,
+                    "Enemy",
+                    undefined,
+                    actors[0],
+                );
+            } finally {
+                KinkyDungeonSendTextMessage = nativeMessage;
+                actors[0].stun = 999;
+            }
+            expect(
+                Spiderlings.SpinnerRecovery.strength() === 0 && !KinkyDungeonGetRestraintItem("ItemNeckRestraints"),
+                "Bare-neck rejection changed equipment or established recovery",
+            );
+            expect(
+                rejectionMessages.length === 1 && !rejectionMessages[0].includes("[NotFound]"),
+                "Rejected recovery hit has no readable feedback",
+            );
             // Native leash admission requires a collar; a rejected slot never forces replacement.
             KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
             let carrier;
@@ -84,6 +113,7 @@
             const row = {
                 count,
                 external,
+                rejectionMessages,
                 attacks,
                 strength: recovery.strength(),
                 standCost: recovery.standFirmCost(),
@@ -92,6 +122,53 @@
             rows.push(row);
             await frame();
             await frame();
+            await new Promise((resolve) => setTimeout(resolve, 700));
+            images[`recovery-${count}-${external}-strands`] = await photo();
+            const strands = () =>
+                recovery.sourceIds().map((id) => kdpixisprites.get(`SpiderlingsRecoveryTether_${id}`));
+            expect(
+                strands().length === count &&
+                    strands().every((sprite) => sprite?.visible && sprite.texture.valid && sprite.mask),
+                "Recovery sources have no visible masked silk art",
+            );
+            row.visual = {
+                strands: strands().length,
+                pink: external,
+                unchangedNativeLeash: structuredClone(KinkyDungeonPlayerEntity.leash || null),
+            };
+            if (count === 2) {
+                const nativeVision = KinkyDungeonVisionGet,
+                    logicBefore = JSON.stringify(recovery.state()),
+                    leashBefore = JSON.stringify(KinkyDungeonPlayerEntity.leash);
+                try {
+                    KinkyDungeonVisionGet = (x, y) =>
+                        x === KinkyDungeonPlayerEntity.x && y === KinkyDungeonPlayerEntity.y ? 5 : 0;
+                    await frame();
+                    await frame();
+                    expect(
+                        strands().every((sprite) => sprite.mask.geometry.graphicsData.length === 1),
+                        "Partly hidden silk mask includes hidden cells",
+                    );
+                    images[`recovery-${external}-one-visible-cell`] = await photo();
+                    KinkyDungeonVisionGet = () => 0;
+                    await frame();
+                    await frame();
+                    expect(
+                        strands().every((sprite) => !sprite || !sprite.visible),
+                        "Fully hidden recovery silk remains visible",
+                    );
+                    row.visual.hiddenEarlyDraw = false;
+                } finally {
+                    KinkyDungeonVisionGet = nativeVision;
+                }
+                expect(
+                    JSON.stringify(recovery.state()) === logicBefore &&
+                        JSON.stringify(KinkyDungeonPlayerEntity.leash) === leashBefore,
+                    "Rendering changed recovery or native movement ownership",
+                );
+                await frame();
+                await frame();
+            }
             const beforeEscape = save();
             const nativeEscape = KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape;
             row.escapePenalty = 0;

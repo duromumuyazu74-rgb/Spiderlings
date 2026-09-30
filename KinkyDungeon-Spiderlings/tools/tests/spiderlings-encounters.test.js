@@ -141,10 +141,10 @@ test("KD 5.5.3 subbier compatibility preserves native calls and older runtimes",
 
 test("ordinary Spiderlings use the confirmed native weights without the minor tag", () => {
     const expectedWeights = {
-        Spinner: 12,
-        Jumper: 12,
+        Spinner: 16,
+        Jumper: 9,
         WebCaster: 8,
-        Tunneler: 4,
+        Tunneler: 3,
         NestEntrance: 2,
     };
 
@@ -437,8 +437,8 @@ test("squad is an optional native Enemies perk granting two displayed points ins
 
 test("nest selection gives Mage the same default weight as Tunneler", () => {
     assert.deepEqual(EncounterRules.DEFAULT_WEIGHTS, {
-        Spinner: 2,
-        Jumper: 2,
+        Spinner: 4,
+        Jumper: 1,
         WebCaster: 2,
         Tunneler: 1,
         MageSpiderlings: 1,
@@ -448,11 +448,11 @@ test("nest selection gives Mage the same default weight as Tunneler", () => {
         "Spinner",
     );
     assert.equal(
-        EncounterRules.selectWeightedSpiderling({}, () => 0.3),
+        EncounterRules.selectWeightedSpiderling({}, () => 0.5),
         "Jumper",
     );
     assert.equal(
-        EncounterRules.selectWeightedSpiderling({}, () => 0.6),
+        EncounterRules.selectWeightedSpiderling({}, () => 0.65),
         "WebCaster",
     );
     assert.equal(
@@ -730,7 +730,7 @@ test("runtime registration keeps native weights and spawns one complete unaware 
         { name: "NestEntrance", weight: 10, tags: { spiderlings: true } },
     ]);
 
-    assert.equal(context.KinkyDungeonEnemies[0].weight, 12);
+    assert.equal(context.KinkyDungeonEnemies[0].weight, 16);
     assert.equal(context.KinkyDungeonEnemies[0].tags.minor, undefined);
     assert.equal(context.KinkyDungeonEnemies[1].weight, 2);
 
@@ -1817,7 +1817,7 @@ test("native population selection excludes capped mobile Spiderlings and recover
     });
     assert.equal(choose().name, "OtherSpider", "native and third-party spiders stay eligible");
     kd.KDMapData = { Entities: [], GridWidth: 40, GridHeight: 40 };
-    assert.equal(choose().name, "WebCaster", "new map has its own full quota, including Mage");
+    assert.equal(choose().name, "Jumper", "new map has its own full quota, including Mage");
 });
 
 test("a fixed squad is skipped atomically when fewer than six map slots remain", () => {

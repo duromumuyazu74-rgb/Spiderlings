@@ -4,6 +4,41 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { runtime } = require("./helpers/spinner-native-runtime.js");
 
+test("legacy native entity admission projects silk under an occupant without kicking it", () => {
+    const r = runtime(),
+        c = r.context;
+    buildAll(r);
+    const field = c.Spiderlings.SpinnerNativeField;
+    const proxy = c.KDMapData.Entities.find(field.isOwnedProxy);
+    c.KDMapData.Entities.splice(c.KDMapData.Entities.indexOf(proxy), 1);
+    const occupant = { id: 9998, x: proxy.x, y: proxy.y, hp: 10, Enemy: { name: "Spinner" } };
+    c.KDMapData.Entities.push(occupant);
+    delete c.KDAddNewEntity;
+    let admitted = 0;
+    c.KDAddEntity = (entity, persistent, teleport, noLoadout) => {
+        assert.equal(persistent, false);
+        assert.equal(teleport, false);
+        assert.equal(noLoadout, true);
+        c.KDMapData.Entities.push(entity);
+        admitted++;
+        return entity;
+    };
+    c.DialogueCreateEnemy = () => {
+        throw new Error("Occupied cell must not kick its actor");
+    };
+    field.reconcile();
+    assert.equal(admitted, 1);
+    assert.equal(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).length,
+        c.Spiderlings.SpinnerTopology.solidCells(field.state().topology).length,
+    );
+    assert.equal(occupant.x, proxy.x);
+    assert.equal(occupant.y, proxy.y);
+    assert.equal(occupant.hp, 10);
+    field.reconcile();
+    assert.equal(admitted, 1);
+});
+
 test("capture boundaries and legacy load aliases use SpinnerTrap artwork in both colors", () => {
     const c = runtime().context;
     for (const prefix of ["", "Game/"])
