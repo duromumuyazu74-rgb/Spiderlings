@@ -6,6 +6,7 @@
         GROUP_RADIUS = 10,
         SHORTLIST_SIZE = 8,
         MAX_LINE_LENGTH = 5,
+        AMBUSH_WAIT_TURNS = 6,
         DIRECTIONS = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
@@ -249,6 +250,109 @@
         );
     }
 
+    function fieldStaffing(ai, group, snapshot, graph) {
+        const plan = ai.plans[group.planId];
+        if (!plan || ["invalid", "abandoned"].includes(plan.status) || plan.kind === "line") return undefined;
+        const field =
+                graph?.fields?.[
+                    (graph?.composites?.[plan.compositeId]?.layerIds || plan.fieldIds || [plan.fieldId]).at(-1)
+                ],
+            interiorCells = field?.interiorCells || plan.interiorCells || [plan.center],
+            gates = field?.gates || plan.gates || [{ cells: [field?.gateCell || plan.gate] }],
+            boundary = new Set(plan.cells || []),
+            interior = new Set(interiorCells.filter(Boolean).map(cellKey)),
+            otherFields = new Set(
+                Object.values(ai.plans)
+                    .filter((other) => other !== plan && !["invalid", "abandoned"].includes(other.status))
+                    .flatMap((other) => other.cells || []),
+            ),
+            byKey = new Map((snapshot?.cells || []).map((cell) => [cellKey(cell), cell])),
+            stations = new Map(),
+            reachableGates = new Set(),
+            mouths = new Set();
+        if (!snapshot)
+            return {
+                capacity: Math.min(8, Math.max(2, gates.length + Math.floor(Math.max(0, interior.size - 1) / 3))),
+                stationCells: [],
+            };
+        for (const gate of gates) {
+            const outside = new Map();
+            for (const cell of gate.cells.filter(Boolean))
+                for (const direction of DIRECTIONS.filter((entry) => !entry.x || !entry.y)) {
+                    const point = { x: cell.x + direction.x, y: cell.y + direction.y },
+                        key = cellKey(point),
+                        tile = byKey.get(key);
+                    if (tile?.floor && !tile.locked && !interior.has(key) && !boundary.has(key))
+                        outside.set(key, point);
+                }
+            if (outside.size === 1) mouths.add([...outside.keys()][0]);
+        }
+        // One station per actor, outside the prey's interior and gate cells.
+        // The extra interior allowance reserves one prey cell and three cells
+        // of movement space per additional helper instead of filling the core.
+        for (const [index, gate] of gates.entries())
+            for (const cell of gate.cells.filter(Boolean))
+                for (let dy = -2; dy <= 2; dy++)
+                    for (let dx = -2; dx <= 2; dx++) {
+                        const point = { x: cell.x + dx, y: cell.y + dy },
+                            key = cellKey(point),
+                            tile = byKey.get(key);
+                        if (
+                            tile?.floor &&
+                            !tile.locked &&
+                            !tile.protected &&
+                            !boundary.has(key) &&
+                            !interior.has(key) &&
+                            !mouths.has(key) &&
+                            !otherFields.has(key)
+                        ) {
+                            stations.set(key, point);
+                            reachableGates.add(index);
+                        }
+                    }
+        return {
+            capacity: Math.min(
+                8,
+                Math.max(2, reachableGates.size + Math.floor(Math.max(0, interior.size - 1) / 3)),
+                stations.size,
+            ),
+            stationCells: [...stations.values()],
+        };
+    }
+
+    function releaseExcessStaff(encounter, snapshot) {
+        const ai = encounter.ai,
+            byId = new Map(KDMapData.Entities.map((entity) => [entity.id, entity]));
+        for (const group of Object.values(ai.groups)) {
+            const staffing = fieldStaffing(ai, group, snapshot, encounter.topology);
+            if (!staffing) continue;
+            const busy = group.memberIds.filter((id) => sourceBusy(byId.get(id))),
+                workers = group.memberIds.filter((id) => !busy.includes(id)),
+                retained = workers
+                    .sort(
+                        (a, b) =>
+                            Number(String(b) === String(group.engagement?.lureId)) -
+                                Number(String(a) === String(group.engagement?.lureId)) ||
+                            Number(!!group.assignments?.[b]) - Number(!!group.assignments?.[a]) ||
+                            group.memberIds.indexOf(a) - group.memberIds.indexOf(b),
+                    )
+                    .slice(0, staffing.capacity),
+                released = workers.filter((id) => !retained.includes(id));
+            group.memberIds = group.memberIds.filter((id) => busy.includes(id) || retained.includes(id));
+            for (const id of released) {
+                delete group.assignments?.[id];
+                delete group.rallyGates?.[id];
+            }
+            group.incomingIds = (group.incomingIds || []).filter((id) => group.memberIds.includes(id));
+            group.staffing = {
+                ...group.staffing,
+                capacity: staffing.capacity,
+                busy: busy.length,
+                released: released.length,
+            };
+        }
+    }
+
     function mergeNearbyGroups(encounter, entities, distances, snapshot) {
         if (Object.hasOwn(snapshot, "candidateLines")) return;
         const ai = encounter.ai,
@@ -275,7 +379,8 @@
                             group !== donor &&
                             ai.groups[group.id] &&
                             group.memberIds.length > 0 &&
-                            group.memberIds.length + donor.memberIds.length <= 8 &&
+                            group.memberIds.filter((id) => !sourceBusy(byId.get(id))).length + donor.memberIds.length <=
+                                (fieldStaffing(ai, group, snapshot, encounter.topology)?.capacity ?? 8) &&
                             groups.indexOf(group) < groups.indexOf(donor) &&
                             (!donorPlan || activePlan(group)?.kind === "passage") &&
                             (sameSource(byId.get(donor.memberIds[0]), group) || !api.HuntingGrounds?.activeState?.()),
@@ -345,7 +450,13 @@
                             .map((member) => pathDistance(entity, member, options)),
                     ),
                 }))
-                .filter((choice) => choice.steps <= GROUP_RADIUS && sameSource(entity, choice.group))
+                .filter(
+                    (choice) =>
+                        choice.steps <= GROUP_RADIUS &&
+                        sameSource(entity, choice.group) &&
+                        choice.group.memberIds.filter((id) => !sourceBusy(byId.get(id))).length <
+                            (fieldStaffing(ai, choice.group, options.mapSnapshot, options.topology)?.capacity ?? 8),
+                )
                 .sort((a, b) => a.steps - b.steps || a.group.id.localeCompare(b.group.id));
             if (choices[0]) {
                 choices[0].group.memberIds.push(entity.id);
@@ -1165,8 +1276,6 @@
                 field = encounter.topology?.fields?.[plan?.fieldId];
             if (plan?.kind !== "passage" || !field || ["invalid", "abandoned"].includes(plan.status)) continue;
             const members = group.memberIds.map((id) => KDMapData.Entities.find((entity) => entity.id === id)),
-                interior = new Set(field.interiorCells.map(cellKey)),
-                gates = new Set(field.gates.flatMap((gate) => gate.cells.map(cellKey))),
                 reserved = new Set(Object.values(group.assignments).map((action) => cellKey(action.workCell))),
                 known = group.engagement?.lastKnown,
                 supporting =
@@ -1174,7 +1283,12 @@
                     known.age < 4 &&
                     field.phase === "sealed" &&
                     api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, known),
-                points = new Map(),
+                points = new Map(
+                    fieldStaffing(encounter.ai, group, snapshot, encounter.topology).stationCells.map((cell) => [
+                        cellKey(cell),
+                        cell,
+                    ]),
+                ),
                 coverage = new Map(field.gates.map((gate) => [gate.id, 0])),
                 nearestGate = (point) =>
                     [...field.gates].sort(
@@ -1182,8 +1296,49 @@
                             nearestDistance(point, a.cells) - nearestDistance(point, b.cells) ||
                             a.id.localeCompare(b.id),
                     )[0];
-            if (field.phase === "ready" && group.rallyPhase !== "ready") group.rallyGates = {};
+            const rallyMembers = members.filter((member) => eligibleSpinner(member) && !sourceBusy(member)),
+                memberSignature = rallyMembers
+                    .map((member) => String(member.id))
+                    .sort()
+                    .join(","),
+                staffingChanged = group.rallyMembers !== undefined && group.rallyMembers !== memberSignature;
+            if (field.phase === "ready" && (group.rallyPhase !== "ready" || staffingChanged)) group.rallyGates = {};
+            if (field.phase === "ready" && group.rallyPhase === "ready" && !staffingChanged) {
+                const blocked = new Set(
+                    [
+                        ...KDMapData.Entities.filter(
+                            (actor) => actor.hp > 0 && !api.SpinnerNativeField.isOwnedProxy(actor),
+                        ),
+                        KinkyDungeonPlayerEntity,
+                    ]
+                        .filter(Boolean)
+                        .map(cellKey),
+                );
+                const blockedPartition = rallyMembers.some((member) => {
+                    const gateId = group.rallyGates?.[member.id];
+                    if (!gateId || (points.has(cellKey(member)) && nearestGate(member).id === gateId)) return false;
+                    const stationedBlocker = rallyMembers.some(
+                        (other) =>
+                            other !== member &&
+                            distance(member, other) <= 1 &&
+                            points.has(cellKey(other)) &&
+                            nearestGate(other).id === group.rallyGates?.[other.id],
+                    );
+                    if (!stationedBlocker) return false;
+                    const occupied = new Set(blocked);
+                    occupied.delete(cellKey(member));
+                    const destinations = [...points.values()].filter((point) => nearestGate(point).id === gateId);
+                    return (
+                        destinations.length > 0 &&
+                        destinations.every((point) => !routeOnSnapshot(snapshot, member, point, occupied).length)
+                    );
+                });
+                // Repartition only when a coworker already holding its mouth
+                // makes the saved assignment unreachable through live occupancy.
+                if (blockedPartition) group.rallyGates = {};
+            }
             group.rallyPhase = field.phase;
+            group.rallyMembers = memberSignature;
             group.rallyGates ||= {};
             for (const id of Object.keys(group.rallyGates))
                 if (!members.some((member) => String(member?.id) === id && eligibleSpinner(member)))
@@ -1197,12 +1352,29 @@
                             Math.min(...members.filter(Boolean).map((member) => distances(a.cells[0], member))) ||
                         a.id.localeCompare(b.id),
                 );
-            // Send the front worker through first. Otherwise two workers arriving
-            // from one side can park across each other's one-cell approach.
+            // Include the workers still needed at other mouths. Picking the
+            // closest core worker first can send a remote colleague through its
+            // completed station. Ties still send the front worker through first.
             for (const gate of gateOrder) {
                 if (Object.values(group.rallyGates).includes(gate.id) || !unassigned.length) continue;
+                const otherGates = gateOrder
+                        .filter((other) => other !== gate && !Object.values(group.rallyGates).includes(other.id))
+                        .slice(0, unassigned.length - 1),
+                    coverageDistance = (member) =>
+                        distances(gate.cells[0], member) +
+                        otherGates.reduce(
+                            (total, other) =>
+                                total +
+                                Math.min(
+                                    ...unassigned
+                                        .filter((candidate) => candidate !== member)
+                                        .map((candidate) => distances(other.cells[0], candidate)),
+                                ),
+                            0,
+                        );
                 unassigned.sort(
                     (a, b) =>
+                        coverageDistance(a) - coverageDistance(b) ||
                         distances(gate.cells[0], a) - distances(gate.cells[0], b) ||
                         String(a.id).localeCompare(String(b.id)),
                 );
@@ -1212,16 +1384,6 @@
                 const gate = nearestGate(action.workCell);
                 coverage.set(gate.id, coverage.get(gate.id) + 1);
             }
-            for (const gate of field.gates)
-                for (const cell of gate.cells)
-                    for (let dy = -2; dy <= 2; dy++)
-                        for (let dx = -2; dx <= 2; dx++) {
-                            const point = { x: cell.x + dx, y: cell.y + dy },
-                                key = cellKey(point),
-                                tile = byKey.get(key);
-                            if (tile?.floor && !tile.locked && !tile.protected && !interior.has(key) && !gates.has(key))
-                                points.set(key, point);
-                        }
             if (supporting)
                 for (const point of [...field.interiorCells, ...field.gates.flatMap((gate) => gate.cells)]) {
                     const tile = byKey.get(cellKey(point));
@@ -1231,6 +1393,7 @@
                 .filter((member) => member && distances(plan.center, member) > 3)
                 .map((member) => member.id);
             group.staffing = {
+                ...group.staffing,
                 available: members.filter((member) => eligibleSpinner(member) && !sourceBusy(member)).length,
                 incoming: group.incomingIds.length,
                 nearCore: members.filter((member) => eligibleSpinner(member) && distance(member, plan.center) <= 1)
@@ -1616,7 +1779,13 @@
             ai.candidateRevision++;
         }
         ai.geometrySignature = signature;
-        auditGroups(ai, entities, { ...input, mapSnapshot: snapshot, routeDistances: distances });
+        auditGroups(ai, entities, {
+            ...input,
+            mapSnapshot: snapshot,
+            routeDistances: distances,
+            topology: encounter.topology,
+        });
+        releaseExcessStaff(encounter, snapshot);
         mergeNearbyGroups(encounter, entities, distances, snapshot);
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
@@ -1666,6 +1835,7 @@
             else group.noPlanSignature = noPlanSignature;
             activatePlan(plan, group);
         }
+        releaseExcessStaff(encounter, snapshot);
         mergeNearbyGroups(encounter, entities, distances, snapshot);
         for (const group of Object.values(ai.groups)) {
             const plan = ai.plans[group.planId];
@@ -1849,7 +2019,7 @@
             };
         if (actualSight) {
             engagement.noSightTurns = 0;
-            engagement.mode = "lure";
+            if (engagement.mode !== "pressure") engagement.mode = "lure";
             if (String(engagement.lureId) === String(enemy.id)) engagement.lureNoContactTurns = 0;
         }
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
@@ -2034,6 +2204,30 @@
         return mustYield ? "yield" : "lure-move";
     }
 
+    function pursueObservation(enemy, group, target, perceivedThreat) {
+        const known = group.engagement?.lastKnown,
+            destination = perceivedThreat ? target : known;
+        if (!destination) return decide(enemy, group, "delegate-native", false);
+        if (distance(enemy, destination) <= 1)
+            return decide(enemy, group, perceivedThreat ? "native-defense" : "delegate-native", perceivedThreat);
+        const path = nativePath(enemy, destination),
+            next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+        if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
+            record(group, "wait");
+            return decide(enemy, group, "pursuit-wait", true);
+        }
+        const moved = KinkyDungeonEnemyTryMove(
+            enemy,
+            { x: next.x - enemy.x, y: next.y - enemy.y },
+            enemy.SpiderlingsSpinnerRuntimeDelta || 1,
+            next.x,
+            next.y,
+            false,
+        );
+        record(group, moved ? "travel" : "wait");
+        return decide(enemy, group, "pursuit-move", true);
+    }
+
     function handleBeforeMove(enemy, target, aiData = {}) {
         // Native load refreshes run the enemy loop with delta 0. They must not
         // spend saved credit, move builders or commit another work decision.
@@ -2043,6 +2237,26 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
+        const perceivedThreat =
+                enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
+            recentObservation =
+                sameTarget(group.engagement?.target, target) &&
+                group.engagement?.lastKnown?.source === "native" &&
+                group.engagement.lastKnown.age < 4,
+            recoveryPursuit =
+                api.SpinnerRecovery?.wantsPursuit?.(enemy, target) ||
+                api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
+        // Departure creates a duty before a new melee hit can attach a recovery
+        // strand. Construction and lure work must not suppress that first hit.
+        if (recoveryPursuit) {
+            if (perceivedThreat) {
+                if (group.engagement && !sameTarget(group.engagement.target, target)) clearEngagement(group);
+                observeTarget(encounter, group, enemy, target, aiData);
+            }
+            if (perceivedThreat || recentObservation) return pursueObservation(enemy, group, target, perceivedThreat);
+            auditEngagement(encounter, group);
+            return decide(enemy, group, "delegate-native", false);
+        }
         const plan = state.plans[group.planId];
         if (!plan || ["invalid", "abandoned"].includes(plan.status) || !planWaypoint(encounter, group)) {
             clearEngagement(group);
@@ -2053,7 +2267,6 @@
         else auditEngagement(encounter, group);
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
         const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData),
-            perceivedThreat = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
             actualSight = !!(
                 aiData.canSeePlayer ||
                 aiData.canSeePlayerChase ||
@@ -2061,6 +2274,12 @@
                 aiData.canShootPlayer
             );
         const assignment = group.assignments?.[enemy.id];
+        if (
+            group.engagement?.mode === "pressure" &&
+            String(group.engagement.lureId) === String(enemy.id) &&
+            !(observed && api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target))
+        )
+            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
         if (
             hasGateWork(encounter, group) &&
@@ -2155,6 +2374,19 @@
             const observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() },
                 sawTarget = observations.sight.size > 0,
                 lureSawTarget = observations.sight.has(String(engagement.lureId));
+            if (sawTarget && engagement.lastKnown) {
+                const waypoint = planWaypoint(encounter, group),
+                    approach = waypoint ? distance(engagement.lastKnown, waypoint) : Infinity,
+                    work = (group.metrics?.construction || 0) + (group.metrics?.repair || 0),
+                    progress = engagement.progress;
+                const advanced = progress && (approach < progress.approach || work > progress.work);
+                engagement.progress = {
+                    approach: Math.min(progress?.approach ?? Infinity, approach),
+                    work,
+                    waits: advanced ? 0 : (progress?.waits || 0) + 1,
+                };
+                if (engagement.progress.waits >= AMBUSH_WAIT_TURNS) engagement.mode = "pressure";
+            }
             if (engagement.lastKnown) {
                 engagement.lastKnown.age++;
                 if (engagement.lastKnown.age >= 4) delete engagement.lastKnown;
@@ -2162,7 +2394,7 @@
             engagement.noSightTurns = sawTarget ? 0 : (engagement.noSightTurns || 0) + 1;
             engagement.lureNoContactTurns = lureSawTarget ? 0 : (engagement.lureNoContactTurns || 0) + 1;
             if (engagement.noSightTurns >= 8) engagement.mode = "pursuit";
-            else if (!sawTarget) engagement.mode = "search";
+            else if (!sawTarget && engagement.mode !== "pressure") engagement.mode = "search";
             if (
                 encounter.ai.plans[group.planId]?.kind === "passage" &&
                 engagement.noSightTurns >= 12 &&
@@ -2234,6 +2466,7 @@
     api.SpinnerAI = {
         GROUP_RADIUS,
         SHORTLIST_SIZE,
+        AMBUSH_WAIT_TURNS,
         seededRandom,
         eligibleSpinner,
         ensureAI,

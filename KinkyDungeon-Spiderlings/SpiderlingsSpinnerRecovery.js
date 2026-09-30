@@ -74,7 +74,7 @@
         return entities().find((entity) => sameId(entity.id, id));
     }
 
-    function sourceActionable(source) {
+    function sourceActionable(source, requireContact = true) {
         if (
             !source ||
             source.Enemy?.name !== "Spinner" ||
@@ -88,6 +88,7 @@
             KinkyDungeonIsDisabled(source)
         )
             return false;
+        if (!requireContact) return true;
         const distance = Math.max(Math.abs(source.x - player().x), Math.abs(source.y - player().y));
         return (
             distance <= MAX_RANGE &&
@@ -98,6 +99,29 @@
 
     function allowedSource(record, source) {
         return !!source && (record?.eligibleSourceIds || []).some((id) => sameId(id, source.id));
+    }
+
+    // Eligibility only: native perception must supply the target before AI pursues it.
+    function wantsPursuit(source, target) {
+        const eligibility = departure() || state();
+        if (
+            target !== player() ||
+            !core.pendingSource(eligibility, source?.id) ||
+            !sourceActionable(source, false) ||
+            api.SpinnerCapture?.isControllingPlayer?.() ||
+            npcCaptureUsesSource(source.id) ||
+            api.SpinnerNPCRecovery?.usesEntity?.(source.id) ||
+            Object.values(api.NPCWrapping?.records?.() || {}).some((record) =>
+                record.sourceIds?.some((id) => sameId(id, source.id)),
+            )
+        )
+            return false;
+        const compositeId = eligibility.compositeId || sourceAssociation(source, eligibility)?.compositeId;
+        return !!(
+            compositeId &&
+            api.SpinnerNativeField?.compositeById?.(compositeId) &&
+            !api.SpinnerNativeField?.containsComposite?.(compositeId, target)
+        );
     }
 
     function sourceRecords(recovery = state()) {
@@ -299,6 +323,8 @@
         }
         KDGameData[STATE] = {
             version: VERSION,
+            compositeId: recovery.compositeId,
+            groupId: recovery.groupId,
             carrierId: recovery.carrierId,
             ownedCarrier: recovery.ownedCarrier === true,
             eligibleSourceIds: [...new Set(recovery.eligibleSourceIds || [])],
@@ -344,6 +370,9 @@
             clearRecoveryForCarrierLoss(recovery);
             return false;
         }
+        const originalSource = Object.values(sourceRecords(recovery))[0];
+        recovery.compositeId ||= originalSource?.compositeId;
+        recovery.groupId ||= originalSource?.groupId;
         for (const id of core.auditSources(
             recovery,
             sourceById,
@@ -414,6 +443,8 @@
         if (!carrier?.item || carrier.item.id === undefined) return false;
         KDGameData[STATE] = {
             version: VERSION,
+            compositeId: eligibility.compositeId,
+            groupId: eligibility.groupId,
             carrierId: carrier.item.id,
             ownedCarrier: carrier.owned,
             eligibleSourceIds: [...eligibility.eligibleSourceIds],
@@ -859,6 +890,7 @@
         sourceRemovalInput,
         removeSource,
         sourceActionable,
+        wantsPursuit,
         usableLeash,
     });
 })();

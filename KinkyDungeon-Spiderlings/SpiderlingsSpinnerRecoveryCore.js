@@ -10,6 +10,13 @@
     const sourceRecords = (record) => (record?.sources && typeof record.sources === "object" ? record.sources : {});
     const sourceIds = (record) => Object.values(sourceRecords(record)).map((source) => source.id);
 
+    function pendingSource(record, id) {
+        return (
+            (record?.eligibleSourceIds || []).some((eligibleId) => sameId(eligibleId, id)) &&
+            !sourceIds(record).some((sourceId) => sameId(sourceId, id))
+        );
+    }
+
     function upsertSource(record, source, association, tick, maxSources = MAX_SOURCES) {
         record.sources ||= {};
         const key = sourceKey(source.id),
@@ -178,6 +185,7 @@
         sourceKey,
         sourceRecords,
         sourceIds,
+        pendingSource,
         upsertSource,
         auditSources,
         chooseExecutor,

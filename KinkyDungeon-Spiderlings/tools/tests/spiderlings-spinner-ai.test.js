@@ -807,7 +807,7 @@ function cellKeyForTest(cell) {
     return `${cell.x},${cell.y}`;
 }
 
-test("a lure holds its best safe tile instead of oscillating around the waypoint", () => {
+test("a lure holds its best safe tile during the bounded ambush window", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
         r = runtime(actors),
         ai = start(r),
@@ -820,7 +820,7 @@ test("a lure holds its best safe tile instead of oscillating around the waypoint
     worker.testSense = true;
     group.assignments = {};
     const original = { x: worker.x, y: worker.y };
-    for (let turn = 0; turn < 12; turn++) {
+    for (let turn = 0; turn < 5; turn++) {
         r.context.KinkyDungeonCurrentTick++;
         r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
         r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
@@ -839,6 +839,124 @@ test("a lure holds its best safe tile instead of oscillating around the waypoint
         "holding still must not prevent retreat from a nearby target outside the core",
     );
     assert.equal(r.movement.length, 1);
+});
+
+test("visible stationary prey ends ambush waiting without resetting pressure on sight or reload", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        worker = actors[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    worker.x = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.x, 0) / plan.anchors.length);
+    worker.y = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.y, 0) / plan.anchors.length);
+    target.x = worker.x + 4;
+    target.y = worker.y;
+    worker.aware = true;
+    worker.testSense = true;
+    group.assignments = {};
+    for (let turn = 0; turn < 6; turn++) {
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    }
+    assert.equal(group.engagement.noSightTurns, 0);
+    assert.equal(group.engagement.mode, "pressure");
+    const encounter = r.context.Spiderlings.SpinnerNativeField.state();
+    r.context.KDMapData.SpiderlingsSpinnerEncounter = plain(encounter);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    const restored = Object.values(
+        r.context.Spiderlings.SpinnerAI.ensureAI(r.context.Spiderlings.SpinnerNativeField.state()).groups,
+    )[0];
+    const before = { x: worker.x, y: worker.y };
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(restored.engagement.mode, "pressure", "Native sight must not undo committed pressure");
+    assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), 3);
+    assert.notDeepEqual({ x: worker.x, y: worker.y }, before);
+    assert.equal(r.phaseCalls.length, 0, "A paid pursuit move cannot also attack");
+    target.x = worker.x + 1;
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(r.phaseCalls.length, 2, "Adjacent pressure reopens native combat");
+});
+
+test("pending recovery pursues native observations before gate work without discovering an unseen target", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]),
+        target = r.context.KinkyDungeonPlayerEntity;
+    target.x = worker.x + 3;
+    target.y = worker.y;
+    worker.aware = true;
+    worker.testSense = true;
+    r.context.Spiderlings.SpinnerRecovery = {
+        wantsPursuit: (source, prey) => source === worker && prey === target,
+        handleEnemyTurn: () => undefined,
+        sourceIds: () => [],
+    };
+    const construction = group.metrics.construction;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), 2);
+    assert.equal(group.metrics.construction, construction);
+    assert.equal(r.phaseCalls.length, 0);
+    worker.testSense = false;
+    group.engagement = {
+        target: { kind: "player", id: 0 },
+        lureId: worker.id,
+        mode: "lure",
+        lastKnown: { x: worker.x + 2, y: worker.y, age: 0, source: "native" },
+    };
+    target.x = 16;
+    target.y = 10;
+    const known = plain(group.engagement.lastKnown);
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(Math.max(Math.abs(worker.x - known.x), Math.abs(worker.y - known.y)), 1);
+    assert.deepEqual(plain(group.engagement.lastKnown), known);
+    group.engagement.lastKnown.age = 4;
+    const moveCount = r.movement.length;
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(group.engagement.lastKnown, undefined);
+    assert.equal(r.movement.length, moveCount, "Expired knowledge cannot pursue the target's new coordinate");
+});
+
+test("actual approach and paid field work renew the ambush window but stale sight does not", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        worker = actors[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    worker.x = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.x, 0) / plan.anchors.length);
+    worker.y = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.y, 0) / plan.anchors.length);
+    worker.aware = true;
+    worker.testSense = true;
+    target.x = worker.x + 4;
+    target.y = worker.y;
+    group.assignments = {};
+    const advance = () => {
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    };
+    for (let turn = 0; turn < 4; turn++) advance();
+    target.x--;
+    advance();
+    assert.equal(group.engagement.progress.waits, 0, "Prey approaching the core is encounter progress");
+    for (let turn = 0; turn < 4; turn++) advance();
+    group.metrics.construction++;
+    advance();
+    assert.equal(group.engagement.progress.waits, 0, "Paid field work renews the waiting window");
+    for (let turn = 0; turn < 5; turn++) advance();
+    assert.equal(group.engagement.mode, "lure");
+    advance();
+    assert.equal(group.engagement.mode, "pressure");
 });
 
 test("a Spinner without a field plan leaves movement and attacks to native AI", () => {
@@ -1113,6 +1231,46 @@ test("cooperative enclosure reuses the saved group and topology work scheduler",
     );
 });
 
+test("a spacious enclosure keeps at most eight ordinary workers without changing nest provenance", () => {
+    const actors = Array.from({ length: 12 }, (_, index) =>
+        spinner(index + 1, 2 + (index % 4), 3 + Math.floor(index / 4)),
+    );
+    for (const actor of actors) actor.SpiderlingsNestParentID = 90;
+    const r = runtime(actors),
+        map = {
+            width: 18,
+            height: 12,
+            floor: mapSnapshot().cells.map(cellKeyForTest),
+            protected: [],
+            occupied: [],
+            exit: { x: 16, y: 6 },
+        },
+        result = r.context.Spiderlings.SpinnerScenarios.setupCooperative({
+            ownerIds: actors.map((actor) => actor.id),
+            compositeId: "spacious",
+            layers: [
+                {
+                    id: "large",
+                    vertices: [
+                        { x: 7, y: 1 },
+                        { x: 15, y: 1 },
+                        { x: 15, y: 10 },
+                        { x: 7, y: 10 },
+                    ],
+                    gate: { x: 7, y: 6 },
+                },
+            ],
+            map,
+            mapSnapshot: mapSnapshot(),
+        }),
+        group = Object.values(result.ai.groups)[0];
+    assert.equal(result.started, true);
+    assert.equal(group.staffing.capacity, 8);
+    assert.equal(group.memberIds.length, 8);
+    assert.ok(actors.every((actor) => actor.SpiderlingsNestParentID === 90 && actor.hp > 0));
+    assert.deepEqual(plain(group.source), { type: "nest", nestId: 90 });
+});
+
 test("one survivor keeps repair work but receives no new construction or replacement plan", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
         r = runtime(actors),
@@ -1315,6 +1473,21 @@ function passageRuntime(actors, corridorWidth = 1, mapWidth = 35) {
     };
 }
 
+function largePassageRuntime(workers) {
+    const r = passageRuntime(workers, 3, 25),
+        planner = r.context.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    // Choose an actually validated 3x3 interior. The ordinary ranking prefers
+    // tiny interiors, which deliberately no longer recruit four workers.
+    planner.candidates = (index, options) => {
+        const candidate = candidates(index, { ...options, maxCandidates: 24 }).find(
+            (entry) => entry.interiorCells.length === 9,
+        );
+        return candidate ? [candidate] : [];
+    };
+    return r;
+}
+
 test("passage AI selects a proved capture interior on one- and two-cell native corridors", () => {
     for (const width of [1, 2]) {
         const r = passageRuntime([spinner(1, 5, 5)], width),
@@ -1343,9 +1516,37 @@ test("passage AI selects a proved capture interior on one- and two-cell native c
     }
 });
 
+test("small passages staff two Spinners and leave excess actors available for other fields", () => {
+    for (const width of [1, 2]) {
+        const workers = Array.from({ length: 12 }, (_, index) =>
+                spinner(index + 1, 3 + (index % 4), 4 + Math.floor(index / 4)),
+            ),
+            r = passageRuntime(workers, width),
+            before = workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y })),
+            ai = r.begin(),
+            staffed = Object.values(ai.groups).filter((group) => group.planId);
+        assert.ok(staffed.length > 0);
+        assert.ok(staffed.every((group) => group.memberIds.length <= 2));
+        assert.equal(workers.length, 12);
+        assert.deepEqual(
+            workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y })),
+            before,
+        );
+        for (let turn = 0; turn < 3; turn++) {
+            r.begin();
+            assert.ok(
+                Object.values(ai.groups)
+                    .filter((group) => group.planId)
+                    .every((group) => group.memberIds.length <= 2),
+                "Excess workers must not rejoin a full small field on the next audit",
+            );
+        }
+    }
+});
+
 test("passage AI recruits initially separated worker groups into one planned field", () => {
-    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 30, 5), spinner(4, 30, 9)];
-    const r = passageRuntime(workers),
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)];
+    const r = largePassageRuntime(workers),
         c = r.context,
         ai = r.begin(),
         groups = Object.values(ai.groups);
@@ -1358,6 +1559,7 @@ test("passage AI recruits initially separated worker groups into one planned fie
         plan = ai.plans[group.planId];
     assert.equal(plan.kind, "passage");
     assert.deepEqual(plain(group.memberIds).sort(), [1, 2, 3, 4]);
+    assert.equal(group.staffing.capacity, 4, "A nine-cell core leaves room for two extra helpers");
     const graph = c.Spiderlings.SpinnerNativeField.state().topology;
     assert.deepEqual(plain(graph.fieldOwners[plan.fieldId]).sort(), [1, 2, 3, 4]);
     assert.equal(Object.values(ai.plans).filter((entry) => !["invalid", "abandoned"].includes(entry.status)).length, 1);
@@ -1365,9 +1567,70 @@ test("passage AI recruits initially separated worker groups into one planned fie
     assert.ok(ai.passageMetrics.candidateCacheHits >= 1, "The second group reuses route-interception proofs");
 });
 
-test("passage AI gives distant support a movement assignment without paying construction on that move", () => {
-    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 30, 5), spinner(4, 30, 9)],
+test("a saved oversized field releases idle workers while preserving active Capture and Recovery sources", () => {
+    const workers = Array.from({ length: 8 }, (_, index) =>
+            spinner(index + 1, 3 + (index % 4), 4 + Math.floor(index / 4)),
+        ),
         r = passageRuntime(workers),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups).find((entry) => entry.planId),
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField;
+    // Model a pre-capacity save with all actors attributed to the existing field.
+    group.memberIds = workers.map((worker) => worker.id);
+    native.setOwners(plan.fieldId, group.memberIds);
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: [6] });
+    c.Spiderlings.SpinnerRecovery = { sourceIds: () => [7] };
+    c.Spiderlings.SpinnerNPCRecovery = { usesEntity: (id) => id === 8 };
+    const fieldBefore = JSON.stringify(native.state().topology.fields[plan.fieldId]),
+        before = workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y, hp: worker.hp }));
+    c.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.equal(group.memberIds.length, 8, "A zero-time load audits state without dispatching excess workers");
+    r.begin();
+    assert.deepEqual(plain(group.memberIds), [1, 2, 6, 7, 8]);
+    assert.equal(group.staffing.capacity, 2);
+    assert.equal(group.staffing.busy, 3);
+    assert.deepEqual(plain(native.fieldOwners(plan.fieldId)), [1, 2, 6, 7, 8]);
+    assert.equal(JSON.stringify(native.state().topology.fields[plan.fieldId]), fieldBefore);
+    assert.deepEqual(
+        workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y, hp: worker.hp })),
+        before,
+    );
+    r.begin();
+    assert.ok([6, 7, 8].every((id) => group.memberIds.includes(id)));
+    assert.ok(group.memberIds.length - group.staffing.busy <= group.staffing.capacity);
+    const otherPlans = Object.values(ai.plans).filter(
+        (entry) => entry !== plan && !["invalid", "abandoned"].includes(entry.status),
+    );
+    assert.ok(otherPlans.every((other) => !other.cells.some((key) => plan.cells.includes(key))));
+});
+
+test("field staffing shrinks to the actual legal stations and leaves the narrow mouth free", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        gate = plan.gates.reduce((a, b) => (a.cells[0].x < b.cells[0].x ? a : b)),
+        mouth = { x: gate.cells[0].x - 1, y: gate.cells[0].y },
+        station = { x: mouth.x - 1, y: mouth.y };
+    assert.equal(group.staffing.capacity, 2);
+    r.setMetadata(station.x, station.y, { OL: true });
+    r.begin();
+    assert.equal(group.planId, plan.id, "Protecting an outer station does not erase the valid field");
+    assert.equal(group.staffing.capacity, 1, "The gate mouth cannot substitute for the lost waiting station");
+    assert.equal(group.memberIds.length, 1);
+    assert.ok(
+        Object.values(group.assignments)
+            .filter((entry) => entry.type === "rally")
+            .every((entry) => cellKeyForTest(entry.workCell) !== cellKeyForTest(mouth)),
+    );
+});
+
+test("passage AI gives distant support a movement assignment without paying construction on that move", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+        r = largePassageRuntime(workers),
         c = r.context,
         ai = r.begin(),
         group = Object.values(ai.groups)[0];
@@ -1618,6 +1881,60 @@ test("passage AI keeps its analysis and active field when paid gate work creates
     );
 });
 
+test("ready staffing keeps a core worker opposite a remote colleague instead of sending them through each other", () => {
+    const workers = [spinner(1, 10, 7), spinner(2, 19, 7)],
+        r = passageRuntime(workers),
+        c = r.context,
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    planner.candidates = (index, options) =>
+        candidates(index, { ...options, maxCandidates: 24 }).filter((entry) => entry.id === "passage:10,7:1x1");
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = () => c.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId];
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(field().phase, "ready");
+    for (let turn = 0; turn < 30; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(
+        workers.every((worker) => cellKeyForTest(worker) === cellKeyForTest(group.assignments[worker.id].workCell)),
+    );
+    assert.ok(workers.some((worker) => worker.x < plan.center.x));
+    assert.ok(workers.some((worker) => worker.x > plan.center.x));
+    const stationed = plain(group.rallyGates);
+    for (let turn = 0; turn < 3; turn++) {
+        r.begin();
+        assert.deepEqual(plain(group.rallyGates), stationed, "A settled partition must remain stable");
+    }
+    // A legacy save can contain the crossed partition emitted by older code.
+    // Keep both physical actors present and let their ordinary movement recover it.
+    workers[0].x = 13;
+    workers[0].y = 7;
+    workers[1].x = 14;
+    workers[1].y = 7;
+    group.rallyGates[workers[0].id] = field().gates.find((gate) => gate.cells[0].x > plan.center.x).id;
+    group.rallyGates[workers[1].id] = field().gates.find((gate) => gate.cells[0].x < plan.center.x).id;
+    c.Spiderlings.SpinnerAI.restoreAfterLoad();
+    for (let turn = 0; turn < 30; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(
+        workers.every((worker) => cellKeyForTest(worker) === cellKeyForTest(group.assignments[worker.id].workCell)),
+    );
+    assert.ok(workers.some((worker) => worker.x < plan.center.x));
+    assert.ok(workers.some((worker) => worker.x > plan.center.x));
+});
+
 test("passage AI stations same-side helpers at both mouths after preparing a one-cell corridor", () => {
     const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
         r = passageRuntime(workers),
@@ -1699,7 +2016,7 @@ test("passage AI stations same-side helpers at both mouths after preparing a one
 
 test("passage AI reuses a bounded distance working set while stable helpers wait for construction", () => {
     const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
-        r = passageRuntime(workers, 1, 25),
+        r = largePassageRuntime(workers),
         c = r.context,
         ai = r.begin();
     c.KinkyDungeonCurrentTick++;
@@ -2066,8 +2383,8 @@ test("passage AI replaces a reserved gate connection after native damage and coo
 
 test("passage AI approaches a blocked rally route only while its next step remains empty", () => {
     for (const blockNextStep of [false, true]) {
-        const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 30, 5), spinner(4, 30, 9)],
-            r = passageRuntime(workers),
+        const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+            r = largePassageRuntime(workers),
             c = r.context,
             ai = r.begin();
         c.Spiderlings.SpinnerAI.preparePositiveTurn(1);

@@ -2,7 +2,7 @@
     const { setup, spawn, turn, frame, expect, save, restore, photo } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []),
         images = (globalThis.passageImages = {});
-    const modes = globalThis.passageAcceptanceModes || ["corridor", "junction", "recruitment", "breach"];
+    const modes = globalThis.passageAcceptanceModes || ["corridor", "junction", "recruitment", "crowding", "breach"];
     const nativeField = Spiderlings.SpinnerNativeField,
         ai = Spiderlings.SpinnerAI;
     const key = (cell) => `${cell.x},${cell.y}`;
@@ -148,17 +148,17 @@
         rows.push(row);
         tick = 0;
         const positions =
-            mode === "recruitment"
-                ? [
-                      [6, 8],
-                      [7, 12],
-                      [23, 8],
-                      [24, 12],
-                  ]
-                : [
-                      [7, 9],
-                      [7, 11],
-                  ];
+            mode === "crowding"
+                ? Array.from({ length: 12 }, (_entry, index) => [3 + (index % 4), 7 + Math.floor(index / 4)])
+                : mode === "recruitment"
+                  ? [
+                        [6, 8],
+                        [24, 12],
+                    ]
+                  : [
+                        [7, 9],
+                        [7, 11],
+                    ];
         const actors = positions.map(([x, y]) => spawn("Spinner", x, y));
         for (const actor of actors) {
             actor.aware = false;
@@ -586,7 +586,61 @@
                 plan: copy(plan),
             });
         }
-        for (const mode of modes.filter((entry) => entry !== "breach")) {
+        if (modes.includes("crowding")) {
+            const actors = terrain("crowding"),
+                ids = actors.map((actor) => actor.id);
+            expect(
+                row.initialActors.every((initial) =>
+                    actors.some((actor) => actor.id === initial.id && actor.x === initial.x && actor.y === initial.y),
+                ),
+                "Staffing a crowded field moved an actor before a paid native turn",
+            );
+            const staffingAudit = () => {
+                const groups = Object.values(state().ai.groups),
+                    active = groups.filter((group) => {
+                        const plan = state().ai.plans[group.planId];
+                        return plan && !["invalid", "abandoned"].includes(plan.status);
+                    });
+                expect(active.length > 0, "Crowding fixture has no naturally planned field");
+                expect(
+                    active.every((group) => {
+                        const plan = state().ai.plans[group.planId];
+                        return (
+                            group.staffing.capacity <= 8 &&
+                            (plan.kind !== "passage" ||
+                                plan.interiorCells.length >= 4 ||
+                                group.staffing.capacity <= 2) &&
+                            group.memberIds.length - group.staffing.busy <= group.staffing.capacity
+                        );
+                    }),
+                    "A small native field recruited more workers than its legal space supports",
+                );
+                expect(
+                    ids.every((id) => KDMapData.Entities.some((actor) => actor.id === id && actor.hp > 0)),
+                    "Crowding was reduced by removing an existing Spinner",
+                );
+                const plans = active.map((group) => state().ai.plans[group.planId]);
+                expect(
+                    plans.every((plan, index) =>
+                        plans.slice(index + 1).every((other) => !other.cells.some((cell) => plan.cells.includes(cell))),
+                    ),
+                    "Excess workers selected an overlapping field",
+                );
+                (row.staffing ||= []).push(copy(groups));
+            };
+            staffingAudit();
+            for (let step = 0; step < 12; step++) {
+                await advance();
+                staffingAudit();
+            }
+            await snapshotReload("crowded field dispatch");
+            staffingAudit();
+            expect(
+                row.moves?.some((move) => move.result),
+                "Dispatched workers never used native movement",
+            );
+        }
+        for (const mode of modes.filter((entry) => entry !== "breach" && entry !== "crowding")) {
             terrain(mode);
             const plan = await ready();
             const field = fieldFor(plan);
@@ -615,17 +669,20 @@
                     const group = state().ai.groups[plan.groupId];
                     return (
                         distantIds.every((id) => group.memberIds.includes(id)) &&
-                        distantIds.every((id) =>
-                            KDMapData.Entities.some(
-                                (actor) =>
-                                    actor.id === id &&
-                                    Math.max(Math.abs(actor.x - plan.center.x), Math.abs(actor.y - plan.center.y)) <= 4,
-                            ),
-                        )
+                        group.memberIds.every((id) => {
+                            const assignment = group.assignments[id],
+                                actor = KDMapData.Entities.find((entry) => entry.id === id);
+                            return assignment?.type === "rally" && actor && key(actor) === key(assignment.workCell);
+                        })
                     );
                 };
                 for (let step = 0; step < 60 && !converged(); step++) await advance();
-                expect(converged(), "Recruited distant colleagues did not walk to the shared passage");
+                expect(converged(), "Recruited colleagues did not finish walking to their assigned waiting mouths");
+                expect(
+                    state().ai.groups[plan.groupId].memberIds.length <=
+                        state().ai.groups[plan.groupId].staffing.capacity,
+                    "Recruitment exceeded the shared passage's legal worker capacity",
+                );
                 row.recruited = { ids: distantIds, group: copy(state().ai.groups[plan.groupId]) };
             }
             await cacheCheck();
