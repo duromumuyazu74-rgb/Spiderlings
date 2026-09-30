@@ -1,4 +1,4 @@
-# Spiderlings 0.92.36-test.67 维护说明
+# Spiderlings 0.92.36-test.68 维护说明
 
 test.67 保持真实危险格不变，蛛丝由外向内聚拢蓄力，结算后播放中心闪光与逐格传播爆发。持续咒印使用角色下方的紫／粉蛛丝纹理。移除 Mage 数字倒计时；游戏内中英文 Hex／Collapse 施法描述同步。Rune 结算使用同一瞬时爆发接口，玩法计时、命中和存档不变。
 
@@ -149,3 +149,7 @@ powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-
 `SpiderlingsNPCAdhesion.js` 为敌对 NPC 记录独立的八回合蛛丝压力、自有 Slime 余额和初始／完全黏住状态。实际原生 Slime 增量按一次付费行动合并；普通蛛丝喷射开启序列，Spinner、Jumper 与 Mage 的有效蛛丝动作可续加压力。初始黏住阻止主动移动，完全黏住使可缩放的直接伤害乘 0.65，不设置原生昏迷或无力反抗。行动间的原生挣脱会扣减自有余额与压力；地图时钟和 NPC 记录随新存档保存。`SpiderlingsNPCWrapping.js` 保存三次付费缠裹进度，并交由 KD 原生非致命移除处理物品和持久 NPC 记录。
 
 `Repository checks` 在每个 PR 和维护分支推送上重建 atlas、构建 ZIP、逐项比对包内容，并保存以提交 SHA 命名的 14 天 workflow artifact。测试版本不创建 GitHub Release。正式发布只从 `main` 产生，并将通过验收的同一 ZIP 附加到 `v<modbuild>` Release。
+
+## test.68 视觉打磨
+
+test.67 保留用于回退。test.68 逐格预警 backing alpha 从 0.18 降为 0.035，原生金色危险格标记不变；八股蛛丝改为错开进度的细线，每股最多三段，不再平移 WebSprayTrail 片。爆发在 map-owned feedback 2.6 层使用受限亮核／亮环／四条外围短线，原生飘字继续显示，520 ms 交付和结算时序不变。雾区限制每个线段和外围亮环；角色下方持续丝网不变。16／21／9 格及伤害、冷却、概率不变。游戏内 test.67 中英牵引描述仍准确，无需重写玩法或名称。主观观感须结合逐帧证据审查；不声称解决全部文字遮挡或提升 FPS。
