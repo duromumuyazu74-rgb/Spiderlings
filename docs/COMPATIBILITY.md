@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.71.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.72.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.72 reachable passage shortlists (2026-09-30)
+
+Test.72 filters group approach reachability before both the 24-validation and eight-result limits. Occupied corridors no longer hide mandatory passages on the workers' reachable side. Dynamic reachable cells participate in candidate-cache identity; static route proofs remain reusable. The Mage parameter guide now describes the current warning visuals without countdown digits or successive ring displays.
+
+The regression first fails against test.71, then selects reachable mandatory passages with corridor blockers at x=20 and x=40. Both native versions exercise the same two scenarios and confirm an actor-blocking native path to a selected gate. The existing completely blocked approach regression remains passing.
+
+The final ZIP SHA-256 is `a3ad52744aca83b6defa33e0ab325eaddd598fef0b936ec5772a0ee4d9d6b113`, 24,810,833 bytes and 169 source-matching entries. Complete local tests pass 740, including 438 public tests; 12 policy tests and repository checks pass. Both KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` pass all 33 native checks in `2026-09-30T13-57-29-764Z-0.92.36-test.72`. Earlier packages are preserved.
 
 ## Test.71 initialized nest defaults (2026-09-30)
 

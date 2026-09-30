@@ -278,14 +278,20 @@
         return result;
     }
 
-    function candidates(index, { routes, maxCandidates = 8, blockedKeys = [] } = {}) {
+    function candidates(index, { routes, maxCandidates = 8, blockedKeys = [], reachableKeys } = {}) {
         const requested = Math.max(0, Math.min(MAX_VALIDATIONS, Math.floor(maxCandidates)));
         if (!requested) return [];
         const pairs = (routes || index.entrances.flatMap((from) => index.exits.map((to) => ({ from, to }))))
             .filter((route) => route.from && route.to)
             .map((route, id) => ({ id: route.id ?? `route-${id}`, from: point(route.from), to: point(route.to) }));
         const occupied = new Set(blockedKeys);
-        const signature = JSON.stringify({ pairs, requested, occupied: [...occupied].sort() });
+        const reachable = reachableKeys === undefined ? undefined : new Set(reachableKeys);
+        const signature = JSON.stringify({
+            pairs,
+            requested,
+            occupied: [...occupied].sort(),
+            reachable: reachable && [...reachable].sort(),
+        });
         if (index.candidateCache?.signature === signature) {
             index.metrics.candidateCacheHits++;
             return clone(index.candidateCache.result);
@@ -303,6 +309,11 @@
             .filter((route) => Number.isFinite(route.baseline));
         const shortlist = index.layouts
             .filter((candidate) => !candidate.cells.some((cell) => occupied.has(key(cell))))
+            // Actor approach eligibility must precede both bounded shortlists.
+            .filter(
+                (candidate) =>
+                    !reachable || candidate.gates.some((gate) => gate.cells.some((cell) => reachable.has(key(cell)))),
+            )
             .map((candidate) => {
                 const inside = new Set(candidate.cells.map(key));
                 const relevant = routeFields.filter(
