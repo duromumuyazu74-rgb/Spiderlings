@@ -13,7 +13,8 @@
     const DIRECTIONS = [...CARDINAL, [1, 1], [1, -1], [-1, 1], [-1, -1]];
     const MAX_INTERIOR_SIDE = 3;
     const MAX_VALIDATIONS = 24;
-    const MAX_DISTANCE_FIELDS = 16;
+    const MAX_DISTANCE_FIELDS = 64;
+    const MAX_DISTANCE_BYTES = 1024 * 1024;
     const key = (cell) => `${cell.x},${cell.y}`;
     const point = ({ x, y }) => ({ x, y });
     const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -61,6 +62,11 @@
             entrances: (snapshot.entrances || []).map(point),
             exits: (snapshot.exits || []).map(point),
             distanceFields: new Map(),
+            // Retain small-map working sets without allowing whole-map fields to grow without a bound.
+            distanceFieldLimit: Math.max(
+                1,
+                Math.min(MAX_DISTANCE_FIELDS, Math.floor(MAX_DISTANCE_BYTES / Math.max(4, nodes.length * 4))),
+            ),
             candidateCache: null,
         };
         analyzeCuts(index);
@@ -147,7 +153,7 @@
         index.metrics.distanceFieldBuilds++;
         values = breadthFirst(index, from);
         index.distanceFields.set(origin, values);
-        if (index.distanceFields.size > MAX_DISTANCE_FIELDS)
+        if (index.distanceFields.size > index.distanceFieldLimit)
             index.distanceFields.delete(index.distanceFields.keys().next().value);
         return values;
     }

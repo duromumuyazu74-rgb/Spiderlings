@@ -15,6 +15,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.65 local Mage integration and distance-cache verification
+
+On 2026-09-30, the final `Spiderlings_0.92.36-test.65.zip` passed all 32 native checks on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` (5.5.3). This local branch combines test.64 passages with the existing Issue #108 Mage fix; it is not published. The ZIP has 169 allowlisted entries, 24,801,754 bytes and SHA-256 `bca8125f87bb511430e5452f082731ac70097408d0b4ce365fc4e5e63685107e`.
+
+The same native Mage timing scenario against the retained test.64 ZIP reproduced silk-bolt damage without Webbing on both games (will 9.75, empty equipment). The final ZIP passes hit/miss checks in both colors, one eligible ordinary Lv1 item after a hit, impact artwork, native save/reload, Hex/Collapse timing and owner-loss handling. Bolt-impact screenshots on both games, a 5.5.3 Hex countdown and a 5.4.92 Pink Collapse warning were visually inspected. No exclusive Mage restraint was added.
+
+A fixed 25-by-25 open-map diagnostic queries 17 origins for twenty identical rounds. Distances remain equal; BFS builds fall from 340 to 17. Retained distance arrays are 40,000 and 42,500 bytes respectively. The new LRU admits at most 64 origins and uses a one-MiB distance-array budget, retaining at least one field even if that field exceeds the budget. Regression coverage checks eviction on a 10,000-cell map. This measures algorithmic work, not native FPS or full-turn speed. Existing paid-construction, passage proof, terrain invalidation and native save contracts pass.
+
+This run passed repository checks, 12 policy tests, 407 public tests and the complete 706-test local watcher. Final ZIP verification matches every entry to source; the checker reports zero errors, warnings or notes. A temporary manifest line-ending mismatch was corrected by restoring the built ZIP's manifest bytes, then final verification passed; the ZIP was not replaced.
+
+Native evidence remains in the parent KD workspace at `.scratch/kd-compatibility/runs/2026-09-30T00-07-13-765Z-0.92.36-test.65/acceptance.json`. This checkout retains copied results, before/after diagnostics and logs in `.scratch/local-review/`. KD 5.4.92 records known native play/pause interruptions; no resources were missing. KD 5.5.3 records no page errors, unhandled rejections or missing resources. Tests used isolated headless Chrome sessions on the user's computer. Full playthroughs, desktop shell, user saves, other Mods and human pacing/balance acceptance were not run.
+
 ## Test.64 coordinated passage sites
 
 On 2026-09-29, the same final `Spiderlings_0.92.36-test.64.zip` passed all thirty-one native scenarios plus shared setup on KD 5.4.92 and official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`, reporting KD 5.5.3. Upstream was fetched at `2026-09-29T15:29:50.019Z`. The package contains 169 allowlisted entries and 24,800,687 bytes; SHA-256 is `fe924c873736743944bd399b3c031d2da85c4eb77b48e214d75cc61f89a890ca`.

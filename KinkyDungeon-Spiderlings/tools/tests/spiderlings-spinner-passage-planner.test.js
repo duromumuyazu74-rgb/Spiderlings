@@ -243,11 +243,11 @@ test("an explicit changed-geometry index replaces an obsolete bottleneck proof",
 
 test("moving origins cannot retain an unbounded number of whole-map distance fields", () => {
     const planner = rules(),
-        snapshot = ascii(["#".repeat(64), "#S" + ".".repeat(60) + "E#", "#".repeat(64)]);
+        snapshot = ascii(["#".repeat(100), "#S" + ".".repeat(96) + "E#", "#".repeat(100)]);
     const index = planner.buildIndex(snapshot);
-    for (let x = 2; x < 42; x++) assert.ok(Number.isFinite(planner.distance(index, { x, y: 2 }, snapshot.exits[0])));
-    assert.equal(index.distanceFields.size, 16);
-    assert.equal(index.metrics.distanceFieldBuilds, 40);
+    for (let x = 2; x < 82; x++) assert.ok(Number.isFinite(planner.distance(index, { x, y: 2 }, snapshot.exits[0])));
+    assert.equal(index.distanceFields.size, 64);
+    assert.equal(index.metrics.distanceFieldBuilds, 80);
 });
 
 test("candidate identities and ordering are independent of snapshot enumeration order", () => {
@@ -300,4 +300,28 @@ test("the topology accepts all emitted one-width, two-width, door and junction p
             assert.equal(topology.solidCells(created).length, 0, "Planning must not grant paid web cells");
         }
     }
+});
+
+test("static 17-origin working set reuses distances across twenty turns", () => {
+    const planner = rules();
+    const cells = Array.from({ length: 625 }, (_, i) => ({ x: i % 25, y: Math.floor(i / 25), floor: true }));
+    const index = planner.buildIndex({ width: 25, height: 25, cells });
+    for (let turn = 0; turn < 20; turn++)
+        for (let x = 0; x < 17; x++)
+            assert.equal(planner.distance(index, { x, y: 1 }, { x: 24, y: 24 }), Math.max(24 - x, 23));
+    assert.equal(index.metrics.distanceFieldBuilds, 17);
+    assert.equal(index.distanceFields.size, 17);
+});
+
+test("large maps keep distance payloads within one MiB and retain LRU reuse", () => {
+    const planner = rules();
+    const cells = Array.from({ length: 10000 }, (_, i) => ({ x: i % 100, y: Math.floor(i / 100), floor: true }));
+    const index = planner.buildIndex({ width: 100, height: 100, cells });
+    for (let x = 0; x < 30; x++) planner.distance(index, { x, y: 1 }, { x: 99, y: 99 });
+    assert.equal(index.distanceFields.size, 26);
+    assert.ok([...index.distanceFields.values()].reduce((bytes, field) => bytes + field.byteLength, 0) <= 1024 * 1024);
+    planner.distance(index, { x: 29, y: 1 }, { x: 99, y: 99 });
+    assert.equal(index.metrics.distanceFieldBuilds, 30);
+    planner.distance(index, { x: 0, y: 1 }, { x: 99, y: 99 });
+    assert.equal(index.metrics.distanceFieldBuilds, 31);
 });
