@@ -2169,3 +2169,17 @@ test("an occupied corridor is not a reachable approach to a new passage", () => 
         plan = ai.plans[group.planId];
     assert.equal(plan.kind, "enclosure", "Do not send builders through a currently impassable occupied mouth");
 });
+
+test("unreachable passages do not hide reachable sites beyond either shortlist limit", () => {
+    for (const blockerX of [20, 40]) {
+        const r = passageRuntime([spinner(1, 60, 7)], 1, 65),
+            c = r.context;
+        c.KDMapData.Entities.push({ id: 99, x: blockerX, y: 7, hp: 10, Enemy: { name: "Bandit", tags: {} } });
+        const ai = r.begin(),
+            group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId];
+        assert.equal(plan.kind, "passage", `Reachable passages past the blocker at ${blockerX} must remain eligible`);
+        assert.equal(plan.proof.kind, "mandatory");
+        assert.ok(plan.gates.every((gate) => gate.cells.every((cell) => cell.x > blockerX)));
+    }
+});

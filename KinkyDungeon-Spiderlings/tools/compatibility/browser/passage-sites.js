@@ -526,6 +526,66 @@
         projectionAudit();
     }
     try {
+        for (const blockerX of [20, 40]) {
+            setup(`passage-reachable-${blockerX}`);
+            KDMapData.GridWidth = 65;
+            KDMapData.GridHeight = 15;
+            KDMapData.Grid =
+                Array.from({ length: 15 }, (_, y) =>
+                    Array.from({ length: 65 }, (_, x) =>
+                        ((x >= 2 && x <= 7) || (x >= 57 && x <= 62)) && y >= 4 && y <= 10
+                            ? "0"
+                            : x >= 7 && x <= 57 && y === 7
+                              ? "0"
+                              : "1",
+                    ).join(""),
+                ).join("\n") + "\n";
+            KDMapData.Tiles = {};
+            KDMapData.StartPosition = { x: 3, y: 7 };
+            KDMapData.EndPosition = { x: 61, y: 7 };
+            KDMapData.ShortcutPositions = {};
+            KDMapData.JailPoints = [];
+            KDPathCache = new Map();
+            KDPathCacheIgnoreLocks = new Map();
+            const worker = spawn("Spinner", 60, 7);
+            const blocker = spawn("Maidforce", blockerX, 7);
+            worker.aware = false;
+            worker.vp = 0;
+            KDUpdateEnemyCache = true;
+            ai.beginTurn({ activate: true });
+            const plan = passagePlans()[0];
+            expect(plan?.proof.kind === "mandatory", `Blocker at ${blockerX} hid all reachable native passages`);
+            const gates = plan.gates.flatMap((gate) => gate.cells);
+            expect(
+                gates.every((cell) => cell.x > blockerX),
+                "Selected passage lies beyond the occupied corridor",
+            );
+            expect(
+                gates.some(
+                    (cell) =>
+                        KinkyDungeonFindPath(
+                            worker.x,
+                            worker.y,
+                            cell.x,
+                            cell.y,
+                            true,
+                            false,
+                            false,
+                            KinkyDungeonMovableTilesEnemy,
+                            undefined,
+                            undefined,
+                            undefined,
+                            worker,
+                        )?.length,
+                ),
+                "Selected passage has no native actor-blocking approach",
+            );
+            rows.push({
+                mode: "reachable-shortlist",
+                blocker: { id: blocker.id, x: blockerX, y: 7 },
+                plan: copy(plan),
+            });
+        }
         for (const mode of modes.filter((entry) => entry !== "breach")) {
             terrain(mode);
             const plan = await ready();

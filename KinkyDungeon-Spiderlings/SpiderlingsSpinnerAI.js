@@ -833,6 +833,9 @@
             routes,
             maxCandidates: SHORTLIST_SIZE,
             blockedKeys: [...occupied],
+            reachableKeys: index.nodes
+                .filter((cell) => members.every((member) => Number.isFinite(approaches(member, cell))))
+                .map(cellKey),
         })
             .filter(
                 (candidate) =>
