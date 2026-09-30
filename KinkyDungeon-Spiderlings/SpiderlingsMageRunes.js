@@ -34,6 +34,19 @@
     function legalCells(mage) {
         if (!mage || typeof KinkyDungeonMapGet !== "function") return [];
         const cells = [];
+        // Occupancy is local to this query. The native cast rechecks after selection,
+        // so movement, bullets, terrain and LOS never need a cross-turn invalidation protocol.
+        const occupied = new Set();
+        for (const entity of KDMapData.Entities) {
+            if (!(entity.hp > 0)) continue;
+            const { x, y } = entity;
+            if (typeof x === "number" && typeof y === "number") occupied.add(`${x},${y}`);
+        }
+        for (const bullet of KDMapData.Bullets) {
+            if (!(bullet.time > 0)) continue;
+            const { x, y } = bullet;
+            if (typeof x === "number" && typeof y === "number") occupied.add(`${x},${y}`);
+        }
         for (let y = mage.y - RADIUS; y <= mage.y + RADIUS; y++) {
             for (let x = mage.x - RADIUS; x <= mage.x + RADIUS; x++) {
                 if (x === mage.x && y === mage.y) continue;
@@ -43,9 +56,8 @@
                     !KinkyDungeonCheckLOS(mage, { x, y }, Math.hypot(x - mage.x, y - mage.y), RADIUS, false, true)
                 )
                     continue;
-                if (KDMapData.Entities.some((entity) => entity.hp > 0 && entity.x === x && entity.y === y)) continue;
+                if (occupied.has(`${x},${y}`)) continue;
                 if (KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y) continue;
-                if (KDMapData.Bullets.some((bullet) => bullet.time > 0 && bullet.x === x && bullet.y === y)) continue;
                 cells.push({ x, y });
             }
         }

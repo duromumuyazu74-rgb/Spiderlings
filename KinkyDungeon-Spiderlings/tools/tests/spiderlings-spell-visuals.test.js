@@ -7,7 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsSpellVisuals.js"), "utf8");
 
-function fixture() {
+function fixture({ mageSpells = false } = {}) {
     const events = {},
         draws = [],
         lines = [],
@@ -15,6 +15,7 @@ function fixture() {
         fills = [],
         labels = [],
         lineStyles = [];
+    const geometryAllocations = { sets: 0 };
     let clock = 0,
         pink = false;
     class Graphics {
@@ -54,18 +55,28 @@ function fixture() {
             return this;
         }
         destroy() {
+            this.clear();
             this.destroyed = true;
         }
     }
     const board = {
+        children: [],
         addChild(g) {
             g.parent = board;
+            board.children.push(g);
         },
         removeChild(g) {
             g.parent = null;
+            board.children.splice(board.children.indexOf(g), 1);
         },
     };
     const c = {
+        Set: class extends Set {
+            constructor(...args) {
+                super(...args);
+                geometryAllocations.sets++;
+            }
+        },
         Spiderlings: { getSetting: () => pink },
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { x: 3, y: 3, player: true },
@@ -94,6 +105,15 @@ function fixture() {
             return { args };
         },
     };
+    if (mageSpells) {
+        c.KDGetFaction = (target) => target.faction;
+        c.KDHostile = () => false;
+        c.KinkyDungeonCastSpell = (x, y, spell, caster) => {
+            c.KDMapData.Bullets.push({ x, y, time: 1, bullet: { spell, source: caster.id } });
+            return { result: "Cast" };
+        };
+        vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsMageSpells.js"), "utf8"), c);
+    }
     vm.runInNewContext(source, c);
     function draw(camera = {}) {
         draws.length = 0;
@@ -109,6 +129,7 @@ function fixture() {
     return {
         c,
         events,
+        geometryAllocations,
         draws,
         lines,
         dots,
@@ -228,6 +249,7 @@ test("mark bursts keep exact footprints and visibly resolve before fading withou
         assert.equal(r.labels[0][1], "2");
         state.clock = 2;
         state.blasts = [{ x: 4, y: 4, radius: stacks - 1, expiresAt: 3 }];
+        r.c.Spiderlings.SpellVisuals.burst(state.blasts[0]);
         assert.equal(r.draw().length, 1);
         assert.ok(r.draws[0][3].endsWith("SpiderlingsMageRuneHit.png"));
         assert.equal(r.fills.length, (stacks * 2 - 1) ** 2);
@@ -245,6 +267,7 @@ test("mark bursts keep exact footprints and visibly resolve before fading withou
 test("Collapse impact excludes corner cells and every new area visual respects fog and map replacement", () => {
     const r = fixture();
     r.state({ blasts: [{ x: 4, y: 4, radius: 2, corners: false, expiresAt: 1 }] });
+    r.c.Spiderlings.SpellVisuals.burst(r.c.KDMapData.SpiderlingsMageSpells.blasts[0]);
     r.draw();
     assert.equal(r.fills.length, 21);
     assert.equal(r.lines.length, 20);
@@ -508,4 +531,82 @@ test("rune triggering adds a 3x3 outline; fog and the native camera transform re
     r.c.KinkyDungeonVisionGet = () => 0;
     r.draw();
     assert.equal(r.lines.length, 0);
+});
+
+test("resolved Mage bursts survive gameplay-record expiry before the first render", () => {
+    const r = fixture({ mageSpells: true });
+    const mage = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
+    r.c.KDMapData.Entities.push(mage);
+    r.c.KinkyDungeonCastSpell(4, 4, { name: "SpiderlingsMageCollapse" }, mage);
+    for (let tick = 0; tick < 4; tick++) r.events.tickAfter(null, { delta: 1 });
+    assert.equal(r.c.KDMapData.SpiderlingsMageSpells.blasts.length, 0);
+    assert.equal(r.draw().length, 1, "A burst must not depend on rendering its one-turn gameplay record");
+    assert.equal(r.fills.length, 21);
+    r.time(600);
+    assert.equal(r.draw().length, 0);
+});
+
+test("native-style reload restores persistent state without replaying a resolved burst", () => {
+    const r = fixture({ mageSpells: true });
+    const mage = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
+    r.c.KDMapData.Entities.push(mage);
+    r.c.KinkyDungeonCastSpell(4, 4, { name: "SpiderlingsMageCollapse" }, mage);
+    for (let tick = 0; tick < 3; tick++) r.events.tickAfter(null, { delta: 1 });
+    assert.equal(r.draw().length, 1);
+    r.time(260);
+    assert.equal(r.draw()[0][9].alpha, 0.5);
+    const saved = JSON.stringify(r.c.KDMapData);
+    r.c.KDMapData = JSON.parse(saved);
+    r.events.afterLoadGame();
+    assert.equal(r.draw().length, 0, "Reload must not treat saved resolved records as new feedback");
+    assert.equal(JSON.stringify(r.c.KDMapData), saved);
+});
+
+test("burst delivery deduplicates an event, copies its shape and drops entirely hidden events", () => {
+    const r = fixture();
+    const event = { x: 4, y: 4, radius: 2, corners: false };
+    r.c.Spiderlings.SpellVisuals.burst(event);
+    r.c.Spiderlings.SpellVisuals.burst(event);
+    event.radius = 0;
+    assert.equal(r.draw().length, 1);
+    assert.equal(r.fills.length, 21);
+    r.events.afterLoadGame();
+    r.c.KinkyDungeonVisionGet = () => 0;
+    r.c.Spiderlings.SpellVisuals.burst({ x: 4, y: 4, radius: 1 });
+    r.c.KinkyDungeonVisionGet = () => 1;
+    assert.equal(r.draw().length, 0);
+    assert.equal(r.fills.length, 0);
+});
+
+test("stationary warnings reuse geometry while their camera and fog projection remain live", () => {
+    const r = fixture();
+    r.state({
+        fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }],
+        collapses: [{ x: 8, y: 8, ownerId: 2, startAt: 0, explodeAt: 3 }],
+    });
+    r.draw();
+    const setsAfterWarmup = r.geometryAllocations.sets;
+    const initialX = r.draws[0][4];
+    for (let frame = 0; frame < 20; frame++) r.draw();
+    assert.equal(r.geometryAllocations.sets, setsAfterWarmup, "Warm static footprints must not rebuild edge sets");
+    r.draw({ CamX: 1 });
+    assert.equal(r.draws[0][4], initialX - 72);
+    r.c.KinkyDungeonVisionGet = () => 0;
+    r.draw();
+    assert.equal(r.fills.length, 0);
+    assert.equal(r.draws.length, 0);
+});
+
+test("area warnings and actor overlays own separate layers and both clear on reload", () => {
+    const r = fixture();
+    r.state({
+        fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }],
+        marks: { player: { stacks: 1, expiresAt: 5 } },
+    });
+    r.draw();
+    const layers = r.c.kdgameboard.children;
+    assert.equal(layers.length, 2);
+    assert.ok(layers[0].zIndex < layers[1].zIndex, "Actor silk must stay above the area fill");
+    r.events.afterLoadGame();
+    assert.equal(r.c.kdgameboard.children.length, 0);
 });
