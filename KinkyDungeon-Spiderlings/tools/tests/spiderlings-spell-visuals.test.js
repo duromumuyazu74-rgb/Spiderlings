@@ -20,6 +20,7 @@ function fixture({ mageSpells = false } = {}) {
         pink = false;
     class Graphics {
         clear() {
+            this.rectangles = [];
             lines.length = 0;
             dots.length = 0;
             fills.length = 0;
@@ -51,6 +52,7 @@ function fixture({ mageSpells = false } = {}) {
             return this;
         }
         drawRect(x, y, width, height) {
+            (this.rectangles ||= []).push({ x, y, width, height });
             fills.push({ x, y, width, height, ...this.fill });
             return this;
         }
@@ -102,7 +104,9 @@ function fixture({ mageSpells = false } = {}) {
         DrawTextFitKDTo: (...args) => labels.push(args),
         KDDraw: (...args) => {
             draws.push(args);
-            return { args };
+            const rendered = { args };
+            c.kdpixisprites.set(args[2], rendered);
+            return rendered;
         },
     };
     if (mageSpells) {
@@ -721,4 +725,64 @@ test("resolved burst owns a bounded bright feedback layer and clears without rep
     assert.equal(r.dots.length, 0);
     r.events.afterLoadGame();
     assert.equal(r.draw().length, 0);
+});
+
+test("Hex warning and active center pixels are clipped to their visible quarter", () => {
+    const r = fixture();
+    r.c.KinkyDungeonVisionGet = (x, y) => (x === 4 && y === 4 ? 1 : 0);
+    const state = r.state({ fields: [{ x: 2, y: 2, ownerId: 7, activateAt: 3, endAt: 6 }] });
+    for (const clock of [0, 3]) {
+        state.clock = clock;
+        r.draw();
+        const core = r.c.kdpixisprites.get("SpiderlingsSpellVisuals_hex_7");
+        assert.ok(core?.mask, "A cross-cell center needs pixel clipping");
+        assert.equal(core.mask.rectangles.length, 1);
+        const rect = core.mask.rectangles[0];
+        assert.ok(rect.x >= 288 && rect.y >= 288);
+        assert.ok(rect.x + rect.width <= 360 && rect.y + rect.height <= 360);
+        assert.ok(rect.width > 0 && rect.height > 0);
+    }
+    r.c.KinkyDungeonVisionGet = () => 1;
+    r.draw();
+    assert.equal(r.c.kdpixisprites.get("SpiderlingsSpellVisuals_hex_7").mask, null);
+    r.events.afterLoadGame();
+    assert.equal(r.c.kdgameboard.children.length, 0);
+});
+
+test("eight entirely hidden Collapse warnings early-return before creating graphics", () => {
+    const r = fixture();
+    let calls = 0;
+    r.c.KinkyDungeonVisionGet = () => {
+        calls++;
+        return 0;
+    };
+    r.state({
+        collapses: Array.from({ length: 8 }, (_, i) => ({
+            x: 50 + i * 5,
+            y: 50,
+            ownerId: i + 1,
+            startAt: 0,
+            explodeAt: 3,
+        })),
+    });
+    r.draw();
+    assert.equal(calls, 168);
+    assert.equal(r.draws.length, 0);
+    assert.equal(r.lines.length, 0);
+    assert.equal(r.c.kdgameboard.children.length, 0);
+});
+
+test("the same visible filament set moves inward as wall time advances", () => {
+    const r = fixture();
+    r.state({ collapses: [{ x: 4, y: 4, ownerId: 1, startAt: 0, explodeAt: 3 }] });
+    r.draw();
+    r.time(300);
+    r.draw();
+    const strands = () => r.lines.filter((_line, i) => r.lineStyles[i]?.width === 1.4);
+    const before = strands().map((line) => Math.hypot(line[0] - 324, line[1] - 324));
+    r.time(600);
+    r.draw();
+    assert.equal(before.length, 24);
+    assert.equal(strands().length, 24);
+    assert.ok(strands().every((line, i) => Math.hypot(line[0] - 324, line[1] - 324) < before[i]));
 });
