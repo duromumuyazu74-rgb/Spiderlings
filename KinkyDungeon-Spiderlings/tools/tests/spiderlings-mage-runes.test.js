@@ -257,3 +257,32 @@ test("forced movement onto the center leaves the rune for its delayed trigger", 
     r.tick();
     assert.equal(bullet.SpiderlingsRunePhase, "triggered");
 });
+
+test("Rune placement scans actor occupancy once per query instead of once per candidate", () => {
+    const r = fixture();
+    let reads = 0;
+    for (let id = 100; id < 120; id++)
+        r.map.Entities.push({
+            id,
+            hp: 10,
+            y: 100,
+            get x() {
+                reads++;
+                return 100;
+            },
+        });
+    assert.equal(r.choose(), r.spell.name);
+    assert.ok(reads <= 20, `A query should inspect each far actor once, saw ${reads} position reads`);
+});
+
+test("Rune cast rebuilds occupancy and checks changed terrain and LOS after spell selection", () => {
+    const r = fixture();
+    assert.equal(r.choose(), r.spell.name);
+    r.map.Bullets.push({ x: 3, y: 3, time: 1, bullet: {} });
+    r.map.Entities.push({ id: 99, hp: 5, x: 4, y: 3 });
+    const mapGet = r.c.KinkyDungeonMapGet;
+    r.c.KinkyDungeonMapGet = (x, y) => (x === 5 && y === 3 ? "1" : mapGet(x, y));
+    r.c.KinkyDungeonCheckLOS = (_source, target) => !(target.x === 6 && target.y === 3);
+    assert.equal(r.cast().result, "Cast");
+    assert.deepEqual([r.calls.casts.at(-1).x, r.calls.casts.at(-1).y], [7, 3]);
+});

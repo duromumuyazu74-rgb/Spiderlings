@@ -194,6 +194,11 @@
         }
     }
 
+    function publishBurst(effect) {
+        state().blasts.push(effect);
+        api.SpellVisuals?.burst(effect);
+    }
+
     function resolveBlast(blast) {
         const source = mageSource(blast.ownerId, blast.ownerFaction);
         const actionId = api.NPCAdhesion?.actionId(source);
@@ -203,7 +208,7 @@
             if (target.player) bindPlayer(source, blast.stacks);
             else bindMaid(source, target, blast.stacks, actionId);
         }
-        state().blasts.push({ x: blast.x, y: blast.y, radius, expiresAt: state().clock + 1 });
+        publishBurst({ x: blast.x, y: blast.y, radius, expiresAt: state().clock + 1 });
     }
 
     function resolveCollapse(collapse) {
@@ -235,7 +240,7 @@
                 api.SpellVisuals?.hit(target);
         }
         source.SpiderlingsCollapseCooldown = COLLAPSE_COOLDOWN;
-        state().blasts.push({ x: collapse.x, y: collapse.y, radius: 2, corners: false, expiresAt: state().clock + 1 });
+        publishBurst({ x: collapse.x, y: collapse.y, radius: 2, corners: false, expiresAt: state().clock + 1 });
     }
 
     function trigger(target) {

@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.65` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.66` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                                                |
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -155,3 +155,13 @@ The NPC legbag uses the direct Stage7 asset through the native model path. Playe
 `SpiderlingsSpinnerDemo` is no longer registered as a starting perk or start callback. Developers can still call `Spiderlings.SpinnerField.enter()` to enter the disposable flat field and reuse its reset/add controls; `SpinnerScenarios` retains the map-aware fixtures. These are test facilities, not an additional gameplay start.
 
 A completed NPC wrap whose native removal was cancelled retains progress 3. Its next eligible native operation retries removal without another construction payment. The wrapper still occupies that operation and does not also attack or cast.
+
+## Mage visual delivery and geometry (test.66)
+
+`MageSpells` publishes each resolved mark blast or Collapse once to `SpellVisuals.burst(effect)` at native resolution. The renderer copies only the footprint into map-local transient state, deduplicates a repeated event object, and times the flash for 520 ms from resolution. It no longer discovers resolved bursts by polling saved `blasts` during drawing. Gameplay records and damage timing are unchanged. Continuous positive ticks without drawing may expire the saved one-turn record while the visual remains available within that real-time window.
+
+`afterLoadGame` and map replacement clear transient delivery; resolved save records are not replayed. Persistent Hex/Rune/Collapse warnings and countdowns still restore from native gameplay state. Events whose complete footprint is hidden at delivery are discarded; every rendered cell continues to respect current fog. This is an intentional one-shot policy, not a new save schema or a cosmetic replay queue.
+
+The renderer retains at most 64 immutable footprint arrays in a map-local LRU, with weakly held boundary edges. Width, height, world origin and cut corners are part of the key. Camera projection, fog, alpha, palette and countdown values are recomputed each frame. Reset clears this cache. Area Graphics remain at 2.4; mark/weapon-silk actor Graphics use a separate 2.5 layer; hit/countdown feedback remains at 2.6. Both Graphics are destroyed on reset. Native sprite and shared-texture ownership stays with KD.
+
+Rune legal-cell selection creates a local occupancy set on every query, preserving row/column order. Actual casting queries again, so changed actors, active bullets, terrain and LOS are revalidated without a cross-turn cache. Rune limits, probabilities, targets, paid actions and saved phases are unchanged.

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.65.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.66.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.66 Mage visual delivery and bounded geometry
+
+On 2026-09-30, the final `Spiderlings_0.92.36-test.66.zip` passed all 32 native checks on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` (5.5.3), fetched at `2026-09-30T01:07:19.707Z`. Its 169 allowlisted entries total 24,802,477 bytes; SHA-256 is `bed274f93f66ceb123f6ab423c1764cc86a582b20e5af30282d351a431a683a9`. This is a local delivery without publication.
+
+Resolved bursts enter a transient visual queue at resolution rather than being discovered from one-turn save records during drawing. The existing 520-ms lifetime starts at resolution. Hidden events and resolved saved records do not replay. Warnings, countdowns, damage and persistent state retain their contracts. Both colors on both games pass four synchronous native turns without a draw, followed by one burst sprite; native reload preserves spell state and draws zero replay sprites. All four delivery screenshots were inspected.
+
+A map-local 64-shape LRU caches footprint cells and edges; fog, camera, color and countdowns remain live. Area graphics use layer 2.4, actor bands and dots 2.5, and feedback 2.6. Rune occupancy sets are call-local, with fresh checks at actual cast time. In a paired fixture with one warning Hex and one charging Collapse over 21 draws, Set builds fall from 63 to 3 while each frame retains 10 sprites, 228 lines, 47 fills and two labels. A Rune option query and cast with 20 distant actors reduce coordinate reads from 1,400 to 40 and choose the same cell. These are work counters, not native FPS or whole-turn speed.
+
+Repository checks, 12 policy tests, 414 public tests and the full 713-test local watcher passed. Final ZIP verification matches source; the watcher reports zero errors, warnings or notes. Red-stage logs reproduce missed delivery, replay and repeated geometry/occupancy work. Native evidence remains in the parent KD workspace at `.scratch/kd-compatibility/runs/2026-09-30T01-07-19-723Z-0.92.36-test.66/acceptance.json`; this checkout retains copied results and logs in `.scratch/architecture-review/`.
+
+Tests used isolated headless Chrome sessions on the user's computer. KD 5.4.92 records known native audio play/pause interruptions and two missing native `Locks/Red.png` requests, with no missing Mod assets. KD 5.5.3 reports no page errors, unhandled rejections or missing resources. Full playthroughs, desktop shell, user saves, other Mods and human pacing/balance acceptance were not run. The independent prison experiment remains excluded.
 
 ## Test.65 local Mage integration and distance-cache verification
 

@@ -7,14 +7,19 @@
     const WARNING = 0xf2c66f;
     const DURATION = 240;
     const BURST_DURATION = 520;
+    const LAYERS = Object.freeze({ area: 2.4, actor: 2.5, feedback: 2.6 });
+    const MAX_SHAPES = 64;
+    const shapes = new Map();
+    let shapeEdges = new WeakMap();
     const impacts = new Map();
     const bursts = new Map();
-    let seenBlasts = new WeakSet();
+    let seenBursts = new WeakSet();
+    let burstSerial = 0;
     const dashes = [];
     const bulletFrames = new Map();
     let built = new WeakMap();
     let map;
-    let drawing;
+    const drawings = new Map();
     let frame;
     const now = () => (typeof CommonTime === "function" ? CommonTime() : Date.now());
     const pink = () => (api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "");
@@ -22,15 +27,18 @@
     function reset() {
         impacts.clear();
         bursts.clear();
-        seenBlasts = new WeakSet();
+        seenBursts = new WeakSet();
+        burstSerial = 0;
         dashes.length = 0;
         bulletFrames.clear();
         built = new WeakMap();
-        if (drawing) {
+        for (const drawing of drawings.values()) {
             drawing.parent?.removeChild(drawing);
             drawing.destroy();
-            drawing = undefined;
         }
+        drawings.clear();
+        shapes.clear();
+        shapeEdges = new WeakMap();
         map = KDMapData;
     }
 
@@ -74,24 +82,55 @@
         );
     }
 
-    function graphics() {
+    function graphics(layer = "area") {
+        let drawing = drawings.get(layer);
         if (!drawing || drawing.destroyed) {
             drawing = new PIXI.Graphics();
-            drawing.name = KEY;
-            drawing.zIndex = 2.4;
+            drawing.name = `${KEY}_${layer}`;
+            drawing.zIndex = LAYERS[layer];
             kdgameboard.addChild(drawing);
+            drawings.set(layer, drawing);
         }
         return drawing;
     }
 
     function square(x, y, width, height = width, corners = true) {
-        const cells = [];
+        const key = `${x},${y}:${width}x${height}:${corners}`;
+        let cells = shapes.get(key);
+        if (cells) {
+            shapes.delete(key);
+            shapes.set(key, cells);
+            return cells;
+        }
+        cells = [];
         for (let dy = 0; dy < height; dy++)
             for (let dx = 0; dx < width; dx++) {
                 if (!corners && (dx === 0 || dx === width - 1) && (dy === 0 || dy === height - 1)) continue;
-                cells.push({ x: x + dx, y: y + dy });
+                cells.push(Object.freeze({ x: x + dx, y: y + dy }));
             }
+        Object.freeze(cells);
+        shapes.set(key, cells);
+        if (shapes.size > MAX_SHAPES) shapes.delete(shapes.keys().next().value);
         return cells;
+    }
+
+    function boundaryEdges(cells) {
+        const cached = shapeEdges.get(cells);
+        if (cached) return cached;
+        const keys = new Set(cells.map((cell) => `${cell.x},${cell.y}`));
+        const sides = [
+            [0, -1, -0.5, -0.5, 0.5, -0.5],
+            [1, 0, 0.5, -0.5, 0.5, 0.5],
+            [0, 1, 0.5, 0.5, -0.5, 0.5],
+            [-1, 0, -0.5, 0.5, -0.5, -0.5],
+        ];
+        const edges = [];
+        for (const cell of cells)
+            for (const [dx, dy, ax, ay, bx, by] of sides)
+                if (!keys.has(`${cell.x + dx},${cell.y + dy}`))
+                    edges.push({ cell, ax: cell.x + ax, ay: cell.y + ay, bx: cell.x + bx, by: cell.y + by });
+        shapeEdges.set(cells, edges);
+        return edges;
     }
 
     function silkColor() {
@@ -129,33 +168,23 @@
             "#201727",
             size * 0.3,
             "center",
-            2.6,
+            LAYERS.feedback,
         );
     }
 
     function outline(cells, dashed = false, color = silkColor(), alpha = 1, width = 2) {
-        const keys = new Set(cells.map((cell) => `${cell.x},${cell.y}`));
-        const edges = [
-            [0, -1, -0.5, -0.5, 0.5, -0.5],
-            [1, 0, 0.5, -0.5, 0.5, 0.5],
-            [0, 1, 0.5, 0.5, -0.5, 0.5],
-            [-1, 0, -0.5, 0.5, -0.5, -0.5],
-        ];
         const g = graphics();
         g.lineStyle(width, color, alpha * (dashed ? 0.8 : 0.95));
-        for (const cell of cells) {
-            if (!visible(cell.x, cell.y)) continue;
-            for (const [dx, dy, ax, ay, bx, by] of edges) {
-                if (keys.has(`${cell.x + dx},${cell.y + dy}`)) continue;
-                const a = xy(cell.x + ax, cell.y + ay),
-                    b = xy(cell.x + bx, cell.y + by);
-                const count = dashed ? 6 : 1;
-                for (let i = 0; i < count; i++) {
-                    const start = i / count,
-                        end = (i + (dashed ? 0.55 : 1)) / count;
-                    g.moveTo(a[0] + (b[0] - a[0]) * start, a[1] + (b[1] - a[1]) * start);
-                    g.lineTo(a[0] + (b[0] - a[0]) * end, a[1] + (b[1] - a[1]) * end);
-                }
+        for (const edge of boundaryEdges(cells)) {
+            if (!visible(edge.cell.x, edge.cell.y)) continue;
+            const a = xy(edge.ax, edge.ay),
+                b = xy(edge.bx, edge.by);
+            const count = dashed ? 6 : 1;
+            for (let i = 0; i < count; i++) {
+                const start = i / count,
+                    end = (i + (dashed ? 0.55 : 1)) / count;
+                g.moveTo(a[0] + (b[0] - a[0]) * start, a[1] + (b[1] - a[1]) * start);
+                g.lineTo(a[0] + (b[0] - a[0]) * end, a[1] + (b[1] - a[1]) * end);
             }
         }
     }
@@ -166,13 +195,33 @@
         impacts.set(`${target.player ? "player" : target.id}:${art}`, { target, art, start: now() });
     }
 
+    function burst(effect) {
+        currentMap();
+        if (!effect || seenBursts.has(effect)) return;
+        seenBursts.add(effect);
+        const cells = square(
+            effect.x - effect.radius,
+            effect.y - effect.radius,
+            effect.radius * 2 + 1,
+            effect.radius * 2 + 1,
+            effect.corners !== false,
+        );
+        // Feedback is delivered at resolution, not by polling a one-turn save record.
+        // Hidden events and saved resolved records never replay on a later render or load.
+        if (!cells.some((cell) => visible(cell.x, cell.y))) return;
+        bursts.set(
+            { x: effect.x, y: effect.y, radius: effect.radius, corners: effect.corners, serial: ++burstSerial },
+            now(),
+        );
+    }
+
     function drawCollapse(collapse, clock, id, speed = 1) {
         const cells = square(collapse.x - 2, collapse.y - 2, 5, 5, false);
         const inner = square(collapse.x - 1, collapse.y - 1, 3);
         const stage = Math.min(2, Math.max(0, (clock - collapse.startAt) * speed));
         fill(cells, WARNING, 0.055 + stage * 0.025);
         fill(inner, WARNING, 0.05 + stage * 0.025);
-        fill([{ x: collapse.x, y: collapse.y }], WARNING, 0.09 + stage * 0.035);
+        fill(square(collapse.x, collapse.y, 1), WARNING, 0.09 + stage * 0.035);
         outline(cells, true, WARNING, 1, 3);
         outline(inner, false, WARNING, 0.6);
         countdown(collapse.x - 1, collapse.y - 2, collapse.explodeAt - clock, WARNING);
@@ -229,9 +278,6 @@
                         0.8,
                         0.8,
                     );
-                } else if (blast.expiresAt > state.clock && !seenBlasts.has(blast)) {
-                    seenBlasts.add(blast);
-                    bursts.set(blast, now());
                 }
             for (const [key, mark] of Object.entries(state.marks)) {
                 if (!(mark.stacks > 0) || mark.expiresAt < state.clock) continue;
@@ -251,11 +297,11 @@
                     0.75,
                     1,
                     0,
-                    2.5,
+                    LAYERS.actor,
                     target,
                 );
                 const [x, y] = xy(visualX, visualY - 0.23);
-                const g = graphics();
+                const g = graphics("actor");
                 g.lineStyle(0).beginFill(PURPLE, 1);
                 for (let i = 0; i < mark.stacks; i++) g.drawCircle(x + (i - (mark.stacks - 1) / 2) * 7, y, 2);
                 g.endFill();
@@ -284,7 +330,7 @@
             fill(cells, silkColor(), (1 - age) * 0.28);
             outline(cells, false, silkColor(), 1 - age, 4);
             sprite(
-                `burst_${blast.x}_${blast.y}_${started}`,
+                `burst_${blast.serial}`,
                 "Bullets/SpiderlingsMageRuneHit.png",
                 blast.x,
                 blast.y,
@@ -301,7 +347,7 @@
             if (!web) continue;
             const [x, y] = xy(target.visual_x ?? target.x, target.visual_y ?? target.y);
             const size = KinkyDungeonGridSizeDisplay;
-            const g = graphics();
+            const g = graphics("actor");
             const color = pink() ? 0xefb7df : 0xf4eef5;
             const bands = 2 + Math.floor(web.coverage * 6);
             // Bands occupy the actor's body; the head remains readable at every coverage.
@@ -327,7 +373,7 @@
         currentMap();
         if (!data || typeof KDDraw !== "function") return;
         frame = data;
-        drawing?.clear();
+        for (const drawing of drawings.values()) drawing.clear();
         drawMage();
         drawWeaponWebbing();
         const weapons = api.Weapons?.visualState();
@@ -349,7 +395,7 @@
                     0.9 + age * 0.1,
                     1 - age,
                     0,
-                    2.6,
+                    LAYERS.feedback,
                     target,
                 );
         }
@@ -475,6 +521,7 @@
 
     api.SpellVisuals = Object.freeze({
         hit,
+        burst,
         dash(source, to) {
             currentMap();
             dashes.push({ id: source.id, x: source.x, y: source.y, to: { ...to }, start: now() });

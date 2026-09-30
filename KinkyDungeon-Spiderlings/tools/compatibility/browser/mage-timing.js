@@ -172,6 +172,53 @@
                 );
         }
     }
+    for (const pink of [false, true]) {
+        setup(`mage-burst-lifecycle-${pink}`);
+        KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
+        KDMovePlayer(12, 10, false);
+        const caster = spawn("MageSpiderlings", 8, 8);
+        caster.stun = 999;
+        expect(cast("SpiderlingsMageCollapse", caster).result === "Cast", "Lifecycle Collapse cast failed");
+        const started = performance.now();
+        // All four native turns run in this JS task, without a requestAnimationFrame between them.
+        for (let tick = 0; tick < 4; tick++) {
+            KinkyDungeonLastAction = "Wait";
+            KinkyDungeonAdvanceTime(1, true);
+        }
+        const state = KDMapData.SpiderlingsMageSpells;
+        expect(
+            state.collapses.length === 0 && state.blasts.length === 0,
+            "Lifecycle fixture retained gameplay feedback",
+        );
+        await frame();
+        await frame();
+        const beforeLoad = rendered("burst_");
+        expect(
+            beforeLoad.length === 1 && hasArt(beforeLoad, "SpiderlingsMageRuneHit"),
+            "Native no-draw turns lost or duplicated the burst",
+        );
+        images[`${pink ? "pink" : "normal"}-lifecycle-delivery`] = document
+            .querySelector("canvas")
+            .toDataURL("image/png");
+        const persistent = JSON.stringify(state);
+        restore(save());
+        await frame();
+        await frame();
+        expect(
+            JSON.stringify(KDMapData.SpiderlingsMageSpells) === persistent,
+            "Lifecycle reload changed spell gameplay",
+        );
+        expect(rendered("burst_").length === 0, "Native reload replayed an already-delivered burst");
+        rows.push({
+            kind: "burst-lifecycle",
+            pink,
+            turnsWithoutDraw: 4,
+            deliverySprites: beforeLoad.length,
+            elapsedMs: performance.now() - started,
+            persistentStateUnchanged: true,
+            replaySprites: 0,
+        });
+    }
     KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();
