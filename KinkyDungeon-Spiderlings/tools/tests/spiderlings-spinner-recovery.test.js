@@ -767,3 +767,97 @@ test("external carrier remains byte-for-byte unchanged through stand firm and so
     assert.equal(JSON.stringify(carrier), original);
     assert.equal(r.api.state().ownedCarrier, false);
 });
+
+test("recovery draws selected silk through visible-cell masks and clears it without mutating control", () => {
+    const r = recoveryRuntime(),
+        children = [],
+        draws = [],
+        sprites = new Map();
+    class Graphics {
+        constructor() {
+            this.rects = [];
+            this.visible = true;
+        }
+        clear() {
+            this.rects = [];
+            return this;
+        }
+        beginFill() {
+            return this;
+        }
+        endFill() {
+            return this;
+        }
+        drawRect(...rect) {
+            this.rects.push(rect);
+            return this;
+        }
+        destroy() {
+            this.destroyed = true;
+        }
+    }
+    r.c.PIXI = { Graphics };
+    r.c.kdgameboard = { addChild: (child) => children.push(child) };
+    r.c.kdpixisprites = sprites;
+    r.c.KinkyDungeonGridSizeDisplay = 72;
+    r.c.KDMapData.GridWidth = 20;
+    r.c.KDMapData.GridHeight = 20;
+    let visible = new Set(["8,5"]),
+        pink = false;
+    r.c.KinkyDungeonVisionGet = (x, y) => (visible.has(`${x},${y}`) ? 1 : 0);
+    r.c.Spiderlings.getSetting = () => pink;
+    r.c.KDDraw = (_board, _cache, id, image) => {
+        draws.push({ id, image });
+        const sprite = sprites.get(id) || {};
+        sprite.visible = true;
+        sprites.set(id, sprite);
+        return sprite;
+    };
+    r.player.x = 6;
+    r.leave();
+    r.hit();
+    const before = JSON.stringify({ state: r.api.state(), leash: r.player.leash, gear: r.gear });
+    const draw = () =>
+        r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerRecovery({}, { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    draw();
+    assert.equal(draws.length, 1);
+    assert.ok(draws[0].image.endsWith("SpiderlingsPlayerTether.png"));
+    const strand = sprites.get("SpiderlingsRecoveryTether_41");
+    assert.deepEqual(strand.mask.rects, [[576, 360, 72, 72]], "Only the visible cell may receive tether pixels");
+    pink = true;
+    draw();
+    assert.ok(draws.at(-1).image.endsWith("SpiderlingsPlayerTetherPink.png"));
+    assert.equal(JSON.stringify({ state: r.api.state(), leash: r.player.leash, gear: r.gear }), before);
+    visible.clear();
+    const count = draws.length;
+    draw();
+    assert.equal(draws.length, count, "An entirely hidden segment must not draw art");
+    assert.equal(strand.visible, false);
+    visible.add("8,5");
+    draw();
+    r.source.hp = 0;
+    draw();
+    assert.equal(strand.visible, false, "Dead source strands disappear before the next logic audit");
+    r.api.clearControl();
+    assert.ok(children.every((child) => child.destroyed));
+    assert.equal(r.player.leash.entity, 777, "Owned display never overwrites the original leash relationship");
+});
+
+test("native carrier rejection consumes the recovery hit with clear feedback; fresh success reports one source", () => {
+    for (const canAdd of [false, true]) {
+        const r = recoveryRuntime({ canAdd }),
+            messages = [];
+        r.c.KinkyDungeonSendTextMessage = (_priority, text) => messages.push(text);
+        r.c.TextGet = (key) => `[NotFound] ${key}`;
+        r.player.x = 6;
+        r.leave();
+        assert.equal(r.hit().effect, false);
+        assert.equal(r.api.strength(), canAdd ? 1 : 0);
+        assert.equal(messages.length, 1);
+        assert.ok(messages[0].includes(canAdd ? "1/8" : "no pull is established"));
+        if (canAdd) {
+            r.hit();
+            assert.equal(messages.length, 1, "Repeated source refresh does not spam attachment messages");
+        } else assert.equal(r.gear.length, 0, "Feedback must not bypass rejected native equipment");
+    }
+});

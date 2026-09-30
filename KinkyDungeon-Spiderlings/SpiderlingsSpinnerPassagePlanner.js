@@ -14,6 +14,7 @@
     const MAX_INTERIOR_SIDE = 3;
     const MAX_VALIDATIONS = 24;
     const MAX_DISTANCE_FIELDS = 64;
+    const MAX_ROUTE_PROOFS = 128;
     const MAX_DISTANCE_BYTES = 1024 * 1024;
     const key = (cell) => `${cell.x},${cell.y}`;
     const point = ({ x, y }) => ({ x, y });
@@ -289,6 +290,9 @@
             index.metrics.candidateCacheHits++;
             return clone(index.candidateCache.result);
         }
+        const proofSignature = JSON.stringify(pairs);
+        if (index.proofCache?.signature !== proofSignature)
+            index.proofCache = { signature: proofSignature, results: new Map() };
         const routeFields = pairs
             .map((route) => ({
                 ...route,
@@ -317,6 +321,11 @@
             .slice(0, MAX_VALIDATIONS);
         const result = [];
         for (const { candidate, relevant, onRoute } of shortlist) {
+            const cached = index.proofCache.results.get(candidate.id);
+            if (cached !== undefined) {
+                if (cached) result.push(cached);
+                continue;
+            }
             const gateKeys = new Set(candidate.gates.flatMap((gate) => gate.cells.map(key)));
             const interiorKeys = new Set(candidate.interiorCells.map(key));
             const proofs = [];
@@ -369,7 +378,16 @@
                 (candidate.doorway ? 20 : 0) +
                 (candidate.gates.length - 2) * 10 -
                 candidate.cells.length;
-            result.push({ ...candidate, proof: { ...proof, checkedRoutes: proofs.length }, score, travelDistance: 0 });
+            const validated = {
+                ...candidate,
+                proof: { ...proof, checkedRoutes: proofs.length },
+                score,
+                travelDistance: 0,
+            };
+            result.push(validated);
+            index.proofCache.results.set(candidate.id, validated);
+            if (index.proofCache.results.size > MAX_ROUTE_PROOFS)
+                index.proofCache.results.delete(index.proofCache.results.keys().next().value);
         }
         result.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
         const selected = result.slice(0, requested);

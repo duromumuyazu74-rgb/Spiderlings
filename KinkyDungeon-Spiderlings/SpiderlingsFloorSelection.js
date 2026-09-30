@@ -2,6 +2,7 @@
 
 (() => {
     const api = globalThis.Spiderlings;
+    if (api.FloorSelection?.canBypassObjective) return;
     // Keep the native modifier with weight 800. Spider floors replace that one
     // modifier after its primary faction is known; they never replace the faction.
     const KEEP_WEIGHT = 800;
@@ -34,7 +35,82 @@
         }
     }
 
-    api.FloorSelection = { weight };
+    const DEBUG_BYPASS = "SpiderlingsDebugStairBypass";
+    const grants = new Set();
+    const grantSession = `${Date.now().toString(36)}:${Math.random().toString(36)}`;
+    let grantOrdinal = 0;
+    const bypassText = () => {
+        const translated = typeof TextGet === "function" ? TextGet(DEBUG_BYPASS) : DEBUG_BYPASS;
+        return translated !== DEBUG_BYPASS && !translated.startsWith("[NotFound]")
+            ? translated
+            : "Debug stair bypass active; marked nests remain unchanged.";
+    };
+    const canBypassObjective = () =>
+        typeof KDMapData !== "undefined" && !!settings[KDMapData.MapMod] && grants.has(KDMapData[DEBUG_BYPASS]);
+    api.FloorSelection = { weight, canBypassObjective, bypassText };
+    if (typeof addTextKey === "function")
+        addTextKey(DEBUG_BYPASS, "Debug stair bypass active; marked nests remain unchanged.");
+    function grantDebugPass(map, result) {
+        if (
+            result === true &&
+            map === KDMapData &&
+            settings[map.MapMod] &&
+            (api.Infestation?.activeState() || api.HuntingGrounds?.activeState()) &&
+            KinkyDungeonPlayerEntity.x === map.EndPosition?.x &&
+            KinkyDungeonPlayerEntity.y === map.EndPosition?.y
+        ) {
+            grants.delete(map[DEBUG_BYPASS]);
+            map[DEBUG_BYPASS] = `${grantSession}:${++grantOrdinal}`;
+            grants.add(map[DEBUG_BYPASS]);
+        }
+    }
+    // 5.5.3 has a named callback; preserve the native action and only grant after success.
+    if (typeof DrawButtonKDEx === "function" && !DrawButtonKDEx.SpiderlingsDebugStairsWrapped) {
+        const nativeDrawButton = DrawButtonKDEx;
+        DrawButtonKDEx = function (name, callback, ...args) {
+            if (name !== "debugtelestairs") return nativeDrawButton.call(this, name, callback, ...args);
+            return nativeDrawButton.call(
+                this,
+                name,
+                function (...input) {
+                    const map = KDMapData,
+                        result = callback.apply(this, input);
+                    grantDebugPass(map, result);
+                    return result;
+                },
+                ...args,
+            );
+        };
+        DrawButtonKDEx.SpiderlingsDebugStairsWrapped = true;
+    }
+    // 5.4.92 renders an unnamed button and handles this exact debug rectangle in
+    // HUD. Verify that legacy branch exists, then preserve its actual mouse action.
+    if (
+        typeof KinkyDungeonHandleHUD === "function" &&
+        /MouseIn\(\s*1100,\s*300,\s*300,\s*64\s*\)/.test(KinkyDungeonHandleHUD.toString())
+    ) {
+        const nativeHUD = KinkyDungeonHandleHUD;
+        KinkyDungeonHandleHUD = function (...args) {
+            const requested =
+                    KinkyDungeonDrawState === "Restart" && TestMode && KDDebugMode && MouseIn(1100, 300, 300, 64),
+                map = KDMapData;
+            const result = nativeHUD.apply(this, args);
+            if (requested) grantDebugPass(map, result);
+            return result;
+        };
+    }
+    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
+        KDAddEvent(KDEventMapGeneric, "beforeHandleStairs", "SpiderlingsDebugStairs", (_event, data) => {
+            if (data.AdvanceAmount !== 0 && typeof KDMapData !== "undefined") {
+                grants.delete(KDMapData[DEBUG_BYPASS]);
+                delete KDMapData[DEBUG_BYPASS];
+            }
+        });
+        KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsDebugStairs", () => {
+            grants.clear();
+            if (typeof KDMapData !== "undefined") delete KDMapData[DEBUG_BYPASS];
+        });
+    }
     if (
         typeof KDJourneySlotTypes === "undefined" ||
         typeof KDJourneySlotTypes.basic !== "function" ||

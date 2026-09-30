@@ -195,7 +195,7 @@ KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
 KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage draws silk inward across a marked area of ground.
+KinkyDungeonSpellCastSpiderlingsMageHex,Mag przyciąga jedwab do środka oznaczonej ziemi. Każda rzeczywista tura w aktywnym znaku dodaje jedną warstwę (do trzech) i odnawia czas; nakładające się znaki nie dodają dodatkowych warstw w tej samej turze.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
 SpiderlingsNPCAdhesionInitial,Unieruchomiony
@@ -227,3 +227,9 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tkasz krąg jedwabiu. Nici zac
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Posyłasz lepką jedwabną nić w stronę celu.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Splot kokonu
 KinkyDungeonSpellSpiderlingsSilkenSnare,Jedwabna pętla
+SpiderlingsDebugStairBypass,Debugowe pominięcie blokady schodów aktywne; oznaczone gniazda pozostają bez zmian.
+RestraintSpiderlingsSilkLeash,Pajęcza jedwabna smycz
+RestraintSpiderlingsSilkLeashDesc,Po wyjściu przez wyrwę w polu kolejne trafienie uprawnionego Spinnera może przypiąć smycz do obroży. Dostępna akcja przyciąga cię z powrotem.
+RestraintSpiderlingsSilkLeashDesc2,Nowa smycz wymaga zgodnej obroży i zwykłych warunków wyposażenia. Aktywne źródła pokazują nici; bez nich smycz jest luźna.
+SpiderlingsRecoveryAttached,Spinner przypina nić powrotną ({count}/8). Jego następna dostępna akcja może przyciągnąć cię z powrotem.
+SpiderlingsRecoveryAttachBlocked,"Nić trafia, ale nie może zostać przypięta do zgodnego wyposażenia szyi. Nowa smycz wymaga obroży i zwykłych warunków wyposażenia; przyciąganie nie zostało uruchomione."

@@ -131,8 +131,8 @@
 
     // Nest reinforcement population weights / 巢穴增援种群权重。
     const SHARED_SPIDERLING_OPTIONS = Object.freeze([
-        Object.freeze({ enemy: "Spinner", refvar: "spiderlingsNestSpinnerWeight", default: 2 }),
-        Object.freeze({ enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 2 }),
+        Object.freeze({ enemy: "Spinner", refvar: "spiderlingsNestSpinnerWeight", default: 4 }),
+        Object.freeze({ enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 1 }),
         Object.freeze({ enemy: "WebCaster", refvar: "spiderlingsNestWebCasterWeight", default: 2 }),
         Object.freeze({ enemy: "Tunneler", refvar: "spiderlingsNestTunnelerWeight", default: 1 }),
         Object.freeze({ enemy: "MageSpiderlings", refvar: "spiderlingsNestMageWeight", default: 1 }),
@@ -141,10 +141,10 @@
         Object.fromEntries(SHARED_SPIDERLING_OPTIONS.map((option) => [option.enemy, option.default])),
     );
     const NORMAL_SPIDERLING_WEIGHTS = Object.freeze({
-        Spinner: 12,
-        Jumper: 12,
+        Spinner: 16,
+        Jumper: 9,
         WebCaster: 8,
-        Tunneler: 4,
+        Tunneler: 3,
         NestEntrance: 2,
     });
     const SQUAD_MEMBERS = Object.freeze(["Spinner", "Spinner", "Tunneler", "WebCaster", "Jumper", "MageSpiderlings"]);

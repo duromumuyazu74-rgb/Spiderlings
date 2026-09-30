@@ -875,15 +875,21 @@
         KinkyDungeonEscapeTypes[MOD] = {
             selectValid: false,
             filterRandom: () => 0,
-            check: () => !activeState() || activeState().complete,
+            check: () => !activeState() || activeState().complete || api.FloorSelection?.canBypassObjective() === true,
             minimaptext: () => progressText(false, true),
-            doortext: () => progressText(true),
+            doortext: () =>
+                api.FloorSelection?.canBypassObjective() ? api.FloorSelection.bypassText() : progressText(true),
         };
         KDAddEvent(KDEventMapGeneric, "calcEscapeMethod", MOD, (_event, data) => {
             if (activeState()) data.escapeMethod = MOD;
         });
         KDAddEvent(KDEventMapGeneric, "beforeStairCancel", MOD, (_event, data) => {
-            if (activeState() && !activeState().complete && (data.toTile === "s" || data.AdvanceAmount > 0)) {
+            if (
+                activeState() &&
+                !activeState().complete &&
+                !api.FloorSelection?.canBypassObjective() &&
+                (data.toTile === "s" || data.AdvanceAmount > 0)
+            ) {
                 data.cancelevent = MOD;
             }
         });

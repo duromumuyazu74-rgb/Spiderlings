@@ -62,6 +62,7 @@ async function verifyGame(game, packagePath, output) {
             ["normal-integration", "normal-integration.js"],
             ["normal-visuals", "normal-visuals.js"],
             ["passage-sites", "passage-sites.js"],
+            ["debug-stairs", "debug-stairs.js"],
         ];
         for (const [name, file, scenario] of checks) {
             currentCheck = name;

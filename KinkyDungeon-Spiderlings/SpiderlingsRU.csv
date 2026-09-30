@@ -195,7 +195,7 @@ KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
 KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage draws silk inward across a marked area of ground.
+KinkyDungeonSpellCastSpiderlingsMageHex,Маг стягивает шёлк внутрь отмеченной области. Каждый реальный ход в активном знаке добавляет одну метку (до трёх) и обновляет срок; перекрывающиеся знаки не дают дополнительных слоёв в тот же ход.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
 SpiderlingsNPCAdhesionInitial,Обездвижен
@@ -227,3 +227,9 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Вы сплетаете кру
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Вы выпускаете липкую шёлковую нить в сторону цели.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Схождение кокона
 KinkyDungeonSpellSpiderlingsSilkenSnare,Шёлковая петля
+SpiderlingsDebugStairBypass,Отладочный обход блокировки лестницы включён; отмеченные гнёзда не изменены.
+RestraintSpiderlingsSilkLeash,Паучий шёлковый поводок
+RestraintSpiderlingsSilkLeashDesc,После выхода через пролом поля повторное попадание подходящего Spinner может прикрепить поводок к ошейнику. Доступное действие затем тянет назад.
+RestraintSpiderlingsSilkLeashDesc2,Новый поводок требует совместимого ошейника и обычных условий экипировки. Активные источники показаны нитями; без них поводок ослаблен.
+SpiderlingsRecoveryAttached,Spinner прикрепляет возвратную нить ({count}/8). Его следующее доступное действие может потянуть вас назад.
+SpiderlingsRecoveryAttachBlocked,"Возвратная нить попала, но не может прикрепиться к совместимой экипировке шеи. Новый поводок требует ошейника и обычных условий экипировки; притягивание не установлено."

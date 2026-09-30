@@ -978,7 +978,7 @@ addTextKey("KinkyDungeonSpellSpiderlingsMageHex", "Shield-Eating Sigil");
 addTextKey("KinkyDungeonSpellSpiderlingsMageCollapse", "Thousand-Silk Collapse");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageHex",
-    "The Spiderling Mage draws silk inward across a marked area of ground.",
+    "The Spiderling Mage draws silk inward across marked ground. Each actual turn inside the active sigil adds one mark (up to three) and refreshes it; overlapping sigils grant no extra layer that turn.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageCollapse",

@@ -325,3 +325,31 @@ test("large maps keep distance payloads within one MiB and retain LRU reuse", ()
     planner.distance(index, { x: 0, y: 1 }, { x: 99, y: 99 });
     assert.equal(index.metrics.distanceFieldBuilds, 31);
 });
+
+test("actor occupancy filters sites before selection while static route proofs remain reusable", () => {
+    const planner = rules(),
+        snapshot = ascii([
+            "#########################################",
+            "#S.....................................E#",
+            "#########################################",
+        ]),
+        index = planner.buildIndex(snapshot);
+    const first = planner.candidates(index),
+        blockedKeys = first
+            .slice(0, 3)
+            .flatMap((candidate) => candidate.gates.flatMap((gate) => gate.cells))
+            .map((cell) => `${cell.x},${cell.y}`);
+    const available = planner.candidates(index, { blockedKeys });
+    assert.ok(available.length);
+    assert.ok(
+        available.every((candidate) => candidate.cells.every((cell) => !blockedKeys.includes(`${cell.x},${cell.y}`))),
+    );
+    const searches = index.metrics.routeSearches;
+    planner.candidates(index);
+    assert.equal(
+        index.metrics.routeSearches,
+        searches,
+        "Changing actor positions must not rebuild unchanged route proofs",
+    );
+    assert.ok(index.proofCache.results.size <= 128);
+});

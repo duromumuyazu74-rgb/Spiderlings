@@ -370,6 +370,33 @@ test("assigned builders route around a live coworker instead of waiting on its o
     assert.equal(group.lastAction, "travel");
 });
 
+test("builders detour when native faction path returns a live occupied first step", () => {
+    const actors = [spinner(1, 2, 4), spinner(2, 3, 4)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            plan.fieldId,
+        );
+    group.assignments[1] = {
+        type: "placeAnchor",
+        anchorId: field.anchors[0].id,
+        target: { x: field.anchors[0].x, y: field.anchors[0].y },
+        workCell: { x: 4, y: 4 },
+        fieldId: plan.fieldId,
+    };
+    r.context.KinkyDungeonFindPath = () => [
+        { x: 3, y: 4 },
+        { x: 4, y: 4 },
+    ];
+    r.context.KinkyDungeonEnemyLoop(actors[0], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 2, y: 4 });
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 3, y: 4 });
+    assert.equal(group.lastAction, "travel");
+});
+
 test("separate Spinner groups perform paid work on their own enclosures", () => {
     const workers = [spinner(1, 3, 3), spinner(2, 15, 8)],
         r = runtime(workers),
@@ -2103,4 +2130,42 @@ test("passage AI approaches a blocked rally route only while its next step remai
             "Rally movement or waiting must not pay for or alter construction",
         );
     }
+});
+
+test("occupied top-eight passages do not hide later legal route sites", () => {
+    const r = passageRuntime([spinner(1, 5, 5)], 2, 65),
+        c = r.context,
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        index = planner.buildIndex(r.snapshot()),
+        blocked = new Map(
+            planner
+                .candidates(index)
+                .flatMap((candidate) => candidate.gates.flatMap((gate) => gate.cells.filter((cell) => cell.y === 7)))
+                .map((cell) => [cellKeyForTest(cell), cell]),
+        );
+    c.KDMapData.Entities.push(
+        ...[...blocked.values()].map((cell, ordinal) => ({
+            id: 100 + ordinal,
+            ...cell,
+            hp: 10,
+            Enemy: { name: "Bandit", movePoints: 1, tags: {} },
+        })),
+    );
+    assert.ok(planner.candidates(index, { blockedKeys: [...blocked.keys()] }).length);
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan.kind, "passage", "A legal route site must be reconsidered before off-route enclosure fallback");
+    assert.ok(plan.gates.every((gate) => gate.cells.every((cell) => !blocked.has(cellKeyForTest(cell)))));
+    assert.equal(plan.proof.kind, "mandatory");
+});
+
+test("an occupied corridor is not a reachable approach to a new passage", () => {
+    const r = passageRuntime([spinner(1, 5, 5)], 1, 65),
+        c = r.context;
+    c.KDMapData.Entities.push({ id: 99, x: 8, y: 7, hp: 10, Enemy: { name: "Bandit", movePoints: 1, tags: {} } });
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan.kind, "enclosure", "Do not send builders through a currently impassable occupied mouth");
 });

@@ -195,7 +195,7 @@ KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot
 KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
 KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
 KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,The Spiderling Mage draws silk inward across a marked area of ground.
+KinkyDungeonSpellCastSpiderlingsMageHex,Der Magier zieht Seide über markiertem Boden nach innen. Jede tatsächliche Runde im aktiven Siegel fügt eine Marke hinzu (bis zu drei) und erneuert sie; überlappende Siegel gewähren in derselben Runde keine zusätzliche Marke.
 KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
 KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
 SpiderlingsNPCAdhesionInitial,Fixiert
@@ -227,3 +227,9 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Du webst einen Kreis aus Seide
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Du schleuderst einen klebrigen Seidenfaden auf dein Ziel.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Kokonkonvergenz
 KinkyDungeonSpellSpiderlingsSilkenSnare,Seidenfessel
+SpiderlingsDebugStairBypass,Debug-Treppenfreigabe aktiv; markierte Nester bleiben unverändert.
+RestraintSpiderlingsSilkLeash,Spinnen-Seidenleine
+RestraintSpiderlingsSilkLeashDesc,Nach dem Verlassen eines durchbrochenen Netzfelds kann ein weiterer geeigneter Spinner-Treffer diese Leine am Halsband befestigen. Eine verfügbare Aktion zieht dich zurück.
+RestraintSpiderlingsSilkLeashDesc2,Eine neue Leine erfordert ein kompatibles Halsband und normale Ausrüstungsbedingungen. Aktive Quellen zeigen Seidenstränge; ohne Quellen bleibt die Leine locker.
+SpiderlingsRecoveryAttached,Spinner befestigt einen Rückholstrang ({count}/8). Seine nächste verfügbare Aktion kann dich zurückziehen.
+SpiderlingsRecoveryAttachBlocked,"Der Rückholstrang trifft, kann aber nicht an kompatibler Halsausrüstung befestigt werden. Eine neue Leine braucht ein Halsband und normale Ausrüstungsbedingungen; kein Zurückziehen wurde eingerichtet."

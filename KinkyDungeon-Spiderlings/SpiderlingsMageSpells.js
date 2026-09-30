@@ -72,7 +72,7 @@
             refreshFragility(target);
             return;
         }
-        if (previous?.pendingUntil >= now) {
+        if (previous?.pendingUntil > now) {
             refreshFragility(target);
             return;
         }
@@ -310,6 +310,9 @@
         const delta = Number(data?.delta || 0);
         if (!(delta > 0)) return;
         const s = state();
+        const nativeTick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : undefined;
+        if (nativeTick !== undefined && s.lastNativeTick === nativeTick) return;
+        if (nativeTick !== undefined) s.lastNativeTick = nativeTick;
         // A positive native tick is one spell turn, like the existing rune timer.
         s.clock += 1;
         for (const caster of KDMapData.Entities)

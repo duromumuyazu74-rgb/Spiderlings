@@ -284,6 +284,78 @@
             replaySprites: 0,
         });
     }
+    setup("hex-world-turn-continuity");
+    KDMovePlayer(12, 10, false);
+    const owners = [spawn("MageSpiderlings", 8, 8), spawn("MageSpiderlings", 8, 7)];
+    for (const owner of owners) {
+        owner.stun = 999;
+        expect(cast("SpiderlingsMageHex", owner).result === "Cast", "Overlap Hex cast failed");
+    }
+    const mark = () => Spiderlings.MageSpells.markFor(KinkyDungeonPlayerEntity),
+        continuity = { kind: "hex-world-turn-continuity", steps: [] };
+    for (let i = 0; i < 3; i++) await turn();
+    expect(mark()?.stacks === 1, "Overlapping active Hex did not grant exactly one layer");
+    const beforeDuplicate = JSON.stringify(KDMapData.SpiderlingsMageSpells);
+    KinkyDungeonSendEvent("tickAfter", { delta: 1 });
+    expect(
+        JSON.stringify(KDMapData.SpiderlingsMageSpells) === beforeDuplicate,
+        "Duplicate positive event changed spell state",
+    );
+    restore(save());
+    const afterLoad = JSON.stringify(KDMapData.SpiderlingsMageSpells);
+    KinkyDungeonSendEvent("tickAfter", { delta: 1 });
+    expect(
+        JSON.stringify(KDMapData.SpiderlingsMageSpells) === afterLoad,
+        "Same-turn reload replayed mark accumulation",
+    );
+    continuity.steps.push({
+        phase: "overlap-and-reload",
+        clock: KDMapData.SpiderlingsMageSpells.clock,
+        mark: structuredClone(mark()),
+    });
+    const striker = spawn("Jumper", 13, 10);
+    striker.stun = 0;
+    const contact = KDPlayerEffects.SpiderlingsWebbingEnemyBind(
+        KinkyDungeonPlayerEntity,
+        "glue",
+        { profile: "Jumper" },
+        undefined,
+        "Enemy",
+        undefined,
+        striker,
+    );
+    expect(mark()?.stacks === 0, "Successful ordinary Jumper contact did not consume the Hex mark");
+    continuity.contact = contact;
+    striker.stun = 999;
+    await turn();
+    expect(mark()?.stacks === 1, "Active Hex failed to replenish on the next actual turn after consumption");
+    continuity.steps.push({
+        phase: "replenished",
+        clock: KDMapData.SpiderlingsMageSpells.clock,
+        mark: structuredClone(mark()),
+    });
+    images["hex-continuity-replenished"] = await photo();
+    const expiration = mark().expiresAt;
+    KDMovePlayer(10, 10, false);
+    await turn();
+    expect(mark()?.expiresAt === expiration, "Outside Hex refreshed the mark");
+    for (let i = 0; i < 6; i++) await turn();
+    expect(!mark(), "Expired fields refreshed marks outside their active lifetime");
+    continuity.steps.push({ phase: "gone", clock: KDMapData.SpiderlingsMageSpells.clock, mark: mark() || null });
+    rows.push(continuity);
+    setup("hex-native-reentry");
+    KDMovePlayer(12, 10, false);
+    const reentryMage = spawn("MageSpiderlings", 8, 8);
+    reentryMage.stun = 999;
+    expect(cast("SpiderlingsMageHex", reentryMage).result === "Cast", "Reentry Hex cast failed");
+    for (let i = 0; i < 3; i++) await turn();
+    KDMovePlayer(10, 10, false);
+    await turn();
+    expect(mark()?.stacks === 1, "Leaving added a mark");
+    KDMovePlayer(12, 10, false);
+    await turn();
+    expect(mark()?.stacks === 2, "Reentry into still-active Hex did not add a layer");
+    rows.push({ kind: "hex-native-reentry", mark: structuredClone(mark()) });
     KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();

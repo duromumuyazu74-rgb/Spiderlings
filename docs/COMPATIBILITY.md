@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.69.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.70.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.70 population, construction approach, debug stairs, recovery display and Hex continuity
+
+A final repeated 5.4.92 native run exposed missing web projections under occupied cells: that version uses `KDAddEntity`, while the occupied-cell path only recognized 5.5's `KDAddNewEntity`. Two of three isolated diagnostic runs reproduced it. A new legacy-admission regression failed before the fix, then passed with the native API fallback without kicking or moving occupants. The final package was rebuilt and both versions rerun; the failed acceptance and diagnostic records remain available.
+
+On 2026-09-30 the final ZIP passed 33 native checks each on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` (5.5.3). SHA-256: `d91548b5b2027671af9d6263cd7c70612b604f006bffca24468930167eb5d83f`. All 169 allowlisted entries match source. The full local watcher passes 738 tests, including 437 public tests; 12 policy tests and repository checks pass.
+
+Natural mobile base weights change from 12/12/8/4 to 16/9/8/3, retaining their total of 36; new nest defaults change from 2/2/2/1/1 to 4/1/2/1/1 without replacing saved settings. Conditional simulations compare three candidates over 2,000 seeds, actual native selector stage/tag/cap branches, and 192 controlled construction traces. These do not establish survival, combat difficulty, complete-map population proportions or an FPS benefit. Occupied passages are filtered before shortlist truncation; unreachable approaches are rejected. Construction retries a native path whose first step is occupied using an actor-blocked detour, preserving normal movement and rally rules.
+
+Explicit native Teleport to stairs grants temporary debug passage on both objective floor types. Native scenarios keep normal unfinished objectives blocked, preserve target lists and completion flags after the cheat, clear on save/load, and actually advance from floor 3 to 4. Separate independent-browser mouse clicks exercise both versions' real buttons. Same-floor side-map retention is unit-tested; an actual side-room round trip is not separately verified.
+
+Recovery now draws ordinary/pink silk independently of Capture and native `player.leash`. Native 2/4/8-source scenes check masks, completely hidden display removal, existing external-leash progress, load, targeted source removal and actual pulling. Bare-neck admission remains rejected with readable feedback. Hex native scenarios check overlap, same-turn repeated processing, save/load, consumed-mark replenishment, exit/expiry and reentry while active. Its three-turn 4-by-4 area, three-layer cap and existing 3/4/5-turn expiry remain unchanged. Existing visual effects and instantaneous Rune/Collapse behavior are preserved.
+
+Evidence is the local compatibility run `2026-09-30T07-50-00-593Z-0.92.36-test.70` and workspace `.scratch/test70-*` logs/JSON. Native screenshots were inspected, including visible ordinary/pink strands, a one-visible-cell mask and Hex replenishment. The old KD run records filtered audio play/pause interruptions and two missing `/Game/Locks/Red.png` requests; these are retained in its raw results, and passing checks do not mean its browser console is empty. Controlled native scenes do not cover user saves, other Mods, online deployment, all real-map trap quality or subjective final balance.
 
 ## Test.69 per-cell fog masks and hidden-warning early return
 

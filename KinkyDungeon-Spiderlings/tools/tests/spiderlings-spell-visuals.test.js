@@ -670,16 +670,22 @@ test("Mage inward-gathering cast descriptions agree in English fallback and all 
     const root = path.join(__dirname, "../..");
     const runtime = fs.readFileSync(path.join(root, "Spiderlings.js"), "utf8");
     const english = [
-        "The Spiderling Mage draws silk inward across a marked area of ground.",
+        "The Spiderling Mage draws silk inward across marked ground. Each actual turn inside the active sigil adds one mark (up to three) and refreshes it; overlapping sigils grant no extra layer that turn.",
         "Silk gathers from the marked outer tiles toward the center before bursting.",
     ];
     for (const value of english) assert.ok(runtime.includes(value));
     for (const locale of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
         const csv = fs.readFileSync(path.join(root, `Spiderlings${locale}.csv`), "utf8");
         if (locale === "CN") {
-            assert.ok(csv.includes("由外向内收拢"));
+            assert.ok(csv.includes("由外向内"));
             assert.ok(csv.includes("准备爆发"));
-        } else for (const value of english) assert.ok(csv.includes(value));
+        } else {
+            assert.ok(csv.includes(english[1]), `${locale}: inward Collapse text`);
+            const hexLine = csv
+                .split(/\r?\n/)
+                .find((line) => line.startsWith("KinkyDungeonSpellCastSpiderlingsMageHex,"));
+            assert.ok(hexLine && hexLine.length > 80, `${locale}: localized Hex per-turn text`);
+        }
     }
 });
 

@@ -66,12 +66,13 @@
 
     function createProxy(field, physical) {
         // DialogueCreateEnemy kicks an occupant before spawning. A web is allowed under a spider.
+        const addEntity = globalThis.KDAddNewEntity || globalThis.KDAddEntity;
         const occupied = KDMapData.Entities.some(
                 (entity) => !isOwnedProxy(entity) && entity.hp > 0 && cellKey(entity) === cellKey(physical),
             ),
             enemy = occupied
-                ? typeof globalThis.DialogueGetEnemy === "function" && typeof globalThis.KDAddNewEntity === "function"
-                    ? globalThis.KDAddNewEntity(
+                ? typeof globalThis.DialogueGetEnemy === "function" && typeof addEntity === "function"
+                    ? addEntity(
                           { ...globalThis.DialogueGetEnemy(PROXY), x: physical.x, y: physical.y },
                           false,
                           false,
