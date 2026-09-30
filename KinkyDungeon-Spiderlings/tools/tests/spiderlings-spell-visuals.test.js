@@ -215,7 +215,8 @@ test("Collapse keeps its fixed cut-corner danger mask while its strands gather i
     assert.equal(danger().length, 21);
     const cells = new Set(danger().map((d) => `${d[4] / 72 - 0.5},${d[5] / 72 - 0.5}`));
     for (const corner of ["2,2", "2,6", "6,2", "6,6"]) assert.equal(cells.has(corner), false);
-    const initial = r.draws.filter((d) => d[2].includes("silk_")).map((d) => Math.hypot(d[4] - 324, d[5] - 324));
+    const strands = () => r.lines.filter((_line, i) => r.lineStyles[i]?.width === 1.4);
+    const initial = strands().map((line) => Math.hypot(line[0] - 324, line[1] - 324));
     for (const clock of [1, 2]) {
         state.clock = clock;
         r.time(clock * 810);
@@ -226,9 +227,9 @@ test("Collapse keeps its fixed cut-corner danger mask while its strands gather i
             positions,
         );
         assert.equal(r.labels.length, 0);
-        const silk = r.draws.filter((d) => d[3].endsWith("WebSprayTrailPink.png"));
-        assert.equal(silk.length, 8);
-        assert.ok(silk.every((d, i) => Math.hypot(d[4] - 324, d[5] - 324) < initial[i]));
+        const silk = strands();
+        assert.equal(silk.length, 24);
+        assert.ok(silk.every((line, i) => Math.hypot(line[0] - 324, line[1] - 324) < initial[i]));
     }
     state.collapses = [];
     r.draw();
@@ -267,7 +268,11 @@ test("Collapse impact excludes corner cells and every new area visual respects f
     r.c.Spiderlings.SpellVisuals.burst(r.c.KDMapData.SpiderlingsMageSpells.blasts[0]);
     r.draw();
     assert.equal(r.fills.length, 21);
-    assert.equal(r.lines.length, 24, "Only the center web has lit at the start of propagation");
+    assert.equal(
+        r.lineStyles.filter((style) => style.width === 1.25).length,
+        24,
+        "Only the center web has lit at the start of propagation",
+    );
     r.c.KinkyDungeonVisionGet = (x, y) => (x === 4 && y === 4 ? 1 : 0);
     r.draw();
     assert.equal(r.fills.length, 1);
@@ -551,7 +556,7 @@ test("native-style reload restores persistent state without replaying a resolved
     for (let tick = 0; tick < 3; tick++) r.events.tickAfter(null, { delta: 1 });
     assert.equal(r.draw().length, 1);
     r.time(260);
-    assert.equal(r.draw()[0][9].alpha, 0.5);
+    assert.equal(r.draw()[0][9].alpha, 0.65);
     const saved = JSON.stringify(r.c.KDMapData);
     r.c.KDMapData = JSON.parse(saved);
     r.events.afterLoadGame();
@@ -616,15 +621,15 @@ test("Mage warning keeps all dangerous cells while silk moves inward, without nu
     const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
     assert.equal(danger().length, 21);
     const positions = danger().map((d) => d.slice(4, 6));
-    const silk = () => r.draws.filter((d) => d[2].includes("silk_"));
-    const outer = silk().map((d) => Math.hypot(d[4] - 324, d[5] - 324));
+    const silk = () => r.lines.filter((_line, i) => r.lineStyles[i]?.width === 1.4);
+    const outer = silk().map((line) => Math.hypot(line[0] - 324, line[1] - 324));
     r.time(600);
     r.draw();
     assert.deepEqual(
         danger().map((d) => d.slice(4, 6)),
         positions,
     );
-    assert.ok(silk().every((d, i) => Math.hypot(d[4] - 324, d[5] - 324) < outer[i]));
+    assert.ok(silk().every((d, i) => Math.hypot(d[0] - 324, d[1] - 324) < outer[i]));
     assert.equal(state.clock, 0);
     assert.equal(r.labels.length, 0);
 });
@@ -672,4 +677,48 @@ test("Mage inward-gathering cast descriptions agree in English fallback and all 
             assert.ok(csv.includes("准备爆发"));
         } else for (const value of english) assert.ok(csv.includes(value));
     }
+});
+
+test("warning backing stays faint while every native dangerous-cell marker remains visible", () => {
+    const r = fixture();
+    r.state({ collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }] });
+    r.draw();
+    const backing = r.draws.filter((d) => d[3].endsWith("WarningBacking.png"));
+    assert.equal(backing.length, 21);
+    assert.ok(backing.every((d) => d[9].alpha <= 0.04));
+    assert.equal(r.draws.filter((d) => d[3].endsWith("WarningColorSpell.png") && d[9].alpha >= 0.48).length, 21);
+});
+
+test("gathering uses bounded thin strands whose heads move inward, not repeated web decals", () => {
+    const r = fixture();
+    const state = r.state({ collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }] });
+    const heads = () => r.lines.filter((_line, i) => r.lineStyles[i]?.width === 1.4);
+    r.draw();
+    assert.equal(r.draws.filter((d) => /WebSprayTrail/.test(d[3])).length, 0);
+    assert.equal(heads().length, 24);
+    const mean = () => heads().reduce((sum, line) => sum + Math.hypot(line[0] - 324, line[1] - 324), 0) / 24;
+    const outer = mean();
+    state.clock = 2;
+    r.time(1800);
+    r.draw();
+    assert.ok(mean() < outer);
+    assert.equal(r.draws.filter((d) => d[2].includes("danger_")).length, 21);
+    assert.equal(r.labels.length, 0);
+});
+
+test("resolved burst owns a bounded bright feedback layer and clears without replay", () => {
+    const r = fixture();
+    r.c.Spiderlings.SpellVisuals.burst({ x: 4, y: 4, radius: 1 });
+    r.draw();
+    const feedback = r.c.kdgameboard.children.find((g) => g.name === "SpiderlingsSpellVisuals_feedback");
+    assert.ok(feedback);
+    assert.equal(feedback.zIndex, 2.6);
+    assert.ok(r.dots.some((dot) => dot[2] <= 72 * 0.12));
+    assert.equal(r.draws.filter((d) => d[2].includes("burst_") && d[9].zIndex === 2.6).length, 1);
+    r.time(521);
+    r.draw();
+    assert.equal(r.draws.length, 0);
+    assert.equal(r.dots.length, 0);
+    r.events.afterLoadGame();
+    assert.equal(r.draw().length, 0);
 });

@@ -182,7 +182,7 @@
                 cell.x,
                 cell.y,
                 1,
-                0.18,
+                0.035,
                 0,
                 -0.3,
                 undefined,
@@ -210,10 +210,6 @@
             0.96,
             Math.max(0, (clock - start + Math.min(0.85, (now() - phase.at) / 900)) / Math.max(1, end - start)),
         );
-        const radius = Math.max(
-            0.12,
-            Math.max(...cells.map((cell) => Math.max(Math.abs(cell.x - x), Math.abs(cell.y - y)))) * (1 - progress),
-        );
         sprite(
             core,
             "Bullets/SpiderlingsMageRune.png",
@@ -226,21 +222,30 @@
             undefined,
             silkColor(),
         );
+        const g = graphics("ground");
+        const reach = Math.max(...cells.map((cell) => Math.max(Math.abs(cell.x - x), Math.abs(cell.y - y))));
+        // Thin staggered filaments are pulled inward, rather than translating eight web decals.
         for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4;
-            const xx = x + Math.cos(angle) * radius,
-                yy = y + Math.sin(angle) * radius;
-            if (!visible(Math.round(xx), Math.round(yy))) continue;
-            sprite(
-                `silk_${id}_${i}`,
-                `Bullets/WebSprayTrail${pink()}.png`,
-                xx,
-                yy,
-                0.65,
-                0.45 + progress * 0.25,
-                angle,
-                -0.01,
-            );
+            const angle = (i * Math.PI) / 4 + (i % 2 ? 0.1 : -0.07);
+            const pull = Math.min(1, Math.max(0, progress * 1.12 - (i % 3) * 0.055));
+            const head = reach * (1 - pull),
+                tail = Math.min(reach, head + 0.3 + (i % 3) * 0.08);
+            for (let step = 0; step < 3; step++) {
+                const a = head + ((tail - head) * step) / 3;
+                const b = head + ((tail - head) * (step + 1)) / 3;
+                const bendA = Math.sin((a / Math.max(0.1, reach)) * Math.PI) * 0.045 * (i % 2 ? 1 : -1);
+                const bendB = Math.sin((b / Math.max(0.1, reach)) * Math.PI) * 0.045 * (i % 2 ? 1 : -1);
+                const ax = x + Math.cos(angle + bendA) * a,
+                    ay = y + Math.sin(angle + bendA) * a;
+                const bx = x + Math.cos(angle + bendB) * b,
+                    by = y + Math.sin(angle + bendB) * b;
+                if (!visible(ax, ay) || !visible(bx, by)) continue;
+                const pa = xy(ax, ay),
+                    pb = xy(bx, by);
+                g.lineStyle(1.4, pink() ? 0xffd9ec : 0xe9d5ff, (0.7 - step * 0.14) * (0.65 + progress * 0.35));
+                g.moveTo(pa[0], pa[1]);
+                g.lineTo(pb[0], pb[1]);
+            }
         }
     }
 
@@ -413,12 +418,40 @@
             groundSilk(cells, (1 - age) * 0.8, blast, age);
             if (visible(blast.x, blast.y)) {
                 const [x, y] = xy(blast.x, blast.y),
-                    g = graphics();
-                g.lineStyle(2, silkColor(), Math.max(0, 1 - age * 1.5)).drawCircle(
-                    x,
-                    y,
-                    KinkyDungeonGridSizeDisplay * (0.14 + age * 0.48),
-                );
+                    g = graphics("feedback");
+                let ringVisible = true;
+                for (let dx = -1; dx <= 1; dx++)
+                    for (let dy = -1; dy <= 1; dy++) if (!visible(blast.x + dx, blast.y + dy)) ringVisible = false;
+                if (ringVisible)
+                    g.lineStyle(3, pink() ? 0xffe2ee : 0xf4eaff, Math.max(0, 1 - age)).drawCircle(
+                        x,
+                        y,
+                        KinkyDungeonGridSizeDisplay * Math.min(blast.radius + 0.45, 0.22 + age * 0.7),
+                    );
+                // A small luminous core and off-center streaks stay below native gameplay text.
+                if (age < 0.3)
+                    g.lineStyle(0)
+                        .beginFill(0xfff8ff, (1 - age / 0.3) * 0.75)
+                        .drawCircle(x, y, KinkyDungeonGridSizeDisplay * 0.12)
+                        .endFill();
+                for (let i = 0; i < 4; i++) {
+                    const angle = Math.PI / 4 + (i * Math.PI) / 2;
+                    const inner = KinkyDungeonGridSizeDisplay * Math.min(blast.radius + 0.45, 0.25 + age * 0.45);
+                    const outer = Math.min(
+                        KinkyDungeonGridSizeDisplay * (blast.radius + 0.45),
+                        inner + KinkyDungeonGridSizeDisplay * 0.16 * (1 - age),
+                    );
+                    if (
+                        !visible(
+                            blast.x + (Math.cos(angle) * outer) / KinkyDungeonGridSizeDisplay,
+                            blast.y + (Math.sin(angle) * outer) / KinkyDungeonGridSizeDisplay,
+                        )
+                    )
+                        continue;
+                    g.lineStyle(2.5, pink() ? 0xffc5e7 : 0xe0bdff, Math.max(0, 1 - age * 1.2));
+                    g.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
+                    g.lineTo(x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
+                }
             }
             sprite(
                 `burst_${blast.serial}`,
@@ -426,7 +459,11 @@
                 blast.x,
                 blast.y,
                 0.8 + age * 0.6,
-                1 - age,
+                Math.min(1, (1 - age) * 1.3),
+                0,
+                LAYERS.feedback,
+                undefined,
+                pink() ? 0xffc9e8 : 0xead5ff,
             );
         }
     }
