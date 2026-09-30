@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.66.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.67.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.67 inward gathering and ground silk
+
+On 2026-09-30, the final `Spiderlings_0.92.36-test.67.zip` passed all 32 native checks on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` (5.5.3). The ZIP contains 169 allowlisted entries and 24,803,074 bytes; SHA-256 is `565ddc479a18b55e6d617075b9fb90f250c63f9e8e6b9df84d75d39186305aec`.
+
+Mage warnings replace numeric countdowns with inward silk motion over fixed per-cell danger marks. The native Mage timing scenario in both colors measures actual trail positions before and after 350 ms: eight trails move inward and all 21 Collapse danger marks remain. Hit, escape without a hit, caster loss, bolt contact/miss, Hex activation and saved state still pass. Persistent Hex uses ground silk below actors; the 520-ms burst queue, hidden-event policy and reload prevention remain. Rune publishes feedback at its existing radius-one resolution. No gameplay effect tiles or collidable decorative bullets are introduced. Normal/Pink warning and gathering screenshots and active Hex images were visually inspected.
+
+Repository checks and 12 policy tests pass. The complete final-ZIP local watcher passes 716 tests, including all 417 public tests, with zero checker errors, warnings or notes. The focused visual/Rune run passes 33 tests. Final ZIP verification matches every payload byte to source. The numeric-countdown red test failed before implementation and passes afterward. Existing footprint, fog, camera, hidden-event, map replacement, load-replay and placement-revalidation tests remain.
+
+English runtime fallback and all seven CSVs update the Hex/Collapse casting messages to describe marked ground and inward gathering. Spell names, bolt/rune placement messages and weapon gameplay descriptions remain accurate; README, maintenance and current runtime ownership remove the obsolete Mage numeric display. Older acceptance paragraphs intentionally preserve their historical observations.
+
+Native evidence is retained in the parent KD workspace at `.scratch/kd-compatibility/runs/2026-09-30T02-22-20-967Z-0.92.36-test.67/acceptance.json`, with copies and logs in this checkout's `.scratch/test67-evidence/` and `.scratch/test67-*.log`. A separate final-ZIP animation capture retains actual game clocks and real-time samples in `.scratch/test67-animation/`; it is not the earlier isolated proposal.
+
+Tests use isolated Chrome on the user's computer; Chrome9237 is not connected or operated. KD 5.4.92 retains known native play/pause interruptions and two native Locks/Red.png missing requests, with no missing Mod asset. KD 5.5.3 reports no page errors, rejections or missing resources. Full playthroughs, user saves, desktop shell, other Mods, human balance acceptance and statistical FPS/frame-time profiling are not covered. Additional warning sprites and silk segments have a cost; no FPS improvement is claimed. Previous ZIPs and the separate prison experiment remain preserved.
 
 ## Test.66 Mage visual delivery and bounded geometry
 

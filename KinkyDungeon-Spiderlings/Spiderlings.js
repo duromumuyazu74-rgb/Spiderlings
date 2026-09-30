@@ -976,8 +976,14 @@ addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Mage Silk Bolt");
 addTextKey("KinkyDungeonSpellSpiderlingsMageRune", "Silken Rune");
 addTextKey("KinkyDungeonSpellSpiderlingsMageHex", "Shield-Eating Sigil");
 addTextKey("KinkyDungeonSpellSpiderlingsMageCollapse", "Thousand-Silk Collapse");
-addTextKey("KinkyDungeonSpellCastSpiderlingsMageHex", "The Spiderling Mage traces a wide sigil across the ground.");
-addTextKey("KinkyDungeonSpellCastSpiderlingsMageCollapse", "Silk gathers at the edge of a broad spell circle.");
+addTextKey(
+    "KinkyDungeonSpellCastSpiderlingsMageHex",
+    "The Spiderling Mage draws silk inward across a marked area of ground.",
+);
+addTextKey(
+    "KinkyDungeonSpellCastSpiderlingsMageCollapse",
+    "Silk gathers from the marked outer tiles toward the center before bursting.",
+);
 addTextKey("KinkyDungeonSpellCastSpiderlingsMageRune", "The Spiderling Mage marks a nearby tile with a glowing rune.");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageBolt",

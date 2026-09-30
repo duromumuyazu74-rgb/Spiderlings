@@ -147,33 +147,32 @@ function fixture({ mageSpells = false } = {}) {
     };
 }
 
-test("Hex shows its full area and saved-turn countdown, then changes color and shape on activation", () => {
+test("Hex preserves sixteen warning cells and switches to ground silk without countdown text", () => {
     const r = fixture();
     const state = r.state({ fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }] });
-    assert.equal(r.draw().length, 1);
-    assert.equal(r.lines.length, 16 * 6, "four-cell sides show dashed edges, with no interior grid");
-    assert.deepEqual(r.draws[0].slice(4, 6), [288, 288]);
-    assert.equal(r.fills.length, 16);
-    assert.equal(r.labels[0][1], "3");
-    const warningColor = r.fills[0].color;
-    const warningArt = r.draws[0][3];
+    r.draw();
+    const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
+    assert.equal(danger().length, 16);
+    const positions = danger().map((d) => d.slice(4, 6));
+    const core = () => r.draws.find((d) => d[2].endsWith("hex_1"));
+    const warningArt = core()[3];
+    assert.deepEqual(core().slice(4, 6), [288, 288]);
+    assert.equal(r.labels.length, 0);
     r.time(5000);
     r.draw();
-    assert.equal(r.labels[0][1], "3", "render time cannot spend a spell turn");
-    state.clock = 2;
-    r.draw();
-    assert.equal(r.labels[0][1], "1");
+    assert.deepEqual(
+        danger().map((d) => d.slice(4, 6)),
+        positions,
+    );
+    assert.equal(state.clock, 0);
     state.clock = 3;
     r.draw();
-    assert.equal(r.lines.length, 16);
-    assert.equal(r.draws.length, 1);
-    assert.equal(r.labels[0][1], "3");
-    assert.notEqual(r.fills[0].color, warningColor);
-    assert.notEqual(r.draws[0][3], warningArt);
-    assert.ok(r.fills.every((cell) => cell.alpha > 0 && cell.alpha < 0.2));
-    state.clock = 5;
-    r.draw();
-    assert.equal(r.labels[0][1], "1");
+    assert.equal(danger().length, 0);
+    assert.notEqual(core()[3], warningArt);
+    assert.equal(r.fills.length, 16);
+    assert.ok(r.c.kdgameboard.children.some((g) => g.zIndex < 0));
+    assert.ok(r.fills.every((cell) => cell.width < 72 * 0.1));
+    assert.equal(r.labels.length, 0);
 });
 
 test("weapon silk follows the visible actor, thickens with surviving silk and clears on release", () => {
@@ -207,30 +206,29 @@ test("weapon silk follows the visible actor, thickens with surviving silk and cl
     assert.equal(r.lines.length, 0);
 });
 
-test("Collapse keeps its cut-corner area, highlights stronger inner cells and counts down while charging", () => {
+test("Collapse keeps its fixed cut-corner danger mask while its strands gather inward", () => {
     const r = fixture();
     const state = r.state({ collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }] });
     r.draw();
-    const boundary = JSON.stringify(r.lines);
-    const cells = new Set(r.fills.map((fill) => `${fill.x / 72},${fill.y / 72}`));
-    assert.equal(cells.size, 21);
+    const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
+    const positions = danger().map((d) => d.slice(4, 6));
+    assert.equal(danger().length, 21);
+    const cells = new Set(danger().map((d) => `${d[4] / 72 - 0.5},${d[5] / 72 - 0.5}`));
     for (const corner of ["2,2", "2,6", "6,2", "6,6"]) assert.equal(cells.has(corner), false);
-    const opacity = (x, y) =>
-        r.fills.filter((fill) => fill.x === x * 72 && fill.y === y * 72).reduce((sum, fill) => sum + fill.alpha, 0);
-    assert.ok(opacity(4, 4) > opacity(3, 3));
-    assert.ok(opacity(3, 3) > opacity(4, 2));
-    const initialCenter = opacity(4, 4);
-    assert.equal(r.labels[0][1], "3");
-    assert.equal(r.draws.filter((d) => d[3].endsWith("WebSprayTrail.png")).length, 8);
+    const initial = r.draws.filter((d) => d[2].includes("silk_")).map((d) => Math.hypot(d[4] - 324, d[5] - 324));
     for (const clock of [1, 2]) {
         state.clock = clock;
         r.time(clock * 810);
         r.pink(true);
         r.draw();
-        assert.equal(JSON.stringify(r.lines), boundary);
-        assert.equal(r.labels[0][1], String(3 - clock));
-        assert.ok(opacity(4, 4) > initialCenter);
-        assert.equal(r.draws.filter((d) => d[3].endsWith("WebSprayTrailPink.png")).length, 8);
+        assert.deepEqual(
+            danger().map((d) => d.slice(4, 6)),
+            positions,
+        );
+        assert.equal(r.labels.length, 0);
+        const silk = r.draws.filter((d) => d[3].endsWith("WebSprayTrailPink.png"));
+        assert.equal(silk.length, 8);
+        assert.ok(silk.every((d, i) => Math.hypot(d[4] - 324, d[5] - 324) < initial[i]));
     }
     state.collapses = [];
     r.draw();
@@ -243,10 +241,9 @@ test("mark bursts keep exact footprints and visibly resolve before fading withou
         const r = fixture();
         const state = r.state({ blasts: [{ x: 4, y: 4, stacks, detonateAt: 2 }] });
         r.draw();
-        assert.equal(r.lines.length, (stacks * 2 - 1) * 4 * 6);
-        assert.equal(r.draws.length, 1);
-        assert.equal(r.fills.length, (stacks * 2 - 1) ** 2);
-        assert.equal(r.labels[0][1], "2");
+        assert.equal(r.draws.filter((d) => d[2].includes("danger_")).length, (stacks * 2 - 1) ** 2);
+        assert.equal(r.fills.length, 0);
+        assert.equal(r.labels.length, 0);
         state.clock = 2;
         state.blasts = [{ x: 4, y: 4, radius: stacks - 1, expiresAt: 3 }];
         r.c.Spiderlings.SpellVisuals.burst(state.blasts[0]);
@@ -270,7 +267,7 @@ test("Collapse impact excludes corner cells and every new area visual respects f
     r.c.Spiderlings.SpellVisuals.burst(r.c.KDMapData.SpiderlingsMageSpells.blasts[0]);
     r.draw();
     assert.equal(r.fills.length, 21);
-    assert.equal(r.lines.length, 20);
+    assert.equal(r.lines.length, 24, "Only the center web has lit at the start of propagation");
     r.c.KinkyDungeonVisionGet = (x, y) => (x === 4 && y === 4 ? 1 : 0);
     r.draw();
     assert.equal(r.fills.length, 1);
@@ -609,4 +606,70 @@ test("area warnings and actor overlays own separate layers and both clear on rel
     assert.ok(layers[0].zIndex < layers[1].zIndex, "Actor silk must stay above the area fill");
     r.events.afterLoadGame();
     assert.equal(r.c.kdgameboard.children.length, 0);
+});
+
+test("Mage warning keeps all dangerous cells while silk moves inward, without numeric labels", () => {
+    const r = fixture();
+    const state = r.state({ collapses: [{ x: 4, y: 4, ownerId: 1, startAt: 0, explodeAt: 3 }] });
+    r.draw();
+    assert.equal(r.labels.length, 0);
+    const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
+    assert.equal(danger().length, 21);
+    const positions = danger().map((d) => d.slice(4, 6));
+    const silk = () => r.draws.filter((d) => d[2].includes("silk_"));
+    const outer = silk().map((d) => Math.hypot(d[4] - 324, d[5] - 324));
+    r.time(600);
+    r.draw();
+    assert.deepEqual(
+        danger().map((d) => d.slice(4, 6)),
+        positions,
+    );
+    assert.ok(silk().every((d, i) => Math.hypot(d[4] - 324, d[5] - 324) < outer[i]));
+    assert.equal(state.clock, 0);
+    assert.equal(r.labels.length, 0);
+});
+
+test("persistent warnings restore from saved phase without numeric labels and keep purple/pink ground distinct", () => {
+    const r = fixture();
+    r.state({ clock: 1, collapses: [{ x: 4, y: 4, ownerId: 1, startAt: 0, explodeAt: 3 }] });
+    r.draw();
+    const positions = r.draws.filter((d) => d[2].includes("danger_")).map((d) => d.slice(4, 6));
+    const saved = JSON.stringify(r.c.KDMapData);
+    r.c.KDMapData = JSON.parse(saved);
+    r.events.afterLoadGame();
+    r.draw();
+    assert.deepEqual(
+        r.draws.filter((d) => d[2].includes("danger_")).map((d) => d.slice(4, 6)),
+        positions,
+    );
+    assert.equal(r.labels.length, 0);
+    assert.equal(JSON.stringify(r.c.KDMapData), saved);
+    r.state({ clock: 3, fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }] });
+    r.draw();
+    const normal = r.fills[0].color;
+    r.pink(true);
+    r.draw();
+    assert.notEqual(r.fills[0].color, normal);
+    assert.ok(r.c.kdgameboard.children.some((g) => g.zIndex < 0));
+    r.c.KinkyDungeonVisionGet = () => 0;
+    r.draw();
+    assert.equal(r.fills.length, 0);
+    assert.equal(r.draws.length, 0);
+});
+
+test("Mage inward-gathering cast descriptions agree in English fallback and all locale files", () => {
+    const root = path.join(__dirname, "../..");
+    const runtime = fs.readFileSync(path.join(root, "Spiderlings.js"), "utf8");
+    const english = [
+        "The Spiderling Mage draws silk inward across a marked area of ground.",
+        "Silk gathers from the marked outer tiles toward the center before bursting.",
+    ];
+    for (const value of english) assert.ok(runtime.includes(value));
+    for (const locale of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
+        const csv = fs.readFileSync(path.join(root, `Spiderlings${locale}.csv`), "utf8");
+        if (locale === "CN") {
+            assert.ok(csv.includes("由外向内收拢"));
+            assert.ok(csv.includes("准备爆发"));
+        } else for (const value of english) assert.ok(csv.includes(value));
+    }
 });
