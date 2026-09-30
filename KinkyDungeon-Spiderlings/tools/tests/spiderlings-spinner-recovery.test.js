@@ -129,6 +129,7 @@ function recoveryRuntime(options = {}) {
         },
         state: () => ({ topology: { composites: Object.fromEntries([...cores].map(([id]) => [id, { id }])) } }),
         compositeById: (id) => (fieldPresent && cores.has(id) ? { id } : undefined),
+        containsComposite: (_id, target) => target.x <= 6,
         fieldOwners: (id) => fieldOwners.get(id) || [],
         commonCore: (id) => (fieldPresent ? cores.get(id) : undefined),
         isSpiderlingsWebCell: (cell) => webCells.has(`${cell.x},${cell.y}`),
@@ -251,6 +252,54 @@ function externalLeash(id = "external-1") {
         restraint: { name: "ForeignLeash", Group: "ItemNeckRestraints", leash: true, tether: 2.9 },
     };
 }
+
+test("departure exposes pursuit eligibility without contact or an automatic recovery hit", () => {
+    const r = recoveryRuntime();
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    r.player.x = 6;
+    r.leave();
+    r.source.x = 14;
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true, "pursuit can start beyond leash range");
+    assert.equal(r.api.wantsPursuit(r.source, { ...r.player }), false, "only the selected player qualifies");
+    assert.equal(r.api.wantsPursuit({ ...r.source, id: 999 }, r.player), false);
+    assert.equal(r.api.wantsPursuit({ ...r.source, stun: 1 }, r.player), false);
+    assert.equal(r.api.wantsPursuit({ ...r.source, friendly: true }, r.player), false);
+    assert.equal(r.api.hit(r.source), false);
+    assert.equal(r.api.state(), undefined, "eligibility does not bypass the fresh hit's contact check");
+    assert.equal(r.gear.length, 0);
+    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => true;
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => false;
+    r.c.Spiderlings.SpinnerNPCCapture = { usesSource: () => true };
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    r.c.Spiderlings.SpinnerNPCCapture = undefined;
+    r.player.x = 5;
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false, "returning home ends pursuit");
+    r.player.x = 7;
+    r.setFieldPresent(false);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false, "a retired field cannot request pursuit");
+});
+
+test("a slack recovery preserves its original field and needs a fresh hit to rejoin", () => {
+    const r = recoveryRuntime();
+    r.player.x = 6;
+    r.leave();
+    r.hit();
+    const carrier = r.gear[0];
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false, "an attached source keeps pull ownership");
+    r.source.x = 14;
+    r.api.audit();
+    assert.deepEqual(Array.from(r.api.sourceIds()), []);
+    assert.equal(r.api.state().compositeId, "field-1");
+    const before = JSON.stringify({ state: r.api.state(), gear: r.gear });
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
+    assert.equal(JSON.stringify({ state: r.api.state(), gear: r.gear }), before, "query is read-only");
+    r.source.x = 8;
+    r.hit();
+    assert.deepEqual(Array.from(r.api.sourceIds()), [r.source.id]);
+    assert.equal(r.gear[0], carrier);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+});
 
 test("only an actual departure through a breached outer field arms a fresh recovery hit", () => {
     const r = recoveryRuntime();

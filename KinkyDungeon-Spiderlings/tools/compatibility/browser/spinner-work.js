@@ -12,6 +12,7 @@
                 x: source.x,
                 y: source.y,
                 action: action.type,
+                fieldId: action.fieldId,
                 cell: action.cell || action.target,
                 result: structuredClone(result),
                 credit: source.SpinnerConstructionPoints,
@@ -60,7 +61,9 @@
                         return { id, x: e?.x, y: e?.y, credit: e?.SpinnerConstructionPoints };
                     }),
                 });
-                if (tick === 20) {
+                // Capacity-limited teams can finish separate small fields before
+                // turn 20; reload while their paid construction is still partial.
+                if (tick === 5) {
                     const before = JSON.stringify(state.topology);
                     restore(save());
                     row.reload = {
@@ -76,8 +79,8 @@
                 `No real paid construction with ${count} workers`,
             );
             expect(
-                Object.values(row.final.topology.fields).filter((field) => field.phase === "ready").length === 3,
-                `${count} workers did not finish three retained layers`,
+                Object.values(row.final.topology.fields).filter((field) => field.phase === "ready").length >= 3,
+                `${count} workers did not finish at least three retained fields or layers`,
             );
             expect(
                 JSON.stringify(row.reload.before) === JSON.stringify(row.reload.after),
@@ -86,7 +89,32 @@
             const beforeIdle = row.actions.length;
             KinkyDungeonAdvanceTime(0, true);
             expect(row.actions.length === beforeIdle, "A zero-time update paid construction");
-            const proxy = KDMapData.Entities.find((entity) => Spiderlings.SpinnerNativeField.isOwnedProxy(entity));
+            // Dispersal can leave completed, ownerless webs in the graph. Repair
+            // acceptance damages a ready outer layer still staffed by a live team.
+            const state = Spiderlings.SpinnerNativeField.state(),
+                repairSites = Object.values(state.ai.groups).flatMap((group) => {
+                    const plan = state.ai.plans[group.planId],
+                        composite = state.topology.composites[plan?.compositeId],
+                        fieldId = composite?.layerIds.at(-1),
+                        field = state.topology.fields[fieldId],
+                        owners = group.memberIds
+                            .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                            .filter((entity) => entity?.hp > 0 && !KinkyDungeonIsDisabled(entity));
+                    if (!field || !["ready", "sealed"].includes(field.phase) || !owners.length) return [];
+                    return KDMapData.Entities.filter(
+                        (entity) =>
+                            Spiderlings.SpinnerNativeField.isOwnedProxy(entity) &&
+                            field.boundaryCells.some((cell) => cell.x === entity.x && cell.y === entity.y),
+                    ).map((proxy) => ({
+                        proxy,
+                        fieldId,
+                        ownerIds: owners.map((owner) => owner.id),
+                        distance: Math.min(...owners.map((owner) => Math.hypot(owner.x - proxy.x, owner.y - proxy.y))),
+                    }));
+                }),
+                repairSite = repairSites.sort((left, right) => left.distance - right.distance)[0];
+            expect(repairSite, "No staffed ready outer layer remained for paid repair acceptance");
+            const { proxy } = repairSite;
             const cell = { x: proxy.x, y: proxy.y };
             KinkyDungeonDamageEnemy(
                 proxy,
@@ -101,17 +129,28 @@
                 !Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(cell),
                 "Native damage did not breach the constructed field",
             );
-            row.repair = { cell, actionsBefore: row.actions.length };
+            row.repair = {
+                cell,
+                fieldId: repairSite.fieldId,
+                ownerIds: repairSite.ownerIds,
+                actionsBefore: row.actions.length,
+            };
             for (let step = 0; step < 90 && !Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(cell); step++) {
                 tick++;
                 await turn();
             }
             row.repair.actionsAfter = row.actions.length;
             row.repair.restored = Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(cell);
-            expect(
-                row.repair.restored && row.repair.actionsAfter > row.repair.actionsBefore,
-                `${count} workers did not pay to repair the breach`,
-            );
+            row.repair.paidRepair = row.actions
+                .slice(row.repair.actionsBefore)
+                .some(
+                    (action) =>
+                        action.result.paid &&
+                        action.result.applied &&
+                        action.cell?.x === cell.x &&
+                        action.cell?.y === cell.y,
+                );
+            expect(row.repair.restored && row.repair.paidRepair, `${count} workers did not pay to repair the breach`);
         }
     } finally {
         Spiderlings.SpinnerNativeField.applyPaidAction = nativeAction;

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.72.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.73.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.73 Spinner pressure, field staffing and recovery pursuit (2026-10-01)
+
+Visible prey no longer keeps a Spinner lure waiting indefinitely: six positive turns without a closer approach or paid construction/repair progress switch the lure to pressure. Field geometry and legal exterior stations limit ordinary staffing, normally two at a short narrow passage, four at a 3-by-3 passage interior and up to eight at a spacious enclosure. Excess idle workers are reassigned without deleting or moving entities instantly; active capture/recovery sources remain protected. Gate allocation includes remaining mouth coverage, with repartition on membership changes or a saved partition made unreachable by a stationed coworker.
+
+Player and NPC Recovery expose pursuit eligibility before another hit. AI follows native perception or a valid recent observation, ahead of construction and lure work; it does not discover hidden target coordinates. Slack player sources retain their original composite association. A player still needs a fresh native Spinner hit and compatible collar/equipment admission; bare-neck rejection remains readable and creates no pull.
+
+The final ZIP SHA-256 is `7abdc8d8e3079f55fceb9c5017ed05e3b6a7bd0b912a99694aa8d39508719937`, 24,813,618 bytes and 169 source-matching entries. Compared with the installed test.72 ZIP, only `mod.json`, Spinner AI and the three Recovery modules change. Complete local tests pass 751, including 449 public tests; 12 policy tests and repository checks pass. KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6` each pass all 33 native checks in `2026-09-30T15-57-04-682Z-0.92.36-test.73`.
+
+Native scenes include stationary visible prey, twelve workers dispatched by field capacity, actual distant-worker arrival at both assigned mouths before capture, and completed leg-bag departure followed by automatic pursuit, real melee and paid pulling through the breach. The native construction fixture now reloads during early partial work and damages a completed outer layer with live workers; it requires a paid repair action at the damaged cell, preserving the 90-turn repair limit. Earlier failed traces and packages remain retained. GitHub fetch through the configured local proxy failed twice with TLS EOF; a direct connection fetched the same current official commit with certificate verification enabled, and the unchanged compatibility runner then completed both versions through a process-scoped proxy override.
+
+A supplementary run strengthens the automatic leg-bag scenario to require full return to the declared interior. With the same final ZIP, both versions return from (16,10) through (15,10) to core (14,10) within eight turns, after two real hits and two attached sources; the same completed bag and its progress remain intact. Evidence is `native-focus-2026-09-30T16-02-27-368Z` (5.5.3) and `native-focus-2026-09-30T16-03-05-697Z` (5.4.92).
+
+These are controlled native scenes; user saves, other Mods and complete natural-map balance remain outside this acceptance.
 
 ## Test.72 reachable passage shortlists (2026-09-30)
 

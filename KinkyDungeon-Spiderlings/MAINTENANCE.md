@@ -1,4 +1,6 @@
-# Spiderlings 0.92.36-test.72 维护说明
+# Spiderlings 0.92.36-test.73 维护说明
+
+test.73 将可见猎物的伏击等待限制为连续六个无进展回合，随后由诱敌者主动逼近；场地按内区、通口和合法外侧站位限制普通工人数，余员分流，保留捕获及牵引中的来源。腿套破口离场后，原合格 Spinner 优先按原生感知追击，再通过真实近战命中尝试挂绳；兼容项圈和原生装备规则保持，挂绳失败沿用明确的装备条件反馈。守岗分口考虑其他通口的剩余覆盖距离，成员变化或旧分区被已到岗同伴完全堵住时才重分，避免两人小队互相挡路。存读档保留等待进度、场地归属及回收资格。
 
 test.72 在 24 项路线验证和 8 项返回候选截断之前，按当前占用格检查所有组员可达的门口；动态可达集合参与候选缓存键，静态路线证明继续复用。长走廊中阻挡角色两侧的通路分别判定，保留可达通路优先于围场回退。新增回归覆盖两层截断，双版本原生通路场景检查实际选点和阻挡角色的原生路径。Mage 参数说明移除过时的倒计时数字及逐环显示描述。
 
@@ -12,7 +14,7 @@ test.67 保持真实危险格不变，蛛丝由外向内聚拢蓄力，结算后
 
 此前 test.66 将 Mage 爆发在实际结算时交付给瞬时视觉，520 毫秒内不依赖玩法残留记录是否已经过期；重复通知去重，读档不重播已结算爆发，完全隐藏的爆发不补播。持续预警仍从玩法存档恢复；test.67 不再绘制数字倒计时。区域几何采用至多 64 项缓存，相机、雾、颜色和 alpha 每帧计算；区域与角色缠丝分别拥有图层和清理职责。Rune 选址采用调用内占位索引，实际施法时重新检查。伤害、束缚权重、范围、回合、行动费用及监狱实验未改动。
 
-当前交付版本为 `0.92.36-test.67`，已通过 KD 5.4.92 与最新 fetch 的官方 GitHub 5.5.3 双版本原生验收。普通 test 的 Spinner 优先选择实际必经或明显增加绕路距离的门口、路口和窄道，复用原生墙、保护原生门；附近闲置队伍按成员真实距离向已有场地补员，在途工人保留独立的移动和站位分配；同伴挡住完整路线时，只沿未被占用的路径前段靠近，不能穿过角色。每次场地转入准备完成状态，按成员当前位置一次性重分守岗，随后保持分配稳定。
+此前交付的 `0.92.36-test.67` 已通过 KD 5.4.92 与最新 fetch 的官方 GitHub 5.5.3 双版本原生验收。普通 test 的 Spinner 优先选择实际必经或明显增加绕路距离的门口、路口和窄道，复用原生墙、保护原生门；附近闲置队伍按成员真实距离向已有场地补员，在途工人保留独立的移动和站位分配；同伴挡住完整路线时，只沿未被占用的路径前段靠近，不能穿过角色。每次场地转入准备完成状态，按成员当前位置一次性重分守岗，随后保持分配稳定。
 
 通道场地初始保留所有通口。准备完成后显示不挡路的淡色蛛丝；猎物进入捕获内区，工人才付费逐格封口并连接。根据近期已感知来向调整通口时，至少指定两个通行口，并先付费打开新路线再关闭旧口；目标离开后付费重开。封场后，支援者共享四回合内的原生观测，实际移动到猎物附近，不再受待捕时的守岗分区限制；捕获仍需满足原生近战命中和有效来源条件。通道队伍连续 12 回合未见目标、当前也无原生感知时结束诱敌。调口与读档不恢复被打坏的蛛网，也不跳过重建等待。旧单入口围场、已建进度和耐久继续兼容。巢穴监狱仍使用独立 `prison.alpha.N` 线。选址依据与接口见[通道算法说明](../docs/spinner-passage-algorithms.md)。
 
@@ -100,11 +102,11 @@ test.38 修复 Spinner 施工拥堵：附近没有合法 3×3 围场时搜索更
 
 对抗使用独立拘束条和挣脱条，不提前装备物品。失败只进入 wrapping；第一次付费 wrapping 行动通过原生 ItemLegs 兼容检查后创建腿袋并写入 20%，随后四次行动继续更新同一物品。中断保留物品 ID、锁、原生解除字段、事件、逃脱进度和 `data.wrapProgress`；临时捕获状态不保存进度副本。场地与连接保存在地图数据中；捕获阶段、参与者及活动腿袋 ID 保存在 KDGameData；实际沉积和逃脱进度只保存在物品 data 中。图形对象与计时器句柄不写入存档。绘制只读物品进度和临时状态；读档事件审计 schema 3 状态和精确物品 ID，旧捕获状态不会迁移。
 
-玩家离开已破损围场后，新的 Spinner 有效命中可建立或复用一条真实 leash。Recovery schema 2 最多保存八个来源及其 field 关联；重复命中只刷新，审计移除的来源必须再次命中才能接回。单一 executor 支付拖拽，目的地按共同核心、无关 field 多数、最近可达核心和 executor fallback 依次决定。跨越连续实体蛛网按每格两个付费拖拽动作累计，最终动作才移动。Stand firm 的显示体力费用为 `5 + 2 × (来源数 - 1)`；自有 leash 的原生挣脱惩罚候选为每个额外来源 `0.05`，仍待实机平衡校准。外部 leash 的物品、锁、进度、链接和原生 tether owner 均不修改。
+玩家离开已破损围场后，尚未接回的合法来源通过只读 `wantsPursuit(source, target)` 请求追击；AI 在施工和诱敌前处理，但仍要求原生感知或不足四回合的匹配观察。新的 Spinner 有效命中可建立或复用一条真实 leash。新挂绳保留兼容项圈及原生装备可访问性检查，失败显示 `SpiderlingsRecoveryAttachBlocked`，说明本次未建立拉回。Recovery schema 2 最多保存八个来源及其 field 关联；重复命中只刷新，审计移除的来源必须再次命中才能接回。单一 executor 支付拖拽，目的地按共同核心、无关 field 多数、最近可达核心和 executor fallback 依次决定。跨越连续实体蛛网按每格两个付费拖拽动作累计，最终动作才移动。Stand firm 的显示体力费用为 `5 + 2 × (来源数 - 1)`；自有 leash 的原生挣脱惩罚候选为每个额外来源 `0.05`，仍待实机平衡校准。外部 leash 的物品、锁、进度、链接和原生 tether owner 均不修改。
 
-NPC 回收复用 `SpiderlingsSpinnerRecoveryCore.js` 的来源、executor、目的地和 crossing 规则，不创建 leash 或其他物品。`enemyMove` 只有在 NPC 实际离开破损外边界时记录 departure；随后真实 Spinner 近战增加 Slime 才接入来源。付费拖拽使用原生 `KDMoveEntity(..., false)`，返回修复后的共同核心不会自动开始 Capture；还需下一次真实命中重新满足闭合围场、两只合法来源和绑定增加条件。
+NPC 回收复用 `SpiderlingsSpinnerRecoveryCore.js` 的待接回来源、来源、executor、目的地和 crossing 规则，不创建 leash 或其他物品。玩家与 NPC 使用同一追击意愿 interface，NPC 仍只接受原生已选择的目标，不向 AI 提供实时目标坐标。`enemyMove` 只有在 NPC 实际离开破损外边界时记录 departure；随后真实 Spinner 近战增加 Slime 才接入来源。付费拖拽使用原生 `KDMoveEntity(..., false)`，返回修复后的共同核心不会自动开始 Capture；还需下一次真实命中重新满足闭合围场、两只合法来源和绑定增加条件。
 
-`Models/SpiderlingsSpinnerLegbinder/` 与同名 `Pink` 目录分别保留 Stage1–Stage7、Tail 的完整原图。两张 2048×2048 独立图集无损裁去透明区，原画布偏移由 Pixi 元数据恢复；共用 Webbing 图集不变。`SpiderlingsSpinnerArt.js` 负责相邻阶段过渡、前后层和跟随上沿的拖尾；`SpiderlingsSpinnerCapture.js` 从 `SpiderlingsSpinnerNativeField.js` 的已闭合复合围场接收玩家入场资格，并保存独立于围场的临时 Capture strands。`SpiderlingsSpinnerNPCCapture.js` 在真实 Spinner 近战增加原生 Slime 后接收 NPC 入场资格，只拦截自愿移动，并把原生挣扎的实际减量用于临时丝线债务。可复用测试场建造仍由 `SpiderlingsSpinnerField.js` 保留。通道场地、单／多层围场和显式测试用拦截线共用纯 JSON 的 `SpiderlingsSpinnerTopology.js` 与原生投影 `SpiderlingsSpinnerNativeField.js`。`SpiderlingsSpinnerPassagePlanner.js` 缓存原生通行图，分别检查绕开捕获内区和关闭通口后的路线；移动角色不会触发整图重建。`SpiderlingsSpinnerAI.js` 保存分组、补员、施工与集合分配、通口选择、稳定诱饵和四回合的最后已知目标信息，八回合失去视线后交回原生追击，通道队伍在十二回合无视线且当前无感知时结束该次诱敌。`SpiderlingsSpinnerRollout.js` 在新普通／侵扰地图保存启用决定与所选 passage 或 enclosure；普通地图缺少合适通道时寻找合法围场，没有独立堵路线 fallback，也没有全局围场数量上限。`SpiderlingsSpinnerScenarios.js` 提供场景输入，`SpiderlingsSpinnerRuntime.js` 是唯一敌人循环分发器及后续攻击/施法门控点。玩家与 NPC 捕获都只会由真实 Spinner 近战命中的 Webbing 特效入口启动。画师交接页、专用脚本和生成记录仅保留在维护者本机，不进入公共仓库或安装 ZIP。
+`Models/SpiderlingsSpinnerLegbinder/` 与同名 `Pink` 目录分别保留 Stage1–Stage7、Tail 的完整原图。两张 2048×2048 独立图集无损裁去透明区，原画布偏移由 Pixi 元数据恢复；共用 Webbing 图集不变。`SpiderlingsSpinnerArt.js` 负责相邻阶段过渡、前后层和跟随上沿的拖尾；`SpiderlingsSpinnerCapture.js` 从 `SpiderlingsSpinnerNativeField.js` 的已闭合复合围场接收玩家入场资格，并保存独立于围场的临时 Capture strands。`SpiderlingsSpinnerNPCCapture.js` 在真实 Spinner 近战增加原生 Slime 后接收 NPC 入场资格，只拦截自愿移动，并把原生挣扎的实际减量用于临时丝线债务。可复用测试场建造仍由 `SpiderlingsSpinnerField.js` 保留。通道场地、单／多层围场和显式测试用拦截线共用纯 JSON 的 `SpiderlingsSpinnerTopology.js` 与原生投影 `SpiderlingsSpinnerNativeField.js`。`SpiderlingsSpinnerPassagePlanner.js` 缓存原生通行图，分别检查绕开捕获内区和关闭通口后的路线；移动角色不会触发整图重建。`SpiderlingsSpinnerAI.js` 保存分组、补员、施工与集合分配、通口选择、稳定诱饵和四回合的最后已知目标信息。日常施工／等待容量由实际外围站位、通口和内区空间共同决定，最多八名工人，小场地通常两名；招募、合并与旧队伍余员释放共用该判断。活跃捕获、回收、缠裹和守巢职责另外保留。闲置余员解除旧分工后通过原生移动另选不重叠场地，不删除或瞬移实体。可见猎物连续六回合没有接近场地或带来施工／修复进展时，诱饵改为主动施压，重新看见目标不会撤销施压。八回合失去视线后交回原生追击，通道队伍在十二回合无视线且当前无感知时结束该次诱敌。`SpiderlingsSpinnerRollout.js` 在新普通／侵扰地图保存启用决定与所选 passage 或 enclosure；普通地图缺少合适通道时寻找合法围场，没有独立堵路线 fallback，也没有全局围场数量上限。`SpiderlingsSpinnerScenarios.js` 提供场景输入，`SpiderlingsSpinnerRuntime.js` 是唯一敌人循环分发器及后续攻击/施法门控点。玩家与 NPC 捕获都只会由真实 Spinner 近战命中的 Webbing 特效入口启动。画师交接页、专用脚本和生成记录仅保留在维护者本机，不进入公共仓库或安装 ZIP。
 
 `spiderlingsPinkWebbing` 同时选择拘束、投射物和带蛛丝敌人的外观。Spinner、Tunneler、WebCaster、NestEntrance 分别有原色和粉色 PNG；Jumper 两种设置共用同一张交付图。切色不改变实体 ID、存档或玩法。
 
