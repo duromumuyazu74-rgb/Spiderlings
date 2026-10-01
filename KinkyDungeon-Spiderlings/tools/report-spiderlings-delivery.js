@@ -143,6 +143,8 @@ function importAcceptance(inputPath, packageHash, output) {
     if (!Array.isArray(supplied.records) || !supplied.records.length) {
         throw new Error("Game acceptance records must be a non-empty array.");
     }
+    if (supplied.verification && supplied.verification.mode !== "full")
+        throw new Error("Partial compatibility runs are debug evidence, not full delivery acceptance.");
     const records = supplied.records.map((entry, index) => {
         if (
             typeof entry.gameVersion !== "string" ||

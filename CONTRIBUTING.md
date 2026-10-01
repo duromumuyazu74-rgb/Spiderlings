@@ -65,7 +65,7 @@ GitHub CI runs repository checks, policy tests and the public group. It also reg
 
 After the applicable checks pass, create a focused git commit for the authorized local changes, preserving unrelated working and staged changes. Record required local and in-game evidence in the PR. Commits and PR preparation do not imply permission to merge or publish a Release.
 
-For a package verification run, `npm run report:delivery` collects these checks, source state, ZIP verification and logs in one report. [Delivery evidence](docs/DELIVERY-EVIDENCE.md) explains the public/full modes and optional game acceptance input. The matrix still determines which checks are needed; documentation-only edits do not require a delivery report.
+For final package verification, use `npm run report:delivery` to collect these checks, source state, ZIP verification and exit codes in one report. After the required native run, supply its `acceptance.json` through `--evidence`. [Delivery evidence](docs/DELIVERY-EVIDENCE.md) explains the public/full modes and game acceptance input. Selected native scenarios are partial debugging evidence and cannot supply full delivery acceptance. Focused checks remain useful during debugging; the matrix determines the final gates. Documentation-only edits do not require a delivery report.
 
 ## Formal promotion and releases
 

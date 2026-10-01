@@ -32,6 +32,8 @@ The final `Repository checks` job always evaluates the Windows safety and delive
 
 For runtime delivery, first run `npm run test:compatibility` using the [dual-version setup](DEVELOPMENT.md#dual-version-runtime-acceptance). It fetches the official GitHub `5.5` branch and tests that commit plus fixed KD 5.4.92 with the same final ZIP. Pass its generated `<cache>/runs/<run>/acceptance.json` to the collector's `--evidence` option. The collector does not fetch upstream or perform those gameplay checks itself.
 
+Use this collector for the final local verification instead of composing separate shell commands and collecting their last exit status. Focused checks remain useful while fixing a failure. A generated compatibility input with `verification.mode: "partial"` is rejected even when every selected scene passed; run the full suite before supplying delivery acceptance. Historical/manual records without this field retain their stated scope and the `reported` label.
+
 Supply a JSON record for the exact tested ZIP. Paths in `evidence` resolve relative to this JSON file:
 
 ```json

@@ -1,5 +1,5 @@
 (async () => {
-    const results = [];
+    const results = (globalThis.normalTrace = []);
     const expected = ["MageSpiderlings", "Spinner", "Spinner", "WebCaster"].sort().join(",");
     const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
     // Keep native SFX I/O out of timing and avoid the upstream MiniWind path defect.
@@ -12,9 +12,11 @@
             ["lib", 12],
         ]) {
             for (let seed = 0; seed < 10; seed++) {
+                const gameSeed = `normal-acceptance-${zone}-${floor}-${seed}`;
+                globalThis.compatibilitySetSeed(gameSeed);
                 KinkyDungeonStartNewGame(false);
                 MiniGameKinkyDungeonLevel = floor;
-                KDsetSeed(`normal-acceptance-${zone}-${floor}-${seed}`);
+                globalThis.compatibilitySetSeed(gameSeed);
                 let start = performance.now();
                 KinkyDungeonCreateMap(
                     KinkyDungeonMapParams[zone],

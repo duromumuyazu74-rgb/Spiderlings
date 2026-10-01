@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { inspectEscapeText, escapeTextKeys } = require("../escape-text-contract.js");
 
 const modRoot = path.join(__dirname, "..", "..");
 const families = [
@@ -514,6 +515,40 @@ test("native inability branches resolve every Webbing failure suffix", () => {
                 assert.notEqual(text, key, key);
                 assert.equal((text.match(/TargetRestraint/g) || []).length, 1, key);
             }
+});
+
+test("registered restraints determine the complete native escape text and locale contract", () => {
+    const runtime = loadRuntime();
+    const restraints = runtime.context.KinkyDungeonRestraints;
+    const report = inspectEscapeText(restraints, (key) => runtime.text[key]);
+    assert.ok(report.keys.length > 0);
+    assert.deepEqual(report.errors, []);
+    for (const locale of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
+        const rows = fs.readFileSync(path.join(modRoot, `Spiderlings${locale}.csv`), "utf8").split(/\r?\n/);
+        const entries = new Map();
+        for (const key of report.keys) {
+            const matches = rows.filter((row) => row.startsWith(key + ","));
+            assert.equal(matches.length, 1, `${locale}: ${key}`);
+            entries.set(key, matches[0].slice(key.length + 1));
+        }
+        assert.deepEqual(inspectEscapeText(restraints, (key) => entries.get(key)).errors, [], locale);
+    }
+});
+
+test("new custom suffixes, missing text and broken placeholders cannot pass the escape contract", () => {
+    const restraint = {
+        name: "SpiderlingsFuture",
+        escapeChance: { Cut: 0.1, Pick: 0.1 },
+        failSuffix: { Cut: "Future" },
+        customEscapeSucc: "Future",
+    };
+    const keys = escapeTextKeys([restraint]);
+    assert.ok(keys.includes("KinkyDungeonStrugglePickSuccessFuture"));
+    assert.ok(keys.includes("KinkyDungeonStruggleCutImpossibleBoundFutureAroused"));
+    assert.ok(!keys.includes("KinkyDungeonStruggleCutImpossibleFutureAroused"));
+    assert.ok(inspectEscapeText([restraint], (key) => "[NotFound] " + key).errors.length > 0);
+    assert.ok(inspectEscapeText([restraint], () => "TargetRestraint TargetRestraint").errors.length > 0);
+    assert.deepEqual(inspectEscapeText([restraint], () => "Try TargetRestraint again.").errors, []);
 });
 
 test("all seven locales cover native Webbing inability messages", () => {

@@ -15,6 +15,12 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Maintenance harness verification (2026-10-01)
+
+Maintenance changes retain the Test.78 runtime and its ZIP SHA-256 below. The native suite now contains 36 scenarios, including the custom escape-message contract derived from registered restraints. Scenario selection includes dependencies and labels its output as partial; the delivery collector rejects selected runs as full acceptance. Scene/seed/resource diagnostics and asset completion boundaries improve attribution, and shared/Hunting Grounds initialization seeds the native RNG before creating a new game.
+
+The focused `native-escape,escape-text-contract` run passes both versions with three executed scenes each, including `normal-helpers`. Evidence: `2026-10-01T08-50-00-209Z-0.92.36-test.78`. The subsequent full same-ZIP run passes all 36 scenes and the final error gates on KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`. Evidence: `2026-10-01T08-52-34-430Z-0.92.36-test.78`. These are controlled Chrome checks with the coverage limits recorded below.
+
 ## Test.78 native inability feedback (2026-10-01)
 
 Test.78 fixes native inability messages for ordinary Webbing. KD also consumes the custom failure suffix for Impossible and ImpossibleBound, including the bound branch's Aroused variant. English registration and all seven locale CSVs now provide all twelve keys. No escape parameter, native function, progress, stamina cost or equipment rule changes. Test.77's calibration, field, relay and ecology changes remain included; its ZIP is preserved.

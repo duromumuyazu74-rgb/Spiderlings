@@ -6,6 +6,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createServer } = require("node:http");
 const { chromium } = require("playwright");
+const { createDiagnostics, browserDiagnostics } = require("./diagnostics.js");
 
 async function createRuntime(game, output) {
     const roots = [game.overlay, game.root, ...[1, 2, 3, 4, 5].map((n) => path.join(game.root, `M${n}`))]
@@ -59,13 +60,26 @@ async function createRuntime(game, output) {
         page.setDefaultTimeout(60000);
         const errors = [],
             missing = [];
-        page.on("pageerror", (error) => errors.push(error.message));
+        const diagnostics = createDiagnostics();
+        page.on("pageerror", (error) => {
+            errors.push(error.message);
+            diagnostics.record("page-error", { message: error.message, stack: error.stack });
+        });
+        page.on("console", (message) => {
+            const text = message.text();
+            if (text.startsWith("SpiderlingsCompatibilityContext:"))
+                diagnostics.setContext(JSON.parse(text.slice("SpiderlingsCompatibilityContext:".length)));
+        });
+        page.on("request", (request) => diagnostics.startRequest(request, request.url(), request.resourceType()));
         page.on("response", (response) => {
             if (response.status() === 404) missing.push(new URL(response.url()).pathname);
+            diagnostics.response(response.request(), response.status());
         });
-        await page.addInitScript(
-            `globalThis.compatibilityRejections = []; window.addEventListener('unhandledrejection', e => compatibilityRejections.push(e.reason?.message || String(e.reason))); localStorage.setItem('KDResolution', '10'); localStorage.setItem('PlayerName', 'Spiderlings compatibility');`,
+        page.on("requestfinished", (request) => diagnostics.finishRequest(request));
+        page.on("requestfailed", (request) =>
+            diagnostics.finishRequest(request, { error: request.failure()?.errorText }),
         );
+        await page.addInitScript(browserDiagnostics);
         await page.goto(`http://127.0.0.1:${server.address().port}`, { waitUntil: "domcontentloaded" });
         await page.waitForFunction(
             `typeof KDLoadMod === 'function' && typeof KDExecuteMods === 'function' && typeof window.zip?.ZipWriter === 'function' && KDLoadingFinished && ['Intro','Menu','CConsent','Consent'].includes(KinkyDungeonState)`,
@@ -74,6 +88,25 @@ async function createRuntime(game, output) {
             page,
             errors,
             missing,
+            diagnostics,
+            async setContext(context) {
+                diagnostics.setContext(context);
+                await page.evaluate((value) => {
+                    globalThis.compatibilityContext = value;
+                }, context);
+            },
+            async settleAssets() {
+                // Resource completion and the following render frames belong to the originating scene.
+                const deadline = Date.now() + 15000;
+                while (Date.now() < deadline) {
+                    await page.evaluate(async () => {
+                        for (let i = 0; i < 2; i++)
+                            await new Promise((resolve) => globalThis.requestAnimationFrame(resolve));
+                    });
+                    if (!diagnostics.pendingAssets().length) return;
+                }
+                throw new Error(`Assets did not settle: ${JSON.stringify(diagnostics.pendingAssets())}`);
+            },
             async close() {
                 await browser.close();
                 await new Promise((resolve) => server.close(resolve));
