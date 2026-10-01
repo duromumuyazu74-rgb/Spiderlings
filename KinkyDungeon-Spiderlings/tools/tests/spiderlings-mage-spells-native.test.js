@@ -41,6 +41,8 @@ test("KD 5.5 inert casts spend one native Mage action and leave only the saved s
     const context = {
         Spiderlings: {},
         KDMapData: map,
+        KDCastConditions: {},
+        KinkyDungeonSpellListEnemies: [{ name: "SpiderlingsMageHex" }, { name: "SpiderlingsMageCollapse" }],
         KinkyDungeonPlayerEntity: { x: 7, y: 7, player: true },
         KDGameData: { Collection: {} },
         KDGetFaction: (entity) => entity.faction,

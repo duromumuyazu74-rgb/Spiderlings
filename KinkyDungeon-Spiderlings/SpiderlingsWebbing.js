@@ -1015,7 +1015,7 @@
             text: [
                 "Spiderling Silk Cocoon",
                 "Layers of silk enclose your body in a soft cocoon. Its rim ends below your mouth.",
-                "The cocoon creases when you move. Loose threads trail across the floor.",
+                "The cocoon creases when you move. Opening it leaves any bindings underneath in place.",
             ],
         });
         return true;

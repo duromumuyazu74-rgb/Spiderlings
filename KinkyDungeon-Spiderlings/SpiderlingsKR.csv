@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,빛을 막는 거미줄이 정수리에�
 RestraintSpiderlingsWebbingLv3HoodDesc2,머리카락과 얼굴의 세부는 실 아래 숨고, 움직임을 따라 흔들리는 윤곽만 남았다.
 RestraintSpiderlingsWebbingCocoon,새끼 거미 실고치
 RestraintSpiderlingsWebbingCocoonDesc,촘촘한 거미줄이 몸을 두꺼운 고치로 감쌌다. 가장자리는 입 아래까지 오므라들고 머리 윗부분만 밖에 남아 있다.
-RestraintSpiderlingsWebbingCocoonDesc2,몸을 비틀면 고치 벽이 미세하게 떨린다. 바닥에 끌리는 실이 바스락거리며 안쪽의 움직임을 어둠 속으로 전하는 듯하다.
+RestraintSpiderlingsWebbingCocoonDesc2,몸을 움직이면 고치 벽에 얕은 주름이 생긴다. 겉고치를 열어도 안쪽의 구속은 그대로 남는다.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1은 TargetLv2 아래에 있다. 안쪽 거미줄을 풀려면 먼저 바깥층을 벗겨야 한다.
 KinkyDungeonSpiderlingsCocoonAnchored,새끼 거미들이 고치 둘레에 거미줄을 겹겹이 당겨 당신을 그 자리에 단단히 고정한다!
 KDMapMod_SpiderlingsHuntingGrounds,새끼 거미 사냥터
@@ -145,13 +145,13 @@ KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,당신은 TargetRestrain
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,당신은 TargetRestraint를 벗겨 내고 풀린 실을 모은다.
 KinkyDungeonStruggleCutFailSpiderlingsCocoon,당신은 TargetRestraint의 이음새를 따라 날을 움직이며 겹겹이 짜인 거미줄에 날을 눌러 댄다.
 KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,당신은 TargetRestraint의 이음새를 따라 날을 움직이며 겹겹이 짜인 거미줄에 날을 눌러 댄다.
-KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,당신은 TargetRestraint에 남은 마지막 이음새를 잘라 낸다. 찢어진 고치 껍질이 몸에서 벗겨져 떨어진다.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,당신은 TargetRestraint의 마지막 이음새를 잘라 낸다. 바깥 고치 껍질이 열린다.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,당신은 TargetRestraint를 안쪽에서 민다. 고치 벽에 얕은 주름이 잡힌다.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,당신은 TargetRestraint를 안쪽에서 민다. 고치 벽에 얕은 주름이 잡힌다.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,당신은 TargetRestraint의 갈라진 틈을 벌리고 늘어진 고치 밖으로 몸을 빼낸다.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,당신은 TargetRestraint의 바깥 껍질을 밀어 열고 풀어진 거미줄을 모은다.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,당신은 TargetRestraint의 가장자리를 더듬으며 서로 달라붙은 거미줄 층을 떼어 내려고 한다.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,당신은 TargetRestraint의 가장자리를 더듬으며 서로 달라붙은 거미줄 층을 떼어 내려고 한다.
-KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,당신은 TargetRestraint를 벗겨 열고 느슨해진 고치 밖으로 빠져나온다.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,당신은 TargetRestraint의 바깥 껍질을 벗겨 열고 느슨해진 고치를 챙긴다.
 KDModButtonspiderlingsMapPopulationCap,맵당 새끼 거미 상한 (0: 무제한)
 KinkyDungeonStatSpiderlingsCocoonStart,고치 속에서 깨어나다
 KinkyDungeonStatDescSpiderlingsCocoonStart,"부드러운 고치 안에서 깨어난다. 촘촘히 겹친 거미줄이 몸을 감싸고, 살짝 움직일 때마다 실이 당겨진다."

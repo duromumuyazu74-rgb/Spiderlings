@@ -1347,6 +1347,21 @@
                 tasks = field ? pendingTasks(field, members.length >= 2) : [],
                 reservedTasks = new Set(),
                 reservedWork = new Set();
+            const known = groupObservation(group),
+                lureKeepsPressure =
+                    known &&
+                    known.age < 4 &&
+                    plan?.compositeId &&
+                    api.SpinnerTopology.isInsideCommonCore(graph, plan.compositeId, known) &&
+                    !api.SpinnerNativeField.captureGeometryReady(known),
+                bodyWorkerAvailable = (action) =>
+                    members.some(
+                        (member) =>
+                            String(member.id) !== String(group.engagement?.lureId) &&
+                            workCells(action.cell || action.target, snapshot, member).some(
+                                (cell) => !reservedWork.has(cellKey(cell)) && Number.isFinite(distances(member, cell)),
+                            ),
+                    );
             const workDistance = new Map();
             if (plan?.kind === "passage")
                 for (const member of members) {
@@ -1367,6 +1382,12 @@
                     retainedWork = previous?.workCell,
                     canRetain =
                         retainedTask &&
+                        !(
+                            lureKeepsPressure &&
+                            previous.role === "body" &&
+                            String(member.id) === String(group.engagement?.lureId) &&
+                            bodyWorkerAvailable(previous)
+                        ) &&
                         (plan?.constructionOrder !== "outer-first" ||
                             api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...reservedTasks])
                                 ?.fieldId === previous.fieldId) &&
@@ -1393,6 +1414,13 @@
                 if (!field && graph?.fields && plan?.compositeId) {
                     const action = api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...reservedTasks]);
                     if (!action?.cell) continue;
+                    if (
+                        lureKeepsPressure &&
+                        action.role === "body" &&
+                        String(member.id) === String(group.engagement?.lureId) &&
+                        bodyWorkerAvailable(action)
+                    )
+                        continue;
                     const work = workCells(action.cell, snapshot, member)
                         .filter((cell) => !reservedWork.has(cellKey(cell)))
                         .sort(
@@ -2753,6 +2781,18 @@
         if (
             hasGateWork(encounter, group) &&
             ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(assignment?.type)
+        )
+            return decide(enemy, group, performAssignment(enemy, group, assignment), true);
+        // Nearby prey must not pull every builder off an unfinished enclosure.
+        // The lure keeps melee pressure while assigned body workers finish
+        // through the same paid movement, occupancy and construction checks.
+        if (
+            observed &&
+            assignment?.role === "body" &&
+            String(group.engagement?.lureId) !== String(enemy.id) &&
+            plan.compositeId &&
+            api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target) &&
+            !api.SpinnerNativeField.captureGeometryReady(target)
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
         if (

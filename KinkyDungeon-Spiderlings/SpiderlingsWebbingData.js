@@ -102,15 +102,15 @@
         SpiderlingsCocoon: {
             Cut: [
                 "You work the blade along a seam in TargetRestraint, pressing against its woven layers.",
-                "You cut through the last seam of TargetRestraint. The cocoon falls open.",
+                "You cut through the last seam of TargetRestraint. The outer cocoon falls open.",
             ],
             Struggle: [
                 "You press against TargetRestraint. Shallow folds rise along the cocoon.",
-                "You pull open TargetRestraint and slip out, gathering the loose silk.",
+                "You pull open the outer shell of TargetRestraint and gather the loose silk.",
             ],
             Remove: [
                 "You pick at the edge of TargetRestraint, trying to separate its clinging layers.",
-                "You peel open TargetRestraint and slip out. You gather the loosened cocoon.",
+                "You peel open the outer shell of TargetRestraint and gather the loosened cocoon.",
             ],
         },
     };

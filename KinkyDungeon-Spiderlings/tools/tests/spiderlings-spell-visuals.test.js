@@ -117,6 +117,8 @@ function fixture({ mageSpells = false } = {}) {
         },
     };
     if (mageSpells) {
+        c.KDCastConditions = {};
+        c.KinkyDungeonSpellListEnemies = [{ name: "SpiderlingsMageHex" }, { name: "SpiderlingsMageCollapse" }];
         c.KDGetFaction = (target) => target.faction;
         c.KDHostile = () => false;
         c.KinkyDungeonCastSpell = (x, y, spell, caster) => {

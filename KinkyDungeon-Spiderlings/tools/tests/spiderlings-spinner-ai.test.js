@@ -886,6 +886,109 @@ function cellKeyForTest(cell) {
     return `${cell.x},${cell.y}`;
 }
 
+test("recognized prey in an unfinished core leaves assigned builders paying for its enclosure", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+        r = runtime([...actors]),
+        c = r.context,
+        { SpinnerAI: planner, SpinnerNativeField: native } = c.Spiderlings,
+        placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+        encounter = native.state(),
+        group = encounter.ai.groups[placed.groupId],
+        originalMembers = [...group.memberIds],
+        composite = encounter.topology.composites[placed.compositeId],
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: composite.core.x + 1, y: composite.core.y });
+    native.onEntry(c.KinkyDungeonPlayerEntity, c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y);
+    for (const actor of actors) actor.aware = actor.testSense = true;
+    for (let turn = 0; turn < 200 && !native.captureGeometryReady(c.KinkyDungeonPlayerEntity); turn++) {
+        start(r, snapshot);
+        for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        planner.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(native.captureGeometryReady(c.KinkyDungeonPlayerEntity), "Standing inside cannot starve paid inner work");
+    assert.deepEqual([...group.memberIds], originalMembers, "The original crew must retain its enclosure");
+    assert.ok(native.state().topology.actionLog.length > 20, "The inner rings must use real paid construction");
+    assert.ok(
+        r.phaseCalls.some((entry) => entry.phase === "attack"),
+        "The lure retains native melee pressure",
+    );
+});
+
+test("unfinished-core role allocation hands body work away from an active lure without erasing progress", () => {
+    for (const variant of [
+        "available",
+        "single",
+        "disabled",
+        "off-map",
+        "separated-work",
+        "expired",
+        "unrecognized",
+        "changed-lure",
+    ]) {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+            r = runtime([...actors]),
+            c = r.context,
+            { SpinnerAI: planner, SpinnerNativeField: native, SpinnerTopology: topology } = c.Spiderlings,
+            placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+            encounter = native.state(),
+            group = encounter.ai.groups[placed.groupId],
+            composite = encounter.topology.composites[placed.compositeId],
+            snapshot = mapSnapshot(),
+            target = { x: composite.core.x + 1, y: composite.core.y };
+        Object.assign(c.KinkyDungeonPlayerEntity, target);
+        native.onEntry(c.KinkyDungeonPlayerEntity, target.x, target.y);
+        // Fixture setup closes the already authored outer gate. The pending
+        // body, paid graph and construction credit then survive role changes.
+        for (let n = 0; n < 8; n++) {
+            const action = topology.nextWorkAction(encounter.topology, actors[0].id, actors[0]);
+            if (action.role === "body") break;
+            const result = topology.applyAction(
+                encounter.topology,
+                { ...action, ownerId: actors[0].id },
+                native.snapshot(action.cell),
+            );
+            assert.ok(result.outcome.legal);
+            encounter.topology = result.state;
+        }
+        group.engagement = {
+            target: { kind: "player", id: 0 },
+            lureId: actors[0].id,
+            lastKnown: { ...target, source: "native", age: 4 },
+        };
+        planner.reserveActions(encounter, snapshot);
+        assert.equal(group.assignments[actors[0].id]?.role, "body", variant);
+        actors[0].SpinnerConstructionPoints = 0.75;
+        if (variant === "single") group.memberIds = [actors[0].id];
+        if (variant === "disabled") for (const actor of actors.slice(1)) actor.disabled = true;
+        if (variant === "off-map") for (const actor of actors.slice(1)) actor.x = 99;
+        if (variant === "separated-work") {
+            actors[1].x = 11;
+            for (const cell of snapshot.cells) if (cell.x === 7) cell.floor = false;
+            assert.ok(planner.routeOnSnapshot(snapshot, actors[1], target).length > 0);
+            assert.equal(
+                planner.routeOnSnapshot(snapshot, actors[1], group.assignments[actors[0].id].workCell).length,
+                0,
+            );
+        }
+        group.engagement.lastKnown.age = variant === "expired" ? 4 : 0;
+        if (variant === "unrecognized") group.engagement.lastKnown.source = "guessed";
+        if (variant === "changed-lure") group.engagement.lureId = actors[1].id;
+        const before = plain(encounter.topology);
+        planner.reserveActions(encounter, snapshot);
+        const lure = group.engagement.lureId;
+        if (["available", "changed-lure"].includes(variant)) {
+            assert.notEqual(group.assignments[lure]?.role, "body", variant);
+            assert.ok(
+                Object.entries(group.assignments).some(([id, action]) => Number(id) !== lure && action.role === "body"),
+            );
+        } else assert.equal(group.assignments[lure]?.role, "body", variant);
+        assert.deepEqual(plain(encounter.topology), before, variant);
+        assert.equal(actors[0].SpinnerConstructionPoints, 0.75, variant);
+    }
+});
+
 test("one mapgen outer body retains a real crew, leaves paid inner work and survives reload without replenishment", () => {
     const actors = [
             spinner(1, 5, 3, { SpiderlingsNestParentID: 90 }),

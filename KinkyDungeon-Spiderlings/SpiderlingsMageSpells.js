@@ -92,14 +92,25 @@
         if (mark) mark.fragileUntil = state().clock + 3;
     }
 
-    function choose(mage) {
+    function canCast(mage, spell) {
+        if (mage?.Enemy?.name !== MAGE) return false;
         const s = state();
-        const canHex = !s.fields.some((field) => field.ownerId === mage.id && field.endAt > s.clock);
-        const canCollapse =
-            !s.collapses.some((collapse) => collapse.ownerId === mage.id) && !(mage.SpiderlingsCollapseCooldown > 0);
+        if (spell === HEX) return !s.fields.some((field) => field.ownerId === mage.id && field.endAt > s.clock);
+        return !s.collapses.some((collapse) => collapse.ownerId === mage.id) && !(mage.SpiderlingsCollapseCooldown > 0);
+    }
+
+    // KD 5.4.92 lacks enumerateSpellOpts but checks castCondition before paying
+    // its enemy cooldown. Keep unavailable spells out of that native candidate loop.
+    for (const spell of KinkyDungeonSpellListEnemies) {
+        if (![HEX, COLLAPSE].includes(spell.name)) continue;
+        spell.castCondition = spell.name;
+        KDCastConditions[spell.name] = (mage) => canCast(mage, spell.name);
+    }
+
+    function choose(mage) {
         const roll = KDRandom();
-        if (canHex && roll < 0.34) return HEX;
-        if (canCollapse && roll < 0.68) return COLLAPSE;
+        if (canCast(mage, HEX) && roll < 0.34) return HEX;
+        if (canCast(mage, COLLAPSE) && roll < 0.68) return COLLAPSE;
         return "SpiderlingsMageBolt";
     }
 
@@ -122,13 +133,7 @@
             if (caster?.Enemy?.name !== MAGE || ![HEX, COLLAPSE].includes(spell?.name))
                 return nativeCast.apply(this, arguments);
             const s = state();
-            if (
-                spell.name === COLLAPSE &&
-                (caster.SpiderlingsCollapseCooldown > 0 || s.collapses.some((pending) => pending.ownerId === caster.id))
-            )
-                return { result: "Fail" };
-            if (spell.name === HEX && s.fields.some((field) => field.ownerId === caster.id && field.endAt > s.clock))
-                return { result: "Fail" };
+            if (!canCast(caster, spell.name)) return { result: "Fail" };
             const previous = new Set(KDMapData.Bullets);
             const result = nativeCast.apply(this, arguments);
             if (result?.result !== "Cast") return result;
