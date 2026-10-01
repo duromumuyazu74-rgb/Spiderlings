@@ -364,7 +364,7 @@
 
     const MOD = "SpiderlingsInfestation";
     const FIELD = "SpiderlingsInfestation";
-    const MIN_FLOOR = 3;
+    const MIN_FLOOR = 5;
     const TARGET = 5;
     const QUIET_TURNS = 15;
     const GARRISON = 5;
@@ -374,14 +374,12 @@
     const texts = {
         KDMapMod_SpiderlingsInfestation: "Spiderling Infestation",
         KinkyDungeonMapModSpiderlingsInfestation:
-            "Soft webs line the corners. Spiderlings step lightly along the threads, filling the room with delicate rustling.",
+            "Webs line the corners, rustling as spiderlings move along the threads.",
         KDEscapeMethod_SpiderlingsInfestation: "Destroy the marked nests",
-        KDEscapeMethodDesc_SpiderlingsInfestation:
-            "Soft threads fringe the nests first built here. Destroy these marked nests to continue downstairs.",
+        KDEscapeMethodDesc_SpiderlingsInfestation: "Destroy the marked nests to continue downstairs.",
         SpiderlingsInfestationProgress: "Marked nests destroyed: CURRENT/5",
-        SpiderlingsInfestationBlocked: "Some marked nests remain. You cannot take the stairs down yet. (CURRENT/5)",
-        SpiderlingsInfestationComplete:
-            "All marked nests are destroyed. Loose threads settle, and you can continue down the stairs. (5/5)",
+        SpiderlingsInfestationBlocked: "Marked nests still remain. Destroy them before going downstairs. (CURRENT/5)",
+        SpiderlingsInfestationComplete: "The last marked nest is destroyed. You can now go downstairs. (5/5)",
     };
 
     function activeState(map = typeof KDMapData !== "undefined" ? KDMapData : null) {
@@ -400,7 +398,8 @@
     }
 
     function seekPatrol(enemy, target, aiData = {}) {
-        const state = activeState();
+        const hunting = api.HuntingGrounds?.activeState?.();
+        const state = activeState() || hunting;
         if (
             !state ||
             !wildSpider(enemy) ||
@@ -418,7 +417,12 @@
             aiData.canSensePlayer ||
             aiData.moveTowardPlayer ||
             api.SpinnerNPCCapture?.usesSource?.(enemy.id) ||
-            api.NPCWrapping?.usesSource?.(enemy.id)
+            api.SpinnerNPCRecovery?.usesEntity?.(enemy.id) ||
+            api.NPCWrapping?.usesSource?.(enemy.id) ||
+            api.SpinnerRecovery?.wantsPursuit?.(enemy, target) ||
+            Object.values(api.SpinnerNativeField?.state?.()?.ai?.groups || {}).some(
+                (group) => group.planId && group.memberIds.some((id) => String(id) === String(enemy.id)),
+            )
         )
             return false;
         const nests = KDMapData.Entities.filter((entity) => entity.hp > 0 && state.targetIds.includes(entity.id));
@@ -441,7 +445,7 @@
             enemy.gy = marker.goal.y;
             return true;
         }
-        if (!marker && nearestNest > 5) return false;
+        if (!hunting && !marker && nearestNest > 5) return false;
         const occupied = new Set(KDMapData.Entities.filter((entity) => entity.hp > 0 && entity !== enemy).map(key)),
             reserved = new Set(
                 KDMapData.Entities.filter((entity) => entity !== enemy).flatMap((entity) =>
@@ -692,6 +696,10 @@
             destroyedIds: [],
             complete: false,
             distributionVersion: 1,
+            fieldPreset: {
+                status: "pending",
+                protectedPoints: spawnPoints.map((point) => ({ x: point.x, y: point.y })),
+            },
             requestedGroupSizes,
             groupSizes,
             nestGroups: groups.map((group) =>
@@ -829,6 +837,12 @@
         // Rooms with enemies:false never invoke population; clear their modifier too.
         KDAddEvent(KDEventMapGeneric, "postMapgen", MOD, () => {
             if (KDMapData.MapMod === MOD && !KDMapData[FIELD]) cancelInfestation("ineligible");
+            const preset = activeState()?.fieldPreset;
+            if (preset?.status === "pending")
+                KDMapData[FIELD].fieldPreset = api.SpinnerAI?.initializeMapgenField(preset) || {
+                    status: "skipped",
+                    reason: "spinner-unavailable",
+                };
         });
         if (!KinkyDungeonPlaceEnemies.SpiderlingsInfestationWrapped) {
             const original = KinkyDungeonPlaceEnemies;

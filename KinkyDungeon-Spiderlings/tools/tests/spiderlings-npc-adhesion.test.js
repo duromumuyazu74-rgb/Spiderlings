@@ -183,6 +183,19 @@ test("saved silk source and owned strength gate native helplessness after reload
     assert.equal(r.adhesion.hasSpiderHelplessness(r.target), true);
 });
 
+test("visual helplessness queries account for native silk loss without rewriting the ledger", () => {
+    const r = fixture();
+    r.bind(r.sourceSpider, 9);
+    r.target.boundLevel = 100;
+    const before = JSON.stringify(r.target.SpiderlingsNPCAdhesion);
+    assert.equal(r.adhesion.hasSpiderHelplessness(r.target, false), true);
+    r.target.specialBoundLevel.Slime = 2;
+    for (let draw = 0; draw < 24; draw++) assert.equal(r.adhesion.hasSpiderHelplessness(r.target, false), false);
+    assert.equal(JSON.stringify(r.target.SpiderlingsNPCAdhesion), before);
+    assert.equal(r.adhesion.hasSpiderHelplessness(r.target), false);
+    assert.notEqual(JSON.stringify(r.target.SpiderlingsNPCAdhesion), before);
+});
+
 test("explicit benchmarks override HP, and fallback uses the binding threshold tag", () => {
     const r = fixture();
     for (const [name, pin, full] of [

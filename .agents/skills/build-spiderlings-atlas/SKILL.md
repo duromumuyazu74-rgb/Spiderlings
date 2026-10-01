@@ -5,7 +5,7 @@ description: Build or validate the Spiderlings Webbing atlas and installable rel
 
 # Spiderlings atlas and release
 
-Run from the workspace root. Read `KinkyDungeon-Spiderlings/AGENTS.md` and the relevant packaging/atlas sections of `docs/spiderlings-official-modding-guidance.md`. Use existing scripts as the implementation authority.
+Run from the active Spiderlings repository checkout, including its attached worktree. Read `KinkyDungeon-Spiderlings/AGENTS.md` and the relevant packaging/atlas sections of `docs/spiderlings-official-modding-guidance.md`. Use existing scripts as the implementation authority.
 
 ## Contract
 
@@ -31,4 +31,4 @@ powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-
 
 Confirm the intended version from the request and manifest. Replace an existing same-version ZIP only when that replacement is authorized; do not use `-Force` to conceal a conflict.
 
-After packaging, run the parent Mod's watcher so it checks the final ZIP. Completion requires passing checks, the expected manifest/atlas/fallback entries, and the parent package's focused commit for changed Mod files. Report the version, package path if built and gate result. When artwork changed, distinguish automated packaging checks from the actual in-game visual inspection requested for that art.
+For final package verification, use `npm run report:delivery -- --base origin/test` from that checkout. It collects the watcher, repository/policy/public checks, final ZIP verification and their exit codes. For runtime delivery, first obtain complete dual-version native acceptance and supply its `acceptance.json` through `--evidence`; see `docs/DELIVERY-EVIDENCE.md`. Focused debug scenes are partial evidence. Completion requires the applicable gates, expected manifest/atlas/fallback entries, and the parent package's focused commit. Report the version, package path and evidence report. When artwork changed, distinguish automated packaging checks from actual in-game visual inspection.

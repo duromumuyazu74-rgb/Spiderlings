@@ -237,6 +237,36 @@ test("NPC recovery requires a real breach and fresh positive-Slime hit without i
     assert.deepEqual(r.itemCalls, []);
 });
 
+test("NPC departure requests native pursuit before a fresh binding hit and after sources go slack", () => {
+    const r = fixture(),
+        source = r.sources[0];
+    assert.equal(r.api.wantsPursuit(source, r.target), false);
+    r.breach();
+    source.x = 14;
+    const before = JSON.stringify(r.api.state());
+    assert.equal(r.api.wantsPursuit(source, r.target), true);
+    assert.equal(JSON.stringify(r.api.state()), before);
+    assert.equal(r.api.wantsPursuit(source, r.c.KinkyDungeonPlayerEntity), false);
+    assert.equal(r.api.wantsPursuit({ ...source, id: 99 }, r.target), false);
+    assert.equal(r.api.wantsPursuit({ ...source, stun: 1 }, r.target), false);
+    source.x = 8;
+    r.hit();
+    assert.equal(r.api.wantsPursuit(source, r.target), false, "active pulling sources retain ownership");
+    source.x = 14;
+    r.api.audit();
+    assert.equal(r.api.recordForTarget(r.target), undefined);
+    assert.equal(r.api.wantsPursuit(source, r.target), true, "the saved departure permits another real hit");
+    r.c.Spiderlings.SpinnerCapture.sourceIds = () => [source.id];
+    assert.equal(r.api.wantsPursuit(source, r.target), false, "player capture sources cannot chase an NPC");
+    r.c.Spiderlings.SpinnerCapture.sourceIds = () => [];
+    r.c.Spiderlings.NPCWrapping = { records: () => ({ wrap: { targetId: r.target.id, sourceIds: [2] } }) };
+    assert.equal(r.api.wantsPursuit(source, r.target), false, "wrapping owns its target");
+    r.c.Spiderlings.NPCWrapping = undefined;
+    r.target.x = 5;
+    assert.equal(r.api.wantsPursuit(source, r.target), false, "returning to the field releases pursuit");
+    assert.deepEqual(r.itemCalls, []);
+});
+
 test("NPC recovery refreshes one through eight sources, rejects ninth, and requires re-hit after audit", () => {
     const r = fixture();
     r.breach();

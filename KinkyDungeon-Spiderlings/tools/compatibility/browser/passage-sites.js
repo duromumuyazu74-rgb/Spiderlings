@@ -2,7 +2,7 @@
     const { setup, spawn, turn, frame, expect, save, restore, photo } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []),
         images = (globalThis.passageImages = {});
-    const modes = globalThis.passageAcceptanceModes || ["corridor", "junction", "recruitment", "breach"];
+    const modes = globalThis.passageAcceptanceModes || ["corridor", "junction", "recruitment", "crowding", "breach"];
     const nativeField = Spiderlings.SpinnerNativeField,
         ai = Spiderlings.SpinnerAI;
     const key = (cell) => `${cell.x},${cell.y}`;
@@ -125,8 +125,10 @@
                 KinkyDungeonTilesDelete(`${x},${y}`);
             }
         room(2, 2, 2, 2);
-        room(3, mode === "junction" ? 9 : 7, 8, mode === "junction" ? 11 : 13);
-        room(20, mode === "junction" ? 9 : 7, 27, mode === "junction" ? 11 : 13);
+        // Keep these fixtures corridor-shaped. Spacious-room enclosure selection
+        // and outer-first work are exercised separately by spinner-work.
+        room(3, 9, 8, 11);
+        room(20, 9, 27, 11);
         room(9, 10, 19, 10);
         if (mode === "junction") {
             room(9, 5, 19, 5);
@@ -148,25 +150,42 @@
         rows.push(row);
         tick = 0;
         const positions =
-            mode === "recruitment"
-                ? [
-                      [6, 8],
-                      [7, 12],
-                      [23, 8],
-                      [24, 12],
-                  ]
-                : [
-                      [7, 9],
-                      [7, 11],
-                  ];
+            mode === "crowding"
+                ? Array.from({ length: 12 }, (_entry, index) => [3 + (index % 4), 9 + Math.floor(index / 4)])
+                : mode === "recruitment"
+                  ? [
+                        [6, 9],
+                        [24, 11],
+                    ]
+                  : [
+                        [7, 9],
+                        [7, 11],
+                    ];
         const actors = positions.map(([x, y]) => spawn("Spinner", x, y));
         for (const actor of actors) {
             actor.aware = false;
             actor.vp = 0;
             actor.hostile = 999;
         }
+        if (mode === "recruitment") {
+            // The report arrives before unpaid distant crews recruit. Its source
+            // has native contact in a separate room; the Spinners have none.
+            room(2, 2, 2, 3);
+            const reporter = spawn("Jumper", 2, 3),
+                ratio = globalThis.KinkyDungeonTrackSneak({ ...reporter, vp: 1 }, 0, KinkyDungeonPlayerEntity);
+            reporter.aware = false;
+            reporter.hostile = 999;
+            reporter.vp = 0.7 / ratio;
+            row.sharedReporterId = reporter.id;
+            KDUpdateEnemyCache = true;
+        }
         row.initialActors = actors.map((actor) => ({ id: actor.id, x: actor.x, y: actor.y }));
         ai.beginTurn({ activate: true });
+        if (mode === "recruitment")
+            expect(
+                ai.playerObservation()?.reporterId === row.sharedReporterId,
+                "Recruitment omitted remote native contact",
+            );
         return actors;
     }
     async function snapshotReload(label) {
@@ -526,7 +545,112 @@
         projectionAudit();
     }
     try {
-        for (const mode of modes.filter((entry) => entry !== "breach")) {
+        for (const blockerX of [20, 40]) {
+            setup(`passage-reachable-${blockerX}`);
+            KDMapData.GridWidth = 65;
+            KDMapData.GridHeight = 15;
+            KDMapData.Grid =
+                Array.from({ length: 15 }, (_, y) =>
+                    Array.from({ length: 65 }, (_, x) =>
+                        ((x >= 2 && x <= 7) || (x >= 57 && x <= 62)) && y >= 6 && y <= 8
+                            ? "0"
+                            : x >= 7 && x <= 57 && y === 7
+                              ? "0"
+                              : "1",
+                    ).join(""),
+                ).join("\n") + "\n";
+            KDMapData.Tiles = {};
+            KDMapData.StartPosition = { x: 3, y: 7 };
+            KDMapData.EndPosition = { x: 61, y: 7 };
+            KDMapData.ShortcutPositions = {};
+            KDMapData.JailPoints = [];
+            KDPathCache = new Map();
+            KDPathCacheIgnoreLocks = new Map();
+            const worker = spawn("Spinner", 60, 7);
+            const blocker = spawn("Maidforce", blockerX, 7);
+            worker.aware = false;
+            worker.vp = 0;
+            KDUpdateEnemyCache = true;
+            ai.beginTurn({ activate: true });
+            const plan = passagePlans()[0];
+            expect(plan?.proof.kind === "mandatory", `Blocker at ${blockerX} hid all reachable native passages`);
+            const gates = plan.gates.flatMap((gate) => gate.cells);
+            expect(
+                gates.every((cell) => cell.x > blockerX),
+                "Selected passage lies beyond the occupied corridor",
+            );
+            expect(
+                gates.some(
+                    (cell) =>
+                        KinkyDungeonFindPath(
+                            worker.x,
+                            worker.y,
+                            cell.x,
+                            cell.y,
+                            true,
+                            false,
+                            false,
+                            KinkyDungeonMovableTilesEnemy,
+                            undefined,
+                            undefined,
+                            undefined,
+                            worker,
+                        )?.length,
+                ),
+                "Selected passage has no native actor-blocking approach",
+            );
+            rows.push({
+                mode: "reachable-shortlist",
+                blocker: { id: blocker.id, x: blockerX, y: 7 },
+                plan: copy(plan),
+            });
+        }
+        if (modes.includes("crowding")) {
+            const actors = terrain("crowding"),
+                ids = actors.map((actor) => actor.id);
+            expect(
+                row.initialActors.every((initial) =>
+                    actors.some((actor) => actor.id === initial.id && actor.x === initial.x && actor.y === initial.y),
+                ),
+                "Planning a crowded field moved an actor before a paid native turn",
+            );
+            const staffingAudit = () => {
+                const groups = Object.values(state().ai.groups),
+                    active = groups.filter((group) => {
+                        const plan = state().ai.plans[group.planId];
+                        return plan && !["invalid", "abandoned"].includes(plan.status);
+                    });
+                expect(active.length > 0, "Crowding fixture has no naturally planned field");
+                expect(
+                    active.some((group) => ids.every((id) => group.memberIds.includes(id))),
+                    "A crowded field dispersed its original team",
+                );
+                expect(
+                    ids.every((id) => KDMapData.Entities.some((actor) => actor.id === id && actor.hp > 0)),
+                    "Field planning removed an existing Spinner",
+                );
+                const plans = active.map((group) => state().ai.plans[group.planId]);
+                expect(
+                    plans.every((plan, index) =>
+                        plans.slice(index + 1).every((other) => !other.cells.some((cell) => plan.cells.includes(cell))),
+                    ),
+                    "Retained teams selected overlapping fields",
+                );
+                (row.staffing ||= []).push(copy(groups));
+            };
+            staffingAudit();
+            for (let step = 0; step < 12; step++) {
+                await advance();
+                staffingAudit();
+            }
+            await snapshotReload("crowded field retained team");
+            staffingAudit();
+            expect(
+                row.moves?.some((move) => move.result),
+                "Retained workers never used native movement",
+            );
+        }
+        for (const mode of modes.filter((entry) => entry !== "breach" && entry !== "crowding")) {
             terrain(mode);
             const plan = await ready();
             const field = fieldFor(plan);
@@ -555,17 +679,19 @@
                     const group = state().ai.groups[plan.groupId];
                     return (
                         distantIds.every((id) => group.memberIds.includes(id)) &&
-                        distantIds.every((id) =>
-                            KDMapData.Entities.some(
-                                (actor) =>
-                                    actor.id === id &&
-                                    Math.max(Math.abs(actor.x - plan.center.x), Math.abs(actor.y - plan.center.y)) <= 4,
-                            ),
-                        )
+                        group.memberIds.every((id) => {
+                            const assignment = group.assignments[id],
+                                actor = KDMapData.Entities.find((entry) => entry.id === id);
+                            return assignment?.type === "rally" && actor && key(actor) === key(assignment.workCell);
+                        })
                     );
                 };
                 for (let step = 0; step < 60 && !converged(); step++) await advance();
-                expect(converged(), "Recruited distant colleagues did not walk to the shared passage");
+                expect(converged(), "Recruited colleagues did not finish walking to their assigned waiting mouths");
+                expect(
+                    row.initialActors.every((actor) => state().ai.groups[plan.groupId].memberIds.includes(actor.id)),
+                    "Recruitment abandoned an existing field worker",
+                );
                 row.recruited = { ids: distantIds, group: copy(state().ai.groups[plan.groupId]) };
             }
             await cacheCheck();

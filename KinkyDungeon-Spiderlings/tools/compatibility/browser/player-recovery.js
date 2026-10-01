@@ -268,6 +268,179 @@
                 );
             }
         }
+    for (const preferNPC of [false, true]) {
+        setup(`recovery-automatic-departure-${preferNPC}`);
+        KDMovePlayer(14, 10, false);
+        const pursuers = [spawn("Spinner", 19, 9), spawn("Spinner", 19, 11)],
+            field = Spiderlings.SpinnerNativeField,
+            recovery = Spiderlings.SpinnerRecovery;
+        for (const actor of pursuers) {
+            actor.stun = 999;
+            actor.hostile = 999;
+        }
+        const encounter = field.initializeEnclosure({
+            compositeId: "automatic-recovery",
+            owners: pursuers.map((actor) => actor.id),
+            built: true,
+            autoSeal: true,
+            layers: [
+                {
+                    id: "automatic-inner",
+                    vertices: [
+                        { x: 13, y: 9 },
+                        { x: 15, y: 9 },
+                        { x: 15, y: 11 },
+                        { x: 13, y: 11 },
+                    ],
+                    gate: { x: 13, y: 10 },
+                },
+            ],
+        });
+        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
+        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName(Spiderlings.SpinnerCapture.ID), 0, false, "");
+        const bag = Spiderlings.SpinnerCapture.item();
+        expect(bag, "The automatic pursuit fixture could not equip the leg bag");
+        (bag.data ||= {}).wrapProgress = 1;
+        KDSetWeapon(null);
+        KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
+        for (let attacks = 0; field.isSpiderlingsWebCell({ x: 15, y: 10 }) && attacks < 20; attacks++) {
+            KinkyDungeonMove({ x: 1, y: 0 }, 1, true, true);
+            await frame();
+        }
+        expect(
+            !field.isSpiderlingsWebCell({ x: 15, y: 10 }),
+            "The completed leg bag fixture could not breach its field",
+        );
+        KDMovePlayer(16, 10, false);
+        expect(recovery.departure(), "The completed leg bag departure did not arm recovery");
+        for (const actor of pursuers) actor.stun = 0;
+        encounter.builders = {};
+        const nativeNearest = globalThis.KinkyDungeonNearestPlayer;
+        if (preferNPC) {
+            const npc = spawn("Bandit", 20, 7),
+                reporter = spawn("Jumper", 13, 4);
+            npc.stun = 999;
+            reporter.hostile = 999;
+            reporter.aware = false;
+            const ratio = globalThis.KinkyDungeonTrackSneak({ ...reporter, vp: 1 }, 0, KinkyDungeonPlayerEntity);
+            reporter.vp = 0.7 / ratio;
+            globalThis.KinkyDungeonNearestPlayer = function (actor) {
+                return pursuers.some((pursuer) => pursuer.id === actor.id) ? npc : nativeNearest.apply(this, arguments);
+            };
+        }
+        Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
+        const automatic = { mode: "automatic-departure", preferNPC, hits: 0, positions: [] },
+            nativeBind = KDPlayerEffects.SpiderlingsWebbingEnemyBind;
+        rows.push(automatic);
+        KDPlayerEffects.SpiderlingsWebbingEnemyBind = function (...args) {
+            if (args[2]?.profile === "Spinner") automatic.hits++;
+            return nativeBind.apply(this, args);
+        };
+        try {
+            for (
+                let tick = 0;
+                tick < 24 && !field.containsComposite("automatic-recovery", KinkyDungeonPlayerEntity);
+                tick++
+            ) {
+                await turn();
+                automatic.positions.push({
+                    x: KinkyDungeonPlayerEntity.x,
+                    y: KinkyDungeonPlayerEntity.y,
+                    sources: recovery.strength(),
+                    actors: pursuers.map((actor) => ({ id: actor.id, x: actor.x, y: actor.y })),
+                });
+            }
+        } finally {
+            KDPlayerEffects.SpiderlingsWebbingEnemyBind = nativeBind;
+            globalThis.KinkyDungeonNearestPlayer = nativeNearest;
+        }
+        expect(automatic.hits > 0, `Escaped prey was not hit by native pursuit: ${JSON.stringify(automatic)}`);
+        expect(
+            automatic.positions.some((position) => position.sources > 0),
+            `Native pursuit did not attach a real recovery strand: ${JSON.stringify(automatic)}`,
+        );
+        expect(
+            field.containsComposite("automatic-recovery", KinkyDungeonPlayerEntity),
+            `Paid recovery did not pull escaped prey home: ${JSON.stringify(automatic)}`,
+        );
+        expect(Spiderlings.SpinnerCapture.item() === bag, "Automatic recovery replaced the completed leg bag");
+        expect(bag.data.wrapProgress === 1, "Automatic recovery changed the completed leg bag's progress");
+        images[`automatic-departure-${preferNPC}`] = await photo();
+    }
+    setup("recovery-remote-relay");
+    for (let y = 5; y <= 15; y++)
+        for (let x = 5; x < KDMapData.GridWidth - 1; x++) {
+            KinkyDungeonMapSet(x, y, "0");
+            KinkyDungeonTilesDelete(`${x},${y}`);
+        }
+    KDMovePlayer(10, 10, false);
+    const relays = Array.from({ length: 8 }, (_, index) => spawn("Spinner", 14 + index * 2, 10));
+    for (const actor of relays) {
+        actor.stun = 999;
+        actor.hostile = 999;
+    }
+    const relayField = Spiderlings.SpinnerNativeField;
+    relayField.initializeEnclosure({
+        compositeId: "remote-relay",
+        owners: relays.map((actor) => actor.id),
+        built: true,
+        autoSeal: true,
+        layers: [
+            {
+                id: "relay-inner",
+                vertices: [
+                    { x: 9, y: 9 },
+                    { x: 11, y: 9 },
+                    { x: 11, y: 11 },
+                    { x: 9, y: 11 },
+                ],
+                gate: { x: 11, y: 10 },
+            },
+        ],
+    });
+    KDSetWeapon(null);
+    KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
+    for (let attempts = 0; relayField.isSpiderlingsWebCell({ x: 11, y: 10 }) && attempts < 20; attempts++) {
+        KinkyDungeonMove({ x: 1, y: 0 }, 1, true, true);
+        await frame();
+    }
+    expect(!relayField.isSpiderlingsWebCell({ x: 11, y: 10 }), "Relay fixture could not breach its exit");
+    KDMovePlayer(12, 10, false);
+    const recovery = Spiderlings.SpinnerRecovery;
+    expect(recovery.departure(), "Relay fixture did not depart a real field");
+    KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
+    relays[0].stun = 0;
+    KDPlayerEffects.SpiderlingsWebbingEnemyBind(
+        KinkyDungeonPlayerEntity,
+        "glue",
+        { profile: "Spinner" },
+        undefined,
+        "Enemy",
+        undefined,
+        relays[0],
+    );
+    expect(recovery.strength() === 1, "Relay root did not establish a native carrier");
+    const beforeJoin = { x: KinkyDungeonPlayerEntity.x, y: KinkyDungeonPlayerEntity.y };
+    for (const actor of relays.slice(1)) {
+        actor.stun = 0;
+        recovery.handleEnemyTurn(actor, KinkyDungeonPlayerEntity, 0);
+        expect(!recovery.sourceIds().includes(actor.id), "Zero-time relay joined without payment");
+        recovery.handleEnemyTurn(actor, KinkyDungeonPlayerEntity, 2);
+        expect(recovery.sourceIds().includes(actor.id), "Connected remote Spinner failed paid relay admission");
+        expect(
+            KinkyDungeonPlayerEntity.x === beforeJoin.x && KinkyDungeonPlayerEntity.y === beforeJoin.y,
+            "Relay admission also pulled the player",
+        );
+    }
+    expect(recovery.strength() === 8, "A single physical root did not support eight relay sources");
+    restore(save());
+    expect(recovery.strength() === 8, "Native reload lost a connected relay chain");
+    const savedRelays = relays.map((actor) => enemy(actor.id));
+    const chain = structuredClone(recovery.state());
+    savedRelays[0].stun = 1;
+    recovery.audit();
+    expect(recovery.strength() === 0, "Disconnected remote relay cycle anchored itself");
+    rows.push({ mode: "remote-relay", sources: chain, joiningDidNotPull: true, rootLossPruned: true });
     KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();

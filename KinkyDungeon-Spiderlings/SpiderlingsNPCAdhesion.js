@@ -1,5 +1,4 @@
 "use strict";
-/* global KDGetBindEffectMult */
 
 // NPC adhesion is separate from KD binding. The enemy owns the saved silk ledger;
 // the map owns its clock, so a revisited floor does not age while it is away.
@@ -87,9 +86,17 @@
         return { id: -1, hp: 1, faction: value.sourceFaction, Enemy: { name: value.sourceName } };
     }
 
-    function hasSpiderHelplessness(target) {
-        if (!hasAttributedSilk(target) || typeof KDHelpless !== "function" || !KDHelpless(target)) return false;
-        const owned = Math.min(record(target).ownedSilk, Math.max(0, Number(target.boundLevel || 0)));
+    function hasSpiderHelplessness(target, reconcileState = true) {
+        if (reconcileState) reconcile(target);
+        const value = record(target),
+            actual = slime(target),
+            surviving = Math.min(
+                actual,
+                Math.max(0, Number(value?.ownedSilk || 0) - Math.max(0, Number(value?.lastSlime || 0) - actual)),
+            );
+        if (!(target?.hp > 0) || !(surviving > 0) || typeof KDHelpless !== "function" || !KDHelpless(target))
+            return false;
+        const owned = Math.min(surviving, Math.max(0, Number(target.boundLevel || 0)));
         const maxhp = target.Enemy?.maxhp;
         if (!(maxhp > 0) || typeof KDNPCStruggleThreshMult !== "function" || typeof KDGetBindEffectMult !== "function")
             return false;

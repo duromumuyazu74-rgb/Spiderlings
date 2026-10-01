@@ -6,6 +6,7 @@
         GROUP_RADIUS = 10,
         SHORTLIST_SIZE = 8,
         MAX_LINE_LENGTH = 5,
+        AMBUSH_WAIT_TURNS = 6,
         DIRECTIONS = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
@@ -249,6 +250,61 @@
         );
     }
 
+    function fieldStandbyCells(ai, group, snapshot, graph) {
+        const plan = ai.plans[group.planId];
+        if (!plan || ["invalid", "abandoned"].includes(plan.status) || plan.kind === "line") return [];
+        const field =
+                graph?.fields?.[
+                    (graph?.composites?.[plan.compositeId]?.layerIds || plan.fieldIds || [plan.fieldId]).at(-1)
+                ],
+            interiorCells = field?.interiorCells || plan.interiorCells || [plan.center],
+            gates = field?.gates || plan.gates || [{ cells: [field?.gateCell || plan.gate] }],
+            boundary = new Set(plan.cells || []),
+            interior = new Set(interiorCells.filter(Boolean).map(cellKey)),
+            otherFields = new Set(
+                Object.values(ai.plans)
+                    .filter((other) => other !== plan && !["invalid", "abandoned"].includes(other.status))
+                    .flatMap((other) => other.cells || []),
+            ),
+            byKey = new Map((snapshot?.cells || []).map((cell) => [cellKey(cell), cell])),
+            stations = new Map(),
+            mouths = new Set();
+        if (!snapshot) return [];
+        for (const gate of gates) {
+            const outside = new Map();
+            for (const cell of gate.cells.filter(Boolean))
+                for (const direction of DIRECTIONS.filter((entry) => !entry.x || !entry.y)) {
+                    const point = { x: cell.x + direction.x, y: cell.y + direction.y },
+                        key = cellKey(point),
+                        tile = byKey.get(key);
+                    if (tile?.floor && !tile.locked && !interior.has(key) && !boundary.has(key))
+                        outside.set(key, point);
+                }
+            if (outside.size === 1) mouths.add([...outside.keys()][0]);
+        }
+        // Reserve distinct waiting cells without detaching any field owners.
+        for (const gate of gates)
+            for (const cell of gate.cells.filter(Boolean))
+                for (let dy = -2; dy <= 2; dy++)
+                    for (let dx = -2; dx <= 2; dx++) {
+                        const point = { x: cell.x + dx, y: cell.y + dy },
+                            key = cellKey(point),
+                            tile = byKey.get(key);
+                        if (
+                            tile?.floor &&
+                            !tile.locked &&
+                            !tile.protected &&
+                            !boundary.has(key) &&
+                            !interior.has(key) &&
+                            !mouths.has(key) &&
+                            !otherFields.has(key)
+                        ) {
+                            stations.set(key, point);
+                        }
+                    }
+        return [...stations.values()];
+    }
+
     function mergeNearbyGroups(encounter, entities, distances, snapshot) {
         if (Object.hasOwn(snapshot, "candidateLines")) return;
         const ai = encounter.ai,
@@ -259,7 +315,8 @@
             },
             location = (group) => activePlan(group)?.center || byId.get(group.memberIds[0]),
             idle = (group) =>
-                !group.engagement && !group.memberIds.some((id) => sourceBusy(byId.get(id)) || byId.get(id)?.aware);
+                (!group.engagement || group.engagement.sharedOnly === true) &&
+                !group.memberIds.some((id) => sourceBusy(byId.get(id)) || byId.get(id)?.aware);
         const groups = Object.values(ai.groups).sort(
             (a, b) =>
                 Number(!!activePlan(b)) - Number(!!activePlan(a)) ||
@@ -275,7 +332,7 @@
                             group !== donor &&
                             ai.groups[group.id] &&
                             group.memberIds.length > 0 &&
-                            group.memberIds.length + donor.memberIds.length <= 8 &&
+                            (!donorPlan || !planHasPaidWork(encounter, donorPlan)) &&
                             groups.indexOf(group) < groups.indexOf(donor) &&
                             (!donorPlan || activePlan(group)?.kind === "passage") &&
                             (sameSource(byId.get(donor.memberIds[0]), group) || !api.HuntingGrounds?.activeState?.()),
@@ -321,11 +378,39 @@
             : entity.SpiderlingsNestParentID === undefined;
     }
 
+    function planHasPaidWork(encounter, plan) {
+        const graph = encounter?.topology,
+            fieldIds = new Set(plan?.fieldIds || [plan?.fieldId]);
+        return (
+            !!graph &&
+            (graph.actionLog?.some((entry) => fieldIds.has(entry.fieldId)) ||
+                graph.anchors?.some((anchor) => anchor.built && anchor.owners.some((id) => fieldIds.has(id))) ||
+                graph.links?.some(
+                    (link) => (link.prepared || link.builtCells.length) && link.owners.some((id) => fieldIds.has(id)),
+                ))
+        );
+    }
+
     function auditGroups(ai, entities, options = {}) {
         const byId = new Map(entities.map((entity) => [entity.id, entity])),
-            assigned = new Set();
+            assigned = new Set(),
+            claimed = new Set(Object.values(ai.groups).flatMap((group) => group.memberIds));
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             group.memberIds = group.memberIds.filter((id) => baseEligibility(byId.get(id), options));
+            if (!group.memberIds.length) {
+                const plan = ai.plans[group.planId],
+                    owners = [
+                        ...new Set(
+                            (plan?.fieldIds || [plan?.fieldId]).flatMap(
+                                (id) => options.topology?.fieldOwners?.[id] || [],
+                            ),
+                        ),
+                    ];
+                // Only saved field attribution can recover an empty crew. A
+                // nearby actor or an already assigned source is not evidence.
+                group.memberIds = owners.filter((id) => !claimed.has(id) && baseEligibility(byId.get(id), options));
+                for (const id of group.memberIds) claimed.add(id);
+            }
             for (const id of group.memberIds) assigned.add(id);
             for (const id of Object.keys(group.assignments || {}))
                 if (!group.memberIds.includes(Number(id)) && !group.memberIds.includes(id))
@@ -559,11 +644,25 @@
         return undefined;
     }
 
-    function analyzeEnclosureCandidates(snapshot, group, distances = routeDistances(snapshot), work, geometry) {
+    function analyzeEnclosureCandidates(
+        snapshot,
+        group,
+        distances = routeDistances(snapshot),
+        work,
+        geometry,
+        minimumRadius = 1,
+    ) {
         // A supplied line catalogue is an explicit line-only scenario (used by authored fixtures).
         if (Object.hasOwn(snapshot, "candidateLines")) return [];
         const origin = (group.members || group.memberPositions || [])[0],
+            observation = api.SpinnerAI.groupObservation?.(group),
+            focus = observation || origin,
             byKey = geometry?.byKey || new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+            stationary = new Set(
+                KDMapData.Entities.filter(
+                    (entity) => entity.hp > 0 && entity.Enemy?.immobile && !api.SpinnerNativeField.isOwnedProxy(entity),
+                ).map(cellKey),
+            ),
             occupied = new Set([
                 ...KDMapData.Entities.filter(
                     (entity) =>
@@ -580,19 +679,58 @@
                 geometry?.passable ||
                 new Set((snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             nests = snapshot.nests || [],
+            approach = observation ? routeOnSnapshot(snapshot, origin, observation) : [],
+            reserved = new Set(
+                Object.values(api.SpinnerNativeField.state()?.ai?.plans || {})
+                    .filter((plan) => plan.groupId !== group.id && !["invalid", "abandoned"].includes(plan.status))
+                    .flatMap((plan) => plan.cells || []),
+            ),
             candidates = [];
         if (!origin) return candidates;
         // Prefer nearby work, then search the connected map before abandoning enclosure construction.
         for (const nearby of [true, false]) {
             if (candidates.length) break;
             for (const center of snapshot.cells || []) {
-                if (distance(origin, center) <= 6 !== nearby) continue;
+                if (distance(focus, center) <= 6 !== nearby) continue;
+                if (observation && !nearby && !approach.some((cell) => distance(cell, center) <= 2)) continue;
                 if (work) {
                     work.candidateCells++;
                     work.candidatesExamined++;
                 }
                 if (!Number.isFinite(distances(origin, center))) continue;
-                const boundary = ringCells(center, 1),
+                const radius = [4, 3, 2, 1]
+                        .filter((size) => size >= minimumRadius)
+                        .find(
+                            (size) =>
+                                [
+                                    ...ringCells(center, size),
+                                    ...Array.from({ length: size - 1 }, (_, index) =>
+                                        ringCells(center, index + 1),
+                                    ).flat(),
+                                    center,
+                                ].every((cell) => {
+                                    const tile = byKey.get(cellKey(cell));
+                                    return (
+                                        tile?.floor &&
+                                        !stationary.has(cellKey(cell)) &&
+                                        !tile.locked &&
+                                        !tile.protected &&
+                                        !reserved.has(cellKey(cell)) &&
+                                        (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
+                                    );
+                                }) &&
+                                reachableGate(
+                                    snapshot,
+                                    center,
+                                    size,
+                                    work,
+                                    byKey,
+                                    passable,
+                                    geometry?.gateCache,
+                                    geometry?.neighbors,
+                                ),
+                        ),
+                    boundary = radius ? ringCells(center, radius) : [],
                     cells = [...boundary, center],
                     legal = cells.every((cell) => {
                         const tile = byKey.get(cellKey(cell));
@@ -603,11 +741,11 @@
                             (cellKey(cell) === cellKey(center) || !occupied.has(cellKey(cell)))
                         );
                     });
-                if (!legal) continue;
+                if (!radius || !legal) continue;
                 const gate = reachableGate(
                     snapshot,
                     center,
-                    1,
+                    radius,
                     work,
                     byKey,
                     passable,
@@ -622,22 +760,54 @@
                     routeHits = cells.filter((cell) => routeKeys.has(cellKey(cell))).length,
                     travelDistance = distances(origin, gate),
                     nestDistance = nest ? distance(center, nest) : 99,
-                    score = 300 + routeHits * 12 + Math.max(0, 12 - nestDistance * 2) - travelDistance * 2;
+                    score =
+                        300 +
+                        routeHits * 12 +
+                        Math.max(0, 12 - nestDistance * 2) -
+                        travelDistance * 2 -
+                        distance(focus, center) * 4;
                 if (!Number.isFinite(travelDistance)) continue;
+                const innerRadius = Math.min(radius, 2);
                 candidates.push({
                     id: `enclosure:${cellKey(center)}`,
                     type: "enclosure",
                     center: { x: center.x, y: center.y },
-                    anchors: rectangle(center, 1),
-                    gate,
-                    cells,
+                    anchors: rectangle(center, innerRadius),
+                    radius,
+                    area: (radius * 2 - 1) ** 2,
+                    gate: {
+                        x: center.x + Math.sign(gate.x - center.x) * innerRadius,
+                        y: center.y + Math.sign(gate.y - center.y) * innerRadius,
+                    },
+                    layers: Array.from({ length: radius - innerRadius + 1 }, (_, index) => {
+                        const size = index + innerRadius;
+                        return {
+                            vertices: rectangle(center, size),
+                            gate: {
+                                x: center.x + Math.sign(gate.x - center.x) * size,
+                                y: center.y + Math.sign(gate.y - center.y) * size,
+                            },
+                        };
+                    }),
+                    cells: [
+                        ...Array.from({ length: radius }, (_, index) => ringCells(center, index + 1)).flat(),
+                        center,
+                    ],
                     score,
                     travelDistance,
                     reasons: { route: routeHits, nest: nestDistance },
                 });
             }
         }
-        return candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+        return candidates.sort(compareSites);
+    }
+
+    function compareSites(a, b) {
+        return (
+            (b.area || b.interiorCells?.length || 1) - (a.area || a.interiorCells?.length || 1) ||
+            b.score - a.score ||
+            a.id.localeCompare(b.id)
+        );
     }
 
     function selectSavedPlan(ai, group, candidates) {
@@ -652,7 +822,14 @@
                 (candidate) =>
                     !invalid.has(candidate.id) && !candidate.cells.some((cell) => occupied.has(cellKey(cell))),
             ),
-            shortlist = eligible.slice(0, SHORTLIST_SIZE);
+            largestArea = Math.max(
+                0,
+                ...eligible.map((candidate) => candidate.area || candidate.interiorCells?.length || 1),
+            ),
+            shortlist = eligible
+                .filter((candidate) => (candidate.area || candidate.interiorCells?.length || 1) === largestArea)
+                .sort(compareSites)
+                .slice(0, SHORTLIST_SIZE);
         if (!shortlist.length) return undefined;
         const random = seededRandom(`${ai.mapSeed}:${ai.mapIdentity}:${group.id}:${group.selectionOrdinal}`),
             floorScore = shortlist[shortlist.length - 1].score,
@@ -679,7 +856,20 @@
                       compositeId: fieldId,
                       center: clone(selected.center),
                       ...(selected.gate ? { gate: clone(selected.gate) } : {}),
-                      fieldIds: [fieldId],
+                      fieldIds:
+                          selected.type === "enclosure"
+                              ? selected.layers.map((_, index) => (index ? `${fieldId}:ring:${index + 1}` : fieldId))
+                              : [fieldId],
+                  }
+                : {}),
+            ...(selected.type === "enclosure"
+                ? {
+                      constructionOrder: "outer-first",
+                      radius: selected.radius,
+                      layers: selected.layers.map((layer, index) => ({
+                          ...clone(layer),
+                          id: index ? `${fieldId}:ring:${index + 1}` : fieldId,
+                      })),
                   }
                 : {}),
             ...(selected.type === "passage"
@@ -699,6 +889,8 @@
             invalidReason: null,
         };
         group.planId = planId;
+        const observation = api.SpinnerAI.groupObservation?.(group);
+        if (observation) group.planningObservation = { ...clone(observation), turn: ai.coordinationTurn || 0 };
         return ai.plans[planId];
     }
 
@@ -831,8 +1023,13 @@
             approaches = routeDistances(snapshot, undefined, occupied, true);
         const candidates = api.SpinnerPassagePlanner.candidates(index, {
             routes,
+            preferLarge: true,
+            focus: api.SpinnerAI.groupObservation?.(group) || members[0],
             maxCandidates: SHORTLIST_SIZE,
             blockedKeys: [...occupied],
+            reachableKeys: index.nodes
+                .filter((cell) => members.every((member) => Number.isFinite(approaches(member, cell))))
+                .map(cellKey),
         })
             .filter(
                 (candidate) =>
@@ -853,12 +1050,20 @@
                         ),
                     ),
                 );
-                return { ...candidate, travelDistance, score: candidate.score - travelDistance * 2 };
+                const focus = api.SpinnerAI.groupObservation?.(group) || members[0];
+                return {
+                    ...candidate,
+                    area: candidate.interiorCells.length,
+                    travelDistance,
+                    focusDistance: distance(focus, candidate.center),
+                    score: candidate.score - travelDistance * 2 - distance(focus, candidate.center) * 4,
+                };
             })
             .filter((candidate) => Number.isFinite(candidate.travelDistance))
-            .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+            .sort(compareSites);
         ai.passageMetrics = { ...index.metrics };
-        return candidates;
+        const local = candidates.filter((candidate) => candidate.focusDistance <= 6);
+        return local.length ? local : candidates;
     }
 
     function activatePlan(plan, group) {
@@ -880,7 +1085,8 @@
                 compositeId: plan.compositeId,
                 groupId: group.id,
                 owners: group.memberIds,
-                layers: [{ id: plan.fieldId, vertices: plan.anchors, gate: plan.gate }],
+                layers: plan.layers || [{ id: plan.fieldId, vertices: plan.anchors, gate: plan.gate }],
+                constructionOrder: plan.constructionOrder,
                 autoSeal: false,
                 scenario: "autonomous-enclosure",
             });
@@ -899,6 +1105,81 @@
             delete group.noPlanSignature;
         }
         return result;
+    }
+
+    function initializeMapgenField(options = {}) {
+        const previous = api.SpinnerNativeField.state();
+        // This is called once by successful new-map objective placement. A
+        // revisit or previously invested field must never receive another body.
+        if (previous?.ai?.mapgenField || Object.keys(previous?.topology?.composites || {}).length)
+            return { status: "skipped", reason: "existing-field" };
+        const nativeSnapshot = nativeMapSnapshot(),
+            snapshot = { ...nativeSnapshot, cells: nativeSnapshot.cells.map((cell) => ({ ...cell })) },
+            protectedPoints = new Set((options.protectedPoints || []).map(cellKey));
+        for (const cell of snapshot.cells) if (protectedPoints.has(cellKey(cell))) cell.protected = true;
+        const encounter = api.SpinnerNativeField.ensureMap({ scenario: "mapgen-enclosure" }),
+            ai = ensureAI(encounter, { mapSeed: mapSeed(), mapIdentity: mapIdentity() }),
+            distances = routeDistances(snapshot);
+        encounter.autonomous = true;
+        auditGroups(ai, KDMapData.Entities, { mapSnapshot: snapshot, routeDistances: distances });
+        const choices = Object.values(ai.groups)
+            .filter((group) => !group.planId && !group.engagement && group.memberIds.length >= 2)
+            .flatMap((group) => {
+                const members = group.memberIds
+                    .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                    .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
+                if (members.length < 2) return [];
+                return analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, undefined, undefined, 4)
+                    .filter((candidate) => candidate.radius === 4)
+                    .map((candidate) => ({
+                        group,
+                        candidate,
+                        preferred: nearestDistance(candidate.center, options.preferredSites || []),
+                    }));
+            })
+            .sort(
+                (left, right) =>
+                    left.preferred - right.preferred ||
+                    left.candidate.travelDistance - right.candidate.travelDistance ||
+                    compareSites(left.candidate, right.candidate) ||
+                    left.group.id.localeCompare(right.group.id),
+            );
+        if (!choices.length) {
+            ai.mapgenField = { status: "skipped", reason: "no-legal-staffed-site" };
+            return clone(ai.mapgenField);
+        }
+        const { group, candidate } = choices[0],
+            plan = selectSavedPlan(ai, group, [candidate]),
+            added = api.SpinnerNativeField.addEnclosure({
+                compositeId: plan.compositeId,
+                groupId: group.id,
+                owners: group.memberIds,
+                layers: plan.layers,
+                constructionOrder: "outer-first",
+                autoSeal: false,
+                prebuiltOuter: true,
+                scenario: "mapgen-enclosure",
+            });
+        if (!added?.added) {
+            plan.status = "invalid";
+            plan.invalidReason = added?.reason || "creation-failed";
+            group.planId = null;
+            ai.mapgenField = { status: "skipped", reason: plan.invalidReason };
+        } else {
+            encounter.autonomous = true;
+            plan.provenance = "mapgen";
+            plan.status = "preparing";
+            ai.mapgenField = {
+                status: "placed",
+                compositeId: plan.compositeId,
+                groupId: group.id,
+                center: clone(plan.center),
+                radius: 4,
+            };
+        }
+        // The caller's extra mapgen reservations are not persistent terrain.
+        mapCache = undefined;
+        return clone(ai.mapgenField);
     }
 
     function taskCell(field, task) {
@@ -1086,6 +1367,9 @@
                     retainedWork = previous?.workCell,
                     canRetain =
                         retainedTask &&
+                        (plan?.constructionOrder !== "outer-first" ||
+                            api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...reservedTasks])
+                                ?.fieldId === previous.fieldId) &&
                         retainedWork &&
                         !reservedTasks.has(assignmentKey(field ? retainedTask : previous)) &&
                         !reservedWork.has(cellKey(retainedWork)) &&
@@ -1162,16 +1446,19 @@
                 field = encounter.topology?.fields?.[plan?.fieldId];
             if (plan?.kind !== "passage" || !field || ["invalid", "abandoned"].includes(plan.status)) continue;
             const members = group.memberIds.map((id) => KDMapData.Entities.find((entity) => entity.id === id)),
-                interior = new Set(field.interiorCells.map(cellKey)),
-                gates = new Set(field.gates.flatMap((gate) => gate.cells.map(cellKey))),
                 reserved = new Set(Object.values(group.assignments).map((action) => cellKey(action.workCell))),
-                known = group.engagement?.lastKnown,
+                known = groupObservation(group),
                 supporting =
                     known &&
                     known.age < 4 &&
                     field.phase === "sealed" &&
                     api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, known),
-                points = new Map(),
+                points = new Map(
+                    fieldStandbyCells(encounter.ai, group, snapshot, encounter.topology).map((cell) => [
+                        cellKey(cell),
+                        cell,
+                    ]),
+                ),
                 coverage = new Map(field.gates.map((gate) => [gate.id, 0])),
                 nearestGate = (point) =>
                     [...field.gates].sort(
@@ -1179,8 +1466,49 @@
                             nearestDistance(point, a.cells) - nearestDistance(point, b.cells) ||
                             a.id.localeCompare(b.id),
                     )[0];
-            if (field.phase === "ready" && group.rallyPhase !== "ready") group.rallyGates = {};
+            const rallyMembers = members.filter((member) => eligibleSpinner(member) && !sourceBusy(member)),
+                memberSignature = rallyMembers
+                    .map((member) => String(member.id))
+                    .sort()
+                    .join(","),
+                staffingChanged = group.rallyMembers !== undefined && group.rallyMembers !== memberSignature;
+            if (field.phase === "ready" && (group.rallyPhase !== "ready" || staffingChanged)) group.rallyGates = {};
+            if (field.phase === "ready" && group.rallyPhase === "ready" && !staffingChanged) {
+                const blocked = new Set(
+                    [
+                        ...KDMapData.Entities.filter(
+                            (actor) => actor.hp > 0 && !api.SpinnerNativeField.isOwnedProxy(actor),
+                        ),
+                        KinkyDungeonPlayerEntity,
+                    ]
+                        .filter(Boolean)
+                        .map(cellKey),
+                );
+                const blockedPartition = rallyMembers.some((member) => {
+                    const gateId = group.rallyGates?.[member.id];
+                    if (!gateId || (points.has(cellKey(member)) && nearestGate(member).id === gateId)) return false;
+                    const stationedBlocker = rallyMembers.some(
+                        (other) =>
+                            other !== member &&
+                            distance(member, other) <= 1 &&
+                            points.has(cellKey(other)) &&
+                            nearestGate(other).id === group.rallyGates?.[other.id],
+                    );
+                    if (!stationedBlocker) return false;
+                    const occupied = new Set(blocked);
+                    occupied.delete(cellKey(member));
+                    const destinations = [...points.values()].filter((point) => nearestGate(point).id === gateId);
+                    return (
+                        destinations.length > 0 &&
+                        destinations.every((point) => !routeOnSnapshot(snapshot, member, point, occupied).length)
+                    );
+                });
+                // Repartition only when a coworker already holding its mouth
+                // makes the saved assignment unreachable through live occupancy.
+                if (blockedPartition) group.rallyGates = {};
+            }
             group.rallyPhase = field.phase;
+            group.rallyMembers = memberSignature;
             group.rallyGates ||= {};
             for (const id of Object.keys(group.rallyGates))
                 if (!members.some((member) => String(member?.id) === id && eligibleSpinner(member)))
@@ -1194,12 +1522,29 @@
                             Math.min(...members.filter(Boolean).map((member) => distances(a.cells[0], member))) ||
                         a.id.localeCompare(b.id),
                 );
-            // Send the front worker through first. Otherwise two workers arriving
-            // from one side can park across each other's one-cell approach.
+            // Include the workers still needed at other mouths. Picking the
+            // closest core worker first can send a remote colleague through its
+            // completed station. Ties still send the front worker through first.
             for (const gate of gateOrder) {
                 if (Object.values(group.rallyGates).includes(gate.id) || !unassigned.length) continue;
+                const otherGates = gateOrder
+                        .filter((other) => other !== gate && !Object.values(group.rallyGates).includes(other.id))
+                        .slice(0, unassigned.length - 1),
+                    coverageDistance = (member) =>
+                        distances(gate.cells[0], member) +
+                        otherGates.reduce(
+                            (total, other) =>
+                                total +
+                                Math.min(
+                                    ...unassigned
+                                        .filter((candidate) => candidate !== member)
+                                        .map((candidate) => distances(other.cells[0], candidate)),
+                                ),
+                            0,
+                        );
                 unassigned.sort(
                     (a, b) =>
+                        coverageDistance(a) - coverageDistance(b) ||
                         distances(gate.cells[0], a) - distances(gate.cells[0], b) ||
                         String(a.id).localeCompare(String(b.id)),
                 );
@@ -1209,16 +1554,6 @@
                 const gate = nearestGate(action.workCell);
                 coverage.set(gate.id, coverage.get(gate.id) + 1);
             }
-            for (const gate of field.gates)
-                for (const cell of gate.cells)
-                    for (let dy = -2; dy <= 2; dy++)
-                        for (let dx = -2; dx <= 2; dx++) {
-                            const point = { x: cell.x + dx, y: cell.y + dy },
-                                key = cellKey(point),
-                                tile = byKey.get(key);
-                            if (tile?.floor && !tile.locked && !tile.protected && !interior.has(key) && !gates.has(key))
-                                points.set(key, point);
-                        }
             if (supporting)
                 for (const point of [...field.interiorCells, ...field.gates.flatMap((gate) => gate.cells)]) {
                     const tile = byKey.get(cellKey(point));
@@ -1287,7 +1622,7 @@
     function adjustPassageApproach(encounter, group, snapshot, distances) {
         const plan = encounter.ai.plans[group.planId],
             field = encounter.topology?.fields?.[plan?.fieldId],
-            known = group.engagement?.lastKnown,
+            known = groupObservation(group),
             turn = encounter.ai.coordinationTurn || 0;
         if (
             plan?.kind !== "passage" ||
@@ -1407,12 +1742,14 @@
         group.planId = null;
         group.selectionOrdinal++;
         const members = group.memberIds
-                .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
-                .filter((entity) => eligibleSpinner(entity)),
-            passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
-            enclosures = passages.length
-                ? passages
-                : analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work, enclosureGeometry?.()),
+            .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+            .filter((entity) => eligibleSpinner(entity));
+        if (!members.length) return;
+        const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
+            enclosures = [
+                ...passages,
+                ...analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work, enclosureGeometry?.()),
+            ].sort(compareSites),
             candidates =
                 enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
                     ? enclosures
@@ -1433,14 +1770,12 @@
             composite = graph?.composites?.[plan.compositeId],
             innerId = composite?.layerIds.at(-1),
             inner = graph?.fields?.[innerId];
-        if (
-            !inner ||
-            composite.layerIds.length >= 3 ||
-            composite.closureArmed ||
-            (!api.SpinnerTopology.isLayerClosed(graph, innerId) && (composite.autoSeal || inner.phase !== "ready"))
-        )
-            return;
-        const radius = composite.layerIds.length + 1,
+        if (!composite || !plan.center || !plan.gate) return;
+        composite.constructionOrder = "outer-first";
+        plan.constructionOrder = "outer-first";
+        if (!inner || composite.layerIds.length >= 3 || composite.closureArmed) return;
+        const outer = graph.fields[composite.layerIds.at(-1)],
+            radius = (outer.bounds.right - outer.bounds.left) / 2 + 1,
             center = plan.center,
             boundary = ringCells(center, radius),
             byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
@@ -1490,6 +1825,19 @@
             plan.expansionBlockedSignature = signature;
             return;
         }
+        const exterior = { x: gate.x + Math.sign(gate.x - center.x), y: gate.y + Math.sign(gate.y - center.y) },
+            exteriorTile = byKey.get(cellKey(exterior)),
+            blockedBoundary = new Set(boundary.map(cellKey));
+        if (
+            !exteriorTile?.floor ||
+            exteriorTile.locked ||
+            [snapshot.entrances?.[0], snapshot.exits?.[0]]
+                .filter(Boolean)
+                .some((origin) => !routeOnSnapshot(snapshot, origin, exterior, blockedBoundary).length)
+        ) {
+            plan.expansionBlockedSignature = signature;
+            return;
+        }
         const fieldId = `${plan.fieldId}:ring:${radius}`,
             added = api.SpinnerNativeField.addEnclosureLayer({
                 compositeId: plan.compositeId,
@@ -1501,9 +1849,11 @@
                 },
             });
         if (added.added) {
+            plan.fieldIds ||= [...composite.layerIds.slice(0, -1)];
             plan.fieldIds.push(fieldId);
             plan.cells.push(...boundary.map(cellKey));
             delete plan.expansionBlockedSignature;
+            expandPlan(encounter, plan, group, snapshot, work);
         } else plan.expansionBlockedSignature = signature;
     }
 
@@ -1613,7 +1963,13 @@
             ai.candidateRevision++;
         }
         ai.geometrySignature = signature;
-        auditGroups(ai, entities, { ...input, mapSnapshot: snapshot, routeDistances: distances });
+        auditGroups(ai, entities, {
+            ...input,
+            mapSnapshot: snapshot,
+            routeDistances: distances,
+            topology: encounter.topology,
+        });
+        refreshObservations(encounter);
         mergeNearbyGroups(encounter, entities, distances, snapshot);
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
@@ -1633,22 +1989,51 @@
                     work,
                     currentEnclosureGeometry,
                 );
+            const observedPlan = ai.plans[group.planId],
+                observation = api.SpinnerAI.groupObservation?.(group),
+                previousObservation = group.planningObservation,
+                observationChanged =
+                    observation &&
+                    (!previousObservation ||
+                        distance(observation, previousObservation) >= 4 ||
+                        observation.dx * previousObservation.dx + observation.dy * previousObservation.dy < 0 ||
+                        JSON.stringify(observation.target) !== JSON.stringify(previousObservation.target));
+            if (
+                observedPlan &&
+                observationChanged &&
+                !planHasPaidWork(encounter, observedPlan) &&
+                (ai.coordinationTurn || 0) - (previousObservation?.turn ?? -4) >= 4
+            ) {
+                // A fresh native report may redirect an unpaid approach. Paid
+                // bodies remain owned maintenance sites regardless of prey movement.
+                observedPlan.status = "abandoned";
+                observedPlan.invalidReason = "observed-approach";
+                for (const fieldId of observedPlan.fieldIds || [observedPlan.fieldId])
+                    api.SpinnerNativeField.retireField(fieldId);
+                group.planId = null;
+                group.assignments = {};
+                group.selectionOrdinal++;
+                group.planningObservation = { ...clone(observation), turn: ai.coordinationTurn || 0 };
+                delete group.noPlanSignature;
+            }
             if (group.planId) continue;
             const members = group.memberIds
                 .map((id) => entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity, input));
+            if (!members.length) continue;
             const noPlanSignature = planningSignature(ai, members);
             if (group.noPlanSignature === noPlanSignature) continue;
             const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
-                enclosures = passages.length
-                    ? passages
-                    : analyzeEnclosureCandidates(
-                          snapshot,
-                          { ...group, members },
-                          distances,
-                          work,
-                          currentEnclosureGeometry(),
-                      ),
+                enclosures = [
+                    ...passages,
+                    ...analyzeEnclosureCandidates(
+                        snapshot,
+                        { ...group, members },
+                        distances,
+                        work,
+                        currentEnclosureGeometry(),
+                    ),
+                ].sort(compareSites),
                 candidates =
                     enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
                         ? enclosures
@@ -1765,13 +2150,33 @@
         return result.filter(Boolean);
     }
 
+    function needsSoleSharedBuilder(encounter, group) {
+        if (group.engagement?.sharedOnly !== true) return false;
+        const plan = encounter.ai.plans[group.planId],
+            composite = encounter.topology?.composites?.[plan?.compositeId];
+        if (
+            plan?.kind !== "enclosure" ||
+            !composite?.layerIds.some((id) => encounter.topology.fields[id]?.phase === "preparing")
+        )
+            return false;
+        // Remote knowledge alone must not take the last available builder away
+        // from an unfinished body. Personal contact and recovery keep priority.
+        return (
+            group.memberIds.filter((id) => {
+                const member = KDMapData.Entities.find((entity) => String(entity.id) === String(id));
+                return eligibleSpinner(member) && !sourceBusy(member);
+            }).length === 1
+        );
+    }
+
     function selectLure(encounter, group, preferredIds = []) {
+        if (needsSoleSharedBuilder(encounter, group)) return undefined;
         const waypoint = planWaypoint(encounter, group),
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             preferred = new Set(preferredIds.map(String));
         let candidates = group.memberIds
             .map((id) => KDMapData.Entities.find((entity) => String(entity.id) === String(id)))
-            .filter((entity) => eligibleSpinner(entity));
+            .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
         const clear = candidates.filter((entity) => !required.has(cellKey(entity)));
         if (clear.length) candidates = clear;
         return candidates.sort(
@@ -1786,6 +2191,215 @@
         delete group.engagement;
     }
 
+    function playerObservation(encounter = api.SpinnerNativeField.state()) {
+        const report = encounter?.ai?.playerObservation;
+        return report?.source === "native" &&
+            report.age >= 0 &&
+            report.age < 4 &&
+            sameTarget(report.target, KinkyDungeonPlayerEntity)
+            ? clone(report)
+            : undefined;
+    }
+
+    function sharePlayerObservation(encounter, enemy, target, aiData, delta) {
+        if (
+            !(delta > 0) ||
+            !encounter?.ai ||
+            target !== KinkyDungeonPlayerEntity ||
+            !eligibleObserver(enemy) ||
+            !aiData.canSensePlayer ||
+            aiData.hostile !== true ||
+            !(aiData.recognized === true || recognizedPlayer(enemy, target))
+        )
+            return false;
+        const previous = playerObservation(encounter),
+            changed = !previous || previous.x !== target.x || previous.y !== target.y,
+            report = {
+                x: target.x,
+                y: target.y,
+                dx: changed ? (previous ? Math.sign(target.x - previous.x) : 0) : previous.dx,
+                dy: changed ? (previous ? Math.sign(target.y - previous.y) : 0) : previous.dy,
+                age: 0,
+                source: "native",
+                target: targetReference(target),
+                reporterId: enemy.id,
+            };
+        encounter.ai.playerObservation = report;
+        const visual = !!(
+            aiData.canSeePlayer ||
+            aiData.canSeePlayerChase ||
+            aiData.canSeePlayerMedium ||
+            aiData.canShootPlayer
+        );
+        for (const group of Object.values(encounter.ai.groups || {})) {
+            if (!targetIsHostile(group, target)) continue;
+            if (changed) delete group.noPlanSignature;
+            // Knowledge does not replace an ongoing native NPC engagement.
+            if (group.engagement && !sameTarget(group.engagement.target, target)) continue;
+            if (!group.engagement) {
+                group.engagement = {
+                    target: targetReference(target),
+                    sharedOnly: true,
+                    mode: "lure",
+                    noSightTurns: 0,
+                    lureNoContactTurns: 0,
+                    compositeId: encounter.ai.plans[group.planId]?.compositeId || null,
+                };
+                group.engagement.lureId = selectLure(encounter, group, [enemy.id])?.id;
+            }
+            const known = clone(report);
+            delete known.target;
+            delete known.reporterId;
+            group.engagement.lastKnown = known;
+            const observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() };
+            observations.sensed.add(`shared:${enemy.id}`);
+            // A remote visual report advances group pressure, never the lure's
+            // personal sight or native awareness/detection accumulator.
+            if (visual) observations.sight.add(`shared:${enemy.id}`);
+            observedGroups.set(group.id, observations);
+            if (visual && group.engagement.mode !== "pressure") group.engagement.mode = "lure";
+        }
+        return true;
+    }
+
+    function reportPlayerContact(enemy, target, aiData, delta) {
+        return sharePlayerObservation(api.SpinnerNativeField.state(), enemy, target, aiData, delta);
+    }
+
+    function eligibleObserver(enemy) {
+        return (
+            enemy?.hp > 0 &&
+            ["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance", "MageSpiderlings"].includes(
+                enemy.Enemy?.name,
+            ) &&
+            KDHostile(enemy) &&
+            !KDAllied(enemy) &&
+            !KDIsInParty(enemy) &&
+            !KDIsImprisoned(enemy) &&
+            !KinkyDungeonIsDisabled(enemy) &&
+            !KDHelpless(enemy) &&
+            ![enemy.stun, enemy.freeze, enemy.channel, enemy.teleporting].some((value) => value > 0) &&
+            !globalThis.KDIsDistracted?.(enemy)
+        );
+    }
+
+    function recognizedPlayer(enemy, target) {
+        // Awareness can originate from NPC combat. Player vp is the native
+        // target-specific recognition gate and must not inherit that awareness.
+        return (
+            typeof globalThis.KinkyDungeonTrackSneak === "function" &&
+            globalThis.KinkyDungeonTrackSneak({ ...enemy }, 0, target) >= 0.5
+        );
+    }
+
+    function groupObservation(group) {
+        const shared = playerObservation();
+        if (
+            shared &&
+            targetIsHostile(group, KinkyDungeonPlayerEntity) &&
+            (!group.engagement || sameTarget(group.engagement.target, KinkyDungeonPlayerEntity))
+        ) {
+            const observation = clone(shared);
+            delete observation.reporterId;
+            return observation;
+        }
+        const known = group.engagement?.lastKnown;
+        return known?.source === "native" && known.age < 4
+            ? { ...clone(known), target: clone(group.engagement.target) }
+            : undefined;
+    }
+
+    function recognizedContact(enemy, target) {
+        if (target === KinkyDungeonPlayerEntity) return recognizedPlayer(enemy, target);
+        return !!(
+            enemy.aware ||
+            (typeof globalThis.KinkyDungeonTrackSneak === "function" &&
+                globalThis.KinkyDungeonTrackSneak({ ...enemy }, 0, target) >= 0.5)
+        );
+    }
+
+    function nativeContact(enemy) {
+        if (
+            !eligibleObserver(enemy) ||
+            typeof globalThis.KinkyDungeonNearestPlayer !== "function" ||
+            typeof globalThis.KinkyDungeonTrackSneak !== "function"
+        )
+            return undefined;
+        // Native acquisition and TrackSneak(delta 0) may initialize awareness or
+        // vp. Sample a detached observer so planning adds no detection progress.
+        const observer = { ...enemy },
+            target = globalThis.KinkyDungeonNearestPlayer(observer, false, true);
+        if (!targetIsLiving(target) || !KDHostile(enemy, target)) return undefined;
+        const aiData = nativeSenses(enemy, target);
+        if (!aiData || !recognizedContact(enemy, target)) return undefined;
+        return { target, aiData: { ...aiData, recognized: true } };
+    }
+
+    function nativeSenses(enemy, target) {
+        let radius = enemy.Enemy.visionRadius ? KDEnemyVisionRadius(enemy) : 0;
+        if (enemy.Enemy.visionRadius && enemy.lifetime > 0) radius += enemy.Enemy.visionSummoned || 0;
+        radius = Math.max(1.5, radius + KinkyDungeonGetBuffedStat(enemy.buffs, "Vision"));
+        if (KinkyDungeonStatsChoice.get("KillSquad"))
+            radius = Math.max(radius * 1.2, (enemy.Enemy.blindSight || 0) + 3.5);
+        if (enemy.blind && !enemy.aware) radius = 1.5;
+        const distance = Math.hypot(enemy.x - target.x, enemy.y - target.y),
+            visible = KinkyDungeonCheckLOS(enemy, target, distance, radius, true, true),
+            heard = globalThis.KDCanHearEnemy?.(enemy, target, 1) === true;
+        if (!visible && !heard) return undefined;
+        return {
+            hostile: KDHostile(enemy, target),
+            canSensePlayer: true,
+            canSeePlayer: visible && KinkyDungeonCheckLOS(enemy, target, distance, radius, false, false),
+        };
+    }
+
+    function recoveryTarget(enemy, target, delta) {
+        // Shared history guides approach; only this actor's real native sensory
+        // range can route an eligible player duty away from an NPC target.
+        if (
+            delta > 0 &&
+            eligibleSpinner(enemy) &&
+            eligibleObserver(enemy) &&
+            playerObservation() &&
+            api.SpinnerRecovery?.wantsPursuit?.(enemy, KinkyDungeonPlayerEntity) &&
+            nativeSenses(enemy, KinkyDungeonPlayerEntity)
+        )
+            return KinkyDungeonPlayerEntity;
+        return target;
+    }
+
+    function refreshObservations(encounter = api.SpinnerNativeField.state(), delta = 1) {
+        if (!(delta > 0) || !encounter?.ai) return;
+        const byId = new Map(KDMapData.Entities.map((entity) => [String(entity.id), entity])),
+            contacts = new Map();
+        for (const enemy of [...KDMapData.Entities].sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const contact = nativeContact(enemy);
+            if (contact) contacts.set(String(enemy.id), contact);
+            if (contact?.target === KinkyDungeonPlayerEntity)
+                sharePlayerObservation(encounter, enemy, contact.target, contact.aiData, delta);
+        }
+        for (const group of Object.values(encounter.ai.groups)) {
+            // Older saves did not distinguish a broadcast from personal contact.
+            // Classify them only on a positive turn using this native sample.
+            if (
+                group.engagement?.sharedOnly === undefined &&
+                sameTarget(group.engagement?.target, KinkyDungeonPlayerEntity)
+            )
+                group.engagement.sharedOnly = !group.memberIds.some((id) => {
+                    const member = byId.get(String(id));
+                    return !sourceBusy(member) && contacts.get(String(id))?.target === KinkyDungeonPlayerEntity;
+                });
+            auditEngagement(encounter, group);
+            const members = [...group.memberIds].sort((left, right) => String(left).localeCompare(String(right)));
+            for (const id of members) {
+                const enemy = byId.get(String(id));
+                if (!enemy || sourceBusy(enemy)) continue;
+                const contact = contacts.get(String(id));
+                if (contact) observeTarget(encounter, group, enemy, contact.target, contact.aiData);
+            }
+        }
+    }
+
     function auditEngagement(encounter, group) {
         const engagement = group.engagement;
         if (!engagement) return;
@@ -1796,7 +2410,12 @@
         }
         if (engagement.lastKnown?.age >= 4 || engagement.lastKnown?.source !== "native") delete engagement.lastKnown;
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
-        if (!eligibleSpinner(lure) || !group.memberIds.some((id) => String(id) === String(lure?.id))) {
+        if (needsSoleSharedBuilder(encounter, group)) delete engagement.lureId;
+        else if (
+            !eligibleSpinner(lure) ||
+            sourceBusy(lure) ||
+            !group.memberIds.some((id) => String(id) === String(lure?.id))
+        ) {
             const replacement = selectLure(encounter, group);
             if (replacement) engagement.lureId = replacement.id;
             else delete engagement.lureId;
@@ -1806,7 +2425,13 @@
     }
 
     function observeTarget(encounter, group, enemy, target, aiData) {
-        const sensed = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target);
+        if (target === KinkyDungeonPlayerEntity)
+            sharePlayerObservation(encounter, enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta ?? 1);
+        const sensed =
+            aiData.canSensePlayer &&
+            aiData.hostile === true &&
+            targetIsLiving(target) &&
+            (aiData.recognized === true || recognizedContact(enemy, target));
         if (!sensed) return false;
         if (!group.engagement) {
             const reference = targetReference(target);
@@ -1832,10 +2457,11 @@
             ),
             observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() },
             firstObservation = observations.sensed.size === 0;
+        engagement.sharedOnly = false;
         observations.sensed.add(String(enemy.id));
         if (actualSight) observations.sight.add(String(enemy.id));
         observedGroups.set(group.id, observations);
-        if (firstObservation)
+        if (firstObservation || previous?.x !== target.x || previous?.y !== target.y)
             engagement.lastKnown = {
                 x: target.x,
                 y: target.y,
@@ -1846,7 +2472,7 @@
             };
         if (actualSight) {
             engagement.noSightTurns = 0;
-            engagement.mode = "lure";
+            if (engagement.mode !== "pressure") engagement.mode = "lure";
             if (String(engagement.lureId) === String(enemy.id)) engagement.lureNoContactTurns = 0;
         }
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
@@ -1976,11 +2602,12 @@
 
     function moveLure(enemy, group, target, actualSight) {
         const encounter = api.SpinnerNativeField.state(),
-            engagement = group.engagement,
             waypoint = planWaypoint(encounter, group),
-            known = engagement.lastKnown,
+            known = groupObservation(group),
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             mustYield = required.has(cellKey(enemy)),
+            path = waypoint ? nativePath(enemy, waypoint) : [],
+            next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y),
             candidates = [
                 { x: enemy.x, y: enemy.y },
                 ...DIRECTIONS.map((direction) => ({
@@ -2003,12 +2630,16 @@
                     required: required.has(cellKey(cell)),
                     melee: known ? distance(cell, known) <= 1 : false,
                     visible: !actualSight || cellVisibleFrom(enemy, cell, target),
+                    followsRoute: !!next && cellKey(cell) === cellKey(next),
                     route: waypoint ? distance(cell, waypoint) : 0,
                 }))
                 .sort(
                     (a, b) =>
                         Number(a.required) - Number(b.required) ||
                         Number(a.melee) - Number(b.melee) ||
+                        // A legal path can temporarily leave sight or increase
+                        // geometric distance while going around a real wall.
+                        Number(b.followsRoute) - Number(a.followsRoute) ||
                         Number(b.visible) - Number(a.visible) ||
                         a.route - b.route ||
                         Number(b.staying) - Number(a.staying) ||
@@ -2031,6 +2662,30 @@
         return mustYield ? "yield" : "lure-move";
     }
 
+    function pursueObservation(enemy, group, target, perceivedThreat, observation) {
+        const known = observation || groupObservation(group),
+            destination = perceivedThreat ? target : known;
+        if (!destination) return decide(enemy, group, "delegate-native", false);
+        if (distance(enemy, destination) <= 1)
+            return decide(enemy, group, perceivedThreat ? "native-defense" : "delegate-native", perceivedThreat);
+        const path = nativePath(enemy, destination),
+            next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+        if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
+            record(group, "wait");
+            return decide(enemy, group, "pursuit-wait", true);
+        }
+        const moved = KinkyDungeonEnemyTryMove(
+            enemy,
+            { x: next.x - enemy.x, y: next.y - enemy.y },
+            enemy.SpiderlingsSpinnerRuntimeDelta || 1,
+            next.x,
+            next.y,
+            false,
+        );
+        record(group, moved ? "travel" : "wait");
+        return decide(enemy, group, "pursuit-move", true);
+    }
+
     function handleBeforeMove(enemy, target, aiData = {}) {
         // Native load refreshes run the enemy loop with delta 0. They must not
         // spend saved credit, move builders or commit another work decision.
@@ -2040,6 +2695,32 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
+        const playerDuty = api.SpinnerRecovery?.wantsPursuit?.(enemy, KinkyDungeonPlayerEntity),
+            recoveryTarget = playerDuty ? KinkyDungeonPlayerEntity : target,
+            recoveryKnown = playerDuty
+                ? playerObservation(encounter) || groupObservation(group)
+                : groupObservation(group);
+        const perceivedThreat =
+                enemy.aware &&
+                aiData.canSensePlayer &&
+                aiData.hostile === true &&
+                targetIsLiving(target) &&
+                recognizedContact(enemy, target),
+            recentObservation = recoveryKnown && sameTarget(recoveryKnown.target, recoveryTarget),
+            recoveryPursuit = playerDuty || api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
+        // Departure creates a duty before a new melee hit can attach a recovery
+        // strand. Construction and lure work must not suppress that first hit.
+        if (recoveryPursuit) {
+            if (perceivedThreat) {
+                if (group.engagement && !sameTarget(group.engagement.target, target)) clearEngagement(group);
+                observeTarget(encounter, group, enemy, target, aiData);
+            }
+            const perceivedRecovery = recoveryTarget === target && perceivedThreat;
+            if (perceivedRecovery || recentObservation)
+                return pursueObservation(enemy, group, recoveryTarget, perceivedRecovery, recoveryKnown);
+            auditEngagement(encounter, group);
+            return decide(enemy, group, "delegate-native", false);
+        }
         const plan = state.plans[group.planId];
         if (!plan || ["invalid", "abandoned"].includes(plan.status) || !planWaypoint(encounter, group)) {
             clearEngagement(group);
@@ -2050,7 +2731,6 @@
         else auditEngagement(encounter, group);
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
         const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData),
-            perceivedThreat = enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
             actualSight = !!(
                 aiData.canSeePlayer ||
                 aiData.canSeePlayerChase ||
@@ -2064,7 +2744,13 @@
             ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(assignment?.type)
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        const known = group.engagement?.lastKnown;
+        if (
+            group.engagement?.mode === "pressure" &&
+            String(group.engagement.lureId) === String(enemy.id) &&
+            !(observed && api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target))
+        )
+            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
+        const known = groupObservation(group);
         if (
             assignment?.type === "rally" &&
             plan.kind === "passage" &&
@@ -2082,9 +2768,17 @@
             plan.compositeId &&
             api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target)
         )
-            return decide(enemy, group, "delegate-native", false);
+            // Native stationed/investigate commands can pull the lure back to
+            // its old mouth. Reach physical melee range through the legal path
+            // before returning the attack phase to the native AI.
+            return distance(enemy, target) > 1
+                ? pursueObservation(enemy, group, target, perceivedThreat)
+                : decide(enemy, group, "delegate-native", false);
         if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
-            if (group.engagement.mode === "pursuit") return decide(enemy, group, "delegate-native", false);
+            if (group.engagement.mode === "pursuit")
+                return groupObservation(group)
+                    ? pursueObservation(enemy, group, target, perceivedThreat)
+                    : decide(enemy, group, "delegate-native", false);
             return decide(
                 enemy,
                 group,
@@ -2152,6 +2846,27 @@
             const observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() },
                 sawTarget = observations.sight.size > 0,
                 lureSawTarget = observations.sight.has(String(engagement.lureId));
+            if (sawTarget && engagement.lastKnown) {
+                const waypoint = planWaypoint(encounter, group),
+                    approach = waypoint ? distance(engagement.lastKnown, waypoint) : Infinity,
+                    lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId)),
+                    path = waypoint && lure ? nativePath(lure, waypoint) : [],
+                    route = waypoint && lure && distance(lure, waypoint) === 0 ? 0 : path.length || Infinity,
+                    progress = engagement.progress;
+                // Only prey approach or this lure's useful travel extends the
+                // ambush. Remote construction must not hide an inert lure.
+                const sameLure = String(progress?.lureId) === String(engagement.lureId),
+                    advanced =
+                        progress &&
+                        (approach < progress.approach || (sameLure && route < (progress.route ?? Infinity)));
+                engagement.progress = {
+                    approach: Math.min(progress?.approach ?? Infinity, approach),
+                    lureId: engagement.lureId,
+                    route: sameLure ? Math.min(progress?.route ?? Infinity, route) : route,
+                    waits: advanced ? 0 : (progress?.waits || 0) + 1,
+                };
+                if (engagement.progress.waits >= AMBUSH_WAIT_TURNS) engagement.mode = "pressure";
+            }
             if (engagement.lastKnown) {
                 engagement.lastKnown.age++;
                 if (engagement.lastKnown.age >= 4) delete engagement.lastKnown;
@@ -2159,13 +2874,17 @@
             engagement.noSightTurns = sawTarget ? 0 : (engagement.noSightTurns || 0) + 1;
             engagement.lureNoContactTurns = lureSawTarget ? 0 : (engagement.lureNoContactTurns || 0) + 1;
             if (engagement.noSightTurns >= 8) engagement.mode = "pursuit";
-            else if (!sawTarget) engagement.mode = "search";
+            else if (!sawTarget && engagement.mode !== "pressure") engagement.mode = "search";
             if (
                 encounter.ai.plans[group.planId]?.kind === "passage" &&
                 engagement.noSightTurns >= 12 &&
                 observations.sensed.size === 0
             )
                 clearEngagement(group);
+        }
+        if (encounter.ai.playerObservation) {
+            encounter.ai.playerObservation.age++;
+            if (!playerObservation(encounter)) delete encounter.ai.playerObservation;
         }
         observedGroups = new Map();
     }
@@ -2231,14 +2950,21 @@
     api.SpinnerAI = {
         GROUP_RADIUS,
         SHORTLIST_SIZE,
+        AMBUSH_WAIT_TURNS,
         seededRandom,
         eligibleSpinner,
         ensureAI,
+        groupObservation,
+        playerObservation,
+        reportPlayerContact,
+        recoveryTarget,
+        refreshObservations,
         auditGroups,
         analyzeLineCandidates,
         selectSavedPlan,
         reserveActions,
         beginTurn,
+        initializeMapgenField,
         preparePositiveTurn,
         handleBeforeMove,
         gateNativePhase,

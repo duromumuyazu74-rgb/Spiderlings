@@ -13,17 +13,17 @@
         ]) {
             KinkyDungeonStartNewGame(false);
             KDToggles.Sound = false;
-            MiniGameKinkyDungeonLevel = 3;
+            MiniGameKinkyDungeonLevel = 5;
             KDsetSeed(`integration-objective-${modifier}`);
             KinkyDungeonCreateMap(
                 KinkyDungeonMapParams.grv,
                 "",
                 modifier,
-                3,
+                5,
                 false,
                 false,
                 undefined,
-                { x: 0, y: 3 },
+                { x: 0, y: 5 },
                 false,
             );
             const map = KDMapData,
@@ -38,6 +38,18 @@
                 !map[modifier === "SpiderlingsHuntingGrounds" ? "SpiderlingsInfestation" : "SpiderlingsHuntingGrounds"],
                 "Independent infestation objectives leaked across modifiers",
             );
+            // Isolate objective/stair transitions from unrelated random encounters.
+            // Keep all task nests, their guards and scenery; population and hunting
+            // have separate full-map scenarios. Some baseline native NPC dresses
+            // include an upstream missing Gothic/HemLowerBack texture.
+            for (const actor of [...map.Entities]) {
+                if (
+                    !actor.Enemy.immobile &&
+                    !state.targetIds.includes(actor.id) &&
+                    !state.targetIds.includes(actor.SpiderlingsNestParentID)
+                )
+                    KDRemoveEntity(actor, false, false);
+            }
             const nest = map.Entities.find((enemy) => enemy.id === state.targetIds[0]);
             cancelledId = nest.id;
             row.cancelled = {

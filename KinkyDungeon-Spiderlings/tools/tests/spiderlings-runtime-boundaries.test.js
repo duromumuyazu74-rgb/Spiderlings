@@ -29,8 +29,7 @@ test("Webbing rules resolve frozen input without registering any native objects"
             }),
         }),
     );
-    assert.equal(result.outcome.completed, true);
-    assert.equal(result.outcome.keep, false);
+    assert.equal(result.outcome.reason, "unsupported-action");
     assert.equal(result.nextSnapshot, snapshot);
     assert.deepEqual(Object.keys(context.Spiderlings).sort(), ["WebbingData", "WebbingRules"]);
 });

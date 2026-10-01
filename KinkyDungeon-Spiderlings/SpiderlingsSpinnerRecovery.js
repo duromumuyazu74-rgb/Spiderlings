@@ -74,7 +74,7 @@
         return entities().find((entity) => sameId(entity.id, id));
     }
 
-    function sourceActionable(source) {
+    function sourceActionable(source, requireContact = true) {
         if (
             !source ||
             source.Enemy?.name !== "Spinner" ||
@@ -88,6 +88,7 @@
             KinkyDungeonIsDisabled(source)
         )
             return false;
+        if (!requireContact) return true;
         const distance = Math.max(Math.abs(source.x - player().x), Math.abs(source.y - player().y));
         return (
             distance <= MAX_RANGE &&
@@ -96,8 +97,49 @@
         );
     }
 
+    function relayEligible(source, recovery) {
+        return (
+            allowedSource(recovery, source) &&
+            !(recovery.severedSourceIds || []).some((id) => sameId(id, source.id)) &&
+            sourceActionable(source, false) &&
+            !npcCaptureUsesSource(source.id) &&
+            !api.SpinnerNPCRecovery?.usesEntity?.(source.id) &&
+            !Object.values(api.NPCWrapping?.records?.() || {}).some((record) =>
+                record.sourceIds?.some((id) => sameId(id, source.id)),
+            )
+        );
+    }
+
+    function relayContact(left, right) {
+        const range = Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y));
+        return range <= MAX_RANGE && KinkyDungeonCheckLOS(left, right, range, MAX_RANGE, false, false);
+    }
+
     function allowedSource(record, source) {
         return !!source && (record?.eligibleSourceIds || []).some((id) => sameId(id, source.id));
+    }
+
+    // Eligibility only: native perception must supply the target before AI pursues it.
+    function wantsPursuit(source, target) {
+        const eligibility = departure() || state();
+        if (
+            target !== player() ||
+            !core.pendingSource(eligibility, source?.id) ||
+            !sourceActionable(source, false) ||
+            api.SpinnerCapture?.isControllingPlayer?.() ||
+            npcCaptureUsesSource(source.id) ||
+            api.SpinnerNPCRecovery?.usesEntity?.(source.id) ||
+            Object.values(api.NPCWrapping?.records?.() || {}).some((record) =>
+                record.sourceIds?.some((id) => sameId(id, source.id)),
+            )
+        )
+            return false;
+        const compositeId = eligibility.compositeId || sourceAssociation(source, eligibility)?.compositeId;
+        return !!(
+            compositeId &&
+            api.SpinnerNativeField?.compositeById?.(compositeId) &&
+            !api.SpinnerNativeField?.containsComposite?.(compositeId, target)
+        );
     }
 
     function sourceRecords(recovery = state()) {
@@ -202,7 +244,6 @@
                 (entity.x - data.CamX - (pans ? 0 : data.CamX_offset) + 0.5) * size,
                 (entity.y - data.CamY - (pans ? 0 : data.CamY_offset) + 0.5) * size,
             ],
-            target = point(player()),
             color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
             root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
         for (const id of sourceIds()) {
@@ -214,19 +255,22 @@
                 kdgameboard.addChild(entry.mask);
                 strandVisuals.set(String(id), entry);
             }
-            const from = point(source);
+            const parent = sourceById(sourceRecords()[sourceKey(id)]?.relayParentId);
+            const to = parent || player();
+            const from = point(source),
+                target = point(to);
             let visible = false;
             entry.mask.beginFill(0xffffff);
             // Per-cell pixel masking keeps the continuous silk inside visible
             // tiles, including a partly hidden source-to-player segment.
             for (
-                let y = Math.max(0, Math.min(source.y, player().y));
-                y <= Math.min(KDMapData.GridHeight - 1, Math.max(source.y, player().y));
+                let y = Math.max(0, Math.min(source.y, to.y));
+                y <= Math.min(KDMapData.GridHeight - 1, Math.max(source.y, to.y));
                 y++
             )
                 for (
-                    let x = Math.max(0, Math.min(source.x, player().x));
-                    x <= Math.min(KDMapData.GridWidth - 1, Math.max(source.x, player().x));
+                    let x = Math.max(0, Math.min(source.x, to.x));
+                    x <= Math.min(KDMapData.GridWidth - 1, Math.max(source.x, to.x));
                     x++
                 ) {
                     if (!(KinkyDungeonVisionGet(x, y) > 0)) continue;
@@ -299,6 +343,8 @@
         }
         KDGameData[STATE] = {
             version: VERSION,
+            compositeId: recovery.compositeId,
+            groupId: recovery.groupId,
             carrierId: recovery.carrierId,
             ownedCarrier: recovery.ownedCarrier === true,
             eligibleSourceIds: [...new Set(recovery.eligibleSourceIds || [])],
@@ -344,12 +390,20 @@
             clearRecoveryForCarrierLoss(recovery);
             return false;
         }
-        for (const id of core.auditSources(
+        const originalSource = Object.values(sourceRecords(recovery))[0];
+        recovery.compositeId ||= originalSource?.compositeId;
+        recovery.groupId ||= originalSource?.groupId;
+        const links = core.relayLinks(
             recovery,
             sourceById,
-            (source) => allowedSource(recovery, source) && sourceActionable(source),
-        ))
+            (source) => relayEligible(source, recovery),
+            (source) => sourceActionable(source),
+            relayContact,
+        );
+        for (const id of core.auditSources(recovery, sourceById, (source) => links.has(sourceKey(source.id))))
             delete recovery.sourceRemovalWork[core.sourceKey(id)];
+        for (const saved of Object.values(sourceRecords(recovery)))
+            saved.relayParentId = links.get(sourceKey(saved.id));
         if (!sourceIds(recovery).length) {
             recovery.executorId = undefined;
             recovery.resisted = false;
@@ -414,6 +468,8 @@
         if (!carrier?.item || carrier.item.id === undefined) return false;
         KDGameData[STATE] = {
             version: VERSION,
+            compositeId: eligibility.compositeId,
+            groupId: eligibility.groupId,
             carrierId: carrier.item.id,
             ownedCarrier: carrier.owned,
             eligibleSourceIds: [...eligibility.eligibleSourceIds],
@@ -433,11 +489,11 @@
     if (typeof addTextKey === "function") {
         addTextKey(
             "SpiderlingsRecoveryAttached",
-            "Spinner attaches a recovery silk strand ({count}/8). Its next available action can pull you back.",
+            "A Spinner attaches a silk leash to your collar ({count}/8). It can pull you back when it next acts.",
         );
         addTextKey(
             "SpiderlingsRecoveryAttachBlocked",
-            "The recovery strand hits but cannot attach to compatible neck gear. A new silk leash needs a collar and normal equipment access; no pull is established.",
+            "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
         );
     }
 
@@ -445,8 +501,8 @@
         if (typeof KinkyDungeonSendTextMessage !== "function") return;
         const key = attached ? "SpiderlingsRecoveryAttached" : "SpiderlingsRecoveryAttachBlocked",
             fallback = attached
-                ? "Spinner attaches a recovery silk strand ({count}/8). Its next available action can pull you back."
-                : "The recovery strand hits but cannot attach to compatible neck gear. A new silk leash needs a collar and normal equipment access; no pull is established.",
+                ? "A Spinner attaches a silk leash to your collar ({count}/8). It can pull you back when it next acts."
+                : "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
             localized = typeof TextGet === "function" ? TextGet(key) : key;
         KinkyDungeonSendTextMessage(
             8,
@@ -471,6 +527,7 @@
                 association = sourceAssociation(source, existing || departure() || departureFromRecovery(recovery)),
                 upserted = core.upsertSource(recovery, source, association, turn(), MAX_SOURCES);
             if (upserted.added) {
+                recovery.severedSourceIds = (recovery.severedSourceIds || []).filter((id) => !sameId(id, source.id));
                 delete recovery.sourceRemovalWork[key];
                 chooseExecutor(recovery);
                 feedback(true);
@@ -605,7 +662,23 @@
     function handleEnemyTurn(enemy, _target, delta) {
         if (!audit()) return undefined;
         const recovery = state();
-        if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) return undefined;
+        if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) {
+            if (!relayEligible(enemy, recovery) || strength(recovery) >= MAX_SOURCES) return undefined;
+            const donor = Object.values(sourceRecords(recovery))
+                .map((saved) => sourceById(saved.id))
+                .find((source) => source && relayContact(source, enemy));
+            if (!donor) return undefined;
+            if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta)) {
+                const association = sourceAssociation(enemy, recovery);
+                const added = core.upsertSource(recovery, enemy, association, turn(), MAX_SOURCES);
+                if (added.added) {
+                    added.source.relayParentId = donor.id;
+                    delete recovery.sourceRemovalWork[sourceKey(enemy.id)];
+                    feedback(true);
+                }
+            }
+            return result(enemy);
+        }
         if (api.SpinnerCapture?.isControllingPlayer?.()) return result(enemy);
         if (!sameId(recovery.executorId, enemy?.id)) return result(enemy);
         if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta) && !alreadyMovedThisTurn(recovery)) {
@@ -666,6 +739,8 @@
         if (!recovery.sources[key]) return false;
         const wasExecutor = sameId(recovery.executorId, id);
         delete recovery.sources[key];
+        recovery.severedSourceIds ||= [];
+        if (!recovery.severedSourceIds.some((saved) => sameId(saved, id))) recovery.severedSourceIds.push(id);
         delete recovery.sourceRemovalWork[key];
         if (wasExecutor) recovery.executorId = undefined;
         if (!sourceIds(recovery).length) {
@@ -826,8 +901,8 @@
             },
             text: [
                 "Spiderling Silk Leash",
-                "After leaving a breached field, a fresh eligible Spinner hit can attach this collar-mounted silk leash. An available Spinner action then pulls you back.",
-                "A compatible collar and native equipment access are needed for a new leash. Active sources show silk strands; no sources leaves the leash slack.",
+                "A silk strand links your collar to a Spinner. It can tug the leash to draw you back toward the web field.",
+                "The leash needs a compatible collar and no equipment blocking it. The strands hang slack when no Spinner holds them.",
             ],
         });
         if (typeof KinkyDungeonRefreshRestraintsCache === "function") KinkyDungeonRefreshRestraintsCache();
@@ -859,6 +934,7 @@
         sourceRemovalInput,
         removeSource,
         sourceActionable,
+        wantsPursuit,
         usableLeash,
     });
 })();

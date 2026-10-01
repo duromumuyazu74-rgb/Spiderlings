@@ -97,7 +97,12 @@
         if (turns.at(-1).capture) break;
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
-    if (outside && new Set(turns.map((t) => `${t.x},${t.y}`)).size !== 1) throw new Error("Lure oscillates.");
+    if (outside) {
+        if (new Set(turns.slice(0, 5).map((t) => `${t.x},${t.y}`)).size !== 1)
+            throw new Error("Lure oscillates during the initial ambush window.");
+        if (new Set(turns.map((t) => `${t.x},${t.y}`)).size < 2)
+            throw new Error("A continuously visible stationary player never triggers Spinner pressure.");
+    }
     if (!outside && !turns.at(-1).capture) throw new Error("Prey in enclosure was not captured within 40 turns.");
     return { outside, turns };
 })();

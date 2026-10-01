@@ -4,6 +4,7 @@
         if (!condition) throw Error(message);
     };
     const setup = (seed = "normal-acceptance") => {
+        globalThis.compatibilitySetSeed(seed);
         KinkyDungeonStartNewGame(false);
         Spiderlings.SpinnerField.enter();
         KDMapData.Entities = [];
@@ -18,7 +19,10 @@
         KDMovePlayer(2, 2, false);
         KDUpdateEnemyCache = true;
         KDToggles.Sound = false;
-        KDsetSeed(seed);
+        globalThis.compatibilitySetSeed(seed);
+        KDSetWeapon("Knife");
+        KinkyDungeonUpdateStats(0);
+        KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
     };
     const spawn = (name, x, y, faction) => {
         const enemy = DialogueCreateEnemy(x, y, name);

@@ -21,13 +21,9 @@
         VIGIL_IDLE_TURNS,
         COCOON_ANCHORED_MESSAGE,
         COCOON_ANCHORED_FALLBACK,
-        LV2_ESCAPE_EVENT,
-        LV3_ESCAPE_EVENT,
         COCOON_REPAIR_AMOUNT,
-        COCOON_ESCAPE_ACTIONS,
-        COCOON_ESCAPE_CHANCE,
-        COCOON_ESCAPE_GATE_PENALTY,
-        LV1_ESCAPE_CHANCE,
+        ESCAPE_PROFILES,
+        COCOON_COST_MULT,
         ESCAPE_METHODS,
         ESCAPE_TEXT,
         OUTER_GAG_TAG,
@@ -40,7 +36,6 @@
         PAIRED_OUTER_GATE_MARKER,
         EXTERNAL_UNLINK_MARKER,
         ESCAPE_SOUNDS,
-        ESCAPE_PROGRESS_KEY,
         ENEMY_BIND_EFFECT,
         PLAYER_HIT_DAMAGE_EVENT,
         WEBSPRAY_EFFECT,
@@ -65,14 +60,13 @@
         resolveWebbingAction,
     } = rules;
     const pendingManualNormalizationGroups = new Set();
-    const pendingCountedEscapes = new WeakMap();
     let manualNormalizationQueued = false;
     let runtimeWebSprayState = emptyWebSprayState();
     let runtimeWebSprayTurn = 0;
     let crossfireMark = null;
     let crossfireBonusTurn = null;
     const CROSS_FIRE_MESSAGE = "KinkyDungeonSpiderlingsWebbingInterwoven";
-    const CROSS_FIRE_FALLBACK = "Two strands interweave against your body, binding another part of it.";
+    const CROSS_FIRE_FALLBACK = "The crossing strands weave together and bind another part of your body.";
 
     function restraintById(id) {
         if (typeof KinkyDungeonGetRestraintByName == "function") return KinkyDungeonGetRestraintByName(id);
@@ -912,6 +906,7 @@
                 const model = `${id}Model`;
                 const familyLayerTag = `SpiderlingsWebbing${definition.linkFamily || definition.family}Layer`;
                 const text = [...definition.text[stage]];
+                const escapeProfile = ESCAPE_PROFILES[stage + definition.family] || ESCAPE_PROFILES[stage];
                 api.restraintCatalog.register({
                     id,
                     module: definition.family,
@@ -930,16 +925,18 @@
                         ...((definition.stageMechanics && definition.stageMechanics[stage]) || {}),
                         power: stageNumber(stage),
                         weight: 0,
-                        escapeChance: {
-                            Cut: LV1_ESCAPE_CHANCE,
-                            Remove: LV1_ESCAPE_CHANCE,
-                            Struggle: LV1_ESCAPE_CHANCE,
-                        },
+                        escapeChance: { ...escapeProfile.escapeChance },
+                        speedMult: { ...escapeProfile.speedMult },
+                        struggleMinSpeed: { Cut: 0.01, Remove: 0.01, Struggle: 0.01 },
+                        limitChance: { Cut: 0, Remove: 0, Struggle: 0 },
                         affinity: {},
                         helpChance: {},
-                        failSuffix: {},
+                        failSuffix: {
+                            Cut: "SpiderlingsWebbing",
+                            Remove: "SpiderlingsWebbing",
+                            Struggle: "SpiderlingsWebbing",
+                        },
                         customEscapeSucc: "SpiderlingsWebbing",
-                        alwaysEscapable: [...ESCAPE_METHODS],
                         enemyTags: {},
                         playerTags: {},
                         minLevel: 0,
@@ -963,20 +960,6 @@
                             { inheritLinked: true, trigger: "postApply", type: MANUAL_NORMALIZE_EVENT },
                             { inheritLinked: true, trigger: "struggle", type: ESCAPE_SOUND_EVENT },
                             { inheritLinked: true, trigger: "beforeSuccessRemove", type: ESCAPE_SOUND_EVENT },
-                            ...(stage !== "Lv1"
-                                ? [
-                                      {
-                                          inheritLinked: true,
-                                          trigger: "beforeStruggleCalc",
-                                          type: stage === "Lv2" ? LV2_ESCAPE_EVENT : LV3_ESCAPE_EVENT,
-                                      },
-                                      {
-                                          inheritLinked: true,
-                                          trigger: "struggle",
-                                          type: stage === "Lv2" ? LV2_ESCAPE_EVENT : LV3_ESCAPE_EVENT,
-                                      },
-                                  ]
-                                : []),
                             { inheritLinked: true, trigger: "beforeSuccessRemove", type: FINAL_ESCAPE_EVENT },
                         ],
                     },
@@ -1003,13 +986,15 @@
                 Group: "ItemDevices",
                 power: 10,
                 weight: 0,
-                escapeChance: { ...COCOON_ESCAPE_CHANCE },
+                escapeChance: { ...ESCAPE_PROFILES.Cocoon.escapeChance },
+                speedMult: { ...ESCAPE_PROFILES.Cocoon.speedMult },
+                struggleMinSpeed: { Cut: 0.01, Remove: 0.01, Struggle: 0.01 },
                 limitChance: { Cut: 0, Struggle: 0, Remove: 0 },
                 affinity: {},
                 helpChance: {},
                 failSuffix: {},
                 customEscapeSucc: "SpiderlingsCocoon",
-                alwaysEscapable: [...ESCAPE_METHODS],
+                alwaysEscapable: ["Remove", "Struggle"],
                 enemyTags: {},
                 playerTags: {},
                 minLevel: 0,
@@ -1029,8 +1014,8 @@
             },
             text: [
                 "Spiderling Silk Cocoon",
-                "Layers of silk follow your body into a thick, soft cocoon. Its rim rests beneath your mouth, leaving the upper part of your head outside.",
-                "The cocoon forms shallow folds as you move, its trailing threads brushing the floor with a soft rustle.",
+                "Layers of silk enclose your body in a soft cocoon. Its rim ends below your mouth.",
+                "The cocoon creases when you move. Loose threads trail across the floor.",
             ],
         });
         return true;
@@ -1069,178 +1054,81 @@
         return true;
     }
 
+    const pendingCocoonResistance = new WeakSet();
     function registerCocoonEscapeEvent() {
-        if (typeof KDEventMapInventory == "undefined") return false;
-        const beforeHandler = (_event, item, data) => {
-            if (item) pendingCountedEscapes.delete(item);
+        if (typeof KDEventMapInventory === "undefined") return false;
+        addRuntimeEvent(KDEventMapInventory, "beforeStruggleCalc", COCOON_ESCAPE_EVENT, (_event, item, data) => {
+            if (item === data?.restraint && item.name === COCOON_ID && ESCAPE_METHODS.includes(data.struggleType))
+                data.cost *= COCOON_COST_MULT[data.struggleType];
+            pendingCocoonResistance.delete(item);
             if (
-                !data ||
-                item !== data.restraint ||
+                item !== data?.restraint ||
                 item.name !== COCOON_ID ||
-                data.query ||
-                !ESCAPE_METHODS.includes(data.struggleType)
+                data.query !== false ||
+                !ESCAPE_METHODS.includes(data.struggleType) ||
+                !Number.isFinite(data.cost)
             )
                 return;
-            if (data.struggleType === "Cut" && data.canCut === false) return;
-            const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
+            if (typeof KinkyDungeonHasStamina === "function" && !KinkyDungeonHasStamina(-data.cost, true)) return;
+            if (data.struggleType === "Cut" && !data.canCut && !data.hasAffinity) return;
+            pendingCocoonResistance.add(item);
+        });
+        addRuntimeEvent(KDEventMapInventory, "struggle", COCOON_ESCAPE_EVENT, (_event, item, data) => {
             if (
-                data.struggleGroup &&
-                typeof KDGroupBlocked == "function" &&
-                KDGroupBlocked(data.struggleGroup) &&
-                !(definition && definition.alwaysStruggleable)
-            )
-                return;
-            const cost = Number(data.cost || 0);
-            const hasStamina = typeof KinkyDungeonHasStamina != "function" || KinkyDungeonHasStamina(-cost, true);
-            if (!hasStamina) return;
-
-            const requiredActions = COCOON_ESCAPE_ACTIONS[data.struggleType];
-            const increment = 1 / requiredActions;
-            const cutProgress = Math.max(0, Number(item.cutProgress || 0));
-            const struggleProgress = Math.max(0, Number(item.struggleProgress || 0));
-            const totalProgress = cutProgress + struggleProgress;
-            if (totalProgress + increment >= 1 - Number.EPSILON) {
-                // KD 5.5's immediate completion check reads cutProgress even for
-                // Struggle/Remove. Mirror the combined progress only for this
-                // final action; beforeSuccessRemove still owns the item fate.
-                item.cutProgress = Math.max(cutProgress, totalProgress);
-                data.escapeChance = 1;
-                data.escapePenalty = -COCOON_ESCAPE_GATE_PENALTY;
-                return;
+                item === data?.restraint &&
+                item.name === COCOON_ID &&
+                ESCAPE_METHODS.includes(data.struggleType) &&
+                ["Fail", "Success"].includes(data.result) &&
+                pendingCocoonResistance.has(item)
+            ) {
+                pendingCocoonResistance.delete(item);
+                recordCocoonResistance(item);
             }
-            data.escapeSpeed = 0;
-            data.minSpeed = 1e-6;
-            data.limitChance = 0;
-            data.escapeChance = 0;
-            data.escapePenalty = COCOON_ESCAPE_GATE_PENALTY;
-            pendingCountedEscapes.set(item, data.struggleType);
-            data.failSuffix = "SpiderlingsCocoon";
-        };
-        const afterHandler = (_event, item, data) => {
-            const armedMethod = item && pendingCountedEscapes.get(item);
-            if (item) pendingCountedEscapes.delete(item);
-            if (
-                !data ||
-                item !== data.restraint ||
-                item.name !== COCOON_ID ||
-                data.result !== "Fail" ||
-                armedMethod !== data.struggleType ||
-                !ESCAPE_METHODS.includes(data.struggleType)
-            )
-                return;
-            const increment = 1 / COCOON_ESCAPE_ACTIONS[data.struggleType];
-            if (data.struggleType === "Cut") item.cutProgress = Math.max(0, Number(item.cutProgress || 0)) + increment;
-            else item.struggleProgress = Math.max(0, Number(item.struggleProgress || 0)) + increment;
-            recordCocoonResistance(item);
-        };
-        addRuntimeEvent(KDEventMapInventory, "beforeStruggleCalc", COCOON_ESCAPE_EVENT, beforeHandler);
-        addRuntimeEvent(KDEventMapInventory, "struggle", COCOON_ESCAPE_EVENT, afterHandler);
+        });
         return true;
     }
 
-    function registerLayerEscapeEvent(stage, eventType) {
-        if (typeof KDEventMapInventory == "undefined") return false;
-        const isStage = (item) => {
-            const descriptor = rules.descriptorFor(item && item.name);
-            return descriptor && descriptor.stage === stage;
-        };
-        const beforeHandler = (_event, item, data) => {
-            if (item) pendingCountedEscapes.delete(item);
-            if (
-                !data ||
-                item !== data.restraint ||
-                !isStage(item) ||
-                data.query ||
-                !ESCAPE_METHODS.includes(data.struggleType)
-            )
-                return;
-            if (data.struggleType === "Cut" && data.canCut === false) return;
-            const definition = typeof KDRestraint == "function" ? KDRestraint(item) : item.restraint;
-            if (
-                data.struggleGroup &&
-                typeof KDGroupBlocked == "function" &&
-                KDGroupBlocked(data.struggleGroup) &&
-                !(definition && definition.alwaysStruggleable)
-            )
-                return;
-            const cost = Number(data.cost || 0);
-            if (typeof KinkyDungeonHasStamina == "function" && !KinkyDungeonHasStamina(-cost, true)) return;
-            const progress = Math.max(0, Number((item.data && item.data[ESCAPE_PROGRESS_KEY]) || 0));
-            if (progress >= rules.descriptorFor(item.name).requiredActions - 1) {
-                item.cutProgress = 1;
-                data.escapeChance = 1;
-                data.escapePenalty = -COCOON_ESCAPE_GATE_PENALTY;
-                return;
-            }
-            data.escapeSpeed = 0;
-            data.minSpeed = 1e-6;
-            data.limitChance = 0;
-            data.escapeChance = 0;
-            data.escapePenalty = COCOON_ESCAPE_GATE_PENALTY;
-            pendingCountedEscapes.set(item, data.struggleType);
-            data.failSuffix = "SpiderlingsWebbing";
-        };
-        const afterHandler = (_event, item, data) => {
-            const armedMethod = item && pendingCountedEscapes.get(item);
-            if (item) pendingCountedEscapes.delete(item);
-            if (
-                !data ||
-                item !== data.restraint ||
-                !isStage(item) ||
-                data.result !== "Fail" ||
-                armedMethod !== data.struggleType ||
-                !ESCAPE_METHODS.includes(data.struggleType)
-            )
-                return;
-            item.data = item.data || {};
-            item.data[ESCAPE_PROGRESS_KEY] = Math.max(0, Number(item.data[ESCAPE_PROGRESS_KEY] || 0)) + 1;
-        };
-        addRuntimeEvent(KDEventMapInventory, "beforeStruggleCalc", eventType, beforeHandler);
-        addRuntimeEvent(KDEventMapInventory, "struggle", eventType, afterHandler);
-        return true;
+    function migrateCountedEscapeProgress() {
+        if (typeof KinkyDungeonAllRestraintDynamic !== "function") return;
+        for (const { item } of KinkyDungeonAllRestraintDynamic()) {
+            const descriptor = rules.descriptorFor(item.name),
+                data = item.data;
+            if (!data) continue;
+            const legacy =
+                item.name === "SpiderlingsSpinnerLegbinder"
+                    ? data.SpiderlingsLegbinderEscapeProgress
+                    : ["Lv2", "Lv3"].includes(descriptor?.stage)
+                      ? data.SpiderlingsEscapeActions
+                      : undefined;
+            if (typeof legacy !== "number" || !Number.isFinite(legacy)) continue;
+            // Preserve earned work in KD's own progress, without completing/removing an item on load.
+            const amount = item.name === "SpiderlingsSpinnerLegbinder" ? legacy : legacy / 2;
+            item.struggleProgress = Math.max(Number(item.struggleProgress) || 0, Math.min(0.99, Math.max(0, amount)));
+            delete data.SpiderlingsEscapeActions;
+            delete data.SpiderlingsLegbinderEscapeProgress;
+        }
     }
 
     function registerEscapeText() {
         if (typeof addTextKey != "function") return;
         for (const [suffix, methods] of Object.entries(ESCAPE_TEXT)) {
-            for (const [method, [progress, success]] of Object.entries(methods)) {
+            for (const [method, [progress, success, impossible, impossibleBound]] of Object.entries(methods)) {
                 const prefix = "KinkyDungeonStruggle" + method;
                 addTextKey(prefix + "Fail" + suffix, progress);
                 // KD appends Aroused to an incomplete action even with a custom suffix.
                 addTextKey(prefix + "Fail" + suffix + "Aroused", progress);
                 addTextKey(prefix + "Success" + suffix, success);
-            }
-        }
-        // KD's assistance branch selects Fail2/Fail3 before consulting failSuffix.
-        // Redirect only that lookup during this item's armed, real struggle call.
-        if (typeof KinkyDungeonStruggle != "function" || typeof TextGet != "function") return;
-        let currentAttempt;
-        const nativeStruggle = KinkyDungeonStruggle;
-        KinkyDungeonStruggle = function (group, method, index, query) {
-            const previous = currentAttempt;
-            const item = playerStruggleTarget({ group, index });
-            currentAttempt =
-                !query && isSpiderlingsRestraint(item) && ESCAPE_METHODS.includes(method)
-                    ? { item, method }
-                    : undefined;
-            try {
-                return nativeStruggle.apply(this, arguments);
-            } finally {
-                currentAttempt = previous;
-            }
-        };
-        const nativeText = TextGet;
-        TextGet = function (key) {
-            const attempt = currentAttempt;
-            if (attempt && pendingCountedEscapes.get(attempt.item) === attempt.method) {
-                const prefix = "KinkyDungeonStruggle" + attempt.method + "Fail";
-                if ([prefix + "2", prefix + "3"].includes(key)) {
-                    const suffix = attempt.item.name === COCOON_ID ? "SpiderlingsCocoon" : "SpiderlingsWebbing";
-                    return nativeText.call(this, prefix + suffix);
+                // KD also consumes failSuffix after its impossible-attempt grace and bound-access checks.
+                for (const [outcome, text] of [
+                    ["Impossible", impossible],
+                    ["ImpossibleBound", impossibleBound],
+                ]) {
+                    if (!text) continue;
+                    addTextKey(prefix + outcome + suffix, text);
+                    addTextKey(prefix + outcome + suffix + "Aroused", text);
                 }
             }
-            return nativeText.apply(this, arguments);
-        };
+        }
     }
 
     function registerFinalEscapeEvent() {
@@ -1341,6 +1229,31 @@
         return true;
     }
 
+    function registerBoundWeaponIcon() {
+        if (typeof DrawButtonKDEx !== "function") return;
+        DrawButtonKDEx = api.Hooks.wrap(
+            "Webbing.boundWeaponIcon",
+            DrawButtonKDEx,
+            (native) =>
+                function (...args) {
+                    const emptyIcon = KinkyDungeonRootDirectory + "Items/.png";
+                    if (
+                        args.includes(emptyIcon) &&
+                        typeof KinkyDungeonPlayerDamage !== "undefined" &&
+                        KinkyDungeonPlayerDamage.unarmed &&
+                        !KinkyDungeonPlayerDamage.name &&
+                        (equippedItem("SpiderlingsSpinnerLegbinder") ||
+                            defaultLifecycleCatalog().some((descriptor) => equippedItem(descriptor.id)))
+                    ) {
+                        // Native bound-hand fallback has no weapon name. Keep its button,
+                        // input and damage intact, without requesting a nonexistent icon.
+                        args = args.map((value) => (value === emptyIcon ? undefined : value));
+                    }
+                    return native.apply(this, args);
+                },
+        );
+    }
+
     function equipForDebug(id = ARM_ID, options = {}) {
         return kdAdapter.equip(id, options);
     }
@@ -1351,7 +1264,7 @@
             addTextKey("KinkyDungeonStat" + id, "Silken Awakening");
             addTextKey(
                 "KinkyDungeonStatDesc" + id,
-                "You awaken in a soft cocoon, completely wrapped from head to toe in close-woven layers of spider silk. Each small movement tugs at the threads nestled against you.",
+                "You awaken inside layers of close-woven spider silk. The cocoon shifts with each small movement.",
             );
         }
         if (typeof KinkyDungeonStatsPresets == "undefined" || typeof KDPerkStart == "undefined") return;
@@ -1374,30 +1287,9 @@
         };
     }
 
-    function completeEffectiveEscape(id, method, options = {}) {
-        const catalog = options.catalog || defaultLifecycleCatalog();
-        const item = options.item || equippedItem(id);
-        if (!item) return { completed: false, id, method, reason: "not-equipped" };
-        const progress = Number((item.data && item.data[ESCAPE_PROGRESS_KEY]) || 0);
-        const resolution = resolveWebbingAction({
-            catalog,
-            snapshot: { items: [item] },
-            action: { type: "escapeAttempt", item, method, effective: options.legal === true, progress },
-        });
-        const outcome = resolution.outcome;
-        if (!outcome.progressed) return { id, method, ...outcome };
-        item.data = item.data || {};
-        item.data[ESCAPE_PROGRESS_KEY] = outcome.effectiveActions;
-        if (!outcome.completed) return { id, method, ...outcome };
-        const completed = kdAdapter.remove(item, method);
-        return { id, method, ...outcome, completed };
-    }
-
     api.Webbing = Object.freeze({
         ARM_ID,
         COCOON_APPLY_EVENT,
-        COCOON_ESCAPE_ACTIONS,
-        COCOON_ESCAPE_CHANCE,
         COCOON_ESCAPE_EVENT,
         COCOON_ID,
         isCocoonPassive,
@@ -1408,6 +1300,7 @@
         ENEMY_BIND_EFFECT,
         applyEnemyProgression,
         ENEMY_PROFILES,
+        ESCAPE_PROFILES,
         ESCAPE_METHODS,
         ESCAPE_SOUND_EVENT,
         ESCAPE_SOUNDS,
@@ -1416,12 +1309,9 @@
         FAMILY_GROUPS,
         FINAL_ESCAPE_EVENT,
         INNER_STUFFING_TAG,
-        LV1_ESCAPE_CHANCE,
         LV1_FAMILIES,
         LV2_FAMILIES,
-        LV2_ESCAPE_EVENT,
         LV3_FAMILIES,
-        LV3_ESCAPE_EVENT,
         PAIRED_OUTER_GATE_MESSAGE_FALLBACK,
         PAIRED_OUTER_GATE_MESSAGE_KEY,
         PROFILE_FAMILIES,
@@ -1433,7 +1323,6 @@
         WEBSPRAY_MAX_STACKS,
         WEBSPRAY_PROVENANCE,
         WEBSPRAY_SLOW_BUFF,
-        completeEffectiveEscape,
         equipForDebug,
         pairedOuterLayerFor,
         resolveWebbingAction,
@@ -1449,12 +1338,17 @@
     registerCocoonOuterEvents();
     addRuntimeEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsHoodPreference", reconcileHoodPreference);
     addRuntimeEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsHoodPreference", reconcileHoodPreference);
+    addRuntimeEvent(
+        KDEventMapGeneric,
+        "afterLoadGame",
+        "SpiderlingsNativeEscapeProgress",
+        migrateCountedEscapeProgress,
+    );
     registerCocoonVigil();
-    registerLayerEscapeEvent("Lv2", LV2_ESCAPE_EVENT);
-    registerLayerEscapeEvent("Lv3", LV3_ESCAPE_EVENT);
     registerFinalEscapeEvent();
     registerEscapeSoundEvent();
     registerPairedOuterLayerGate();
+    registerBoundWeaponIcon();
     registerExternalUnlinkPreservation();
     registerEnemyBindEffect();
     registerPlayerHitDamageEvent();

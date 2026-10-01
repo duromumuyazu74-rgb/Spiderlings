@@ -43,42 +43,74 @@
     const VIGIL_IDLE_TURNS = 25;
     const COCOON_ANCHORED_MESSAGE = "KinkyDungeonSpiderlingsCocoonAnchored";
     const COCOON_ANCHORED_FALLBACK =
-        "The spiderlings lay webs around the cocoon, securing it in place. You cannot move while they hold it there.";
-    const LV2_ESCAPE_EVENT = "SpiderlingsLv2Escape";
-    const LV3_ESCAPE_EVENT = "SpiderlingsLv3Escape";
+        "Spiderlings weave fresh threads around your cocoon and anchor it to the floor. You cannot move.";
     const COCOON_REPAIR_AMOUNT = 0.1;
-    const COCOON_ESCAPE_ACTIONS = Object.freeze({ Cut: 40, Struggle: 50, Remove: 50 });
-    const COCOON_ESCAPE_CHANCE = Object.freeze({ Cut: 0.025, Struggle: 0.02, Remove: 0.02 });
-    const COCOON_ESCAPE_GATE_PENALTY = 100;
-    const LV1_ESCAPE_CHANCE = 100;
+    // Native chance and speed, never a fixed number of successful inputs.
+    const ESCAPE_PROFILES = Object.freeze({
+        Lv1: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 4, Remove: 4, Struggle: 4 }),
+            speedMult: Object.freeze({ Cut: 1, Remove: 1, Struggle: 1 }),
+        }),
+        Lv2: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.18, Remove: 0.3, Struggle: 0.12 }),
+            speedMult: Object.freeze({ Cut: 1, Remove: 1, Struggle: 1 }),
+        }),
+        Lv3: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.1, Remove: 0.14, Struggle: 0.04 }),
+            speedMult: Object.freeze({ Cut: 0.75, Remove: 0.65, Struggle: 0.65 }),
+        }),
+        Legbinder: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.1, Remove: 0.1, Struggle: 0.05 }),
+            speedMult: Object.freeze({ Cut: 0.55, Remove: 0.5, Struggle: 0.55 }),
+        }),
+        Lv2Arm: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.18, Remove: 0.7, Struggle: 0.2 }),
+            speedMult: Object.freeze({ Cut: 1, Remove: 1, Struggle: 1 }),
+        }),
+        Lv3Arm: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.18, Remove: 0.5, Struggle: 0.15 }),
+            speedMult: Object.freeze({ Cut: 0.75, Remove: 0.65, Struggle: 0.65 }),
+        }),
+        Cocoon: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.5, Remove: 0.04, Struggle: 0.03 }),
+            speedMult: Object.freeze({ Cut: 0.1, Remove: 0.2, Struggle: 0.24 }),
+        }),
+    });
+    const COCOON_COST_MULT = Object.freeze({ Cut: 2, Remove: 3, Struggle: 1.5 });
     const ESCAPE_METHODS = Object.freeze(["Cut", "Struggle", "Remove"]);
     const ESCAPE_TEXT = {
         SpiderlingsWebbing: {
             Cut: [
-                "You cut carefully along a seam in TargetRestraint. A few threads part, extending the opening a little further.",
-                "You cut the last connecting threads of TargetRestraint, letting the fragments of silk fall gently away.",
+                "You work the blade along a seam in TargetRestraint.",
+                "You cut through the last threads of TargetRestraint. Scraps of silk fall away.",
+                "You cannot cut TargetRestraint in your current condition.",
+                "Your bindings keep you from holding the blade steady enough to cut TargetRestraint.",
             ],
             Struggle: [
-                "You push against TargetRestraint. The strands ease apart with your movements, widening the gaps in the weave.",
-                "You pull free of the last clinging threads of TargetRestraint and gather the loosened silk.",
+                "You pull against TargetRestraint. The weave creases around your movements.",
+                "You pull free of TargetRestraint and gather the loose silk.",
+                "You cannot pull free of TargetRestraint in your current condition.",
+                "Your other bindings prevent you from struggling against TargetRestraint.",
             ],
             Remove: [
-                "You tease apart the clinging threads of TargetRestraint, slowly lifting a small patch of the weave.",
-                "You peel away TargetRestraint, gathering the loosened threads together.",
+                "You pick at the edge of TargetRestraint, trying to lift the clinging threads.",
+                "You peel away TargetRestraint and gather its threads.",
+                "You cannot loosen TargetRestraint in your current condition.",
+                "Your other bindings keep you from working on TargetRestraint.",
             ],
         },
         SpiderlingsCocoon: {
             Cut: [
-                "You continue cutting along a seam in TargetRestraint. Threads part in the cocoon wall, and the soft edges fall back.",
-                "You cut through the last seam of TargetRestraint, and the severed cocoon layers slowly fall away.",
+                "You work the blade along a seam in TargetRestraint, pressing against its woven layers.",
+                "You cut through the last seam of TargetRestraint. The cocoon falls open.",
             ],
             Struggle: [
-                "You press outward against TargetRestraint. Shallow folds form in the cocoon as more strands loosen inside.",
-                "You widen the opening in TargetRestraint and slip out of the softened layers, gathering the loose silk.",
+                "You press against TargetRestraint. Shallow folds rise along the cocoon.",
+                "You pull open TargetRestraint and slip out, gathering the loose silk.",
             ],
             Remove: [
-                "You slowly peel back the edge of TargetRestraint, parting the clinging layers a little further.",
-                "You peel open TargetRestraint and slip out of the loosened silk, gathering up the freed cocoon.",
+                "You pick at the edge of TargetRestraint, trying to separate its clinging layers.",
+                "You peel open TargetRestraint and slip out. You gather the loosened cocoon.",
             ],
         },
     };
@@ -97,7 +129,6 @@
         "Sounds/webs-sweep-away-by-hand-003_01.ogg",
         "Sounds/webs-sweep-away-by-hand-004_01.ogg",
     ]);
-    const ESCAPE_PROGRESS_KEY = "SpiderlingsEscapeActions";
     const ENEMY_BIND_EFFECT = "SpiderlingsWebbingEnemyBind";
     const PLAYER_HIT_DAMAGE_EVENT = "SpiderlingsWebbingPlayerHitDamage";
     const WEBSPRAY_EFFECT = "SpiderlingsWebSprayHit";
@@ -134,18 +165,18 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Arm Bonds",
-                    "A few pliant strands wind around your wrists, holding your arms together behind you.",
-                    "Small gaps remain between the strands; a turn of your wrist gently draws the threads along with it.",
+                    "A few silk strands hold your wrists together behind your back.",
+                    "When you turn a wrist, the loose threads draw across your skin.",
                 ]),
                 Lv2: Object.freeze([
                     "Woven Silken Arm Bonds",
-                    "Silk interweaves around your wrists and arms, turning the scattered strands into close-fitting bands.",
-                    "The bands follow the curves of your arms, their overlapping threads moving together as you shift.",
+                    "Interwoven silk forms snug bands around your wrists and arms.",
+                    "Overlapping strands follow your arms and pull together when you shift.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Arm Bonds",
-                    "Densely woven silk wraps your arms together behind you, gathering the knots at your wrists into a smooth layer.",
-                    "The silk follows your arms, forming shallow folds as you twist; the earlier gaps are woven closed.",
+                    "Dense silk wraps your arms together behind your back. Its layers cover the knots at your wrists.",
+                    "The gaps have closed. Small folds rise along the silk when you twist.",
                 ]),
             }),
         }),
@@ -157,8 +188,8 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Mitten · Left",
-                    "A thin layer of silk settles over your left hand, gathering its fingers into a soft covering.",
-                    "Your fingertips rest against fluffy fibers, while a few fine threads hang from the cuff.",
+                    "A thin silk mitten gathers the fingers of your left hand together.",
+                    "Soft fibers brush your fingertips. A few threads hang from the cuff.",
                 ]),
             }),
         }),
@@ -170,8 +201,8 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Mitten · Right",
-                    "Thin silk follows the outline of your right hand, wrapping its fingers together.",
-                    "Threads curve from the back of your hand toward your palm, rising in small folds as your knuckles move.",
+                    "A thin silk mitten wraps the fingers of your right hand together.",
+                    "Threads run across your knuckles and crease when you try to bend your fingers.",
                 ]),
             }),
         }),
@@ -183,18 +214,18 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Belly Wrap",
-                    "A narrow band of pliant silk rests against your lower belly.",
-                    "Soft fibers fringe the band, stirring gently with the rise and fall of your body.",
+                    "A narrow silk band rests against your lower belly.",
+                    "Loose fibers fringe the band and stir with your breath.",
                 ]),
                 Lv2: Object.freeze([
                     "Woven Silken Belly Wrap",
-                    "Silk lies in layers over your lower belly, weaving the narrow band into a thick, soft wrap.",
-                    "Fresh threads follow the existing weave, their soft edges reaching toward your waist.",
+                    "Overlapping silk bands cover your lower belly in a soft wrap.",
+                    "Each band lies against the next, with loose threads along your waist.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Belly Wrap",
-                    "Fine silk lies in dense layers, following the curve of your belly in a continuous covering.",
-                    "The weave blends into a smooth surface, forming soft, shallow folds as your body moves.",
+                    "Dense layers of silk cover the curve of your belly.",
+                    "The separate bands have joined. Shallow folds follow each bend of your body.",
                 ]),
             }),
         }),
@@ -205,18 +236,18 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Leg Bindings",
-                    "Sparse strands cross your joined legs, forming a delicate mesh between them.",
-                    "The outlines of your legs show through the open weave; nearby strands quiver together as you shift.",
+                    "Sparse silk strands cross your joined legs.",
+                    "Your legs show through the open mesh. The strands quiver when you shift.",
                 ]),
                 Lv2: Object.freeze([
                     "Woven Silken Leg Bindings",
-                    "Layers of silk settle over your legs, weaving the space between them into a continuous mesh.",
-                    "The weave grows finer, and the overlapping bands form soft folds as your legs shift.",
+                    "Silk bands overlap along your legs and weave across the space between them.",
+                    "Small folds gather where the bands cross your knees.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Leg Bindings",
-                    "Densely woven silk fully wraps your joined legs, closing each opening in the mesh between them.",
-                    "Both legs share a single silken outline, the close layers rising and falling slightly with your movements.",
+                    "Dense silk encloses your joined legs, covering the gaps in the mesh.",
+                    "The silk forms one outline around both legs. Its surface wrinkles when you try to move them.",
                 ]),
             }),
         }),
@@ -227,18 +258,18 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Ankle Bonds",
-                    "A few soft strands cross around your ankles, forming an open mesh between your feet.",
-                    "A small shift of your ankles gently draws the fine threads with it.",
+                    "A few silk strands circle your ankles and cross between your feet.",
+                    "Each shift of your ankles tugs at the threads between them.",
                 ]),
                 Lv2: Object.freeze([
                     "Woven Silken Ankle Bonds",
-                    "Silk circles your ankles in layers, weaving the open mesh into close-fitting bands.",
-                    "Overlapping strands follow the curves of your ankles, with soft fibers fringing their edges.",
+                    "Overlapping silk bands wrap your ankles and fill the open mesh.",
+                    "Soft fibers fringe the bands where they curve around your ankles.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Ankle Bonds",
-                    "Densely woven silk wraps both ankles in one covering, neatly closing the gaps between the bands.",
-                    "The silk lies smoothly against your ankles, forming shallow folds as they move.",
+                    "Dense silk wraps both ankles in one covering. The gaps between the bands have closed.",
+                    "The silk creases at the sides of your ankles when you move.",
                 ]),
             }),
         }),
@@ -249,18 +280,18 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Foot Wrap",
-                    "Thin silk wraps your joined feet, settling into a single covering along their edges.",
-                    "Fine strands lie across your insteps, leaving the outline of your toes visible beneath the weave.",
+                    "Thin silk wraps your joined feet.",
+                    "Your toes show beneath the mesh stretched across your insteps.",
                 ]),
                 Lv2: Object.freeze([
                     "Woven Silken Foot Wrap",
-                    "Silk lies in layers around your feet, wrapping their insteps and edges in a thick, soft weave.",
-                    "The outlines of your toes soften beneath the silk, whose surface carries delicate overlapping ridges.",
+                    "Layers of silk cover your insteps and wrap around both feet.",
+                    "Overlapping threads make small ridges above your toes.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Foot Wrap",
-                    "Layers of silk follow both feet, wrapping their insteps and edges in a dense weave.",
-                    "Fine strands form a smooth covering, softly tracing the shape of your feet held together.",
+                    "Dense silk encloses both feet, filling the gaps over your insteps.",
+                    "The woven surface follows the shape of your feet, held together beneath it.",
                 ]),
             }),
         }),
@@ -274,13 +305,13 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Blindfold",
-                    "A thin veil of silk lies over your eyes, softening the light and blurring distant shapes.",
-                    "The edges rest beside your eyes, and stray threads brush your cheeks as you turn your head.",
+                    "A thin silk veil covers your eyes. Light filters through, but distant shapes blur.",
+                    "Stray threads brush your cheeks when you turn your head.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Blindfold",
-                    "Thick, soft silk covers your eyes, weaving the edges of the blindfold into a single layer.",
-                    "Fine threads lie smoothly beside your eyes and cheeks, the covering moving with each turn of your head.",
+                    "Dense silk covers your eyes and joins the blindfold's edges.",
+                    "The silk rests against your brow and cheeks, shifting with your head.",
                 ]),
             }),
         }),
@@ -294,8 +325,8 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Mouth Stuffing",
-                    "A soft wad of silk rests in your mouth, making your words quiet and indistinct.",
-                    "Fluffy fibers rest behind your lips, trembling softly with each muffled word.",
+                    "A soft wad of silk fills your mouth and muffles your words.",
+                    "Loose fibers tremble behind your lips when you try to speak.",
                 ]),
             }),
         }),
@@ -311,13 +342,13 @@
             text: Object.freeze({
                 Lv1: Object.freeze([
                     "Silken Gag",
-                    "A pliant band of silk covers your mouth, muffling your speech into quiet sounds.",
-                    "Threads follow the corners of your mouth onto your cheeks, their neatly layered edges still showing the weave.",
+                    "A silk band covers your mouth and muffles your speech.",
+                    "Threads extend from the corners of your mouth across your cheeks.",
                 ]),
                 Lv3: Object.freeze([
                     "Dense Silken Gag",
-                    "Layers of silk settle over your mouth, weaving the overlapping mesh into a thick, soft covering.",
-                    "The seams beside your lips are woven closed; muffled sounds pass through the silk, gently stirring its surface.",
+                    "Overlapping silk layers cover your mouth.",
+                    "The seams beside your lips have closed. Muffled sounds stir the silk.",
                 ]),
             }),
         }),
@@ -328,8 +359,8 @@
             text: Object.freeze({
                 Lv3: Object.freeze([
                     "Dense Silken Hood",
-                    "Dense, opaque silk follows the outline of your head from the crown down, wrapping it fully in a close-fitting hood.",
-                    "Hair and features lie beneath the smooth silk, whose soft folds shift as you turn your head.",
+                    "Opaque silk wraps your whole head in a snug hood.",
+                    "The silk covers your hair and face. Small folds shift when you turn your head.",
                 ]),
             }),
         }),
@@ -353,13 +384,9 @@
         VIGIL_IDLE_TURNS,
         COCOON_ANCHORED_MESSAGE,
         COCOON_ANCHORED_FALLBACK,
-        LV2_ESCAPE_EVENT,
-        LV3_ESCAPE_EVENT,
         COCOON_REPAIR_AMOUNT,
-        COCOON_ESCAPE_ACTIONS,
-        COCOON_ESCAPE_CHANCE,
-        COCOON_ESCAPE_GATE_PENALTY,
-        LV1_ESCAPE_CHANCE,
+        ESCAPE_PROFILES,
+        COCOON_COST_MULT,
         ESCAPE_METHODS,
         ESCAPE_TEXT,
         OUTER_GAG_TAG,
@@ -372,7 +399,6 @@
         PAIRED_OUTER_GATE_MARKER,
         EXTERNAL_UNLINK_MARKER,
         ESCAPE_SOUNDS,
-        ESCAPE_PROGRESS_KEY,
         ENEMY_BIND_EFFECT,
         PLAYER_HIT_DAMAGE_EVENT,
         WEBSPRAY_EFFECT,

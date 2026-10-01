@@ -10,6 +10,7 @@
     "test:public": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js public",
     "test:local": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js all",
     "test:compatibility": "node KinkyDungeon-Spiderlings/tools/verify-kd-compatibility.js",
+    "audit:text": "node KinkyDungeon-Spiderlings/tools/audit-spiderlings-text.js",
     "report:delivery": "node KinkyDungeon-Spiderlings/tools/report-spiderlings-delivery.js"
   },
   "devDependencies": {

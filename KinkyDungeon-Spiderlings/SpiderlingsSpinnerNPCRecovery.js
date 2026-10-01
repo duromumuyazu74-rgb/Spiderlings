@@ -36,7 +36,7 @@
         return !!(target && !target.player && target.hp > 0 && target.Enemy?.bound && !KDIsImmobile(target));
     }
 
-    function sourceActionable(source, target, departure) {
+    function sourceActionable(source, target, departure, requireContact = true) {
         if (
             !source ||
             source.Enemy?.name !== "Spinner" ||
@@ -51,6 +51,7 @@
             !(departure?.eligibleSourceIds || []).some((id) => core.sameId(id, source.id))
         )
             return false;
+        if (!requireContact) return true;
         const distance = Math.max(Math.abs(source.x - target.x), Math.abs(source.y - target.y));
         return (
             distance <= MAX_RANGE &&
@@ -79,6 +80,27 @@
             !usesEntity(source.id, targetId) &&
             !api.SpinnerNPCCapture?.usesSource?.(source.id) &&
             !api.SpinnerRecovery?.sourceIds?.().some((id) => core.sameId(id, source.id))
+        );
+    }
+
+    // Only the already selected native target may be considered for pursuit.
+    function wantsPursuit(source, target) {
+        const departure = departureForTarget(target),
+            record = recordForTarget(target);
+        return !!(
+            targetValid(target) &&
+            core.pendingSource(record || departure, source?.id) &&
+            sourceAvailable(source, target.id) &&
+            sourceActionable(source, target, departure, false) &&
+            !api.SpinnerCapture?.sourceIds?.().some((id) => core.sameId(id, source.id)) &&
+            !api.SpinnerNPCCapture?.blocksVoluntaryMove?.(target) &&
+            !Object.values(api.NPCWrapping?.records?.() || {}).some(
+                (wrapping) =>
+                    core.sameId(wrapping.targetId, target.id) ||
+                    wrapping.sourceIds?.some((id) => core.sameId(id, source.id)),
+            ) &&
+            api.SpinnerNativeField?.compositeById?.(departure.compositeId) &&
+            !api.SpinnerNativeField?.containsComposite?.(departure.compositeId, target)
         );
     }
 
@@ -399,6 +421,7 @@
         compositeClaimed,
         recordForTarget,
         departureForTarget,
+        wantsPursuit,
         onEnemyMove,
         onSuccessfulNativeSpinnerHit,
         handleEnemyTurn,

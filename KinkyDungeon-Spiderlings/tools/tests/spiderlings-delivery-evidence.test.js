@@ -256,3 +256,34 @@ test("a reported failed native acceptance fails the command despite passing auto
     assert.equal(report.gameAcceptance.status, "reported");
     assert.equal(report.gameAcceptance.records[0].reportedStatus, "failed");
 });
+
+test("passing selected native scenes cannot be imported as full delivery acceptance", (t) => {
+    const f = fixture(t);
+    f.write(".scratch/native/result.json", JSON.stringify({ status: "passed" }));
+    const input = f.write(
+        ".scratch/native/acceptance.json",
+        JSON.stringify({
+            schemaVersion: 1,
+            packageSha256: hash("fixture package"),
+            verification: {
+                mode: "partial",
+                requested: ["native-escape"],
+                executed: ["normal-helpers", "native-escape"],
+                total: 36,
+            },
+            records: [
+                {
+                    gameVersion: "5.4.92",
+                    status: "passed",
+                    scope: "partial native-escape",
+                    evidence: "result.json",
+                    limitations: [],
+                },
+            ],
+        }),
+    );
+    const result = f.collect({ evidencePath: input });
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.report.gameAcceptance.status, "invalid");
+    assert.match(result.report.errors.join(" "), /Partial compatibility runs/);
+});

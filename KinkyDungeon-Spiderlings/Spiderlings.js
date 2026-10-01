@@ -15,6 +15,23 @@ const SPIDERLINGS = globalThis.Spiderlings;
     const provokedFlag = "SpiderlingsPlayerProvoked";
     const provokedTurns = 10;
     let rivalSelection = null;
+    let rivalProjectileSource = null;
+    let zeroTimeUpdate = false;
+    // Map generation runs native enemy initialization at delta zero. It may
+    // still resolve an already-ready attack, so even the native selector's
+    // first pass must see native factions during that synchronous update.
+    if (typeof KinkyDungeonUpdateEnemies === "function") {
+        const nativeUpdate = KinkyDungeonUpdateEnemies;
+        KinkyDungeonUpdateEnemies = function (delta) {
+            const previous = zeroTimeUpdate;
+            zeroTimeUpdate = !(delta > 0);
+            try {
+                return nativeUpdate.apply(this, arguments);
+            } finally {
+                zeroTimeUpdate = previous;
+            }
+        };
+    }
     // The three-nest Hunting Grounds uses the former modifier ID in existing
     // saves. Its garrison marker distinguishes it from the separate five-nest
     // Spiderling Infestation while the two floors are developed independently.
@@ -30,9 +47,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             onHuntingGrounds() &&
             isHostileSpiderlingTarget(enemy) &&
             other !== enemy &&
-            other?.Enemy &&
-            other.hp > 0 &&
-            !other.player &&
+            isIndependentNPC(other) &&
             other.Enemy.name !== "NestEntrance" &&
             KDGetFaction(other) !== KDGetFaction(enemy) &&
             !other.Enemy.tags?.scenery &&
@@ -40,6 +55,18 @@ const SPIDERLINGS = globalThis.Spiderlings;
         );
     }
     SPIDERLINGS.HuntingGrounds = { active: onHuntingGrounds, isPrey: isHuntingPrey };
+    function isIndependentNPC(entity) {
+        return (
+            entity?.Enemy &&
+            entity.hp > 0 &&
+            !entity.player &&
+            !entity.allied &&
+            !entity.Enemy.allied &&
+            !(entity.ceasefire > 0) &&
+            !(typeof KDIsInParty == "function" && KDIsInParty(entity)) &&
+            !(typeof KDIsServant == "function" && KDIsServant(KDGameData.Collection?.[entity.id + ""]))
+        );
+    }
     function isHostileSpiderlingTarget(entity) {
         return (
             entity &&
@@ -79,29 +106,36 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             other?.hp > 0 &&
             ((isMaidRival(enemy) && isMaidTarget(other)) ||
-                (isHostileSpiderlingTarget(enemy) && isMaidRival(other)) ||
-                isHuntingPrey(enemy, other))
+                (isMaidTarget(enemy) && isMaidRival(other)) ||
+                isHuntingPrey(enemy, other) ||
+                isHuntingPrey(other, enemy))
+        );
+    }
+    function isRivalActor(entity) {
+        return (
+            isMaidRival(entity) ||
+            isHostileSpiderlingTarget(entity) ||
+            (onHuntingGrounds() &&
+                isIndependentNPC(entity) &&
+                !entity.Enemy.tags?.scenery &&
+                !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(entity))
         );
     }
     KDHostile = function (enemy, other) {
         const original = nativeHostile.apply(this, arguments);
+        if (zeroTimeUpdate) return original;
         // Only during the rival-search pass: remove the player's distance ceiling
         // and let the native selector consider this pair, with its normal perception.
         if (rivalSelection === enemy && !isRivalPair(enemy, other)) return false;
         if (original || !other || enemy === other) return original;
-        if (isHuntingPrey(enemy, other)) return true;
-        if (enemy.ceasefire > 0 || other.ceasefire > 0) return original;
-        return (
-            (KDGetFaction(enemy) === "Maidforce" && isMaidTarget(other)) ||
-            (KDGetFaction(other) === "Maidforce" && isMaidTarget(enemy)) ||
-            original
-        );
+        if (isRivalPair(enemy, other)) return true;
+        return original;
     };
     KDHostile.spiderlingsMaidHostility = true;
     if (typeof KinkyDungeonNearestPlayer == "function") {
         const nativeNearest = KinkyDungeonNearestPlayer;
         KinkyDungeonNearestPlayer = function (enemy, requireVision, decoy, visionRadius, aiData) {
-            if (!decoy || !(enemy?.hp > 0) || !(isMaidRival(enemy) || isHostileSpiderlingTarget(enemy)))
+            if (zeroTimeUpdate || !decoy || !(enemy?.hp > 0) || !isRivalActor(enemy))
                 return nativeNearest.apply(this, arguments);
             let radius = visionRadius || KDEnemyVisionRadius(enemy);
             if (!visionRadius && enemy.blind && !enemy.aware) radius = 1.5;
@@ -148,7 +182,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             // spider's own perception wake it, including immobile nests and old saves.
             if (
                 !enemy.aware &&
-                isHostileSpiderlingTarget(enemy) &&
+                (isHostileSpiderlingTarget(enemy) || (onHuntingGrounds() && isRivalActor(enemy))) &&
                 !KDHelpless(enemy) &&
                 !KDIsImprisoned(enemy) &&
                 KDNearbyEnemies(enemy.x, enemy.y, radius).some(
@@ -257,6 +291,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             const ai = KDAIType[name];
             const nativeAfterMove = ai.aftermove;
             ai.aftermove = function (enemy, player, aiData) {
+                if (zeroTimeUpdate) return nativeAfterMove.apply(this, arguments);
                 return (
                     nativeAfterMove.apply(this, arguments) ||
                     seekRival(enemy, player, aiData) ||
@@ -280,10 +315,37 @@ const SPIDERLINGS = globalThis.Spiderlings;
     if (typeof KDFactionFavorable == "function") {
         const nativeFavorable = KDFactionFavorable;
         KDFactionFavorable = function (faction, other) {
+            if (zeroTimeUpdate) return nativeFavorable.apply(this, arguments);
+            if (rivalProjectileSource) {
+                if (faction === KDGetFaction(rivalProjectileSource) && isRivalPair(rivalProjectileSource, other))
+                    return false;
+                return nativeFavorable.apply(this, arguments);
+            }
             if (faction === "Maidforce" && isMaidTarget(other)) return false;
             return nativeFavorable.apply(this, arguments);
         };
     }
+    // NPC collision queries carry the actual caster. Apply hunting hostility
+    // only inside that query, preserving native geometry, unique hits and heals.
+    function rivalCollision(native) {
+        return function (bullet, _target) {
+            if (bullet?.bullet?.spell?.friendlyfire || (!onHuntingGrounds() && bullet?.bullet?.faction !== "Maidforce"))
+                return native.apply(this, arguments);
+            const sourceId = bullet?.bullet?.source;
+            const source = sourceId == null ? undefined : KDMapData.Entities.find((entity) => entity.id === sourceId);
+            if (!source || bullet.bullet.damage?.type === "heal") return native.apply(this, arguments);
+            const previous = rivalProjectileSource;
+            rivalProjectileSource = source;
+            try {
+                return native.apply(this, arguments);
+            } finally {
+                rivalProjectileSource = previous;
+            }
+        };
+    }
+    if (typeof KDBulletCanHitEntity === "function") KDBulletCanHitEntity = rivalCollision(KDBulletCanHitEntity);
+    if (typeof KDBulletAoECanHitEntity === "function")
+        KDBulletAoECanHitEntity = rivalCollision(KDBulletAoECanHitEntity);
 })();
 
 //Enemies------------------------------------------------------------------------------------------------------------------
@@ -318,7 +380,7 @@ SPIDERLINGS.addEnemies([
         AI: "hunt",
         sneakThreshold: 1,
         disarm: 0.25,
-        visionRadius: 5,
+        visionRadius: 8,
         maxhp: 2,
         minLevel: 0,
         weight: 10,
@@ -561,51 +623,33 @@ addTextKey("SpiderlingsNPCWrapping", "Wrapping");
 
 //Spinner
 addTextKey("NameSpinner", "Spiderling Spinner");
-addTextKey(
-    "AttackSpinner",
-    "The Spiderling Spinner takes tiny steps across your body, its fine legs brushing you with a faint tickle.",
-);
+addTextKey("AttackSpinner", "The Spiderling Spinner steps across your body. Its slender legs tickle your skin.");
 addTextKey(
     "AttackSpinnerBind",
-    "The Spiderling Spinner winds a loop of silk around your legs, then stays nearby to keep weaving. (+RestraintAdded)",
+    "The Spiderling Spinner draws silk around you and binds it in place. (+RestraintAdded)",
 );
-addTextKey("KillSpinner", "The Spiderling Spinner folds its fine legs, easing back and out of sight.");
+addTextKey("KillSpinner", "The Spiderling Spinner folds its legs and slips out of sight.");
 
 //Jumper
 addTextKey("NameJumper", "Spiderling Jumper");
-addTextKey(
-    "AttackJumper",
-    "The Spiderling Jumper springs lightly toward you, its fine legs brushing your body with a faint tickle.",
-);
-addTextKey(
-    "AttackJumperBind",
-    "The Spiderling Jumper lands on you, drawing its silk into a binding with the motion before hopping away. (+RestraintAdded)",
-);
-addTextKey("KillJumper", "The Spiderling Jumper draws in its fine legs, stepping back and soon out of sight.");
+addTextKey("AttackJumper", "The Spiderling Jumper springs onto you, its legs brushing your skin.");
+addTextKey("AttackJumperBind", "The Spiderling Jumper lands on you and loops silk around your body. (+RestraintAdded)");
+addTextKey("KillJumper", "The Spiderling Jumper folds its legs and hops out of sight.");
 
 //Tunneler
 addTextKey("NameTunneler", "Spiderling Tunneler");
-addTextKey(
-    "KillTunneler",
-    "The Spiderling Tunneler slips away along the ground, leaving a few fine threads to settle behind it.",
-);
+addTextKey("KillTunneler", "The Spiderling Tunneler slips away, trailing a few strands of silk.");
 
 //NestEntrance - Need to fix summon text
 addTextKey("NameNestEntrance", "Nest Entrance");
-addTextKey(
-    "KillNestEntrance",
-    "The nest entrance collapses, its silken fringe settling as the spiderlings within crawl out.",
-);
+addTextKey("KillNestEntrance", "The nest entrance collapses beneath a loose fringe of silk.");
 
 //WebCaster
 addTextKey("NameWebCaster", "Spiderling Web Caster");
-addTextKey(
-    "KillWebCaster",
-    "The Spiderling Web Caster draws its fine legs close and eases away, leaving a slender thread behind.",
-);
+addTextKey("KillWebCaster", "The Spiderling Web Caster draws its legs close and retreats along a thread of silk.");
 
 addTextKey("NameMageSpiderlings", "Spiderling Mage");
-addTextKey("NameSpiderlingsSpinnerTrap", "Capture field boundary");
+addTextKey("NameSpiderlingsSpinnerTrap", "Web boundary");
 addTextKey("KillMageSpiderlings", "The Spiderling Mage draws back its legs and retreats into the shadows.");
 
 //Enemy Spells--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -972,111 +1016,90 @@ SPIDERLINGS.addSpells([
 ]);
 
 //Enemy Spell Text--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Mage Silk Bolt");
+addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Silk Ball");
 addTextKey("KinkyDungeonSpellSpiderlingsMageRune", "Silken Rune");
 addTextKey("KinkyDungeonSpellSpiderlingsMageHex", "Shield-Eating Sigil");
 addTextKey("KinkyDungeonSpellSpiderlingsMageCollapse", "Thousand-Silk Collapse");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageHex",
-    "The Spiderling Mage draws silk inward across marked ground. Each actual turn inside the active sigil adds one mark (up to three) and refreshes it; overlapping sigils grant no extra layer that turn.",
+    "The Spiderling Mage draws silk inward across the glowing sigil.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageCollapse",
-    "Silk gathers from the marked outer tiles toward the center before bursting.",
+    "Silk gathers toward the center of the marked ground, ready to burst.",
 );
 addTextKey("KinkyDungeonSpellCastSpiderlingsMageRune", "The Spiderling Mage marks a nearby tile with a glowing rune.");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageBolt",
-    "The Spiderling Mage gathers a bright knot of silk and casts it toward you.",
+    "The Spiderling Mage gathers a glowing ball of silk and sends it forward.",
 );
 addTextKey("KinkyDungeonSpellSummonSpinner", "Summon Spinner");
-addTextKey(
-    "KinkyDungeonSummonSummonSpinner",
-    "A Spiderling Spinner follows a strand of silk into view, its fine legs touching lightly down.",
-);
+addTextKey("KinkyDungeonSummonSummonSpinner", "A Spiderling Spinner steps into view along a strand of silk.");
 addTextKey(
     "KinkyDungeonSpellCastSummonSpinner",
-    "A soft patter stirs the slender threads; a Spiderling Spinner is about to emerge.",
+    "Tiny footsteps rustle along the silk. A Spiderling Spinner is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonJumper", "Summon Jumper");
-addTextKey(
-    "KinkyDungeonSummonSummonJumper",
-    "A Spiderling Jumper hops into view, its fine legs unfolding as it lands.",
-);
-addTextKey(
-    "KinkyDungeonSpellCastSummonJumper",
-    "A delicate rustling draws closer; a Spiderling Jumper is about to emerge.",
-);
+addTextKey("KinkyDungeonSummonSummonJumper", "A Spiderling Jumper hops into view and unfolds its legs.");
+addTextKey("KinkyDungeonSpellCastSummonJumper", "Rustling draws closer. A Spiderling Jumper is about to emerge.");
 
 addTextKey("KinkyDungeonSpellSummonWebCaster", "Summon Web Caster");
 addTextKey(
     "KinkyDungeonSummonSummonWebCaster",
-    "A Spiderling Web Caster crawls into view, laying a trailing thread along the ground.",
+    "A Spiderling Web Caster crawls into view, trailing silk along the ground.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSummonWebCaster",
-    "A strand of silk slowly draws into view; a Spiderling Web Caster is about to emerge.",
+    "A strand of silk slides into view. A Spiderling Web Caster is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonTunneler", "Summon Tunneler");
-addTextKey(
-    "KinkyDungeonSummonSummonTunneler",
-    "A Spiderling Tunneler emerges, taking tiny steps along the ground on its fine legs.",
-);
+addTextKey("KinkyDungeonSummonSummonTunneler", "A Spiderling Tunneler emerges and scurries along the ground.");
 addTextKey(
     "KinkyDungeonSpellCastSummonTunneler",
-    "A soft digging sound comes from the ground; a Spiderling Tunneler is about to emerge.",
+    "Scratching comes from beneath the ground. A Spiderling Tunneler is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonNestEntrance", "Dig a Spiderling Nest");
 addTextKey(
     "KinkyDungeonSummonSummonNestEntrance",
-    "An opening appears in the ground, fine silk lining its edges as a new nest entrance takes shape.",
+    "A new nest entrance opens in the ground, its edges lined with silk.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSummonNestEntrance",
-    "The Spiderling Tunneler settles close to the ground to dig, laying silk along the cracks strand by strand.",
+    "The Spiderling Tunneler digs into the ground and lines the cracks with silk.",
 );
 
 addTextKey("KinkyDungeonSpellSpiderlingsJumperDash", "Jumper Dash");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsJumperDash",
-    "The Spiderling Jumper watches the ground beneath you, lowering its body and folding its fine legs in preparation to leap.",
+    "The Spiderling Jumper crouches, its legs tucked beneath it, ready to leap at you.",
 );
 
 addTextKey("KinkyDungeonSpellWebSpray", "Web Spray");
 addTextKey(
     "KinkyDungeonSpellCastWebSpray",
-    "The Spiderling Web Caster sprays a bundle of silk toward you, its fine threads unfurling in the air.",
+    "The Spiderling Web Caster sprays silk toward you. The strands spread in the air.",
 );
 addTextKey(
     "KinkyDungeonSpellWebSprayDamage",
-    "The spray lands on you, its soft, clinging threads winding around you. (DamageDealt)",
+    "The silk spray lands, and sticky strands cling to your body. (DamageDealt)",
 );
-addTextKey(
-    "KinkyDungeonSpellWebSprayBind",
-    "The sprayed silk settles against your body, its strands joining into a close-fitting web.",
-);
+addTextKey("KinkyDungeonSpellWebSprayBind", "The sprayed strands join into a web against your body.");
 
 addTextKey("KinkyDungeonSpellSpiderWeb", "Ground Webbing");
-addTextKey(
-    "KinkyDungeonSpellCastSpiderWeb",
-    "Pliant threads settle onto the ground, spreading into an open mesh all around.",
-);
+addTextKey("KinkyDungeonSpellCastSpiderWeb", "Silk spreads over the ground in an open mesh.");
 addTextKey(
     "KinkyDungeonSpellSpiderWebDamage",
-    "You step into the web, drawing up clinging threads that wind around your feet. (DamageDealt)",
+    "You step into the web. Sticky strands cling to your feet. (DamageDealt)",
 );
-addTextKey(
-    "KinkyDungeonSpellSpiderWebBind",
-    "You step into the web, and soft, clinging threads curl around your feet in little loops.",
-);
+addTextKey("KinkyDungeonSpellSpiderWebBind", "Threads from the web loop around your feet.");
 
 KinkyDungeonRefreshRestraintsCache();
 KinkyDungeonRefreshEnemiesCache();
 
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
-    "The Spiderling Jumper watches the ground beneath its opponent and lowers its body, preparing to leap.",
+    "The Spiderling Jumper crouches, ready to leap at its opponent.",
 );

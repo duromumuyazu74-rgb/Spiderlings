@@ -5,6 +5,8 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { spawnSync } = require("node:child_process");
 const { parseReleaseVersion } = require("./release-version.js");
+const { escapeTextKeys, inspectEscapeText } = require("./escape-text-contract.js");
+const { inspectTranslationPlaceholders } = require("./translation-contract.js");
 
 const modRoot = path.resolve(__dirname, "..");
 const workspaceRoot = path.resolve(modRoot, "..");
@@ -79,8 +81,8 @@ const soundAssets = [
     "Sounds/webs-sweep-away-by-hand-004_01.ogg",
 ];
 const runtimeAssets = [
-    "Items/SpiderlingsSilkenBindingTome.png",
-    "Items/SpiderlingsSilkweaverStaff.png",
+    "Items/SpiderlingTome.png",
+    "Items/SpiderlingStaff.png",
     "UI/MapMod/SpiderlingsInfestation.png",
     "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",
@@ -615,6 +617,8 @@ function createMockState() {
     let restraintCacheRefreshes = 0;
     const context = {
         console,
+        Map,
+        Weapon: "weapon",
         globalThis: null,
         window: null,
         ModelDefs: {},
@@ -623,6 +627,18 @@ function createMockState() {
         KinkyDungeonRestraints: restraints,
         KinkyDungeonEnemies: enemies,
         KinkyDungeonWeapons: {},
+        KinkyDungeonInventory: new Map([["weapon", new Map()]]),
+        KinkyDungeonWeaponVariants: {},
+        KinkyDungeonWeaponChoices: [],
+        KinkyDungeonLostItems: [],
+        KinkyDungeonPlayerBuffs: {},
+        KinkyDungeonPlayerWeapon: "",
+        KinkyDungeonInventoryAddWeapon() {},
+        KinkyDungeonInventoryGetWeapon() {},
+        KinkyDungeonInventoryGet() {},
+        KinkyDungeonInventoryGetSafe() {},
+        KinkyDungeonFindWeapon() {},
+        KDSetWeapon() {},
         KDPrereqs: {},
         KinkyDungeonSpellSpecials: {},
         KinkyDungeonCastSpell() {},
@@ -638,6 +654,11 @@ function createMockState() {
         KDCastConditions: {},
         KDPlayerEffects: { TrapBindings: nativeTrapBindings },
         KDModConfigs: {},
+        KDMapMods: {},
+        KinkyDungeonEscapeTypes: {},
+        KDCancelEvents: {},
+        KinkyDungeonPlaceEnemies() {},
+        KDRemoveEntity() {},
         KDModSettings: {},
         KDModFiles: {},
         KinkyDungeonPlayer: {},
@@ -651,6 +672,9 @@ function createMockState() {
             },
         },
         KDGameData: {},
+        KDMapData: {},
+        KDWorldMap: {},
+        KDPersistentNPCs: {},
         KDRefreshCharacter: new Map(),
         KDRefresh: false,
         KinkyDungeonPlayerNeedsRefresh: false,
@@ -1227,8 +1251,8 @@ function checkRuntime(state) {
             .filter((event) => event.type === "SpiderlingsLv2Escape")
             .map((event) => event.trigger)
             .sort();
-        if (JSON.stringify(escapeTriggers) !== JSON.stringify(["beforeStruggleCalc", "struggle"])) {
-            fail(`${family.id} must require the shared two-action native escape lifecycle.`);
+        if (escapeTriggers.length !== 0) {
+            fail(`${family.id} must delegate progression to native escape parameters.`);
         }
         for (const suffix of ["", "Desc", "Desc2"]) {
             if (!String(state.texts[`Restraint${family.id}${suffix}`] || "").trim())
@@ -1319,8 +1343,8 @@ function checkRuntime(state) {
             .filter((event) => event.type === "SpiderlingsLv3Escape")
             .map((event) => event.trigger)
             .sort();
-        if (JSON.stringify(escapeTriggers) !== JSON.stringify(["beforeStruggleCalc", "struggle"])) {
-            fail(`${family.id} must use the shared two-action native escape lifecycle.`);
+        if (escapeTriggers.length !== 0) {
+            fail(`${family.id} must delegate progression to native escape parameters.`);
         }
         const escapeTarget = state.context.Spiderlings.Webbing.resolveWebbingAction({
             action: {
@@ -1331,8 +1355,8 @@ function checkRuntime(state) {
                 progress: 1,
             },
         }).outcome;
-        if (escapeTarget.requiredActions !== 2 || escapeTarget.completed !== true) {
-            fail(`${family.id} must complete its counted escape on the second effective action.`);
+        if (escapeTarget.reason !== "unsupported-action") {
+            fail(`${family.id} must not complete escape in the lifecycle resolver.`);
         }
         const refreshTriggers = ((restraint && restraint.events) || [])
             .filter((event) => event.type === "SpiderlingsRefreshModels")
@@ -1426,6 +1450,26 @@ function checkRuntime(state) {
     if (errors.length === cocoonGateErrors)
         pass("Cocoon blocks all twenty-three inner Webbing items across groups and restores their actions on removal.");
 
+    for (const definition of byId.values()) {
+        if (!definition.name.startsWith("SpiderlingsWebbing")) continue;
+        const stage =
+            definition.name === cocoon.id
+                ? "Cocoon"
+                : definition.name.includes("Lv3")
+                  ? "Lv3"
+                  : definition.name.includes("Lv2")
+                    ? "Lv2"
+                    : "Lv1";
+        const profiles = state.context.Spiderlings.WebbingData.ESCAPE_PROFILES;
+        const profile = profiles[stage + (definition.name.endsWith("Arm") ? "Arm" : "")] || profiles[stage];
+        if (
+            JSON.stringify(plain(definition.escapeChance)) !== JSON.stringify(plain(profile.escapeChance)) ||
+            JSON.stringify(plain(definition.speedMult)) !== JSON.stringify(plain(profile.speedMult)) ||
+            definition.struggleMinSpeed?.Cut !== 0.01 ||
+            definition.alwaysEscapable?.includes("Cut")
+        )
+            fail(definition.name + " must retain native escape parameters and native cutting access.");
+    }
     const cocoonRestraint = byId.get(cocoon.id);
     const cocoonModel = byModel.get(cocoon.model);
     const cocoonLayer = layers(cocoonModel)[0];
@@ -1435,7 +1479,7 @@ function checkRuntime(state) {
         cocoonRestraint.immobile === true ||
         cocoonRestraint.hobble !== 3 ||
         JSON.stringify(plain(cocoonRestraint.escapeChance)) !==
-            JSON.stringify({ Cut: 0.025, Struggle: 0.02, Remove: 0.02 })
+            JSON.stringify({ Cut: 0.5, Remove: 0.04, Struggle: 0.03 })
     ) {
         fail("Cocoon restraint contract changed.");
     }
@@ -1479,14 +1523,14 @@ function checkRuntime(state) {
     }
     const webbingSource = readModText("SpiderlingsWebbing.js");
     if (/Math\.max\(0,\s*Number\(data\.cost/.test(webbingSource))
-        fail("counted escape must preserve KD's negative stamina cost sign.");
+        fail("native escape must preserve KD's negative stamina cost sign.");
     const testModels = [...byModel.values()].filter((model) =>
         layers(model).some((layer) => layer.Sprite === "TestPlaceholder"),
     );
     if (testModels.length) fail("No model may retain TEST placeholder art.");
     if (!errors.some((message) => /Cocoon|Lv2|negative stamina|TEST placeholder/.test(message))) {
         pass(
-            "all five Lv2 items and Cocoon render delivered art and retain their counted escape contracts; no placeholder remains.",
+            "all five Lv2 items and Cocoon render delivered art and retain their native escape contracts; no placeholder remains.",
         );
     }
 }
@@ -1781,6 +1825,9 @@ function checkRouting(state) {
 
 function checkTranslations(state) {
     const initialErrorCount = errors.length;
+    const localeTexts = {};
+    for (const error of inspectEscapeText(state.context.KinkyDungeonRestraints, (key) => state.texts[key]).errors)
+        fail(`English fallback ${error}`);
     const currentIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
         .concat(cocoon.id, "SpiderlingsSpinnerLegbinder");
@@ -1799,6 +1846,10 @@ function checkTranslations(state) {
         ),
     );
     runtimeMessageKeys.push(...escapeMessageKeys);
+    escapeMessageKeys.push(
+        ...escapeTextKeys(state.context.KinkyDungeonRestraints).filter((key) => !escapeMessageKeys.includes(key)),
+    );
+    runtimeMessageKeys.push(...escapeMessageKeys.filter((key) => !runtimeMessageKeys.includes(key)));
     runtimeMessageKeys.push("KinkyDungeonStatSpiderlingsCocoonStart", "KinkyDungeonStatDescSpiderlingsCocoonStart");
     runtimeMessageKeys.push(
         ...["Pull", "Contest", "Start", "Win", "Interrupt", "Tired", "Wrap", "Done", "Weave", "Escape"].map(
@@ -1825,6 +1876,7 @@ function checkTranslations(state) {
             continue;
         }
         const entries = parseCsv(localeFile);
+        localeTexts[localeFile] = entries;
         for (const id of currentIds) {
             for (const suffix of ["", "Desc", "Desc2"]) {
                 if (!String(entries.get(`Restraint${id}${suffix}`) || "").trim())
@@ -1845,6 +1897,7 @@ function checkTranslations(state) {
         }
         if (!String(entries.get(pairedGateKey) || "").trim()) fail(`${localeFile} is missing ${pairedGateKey}.`);
     }
+    for (const error of inspectTranslationPlaceholders(state.texts, localeTexts)) fail(error);
     const fallbackMissing = currentIds
         .flatMap((id) => ["", "Desc", "Desc2"].map((suffix) => `Restraint${id}${suffix}`))
         .concat(runtimeMessageKeys, pairedGateKey)

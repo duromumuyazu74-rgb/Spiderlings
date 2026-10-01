@@ -20,17 +20,16 @@
     const messages = {
         NameSpiderlingsSilkAnchor: "Web knot",
         KillSpiderlingsSilkAnchor: "The web boundary tears open.",
-        SpiderlingsFieldPreparing:
-            "Spinners build the capture field boundary. Leave through its entrance before it closes, or cut a connection.",
-        SpiderlingsFieldReady: "A boundary connection is complete. The Spinners continue building the capture field.",
-        SpiderlingsFieldSprung: "The capture field is enclosed. Players still inside can be captured.",
-        SpiderlingsFieldBroken: "A knot breaks. The trap collapses and the threads release you.",
+        SpiderlingsFieldPreparing: "Spinners weave a web boundary around the field. The entrance is still open.",
+        SpiderlingsFieldReady: "Another strand joins the web boundary. The Spinners keep weaving.",
+        SpiderlingsFieldSprung: "The web boundary closes around the field.",
+        SpiderlingsFieldBroken: "A web knot breaks. The weaving stops; silk already wrapped around you remains.",
         SpiderlingsFieldReset: "Reset test field",
         SpiderlingsFieldJumper: "Release Jumper",
         SpiderlingsFieldAddSpinner: "Add Spinner",
         SpiderlingsFieldStatus: "Capture field: {phase} · corners {count}/4 · connections {links}/4",
-        SpiderlingsFieldRebuild: "Spinners resume building in {turns} world turns.",
-        SpiderlingsFieldWaiting: "The capture field is ready. The western entrance stays open until you enter.",
+        SpiderlingsFieldRebuild: "The Spinners will resume weaving in {turns} turns.",
+        SpiderlingsFieldWaiting: "The web boundary is ready. Its western entrance remains open.",
     };
     for (const [key, text] of Object.entries(messages)) if (typeof addTextKey === "function") addTextKey(key, text);
     function say(key) {

@@ -541,15 +541,46 @@
         }
     }
 
+    function drawCocoon(g, x, y, size, color) {
+        const center = y + size * 0.08,
+            rx = size * 0.27,
+            ry = size * 0.4;
+        g.lineStyle(2, 0x72586d, 0.85).beginFill(color, 0.96);
+        for (let step = 0; step <= 32; step++) {
+            const angle = (step / 32) * Math.PI * 2,
+                xx = x + Math.cos(angle) * rx,
+                yy = center + Math.sin(angle) * ry;
+            if (!step) g.moveTo(xx, yy);
+            else g.lineTo(xx, yy);
+        }
+        g.endFill();
+        // The body is enclosed; the upper face remains visible above the silk.
+        for (let band = -4; band <= 4; band++) {
+            const height = center + band * size * 0.075,
+                width = rx * Math.sqrt(1 - ((height - center) / ry) ** 2);
+            g.lineStyle(2, pink() ? 0xd294bf : 0xcbbdce, 0.8);
+            g.moveTo(x - width, height - size * 0.014);
+            g.lineTo(x + width, height + size * 0.014);
+            g.lineStyle(1.2, 0xfffbff, 0.9);
+            g.moveTo(x - width * 0.95, height + size * 0.016);
+            g.lineTo(x + width * 0.95, height - size * 0.016);
+        }
+    }
+
     function drawWeaponWebbing() {
         for (const target of KDMapData.Entities) {
             if (!(target.hp > 0) || !visible(target.x, target.y, target)) continue;
             const web = api.WeaponWebbing?.status(target);
-            if (!web) continue;
+            const cocoon = web?.cocoon || api.NPCAdhesion?.hasSpiderHelplessness(target, false);
+            if (!web && !cocoon) continue;
             const [x, y] = xy(target.visual_x ?? target.x, target.visual_y ?? target.y);
             const size = KinkyDungeonGridSizeDisplay;
             const g = graphics("actor");
             const color = pink() ? 0xefb7df : 0xf4eef5;
+            if (cocoon) {
+                drawCocoon(g, x, y, size, color);
+                continue;
+            }
             const bands = 2 + Math.floor(web.coverage * 6);
             // Bands occupy the actor's body; the head remains readable at every coverage.
             for (let band = 0; band < bands; band++) {
@@ -647,6 +678,12 @@
             if (typeof kdbulletboard === "undefined" || board !== kdbulletboard) return nativeDraw.apply(this, args);
             const root = KinkyDungeonRootDirectory + "Bullets/";
             const name = typeof path === "string" && path.startsWith(root) ? path.slice(root.length) : "";
+            // Native AoE appends Hit to this invisible launcher but does not
+            // preserve noSprite. Both runtimes provide the same Rope family art.
+            if (name === "WitchRopeBoltLaunchManyHit.png") {
+                args[3] = root + "RopeBoltLaunchManyHit.png";
+                return nativeDraw.apply(this, args);
+            }
             const bolt = name === "SpiderlingsMageBolt.png";
             const spray = name === "WebSpray.png" || name === "WebSprayPink.png";
             const trail = name === "WebSprayTrail.png" || name === "WebSprayTrailPink.png";
@@ -666,7 +703,11 @@
                 bulletFrames.set(id, record);
             }
             record.last = now();
-            if (impact) args[9].alpha = (args[9].alpha ?? 1) * Math.max(0, 1 - (now() - record.start) / DURATION);
+            if (impact) {
+                args[3] = root + `SpiderWebHit${pink()}.png`;
+                args[8] = 0;
+                args[9].alpha = (args[9].alpha ?? 1) * Math.max(0, 1 - (now() - record.start) / DURATION);
+            }
             if (bolt || spray) {
                 if (bolt) {
                     args[6] *= 0.9;
@@ -684,7 +725,11 @@
                 for (const [index, previous] of record.points.entries()) {
                     const ghost = [...args];
                     ghost[2] = `${id}_spider_trail_${index}`;
-                    ghost[3] = bolt ? path : root + `WebSprayTrail${pink()}.png`;
+                    ghost[3] = root + `WebSprayTrail${pink()}.png`;
+                    if (bolt) {
+                        ghost[7] *= 0.28;
+                        ghost[8] = Math.atan2(point.y - previous.y, point.x - previous.x);
+                    }
                     ghost[4] = previous.x * size + offsetX;
                     ghost[5] = previous.y * size + offsetY;
                     ghost[9] = {

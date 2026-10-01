@@ -55,7 +55,7 @@
         const before = playerState();
         const npcHP = target.hp;
         cast("SpiderlingsMageCollapse", mage, target);
-        for (let i = 0; i < 3; i++) await turn();
+        for (let i = 0; i < 5; i++) await turn();
         const after = playerState();
         expect(JSON.stringify(before) === JSON.stringify(after), "Friendly Collapse harmed player");
         expect(target.hp < npcHP && target.specialBoundLevel?.Slime > 0, "Friendly Collapse missed hostile NPC");
@@ -103,6 +103,8 @@
         KDMoveEntity(target, rune.x, rune.y, false);
         await turn();
         expect(rune.SpiderlingsRunePhase === "triggered", "Hostile NPC did not trigger friendly rune");
+        await turn();
+        expect(!target.specialBoundLevel?.Slime, "Friendly rune resolved before its second warning turn");
         await turn();
         const after = playerState();
         expect(JSON.stringify(before) === JSON.stringify(after), "Friendly rune blast bound player");

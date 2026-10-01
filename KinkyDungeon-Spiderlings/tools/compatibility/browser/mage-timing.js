@@ -121,85 +121,113 @@
             KDMovePlayer(12, 10, false);
             const caster = spawn("MageSpiderlings", 8, 8);
             caster.stun = 999;
-            expect(cast("SpiderlingsMageCollapse", caster).result === "Cast", "Collapse cast failed");
             const collapse = { pink, kind: mode, turns: [] };
             rows.push(collapse);
-            const affected = [];
-            for (let y = 8; y <= 12; y++)
-                for (let x = 10; x <= 14; x++)
-                    if (Spiderlings.MageSpells.collapseDistance(12, 10, { x, y }) >= 0) affected.push({ x, y });
-            expect(affected.length === 21, "Collapse footprint is not 21 cells");
-            images[`${color}-collapse-${mode}-warning`] = await photo();
-            const danger = () => rendered(`danger_collapse_${caster.id}_`);
-            const trails = () => {
-                const ground = kdgameboard.children.find((g) => g.name === "SpiderlingsSpellVisuals_ground");
-                return (ground?.geometry?.graphicsData || [])
-                    .filter((shape) => shape.lineStyle.width === 1.4)
-                    .map((shape) => ({
-                        x: shape.shape.points[0],
-                        y: shape.shape.points[1],
-                        alpha: shape.lineStyle.alpha,
-                    }));
-            };
-            expect(danger().length === 21, "Collapse warning did not retain all 21 dangerous cells");
-            {
-                await frame();
-                const before = trails(),
-                    center = rendered(`collapse_${caster.id}`);
-                const centerSprite = kdpixisprites.get(center[0]?.id);
-                const initialDistance = before.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y));
-                await new Promise((resolve) => setTimeout(resolve, 350));
-                await frame();
-                expect(danger().length === 21, "Inward gathering shrank the dangerous-cell mask");
-                const gathered = trails();
-                collapse.gatheringDebug = {
-                    before,
-                    gathered,
-                    initialDistance,
-                    currentDistance: gathered.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y)),
+            const nativeTime = CommonTime;
+            let visualTime = nativeTime();
+            CommonTime = () => visualTime;
+            try {
+                expect(cast("SpiderlingsMageCollapse", caster).result === "Cast", "Collapse cast failed");
+                const affected = [];
+                for (let y = 8; y <= 12; y++)
+                    for (let x = 10; x <= 14; x++)
+                        if (Spiderlings.MageSpells.collapseDistance(12, 10, { x, y }) >= 0) affected.push({ x, y });
+                expect(affected.length === 21, "Collapse footprint is not 21 cells");
+                images[`${color}-collapse-${mode}-warning`] = await photo();
+                const danger = () => rendered(`danger_collapse_${caster.id}_`);
+                const trails = () => {
+                    const ground = kdgameboard.children.find((g) => g.name === "SpiderlingsSpellVisuals_ground");
+                    return (ground?.geometry?.graphicsData || [])
+                        .filter((shape) => shape.lineStyle.width === 1.4)
+                        .map((shape) => ({
+                            x: shape.shape.points[0],
+                            y: shape.shape.points[1],
+                            alpha: shape.lineStyle.alpha,
+                        }));
                 };
-                const meanDistance = (positions) =>
-                    positions.reduce(
-                        (sum, point) => sum + Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
-                        0,
-                    ) / positions.length;
-                // Match stable direction/brightness identities, never compare changing fog-set means.
-                const key = (point, maximum) =>
-                    `${Math.round(Math.atan2(point.y - centerSprite.y, point.x - centerSprite.x) / (Math.PI / 4))}:${Math.round((1 - point.alpha / maximum) * 5)}`;
-                const beforeAlpha = Math.max(...before.map((point) => point.alpha)),
-                    afterAlpha = Math.max(...gathered.map((point) => point.alpha));
-                const original = new Map(
-                    before.map((point) => [
-                        key(point, beforeAlpha),
-                        Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
-                    ]),
-                );
-                const common = gathered.filter((point) => original.has(key(point, afterAlpha)));
-                expect(
-                    common.length >= 8 &&
-                        common.every(
-                            (point) =>
-                                Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y) <
-                                original.get(key(point, afterAlpha)),
-                        ),
-                    "Visible charging silk did not move inward",
-                );
-                collapse.gatheringDebug.matchedSegments = common.length;
-                images[`${color}-collapse-${mode}-gathered`] = document.querySelector("canvas").toDataURL("image/png");
-                collapse.gathering = {
-                    dangerCells: danger().length,
-                    strands: 8,
-                    visibleSegments: gathered.length,
-                    meanBefore: meanDistance(before),
-                    meanAfter: meanDistance(gathered),
-                    inward: true,
-                };
+                expect(danger().length === 21, "Collapse warning did not retain all 21 dangerous cells");
+                {
+                    // Both samples must precede the bounded intra-turn animation's
+                    // 765ms plateau. Asset/photo latency must not choose the phase.
+                    visualTime += 200;
+                    await frame();
+                    await frame();
+                    const before = trails(),
+                        center = rendered(`collapse_${caster.id}`);
+                    const centerSprite = kdpixisprites.get(center[0]?.id);
+                    const initialDistance = before.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y));
+                    visualTime += 350;
+                    await frame();
+                    await frame();
+                    expect(danger().length === 21, "Inward gathering shrank the dangerous-cell mask");
+                    const gathered = trails();
+                    collapse.gatheringDebug = {
+                        samplePhaseMs: [200, 550],
+                        before,
+                        gathered,
+                        initialDistance,
+                        currentDistance: gathered.map((s) => Math.hypot(s.x - centerSprite.x, s.y - centerSprite.y)),
+                    };
+                    const meanDistance = (positions) =>
+                        positions.reduce(
+                            (sum, point) => sum + Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
+                            0,
+                        ) / positions.length;
+                    // Match stable direction/brightness identities, never compare changing fog-set means.
+                    const key = (point, maximum) =>
+                        `${Math.round(Math.atan2(point.y - centerSprite.y, point.x - centerSprite.x) / (Math.PI / 4))}:${Math.round((1 - point.alpha / maximum) * 5)}`;
+                    const beforeAlpha = Math.max(...before.map((point) => point.alpha)),
+                        afterAlpha = Math.max(...gathered.map((point) => point.alpha));
+                    const original = new Map(
+                        before.map((point) => [
+                            key(point, beforeAlpha),
+                            Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y),
+                        ]),
+                    );
+                    const common = gathered.filter((point) => original.has(key(point, afterAlpha)));
+                    expect(
+                        common.length >= 8 &&
+                            common.every(
+                                (point) =>
+                                    Math.hypot(point.x - centerSprite.x, point.y - centerSprite.y) <
+                                    original.get(key(point, afterAlpha)),
+                            ),
+                        "Visible charging silk did not move inward",
+                    );
+                    collapse.gatheringDebug.matchedSegments = common.length;
+                    images[`${color}-collapse-${mode}-gathered`] = document
+                        .querySelector("canvas")
+                        .toDataURL("image/png");
+                    collapse.gathering = {
+                        dangerCells: danger().length,
+                        strands: 8,
+                        visibleSegments: gathered.length,
+                        meanBefore: meanDistance(before),
+                        meanAfter: meanDistance(gathered),
+                        inward: true,
+                    };
+                    visualTime += 250;
+                    await frame();
+                    await frame();
+                    const plateau = trails();
+                    visualTime += 350;
+                    await frame();
+                    await frame();
+                    expect(
+                        JSON.stringify(trails()) === JSON.stringify(plateau),
+                        "Charging animation exceeded its bounded intra-turn plateau",
+                    );
+                    collapse.gathering.plateauPhaseMs = [800, 1150];
+                    collapse.gathering.plateauStable = true;
+                }
+            } finally {
+                CommonTime = nativeTime;
             }
             collapse.warning = rendered(`collapse_${caster.id}`);
             expect(hasArt(collapse.warning, "SpiderlingsMageRune"), "Collapse warning artwork is missing");
             if (mode === "owner-loss") KDRemoveEntity(caster, true, false);
             const initialWill = KinkyDungeonStatWill;
-            for (let tick = 1; tick <= 3; tick++) {
+            for (let tick = 1; tick <= 5; tick++) {
                 if (mode === "escape") {
                     KinkyDungeonMove({ x: 1, y: 0 }, 1, false, true);
                     await frame();
@@ -212,17 +240,17 @@
                     cooldown: caster.SpiderlingsCollapseCooldown,
                     gear: gear(),
                 });
-                if (mode === "impact" && tick === 3) {
+                if (mode === "impact" && tick === 5) {
                     images[`${color}-collapse-burst`] = await photo();
                     collapse.burst = rendered("burst_");
                     expect(hasArt(collapse.burst, "SpiderlingsMageRuneHit"), "Collapse resolved without burst artwork");
                 }
             }
-            expect(collapse.turns[1].gear.length === 0, "Collapse applied bindings before the third turn");
+            expect(collapse.turns[3].gear.length === 0, "Collapse applied bindings before the fifth turn");
             if (mode === "impact") {
                 expect(
-                    collapse.turns[2].gear.length > 0 && caster.SpiderlingsCollapseCooldown === 7,
-                    "Third-turn impact/cooldown missing",
+                    collapse.turns[4].gear.length > 0 && caster.SpiderlingsCollapseCooldown === 7,
+                    "Fifth-turn impact/cooldown missing",
                 );
                 expect(cast("SpiderlingsMageCollapse", caster).result === "Fail", "Collapse bypassed its cooldown");
                 for (let tick = 0; tick < 7; tick++) await turn();
@@ -232,7 +260,7 @@
                 );
             } else
                 expect(
-                    KinkyDungeonStatWill >= initialWill && collapse.turns[2].gear.length === 0,
+                    KinkyDungeonStatWill >= initialWill && collapse.turns[4].gear.length === 0,
                     "Escaped/cancelled Collapse still hit the player",
                 );
         }
@@ -245,8 +273,8 @@
         caster.stun = 999;
         expect(cast("SpiderlingsMageCollapse", caster).result === "Cast", "Lifecycle Collapse cast failed");
         const started = performance.now();
-        // All four native turns run in this JS task, without a requestAnimationFrame between them.
-        for (let tick = 0; tick < 4; tick++) {
+        // All six native turns run in this JS task, without a requestAnimationFrame between them.
+        for (let tick = 0; tick < 6; tick++) {
             KinkyDungeonLastAction = "Wait";
             KinkyDungeonAdvanceTime(1, true);
         }
@@ -277,7 +305,7 @@
         rows.push({
             kind: "burst-lifecycle",
             pink,
-            turnsWithoutDraw: 4,
+            turnsWithoutDraw: 6,
             deliverySprites: beforeLoad.length,
             elapsedMs: performance.now() - started,
             persistentStateUnchanged: true,
@@ -356,6 +384,39 @@
     await turn();
     expect(mark()?.stacks === 2, "Reentry into still-active Hex did not add a layer");
     rows.push({ kind: "hex-native-reentry", mark: structuredClone(mark()) });
+    for (const restrained of [false, true]) {
+        setup(`rune-native-warning-${restrained}`);
+        KDMovePlayer(12, 10, false);
+        if (restrained)
+            KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("SpiderlingsSpinnerLegbinder"), 0, false, "");
+        KinkyDungeonUpdateStats(0);
+        const mage = spawn("MageSpiderlings", 8, 8);
+        mage.stun = 999;
+        expect(cast("SpiderlingsMageRune", mage).result === "Cast", "Warning Rune cast failed");
+        const rune = KDMapData.Bullets.find((entry) => entry.bullet.spell?.name === "SpiderlingsMageRune");
+        KDMovePlayer(16, 10, false);
+        for (let n = 0; n < 6 && rune.SpiderlingsRunePhase !== "armed"; n++) await turn();
+        expect(rune.SpiderlingsRunePhase === "armed", "Warning Rune did not arm");
+        KDMovePlayer(rune.x, rune.y, false);
+        await turn();
+        const warning = rune.SpiderlingsRuneTurns,
+            slow = KinkyDungeonSlowLevel;
+        expect(
+            rune.SpiderlingsRunePhase === "triggered" && warning === 2 + Math.ceil(Math.max(0, slow) / 2),
+            "Rune did not snapshot its native Slow warning",
+        );
+        const state = JSON.stringify(rune);
+        KinkyDungeonSendEvent("tickAfter", { delta: 0 });
+        expect(JSON.stringify(rune) === state, "Zero-time Rune update changed its deadline");
+        for (let n = 1; n < warning; n++) {
+            await turn();
+            expect(rune.SpiderlingsRunePhase === "triggered", "Rune resolved before its adaptive warning elapsed");
+            expect(rune.SpiderlingsRuneTurns === warning - n, "Waiting refreshed the Rune warning");
+        }
+        await turn();
+        expect(rune.time <= 0 && !KDMapData.Bullets.includes(rune), "Rune missed its native warning deadline");
+        rows.push({ kind: "rune-adaptive-warning", restrained, slow, warning });
+    }
     KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();

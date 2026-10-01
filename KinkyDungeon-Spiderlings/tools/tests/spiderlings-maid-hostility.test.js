@@ -51,6 +51,7 @@ function loadRuntime() {
         KinkyDungeonVisionGet: () => 1,
         KinkyDungeonJailGuard: () => undefined,
         KinkyDungeonLeashingEnemy: () => undefined,
+        KinkyDungeonUpdateEnemies: (_delta, operation) => operation(),
         KinkyDungeonFindPath: (_x, _y, x, y) => [{ x, y }],
         KDNearbyEnemies(x, y, radius) {
             return context.KDMapData.Entities.filter((e) => Math.hypot(e.x - x, e.y - y) <= radius);
@@ -224,6 +225,147 @@ test("Hunting Grounds spiders seek other NPCs without locking onto their own fac
     assert.equal(kd.KinkyDungeonNearestPlayer(hunter, false, true), prey);
 });
 
+test("Hunting Grounds warriors and nurses select their spider attacker even with the player closer", () => {
+    const { context: kd, make, nativeHostile } = loadRuntime();
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    kd.KinkyDungeonPlayerEntity.x = 5;
+    kd.KinkyDungeonPlayerEntity.y = 4;
+    for (const [name, faction] of [
+        ["Adventurer_Brat_Fighter", "Adventurer"],
+        ["Nurse", "Dressmaker"],
+    ]) {
+        const spider = make("WebCaster", { x: 7 });
+        const prey = make(name, { Enemy: { name, faction, visionRadius: 6, tags: {} } });
+        kd.KDMapData.Entities = [prey, spider];
+        assert.equal(nativeHostile(prey, spider), false, "the native pair reproduces absent retaliation");
+        assert.equal(kd.KDHostile(spider, prey), true);
+        assert.equal(kd.KDHostile(prey, spider), true);
+        assert.equal(kd.KinkyDungeonNearestPlayer(prey, true, true, 6), spider);
+        assert.equal(kd.KinkyDungeonNearestPlayer(spider, true, true, 6), prey);
+        kd.KDMapData.MapMod = "Elsewhere";
+        assert.equal(kd.KDHostile(prey, spider), nativeHostile(prey, spider));
+        kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    }
+});
+
+test("zero-time enemy initialization keeps native rivalry, perception and projectile gates", () => {
+    const { context: kd, make, nativeHostile } = loadRuntime();
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    kd.KinkyDungeonPlayerEntity.x = 1;
+    kd.KinkyDungeonPlayerEntity.y = 1;
+    kd.KinkyDungeonVisionGet = () => 0;
+    const spider = make("WebCaster", { x: 6, aware: false });
+    const prey = make("Nurse", {
+        aware: false,
+        Enemy: { name: "Nurse", faction: "Dressmaker", visionRadius: 6, tags: {} },
+    });
+    kd.KDMapData.Entities = [prey, spider];
+    const bullet = {
+        x: spider.x,
+        y: spider.y,
+        bullet: { source: prey.id, faction: "Dressmaker", spell: {}, damage: { type: "glue", damage: 4 } },
+    };
+    for (const delta of [0, -1]) {
+        kd.KinkyDungeonUpdateEnemies(delta, () => {
+            assert.equal(kd.KDHostile(prey, spider), nativeHostile(prey, spider));
+            assert.equal(kd.KDHostile(spider, prey), nativeHostile(spider, prey));
+            assert.equal(kd.KinkyDungeonNearestPlayer(spider, false, true, 6), kd.KinkyDungeonPlayerEntity);
+            assert.equal(kd.KinkyDungeonNearestPlayer(prey, false, true, 6), kd.KinkyDungeonPlayerEntity);
+            assert.equal(spider.aware, false, "zero-time setup cannot wake the spider");
+            assert.equal(prey.aware, false, "zero-time setup cannot wake its prey");
+            assert.equal(kd.KDAIType.hunt.aftermove(spider, kd.KinkyDungeonPlayerEntity, {}), false);
+            assert.equal(kd.KDBulletCanHitEntity(bullet, spider), false);
+        });
+    }
+    kd.KinkyDungeonUpdateEnemies(1, () => {
+        assert.equal(kd.KDHostile(prey, spider), true);
+        assert.equal(kd.KinkyDungeonNearestPlayer(prey, false, true, 6), spider);
+        assert.equal(prey.aware, true);
+        assert.equal(kd.KDBulletCanHitEntity(bullet, spider), true);
+    });
+    assert.equal(kd.KDHostile(prey, spider), true, "normal rivalry must survive the update scope");
+});
+
+test("zero-time rivalry scope restores after nested updates and exceptions", () => {
+    const { context: kd, make, nativeHostile } = loadRuntime();
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    const spider = make("WebCaster");
+    const prey = make("Nurse", { Enemy: { name: "Nurse", faction: "Dressmaker", visionRadius: 6, tags: {} } });
+    assert.throws(
+        () =>
+            kd.KinkyDungeonUpdateEnemies(0, () => {
+                assert.equal(kd.KDHostile(prey, spider), nativeHostile(prey, spider));
+                kd.KinkyDungeonUpdateEnemies(1, () => assert.equal(kd.KDHostile(prey, spider), true));
+                assert.equal(kd.KDHostile(prey, spider), nativeHostile(prey, spider));
+                throw new Error("native-update-failed");
+            }),
+        /native-update-failed/,
+    );
+    assert.equal(kd.KDHostile(prey, spider), true);
+});
+
+test("Hunting Grounds injected rivalry respects prey allies, party, servants and ceasefire", () => {
+    const { context: kd, make, nativeHostile } = loadRuntime();
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    const spider = make("WebCaster");
+    const definition = { name: "ProtectedPrey", faction: "Natural", visionRadius: 6, tags: {} };
+    for (const overrides of [{ allied: 20 }, { ceasefire: 20 }, { Enemy: { ...definition, allied: true } }]) {
+        const prey = make("ProtectedPrey", { Enemy: definition, ...overrides });
+        assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(spider, prey), false);
+        assert.equal(kd.KDHostile(spider, prey), nativeHostile(spider, prey));
+        assert.equal(kd.KDHostile(prey, spider), nativeHostile(prey, spider));
+    }
+    for (const kind of ["party", "servant"]) {
+        const prey = make("ProtectedPrey", { Enemy: definition });
+        if (kind === "party") kd.party.add(prey.id);
+        else kd.KDGameData.Collection[prey.id] = { status: "Servant" };
+        assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(spider, prey), false, kind);
+    }
+    const alliedMaid = make("Maidforce", { faction: "Maidforce", allied: 20 });
+    assert.equal(kd.KDHostile(spider, alliedMaid), nativeHostile(spider, alliedMaid));
+    assert.equal(kd.KDHostile(alliedMaid, spider), nativeHostile(alliedMaid, spider));
+});
+
+test("rival projectiles use the exact caster pair while retaining geometry and native collision guards", () => {
+    const { context: kd, make } = loadRuntime();
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    const spider = make("WebCaster", { x: 5 });
+    const nurse = make("Nurse", { Enemy: { name: "Nurse", faction: "Dressmaker", visionRadius: 6, tags: {} } });
+    kd.KDMapData.Entities = [nurse, spider];
+    const bullet = {
+        x: 5,
+        y: 4,
+        bullet: { source: nurse.id, faction: "Dressmaker", spell: {}, damage: { type: "glue", damage: 4 } },
+    };
+    assert.equal(kd.KDFactionFavorable("Dressmaker", spider), true, "global faction relation remains native");
+    assert.equal(kd.KDBulletCanHitEntity(bullet, spider), true);
+    bullet.x = 6;
+    assert.equal(kd.KDBulletCanHitEntity(bullet, spider), false, "cannot skip collision geometry");
+    bullet.x = 5;
+    bullet.bullet.noEnemyCollision = true;
+    assert.equal(!!kd.KDBulletCanHitEntity(bullet, spider), false);
+    delete bullet.bullet.noEnemyCollision;
+    nurse.ceasefire = 2;
+    assert.equal(kd.KDBulletCanHitEntity(bullet, spider), false);
+    delete nurse.ceasefire;
+    bullet.bullet.damage.type = "heal";
+    assert.equal(kd.KDBulletCanHitEntity(bullet, spider), true, "native heal admission remains unchanged");
+    bullet.bullet.damage.type = "glue";
+    bullet.bullet.source = 999;
+    assert.equal(kd.KDBulletCanHitEntity(bullet, spider), false, "cannot assign anonymous Enemy bullets to a rival");
+    const alliedMaid = make("Maidforce", { faction: "Maidforce", allied: 20 });
+    kd.KDMapData.Entities.push(alliedMaid);
+    bullet.bullet.source = alliedMaid.id;
+    bullet.bullet.faction = "Maidforce";
+    assert.equal(kd.KDBulletCanHitEntity(bullet, spider), false, "a known allied caster retains native protection");
+    assert.equal(kd.KDFactionFavorable("Dressmaker", spider), true, "query scope is restored");
+});
+
 test("Hunting Grounds patrol seeks different-faction noAttack NPCs but ignores scenery", () => {
     const { context: kd, make } = loadRuntime();
     const spider = make("Spinner", { aware: false });
@@ -232,7 +374,8 @@ test("Hunting Grounds patrol seeks different-faction noAttack NPCs but ignores s
         Enemy: { name: "ExplosiveBarrel", faction: "Barrel", tags: { scenery: true } },
     });
     const prey = make("NeutralPrey", {
-        x: 12,
+        // Keep this search fixture beyond Spinner's eight-cell visual radius.
+        x: 14,
         Enemy: { name: "NeutralPrey", faction: "Natural", visionRadius: 6, noAttack: true, tags: {} },
     });
     kd.KDMapData.Entities = [spider, scenery, prey];

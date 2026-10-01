@@ -23,8 +23,6 @@
         lineColor: 0xffffff,
     });
     const EVENT = "SpiderlingsLegbinderEscape";
-    const PROGRESS = "SpiderlingsLegbinderEscapeProgress";
-    const armed = new WeakMap();
     const item = (itemId) =>
         typeof KinkyDungeonAllRestraintDynamic == "function"
             ? KinkyDungeonAllRestraintDynamic().find(
@@ -103,13 +101,14 @@
             hobble: CONFIG.hobble,
             power: 4,
             weight: 0,
-            escapeChance: { Cut: 1, Remove: 1, Struggle: 1 },
+            escapeChance: { ...api.WebbingData.ESCAPE_PROFILES.Legbinder.escapeChance },
+            speedMult: { ...api.WebbingData.ESCAPE_PROFILES.Legbinder.speedMult },
+            struggleMinSpeed: { Cut: 0.01, Remove: 0.01, Struggle: 0.01 },
             limitChance: { Cut: 0, Remove: 0, Struggle: 0 },
             affinity: {},
             helpChance: {},
             failSuffix: {},
             customEscapeSucc: "SpiderlingsWebbing",
-            alwaysEscapable: ["Cut", "Remove", "Struggle"],
             enemyTags: {},
             playerTags: {},
             minLevel: 0,
@@ -120,14 +119,13 @@
             renderWhenLinked: [],
             events: [
                 { inheritLinked: true, trigger: "beforeStruggleCalc", type: EVENT },
-                { inheritLinked: true, trigger: "struggle", type: EVENT },
                 { inheritLinked: true, trigger: "beforeSuccessRemove", type: api.Webbing.FINAL_ESCAPE_EVENT },
             ],
         },
         text: [
             "Silken Leg Bag",
-            "Silk encloses your legs from above the ankles to the upper thighs. Your feet and arms remain exposed.",
-            "Cut in four actions or peel/struggle free in six; half-woven silk takes half as many. Mixed methods share progress.",
+            "Silk wraps your legs from above the ankles to your upper thighs.",
+            "The dense weave holds your legs together. Cutting works best. Unfinished silk is easier to loosen.",
         ],
     });
     if (typeof AddModel === "function")
@@ -155,41 +153,11 @@
     if (typeof KinkyDungeonRefreshRestraintsCache === "function") KinkyDungeonRefreshRestraintsCache();
     if (typeof KDEventMapInventory !== "undefined") {
         event(KDEventMapInventory, "beforeStruggleCalc", EVENT, (_e, target, data) => {
-            armed.delete(target);
-            if (
-                target !== data?.restraint ||
-                target.name !== ID ||
-                data.query ||
-                !["Cut", "Remove", "Struggle"].includes(data.struggleType) ||
-                (data.struggleType === "Cut" && data.canCut === false && !data.hasAffinity) ||
-                (data.struggleGroup && KDGroupBlocked(data.struggleGroup)) ||
-                !KinkyDungeonHasStamina(-Number(data.cost || 0), true)
-            )
-                return;
-            const half = (target.data?.wrapProgress ?? 1) < 1;
-            const steps = data.struggleType === "Cut" ? (half ? 2 : 4) : half ? 3 : 6;
-            const amount = 1 / steps;
-            if (Number(target.data?.[PROGRESS] || 0) + amount >= 1 - 1e-8) {
-                target.cutProgress = 1;
-                data.escapeChance = 1;
-                data.escapePenalty = -100;
-            } else {
-                data.escapeSpeed = 0;
-                data.cutSpeed = 0;
-                data.minSpeed = 1e-6;
-                data.limitChance = 0;
-                data.escapeChance = 0;
-                data.escapePenalty = 100;
-                data.failSuffix = "SpiderlingsWebbing";
-                armed.set(target, { method: data.struggleType, amount });
-            }
-        });
-        event(KDEventMapInventory, "struggle", EVENT, (_e, target, data) => {
-            const action = armed.get(target);
-            armed.delete(target);
-            if (target !== data?.restraint || data.result !== "Fail" || action?.method !== data.struggleType) return;
-            target.data ||= {};
-            target.data[PROGRESS] = Number(target.data[PROGRESS] || 0) + action.amount;
+            if (target !== data?.restraint || target.name !== ID) return;
+            const woven = Math.max(0, Math.min(1, Number(target.data?.wrapProgress ?? 1)));
+            const scale = 1 / (0.5 + 0.5 * woven);
+            data.escapeChance *= scale;
+            data.escapeSpeed *= scale;
         });
     }
 
@@ -229,12 +197,13 @@
         SpiderlingsSpinnerWeave: "Binding: {value}/100",
         SpiderlingsSpinnerEscape: "Escape: {value}/{goal}",
         SpiderlingsSpinnerStart:
-            "The connected traps hold your legs together. Fill your escape bar before the binding bar; joining Spinners increase both their speed and your escape target.",
-        SpiderlingsSpinnerWin: "You pull the threads apart. All participating spinners are held for six turns.",
-        SpiderlingsSpinnerInterrupt: "The weaving breaks off. You can act again; any deposited silk remains.",
-        SpiderlingsSpinnerTired: "You need 10 stamina to pull. You can still wait or use a potion.",
-        SpiderlingsSpinnerWrap: "The spinners begin weaving a leg bag. Five world turns; your arms remain free.",
-        SpiderlingsSpinnerDone: "The leg bag is complete. You can attack, use items, move slowly, or remove it.",
+            "Threads from the surrounding webs draw your legs together. You can pull against them before the silk closes around you.",
+        SpiderlingsSpinnerWin: "You pull free, leaving the weaving Spinners stunned.",
+        SpiderlingsSpinnerInterrupt:
+            "The weaving stops. You can act again, but silk already wrapped around you remains.",
+        SpiderlingsSpinnerTired: "Pulling needs 10 stamina. You can wait or use a potion.",
+        SpiderlingsSpinnerWrap: "Spinners begin weaving a silk bag around your legs.",
+        SpiderlingsSpinnerDone: "The silk leg bag is complete. Walking in it is slow.",
     };
     if (typeof addTextKey === "function") for (const [key, text] of Object.entries(messages)) addTextKey(key, text);
     function eligible(enemy) {

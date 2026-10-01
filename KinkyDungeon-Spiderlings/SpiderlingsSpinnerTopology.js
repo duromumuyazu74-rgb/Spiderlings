@@ -553,6 +553,7 @@
             targetId: null,
             closureArmed: !!(input.built || input.autoSeal),
             autoSeal: !!input.autoSeal,
+            ...(input.constructionOrder === "outer-first" ? { constructionOrder: "outer-first" } : {}),
         };
         for (const layer of accepted)
             state.fields[layer.id] = {
@@ -669,7 +670,8 @@
 
     function addEnclosure(state, input) {
         const addition = createEnclosure(input);
-        if (addition.kind !== "enclosure") return { state: clone(state), added: false, reason: addition.reason };
+        if (addition.kind !== "enclosure")
+            return { state: state && clone(state), added: false, reason: addition.reason };
         if (!state) return { state: addition, added: true };
         const next = clone(state);
         if (next.composites?.[input.compositeId]) return { state: next, added: false, reason: "duplicate" };
@@ -689,7 +691,12 @@
         const composite = state?.composites?.[input.compositeId],
             inner = composite && state.fields[composite.layerIds.at(-1)],
             checked = validatePolygon({ ...input.layer, map: input.map });
-        if (!inner || (!isLayerClosed(state, inner.id) && (composite.autoSeal || inner.phase !== "ready")))
+        if (
+            !inner ||
+            (composite.constructionOrder !== "outer-first" &&
+                !isLayerClosed(state, inner.id) &&
+                (composite.autoSeal || inner.phase !== "ready"))
+        )
             return { state: clone(state), added: false, reason: "inner" };
         if (!checked.valid) return { state: clone(state), added: false, reason: checked.reason };
         if (
@@ -764,7 +771,7 @@
         return "";
     }
 
-    function fieldBodyComplete(state, field) {
+    function fieldBodyComplete(state, field, solidKeys) {
         if (field.kind === "passage")
             return (
                 field.nativeTerrainValid !== false &&
@@ -773,7 +780,7 @@
                     return link?.prepared && link.hp > 0 && !link.collapsed;
                 })
             );
-        const solids = new Set(solidCells(state).map(key)),
+        const solids = solidKeys || new Set(solidCells(state).map(key)),
             gate = key(field.gateCell);
         if (!field.boundaryCells.every((cell) => key(cell) === gate || solids.has(key(cell)))) return false;
         return state.links
@@ -781,12 +788,12 @@
             .every((link) => link.connected);
     }
 
-    function isLayerClosed(state, fieldId) {
+    function isLayerClosed(state, fieldId, solidKeys) {
         const field = state.fields?.[fieldId];
         if (!field) return false;
         if (field.kind === "passage")
             return (
-                fieldBodyComplete(state, field) &&
+                fieldBodyComplete(state, field, solidKeys) &&
                 field.gates.every((gate) => {
                     const link = state.links.find((candidate) => candidate.id === gate.linkId);
                     return (
@@ -795,7 +802,7 @@
                     );
                 })
             );
-        const solids = new Set(solidCells(state).map(key));
+        const solids = solidKeys || new Set(solidCells(state).map(key));
         return (
             field.boundaryCells.every((cell) => solids.has(key(cell))) &&
             state.links.filter((link) => link.owners.includes(field.id)).every((link) => link.connected && link.hp > 0)
@@ -803,13 +810,14 @@
     }
 
     function refresh(state) {
+        const solidKeys = new Set(solidCells(state).map(key));
         for (const field of Object.values(state.fields || {}).sort((a, b) => a.layer - b.layer)) {
             if (field.retired) {
                 field.phase = "retired";
                 continue;
             }
-            const closed = isLayerClosed(state, field.id),
-                body = fieldBodyComplete(state, field),
+            const closed = isLayerClosed(state, field.id, solidKeys),
+                body = fieldBodyComplete(state, field, solidKeys),
                 wasComplete = ["sealed", "breached"].includes(field.phase);
             if (field.kind === "passage") {
                 const armed = state.composites[field.compositeId]?.closureArmed,
@@ -1158,6 +1166,11 @@
                 (state.fieldOwners?.[field.id] || state.owners).includes(ownerId),
             ),
             fields = ownedFields.filter((field) => field.kind !== "passage").sort((a, b) => a.layer - b.layer),
+            constructionFields = [...fields].sort(
+                (a, b) =>
+                    (state.composites[a.compositeId]?.constructionOrder === "outer-first" ? -a.layer : a.layer) -
+                    (state.composites[b.compositeId]?.constructionOrder === "outer-first" ? -b.layer : b.layer),
+            ),
             ownedIds = new Set(fields.map((field) => field.id)),
             here = point(actorCell),
             reserved = new Set(reservedKeys);
@@ -1185,9 +1198,14 @@
                 }
                 field.reopenPending = false;
             }
-        for (const field of fields) {
+        for (const field of constructionFields) {
             if (field.retired) continue;
-            if (field.layer > 0) {
+            if (state.composites[field.compositeId]?.constructionOrder === "outer-first") {
+                const outer = allFields.find(
+                    (candidate) => candidate.compositeId === field.compositeId && candidate.layer === field.layer + 1,
+                );
+                if (outer && !fieldBodyComplete(state, outer)) continue;
+            } else if (field.layer > 0) {
                 const inner = allFields.find(
                     (candidate) => candidate.compositeId === field.compositeId && candidate.layer === field.layer - 1,
                 );
@@ -1273,14 +1291,19 @@
     }
 
     function updateTarget(state, target, compositeId) {
+        let changed = false;
         for (const composite of Object.values(state.composites || {})) {
             if (compositeId && composite.id !== compositeId) continue;
             if (composite.autoSeal) continue;
             const inside = isInsideCommonCore(state, composite.id, target);
             composite.targetId = target?.id;
-            if (inside) composite.closureArmed = true;
-            else if (composite.closureArmed) {
+            if (inside && !composite.closureArmed) {
+                composite.closureArmed = true;
+                changed = true;
+            } else if (composite.closureArmed) {
+                if (inside) continue;
                 composite.closureArmed = false;
+                changed = true;
                 for (const fieldId of composite.layerIds) {
                     const field = state.fields[fieldId];
                     if (field.phase === "sealed" || (field.phase === "sealing" && !isLayerClosed(state, fieldId)))
@@ -1288,7 +1311,7 @@
                 }
             }
         }
-        refresh(state);
+        if (changed) refresh(state);
         return state;
     }
 

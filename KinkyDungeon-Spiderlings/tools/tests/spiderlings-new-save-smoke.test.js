@@ -91,10 +91,23 @@ function freshNewSaveRuntime() {
     const refresh = { force: 0, dress: 0 };
     const context = {
         console,
+        Map,
+        Weapon: "weapon",
         KinkyDungeonEnemies: [],
         KinkyDungeonRootDirectory: "Game/",
         KinkyDungeonRestraints: [],
         KinkyDungeonWeapons: {},
+        KinkyDungeonInventory: new Map([["weapon", new Map()]]),
+        KinkyDungeonWeaponVariants: {},
+        KinkyDungeonWeaponChoices: [],
+        KinkyDungeonLostItems: [],
+        KinkyDungeonPlayerWeapon: "",
+        KinkyDungeonInventoryAddWeapon() {},
+        KinkyDungeonInventoryGetWeapon() {},
+        KinkyDungeonInventoryGet() {},
+        KinkyDungeonInventoryGetSafe() {},
+        KinkyDungeonFindWeapon() {},
+        KDSetWeapon() {},
         KDPrereqs: {},
         KinkyDungeonSpellSpecials: {},
         KinkyDungeonCastSpell() {},
@@ -116,6 +129,8 @@ function freshNewSaveRuntime() {
         KinkyDungeonPlayerBuffs: {},
         KDGameData: { PrisonerState: "" },
         KDMapData: { Entities: [] },
+        KDWorldMap: {},
+        KDPersistentNPCs: {},
         KDCurrentModels: new Map(),
         KDTapeLink: ["Wrapping"],
         KDTapeRender: ["Wrapping"],
@@ -492,8 +507,7 @@ test("fresh manifest VM exposes active restraints and a Mage bolt with native Da
         assert.equal(isolated.equipment.get(groups[family]).tightness, 0);
         assert.equal(isolated.equipment.get(groups[family]).lock, "");
         assert.equal(
-            isolated.context.Spiderlings.Webbing.completeEffectiveEscape(lv1Id(family), "Remove", { legal: true })
-                .completed,
+            !!isolated.context.KinkyDungeonRemoveRestraintSpecific(isolated.equipment.get(groups[family]), true),
             true,
         );
         assert.equal(isolated.equipment.has(groups[family]), false, `${family} can be removed independently`);
@@ -622,8 +636,9 @@ test("developer Cocoon scenario keeps gates, twenty-fourth layer, repair, escape
     assert.equal(cocoon.Group, "ItemDevices");
     assert.notEqual(cocoon.immobile, true);
     assert.equal(cocoon.hobble, 3);
-    assert.deepEqual(plain(cocoon.escapeChance), { Cut: 0.025, Struggle: 0.02, Remove: 0.02 });
-    assert.deepEqual(plain(api.COCOON_ESCAPE_ACTIONS), { Cut: 40, Struggle: 50, Remove: 50 });
+    assert.deepEqual(plain(cocoon.escapeChance), { Cut: 0.5, Remove: 0.04, Struggle: 0.03 });
+    assert.equal(api.COCOON_ESCAPE_ACTIONS, undefined);
+    assert.deepEqual(plain(api.ESCAPE_PROFILES.Cocoon.speedMult), { Cut: 0.1, Remove: 0.2, Struggle: 0.24 });
     assert.equal(api.COCOON_REPAIR_AMOUNT, 0.1);
     assert.equal(cocoon.inventory, true);
     for (const field of ["removePrison", "forceRemovePrison", "removeOnDefeat", "removeOnCapture"])

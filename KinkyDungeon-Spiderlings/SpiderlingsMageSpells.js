@@ -9,7 +9,7 @@
     const MAX_STACKS = 3;
     const HEX_WARNING = 2;
     const HEX_ACTIVE = 3;
-    const COLLAPSE_CHARGE = 3;
+    const COLLAPSE_CHARGE = 5;
     const COLLAPSE_COOLDOWN = 7;
 
     function state() {

@@ -1,6 +1,6 @@
 NameSpinner,새끼 거미 방적자
 AttackSpinner,새끼 거미 방적자가 몸에 바짝 붙어 빠르게 기어 다닌다. 가는 다리가 스치며 따끔한 간지러움을 남긴다.
-AttackSpinnerBind,거미가 다리에 실을 감고 근처에 남아 계속 움직입니다. (+RestraintAdded)
+AttackSpinnerBind,새끼 거미 방적자가 다리에 실을 감고 가까이 남아 계속 짠다. (+RestraintAdded)
 KillSpinner,새끼 거미 방적자가 가는 다리를 접고 그림자 속으로 물러나 사라진다.
 NameJumper,새끼 거미 도약자
 AttackJumper,새끼 거미 도약자가 갑자기 덮쳐 온다. 가는 다리가 몸을 스치며 따끔한 간지러움을 일으킨다.
@@ -9,7 +9,7 @@ KillJumper,새끼 거미 도약자가 비틀거리며 물러나 이내 그림자
 NameTunneler,새끼 거미 굴착자
 KillTunneler,새끼 거미 굴착자가 자취를 감추고, 그 자리에는 실 몇 가닥만 남는다.
 NameNestEntrance,둥지 입구
-KillNestEntrance,둥지 입구가 굉음과 함께 무너지며 안에 숨어 있던 새끼 거미들이 쏟아져 나온다!
+KillNestEntrance,둥지 입구가 무너졌다. 가장자리의 가는 거미줄이 풀려 바닥으로 떨어진다.
 NameWebCaster,새끼 거미 거미줄 투사자
 KillWebCaster,새끼 거미 거미줄 투사자가 몸을 웅크린 채 물러나 어둠 속으로 숨는다.
 KinkyDungeonSpellSummonSpinner,방적자 소환
@@ -30,29 +30,29 @@ KinkyDungeonSpellSummonNestEntrance,거미 둥지 파기
 KinkyDungeonSummonSummonNestEntrance,땅이 갈라져 실로 뒤덮인 구멍이 열린다. 새 둥지 입구가 나타났다!
 KinkyDungeonSpellCastSummonNestEntrance,새끼 거미 굴착자가 바닥에 엎드려 땅을 파고, 갈라진 틈을 따라 실이 퍼져 나간다!
 KinkyDungeonSpellWebSpray,거미줄 분사
-KinkyDungeonSpellCastWebSpray,새끼 거미 거미줄 투사자가 끈끈한 실뭉치를 쏘아 보낸다. 흰 실이 공중에서 갑자기 펼쳐진다!
+KinkyDungeonSpellCastWebSpray,새끼 거미 거미줄 투사자가 끈끈한 실뭉치를 쏘아 보낸다. 실이 공중에서 갑자기 펼쳐진다!
 KinkyDungeonSpellWebSprayDamage,날아온 끈끈한 실이 정면에서 당신을 휘감는다!(DamageDealt)
 KinkyDungeonSpellWebSprayBind,뿜어진 실이 몸에 달라붙어 거미줄로 엉킨다!
 KinkyDungeonSpellSpiderWeb,바닥 거미줄
 KinkyDungeonSpellCastSpiderWeb,질긴 실이 바닥으로 내려앉아 주위에 어지러운 그물을 펼친다.
 KinkyDungeonSpellSpiderWebDamage,거미줄을 밟자 끈끈한 실이 두 발을 휘감는다!(DamageDealt)
 KinkyDungeonSpellSpiderWebBind,거미줄에 들어서자 발치의 끈끈한 실이 곧바로 감겨 올라온다!
-KDModButtonSpiderlings,새끼 거미
+KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,새끼 거미 분대
-KinkyDungeonStatDescSpiderlingsSquad,조건을 충족하는 새 일반 지도마다 적대 분대가 등장합니다. Spinner 2마리와 Tunneler·Web Caster·Jumper·Mage 각 1마리입니다. 공간과 거미 개체 수 여유가 필요합니다.
-KDModButtonspiderlingsSpinnerEncounters,자율 Spinner 조우
+KinkyDungeonStatDescSpiderlingsSquad,"조건을 충족하는 새 일반 지도마다 적대 분대가 나타난다. 방적자 2마리와 굴착자, 거미줄 투사자, 도약자, 마법사 각 1마리다. 자리와 새끼 거미 개체 수 여유가 필요하다."
+KDModButtonspiderlingsSpinnerEncounters,자율 방적자 조우
 KDModButtonspiderlingsNestSummonWeights,둥지 증원 가중치 (0: 비활성화)
 KDModButtonspiderlingsNestSpinnerWeight,방적자 가중치
 KDModButtonspiderlingsNestJumperWeight,도약자 가중치
 KDModButtonspiderlingsNestWebCasterWeight,거미줄 투사자 가중치
 KDModButtonspiderlingsNestTunnelerWeight,굴착자 가중치
-KDModButtonspiderlingsNestMageWeight,마법 거미 가중치
+KDModButtonspiderlingsNestMageWeight,마법사 가중치
 KDModButtonspiderlingsNestReinforcementControl,둥지 반복 지원
 KDModButtonspiderlingsNestReinforcementCap,둥지당 생존 지원 개체 상한
 KDModButtonspiderlingsNestReinforcementInterval,지원 확인 간격(턴)
 RestraintSpiderlingsWebbingLv1Arm,거미줄 팔 결박
 RestraintSpiderlingsWebbingLv1ArmDesc,끈끈하고 질긴 거미줄 몇 가닥이 양 손목을 감아 두 팔을 등 뒤로 끌어당긴다.
-RestraintSpiderlingsWebbingLv1ArmDesc2,실 사이에는 아직 틈이 남아 있다. 살짝 몸을 비틀면 가느다란 흰 줄이 팽팽해진다.
+RestraintSpiderlingsWebbingLv1ArmDesc2,실 사이에는 아직 틈이 남아 있다. 살짝 몸을 비틀면 가느다란 실이 팽팽해진다.
 RestraintSpiderlingsWebbingLv1MittenLeft,거미줄 벙어리장갑·왼손
 RestraintSpiderlingsWebbingLv1MittenLeftDesc,얇은 거미줄이 왼손에 달라붙어 손가락들을 부드러운 덮개 안으로 모은다.
 RestraintSpiderlingsWebbingLv1MittenLeftDesc2,손끝에 보드라운 실뭉치가 닿고, 가장자리에는 여물지 않은 가는 실이 늘어져 있다.
@@ -63,11 +63,11 @@ RestraintSpiderlingsWebbingLv1Belly,거미줄 복대
 RestraintSpiderlingsWebbingLv1BellyDesc,끈끈하고 질긴 거미줄이 아랫배에 붙어 좁은 띠를 이루고 있다.
 RestraintSpiderlingsWebbingLv1BellyDesc2,띠 가장자리의 가는 보풀이 몸의 움직임을 따라 가볍게 흔들린다.
 RestraintSpiderlingsWebbingLv1Legs,거미줄 다리 결박
-RestraintSpiderlingsWebbingLv1LegsDesc,성긴 거미줄이 모은 두 다리를 가로질러 다리 사이에 가는 흰 선을 긋는다.
+RestraintSpiderlingsWebbingLv1LegsDesc,성긴 거미줄이 모은 두 다리를 가로질러 다리 사이에 가는 실을 긋는다.
 RestraintSpiderlingsWebbingLv1LegsDesc2,그물눈이 아직 또렷하다. 한 곳을 당기면 이웃한 실도 함께 떨린다.
 RestraintSpiderlingsWebbingLv1Ankles,거미줄 발목 결박
 RestraintSpiderlingsWebbingLv1AnklesDesc,거미줄 몇 가닥이 양 발목 사이에서 엇갈리며 발목을 가볍게 모은다.
-RestraintSpiderlingsWebbingLv1AnklesDesc2,흰 실이 발목 옆을 돌아 두 발 사이에 좁은 다리처럼 팽팽하게 걸린다.
+RestraintSpiderlingsWebbingLv1AnklesDesc2,실이 발목 옆을 돌아 두 발 사이에 좁은 다리처럼 팽팽하게 걸린다.
 RestraintSpiderlingsWebbingLv1Foot,거미줄 발 덮개
 RestraintSpiderlingsWebbingLv1FootDesc,얇은 거미줄이 모은 두 발을 감싸 발 가장자리를 따라 달라붙어 있다.
 RestraintSpiderlingsWebbingLv1FootDesc2,가는 실이 발등을 따라 퍼지고, 그물 아래에는 발끝의 윤곽이 아직 선명하다.
@@ -85,7 +85,7 @@ RestraintSpiderlingsWebbingLv2LegsDesc,두꺼운 거미줄이 두 다리를 가�
 RestraintSpiderlingsWebbingLv2LegsDesc2,성기던 그물눈은 작은 틈이 되었고, 겹친 띠들이 다리의 움직임을 따라 함께 당겨진다.
 RestraintSpiderlingsWebbingLv2Ankles,겹짜임 발목 결박
 RestraintSpiderlingsWebbingLv2AnklesDesc,거미줄이 발목을 거듭 감아 엇갈린 가닥들을 두꺼운 고리로 덮었다.
-RestraintSpiderlingsWebbingLv2AnklesDesc2,고리 사이로 끈끈한 실이 이어져, 발목이 움직이면 엉킨 흰 줄들이 서로를 당긴다.
+RestraintSpiderlingsWebbingLv2AnklesDesc2,고리 사이로 끈끈한 실이 이어져, 발목이 움직이면 엉킨 실들이 서로를 당긴다.
 RestraintSpiderlingsWebbingLv2Foot,겹짜임 발 덮개
 RestraintSpiderlingsWebbingLv2FootDesc,거미줄이 두 발을 따라 거듭 겹쳐져 발등과 가장자리를 두꺼운 그물 속에 감쌌다.
 RestraintSpiderlingsWebbingLv2FootDesc2,발끝의 윤곽은 흐려졌고 표면에는 겹겹이 눌린 실무늬만 남았다.
@@ -96,84 +96,84 @@ RestraintSpiderlingsWebbingLv1Gag,거미줄 재갈
 RestraintSpiderlingsWebbingLv1GagDesc,넓은 거미줄 띠가 입을 가로질러 입술 사이의 목소리를 먹먹하게 누른다.
 RestraintSpiderlingsWebbingLv1GagDesc2,끈끈한 실이 입꼬리에서 뺨으로 뻗고, 가장자리에는 겹친 가닥들이 아직 보인다.
 RestraintSpiderlingsWebbingLv3Arm,촘촘한 팔 결박
-RestraintSpiderlingsWebbingLv3ArmDesc,촘촘한 거미줄이 등 뒤의 두 팔을 통째로 감싸 손목의 매듭까지 두꺼운 흰 껍질에 묻었다.
+RestraintSpiderlingsWebbingLv3ArmDesc,촘촘한 거미줄이 등 뒤의 두 팔을 통째로 감싸 손목의 매듭까지 두꺼운 껍질에 묻었다.
 RestraintSpiderlingsWebbingLv3ArmDesc2,몸을 비틀어도 표면에 잔주름만 잡힐 뿐, 전처럼 뚜렷한 틈은 보이지 않는다.
 RestraintSpiderlingsWebbingLv3Belly,촘촘한 복대
 RestraintSpiderlingsWebbingLv3BellyDesc,가는 거미줄이 빽빽하게 포개져 배를 끊김 없는 껍질로 감쌌다.
 RestraintSpiderlingsWebbingLv3BellyDesc2,짜인 무늬는 두꺼운 표면에 묻히고 몸이 움직일 때 얕은 주름만 떠오른다.
 RestraintSpiderlingsWebbingLv3Legs,촘촘한 다리 결박
-RestraintSpiderlingsWebbingLv3LegsDesc,거미줄이 모은 두 다리를 완전히 덮고 그 사이의 빈틈도 촘촘한 흰 실로 메웠다.
+RestraintSpiderlingsWebbingLv3LegsDesc,거미줄이 모은 두 다리를 완전히 덮고 그 사이의 빈틈도 촘촘한 실로 메웠다.
 RestraintSpiderlingsWebbingLv3LegsDesc2,두 다리의 윤곽이 하나로 합쳐지고, 보이던 띠들은 매끈한 덮개 아래 묻혔다.
 RestraintSpiderlingsWebbingLv3Ankles,촘촘한 발목 결박
 RestraintSpiderlingsWebbingLv3AnklesDesc,촘촘한 거미줄이 발목을 감싸 이웃한 고리들을 이음새 없는 덮개로 엮었다.
 RestraintSpiderlingsWebbingLv3AnklesDesc2,매듭과 이음새는 사라지고 발목 옆의 얕은 자국만 움직임을 따라 바뀐다.
 RestraintSpiderlingsWebbingLv3Foot,촘촘한 발 덮개
 RestraintSpiderlingsWebbingLv3FootDesc,거미줄이 두 발을 완전히 감싸 발등과 가장자리의 세부를 두꺼운 껍질 안에 묻었다.
-RestraintSpiderlingsWebbingLv3FootDesc2,수많은 실이 흰 면으로 합쳐져 서로 붙은 두 발의 전체적인 모양만 남았다.
+RestraintSpiderlingsWebbingLv3FootDesc2,수많은 실이 실의 표면으로 합쳐져 서로 붙은 두 발의 전체적인 모양만 남았다.
 RestraintSpiderlingsWebbingLv3Blindfold,촘촘한 안대
-RestraintSpiderlingsWebbingLv3BlindfoldDesc,촘촘한 거미줄이 눈을 덮어 안대 가장자리마저 이어진 흰 면 속에 묻었다.
+RestraintSpiderlingsWebbingLv3BlindfoldDesc,촘촘한 거미줄이 눈을 덮어 안대 가장자리마저 이어진 실의 표면 속에 묻었다.
 RestraintSpiderlingsWebbingLv3BlindfoldDesc2,뺨 옆에는 더 이상 풀린 실이 날리지 않고, 밀착한 덮개가 머리와 함께 움직인다.
 RestraintSpiderlingsWebbingLv3Gag,촘촘한 재갈
 RestraintSpiderlingsWebbingLv3GagDesc,두꺼운 거미줄이 입 위로 퍼져 겹친 그물을 빽빽하고 연속된 표면으로 덮었다.
 RestraintSpiderlingsWebbingLv3GagDesc2,입술 옆의 이음새는 사라졌고, 먹먹한 소리가 실을 지나며 미세한 떨림을 만든다.
 RestraintSpiderlingsWebbingLv3Hood,촘촘한 거미줄 두건
 RestraintSpiderlingsWebbingLv3HoodDesc,빛을 막는 거미줄이 정수리에서 내려와 머리 전체를 두꺼운 두건으로 감쌌다.
-RestraintSpiderlingsWebbingLv3HoodDesc2,머리카락과 얼굴의 세부는 흰 실 아래 숨고, 움직임을 따라 흔들리는 윤곽만 남았다.
-RestraintSpiderlingsWebbingCocoon,어린 거미의 실고치
+RestraintSpiderlingsWebbingLv3HoodDesc2,머리카락과 얼굴의 세부는 실 아래 숨고, 움직임을 따라 흔들리는 윤곽만 남았다.
+RestraintSpiderlingsWebbingCocoon,새끼 거미 실고치
 RestraintSpiderlingsWebbingCocoonDesc,촘촘한 거미줄이 몸을 두꺼운 고치로 감쌌다. 가장자리는 입 아래까지 오므라들고 머리 윗부분만 밖에 남아 있다.
 RestraintSpiderlingsWebbingCocoonDesc2,몸을 비틀면 고치 벽이 미세하게 떨린다. 바닥에 끌리는 실이 바스락거리며 안쪽의 움직임을 어둠 속으로 전하는 듯하다.
-KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1은 TargetLv2 아래에 묻혀 있다. 손에 닿는 것은 겉을 덮은 끈끈한 실뿐이다.
+KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1은 TargetLv2 아래에 있다. 안쪽 거미줄을 풀려면 먼저 바깥층을 벗겨야 한다.
 KinkyDungeonSpiderlingsCocoonAnchored,새끼 거미들이 고치 둘레에 거미줄을 겹겹이 당겨 당신을 그 자리에 단단히 고정한다!
 KDMapMod_SpiderlingsHuntingGrounds,새끼 거미 사냥터
 KinkyDungeonMapModSpiderlingsHuntingGrounds,부드러운 거미줄이 층 전체에 퍼져 있다. 새끼 거미들이 둥지 사이를 오가고 좁은 통로마다 바스락거리는 소리가 따라온다.
 KDEscapeMethod_SpiderlingsHuntingGrounds,목표 둥지 파괴
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,처음부터 이곳에 자리 잡은 둥지들이 아직 어둠 속에서 꿈틀거린다. 입구 깊은 곳에서 자잘하게 긁는 소리가 난다.
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,처음부터 있던 둥지 가장자리에 가는 거미줄이 늘어져 있다. 목표 둥지를 파괴하면 더 아래로 내려갈 수 있다.
 SpiderlingsHuntingGroundsProgress,파괴한 목표 둥지: CURRENT/TARGET
 SpiderlingsHuntingGroundsBlocked,계단 앞에서 발길이 멎는다. 둥지 깊은 곳의 바스락거림은 아직 잠잠해지지 않았다. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,분홍색 거미줄 (끄기: 원래 색)
-KDModButtonspiderlingsEnableHood,새끼거미 비단 두건 (끄기: 착용 안 함)
+KDModButtonspiderlingsEnableHood,새끼 거미 비단 두건 (끄기: 착용 안 함)
 KinkyDungeonSpiderlingsWebbingInterwoven,엇갈린 거미줄이 조여들며 몸의 다른 부위까지 휘감는다.
-KinkyDungeonStruggleCutFailSpiderlingsWebbing,당신은 TargetRestraint의 실 틈을 따라 날을 밀어 넣는다. 끈적한 실 몇 가닥이 끊어지며 베인 틈이 조금 깊어진다.
-KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,당신은 TargetRestraint의 실 틈을 따라 날을 밀어 넣는다. 끈적한 실 몇 가닥이 끊어지며 베인 틈이 조금 깊어진다.
+KinkyDungeonStruggleCutFailSpiderlingsWebbing,당신은 TargetRestraint의 실 이음새를 따라 날을 움직인다.
+KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,당신은 TargetRestraint의 실 이음새를 따라 날을 움직인다.
 KinkyDungeonStruggleCutSuccessSpiderlingsWebbing,당신은 TargetRestraint에 남은 마지막 실을 잘라 낸다. 찢어진 거미줄이 구속하던 자리에서 떨어진다.
-KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,당신은 TargetRestraint를 밀어 벌린다. 팽팽한 실이 느슨해지며 그물 사이의 틈이 조금 넓어진다.
-KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,당신은 TargetRestraint를 밀어 벌린다. 팽팽한 실이 느슨해지며 그물 사이의 틈이 조금 넓어진다.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,당신은 TargetRestraint를 잡아당긴다. 움직임을 따라 그물 표면에 주름이 잡힌다.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,당신은 TargetRestraint를 잡아당긴다. 움직임을 따라 그물 표면에 주름이 잡힌다.
 KinkyDungeonStruggleStruggleSuccessSpiderlingsWebbing,당신은 TargetRestraint의 마지막 끈적한 실을 떨쳐 내고 풀린 거미줄을 모은다.
-KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,당신은 TargetRestraint의 달라붙은 실을 하나씩 푼다. 거미줄의 작은 부분이 벗겨진다.
-KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,당신은 TargetRestraint의 달라붙은 실을 하나씩 푼다. 거미줄의 작은 부분이 벗겨진다.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,당신은 TargetRestraint의 가장자리를 더듬으며 달라붙은 실을 떼어 내려고 한다.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,당신은 TargetRestraint의 가장자리를 더듬으며 달라붙은 실을 떼어 내려고 한다.
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,당신은 TargetRestraint를 벗겨 내고 풀린 실을 모은다.
-KinkyDungeonStruggleCutFailSpiderlingsCocoon,당신은 TargetRestraint에 날 끝을 밀어 넣는다. 고치 벽의 좁은 틈을 따라 실 몇 가닥이 더 끊어진다.
-KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,당신은 TargetRestraint에 날 끝을 밀어 넣는다. 고치 벽의 좁은 틈을 따라 실 몇 가닥이 더 끊어진다.
+KinkyDungeonStruggleCutFailSpiderlingsCocoon,당신은 TargetRestraint의 이음새를 따라 날을 움직이며 겹겹이 짜인 거미줄에 날을 눌러 댄다.
+KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,당신은 TargetRestraint의 이음새를 따라 날을 움직이며 겹겹이 짜인 거미줄에 날을 눌러 댄다.
 KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,당신은 TargetRestraint에 남은 마지막 이음새를 잘라 낸다. 찢어진 고치 껍질이 몸에서 벗겨져 떨어진다.
-KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,당신은 TargetRestraint를 안에서 밀어 벌린다. 고치 벽이 떨리며 안쪽의 실 몇 가닥이 느슨해져 끊어진다.
-KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,당신은 TargetRestraint를 안에서 밀어 벌린다. 고치 벽이 떨리며 안쪽의 실 몇 가닥이 느슨해져 끊어진다.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,당신은 TargetRestraint를 안쪽에서 민다. 고치 벽에 얕은 주름이 잡힌다.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,당신은 TargetRestraint를 안쪽에서 민다. 고치 벽에 얕은 주름이 잡힌다.
 KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,당신은 TargetRestraint의 갈라진 틈을 벌리고 늘어진 고치 밖으로 몸을 빼낸다.
-KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,당신은 TargetRestraint의 가장자리를 조금씩 벗긴다. 달라붙은 실 층이 조금 더 벌어진다.
-KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,당신은 TargetRestraint의 가장자리를 조금씩 벗긴다. 달라붙은 실 층이 조금 더 벌어진다.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,당신은 TargetRestraint의 가장자리를 더듬으며 서로 달라붙은 거미줄 층을 떼어 내려고 한다.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,당신은 TargetRestraint의 가장자리를 더듬으며 서로 달라붙은 거미줄 층을 떼어 내려고 한다.
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,당신은 TargetRestraint를 벗겨 열고 느슨해진 고치 밖으로 빠져나온다.
 KDModButtonspiderlingsMapPopulationCap,맵당 새끼 거미 상한 (0: 무제한)
 KinkyDungeonStatSpiderlingsCocoonStart,고치 속에서 깨어나다
-KinkyDungeonStatDescSpiderlingsCocoonStart,부드러운 고치 안에서 깨어나니, 촘촘히 겹쳐진 거미줄이 머리부터 발끝까지 온몸을 감싸고 있습니다. 살짝 몸을 움직일 때마다 몸에 밀착된 실들이 가만히 당겨집니다.
-KinkyDungeonSpellCastSpiderlingsJumperDashNPC,도약 새끼거미가 상대의 발밑을 바라보며 몸을 낮추고 뛸 준비를 한다.
-KDModButtonspiderlingsNestTunnelerCap,둥지별 Tunneler 누적 한도 (0: 소환 안 함)
+KinkyDungeonStatDescSpiderlingsCocoonStart,"부드러운 고치 안에서 깨어난다. 촘촘히 겹친 거미줄이 몸을 감싸고, 살짝 움직일 때마다 실이 당겨진다."
+KinkyDungeonSpellCastSpiderlingsJumperDashNPC,새끼 거미 도약자가 상대의 발밑을 바라보며 몸을 낮추고 뛸 준비를 한다.
+KDModButtonspiderlingsNestTunnelerCap,둥지별 굴착자 누적 한도 (0: 소환 안 함)
 RestraintSpiderlingsSpinnerLegbinder,거미줄 다리 주머니
-RestraintSpiderlingsSpinnerLegbinderDesc,거미줄이 발목 위부터 허벅지 윗부분까지 다리를 감싼다. 발과 양팔은 드러나 있다.
-RestraintSpiderlingsSpinnerLegbinderDesc2,자르기 4회 또는 벗기기나 몸부림 6회로 해제한다. 절반만 감겼다면 횟수도 절반이다. 서로 다른 방법도 진행도를 공유한다.
+RestraintSpiderlingsSpinnerLegbinderDesc,거미줄이 발목 위부터 허벅지 윗부분까지 다리를 감싼다.
+RestraintSpiderlingsSpinnerLegbinderDesc2,촘촘한 비단이 두 다리를 묶고 있다. 날붙이가 가장 효과적이며 덜 짜인 부분은 저항이 약하다.
 SpiderlingsSpinnerPull,거미줄 떼기 · 체력 10 · 1턴
-SpiderlingsSpinnerContest,참여 Spinner: {count} · 턴당 직조 +{rate}
-SpiderlingsSpinnerStart,온전한 그물이 다리를 붙잡았다. 구속 막대보다 먼저 탈출 막대를 채우자. 합류한 Spinner는 직조 속도와 탈출 목표를 높인다.
-SpiderlingsSpinnerWin,실을 끊었다. 참여한 모든 Spinner가 이후 네 턴 동안 기절한다.
+SpiderlingsSpinnerContest,방적자: {count} · 턴당 직조 +{rate}
+SpiderlingsSpinnerStart,주변 그물에서 뻗은 실이 두 다리를 모은다. 실이 온전히 감기기 전에 당겨서 떨쳐 낼 수 있다.
+SpiderlingsSpinnerWin,실을 떨쳐 냈다. 짜던 방적자들이 기절해 있다.
 SpiderlingsSpinnerInterrupt,공동 작업이 중단됐다. 행동할 수 있지만 이미 감긴 거미줄은 남는다.
 SpiderlingsSpinnerTired,체력이 10 필요하다. 기다리거나 물약을 사용할 수 있다.
-SpiderlingsSpinnerWrap,다리를 감싸는 데 세계 턴 다섯 번이 걸립니다. 팔 상태는 유지됩니다.
-SpiderlingsSpinnerDone,주머니가 완성됐다. 공격, 아이템 사용, 느린 이동 또는 제거가 가능하다.
+SpiderlingsSpinnerWrap,방적자들이 다리 둘레에 거미줄 주머니를 짜기 시작한다.
+SpiderlingsSpinnerDone,거미줄 다리 주머니가 완성됐다. 걸음이 느려진다.
 NameSpiderlingsSilkAnchor,거미줄 매듭
 KillSpiderlingsSilkAnchor,거미줄 경계가 찢어집니다.
-SpiderlingsFieldPreparing,거미가 포획 구역의 경계를 짓고 있다. 입구가 닫히기 전에 나가거나 연결을 끊자.
+SpiderlingsFieldPreparing,방적자들이 구역 둘레에 거미줄 경계를 짜고 있다. 입구는 아직 열려 있다.
 SpiderlingsFieldReady,경계 일부가 연결되었다. 거미는 포획 구역을 계속 짓는다.
 SpiderlingsFieldSprung,포획 구역이 닫혔다. 안에 남은 플레이어는 포획될 수 있다.
-SpiderlingsFieldBroken,매듭이 끊어져 덫과 구속이 풀립니다.
+SpiderlingsFieldBroken,거미줄 매듭이 끊어져 짜임이 멈췄다. 이미 몸에 감긴 거미줄은 남아 있다.
 SpiderlingsFieldReset,시험장 초기화
 SpiderlingsFieldJumper,도약 거미 풀기
 SpiderlingsFieldStatus,포획 구역: {phase} · 모서리 {count}/4 · 연결 {links}/4
@@ -184,20 +184,20 @@ SpiderlingsFieldPhasebroken,파괴됨
 SpiderlingsFieldPhasecomplete,완료
 SpiderlingsSpinnerWeave,구속: {value}/100
 SpiderlingsSpinnerEscape,탈출: {value}/{goal}
-SpiderlingsFieldAddSpinner,Spinner 추가
+SpiderlingsFieldAddSpinner,방적자 추가
 SpiderlingsFieldRebuild,{turns} 월드 턴 후 거미들이 다시 설치를 시작한다.
-SpiderlingsFieldWaiting,포획 구역 준비 완료. 들어올 때까지 서쪽 입구는 열려 있다.
-NameMageSpiderlings,Spiderling Mage
+SpiderlingsFieldWaiting,거미줄 경계가 갖춰졌다. 서쪽 입구는 열려 있다.
+NameMageSpiderlings,새끼 거미 마법사
 NameSpiderlingsSpinnerTrap,포획 구역 경계
-KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
-KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
-KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
-KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
-KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
-KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,마법사가 표시된 지면의 비단을 안쪽으로 모은다. 활성 문양 안에서는 실제 턴마다 표식 한 층이 추가되고(최대 세 층) 지속 시간이 갱신된다. 겹친 문양도 같은 턴에 추가 층을 주지 않는다.
-KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
-KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
+KillMageSpiderlings,새끼 거미 마법사가 가는 다리를 접고 그림자 속으로 물러난다.
+KinkyDungeonSpellSpiderlingsMageBolt,거미줄 구체
+KinkyDungeonSpellCastSpiderlingsMageBolt,새끼 거미 마법사가 빛나는 거미줄을 둥글게 모아 앞으로 날린다.
+KinkyDungeonSpellSpiderlingsMageRune,거미줄 룬
+KinkyDungeonSpellCastSpiderlingsMageRune,새끼 거미 마법사가 가까운 땅에 빛나는 룬을 새긴다.
+KinkyDungeonSpellSpiderlingsMageHex,방패 침식 문양
+KinkyDungeonSpellCastSpiderlingsMageHex,새끼 거미 마법사가 가는 거미줄을 빛나는 문양의 중심으로 끌어 모은다.
+KinkyDungeonSpellSpiderlingsMageCollapse,천 가닥의 붕괴
+KinkyDungeonSpellCastSpiderlingsMageCollapse,표시된 영역의 가장자리에서 중심으로 거미줄이 모이며 터져 나올 준비를 한다.
 SpiderlingsNPCAdhesionInitial,발 묶임
 SpiderlingsNPCAdhesionFull,거미줄에 묶임
 SpiderlingsNPCAdhesionHelpless,무력화
@@ -205,31 +205,43 @@ SpiderlingsNPCWrapping,고치로 감싸는 중
 KDMapMod_SpiderlingsInfestation,새끼 거미 창궐
 KinkyDungeonMapModSpiderlingsInfestation,구석마다 실이 뻗고 그림자 속에서 바스락거림이 서로 답한다. 이곳에는 오래전부터 다른 주민이 있었다.
 KDEscapeMethod_SpiderlingsInfestation,목표 둥지 파괴
-KDEscapeMethodDesc_SpiderlingsInfestation,처음부터 이곳에 자리 잡은 둥지들이 아직 어둠 속에서 꿈틀거린다. 입구 깊은 곳에서 자잘하게 긁는 소리가 난다.
+KDEscapeMethodDesc_SpiderlingsInfestation,처음부터 있던 둥지 가장자리에 가는 거미줄이 늘어져 있다. 목표 둥지를 파괴하면 더 아래로 내려갈 수 있다.
 SpiderlingsInfestationProgress,파괴한 목표 둥지: CURRENT/5
 SpiderlingsInfestationBlocked,계단 앞에서 발길이 멎는다. 둥지 깊은 곳의 바스락거림은 아직 잠잠해지지 않았다. (CURRENT/5)
 SpiderlingsInfestationComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (5/5)
-KDModButtonspiderlingsInfestationWeight,유충 침입 가중치 (0: 끄기)
-KDModButtonspiderlingsHuntingGroundsWeight,유충 사냥터 가중치 - Maidforce 전용 (0: 끄기)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,비단 속박의 마도서
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,비단 직조자의 지팡이
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,천 가닥 고치
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,비단 올가미
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,가는 거미줄이 책등을 지나 펼쳐진 책장을 감싼다. 짜인 주문을 읽으면 흩어진 실이 중심으로 모인다.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,지팡이 끝의 그물에 희미한 빛이 머문다. 휘두르면 가느다란 실이 뻗어 대상을 여러 겹으로 감싼다.
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,"주손 또는 보조 손에 들면 속박 강도 +15%. 마나 4, 사거리 6, 시전 후 2턴 뒤 수렴, 재사용 대기 8턴. 21칸에 영향을 주며 중심에 가까울수록 피해와 속박이 강해진다. 벽에 막힌다." 실은 대상에게 감긴 채 남는다. 마도서의 실만으로 적을 무력화할 수 있으면 비어 있는 팔·허리·다리·발목 부위에 구속을 짠다.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"마나 2, 사거리 6, 재사용 대기 3턴. 처음 맞힌 적을 속박한 뒤 2턴 동안 둔화시킨다. 실은 벽을 통과하지 못한다." 실은 대상을 따라 움직이며 풀려날수록 사라진다.
-ItemPickupSpiderlingsSilkenBindingTome,비단 속박의 마도서를 주웠다.
-ItemPickupSpiderlingsSilkweaverStaff,비단 직조자의 지팡이를 주웠다.
-KDPrereqFailSpiderlingsCocoonConvergence,마나 4가 필요하며 8턴의 재사용 대기 시간이 끝나야 한다.
-KDPrereqFailSpiderlingsSilkenSnare,마나 2가 필요하며 3턴의 재사용 대기 시간이 끝나야 한다.
+KDModButtonspiderlingsInfestationWeight,새끼 거미 창궐 가중치 (0: 끄기)
+KDModButtonspiderlingsHuntingGroundsWeight,새끼 거미 사냥터 가중치 · Maidforce 전용 (0: 끄기)
+KinkyDungeonInventoryItemSpiderlingTome,비단 속박의 마도서
+KinkyDungeonInventoryItemSpiderlingStaff,비단 직조자의 지팡이
+KinkyDungeonSpecialSpiderlingTome,천 가닥 고치
+KinkyDungeonSpecialSpiderlingStaff,비단 올가미
+KinkyDungeonInventoryItemSpiderlingTomeDesc,가는 거미줄이 책등을 지나 펼쳐진 책장을 감싼다. 짜인 주문을 읽으면 흩어진 실이 중심으로 모인다.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,지팡이 끝의 그물에 희미한 빛이 머문다. 휘두르면 가느다란 실이 뻗어 대상을 여러 겹으로 감싼다.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"주손이나 보조 손에 들면 속박 강도 +20%. 마나 4, 사거리 6, 2턴 뒤 발동, 재사용 대기 8턴. 21칸에 영향을 주며 중심에 가까울수록 피해와 속박이 강해진다. 벽에 막힌다. 이 무기의 실만으로 적을 무력하게 만들면 전신을 감싸는 고치가 된다. 적이 벗어날수록 고치가 풀려 다시 실로 흩어진다."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"마나 2, 사거리 6, 재사용 대기 3턴. 처음 맞힌 적을 속박한 뒤 최대 3턴 동안 둔화시킨다. 실은 벽을 통과하지 못한다. 이 무기의 실만으로 대상을 무력하게 만들면 전신을 감싸는 고치가 된다. 대상이 벗어날수록 고치가 풀려 다시 실로 흩어진다."
+ItemPickupSpiderlingTome,비단 속박의 마도서를 주웠다.
+ItemPickupSpiderlingStaff,비단 직조자의 지팡이를 주웠다.
+KDPrereqFailSpiderlingsCocoonConvergence,마나 4가 필요하다. 재사용 대기 시간도 끝나야 한다.
+KDPrereqFailSpiderlingsSilkenSnare,마나 2가 필요하다. 재사용 대기 시간도 끝나야 한다.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,거미줄로 원을 짰다. 실이 중심으로 모이기 시작한다.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,끈끈한 비단실을 대상에게 날렸다.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,천 가닥 고치
 KinkyDungeonSpellSpiderlingsSilkenSnare,비단 올가미
 SpiderlingsDebugStairBypass,디버그 계단 통과가 활성화되었습니다. 표시된 둥지는 그대로 유지됩니다.
 RestraintSpiderlingsSilkLeash,거미 비단 리드
-RestraintSpiderlingsSilkLeashDesc,그물 구역의 틈으로 나온 뒤 조건에 맞는 Spinner가 다시 적중하면 목줄에 연결된다. 이후 가능한 행동으로 끌어당긴다.
-RestraintSpiderlingsSilkLeashDesc2,새 리드에는 호환되는 목줄과 기본 장비 조건이 필요하다. 활성 제어원은 비단 선으로 표시되며 없으면 느슨해진다.
-SpiderlingsRecoveryAttached,Spinner가 회수용 비단 선을 연결했다({count}/8). 다음 가능한 행동에서 끌어당길 수 있다.
-SpiderlingsRecoveryAttachBlocked,회수 선은 적중했지만 호환되는 목 장비에 연결할 수 없다. 새 리드에는 목줄과 기본 장비 조건이 필요하다. 이번에는 끌어당김이 성립하지 않았다.
+RestraintSpiderlingsSilkLeashDesc,그물의 틈으로 달아난 뒤 방적자의 공격이 다시 맞으면 목줄에 거미줄 끈이 연결될 수 있다. 방적자는 포획 구역으로 끌어당기려 한다.
+RestraintSpiderlingsSilkLeashDesc2,끈을 연결할 수 있는 목줄이 필요하며 다른 장비가 가로막으면 연결되지 않는다. 끌어당기는 방적자가 없으면 실은 느슨하게 늘어진다.
+SpiderlingsRecoveryAttached,방적자가 거미줄 끈을 연결했다({count}/8). 다음에 행동할 수 있을 때 끌어당길 수 있다.
+SpiderlingsRecoveryAttachBlocked,거미줄 끈을 연결할 수 없다. 맞는 목줄이 필요하며 다른 장비가 가로막으면 연결되지 않는다.
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"다른 구속 때문에 칼날을 단단히 쥘 수 없어 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"다른 구속 때문에 칼날을 단단히 쥘 수 없어 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"다른 구속이 너무 단단해서 몸부림쳐도 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"다른 구속이 너무 단단해서 몸부림쳐도 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 풀 수 없다."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 풀 수 없다."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."

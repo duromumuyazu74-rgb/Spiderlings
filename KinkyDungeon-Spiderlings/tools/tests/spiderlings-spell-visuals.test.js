@@ -13,6 +13,7 @@ function fixture({ mageSpells = false } = {}) {
         lines = [],
         dots = [],
         fills = [],
+        polygons = [],
         labels = [],
         lineStyles = [];
     const geometryAllocations = { sets: 0 };
@@ -24,6 +25,7 @@ function fixture({ mageSpells = false } = {}) {
             lines.length = 0;
             dots.length = 0;
             fills.length = 0;
+            polygons.length = 0;
             lineStyles.length = 0;
             return this;
         }
@@ -33,18 +35,23 @@ function fixture({ mageSpells = false } = {}) {
         }
         moveTo(x, y) {
             this.start = [x, y];
+            if (this.fill) this.fillPath.push([x, y]);
             return this;
         }
         lineTo(x, y) {
             lines.push([...this.start, x, y]);
+            if (this.fill) this.fillPath.push([x, y]);
             lineStyles.push(this.stroke);
             return this;
         }
         beginFill(color, alpha) {
             this.fill = { color, alpha };
+            this.fillPath = [];
             return this;
         }
         endFill() {
+            if (this.fillPath?.length > 2) polygons.push({ points: this.fillPath, ...this.fill });
+            this.fill = undefined;
             return this;
         }
         drawCircle(x, y, radius) {
@@ -138,6 +145,7 @@ function fixture({ mageSpells = false } = {}) {
         lines,
         dots,
         fills,
+        polygons,
         labels,
         lineStyles,
         draw,
@@ -179,6 +187,40 @@ test("Hex preserves sixteen warning cells and switches to ground silk without co
     assert.equal(r.labels.length, 0);
 });
 
+test("the exact native Witch rope launcher hit uses its existing Rope launcher art without changing the draw", () => {
+    const r = fixture();
+    const options = { alpha: 0.7, zIndex: 2, bullet: { source: 37, faction: "Witch" } };
+    const args = [
+        r.c.kdbulletboard,
+        r.c.kdpixisprites,
+        "native-witch-hit",
+        "Game/Bullets/WitchRopeBoltLaunchManyHit.png",
+        123,
+        234,
+        35,
+        45,
+        0.6,
+        options,
+    ];
+    const result = r.c.KDDraw(...args);
+    assert.equal(result.args[3], "Game/Bullets/RopeBoltLaunchManyHit.png");
+    assert.deepEqual(result.args.slice(0, 3), args.slice(0, 3));
+    assert.deepEqual(result.args.slice(4), args.slice(4));
+    assert.equal(result.args[9], options, "the native draw options and source retain their identity");
+    for (const path of [
+        "Game/Bullets/WitchRopeBoltLaunchSingleHit.png",
+        "Game/Bullets/WitchRopeBoltLaunchManyHitExtra.png",
+        "Game/Bullets/WitchRopeBoltLaunchMany.png",
+        "Other/Game/Bullets/WitchRopeBoltLaunchManyHit.png",
+    ]) {
+        const other = r.c.KDDraw(...args.slice(0, 3), path, ...args.slice(4));
+        assert.equal(other.args[3], path);
+        assert.equal(other.args[9], options);
+    }
+    const otherBoard = r.c.KDDraw(r.c.kdgameboard, ...args.slice(1));
+    assert.equal(otherBoard.args[3], args[3]);
+});
+
 test("weapon silk follows the visible actor, thickens with surviving silk and clears on release", () => {
     const r = fixture();
     const enemy = { id: 7, hp: 20, x: 4, y: 5, visual_x: 4.25, visual_y: 5.5, Enemy: { name: "Maidforce" } };
@@ -208,6 +250,31 @@ test("weapon silk follows the visible actor, thickens with surviving silk and cl
     coverage = undefined;
     r.draw();
     assert.equal(r.lines.length, 0);
+});
+
+test("only confirmed cocoons enclose the body, then downgrade immediately after native recovery", () => {
+    const r = fixture(),
+        enemy = { id: 7, hp: 20, x: 4, y: 5, Enemy: { name: "Maidforce" } };
+    let cocoon = false;
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.Spiderlings.WeaponWebbing = { status: () => ({ coverage: 1, cocoon }) };
+    r.draw();
+    assert.equal(r.polygons.length, 0, "coverage alone does not hide an active NPC");
+    cocoon = true;
+    r.draw();
+    assert.equal(r.polygons.length, 1);
+    assert.ok(r.polygons[0].alpha > 0.9);
+    assert.equal(r.polygons[0].points.length, 33);
+    cocoon = false;
+    r.draw();
+    assert.equal(r.polygons.length, 0);
+    r.c.Spiderlings.WeaponWebbing.status = () => undefined;
+    r.c.Spiderlings.NPCAdhesion = { hasSpiderHelplessness: () => true };
+    r.draw();
+    assert.equal(r.polygons.length, 1, "Mage and hunting silk share the same terminal visual");
+    enemy.hidden = true;
+    r.draw();
+    assert.equal(r.polygons.length, 0);
 });
 
 test("Collapse keeps its fixed cut-corner danger mask while its strands gather inward", () => {
@@ -376,7 +443,7 @@ test("fully resisted NPC hits and ground-trail contacts do not create false hit 
     assert.equal(r.draw().length, 0);
 });
 
-test("Mage bolts have a readable upright head and at most two world-aligned afterimages during camera motion", () => {
+test("Mage silk balls have an upright head and two thin thread trails during camera motion", () => {
     const r = fixture();
     const options = { alpha: 0.8, zIndex: 2 };
     const shot = { visual_x: 3, visual_y: 4 };
@@ -402,6 +469,8 @@ test("Mage bolts have a readable upright head and at most two world-aligned afte
     r.draws.length = 0;
     draw(252, 324); // The camera moved one tile right with the shot.
     assert.equal(r.draws[0][4], 180, "the old world position pans with the current camera");
+    assert.ok(r.draws[0][3].endsWith("WebSprayTrail.png"));
+    assert.ok(r.draws[0][7] < 72 * 0.3);
     for (let x = 5; x < 10; x++) {
         shot.visual_x = x;
         r.draws.length = 0;
@@ -544,7 +613,7 @@ test("resolved Mage bursts survive gameplay-record expiry before the first rende
     const mage = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
     r.c.KDMapData.Entities.push(mage);
     r.c.KinkyDungeonCastSpell(4, 4, { name: "SpiderlingsMageCollapse" }, mage);
-    for (let tick = 0; tick < 4; tick++) r.events.tickAfter(null, { delta: 1 });
+    for (let tick = 0; tick < 6; tick++) r.events.tickAfter(null, { delta: 1 });
     assert.equal(r.c.KDMapData.SpiderlingsMageSpells.blasts.length, 0);
     assert.equal(r.draw().length, 1, "A burst must not depend on rendering its one-turn gameplay record");
     assert.equal(r.fills.length, 21);
@@ -557,7 +626,7 @@ test("native-style reload restores persistent state without replaying a resolved
     const mage = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
     r.c.KDMapData.Entities.push(mage);
     r.c.KinkyDungeonCastSpell(4, 4, { name: "SpiderlingsMageCollapse" }, mage);
-    for (let tick = 0; tick < 3; tick++) r.events.tickAfter(null, { delta: 1 });
+    for (let tick = 0; tick < 5; tick++) r.events.tickAfter(null, { delta: 1 });
     assert.equal(r.draw().length, 1);
     r.time(260);
     assert.equal(r.draw()[0][9].alpha, 0.65);
@@ -666,25 +735,37 @@ test("persistent warnings restore from saved phase without numeric labels and ke
     assert.equal(r.draws.length, 0);
 });
 
-test("Mage inward-gathering cast descriptions agree in English fallback and all locale files", () => {
+test("Mage cast descriptions express inward gathering in English and all seven locales", () => {
     const root = path.join(__dirname, "../..");
     const runtime = fs.readFileSync(path.join(root, "Spiderlings.js"), "utf8");
-    const english = [
-        "The Spiderling Mage draws silk inward across marked ground. Each actual turn inside the active sigil adds one mark (up to three) and refreshes it; overlapping sigils grant no extra layer that turn.",
-        "Silk gathers from the marked outer tiles toward the center before bursting.",
-    ];
-    for (const value of english) assert.ok(runtime.includes(value));
-    for (const locale of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
-        const csv = fs.readFileSync(path.join(root, `Spiderlings${locale}.csv`), "utf8");
-        if (locale === "CN") {
-            assert.ok(csv.includes("由外向内"));
-            assert.ok(csv.includes("准备爆发"));
-        } else {
-            assert.ok(csv.includes(english[1]), `${locale}: inward Collapse text`);
-            const hexLine = csv
-                .split(/\r?\n/)
-                .find((line) => line.startsWith("KinkyDungeonSpellCastSpiderlingsMageHex,"));
-            assert.ok(hexLine && hexLine.length > 80, `${locale}: localized Hex per-turn text`);
+    const hexKey = "KinkyDungeonSpellCastSpiderlingsMageHex";
+    const collapseKey = "KinkyDungeonSpellCastSpiderlingsMageCollapse";
+    const english = (key) => runtime.match(new RegExp('addTextKey\\(\\s*"' + key + '",\\s*"([^"\\r\\n]+)"'))?.[1];
+    assert.match(english(hexKey) || "", /\binward\b/i, "English Hex draws inward");
+    assert.match(
+        english(collapseKey) || "",
+        /\btoward(?:s)? (?:the )?cent(?:er|re)\b/i,
+        "English Collapse gathers toward the center",
+    );
+    const directions = {
+        CN: /向(?:中央|中心)收拢/,
+        DE: /zur Mitte/,
+        ES: /hacia el centro/,
+        JP: /中心へ/,
+        KR: /중심으로/,
+        PL: /ku środkowi/,
+        RU: /к центру/,
+    };
+    for (const [locale, direction] of Object.entries(directions)) {
+        const rows = fs.readFileSync(path.join(root, `Spiderlings${locale}.csv`), "utf8").split(/\r?\n/);
+        for (const key of [hexKey, collapseKey]) {
+            const row = rows.find((line) => line.startsWith(key + ","));
+            assert.ok(row, `${locale}: ${key} exists`);
+            const value = row
+                .slice(key.length + 1)
+                .replace(/^"|"$/g, "")
+                .replace(/""/g, '"');
+            assert.match(value, direction, `${locale}: ${key} gathers inward`);
         }
     }
 });

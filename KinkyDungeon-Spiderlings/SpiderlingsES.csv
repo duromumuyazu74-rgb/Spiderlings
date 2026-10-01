@@ -9,7 +9,7 @@ KillJumper,La cría de araña saltadora retrocede a trompicones y pronto se pier
 NameTunneler,Cría de araña excavadora
 KillTunneler,La cría de araña excavadora desaparece y solo deja unas hebras de seda.
 NameNestEntrance,Entrada del nido
-KillNestEntrance,La entrada del nido se derrumba con estrépito; las crías de araña ocultas dentro salen en tropel.
+KillNestEntrance,La entrada del nido se derrumba. Unas hebras finas se desprenden del borde y caen al suelo.
 NameWebCaster,Cría de araña escupidora
 KillWebCaster,La cría de araña escupidora se encoge y retrocede hacia la oscuridad.
 KinkyDungeonSpellSummonSpinner,Invocar hiladora
@@ -30,29 +30,29 @@ KinkyDungeonSpellSummonNestEntrance,Excavar un nido de arañas
 KinkyDungeonSummonSummonNestEntrance,El suelo se abre en un hueco cubierto de seda; ha aparecido una nueva entrada de nido.
 KinkyDungeonSpellCastSummonNestEntrance,La cría de araña excavadora se agacha a cavar mientras la seda se extiende por las grietas.
 KinkyDungeonSpellWebSpray,Rociar telaraña
-KinkyDungeonSpellCastWebSpray,La cría de araña escupidora lanza hacia ti un haz de seda pegajosa; las hebras blancas se abren en el aire.
+KinkyDungeonSpellCastWebSpray,La cría de araña escupidora lanza hacia ti un haz de seda pegajosa; las hebras se abren en el aire.
 KinkyDungeonSpellWebSprayDamage,La seda pegajosa te alcanza de frente. (DamageDealt)
 KinkyDungeonSpellWebSprayBind,La seda rociada se adhiere a tu cuerpo y se enreda formando una telaraña.
 KinkyDungeonSpellSpiderWeb,Telaraña del suelo
 KinkyDungeonSpellCastSpiderWeb,Las hebras pegajosas caen al suelo y tienden una red irregular alrededor.
 KinkyDungeonSpellSpiderWebDamage,Pisas la telaraña y las hebras pegajosas se enrollan en tus pies. (DamageDealt)
 KinkyDungeonSpellSpiderWebBind,Pisas la telaraña y las hebras junto a tus pies empiezan a enredarse en ellos.
-KDModButtonSpiderlings,Crías de araña
+KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,Escuadrón de crías de araña
-KinkyDungeonStatDescSpiderlingsSquad,Cada mapa normal nuevo y apto añade un escuadrón hostil: dos Spinner y un Tunneler; Web Caster; Jumper y Mage. Requiere espacio y población disponible.
-KDModButtonspiderlingsSpinnerEncounters,Encuentros autónomos de Spinner
+KinkyDungeonStatDescSpiderlingsSquad,"En cada mapa normal nuevo y apto aparece un escuadrón hostil: dos hiladoras y una excavadora, escupidora, saltadora y maga. Necesita espacio y plazas libres dentro del límite de arañas."
+KDModButtonspiderlingsSpinnerEncounters,Encuentros autónomos de hiladoras
 KDModButtonspiderlingsNestSummonWeights,Pesos de refuerzo del nido (0: desactivado)
 KDModButtonspiderlingsNestSpinnerWeight,Peso de hiladora
 KDModButtonspiderlingsNestJumperWeight,Peso de saltadora
 KDModButtonspiderlingsNestWebCasterWeight,Peso de escupidora
 KDModButtonspiderlingsNestTunnelerWeight,Peso de excavadora
-KDModButtonspiderlingsNestMageWeight,Peso de maga araña
+KDModButtonspiderlingsNestMageWeight,Peso de maga
 KDModButtonspiderlingsNestReinforcementControl,Refuerzos recurrentes del nido
 KDModButtonspiderlingsNestReinforcementCap,Refuerzos vivos por nido
 KDModButtonspiderlingsNestReinforcementInterval,Intervalo de comprobación de refuerzos (turnos)
 RestraintSpiderlingsWebbingLv1Arm,Ataduras de seda para brazos
 RestraintSpiderlingsWebbingLv1ArmDesc,Unas hebras pegajosas rodean tus muñecas y llevan tus brazos tras la espalda.
-RestraintSpiderlingsWebbingLv1ArmDesc2,Aún quedan huecos entre los hilos. Un leve giro tensa las finas líneas blancas.
+RestraintSpiderlingsWebbingLv1ArmDesc2,Aún quedan huecos entre los hilos. Un leve giro tensa las finas líneas.
 RestraintSpiderlingsWebbingLv1MittenLeft,Manopla de seda · Izquierda
 RestraintSpiderlingsWebbingLv1MittenLeftDesc,Una fina seda envuelve tu mano izquierda y reúne los dedos en una misma cubierta suave.
 RestraintSpiderlingsWebbingLv1MittenLeftDesc2,Las yemas presionan una pelusa sedosa; algunos hilos sueltos cuelgan del borde.
@@ -63,11 +63,11 @@ RestraintSpiderlingsWebbingLv1Belly,Faja de seda
 RestraintSpiderlingsWebbingLv1BellyDesc,Una estrecha banda de seda pegajosa se adhiere a tu bajo vientre.
 RestraintSpiderlingsWebbingLv1BellyDesc2,Sus bordes tienen una fina pelusa que se mueve suavemente con tu cuerpo.
 RestraintSpiderlingsWebbingLv1Legs,Ataduras de seda para piernas
-RestraintSpiderlingsWebbingLv1LegsDesc,Unos hilos dispersos cruzan tus piernas juntas y trazan finas líneas blancas entre ellas.
+RestraintSpiderlingsWebbingLv1LegsDesc,Unos hilos dispersos cruzan tus piernas juntas y trazan finas líneas entre ellas.
 RestraintSpiderlingsWebbingLv1LegsDesc2,Los huecos de la malla siguen bien definidos; al tirar de un punto, tiemblan las hebras cercanas.
 RestraintSpiderlingsWebbingLv1Ankles,Ataduras de seda para tobillos
 RestraintSpiderlingsWebbingLv1AnklesDesc,Unas hebras se entrecruzan entre tus tobillos y los juntan suavemente.
-RestraintSpiderlingsWebbingLv1AnklesDesc2,Los hilos blancos rodean los tobillos y forman un estrecho puente entre tus pies.
+RestraintSpiderlingsWebbingLv1AnklesDesc2,Los hilos rodean los tobillos y forman un estrecho puente entre tus pies.
 RestraintSpiderlingsWebbingLv1Foot,Envoltura de seda para pies
 RestraintSpiderlingsWebbingLv1FootDesc,Una fina seda cubre tus pies juntos y se pega a lo largo de sus bordes.
 RestraintSpiderlingsWebbingLv1FootDesc2,Los hilos se extienden por los empeines; las puntas de los pies aún se distinguen bajo la red.
@@ -96,108 +96,108 @@ RestraintSpiderlingsWebbingLv1Gag,Mordaza de seda
 RestraintSpiderlingsWebbingLv1GagDesc,Una ancha tira de seda cubre tu boca y apaga tu voz.
 RestraintSpiderlingsWebbingLv1GagDesc2,Los hilos pegajosos van de las comisuras a las mejillas; sus extremos superpuestos aún se distinguen.
 RestraintSpiderlingsWebbingLv3Arm,Ataduras densas para brazos
-RestraintSpiderlingsWebbingLv3ArmDesc,La seda tupida envuelve por completo tus brazos tras la espalda y sepulta los nudos de las muñecas en una gruesa cubierta blanca.
+RestraintSpiderlingsWebbingLv3ArmDesc,La seda tupida envuelve por completo tus brazos tras la espalda y sepulta los nudos de las muñecas en una gruesa cubierta.
 RestraintSpiderlingsWebbingLv3ArmDesc2,Tus giros apenas forman pequeños pliegues en la cubierta; ya no encuentras los huecos antes definidos.
 RestraintSpiderlingsWebbingLv3Belly,Faja de seda tupida
 RestraintSpiderlingsWebbingLv3BellyDesc,La seda fina se superpone densamente y envuelve tu vientre en una cubierta continua.
 RestraintSpiderlingsWebbingLv3BellyDesc2,El dibujo del tejido desaparece en la superficie gruesa; solo quedan pliegues leves al moverte.
 RestraintSpiderlingsWebbingLv3Legs,Ataduras densas para piernas
-RestraintSpiderlingsWebbingLv3LegsDesc,La seda cubre por completo tus piernas juntas y rellena los huecos entre ellas con hilos blancos y tupidos.
+RestraintSpiderlingsWebbingLv3LegsDesc,La seda cubre por completo tus piernas juntas y rellena los huecos entre ellas con hilos tupidos.
 RestraintSpiderlingsWebbingLv3LegsDesc2,Los contornos de ambas piernas se funden; las bandas antes visibles quedan enterradas bajo la cubierta lisa.
 RestraintSpiderlingsWebbingLv3Ankles,Ataduras densas para tobillos
 RestraintSpiderlingsWebbingLv3AnklesDesc,La seda tupida envuelve tus tobillos y une los anillos vecinos en una cubierta sin costuras.
 RestraintSpiderlingsWebbingLv3AnklesDesc2,Los nudos y las uniones han desaparecido; solo unas marcas tenues junto a los tobillos siguen tus movimientos.
 RestraintSpiderlingsWebbingLv3Foot,Envoltura tupida para pies
 RestraintSpiderlingsWebbingLv3FootDesc,La seda encierra por completo tus pies y oculta los detalles de bordes y empeines en una cubierta gruesa.
-RestraintSpiderlingsWebbingLv3FootDesc2,Los innumerables hilos se funden en una superficie blanca; solo queda la silueta de tus pies juntos.
+RestraintSpiderlingsWebbingLv3FootDesc2,Los innumerables hilos se funden en una superficie; solo queda la silueta de tus pies juntos.
 RestraintSpiderlingsWebbingLv3Blindfold,Venda de seda tupida
-RestraintSpiderlingsWebbingLv3BlindfoldDesc,La seda tupida cubre tus ojos y sepulta los bordes de la venda en una superficie blanca continua.
+RestraintSpiderlingsWebbingLv3BlindfoldDesc,La seda tupida cubre tus ojos y sepulta los bordes de la venda en una superficie continua.
 RestraintSpiderlingsWebbingLv3BlindfoldDesc2,Ya no flotan hilos junto a tus mejillas; la cubierta ceñida gira con tu cabeza como una sola pieza.
 RestraintSpiderlingsWebbingLv3Gag,Mordaza de seda tupida
 RestraintSpiderlingsWebbingLv3GagDesc,La seda gruesa cubre tu boca y oculta la red superpuesta bajo una superficie densa y continua.
 RestraintSpiderlingsWebbingLv3GagDesc2,Las uniones junto a tus labios se han perdido; los sonidos apagados atraviesan la seda y la hacen temblar levemente.
 RestraintSpiderlingsWebbingLv3Hood,Capucha de seda tupida
 RestraintSpiderlingsWebbingLv3HoodDesc,La seda opaca baja desde la coronilla y envuelve toda tu cabeza en una capucha gruesa.
-RestraintSpiderlingsWebbingLv3HoodDesc2,El cabello y los rasgos del rostro se ocultan bajo la seda blanca; solo queda un contorno que oscila al moverte.
+RestraintSpiderlingsWebbingLv3HoodDesc2,El cabello y los rasgos del rostro se ocultan bajo la seda; solo queda un contorno que oscila al moverte.
 RestraintSpiderlingsWebbingCocoon,Capullo de seda de arañita
 RestraintSpiderlingsWebbingCocoonDesc,La seda densa envuelve tu cuerpo en un capullo grueso. Su borde llega bajo tu boca y deja fuera la parte superior de la cabeza.
 RestraintSpiderlingsWebbingCocoonDesc2,La pared del capullo tiembla al retorcerte. Las hebras arrastradas susurran sobre el suelo, como si llevaran hacia la oscuridad el movimiento de su interior.
-KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 yace bajo TargetLv2; solo alcanzas la seda pegajosa que lo cubre.
+KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 está bajo TargetLv2. Retira primero la capa exterior para alcanzar la seda de debajo.
 KinkyDungeonSpiderlingsCocoonAnchored,Las crías de araña tienden redes alrededor del capullo y te fijan firmemente al sitio.
 KDMapMod_SpiderlingsHuntingGrounds,Coto de caza de las arañitas
 KinkyDungeonMapModSpiderlingsHuntingGrounds,La seda se extiende por todo el piso. Las arañitas cruzan entre sus nidos y el roce de sus patas te sigue por los pasillos.
 KDEscapeMethod_SpiderlingsHuntingGrounds,Destruir los nidos marcados
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Los nidos que primero ocuparon este lugar aún se agitan en la oscuridad; se oyen leves arañazos en el fondo de sus entradas.
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,De los nidos originales cuelgan finos hilos de seda. Destruye estos nidos marcados para seguir descendiendo.
 SpiderlingsHuntingGroundsProgress,Nidos marcados destruidos: CURRENT/TARGET
 SpiderlingsHuntingGroundsBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Telaraña rosa (no: original)
 KDModButtonspiderlingsEnableHood,Capucha de seda arácnida (no: nunca equipar)
 KinkyDungeonSpiderlingsWebbingInterwoven,Los hilos entrecruzados se tensan y atan otra parte de tu cuerpo.
-KinkyDungeonStruggleCutFailSpiderlingsWebbing,Cortas TargetRestraint. Varias hebras pegajosas se rompen y el corte se hace más profundo.
-KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Cortas TargetRestraint. Varias hebras pegajosas se rompen y el corte se hace más profundo.
+KinkyDungeonStruggleCutFailSpiderlingsWebbing,Deslizas el filo por una unión de TargetRestraint.
+KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Deslizas el filo por una unión de TargetRestraint.
 KinkyDungeonStruggleCutSuccessSpiderlingsWebbing,Cortas las últimas hebras de TargetRestraint. La telaraña hecha jirones se desprende.
-KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,Forcejeas contra TargetRestraint. Las hebras tensas se aflojan y un hueco del tejido se ensancha un poco.
-KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,Forcejeas contra TargetRestraint. Las hebras tensas se aflojan y un hueco del tejido se ensancha un poco.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,Tiras de TargetRestraint. El tejido se pliega con tus movimientos.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,Tiras de TargetRestraint. El tejido se pliega con tus movimientos.
 KinkyDungeonStruggleStruggleSuccessSpiderlingsWebbing,Te libras de las últimas hebras adheridas de TargetRestraint y recoges la telaraña suelta.
-KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,Separas las hebras adheridas de TargetRestraint. Un pequeño tramo del tejido se despega.
-KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,Separas las hebras adheridas de TargetRestraint. Un pequeño tramo del tejido se despega.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,"Tanteas el borde de TargetRestraint, intentando separar las hebras adheridas."
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,"Tanteas el borde de TargetRestraint, intentando separar las hebras adheridas."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Desprendes TargetRestraint y recoges la seda suelta.
-KinkyDungeonStruggleCutFailSpiderlingsCocoon,Introduces el filo en TargetRestraint. Se cortan más hebras a lo largo de la estrecha abertura del capullo.
-KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Introduces el filo en TargetRestraint. Se cortan más hebras a lo largo de la estrecha abertura del capullo.
+KinkyDungeonStruggleCutFailSpiderlingsCocoon,Deslizas el filo por una unión de TargetRestraint y lo presionas contra las capas tejidas.
+KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Deslizas el filo por una unión de TargetRestraint y lo presionas contra las capas tejidas.
 KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Cortas la última unión de TargetRestraint. La envoltura desgarrada se desprende de tu cuerpo.
-KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Empujas contra TargetRestraint. La pared del capullo tiembla y algunas hebras interiores ceden.
-KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Empujas contra TargetRestraint. La pared del capullo tiembla y algunas hebras interiores ceden.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Empujas contra TargetRestraint. Se forman pequeños pliegues en la pared del capullo.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Empujas contra TargetRestraint. Se forman pequeños pliegues en la pared del capullo.
 KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ensanchas la abertura de TargetRestraint y te escurres fuera del capullo flojo.
-KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,Despegas poco a poco un borde de TargetRestraint. Las capas adheridas se separan un poco más.
-KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,Despegas poco a poco un borde de TargetRestraint. Las capas adheridas se separan un poco más.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Abres TargetRestraint desprendiendo sus capas y sales del capullo aflojado.
 KDModButtonspiderlingsMapPopulationCap,Arañas por mapa (0: sin límite)
 KinkyDungeonStatSpiderlingsCocoonStart,Despertar de seda
-KinkyDungeonStatDescSpiderlingsCocoonStart,Despiertas en un capullo suave, completamente envuelta de pies a cabeza en capas tupidas de seda de araña. Cada pequeño movimiento tira de los hilos que se ciñen a tu cuerpo.
-KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La arañita saltadora mira el suelo bajo su rival y se agacha para saltar.
-KDModButtonspiderlingsNestTunnelerCap,Tunneler totales por nido (0: ninguno)
+KinkyDungeonStatDescSpiderlingsCocoonStart,"Despiertas en un capullo suave, envuelta en capas tupidas de seda de araña. Cada pequeño movimiento tira de los hilos ceñidos a tu cuerpo."
+KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La cría de araña saltadora mira el suelo bajo su rival y se agacha para saltar.
+KDModButtonspiderlingsNestTunnelerCap,Excavadoras totales por nido (0: ninguna)
 RestraintSpiderlingsSpinnerLegbinder,Saco de seda para las piernas
-RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve tus piernas desde encima de los tobillos hasta la parte alta de los muslos. Los pies y los brazos quedan descubiertos.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Corta cuatro veces o retira la seda o forcejea seis veces; a medio tejer requiere la mitad. Los métodos comparten el progreso.
+RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve tus piernas desde encima de los tobillos hasta la parte alta de los muslos.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Un tejido denso mantiene tus piernas juntas. Las herramientas de corte son más eficaces; el tejido incompleto ofrece menos resistencia.
 SpiderlingsSpinnerPull,Soltarse · 10 de energía · 1 turno
-SpiderlingsSpinnerContest,Spinner: {count} · tejido +{rate}/turno
-SpiderlingsSpinnerStart,La trampa intacta te sujeta. Completa la barra de escape primero; más Spinner aumentan la velocidad y la meta de escape.
-SpiderlingsSpinnerWin,Rompes los hilos. Todos los Spinner participantes quedan aturdidos cuatro turnos.
+SpiderlingsSpinnerContest,Hiladoras: {count} · tejido +{rate}/turno
+SpiderlingsSpinnerStart,Los hilos de la red que te rodea juntan tus piernas. Puedes tirar de ellos antes de que la seda termine de envolverte.
+SpiderlingsSpinnerWin,Te sueltas de los hilos y dejas aturdidas a las hiladoras que te rodeaban.
 SpiderlingsSpinnerInterrupt,Se interrumpe el tejido. Puedes actuar; la seda ya depositada permanece.
 SpiderlingsSpinnerTired,Necesitas 10 de energía. Aún puedes esperar o beber una poción.
-SpiderlingsSpinnerWrap,La envoltura dura cinco turnos del mundo; los brazos conservan su estado.
-SpiderlingsSpinnerDone,El saco está listo. Puedes atacar, usar objetos, moverte despacio o quitártelo.
+SpiderlingsSpinnerWrap,Las hiladoras empiezan a tejer un saco de seda alrededor de tus piernas.
+SpiderlingsSpinnerDone,El saco de seda está completo. Caminar con él es lento.
 NameSpiderlingsSilkAnchor,Nudo de telaraña
 KillSpiderlingsSilkAnchor,La barrera de seda se rompe.
-SpiderlingsFieldPreparing,Las tejedoras construyen el límite del campo de captura. Sal antes de que se cierre la entrada o corta una conexión.
+SpiderlingsFieldPreparing,Las hiladoras tejen una barrera de seda alrededor del campo. La entrada sigue abierta.
 SpiderlingsFieldReady,Una sección del límite está conectada. Las tejedoras siguen construyendo el campo.
 SpiderlingsFieldSprung,El campo de captura está cerrado. Quienes sigan dentro pueden ser capturados.
-SpiderlingsFieldBroken,Un nudo se rompe y la trampa te libera.
+SpiderlingsFieldBroken,"Un nudo de la red se rompe. El tejido se detiene, pero la seda ya enrollada a tu alrededor permanece."
 SpiderlingsFieldReset,Reiniciar campo de pruebas
 SpiderlingsFieldJumper,Soltar saltadora
 SpiderlingsFieldStatus,Campo de captura: {phase} · esquinas {count}/4 · conexiones {links}/4
 SpiderlingsFieldPhasepreparing,Preparando
 SpiderlingsFieldPhaseready,Conexión lista
 SpiderlingsFieldPhasesprung,Cerrado
-SpiderlingsFieldPhasebroken,Rota
-SpiderlingsFieldPhasecomplete,Completada
+SpiderlingsFieldPhasebroken,Roto
+SpiderlingsFieldPhasecomplete,Completado
 SpiderlingsSpinnerWeave,Atadura: {value}/100
 SpiderlingsSpinnerEscape,Escape: {value}/{goal}
-SpiderlingsFieldAddSpinner,Añadir Spinner
+SpiderlingsFieldAddSpinner,Añadir hiladora
 SpiderlingsFieldRebuild,Las tejedoras volverán a construir en {turns} turnos del mundo.
-SpiderlingsFieldWaiting,El campo está listo. La entrada oeste queda abierta hasta que entres.
-NameMageSpiderlings,Spiderling Mage
+SpiderlingsFieldWaiting,La barrera de seda está lista. Su entrada oeste permanece abierta.
+NameMageSpiderlings,Cría de araña maga
 NameSpiderlingsSpinnerTrap,Límite del campo de captura
-KillMageSpiderlings,The Spiderling Mage draws back its legs and retreats into the shadows.
-KinkyDungeonSpellSpiderlingsMageBolt,Mage Silk Bolt
-KinkyDungeonSpellCastSpiderlingsMageBolt,The Spiderling Mage casts a bright knot of silk toward you.
-KinkyDungeonSpellSpiderlingsMageRune,Silken Rune
-KinkyDungeonSpellCastSpiderlingsMageRune,The Spiderling Mage marks a nearby tile with a glowing rune.
-KinkyDungeonSpellSpiderlingsMageHex,Shield-Eating Sigil
-KinkyDungeonSpellCastSpiderlingsMageHex,El mago atrae la seda hacia el centro del suelo marcado. Cada turno real dentro del sigilo activo añade una marca (hasta tres) y la renueva; los sigilos superpuestos no añaden capas extra ese turno.
-KinkyDungeonSpellSpiderlingsMageCollapse,Thousand-Silk Collapse
-KinkyDungeonSpellCastSpiderlingsMageCollapse,Silk gathers from the marked outer tiles toward the center before bursting.
+KillMageSpiderlings,La cría de araña maga recoge sus patas finas y se retira a las sombras.
+KinkyDungeonSpellSpiderlingsMageBolt,Bola de seda
+KinkyDungeonSpellCastSpiderlingsMageBolt,La cría de araña maga reúne seda luminosa en una bola y la lanza hacia delante.
+KinkyDungeonSpellSpiderlingsMageRune,Runa de seda
+KinkyDungeonSpellCastSpiderlingsMageRune,La cría de araña maga traza una runa luminosa en el suelo cercano.
+KinkyDungeonSpellSpiderlingsMageHex,Sello devoraescudos
+KinkyDungeonSpellCastSpiderlingsMageHex,La cría de araña maga atrae finos hilos de seda hacia el centro de un sello luminoso.
+KinkyDungeonSpellSpiderlingsMageCollapse,Caída de mil hilos
+KinkyDungeonSpellCastSpiderlingsMageCollapse,"La seda se reúne desde el borde de la zona marcada hacia el centro, preparándose para estallar."
 SpiderlingsNPCAdhesionInitial,Inmovilizado
 SpiderlingsNPCAdhesionFull,Atado con seda
 SpiderlingsNPCAdhesionHelpless,Indefenso
@@ -205,31 +205,43 @@ SpiderlingsNPCWrapping,Envolviendo
 KDMapMod_SpiderlingsInfestation,Infestación de arañitas
 KinkyDungeonMapModSpiderlingsInfestation,La seda invade los rincones y unos susurros responden a otros en las sombras. Este lugar lleva tiempo teniendo otros habitantes.
 KDEscapeMethod_SpiderlingsInfestation,Destruir los nidos marcados
-KDEscapeMethodDesc_SpiderlingsInfestation,Los nidos que primero ocuparon este lugar aún se agitan en la oscuridad; se oyen leves arañazos en el fondo de sus entradas.
+KDEscapeMethodDesc_SpiderlingsInfestation,De los nidos originales cuelgan finos hilos de seda. Destruye estos nidos marcados para seguir descendiendo.
 SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/5
 SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/5)
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
 KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
 KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Tomo de ataduras de seda
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Bastón del tejedor de seda
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Convergencia del capullo
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Lazo de seda
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Mano principal o secundaria: +15% de fuerza de atadura. 4 de maná; alcance 6; carga de dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto. Los hilos permanecen visibles. Cuando la seda del tomo basta por sí sola para dejar al enemigo indefenso, forma ataduras en brazos, cintura, piernas y tobillos si están libres.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza durante 2 turnos. Las paredes detienen el hilo. Los hilos siguen al objetivo y desaparecen al liberarse.
-ItemPickupSpiderlingsSilkenBindingTome,Recoges un tomo de ataduras de seda.
-ItemPickupSpiderlingsSilkweaverStaff,Recoges un bastón del tejedor de seda.
-KDPrereqFailSpiderlingsCocoonConvergence,Requiere 4 de maná y que termine la recarga de 8 turnos.
-KDPrereqFailSpiderlingsSilkenSnare,Requiere 2 de maná y que termine la recarga de 3 turnos.
+KinkyDungeonInventoryItemSpiderlingTome,Tomo de ataduras de seda
+KinkyDungeonInventoryItemSpiderlingStaff,Bastón del tejedor de seda
+KinkyDungeonSpecialSpiderlingTome,Convergencia del capullo
+KinkyDungeonSpecialSpiderlingStaff,Lazo de seda
+KinkyDungeonInventoryItemSpiderlingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
+KinkyDungeonInventoryItemSpiderlingStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"En la mano principal o secundaria: +20% de fuerza de atadura. 4 de maná; alcance 6; efecto tras dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto. Si la seda de esta arma basta por sí sola para dejar al enemigo indefenso, forma un capullo completo. Al liberarse, el capullo vuelve a deshacerse en hilos."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza hasta 3 turnos. Las paredes detienen el hilo. Si la seda de esta arma basta por sí sola para dejar al objetivo indefenso, forma un capullo completo. Al liberarse, el capullo vuelve a deshacerse en hilos."
+ItemPickupSpiderlingTome,Recoges un tomo de ataduras de seda.
+ItemPickupSpiderlingStaff,Recoges un bastón del tejedor de seda.
+KDPrereqFailSpiderlingsCocoonConvergence,Necesita 4 de maná. La recarga también debe haber terminado.
+KDPrereqFailSpiderlingsSilkenSnare,Necesita 2 de maná. La recarga también debe haber terminado.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tejes un círculo de seda. Los hilos empiezan a recogerse hacia el centro.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Lanzas un hilo de seda pegajosa hacia tu objetivo.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Convergencia del capullo
 KinkyDungeonSpellSpiderlingsSilkenSnare,Lazo de seda
 SpiderlingsDebugStairBypass,Acceso de depuración a las escaleras activo; los nidos marcados no cambian.
 RestraintSpiderlingsSilkLeash,Correa de seda de araña
-RestraintSpiderlingsSilkLeashDesc,"Tras salir por una brecha del campo, otro impacto válido de Spinner puede unir esta correa al collar. Una acción disponible te arrastra de vuelta."
-RestraintSpiderlingsSilkLeashDesc2,Una correa nueva requiere un collar compatible y las condiciones normales de equipamiento. Las fuentes activas muestran hilos; sin fuentes queda floja.
-SpiderlingsRecoveryAttached,Spinner conecta un hilo de recuperación ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
-SpiderlingsRecoveryAttachBlocked,"El hilo impacta, pero no puede unirse al equipo de cuello compatible. Una correa nueva necesita un collar y las condiciones normales de equipamiento; no se establece el arrastre."
+RestraintSpiderlingsSilkLeashDesc,"Tras escapar por una brecha de la red, otro golpe de una hiladora puede unir la correa de seda a tu collar. La hiladora intentará arrastrarte de vuelta al campo."
+RestraintSpiderlingsSilkLeashDesc2,"La correa necesita un collar compatible y que ningún otro equipo la bloquee. Si ninguna hiladora tira de ella, la seda queda floja."
+SpiderlingsRecoveryAttached,Una hiladora une un hilo de seda ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
+SpiderlingsRecoveryAttachBlocked,La correa de seda no puede sujetarse. Necesita un collar compatible y que ningún otro equipo la bloquee.
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes cortar TargetRestraint."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes cortar TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Tus ataduras te impiden sujetar la hoja con firmeza para cortar TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"Tus ataduras te impiden sujetar la hoja con firmeza para cortar TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes liberarte de TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes liberarte de TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"Tus otras ataduras están demasiado apretadas para que puedas zafarte de TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"Tus otras ataduras están demasiado apretadas para que puedas zafarte de TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes aflojar TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes aflojar TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Tus otras ataduras te impiden manipular TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Tus otras ataduras te impiden manipular TargetRestraint."

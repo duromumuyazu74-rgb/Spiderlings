@@ -246,7 +246,7 @@ test("Arm Webbing registers a direct Wristtie-only ItemArms tracer", () => {
             Remove: restraint.escapeChance.Remove,
             Struggle: restraint.escapeChance.Struggle,
         },
-        { Cut: 100, Remove: 100, Struggle: 100 },
+        { Cut: 4, Remove: 4, Struggle: 4 },
     );
 
     assert.ok(model);
@@ -297,7 +297,7 @@ test("the complete runtime registers ten Lv1, five Lv2, eight Lv3 restraints, an
     assert.equal(runtime.context.Spiderlings.LooseWebbing, undefined);
 });
 
-test("all five real Lv2 items render their delivered art and require two effective actions", () => {
+test("all five real Lv2 items render their delivered art and expose native escape parameters", () => {
     const modJson = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
     const firstScript = modJson.fileorder.findIndex((file) => file.endsWith(".js"));
     for (const family of lv2Families) {
@@ -334,19 +334,19 @@ test("all five real Lv2 items render their delivered art and require two effecti
         );
 
         assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(family.id).applied, true);
-        const first = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(family.id, "Struggle", {
-            legal: true,
+        assert.deepEqual(JSON.parse(JSON.stringify(restraint.escapeChance)), {
+            Cut: 0.18,
+            Remove: family.family === "Arm" ? 0.7 : 0.3,
+            Struggle: family.family === "Arm" ? 0.2 : 0.12,
         });
-        assert.equal(first.progressed, true);
-        assert.equal(first.completed, false);
-        const second = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(family.id, "Remove", {
-            legal: true,
-        });
-        assert.equal(second.completed, true);
+        assert.equal(
+            restraint.events.some((e) => /Lv[23]Escape/.test(e.type)),
+            false,
+        );
     }
 });
 
-test("all eight Lv3 restraints equip independently with delivered models, complete translations, and two-action escape", () => {
+test("all eight Lv3 restraints equip independently with delivered models, complete translations, and native escape parameters", () => {
     const runtime = loadWebbingRuntime();
     const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
     const csv = translationFiles.map((file) => ({ file, values: parseTranslations(file) }));
@@ -375,12 +375,15 @@ test("all eight Lv3 restraints equip independently with delivered models, comple
             for (const translation of csv) assert.ok(translation.values.get(key), `${translation.file}: ${key}`);
         }
         assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
-        for (const [index, method] of ["Cut", "Remove"].entries()) {
-            const result = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(id, method, { legal: true });
-            assert.equal(result.requiredActions, 2);
-            assert.equal(result.effectiveActions, index + 1);
-            assert.equal(result.completed, index === 1);
-        }
+        assert.deepEqual(JSON.parse(JSON.stringify(restraint.escapeChance)), {
+            Cut: family === "Arm" ? 0.18 : 0.1,
+            Remove: family === "Arm" ? 0.5 : 0.14,
+            Struggle: family === "Arm" ? 0.15 : 0.04,
+        });
+        assert.equal(
+            restraint.events.some((e) => /Lv[23]Escape/.test(e.type)),
+            false,
+        );
     }
     assert.equal(runtime.context.KinkyDungeonGetRestraintByName("SpiderlingsWebbingLv3Hood").Group, "ItemHead");
     assert.equal(runtime.context.KinkyDungeonGetRestraintByName("SpiderlingsWebbingLv3Blindfold").Group, "ItemHead");
@@ -556,87 +559,22 @@ test("Lv2 stays above every visible Lv1 pair while Lv1 Legs/Ankles remain behind
     }
 });
 
-test("the real Lv2 inventory event makes the first native action spend-and-fail and the second succeed", () => {
-    const runtime = loadWebbingRuntime();
-    const id = "SpiderlingsWebbingLv2Arm";
-    assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
-    const item = runtime.equipped.get("ItemArms");
-    const eventType = runtime.context.Spiderlings.Webbing.LV2_ESCAPE_EVENT;
-    const before = runtime.context.KDEventMapInventory.beforeStruggleCalc[eventType];
-    const after = runtime.context.KDEventMapInventory.struggle[eventType];
-    const rejectedCut = {
-        restraint: item,
-        query: false,
-        struggleType: "Cut",
-        struggleGroup: "ItemArms",
-        canCut: false,
-        cost: -0.2,
-        escapeSpeed: 1,
-        minSpeed: 0.4,
-        escapeChance: 100,
-        escapePenalty: 0,
-        limitChance: 0,
-    };
-    before({}, item, rejectedCut);
-    after({}, item, { restraint: item, struggleType: "Cut", result: "Fail" });
-    assert.equal(
-        item.data.SpiderlingsEscapeActions,
-        undefined,
-        "an unarmed Cut must not be counted when KD later reports Fail",
-    );
-
-    const blockedRuntime = loadWebbingRuntime({ KDGroupBlocked: () => true });
-    assert.equal(blockedRuntime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
-    const blockedItem = blockedRuntime.equipped.get("ItemArms");
-    const blockedBefore = blockedRuntime.context.KDEventMapInventory.beforeStruggleCalc[eventType];
-    const blockedAfter = blockedRuntime.context.KDEventMapInventory.struggle[eventType];
-    const blockedAttempt = {
-        restraint: blockedItem,
-        query: false,
-        struggleType: "Struggle",
-        struggleGroup: "ItemArms",
-        cost: -3,
-        escapeSpeed: 1,
-        minSpeed: 0.4,
-        escapeChance: 100,
-        escapePenalty: 0,
-        limitChance: 0,
-    };
-    blockedBefore({}, blockedItem, blockedAttempt);
-    blockedAfter({}, blockedItem, { restraint: blockedItem, struggleType: "Struggle", result: "Fail" });
-    assert.equal(
-        blockedItem.data.SpiderlingsEscapeActions,
-        undefined,
-        "a group-blocked attempt must not be counted when KD later reports Fail",
-    );
-
-    const first = {
-        restraint: item,
-        query: false,
-        struggleType: "Struggle",
-        struggleGroup: "ItemArms",
-        cost: -3,
-        escapeSpeed: 1,
-        minSpeed: 0.4,
-        escapeChance: 100,
-        escapePenalty: 0,
-        limitChance: 0,
-    };
-    before({}, item, first);
-    assert.equal(first.escapeSpeed, 0);
-    assert.ok(first.minSpeed > 0);
-    assert.equal(item.data.SpiderlingsEscapeActions, undefined);
-    after({}, item, { restraint: item, struggleType: "Struggle", result: "Fail" });
-    assert.equal(item.data.SpiderlingsEscapeActions, 1);
-
-    const second = { ...first, escapeSpeed: 1, escapeChance: 100, escapePenalty: 0 };
-    before({}, item, second);
-    assert.equal(item.cutProgress, 1);
-    assert.equal(second.escapeChance, 1);
-    assert.ok(second.escapePenalty < 0);
+test("layer escape exposes native speeds without forced completion hooks", () => {
+    const r = loadWebbingRuntime();
+    for (const id of ["SpiderlingsWebbingLv2Arm", "SpiderlingsWebbingLv3Arm"]) {
+        const def = r.context.KinkyDungeonGetRestraintByName(id);
+        assert.equal(def.alwaysEscapable, undefined);
+        assert.equal(
+            def.events.some((e) => /Lv[23]Escape/.test(e.type)),
+            false,
+        );
+        assert.deepEqual(JSON.parse(JSON.stringify(def.struggleMinSpeed)), { Cut: 0.01, Remove: 0.01, Struggle: 0.01 });
+        assert.deepEqual(JSON.parse(JSON.stringify(def.limitChance)), { Cut: 0, Remove: 0, Struggle: 0 });
+    }
+    assert.equal(r.context.Spiderlings.Webbing.completeEffectiveEscape, undefined);
 });
 
-test("debug equipment uses zero tightness and no lock, then one legal Lv1 action removes Arm Webbing", () => {
+test("debug equipment uses zero tightness and no lock, and native removal preserves the equipment contract", () => {
     for (const method of ["Cut", "Struggle", "Remove"]) {
         const runtime = loadWebbingRuntime();
         const equipped = runtime.context.Spiderlings.Webbing.equipForDebug(armId);
@@ -647,23 +585,21 @@ test("debug equipment uses zero tightness and no lock, then one legal Lv1 action
         assert.equal(runtime.addCalls[0].lock, "");
         assert.equal(runtime.equipped.get("ItemArms").name, armId);
 
-        const escaped = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(armId, method, { legal: true });
+        const escaped = runtime.removeFixtureItem(armId);
         assert.equal(escaped.completed, true);
-        assert.equal(escaped.method, method);
+        assert.ok(["Cut", "Struggle", "Remove"].includes(method));
         assert.equal(runtime.removeCalls.length, 1);
         assert.equal(runtime.equipped.has("ItemArms"), false);
     }
 });
 
-test("blocked escape attempts do not remove Arm Webbing", () => {
+test("equipping Webbing never grants free native escape progress", () => {
     const runtime = loadWebbingRuntime();
     runtime.context.Spiderlings.Webbing.equipForDebug(armId);
-
-    const result = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(armId, "Cut", { legal: false });
-
-    assert.equal(result.completed, false);
+    const item = runtime.equipped.get("ItemArms");
+    assert.equal(item.cutProgress, undefined);
+    assert.equal(item.struggleProgress, undefined);
     assert.equal(runtime.removeCalls.length, 0);
-    assert.equal(runtime.equipped.get("ItemArms").name, armId);
 });
 
 test("the canonical ten-family Lv1 catalogue resolves ten direct runtime assets and localized text", () => {
@@ -745,7 +681,7 @@ test("all ten Lv1 items stay out of random pools and expose only their delivered
                 Remove: restraint.escapeChance.Remove,
                 Struggle: restraint.escapeChance.Struggle,
             },
-            { Cut: 100, Remove: 100, Struggle: 100 },
+            { Cut: 4, Remove: 4, Struggle: 4 },
         );
     }
 
@@ -923,10 +859,7 @@ test("Lv1 Stuffing and Gag form an independently removable inner/outer mouth cha
         assert.equal(root.dynamicLink.name, "SpiderlingsWebbingLv1Stuffing");
         assert.equal(root.restraint.gag + root.dynamicLink.restraint.gag, 0.25);
 
-        assert.equal(
-            api.completeEffectiveEscape(`SpiderlingsWebbingLv1${removeFamily}`, "Remove", { legal: true }).completed,
-            true,
-        );
+        assert.equal(runtime.removeFixtureItem(`SpiderlingsWebbingLv1${removeFamily}`).completed, true);
         const survivor = removeFamily === "Stuffing" ? "SpiderlingsWebbingLv1Gag" : "SpiderlingsWebbingLv1Stuffing";
         assert.equal(runtime.equipped.get("ItemMouth").name, survivor);
     }
@@ -940,7 +873,7 @@ test("each Lv1 family can be equipped at zero tightness and removed independentl
         assert.equal(equipped.applied, true, `${family.id} should equip`);
         assert.equal(runtime.addCalls[0].tightness, 0);
         assert.equal(runtime.addCalls[0].lock, "");
-        assert.equal(api.completeEffectiveEscape(family.id, "Struggle", { legal: true }).completed, true);
+        assert.equal(runtime.removeFixtureItem(family.id).completed, true);
         assert.equal(runtime.equipped.has(family.group), false);
     }
 });

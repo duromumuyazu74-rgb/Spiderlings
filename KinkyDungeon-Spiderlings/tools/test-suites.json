@@ -1,6 +1,8 @@
 {
   "public": [
     "spiderlings-kd-compatibility.test.js",
+    "spiderlings-translation-contract.test.js",
+    "spiderlings-text-audit.test.js",
     "spiderlings-worktree-safety.test.js",
     "spiderlings-webbing-cutover.test.js",
     "spiderlings-webbing-cocoon.test.js",
@@ -14,6 +16,7 @@
     "spiderlings-spinner-enclosure.test.js",
     "spiderlings-spinner-native-field.test.js",
     "spiderlings-spinner-ai.test.js",
+    "spiderlings-spinner-perception.test.js",
     "spiderlings-spinner-passage-planner.test.js",
     "spiderlings-spinner-passage.test.js",
     "spiderlings-web-mobility.test.js",
