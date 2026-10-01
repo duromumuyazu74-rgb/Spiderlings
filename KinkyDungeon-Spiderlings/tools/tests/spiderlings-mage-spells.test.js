@@ -78,7 +78,7 @@ test("friendly Collapse attacks hostile NPCs without damaging or binding the nea
     const r = fixture();
     r.mage.faction = "Player";
     r.cast("SpiderlingsMageCollapse");
-    for (let i = 0; i < 3; i++) r.tick();
+    for (let i = 0; i < 5; i++) r.tick();
     assert.equal(r.calls.npcDamage.length, 1);
     assert.equal(r.calls.npcWeb.length, 5);
     assert.equal(r.calls.playerDamage.length, 0);
@@ -242,6 +242,9 @@ test("Collapse uses the 21-cell inward ring and center-to-edge damage and bindin
     r.player.x = 8;
     r.player.y = 7;
     assert.equal(r.cast("SpiderlingsMageCollapse").result, "Cast");
+    r.tick();
+    r.tick();
+    assert.equal(r.calls.npcDamage.length, 0);
     r.tick();
     r.tick();
     assert.equal(r.calls.npcDamage.length, 0);

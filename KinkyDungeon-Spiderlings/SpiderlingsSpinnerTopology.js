@@ -670,7 +670,8 @@
 
     function addEnclosure(state, input) {
         const addition = createEnclosure(input);
-        if (addition.kind !== "enclosure") return { state: clone(state), added: false, reason: addition.reason };
+        if (addition.kind !== "enclosure")
+            return { state: state && clone(state), added: false, reason: addition.reason };
         if (!state) return { state: addition, added: true };
         const next = clone(state);
         if (next.composites?.[input.compositeId]) return { state: next, added: false, reason: "duplicate" };

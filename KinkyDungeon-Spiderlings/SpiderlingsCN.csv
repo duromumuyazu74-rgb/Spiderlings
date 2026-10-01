@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跃击幼蛛盯住对手脚下的�
 KDModButtonspiderlingsNestTunnelerCap,每巢累计掘穴幼蛛上限（0 为不召唤）
 RestraintSpiderlingsSpinnerLegbinder,蛛丝腿袋
 RestraintSpiderlingsSpinnerLegbinderDesc,蛛丝从脚踝上方包裹至大腿上段，双脚和双臂保持外露。
-RestraintSpiderlingsSpinnerLegbinderDesc2,完整切割四次或解开／挣脱六次；半程次数减半，混用共享进度。
+RestraintSpiderlingsSpinnerLegbinderDesc2,密实的丝织物包住双腿。刀具最为有效；尚未织好的部分更容易挣脱。
 SpiderlingsSpinnerPull,挣开蛛丝 · 精力 10 · 1 回合
 SpiderlingsSpinnerContest,参与幼蛛：{count} · 每回合织网 +{rate}
 SpiderlingsSpinnerStart,完整围网牵住了你的双腿。在拘束进度填满前完成挣脱；加入的幼蛛会加快织网并提高挣脱目标。

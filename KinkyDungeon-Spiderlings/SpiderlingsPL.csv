@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Skaczący pajączek wpatruje się 
 KDModButtonspiderlingsNestTunnelerCap,Łączny limit Tunneler na gniazdo (0: brak)
 RestraintSpiderlingsSpinnerLegbinder,Jedwabny worek na nogi
 RestraintSpiderlingsSpinnerLegbinderDesc,Jedwab otula nogi od miejsca nad kostkami po górną część ud. Stopy i ramiona pozostają odsłonięte.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Cztery cięcia albo sześć prób zdjęcia lub wyswobodzenia; częściowy splot wymaga połowy. Różne metody dzielą postęp.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Gęsty jedwab trzyma nogi razem. Narzędzia tnące działają najlepiej; niedokończony splot stawia mniejszy opór.
 SpiderlingsSpinnerPull,Wyrwij się · 10 wytrzymałości · 1 tura
 SpiderlingsSpinnerContest,Spinner: {count} · tkanie +{rate}/turę
 SpiderlingsSpinnerStart,Cała sieć trzyma nogi. Najpierw wypełnij pasek ucieczki; kolejne Spinnery zwiększają tempo tkania i cel ucieczki.

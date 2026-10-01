@@ -364,7 +364,7 @@
 
     const MOD = "SpiderlingsInfestation";
     const FIELD = "SpiderlingsInfestation";
-    const MIN_FLOOR = 3;
+    const MIN_FLOOR = 5;
     const TARGET = 5;
     const QUIET_TURNS = 15;
     const GARRISON = 5;
@@ -400,7 +400,8 @@
     }
 
     function seekPatrol(enemy, target, aiData = {}) {
-        const state = activeState();
+        const hunting = api.HuntingGrounds?.activeState?.();
+        const state = activeState() || hunting;
         if (
             !state ||
             !wildSpider(enemy) ||
@@ -418,7 +419,12 @@
             aiData.canSensePlayer ||
             aiData.moveTowardPlayer ||
             api.SpinnerNPCCapture?.usesSource?.(enemy.id) ||
-            api.NPCWrapping?.usesSource?.(enemy.id)
+            api.SpinnerNPCRecovery?.usesEntity?.(enemy.id) ||
+            api.NPCWrapping?.usesSource?.(enemy.id) ||
+            api.SpinnerRecovery?.wantsPursuit?.(enemy, target) ||
+            Object.values(api.SpinnerNativeField?.state?.()?.ai?.groups || {}).some(
+                (group) => group.planId && group.memberIds.some((id) => String(id) === String(enemy.id)),
+            )
         )
             return false;
         const nests = KDMapData.Entities.filter((entity) => entity.hp > 0 && state.targetIds.includes(entity.id));
@@ -441,7 +447,7 @@
             enemy.gy = marker.goal.y;
             return true;
         }
-        if (!marker && nearestNest > 5) return false;
+        if (!hunting && !marker && nearestNest > 5) return false;
         const occupied = new Set(KDMapData.Entities.filter((entity) => entity.hp > 0 && entity !== enemy).map(key)),
             reserved = new Set(
                 KDMapData.Entities.filter((entity) => entity !== enemy).flatMap((entity) =>

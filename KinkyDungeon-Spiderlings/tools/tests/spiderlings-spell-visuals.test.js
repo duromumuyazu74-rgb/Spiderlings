@@ -544,7 +544,7 @@ test("resolved Mage bursts survive gameplay-record expiry before the first rende
     const mage = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
     r.c.KDMapData.Entities.push(mage);
     r.c.KinkyDungeonCastSpell(4, 4, { name: "SpiderlingsMageCollapse" }, mage);
-    for (let tick = 0; tick < 4; tick++) r.events.tickAfter(null, { delta: 1 });
+    for (let tick = 0; tick < 6; tick++) r.events.tickAfter(null, { delta: 1 });
     assert.equal(r.c.KDMapData.SpiderlingsMageSpells.blasts.length, 0);
     assert.equal(r.draw().length, 1, "A burst must not depend on rendering its one-turn gameplay record");
     assert.equal(r.fills.length, 21);
@@ -557,7 +557,7 @@ test("native-style reload restores persistent state without replaying a resolved
     const mage = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
     r.c.KDMapData.Entities.push(mage);
     r.c.KinkyDungeonCastSpell(4, 4, { name: "SpiderlingsMageCollapse" }, mage);
-    for (let tick = 0; tick < 3; tick++) r.events.tickAfter(null, { delta: 1 });
+    for (let tick = 0; tick < 5; tick++) r.events.tickAfter(null, { delta: 1 });
     assert.equal(r.draw().length, 1);
     r.time(260);
     assert.equal(r.draw()[0][9].alpha, 0.65);

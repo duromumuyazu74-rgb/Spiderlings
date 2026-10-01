@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Прыгающий паучок с
 KDModButtonspiderlingsNestTunnelerCap,Всего Tunneler на гнездо (0: не призывать)
 RestraintSpiderlingsSpinnerLegbinder,Шёлковый мешок для ног
 RestraintSpiderlingsSpinnerLegbinderDesc,Шёлк охватывает ноги от места над щиколотками до верхней части бёдер. Ступни и руки остаются открытыми.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Четыре разреза либо шесть попыток снять или вырваться; для незавершённого плетения нужно вдвое меньше. Разные способы используют общий прогресс.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Плотный шёлк удерживает ноги вместе. Режущие инструменты наиболее эффективны; незавершённое плетение слабее.
 SpiderlingsSpinnerPull,Разорвать нити · 10 выносливости · 1 ход
 SpiderlingsSpinnerContest,Spinner: {count} · плетение +{rate}/ход
 SpiderlingsSpinnerStart,Целая сеть удерживает ноги. Заполни шкалу освобождения первой; новые Spinner ускоряют плетение и повышают цель освобождения.

@@ -241,7 +241,12 @@
                 const maidOnRune = KDMapData.Entities.some(
                     (target) => target.x === bullet.x && target.y === bullet.y && hostileMaid(bullet, target),
                 );
-                if (playerOnRune || maidOnRune) setPhase(bullet, "triggered", 1);
+                if (playerOnRune || maidOnRune) {
+                    // Snapshot the player's native movement impairment at contact.
+                    // Later waiting does not repeatedly extend an armed explosion.
+                    const warning = playerOnRune ? 2 + Math.ceil(Math.max(0, KinkyDungeonSlowLevel) / 2) : 2;
+                    setPhase(bullet, "triggered", warning);
+                }
             } else if (phase === "triggered" && --bullet[TURNS] <= 0) {
                 resolveRune(bullet);
             }

@@ -960,108 +960,50 @@ test("a leg bag gates only its own covered lower layers and preserves external a
     assert.equal(api.pairedOuterLayerFor(item("SpiderlingsWebbingLv1Legs")), undefined);
 });
 
-test("leg-bag escape counts a legal cutting affinity even when the weapon canCut flag is false", () => {
-    const r = loadLifecycleRuntime(
-        { KDGroupBlocked: () => false, KinkyDungeonHasStamina: () => true },
-        undefined,
-        true,
-    );
-    const target = item("SpiderlingsSpinnerLegbinder", { group: "ItemLegs", data: { wrapProgress: 1 } });
-    r.equipment.set("ItemLegs", target);
-    const before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsLegbinderEscape"];
-    const after = r.inventoryEvents["struggle:SpiderlingsLegbinderEscape"];
-    const attempt = (method) => ({
-        restraint: target,
-        struggleType: method,
-        struggleGroup: "ItemLegs",
-        cost: -0.2,
-        canCut: false,
-        hasAffinity: true,
+test("leg-bag queries preserve native cutting affinity and do not write progress", () => {
+    const r = loadLifecycleRuntime({}, undefined, true);
+    const target = item("SpiderlingsSpinnerLegbinder", {
+        group: "ItemLegs",
+        data: { wrapProgress: 1 },
+        cutProgress: 0.2,
     });
-    const query = { ...attempt("Cut"), query: true };
-    before({}, target, query);
-    after({}, target, { ...query, result: "Fail" });
-    assert.equal(target.data.SpiderlingsLegbinderEscapeProgress, undefined);
-    for (const method of ["Cut", "Remove", "Cut", "Struggle"]) {
-        const data = attempt(method);
+    const before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsLegbinderEscape"];
+    for (const query of [true, false]) {
+        const data = {
+            restraint: target,
+            struggleType: "Cut",
+            query,
+            canCut: false,
+            hasAffinity: true,
+            cost: -0.2,
+            escapeChance: 0.3,
+            escapeSpeed: 0.4,
+        };
         before({}, target, data);
-        assert.equal(data.escapeSpeed, 0);
-        after({}, target, { ...data, result: "Fail" });
-        after({}, target, { ...data, result: "Fail" });
+        assert.equal(data.escapeChance, 0.3);
+        assert.equal(data.escapeSpeed, 0.4);
+        assert.equal(data.cost, -0.2);
+        assert.equal(target.cutProgress, 0.2);
+        assert.deepEqual(target.data, { wrapProgress: 1 });
     }
-    const final = attempt("Remove");
-    before({}, target, final);
-    assert.equal(target.cutProgress, 1);
-    const finish = r.inventoryEvents["beforeSuccessRemove:SpiderlingsFinalEscapeOutcome"];
-    finish({}, target, final);
-    assert.equal(final.destroyChance, 0);
-    finish({}, target, { ...final, struggleType: "Cut" });
+    assert.equal(r.inventoryEvents["struggle:SpiderlingsLegbinderEscape"], undefined);
+    assert.equal(r.context.KinkyDungeonGetRestraintByName(target.name).alwaysEscapable, undefined);
 });
 
-test("full and incomplete bags require the specified effective Cut, Remove, and Struggle counts", () => {
-    for (const [wrapProgress, method, steps] of [
-        [1, "Cut", 4],
-        [1, "Remove", 6],
-        [1, "Struggle", 6],
-        [0.8, "Cut", 2],
-        [0.8, "Remove", 3],
-        [0.8, "Struggle", 3],
-    ]) {
-        let stamina = true;
-        let blocked = false;
-        const r = loadLifecycleRuntime(
-            {
-                KDGroupBlocked: () => blocked,
-                KinkyDungeonHasStamina: () => stamina,
-            },
-            undefined,
-            true,
-        );
-        const target = item("SpiderlingsSpinnerLegbinder", {
-            id: 7400,
-            group: "ItemLegs",
-            data: { wrapProgress },
-        });
-        r.equipment.set("ItemLegs", target);
-        const before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsLegbinderEscape"];
-        const after = r.inventoryEvents["struggle:SpiderlingsLegbinderEscape"];
-        const attempt = (extra = {}) => ({
-            restraint: target,
-            struggleType: method,
-            struggleGroup: "ItemLegs",
-            cost: -0.2,
-            canCut: true,
-            escapeChance: 100,
-            ...extra,
-        });
-
-        for (const invalid of [{ query: true }, ...(method === "Cut" ? [{ canCut: false, hasAffinity: false }] : [])]) {
-            const data = attempt(invalid);
+test("incomplete bags scale native resistance continuously without counting actions", () => {
+    const r = loadLifecycleRuntime({}, undefined, true),
+        before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsLegbinderEscape"];
+    const def = r.context.KinkyDungeonGetRestraintByName("SpiderlingsSpinnerLegbinder");
+    assert.deepEqual(JSON.parse(JSON.stringify(def.escapeChance)), { Cut: 0.1, Remove: 0.1, Struggle: 0.05 });
+    for (const wrapProgress of [0.2, 0.5, 0.8, 1])
+        for (const method of ["Cut", "Remove", "Struggle"]) {
+            const target = item(def.name, { group: "ItemLegs", data: { wrapProgress }, lock: "Red", cutProgress: 0.2 });
+            const data = { restraint: target, struggleType: method, escapeChance: 0.2, escapeSpeed: 0.5, cost: -3 };
             before({}, target, data);
-            after({}, target, { ...data, result: "Fail" });
+            assert.ok(Math.abs(data.escapeChance - 0.2 / (0.5 + 0.5 * wrapProgress)) < 1e-9);
+            assert.ok(Math.abs(data.escapeSpeed - 0.5 / (0.5 + 0.5 * wrapProgress)) < 1e-9);
+            assert.equal(data.cost, -3);
+            assert.equal(target.cutProgress, 0.2);
+            assert.equal(target.lock, "Red");
         }
-        stamina = false;
-        let data = attempt();
-        before({}, target, data);
-        after({}, target, { ...data, result: "Fail" });
-        stamina = true;
-        blocked = true;
-        data = attempt();
-        before({}, target, data);
-        after({}, target, { ...data, result: "Fail" });
-        blocked = false;
-        assert.equal(target.data.SpiderlingsLegbinderEscapeProgress, undefined);
-
-        for (let action = 1; action < steps; action++) {
-            data = attempt();
-            before({}, target, data);
-            after({}, target, { ...data, result: "Fail" });
-            after({}, target, { ...data, result: "Fail" });
-            assert.ok(Math.abs(target.data.SpiderlingsLegbinderEscapeProgress - action / steps) < 1e-8);
-        }
-        data = attempt();
-        before({}, target, data);
-        assert.equal(data.escapeChance, 1, `${wrapProgress}:${method}`);
-        assert.equal(data.escapePenalty, -100, `${wrapProgress}:${method}`);
-    }
 });

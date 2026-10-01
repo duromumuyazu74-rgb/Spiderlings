@@ -17,6 +17,7 @@ function fixture() {
     const map = { Entities: [mage], Bullets: [] };
     let random = 0;
     const c = {
+        KinkyDungeonSlowLevel: 0,
         Spiderlings: { Webbing: { applyEnemyProgression: (...args) => calls.binds.push(args) } },
         KDMapData: map,
         KinkyDungeonPlayerEntity: player,
@@ -115,6 +116,7 @@ test("friendly runes ignore the player but still trigger on hostile NPCs after c
         r.tick();
         assert.equal(bullet.SpiderlingsRunePhase, "triggered");
         r.tick();
+        r.tick();
         assert.equal(maid.slime, 6);
         assert.equal(r.calls.binds.length, 0, "the friendly player within the blast is unaffected");
     }
@@ -165,10 +167,11 @@ test("Hunting Grounds rune can trigger on allied neutral NPC prey", () => {
     r.tick();
     assert.equal(bullet.SpiderlingsRunePhase, "triggered");
     r.tick();
+    r.tick();
     assert.equal(neutral.slime, 6);
 });
 
-test("rune icon places for one turn, then the triggered rune warns 3x3 and binds after one turn", () => {
+test("rune icon places for one turn, then the triggered rune warns 3x3 and binds after two warning turns", () => {
     const r = fixture();
     r.cast();
     const bullet = r.map.Bullets[0];
@@ -195,6 +198,7 @@ test("rune icon places for one turn, then the triggered rune warns 3x3 and binds
     assert.equal(bullet.bullet.bulletLight, 6);
     assert.equal(maid.slime, undefined);
     maid.x += 1;
+    r.tick();
     r.tick();
     assert.equal(maid.slime, 6);
     assert.equal(r.calls.npcHits.length, 1);
@@ -224,6 +228,7 @@ test("saved delayed rune survives caster death, player receives normal Webbing, 
     r.map.Entities.push(maid);
     r.tick();
     r.tick();
+    r.tick();
     assert.equal(maid.slime, 6, "the saved rune outlives its caster");
     r.map.Entities.push(r.mage);
     r.cast();
@@ -234,6 +239,7 @@ test("saved delayed rune survives caster death, player receives normal Webbing, 
     r.tick();
     r.tick();
     r.player.x += 1;
+    r.tick();
     r.tick();
     assert.equal(r.calls.binds.length, 1);
     assert.equal(r.calls.binds[0][0], "MageSpiderlings");
@@ -285,4 +291,26 @@ test("Rune cast rebuilds occupancy and checks changed terrain and LOS after spel
     r.c.KinkyDungeonCheckLOS = (_source, target) => !(target.x === 6 && target.y === 3);
     assert.equal(r.cast().result, "Cast");
     assert.deepEqual([r.calls.casts.at(-1).x, r.calls.casts.at(-1).y], [7, 3]);
+});
+
+test("Rune warning snapshots native Slow and never extends while the player waits", () => {
+    for (const slow of [0, 1, 3, 5]) {
+        const r = fixture();
+        r.cast();
+        r.tick();
+        r.tick();
+        const b = r.map.Bullets[0];
+        r.c.KinkyDungeonSlowLevel = slow;
+        Object.assign(r.player, { x: b.x, y: b.y });
+        r.tick();
+        const warning = 2 + Math.ceil(slow / 2);
+        assert.equal(b.SpiderlingsRuneTurns, warning);
+        r.c.KinkyDungeonSlowLevel = 99;
+        for (let i = 1; i < warning; i++) {
+            r.tick();
+            assert.equal(r.calls.binds.length, 0);
+        }
+        r.tick();
+        assert.equal(r.calls.binds.length, 1);
+    }
 });

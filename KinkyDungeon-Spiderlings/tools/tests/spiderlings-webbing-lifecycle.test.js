@@ -73,6 +73,29 @@ function syntheticCatalog() {
 
 const { loadLifecycleRuntime, item } = require("./helpers/lifecycle-runtime.js");
 
+test("bound Webbing retains the native weapon button without requesting an empty unarmed icon", () => {
+    const calls = [],
+        damage = { name: "", unarmed: true, damage: 2 },
+        receiver = {};
+    const r = loadLifecycleRuntime({
+        KinkyDungeonPlayerDamage: damage,
+        DrawButtonKDEx(...args) {
+            calls.push({ args, receiver: this });
+            return "NativeButton";
+        },
+    });
+    const button = r.context.DrawButtonKDEx;
+    assert.equal(button.call(receiver, "switchWeapon", "Game/Items/.png"), "NativeButton");
+    assert.equal(calls.at(-1).args[1], "Game/Items/.png", "unrelated native gear keeps its existing rendering");
+    r.equipment.set("ItemArms", item("SpiderlingsWebbingLv3Arm"));
+    button.call(receiver, "switchWeapon", "Game/Items/.png");
+    assert.equal(calls.at(-1).args[1], undefined);
+    assert.equal(calls.at(-1).receiver, receiver);
+    assert.deepEqual(damage, { name: "", unarmed: true, damage: 2 });
+    button("switchWeapon", "Game/Items/Knife.png");
+    assert.equal(calls.at(-1).args[1], "Game/Items/Knife.png");
+});
+
 test("the action resolver canonicalizes mouth, split-mitten, and ordinary Lv1/Lv2 order without rebuilding items", () => {
     const runtime = loadLifecycleRuntime();
     const resolve = runtime.context.Spiderlings.Webbing.resolveWebbingAction;
@@ -401,39 +424,15 @@ test("physical inspection counts only exact injected catalog IDs at 10, 15, and 
     assert.equal(inspect([...lv1, ...lv1]).lv1Count, 10);
 });
 
-test("Lv1 needs one effective action and synthetic Lv2 shares two actions across methods", () => {
+test("the lifecycle resolver delegates escape calculation to native KD", () => {
     const runtime = loadLifecycleRuntime();
-    const resolve = runtime.context.Spiderlings.Webbing.resolveWebbingAction;
-    const catalog = syntheticCatalog();
-    const lv1 = item("SpiderlingsWebbingLv1Arm");
-    const lv2 = item("SpiderlingsWebbingLv2Arm");
-    const act = (target, method, effective, progress = 0) =>
-        plain(
-            resolve({
-                catalog,
-                snapshot: { items: [target] },
-                action: { type: "escapeAttempt", item: target, method, effective, progress },
-            }).outcome,
-        );
-
-    assert.deepEqual(act(lv1, "Struggle", true), {
-        completed: true,
-        progressed: true,
-        effectiveActions: 1,
-        requiredActions: 1,
-        method: "Struggle",
-        keep: true,
+    const target = item("SpiderlingsWebbingLv2Arm", { cutProgress: 0.3 });
+    const result = runtime.context.Spiderlings.Webbing.resolveWebbingAction({
+        snapshot: { items: [target] },
+        action: { type: "escapeAttempt", item: target, method: "Cut", effective: true, progress: 1 },
     });
-    const blocked = act(lv2, "Cut", false);
-    assert.equal(blocked.progressed, false);
-    assert.equal(blocked.completed, false);
-    const first = act(lv2, "Cut", true);
-    assert.equal(first.completed, false);
-    assert.equal(first.effectiveActions, 1);
-    const second = act(lv2, "Remove", true, first.effectiveActions);
-    assert.equal(second.completed, true);
-    assert.equal(second.effectiveActions, 2);
-    assert.equal(second.keep, true);
+    assert.equal(result.outcome.reason, "unsupported-action");
+    assert.equal(target.cutProgress, 0.3);
 });
 
 test("the player escape input blocks only an exactly paired Lv1 while its Lv2 remains equipped", () => {
@@ -541,55 +540,24 @@ test("the paired gate ignores unpaired Lv1 and system-level removal, then permit
     assert.equal(runtime.errorSounds.length, 0);
 });
 
-test("the final effective method alone chooses destruction or a fresh retained loose item", () => {
-    const retained = loadLifecycleRuntime();
-    const retainedId = "SpiderlingsWebbingLv2Arm";
-    const retainedItem = item(retainedId, {
-        group: "ItemArms",
-        tightness: 9,
-        lock: "Red",
-        data: { SpiderlingsEscapeActions: 0, damage: 0.6, repair: 0.2 },
-    });
-    retained.equipment.set("ItemArms", retainedItem);
-    const catalog = syntheticCatalog();
-
-    const first = retained.context.Spiderlings.Webbing.completeEffectiveEscape(retainedId, "Cut", {
-        legal: true,
-        catalog,
-    });
-    assert.equal(first.completed, false);
-    assert.equal(retainedItem.data.SpiderlingsEscapeActions, 1);
-    const second = retained.context.Spiderlings.Webbing.completeEffectiveEscape(retainedId, "Remove", {
-        legal: true,
-        catalog,
-    });
-    assert.equal(second.completed, true);
-    assert.equal(retained.equipment.has("ItemArms"), false);
-    assert.deepEqual(retained.loose.get(retainedId), { name: retainedId, type: "LooseRestraint", quantity: 1 });
-
-    assert.equal(retained.nativeInventoryEquip({ name: retainedId, Group: "ItemArms" }), true);
-    retained.flushScheduled();
-    const fresh = retained.equipment.get("ItemArms");
-    assert.notEqual(fresh, retainedItem);
-    assert.deepEqual(fresh.data, {});
-    assert.equal(fresh.tightness, 0);
-    assert.equal(fresh.lock, "");
-    assert.equal(retained.loose.has(retainedId), false);
-
-    const destroyed = loadLifecycleRuntime();
-    const destroyedItem = item(retainedId, { group: "ItemArms", data: { SpiderlingsEscapeActions: 0 } });
-    destroyed.equipment.set("ItemArms", destroyedItem);
-    assert.equal(
-        destroyed.context.Spiderlings.Webbing.completeEffectiveEscape(retainedId, "Remove", { legal: true, catalog })
-            .completed,
-        false,
-    );
-    assert.equal(
-        destroyed.context.Spiderlings.Webbing.completeEffectiveEscape(retainedId, "Cut", { legal: true, catalog })
-            .completed,
-        true,
-    );
-    assert.equal(destroyed.loose.has(retainedId), false);
+test("native successful removal chooses item fate and re-equips fresh instances", () => {
+    for (const method of ["Cut", "Remove", "Struggle"]) {
+        const r = loadLifecycleRuntime();
+        const target = item("SpiderlingsWebbingLv2Arm", { group: "ItemArms", data: { damage: 0.6 }, lock: "Red" });
+        r.equipment.set("ItemArms", target);
+        const data = { item: target, restraint: target, struggleType: method, destroyChance: 0.5 };
+        r.inventoryEvents["beforeSuccessRemove:SpiderlingsFinalEscapeOutcome"]({}, target, data);
+        r.context.KinkyDungeonRemoveRestraintSpecific(target, data.destroyChance < 1);
+        assert.equal(r.loose.has(target.name), method !== "Cut");
+        if (method !== "Cut") {
+            assert.equal(r.nativeInventoryEquip({ name: target.name, Group: "ItemArms" }), true);
+            r.flushScheduled();
+            const fresh = r.equipment.get("ItemArms");
+            assert.notEqual(fresh, target);
+            assert.deepEqual(fresh.data, {});
+            assert.equal(fresh.lock, "");
+        }
+    }
 });
 
 test("a retained synthetic Cocoon uses native loose inventory and re-equips without old damage or repair state", () => {
@@ -908,56 +876,18 @@ test("Cocoon hides every inner HUD/context action and removing it restores the o
     assert.equal(runtime.nativeStruggleInputs.length, 0, "menu queries spend no actions");
 });
 
-test("Lv3 native escape shares two actions across methods and ignores queries, failed prerequisites, and duplicate Fail events", () => {
-    const runtime = loadLifecycleRuntime({ KinkyDungeonHasStamina: () => true });
-    const api = runtime.context.Spiderlings.Webbing;
-    assert.equal(api.equipForDebug("SpiderlingsWebbingLv3Arm").applied, true);
-    const target = runtime.equipment.get("ItemArms");
-    const before = runtime.inventoryEvents[`beforeStruggleCalc:${api.LV3_ESCAPE_EVENT}`];
-    const after = runtime.inventoryEvents[`struggle:${api.LV3_ESCAPE_EVENT}`];
-    const attempt = (method, extra = {}) => ({
-        restraint: target,
-        struggleType: method,
-        struggleGroup: "ItemArms",
-        cost: -0.2,
-        escapeChance: 100,
-        escapePenalty: 0,
-        ...extra,
+test("Lv3 native profile has no counted result handlers", () => {
+    const r = loadLifecycleRuntime();
+    const def = r.context.KinkyDungeonGetRestraintByName("SpiderlingsWebbingLv3Arm");
+    assert.deepEqual(plain(def.escapeChance), { Cut: 0.18, Remove: 0.5, Struggle: 0.15 });
+    assert.deepEqual(plain(r.context.KinkyDungeonGetRestraintByName("SpiderlingsWebbingLv3Legs").escapeChance), {
+        Cut: 0.1,
+        Remove: 0.14,
+        Struggle: 0.04,
     });
-    for (const extra of [{ query: true }, { canCut: false }]) {
-        before({}, target, attempt("Cut", extra));
-        after({}, target, { ...attempt("Cut"), result: "Fail" });
-        assert.equal(target.data.SpiderlingsEscapeActions, undefined);
-    }
-    runtime.context.KinkyDungeonHasStamina = () => false;
-    before({}, target, attempt("Struggle"));
-    after({}, target, { ...attempt("Struggle"), result: "Fail" });
-    assert.equal(target.data.SpiderlingsEscapeActions, undefined);
-    runtime.context.KinkyDungeonHasStamina = () => true;
-    runtime.context.KDGroupBlocked = () => true;
-    before({}, target, attempt("Struggle"));
-    after({}, target, { ...attempt("Struggle"), result: "Fail" });
-    assert.equal(target.data.SpiderlingsEscapeActions, undefined);
-    runtime.context.KDGroupBlocked = () => false;
-    for (const [index, method] of ["Struggle"].entries()) {
-        const data = attempt(method);
-        before({}, target, data);
-        assert.equal(data.escapeChance, 0);
-        after({}, target, { ...data, result: "Fail" });
-        after({}, target, { ...data, result: "Fail" });
-        assert.equal(target.data.SpiderlingsEscapeActions, index + 1);
-    }
-    const final = attempt("Remove");
-    before({}, target, final);
-    assert.equal(target.cutProgress, 1);
-    assert.equal(final.escapeChance, 1);
-    assert.ok(final.escapePenalty < 0);
-    const finalHandler = runtime.inventoryEvents[`beforeSuccessRemove:${api.FINAL_ESCAPE_EVENT}`];
-    finalHandler({}, target, final);
-    assert.equal(final.destroyChance, 0);
-    const cut = { ...final, struggleType: "Cut" };
-    finalHandler({}, target, cut);
-    assert.equal(cut.destroyChance, 1);
+    assert.deepEqual(plain(def.speedMult), { Cut: 0.75, Remove: 0.65, Struggle: 0.65 });
+    assert.equal(r.inventoryEvents["beforeStruggleCalc:SpiderlingsLv3Escape"], undefined);
+    assert.equal(r.inventoryEvents["struggle:SpiderlingsLv3Escape"], undefined);
 });
 
 test("physical inspection includes all eight Lv3 items required by enemy Cocoon progression", () => {
@@ -1022,4 +952,32 @@ test("physical Spiderlings items expose no defeat, capture, or prison cleanup pa
     assert.deepEqual(lv1.data, { persistent: "lv1" });
     assert.deepEqual(lv2.data, { persistent: "lv2" });
     assert.deepEqual(cocoon.data, { persistent: "cocoon" });
+});
+
+test("load migrates earned counted work once without changing locks, links or Cut progress", () => {
+    const r = loadLifecycleRuntime({}, undefined, true);
+    const inner = item("ThirdPartyCuffs", { group: "ItemLegs", lock: "Gold" });
+    const bag = item("SpiderlingsSpinnerLegbinder", {
+        group: "ItemLegs",
+        lock: "Red",
+        dynamicLink: inner,
+        cutProgress: 0.2,
+        struggleProgress: 0.1,
+        data: { wrapProgress: 0.8, SpiderlingsLegbinderEscapeProgress: 0.5 },
+    });
+    const arm = item("SpiderlingsWebbingLv3Arm", { group: "ItemArms", data: { SpiderlingsEscapeActions: 1 } });
+    r.equipment.set("ItemLegs", bag);
+    r.equipment.set("ItemArms", arm);
+    const load = () => r.context.KDEventMapGeneric.afterLoadGame.SpiderlingsNativeEscapeProgress("afterLoadGame", {});
+    load();
+    assert.equal(bag.struggleProgress, 0.5);
+    assert.equal(bag.cutProgress, 0.2);
+    assert.equal(arm.struggleProgress, 0.5);
+    assert.equal(bag.lock, "Red");
+    assert.equal(bag.dynamicLink, inner);
+    assert.deepEqual(bag.data, { wrapProgress: 0.8 });
+    assert.deepEqual(arm.data, {});
+    load();
+    assert.equal(bag.struggleProgress, 0.5);
+    assert.equal(r.equipment.get("ItemLegs"), bag);
 });

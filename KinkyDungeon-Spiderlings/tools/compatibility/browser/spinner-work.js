@@ -43,7 +43,7 @@
             Spiderlings.SpinnerAI.beginTurn({ activate: true });
             row = { count, actions: [], turns: [], reload: undefined };
             rows.push(row);
-            for (tick = 1; tick <= 180; tick++) {
+            for (tick = 1; tick <= 260; tick++) {
                 await turn();
                 const state = Spiderlings.SpinnerNativeField.state();
                 const fields = Object.values(state?.topology?.fields || {}).map((field) => ({
@@ -90,6 +90,10 @@
             expect(
                 composite?.constructionOrder === "outer-first" && composite.layerIds.length === 3,
                 `${count} workers did not declare the largest three-ring enclosure`,
+            );
+            expect(
+                row.final.topology.fields[composite.layerIds[0]].interiorCells.length === 9,
+                "The spacious enclosure did not keep its larger capture core",
             );
             const bodyWork = row.actions.filter(
                 (action) => action.result.applied && !/Gate|repair/.test(action.action),

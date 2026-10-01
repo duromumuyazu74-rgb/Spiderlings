@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La arañita saltadora mira el suel
 KDModButtonspiderlingsNestTunnelerCap,Tunneler totales por nido (0: ninguno)
 RestraintSpiderlingsSpinnerLegbinder,Saco de seda para las piernas
 RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve tus piernas desde encima de los tobillos hasta la parte alta de los muslos. Los pies y los brazos quedan descubiertos.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Corta cuatro veces o retira la seda o forcejea seis veces; a medio tejer requiere la mitad. Los métodos comparten el progreso.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Un tejido denso mantiene tus piernas juntas. Las herramientas de corte son más eficaces; el tejido incompleto ofrece menos resistencia.
 SpiderlingsSpinnerPull,Soltarse · 10 de energía · 1 turno
 SpiderlingsSpinnerContest,Spinner: {count} · tejido +{rate}/turno
 SpiderlingsSpinnerStart,La trampa intacta te sujeta. Completa la barra de escape primero; más Spinner aumentan la velocidad y la meta de escape.

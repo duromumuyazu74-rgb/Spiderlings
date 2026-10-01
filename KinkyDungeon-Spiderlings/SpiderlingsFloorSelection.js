@@ -19,7 +19,8 @@
     }
 
     function select(slot) {
-        if (slot.type !== "basic" || slot.protected || slot.y < 3 || slot.RoomType || KDIsHellFloor(slot.y)) return;
+        // Both supported native journeys place the first Boss on floor four.
+        if (slot.type !== "basic" || slot.protected || slot.y < 5 || slot.RoomType || KDIsHellFloor(slot.y)) return;
         const candidates = Object.keys(settings)
             .map((name) => KDMapMods[name])
             .filter((mod) => mod && mod.weight > 0 && mod.filter(slot) > 0);

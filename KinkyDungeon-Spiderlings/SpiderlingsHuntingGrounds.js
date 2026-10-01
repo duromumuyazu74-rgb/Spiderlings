@@ -250,7 +250,7 @@
 
     const MOD = "SpiderlingsHuntingGrounds";
     const FIELD = "SpiderlingsHuntingGrounds";
-    const MIN_FLOOR = 3;
+    const MIN_FLOOR = 5;
     const TARGET = 3;
     const QUIET_TURNS = 15;
     const WILD_QUIET_CAP = 5;
@@ -258,7 +258,7 @@
     const MOBILE = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]);
     const POPULATION_TAG = MOD + "Population";
     const POPULATION_MULTIPLIERS = { Spider: 1, Maid: 3, Dressmaker: 0.5, Nurse: 1 };
-    const INFESTATION_MULTIPLIERS = { Spider: 3, Maid: 0.35, Dressmaker: 0.2, Nurse: 0.2 };
+    const INFESTATION_MULTIPLIERS = { Spider: 9, Maid: 0.35, Dressmaker: 0.2, Nurse: 0.2, Other: 0.1 };
     const NEST_PARENT_ID = "SpiderlingsNestParentID";
     const POPULATION_TAGS = ["spiderlings", "maid", "dressmaker"];
     const PRESET_TAG = MOD + "Preset";
@@ -306,6 +306,69 @@
         }
     }
 
+    function scatterInitialPrey(previous, protectedPositions) {
+        const prey = KDMapData.Entities.filter(
+            (entity) =>
+                !previous.has(entity) &&
+                !protectedPositions.has(key(entity)) &&
+                populationGroup(entity.Enemy) !== "Spider" &&
+                !entity.Enemy?.immobile &&
+                !entity.Enemy?.master &&
+                entity.runSpawnAI !== true &&
+                !(typeof KDEnemyHasFlag === "function" && KDEnemyHasFlag(entity, "Shop")),
+        );
+        if (prey.length < 2) return;
+        const occupied = new Set(KDMapData.Entities.map(key)),
+            passable = new Set(),
+            candidates = [];
+        for (let x = 1; x < KDMapData.GridWidth - 1; x++)
+            for (let y = 1; y < KDMapData.GridHeight - 1; y++) {
+                const point = { x, y },
+                    tile = KinkyDungeonMapGet(x, y),
+                    meta = KinkyDungeonTilesGet(key(point));
+                if (KinkyDungeonMovableTiles.includes(tile) && !meta?.Lock) passable.add(key(point));
+                if (
+                    tile !== "0" ||
+                    meta?.OL ||
+                    meta?.OffLimits ||
+                    meta?.Type ||
+                    meta?.Lock ||
+                    occupied.has(key(point)) ||
+                    protectedPositions.has(key(point)) ||
+                    distance(point, KDMapData.StartPosition) < 5 ||
+                    distance(point, KinkyDungeonPlayerEntity) < 3 ||
+                    distance(point, KDMapData.EndPosition) < 2
+                )
+                    continue;
+                candidates.push({ ...point, tie: KDRandom() });
+            }
+        const reachable = reachableCells(KDMapData.StartPosition, passable);
+        for (const entity of prey) {
+            const others = prey.filter((other) => other !== entity);
+            const separation = (point) => Math.min(...others.map((other) => distance(point, other)));
+            if (separation(entity) >= 6) continue;
+            const goal = candidates
+                .filter((point) => !occupied.has(key(point)) && reachable.has(key(point)))
+                .sort(
+                    (a, b) =>
+                        Math.min(6, separation(b)) - Math.min(6, separation(a)) ||
+                        distance(entity, a) - distance(entity, b) ||
+                        a.tie - b.tie,
+                )[0];
+            if (!goal || separation(goal) <= separation(entity)) continue;
+            occupied.delete(key(entity));
+            entity.x = goal.x;
+            entity.y = goal.y;
+            entity.gx = goal.x;
+            entity.gy = goal.y;
+            entity.visual_x = goal.x;
+            entity.visual_y = goal.y;
+            entity.lastx = goal.x;
+            entity.lasty = goal.y;
+            occupied.add(key(entity));
+        }
+    }
+
     function trimInfestationPatrol() {
         if (!activeState() || KDMapData.MapMod !== MOD) return;
         const protectedIds = presetActorIds.get(KDMapData);
@@ -318,6 +381,7 @@
         for (const enemy of KinkyDungeonEnemies) {
             const group = populationGroup(enemy);
             if (group) Object.assign(enemy.tags, { [POPULATION_TAG]: true, [MOD + group]: true });
+            else enemy.tags[MOD + "Other"] = true;
         }
         if (KinkyDungeonGetEnemy.SpiderlingsHuntingGroundsWrapped) return;
         const original = KinkyDungeonGetEnemy;
@@ -326,7 +390,7 @@
                 // Native selection owns level, tile, rank and cap eligibility.
                 // A required owned tag also survives its minimum-weight fallback.
                 args[0] = [...new Set([...(args[0] || []), ...POPULATION_TAGS])];
-                args[4] = [...new Set([...(args[4] || []), POPULATION_TAG])];
+                if (KDMapData.MapMod !== MOD) args[4] = [...new Set([...(args[4] || []), POPULATION_TAG])];
                 args[6] = { ...(args[6] || {}), ...populationBonuses() };
                 // Native initial population spends the neutral allowance on preset
                 // NPCs too, then excludes default-neutral maids/Dressmaker entirely.
@@ -336,7 +400,19 @@
                     args[5] = { ...args[5], requireHostile: "" };
                 }
             }
-            return original.apply(this, args);
+            const selected = original.apply(this, args);
+            if (
+                selected &&
+                selectingPopulation === "initial" &&
+                KDMapData.MapMod === MOD &&
+                !args[7]?.includes(PRESET_TAG) &&
+                populationGroup(selected) !== "Spider"
+            ) {
+                // Ordinary prey must not start native same-faction clusters.
+                // Return a floor-local definition; authored actors keep theirs.
+                return { ...selected, clusterWith: undefined, cohesion: 0.01, cohesionRange: 1 };
+            }
+            return selected;
         };
         KinkyDungeonGetEnemy.SpiderlingsHuntingGroundsWrapped = true;
     }
@@ -930,6 +1006,7 @@
                             ),
                         );
                         trimNewRivals(previousEntities, 3, presetPositions);
+                        scatterInitialPrey(previousEntities, presetPositions);
                     }
                     return result;
                 } finally {

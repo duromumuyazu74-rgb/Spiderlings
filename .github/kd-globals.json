@@ -295,5 +295,9 @@
   "KinkyDungeonHandleStairs",
   "KDDamageQueue",
   "KinkyDungeonFloaters",
-  "KinkyDungeonWallTiles"
+  "KinkyDungeonWallTiles",
+  "KinkyDungeonSlowLevel",
+  "KinkyDungeonAllWeapon",
+  "KinkyDungeonUpdateStats",
+  "KinkyDungeonPlayerDamage"
 ]

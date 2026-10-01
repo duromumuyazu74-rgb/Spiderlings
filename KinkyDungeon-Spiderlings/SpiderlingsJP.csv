@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跳躍する幼蜘蛛は相手の�
 KDModButtonspiderlingsNestTunnelerCap,巣ごとの掘穴幼蛛の累計上限（0：召喚しない）
 RestraintSpiderlingsSpinnerLegbinder,蛛糸の脚袋
 RestraintSpiderlingsSpinnerLegbinderDesc,足首の上から太ももの上部までを蛛糸が包む。足先と両腕は露出したまま。
-RestraintSpiderlingsSpinnerLegbinderDesc2,切断4回、取り外しまたは抵抗6回で解除。織りかけなら半分の回数。異なる方法でも進行度を共有する。
+RestraintSpiderlingsSpinnerLegbinderDesc2,密に織られた糸が両脚をまとめている。刃物が最も有効で、織りかけの糸は抵抗が弱い。
 SpiderlingsSpinnerPull,糸を振りほどく · 体力10 · 1ターン
 SpiderlingsSpinnerContest,参加幼蛛：{count} · 毎ターン製織 +{rate}
 SpiderlingsSpinnerStart,完全な網が脚を捕らえた。拘束ゲージより先に脱出ゲージを満たそう。援軍は製織速度と脱出目標を増やす。

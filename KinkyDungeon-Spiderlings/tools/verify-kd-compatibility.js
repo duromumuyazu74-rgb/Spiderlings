@@ -51,6 +51,7 @@ async function verifyGame(game, packagePath, output) {
             ["hunting-grounds", "hunting-grounds.js"],
             ["owned-effects", "owned-effects.js"],
             ["normal-helpers", "normal-helpers.js"],
+            ["native-escape", "native-escape.js"],
             ["adhesion-offense", "adhesion-offense.js"],
             ["adhesion-recovery", "adhesion-recovery.js"],
             ["spinner-work", "spinner-work.js"],
@@ -67,6 +68,8 @@ async function verifyGame(game, packagePath, output) {
         ];
         for (const [name, file, scenario] of checks) {
             currentCheck = name;
+            const errorStart = runtime.errors.length,
+                missingStart = runtime.missing.length;
             if (scenario)
                 await page.evaluate((value) => {
                     globalThis.spinnerScenario = value;
@@ -83,7 +86,13 @@ async function verifyGame(game, packagePath, output) {
                 }
                 delete result.images;
             }
-            report.checks.push({ name, status: "passed", result });
+            report.checks.push({
+                name,
+                status: "passed",
+                result,
+                pageErrors: runtime.errors.slice(errorStart),
+                missing: runtime.missing.slice(missingStart),
+            });
             await page.screenshot({ path: path.join(output, `${name}.png`) });
             fs.writeFileSync(path.join(output, "result.json"), JSON.stringify(report, null, 2) + "\n");
             console.log(`${game.version}: ${name} passed`);
