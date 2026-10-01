@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.75` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.76` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                                       |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -34,6 +34,8 @@ The manifest owns script loading order. Runtime scripts remain plain JavaScript 
 | `SpiderlingsSpinnerRuntime.js`                              | Owns the single Spinner enemy-loop wrapper, composes native recognition and `hunt`/`wander` contact reports, gates Spinner actions and dispatches field damage, movement, load and positive-turn events.           |
 
 Core precedes encounters and WebCaster movement. Webbing data precedes Webbing rules, which precede the native Webbing adapter. Tests explicitly load these dependencies; the independent manifest allowlist test protects delivery order. Rule-only tests load data and rules without registering enemies, items, native hooks or game events.
+
+Spinner engagement records distinguish shared-only knowledge from personal contact. Shared-only crews remain eligible for unpaid idle recruitment, and an unfinished enclosure keeps its sole available builder. Positive native sampling classifies older saves without this marker. Native player recognition gates live pressure destinations; NPC awareness alone leaves only valid recorded coordinates. Existing paid-field ownership, native combat and Recovery remain authoritative.
 
 ## Shared native hooks
 
