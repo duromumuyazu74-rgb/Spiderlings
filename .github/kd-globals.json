@@ -300,5 +300,16 @@
   "KinkyDungeonSlowLevel",
   "KinkyDungeonAllWeapon",
   "KinkyDungeonUpdateStats",
-  "KinkyDungeonPlayerDamage"
+  "KinkyDungeonPlayerDamage",
+  "Weapon",
+  "KinkyDungeonWeaponVariants",
+  "KinkyDungeonWeaponChoices",
+  "KinkyDungeonLostItems",
+  "KDGenMapCallback",
+  "KinkyDungeonInventoryGet",
+  "KinkyDungeonFindWeapon",
+  "KDPersistentNPCs",
+  "KDDropStolenItems",
+  "KinkyDungeonItemEvent",
+  "KinkyDungeonUpdateEnemies"
 ]

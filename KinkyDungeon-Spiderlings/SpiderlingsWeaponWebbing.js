@@ -4,8 +4,8 @@
 (() => {
     const api = globalThis.Spiderlings;
     const KEY = "SpiderlingsWeaponWebbing";
-    const TOME = "SpiderlingsSilkenBindingTome";
-    const STAFF = "SpiderlingsSilkweaverStaff";
+    const TOME = "SpiderlingTome";
+    const STAFF = "SpiderlingStaff";
     const FAMILIES = ["Arm", "Legs", "Ankles", "Belly"];
     const slime = (enemy) => Math.max(0, enemy.specialBoundLevel?.Slime || 0);
     const worn = (enemy) => KDGetNPCRestraints(enemy.id);
@@ -27,18 +27,25 @@
         }
     }
 
-    function reconcile(enemy) {
+    function survivingSilk(enemy) {
         const value = enemy?.[KEY];
         if (!value) return;
         const actual = enemy.hp > 0 ? slime(enemy) : 0;
         const owned = value.tome + value.staff;
         const remaining = Math.min(actual, Math.max(0, owned - Math.max(0, value.lastSlime - actual)));
         const ratio = owned > 0 ? remaining / owned : 0;
-        value.tome *= ratio;
-        value.staff *= ratio;
-        value.lastSlime = actual;
+        return { tome: value.tome * ratio, staff: value.staff * ratio, actual, remaining };
+    }
+
+    function reconcile(enemy) {
+        const current = survivingSilk(enemy);
+        if (!current) return;
+        const value = enemy[KEY];
+        value.tome = current.tome;
+        value.staff = current.staff;
+        value.lastSlime = current.actual;
         removeUnsupportedItems(enemy, value);
-        if (!(remaining > 1e-6)) delete enemy[KEY];
+        if (!(current.remaining > 1e-6)) delete enemy[KEY];
         return enemy[KEY];
     }
 
@@ -47,21 +54,20 @@
         if (data.spell?.name === "SpiderlingsCocoonConvergence") return "tome";
         if (data.spell?.name === "SpiderlingsSilkenSnare") return "staff";
         if (data.spell) return;
-        const name = data.weapon?.name || data.incomingDamage?.name;
+        const name = api.Weapons.resolveName(data.weapon?.name || data.incomingDamage?.name);
         return name === TOME ? "tome" : name === STAFF ? "staff" : undefined;
     }
 
-    function canFormSet(enemy, value) {
+    function canFormCocoon(enemy, owned) {
         if (!KDCanBind(enemy) || !KDHelpless(enemy)) return false;
         const hp = enemy.Enemy.maxhp;
         const fullyBound =
-            value.tome >= hp * KDGetBindEffectMult(enemy) ||
-            (enemy.hp <= 0.1 * hp && Math.max(value.tome, 0.1) > enemy.hp);
-        return fullyBound && (enemy.hp <= 0.52 || value.tome > KDNPCStruggleThreshMult(enemy) * hp);
+            owned >= hp * KDGetBindEffectMult(enemy) || (enemy.hp <= 0.1 * hp && Math.max(owned, 0.1) > enemy.hp);
+        return fullyBound && (enemy.hp <= 0.52 || owned > KDNPCStruggleThreshMult(enemy) * hp);
     }
 
     function formSet(enemy, value) {
-        if (!canFormSet(enemy, value)) return;
+        if (!canFormCocoon(enemy, value.tome)) return;
         let available = value.tome - value.items.reduce((sum, entry) => sum + entry.amount, 0);
         for (const family of FAMILIES) {
             const restraint = KinkyDungeonGetRestraintByName(`SpiderlingsWebbingLv1${family}`);
@@ -118,8 +124,11 @@
     KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) => {
         const hit = data.spiderlingsWeaponSilk;
         const enemy = data.enemy;
-        if (enemy && !(enemy.hp > 0)) reconcile(enemy);
-        if (!hit || !(enemy?.hp > 0) || enemy.player || KDAllied(enemy) || !KDHostile(enemy)) return;
+        if (!hit || !(enemy?.hp > 0) || enemy.player || KDAllied(enemy) || !KDHostile(enemy)) {
+            // Record other Slime gains too, so they cannot mask later native removal of owned silk.
+            reconcile(enemy);
+            return;
+        }
         const amount = Math.max(0, slime(enemy) - hit.before);
         if (!(amount > 0)) return;
         const value = (enemy[KEY] ||= { version: 1, tome: 0, staff: 0, lastSlime: hit.before, items: [] });
@@ -159,13 +168,20 @@
 
     api.WeaponWebbing = Object.freeze({
         status(enemy) {
-            const value = reconcile(enemy);
-            if (!value) return;
-            const owned = value.tome + value.staff;
+            // Drawing reads current native recovery without removing gear or mutating saved gameplay.
+            const current = survivingSilk(enemy);
+            if (!current || !(current.remaining > 1e-6)) return;
+            const owned = current.remaining;
+            const ids = new Set(
+                Object.values(worn(enemy))
+                    .filter((item) => item.conjured)
+                    .map((item) => item.id),
+            );
             return {
                 amount: owned,
                 coverage: Math.min(1, owned / Math.max(1, enemy.Enemy.maxhp * KDGetBindEffectMult(enemy))),
-                pieces: value.items.length,
+                pieces: enemy[KEY].items.filter((entry) => ids.has(entry.id)).length,
+                cocoon: canFormCocoon(enemy, owned),
             };
         },
     });

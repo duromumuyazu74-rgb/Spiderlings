@@ -80,15 +80,12 @@
     }
 
     function targetEligible(target) {
+        if (entity(target?.id) !== target || protectedTarget(target)) return false;
         const rivals = entities().filter((candidate) => SPIDERS.has(candidate.Enemy?.name));
         const silkSource = api.NPCAdhesion?.silkSource?.(target);
-        return (
-            entity(target?.id) === target &&
-            !protectedTarget(target) &&
-            (rivals.length
-                ? rivals.some((rival) => KDHostile(rival, target))
-                : !!silkSource && KDHostile(silkSource, target))
-        );
+        return rivals.length
+            ? rivals.some((rival) => KDHostile(rival, target))
+            : !!silkSource && KDHostile(silkSource, target);
     }
 
     function sourceEligible(source, target) {

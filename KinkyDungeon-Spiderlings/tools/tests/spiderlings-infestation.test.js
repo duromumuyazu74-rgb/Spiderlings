@@ -91,6 +91,28 @@ function runtime(overrides = {}, nativeSources = []) {
     };
 }
 
+test("new Infestation requests one field preset after native population and leaves revisited maps intact", () => {
+    const r = runtime(),
+        calls = [];
+    r.context.Spiderlings.SpinnerAI = {
+        initializeMapgenField(options) {
+            calls.push(JSON.parse(JSON.stringify(options)));
+            return { status: "skipped", reason: "no-legal-staffed-site" };
+        },
+    };
+    r.generate({});
+    assert.equal(calls.length, 0);
+    const ids = [...r.context.KDMapData.SpiderlingsInfestation.targetIds];
+    r.event("postMapgen");
+    r.event("postMapgen");
+    assert.equal(calls.length, 1, "A failed legal-site search is not an unlimited retry or reinforcement");
+    assert.deepEqual([...r.context.KDMapData.SpiderlingsInfestation.targetIds], ids);
+    assert.equal(r.context.KDMapData.SpiderlingsInfestation.fieldPreset.status, "skipped");
+    delete r.context.KDMapData.SpiderlingsInfestation.fieldPreset;
+    r.event("postMapgen");
+    assert.equal(calls.length, 1);
+});
+
 test("native modifier selects eligible floors and adds five grouped nests alongside native population", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsInfestation;

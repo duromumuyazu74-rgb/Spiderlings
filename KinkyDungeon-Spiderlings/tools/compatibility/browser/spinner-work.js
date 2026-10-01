@@ -180,5 +180,145 @@
     } finally {
         Spiderlings.SpinnerNativeField.applyPaidAction = nativeAction;
     }
-    return { rows };
+    setup("corner-lure-with-paid-builders");
+    KDMapData.GridWidth = 28;
+    KDMapData.GridHeight = 22;
+    KDMapData.Grid =
+        Array.from({ length: 22 }, (_, y) =>
+            Array.from({ length: 28 }, (_, x) => (x > 0 && y > 0 && x < 27 && y < 21 ? "0" : "1")).join(""),
+        ).join("\n") + "\n";
+    KDMapData.Tiles = {};
+    KDMapData.StartPosition = { x: 2, y: 2 };
+    KDMapData.EndPosition = { x: 25, y: 19 };
+    for (let y = 5; y < 21; y++) KinkyDungeonMapSet(10, y, "1");
+    KDMovePlayer(15, 10, false);
+    KinkyDungeonPlayerEntity.sound = 0;
+    const lure = spawn("Spinner", 11, 10),
+        helpers = [spawn("Spinner", 4, 7), spawn("Spinner", 4, 13)],
+        actors = [lure, ...helpers],
+        layers = [2, 3, 4].map((radius, index) => ({
+            id: `corner-layer-${index}`,
+            vertices: [
+                { x: 5 - radius, y: 10 - radius },
+                { x: 5 + radius, y: 10 - radius },
+                { x: 5 + radius, y: 10 + radius },
+                { x: 5 - radius, y: 10 + radius },
+            ],
+            gate: { x: 5 + radius, y: 10 },
+        }));
+    for (const source of actors) source.hostile = 999;
+    for (const source of helpers) {
+        source.aware = false;
+        source.vp = 0;
+    }
+    const encounter = Spiderlings.SpinnerNativeField.initializeEnclosure({
+        compositeId: "corner-field",
+        owners: actors.map((source) => source.id),
+        autoSeal: false,
+        layers,
+        constructionOrder: "outer-first",
+    });
+    // Keep the real retained plan invested before ordinary intelligence can
+    // redirect an unpaid plan. Further builder work uses the native loop.
+    const initial = Spiderlings.SpinnerTopology.nextWorkAction(encounter.topology, lure.id, lure),
+        applied = Spiderlings.SpinnerTopology.applyAction(
+            encounter.topology,
+            { ...initial, ownerId: lure.id },
+            Spiderlings.SpinnerNativeField.snapshot(initial.cell),
+        );
+    expect(applied.outcome.legal, "Could not establish the corner fixture's retained field");
+    encounter.topology = applied.state;
+    encounter.builders = {};
+    encounter.autonomous = true;
+    Spiderlings.SpinnerNativeField.reconcile();
+    const ai = Spiderlings.SpinnerAI.ensureAI(encounter),
+        group = {
+            id: "corner-group",
+            memberIds: actors.map((source) => source.id),
+            source: { type: "ordinary" },
+            selectionOrdinal: 0,
+            planId: "corner-plan",
+            assignments: {},
+            metrics: { travel: 0, construction: 0, wait: 0, yield: 0, repair: 0 },
+        },
+        plan = {
+            id: "corner-plan",
+            kind: "enclosure",
+            groupId: group.id,
+            fieldId: layers[0].id,
+            compositeId: "corner-field",
+            status: "preparing",
+            center: { x: 5, y: 10 },
+            gate: { x: 7, y: 10 },
+            anchors: layers[0].vertices,
+            layers,
+            fieldIds: layers.map((layer) => layer.id),
+            cells: Object.values(encounter.topology.fields).flatMap((field) =>
+                field.boundaryCells.map((cell) => `${cell.x},${cell.y}`),
+            ),
+            selectionOrdinal: 0,
+            invalidReason: null,
+            constructionOrder: "outer-first",
+        };
+    plan.initialCells = [...plan.cells];
+    ai.groups[group.id] = group;
+    ai.plans[plan.id] = plan;
+    ai.nextPlanOrdinal = 2;
+    KDUpdateEnemyCache = true;
+    KDPathCache = new Map();
+    KDPathCacheIgnoreLocks = new Map();
+    const corner = { turns: [] };
+    globalThis.normalTrace = { rows, corner };
+    for (let step = 0; step < 25; step++) {
+        await turn();
+        corner.turns.push({
+            turn: step + 1,
+            x: lure.x,
+            y: lure.y,
+            mode: group.engagement?.mode,
+            metrics: structuredClone(group.metrics),
+            paid: encounter.topology.actionLog.length,
+        });
+        expect(KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(lure.x, lure.y)), "Lure crossed a wall");
+    }
+    corner.firstMove = corner.turns.find((entry) => entry.x !== 11 || entry.y !== 10)?.turn;
+    expect(corner.firstMove <= 4, "Legal detour remained stuck at a local minimum while builders worked");
+    expect(group.metrics.construction > 0, "The corner regression did not retain real paid builders");
+    expect(group.planId === plan.id, "Lure repair diverted the crew from its retained field");
+
+    setup("mapgen-outer-body");
+    KDMovePlayer(28, 18, false);
+    const presetActors = [spawn("Spinner", 12, 8), spawn("Spinner", 14, 8)];
+    const preset = Spiderlings.SpinnerAI.initializeMapgenField({ preferredSites: [{ x: 14, y: 10 }] });
+    expect(preset.status === "placed", "The legal mapgen outer field was not generated");
+    const presetState = Spiderlings.SpinnerNativeField.state(),
+        composite = presetState.topology.composites[preset.compositeId],
+        outer = presetState.topology.fields[composite.layerIds.at(-1)];
+    expect(outer.bounds.right - outer.bounds.left === 8 && outer.phase === "ready", "Preset outer body is too small");
+    expect(
+        KDMapData.Entities.filter(Spiderlings.SpinnerNativeField.isOwnedProxy).length === 31,
+        "A single outer body should add only 31 collision proxies",
+    );
+    expect(!Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(outer.gateCell), "Preset opening is blocked");
+    expect(presetState.topology.actionLog.length === 0, "Mapgen field spent fake paid construction");
+    const before = JSON.stringify(presetState.topology),
+        memberIds = [...presetState.ai.groups[preset.groupId].memberIds];
+    restore(save());
+    expect(JSON.stringify(Spiderlings.SpinnerNativeField.state().topology) === before, "Preset changed on reload");
+    const reloaded = Spiderlings.SpinnerNativeField.state();
+    expect(
+        Spiderlings.SpinnerAI.initializeMapgenField().reason === "existing-field",
+        "A revisit replenished the field",
+    );
+    for (let step = 0; step < 25; step++) await turn();
+    expect(reloaded.topology.actionLog.length > 0, "Existing Spinner crew did not pay to complete inner circles");
+    expect(
+        memberIds.every((id) => reloaded.ai.groups[preset.groupId].memberIds.includes(id)),
+        "Prefab diverted existing crew members",
+    );
+    expect(
+        KDMapData.Entities.filter((source) => source.Enemy?.name === "Spinner").length === presetActors.length,
+        "Field creation granted uncontrolled Spinner reinforcement",
+    );
+    return { rows, corner, preset: { ...preset, memberIds, paidInnerActions: reloaded.topology.actionLog.length } };
 })();

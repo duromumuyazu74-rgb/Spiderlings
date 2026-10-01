@@ -16,7 +16,14 @@ function fixture() {
         blocked;
     const enemy = { id: 1, hp: 20, boundLevel: 0, specialBoundLevel: {}, Enemy: { maxhp: 20 } };
     const c = {
-        Spiderlings: {},
+        Spiderlings: {
+            Weapons: {
+                resolveName: (name) =>
+                    ({ SpiderlingsSilkenBindingTome: "SpiderlingTome", SpiderlingsSilkweaverStaff: "SpiderlingStaff" })[
+                        name
+                    ] || name,
+            },
+        },
         KDMapData: { Entities: [enemy] },
         KDEventMapGeneric: {},
         KDAddEvent: (_map, event, _key, handler) => {
@@ -53,12 +60,7 @@ function fixture() {
             enemy,
             attacker: { player: true },
             weapon: {
-                name:
-                    kind === "tome"
-                        ? "SpiderlingsSilkenBindingTome"
-                        : kind === "staff"
-                          ? "SpiderlingsSilkweaverStaff"
-                          : "StaffGlue",
+                name: kind === "tome" ? "SpiderlingTome" : kind === "staff" ? "SpiderlingStaff" : "StaffGlue",
             },
             ...extra,
         };
@@ -198,4 +200,63 @@ test("native removal is respected and death clears remaining conjured silk", () 
     f.events.tickAfter(null, { delta: 1 });
     assert.equal(f.enemy[KEY], undefined);
     assert.equal(Object.keys(f.restraints).length, 0);
+});
+
+test("both weapons form a cocoon only when their surviving silk alone meets native helpless thresholds", () => {
+    for (const kind of ["tome", "staff"]) {
+        const f = fixture();
+        f.hit(kind, 20);
+        assert.equal(
+            f.c.Spiderlings.WeaponWebbing.status(f.enemy).cocoon,
+            false,
+            "Fully bound but still struggling is not helpless",
+        );
+        f.hit(kind, 11);
+        assert.equal(f.c.Spiderlings.WeaponWebbing.status(f.enemy).cocoon, true);
+        f.enemy.specialBoundLevel.Slime -= 2;
+        f.enemy.boundLevel -= 2;
+        const before = JSON.stringify({ enemy: f.enemy, restraints: f.restraints });
+        assert.equal(f.c.Spiderlings.WeaponWebbing.status(f.enemy).cocoon, false);
+        assert.equal(
+            JSON.stringify({ enemy: f.enemy, restraints: f.restraints }),
+            before,
+            "A draw query changed saved gameplay",
+        );
+        f.events.tickAfter(null, { delta: 0 });
+        assert.equal(
+            JSON.stringify({ enemy: f.enemy, restraints: f.restraints }),
+            before,
+            "Zero-time refresh changed silk",
+        );
+    }
+    const mixed = fixture();
+    mixed.hit("other", 100);
+    mixed.hit("staff", 2);
+    assert.equal(
+        mixed.c.Spiderlings.WeaponWebbing.status(mixed.enemy).cocoon,
+        false,
+        "Other Slime cannot pay for the cocoon",
+    );
+    mixed.hit("tome", 29);
+    assert.equal(
+        mixed.c.Spiderlings.WeaponWebbing.status(mixed.enemy).cocoon,
+        true,
+        "Owned tome and staff silk may combine",
+    );
+    assert.equal(mixed.enemy[KEY].items.length, 0, "Staff silk cannot pay for tome-only physical pieces");
+});
+
+test("later unrelated Slime cannot hide native recovery of weapon silk before the next tick", () => {
+    const f = fixture();
+    f.hit("staff", 31);
+    assert.equal(f.c.Spiderlings.WeaponWebbing.status(f.enemy).cocoon, true);
+    f.hit("other", 100);
+    f.enemy.specialBoundLevel.Slime -= 40;
+    f.enemy.boundLevel -= 40;
+    assert.equal(f.c.KDHelpless(f.enemy), true, "The NPC is still helpless from unrelated Slime");
+    assert.equal(
+        f.c.Spiderlings.WeaponWebbing.status(f.enemy),
+        undefined,
+        "Other Slime concealed recovery of owned silk",
+    );
 });

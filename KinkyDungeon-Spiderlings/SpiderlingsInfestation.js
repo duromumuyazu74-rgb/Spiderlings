@@ -698,6 +698,10 @@
             destroyedIds: [],
             complete: false,
             distributionVersion: 1,
+            fieldPreset: {
+                status: "pending",
+                protectedPoints: spawnPoints.map((point) => ({ x: point.x, y: point.y })),
+            },
             requestedGroupSizes,
             groupSizes,
             nestGroups: groups.map((group) =>
@@ -835,6 +839,12 @@
         // Rooms with enemies:false never invoke population; clear their modifier too.
         KDAddEvent(KDEventMapGeneric, "postMapgen", MOD, () => {
             if (KDMapData.MapMod === MOD && !KDMapData[FIELD]) cancelInfestation("ineligible");
+            const preset = activeState()?.fieldPreset;
+            if (preset?.status === "pending")
+                KDMapData[FIELD].fieldPreset = api.SpinnerAI?.initializeMapgenField(preset) || {
+                    status: "skipped",
+                    reason: "spinner-unavailable",
+                };
         });
         if (!KinkyDungeonPlaceEnemies.SpiderlingsInfestationWrapped) {
             const original = KinkyDungeonPlaceEnemies;

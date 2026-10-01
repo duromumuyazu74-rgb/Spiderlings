@@ -15,6 +15,23 @@ const SPIDERLINGS = globalThis.Spiderlings;
     const provokedFlag = "SpiderlingsPlayerProvoked";
     const provokedTurns = 10;
     let rivalSelection = null;
+    let rivalProjectileSource = null;
+    let zeroTimeUpdate = false;
+    // Map generation runs native enemy initialization at delta zero. It may
+    // still resolve an already-ready attack, so even the native selector's
+    // first pass must see native factions during that synchronous update.
+    if (typeof KinkyDungeonUpdateEnemies === "function") {
+        const nativeUpdate = KinkyDungeonUpdateEnemies;
+        KinkyDungeonUpdateEnemies = function (delta) {
+            const previous = zeroTimeUpdate;
+            zeroTimeUpdate = !(delta > 0);
+            try {
+                return nativeUpdate.apply(this, arguments);
+            } finally {
+                zeroTimeUpdate = previous;
+            }
+        };
+    }
     // The three-nest Hunting Grounds uses the former modifier ID in existing
     // saves. Its garrison marker distinguishes it from the separate five-nest
     // Spiderling Infestation while the two floors are developed independently.
@@ -30,9 +47,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             onHuntingGrounds() &&
             isHostileSpiderlingTarget(enemy) &&
             other !== enemy &&
-            other?.Enemy &&
-            other.hp > 0 &&
-            !other.player &&
+            isIndependentNPC(other) &&
             other.Enemy.name !== "NestEntrance" &&
             KDGetFaction(other) !== KDGetFaction(enemy) &&
             !other.Enemy.tags?.scenery &&
@@ -40,6 +55,18 @@ const SPIDERLINGS = globalThis.Spiderlings;
         );
     }
     SPIDERLINGS.HuntingGrounds = { active: onHuntingGrounds, isPrey: isHuntingPrey };
+    function isIndependentNPC(entity) {
+        return (
+            entity?.Enemy &&
+            entity.hp > 0 &&
+            !entity.player &&
+            !entity.allied &&
+            !entity.Enemy.allied &&
+            !(entity.ceasefire > 0) &&
+            !(typeof KDIsInParty == "function" && KDIsInParty(entity)) &&
+            !(typeof KDIsServant == "function" && KDIsServant(KDGameData.Collection?.[entity.id + ""]))
+        );
+    }
     function isHostileSpiderlingTarget(entity) {
         return (
             entity &&
@@ -79,29 +106,36 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             other?.hp > 0 &&
             ((isMaidRival(enemy) && isMaidTarget(other)) ||
-                (isHostileSpiderlingTarget(enemy) && isMaidRival(other)) ||
-                isHuntingPrey(enemy, other))
+                (isMaidTarget(enemy) && isMaidRival(other)) ||
+                isHuntingPrey(enemy, other) ||
+                isHuntingPrey(other, enemy))
+        );
+    }
+    function isRivalActor(entity) {
+        return (
+            isMaidRival(entity) ||
+            isHostileSpiderlingTarget(entity) ||
+            (onHuntingGrounds() &&
+                isIndependentNPC(entity) &&
+                !entity.Enemy.tags?.scenery &&
+                !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(entity))
         );
     }
     KDHostile = function (enemy, other) {
         const original = nativeHostile.apply(this, arguments);
+        if (zeroTimeUpdate) return original;
         // Only during the rival-search pass: remove the player's distance ceiling
         // and let the native selector consider this pair, with its normal perception.
         if (rivalSelection === enemy && !isRivalPair(enemy, other)) return false;
         if (original || !other || enemy === other) return original;
-        if (isHuntingPrey(enemy, other)) return true;
-        if (enemy.ceasefire > 0 || other.ceasefire > 0) return original;
-        return (
-            (KDGetFaction(enemy) === "Maidforce" && isMaidTarget(other)) ||
-            (KDGetFaction(other) === "Maidforce" && isMaidTarget(enemy)) ||
-            original
-        );
+        if (isRivalPair(enemy, other)) return true;
+        return original;
     };
     KDHostile.spiderlingsMaidHostility = true;
     if (typeof KinkyDungeonNearestPlayer == "function") {
         const nativeNearest = KinkyDungeonNearestPlayer;
         KinkyDungeonNearestPlayer = function (enemy, requireVision, decoy, visionRadius, aiData) {
-            if (!decoy || !(enemy?.hp > 0) || !(isMaidRival(enemy) || isHostileSpiderlingTarget(enemy)))
+            if (zeroTimeUpdate || !decoy || !(enemy?.hp > 0) || !isRivalActor(enemy))
                 return nativeNearest.apply(this, arguments);
             let radius = visionRadius || KDEnemyVisionRadius(enemy);
             if (!visionRadius && enemy.blind && !enemy.aware) radius = 1.5;
@@ -148,7 +182,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             // spider's own perception wake it, including immobile nests and old saves.
             if (
                 !enemy.aware &&
-                isHostileSpiderlingTarget(enemy) &&
+                (isHostileSpiderlingTarget(enemy) || (onHuntingGrounds() && isRivalActor(enemy))) &&
                 !KDHelpless(enemy) &&
                 !KDIsImprisoned(enemy) &&
                 KDNearbyEnemies(enemy.x, enemy.y, radius).some(
@@ -257,6 +291,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             const ai = KDAIType[name];
             const nativeAfterMove = ai.aftermove;
             ai.aftermove = function (enemy, player, aiData) {
+                if (zeroTimeUpdate) return nativeAfterMove.apply(this, arguments);
                 return (
                     nativeAfterMove.apply(this, arguments) ||
                     seekRival(enemy, player, aiData) ||
@@ -280,10 +315,37 @@ const SPIDERLINGS = globalThis.Spiderlings;
     if (typeof KDFactionFavorable == "function") {
         const nativeFavorable = KDFactionFavorable;
         KDFactionFavorable = function (faction, other) {
+            if (zeroTimeUpdate) return nativeFavorable.apply(this, arguments);
+            if (rivalProjectileSource) {
+                if (faction === KDGetFaction(rivalProjectileSource) && isRivalPair(rivalProjectileSource, other))
+                    return false;
+                return nativeFavorable.apply(this, arguments);
+            }
             if (faction === "Maidforce" && isMaidTarget(other)) return false;
             return nativeFavorable.apply(this, arguments);
         };
     }
+    // NPC collision queries carry the actual caster. Apply hunting hostility
+    // only inside that query, preserving native geometry, unique hits and heals.
+    function rivalCollision(native) {
+        return function (bullet, _target) {
+            if (bullet?.bullet?.spell?.friendlyfire || (!onHuntingGrounds() && bullet?.bullet?.faction !== "Maidforce"))
+                return native.apply(this, arguments);
+            const sourceId = bullet?.bullet?.source;
+            const source = sourceId == null ? undefined : KDMapData.Entities.find((entity) => entity.id === sourceId);
+            if (!source || bullet.bullet.damage?.type === "heal") return native.apply(this, arguments);
+            const previous = rivalProjectileSource;
+            rivalProjectileSource = source;
+            try {
+                return native.apply(this, arguments);
+            } finally {
+                rivalProjectileSource = previous;
+            }
+        };
+    }
+    if (typeof KDBulletCanHitEntity === "function") KDBulletCanHitEntity = rivalCollision(KDBulletCanHitEntity);
+    if (typeof KDBulletAoECanHitEntity === "function")
+        KDBulletAoECanHitEntity = rivalCollision(KDBulletAoECanHitEntity);
 })();
 
 //Enemies------------------------------------------------------------------------------------------------------------------

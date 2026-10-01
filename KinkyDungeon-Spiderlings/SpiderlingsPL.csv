@@ -211,16 +211,16 @@ SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głęb
 SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (5/5)
 KDModButtonspiderlingsInfestationWeight,Waga inwazji (0: wyłączona)
 KDModButtonspiderlingsHuntingGroundsWeight,Waga łowiska - tylko Maidforce (0: wyłączone)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Księga jedwabnych więzów
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Kostur tkacza jedwabiu
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Splot kokonu
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Jedwabna pętla
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Cienki jedwab przenika grzbiet i oplata otwarte strony. Odczytane słowa ściągają rozproszone nici ku środkowi.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"W sieci na końcu kostura tli się blask. Jeden ruch wysyła cienkie nici, które oplatają cel."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,W głównej lub drugiej ręce: +15% siły więzów. 4 many; zasięg 6; dwie tury przygotowania; odnowienie 8 tur. Działa na 21 polach; obrażenia i więzy rosną ku środkowi. Ściany blokują efekt. Nici pozostają widoczne na celu. Gdy jedwab księgi sam wystarcza do obezwładnienia wroga, tworzy więzy na wolnych ramionach, talii, nogach i kostkach.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 many; zasięg 6; odnowienie 3 tury. Wiąże pierwszego trafionego wroga, a następnie spowalnia go na 2 tury. Ściany zatrzymują nić." Nici poruszają się wraz z celem i znikają w miarę uwalniania się.
-ItemPickupSpiderlingsSilkenBindingTome,Podnosisz księgę jedwabnych więzów.
-ItemPickupSpiderlingsSilkweaverStaff,Podnosisz kostur tkacza jedwabiu.
+KinkyDungeonInventoryItemSpiderlingTome,Księga jedwabnych więzów
+KinkyDungeonInventoryItemSpiderlingStaff,Kostur tkacza jedwabiu
+KinkyDungeonSpecialSpiderlingTome,Splot kokonu
+KinkyDungeonSpecialSpiderlingStaff,Jedwabna pętla
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Cienki jedwab przenika grzbiet i oplata otwarte strony. Odczytane słowa ściągają rozproszone nici ku środkowi.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,"W sieci na końcu kostura tli się blask. Jeden ruch wysyła cienkie nici, które oplatają cel."
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"W głównej lub drugiej ręce: +20% siły więzów. 4 many; zasięg 6; dwie tury przygotowania; odnowienie 8 tur. Działa na 21 polach; obrażenia i więzy rosną ku środkowi. Ściany blokują efekt. Gdy jedwab broni sam wystarcza do obezwładnienia wroga, otacza go pełnym kokonem, który otwiera się w miarę uwalniania."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 many; zasięg 6; odnowienie 3 tury. Wiąże pierwszego trafionego wroga, a następnie spowalnia go na 3 tury. Ściany zatrzymują nić. Jedwab podąża za celem i tworzy pełny kokon, gdy sam wystarcza do obezwładnienia. Kokon otwiera się w miarę uwalniania."
+ItemPickupSpiderlingTome,Podnosisz księgę jedwabnych więzów.
+ItemPickupSpiderlingStaff,Podnosisz kostur tkacza jedwabiu.
 KDPrereqFailSpiderlingsCocoonConvergence,Wymaga 4 many i zakończenia 8 tur odnowienia.
 KDPrereqFailSpiderlingsSilkenSnare,Wymaga 2 many i zakończenia 3 tur odnowienia.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tkasz krąg jedwabiu. Nici zaczynają ściągać się do środka.

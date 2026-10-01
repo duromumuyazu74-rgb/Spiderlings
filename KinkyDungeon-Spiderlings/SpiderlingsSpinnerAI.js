@@ -644,7 +644,14 @@
         return undefined;
     }
 
-    function analyzeEnclosureCandidates(snapshot, group, distances = routeDistances(snapshot), work, geometry) {
+    function analyzeEnclosureCandidates(
+        snapshot,
+        group,
+        distances = routeDistances(snapshot),
+        work,
+        geometry,
+        minimumRadius = 1,
+    ) {
         // A supplied line catalogue is an explicit line-only scenario (used by authored fixtures).
         if (Object.hasOwn(snapshot, "candidateLines")) return [];
         const origin = (group.members || group.memberPositions || [])[0],
@@ -691,34 +698,38 @@
                     work.candidatesExamined++;
                 }
                 if (!Number.isFinite(distances(origin, center))) continue;
-                const radius = [4, 3, 2, 1].find(
-                        (size) =>
-                            [
-                                ...ringCells(center, size),
-                                ...Array.from({ length: size - 1 }, (_, index) => ringCells(center, index + 1)).flat(),
-                                center,
-                            ].every((cell) => {
-                                const tile = byKey.get(cellKey(cell));
-                                return (
-                                    tile?.floor &&
-                                    !stationary.has(cellKey(cell)) &&
-                                    !tile.locked &&
-                                    !tile.protected &&
-                                    !reserved.has(cellKey(cell)) &&
-                                    (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
-                                );
-                            }) &&
-                            reachableGate(
-                                snapshot,
-                                center,
-                                size,
-                                work,
-                                byKey,
-                                passable,
-                                geometry?.gateCache,
-                                geometry?.neighbors,
-                            ),
-                    ),
+                const radius = [4, 3, 2, 1]
+                        .filter((size) => size >= minimumRadius)
+                        .find(
+                            (size) =>
+                                [
+                                    ...ringCells(center, size),
+                                    ...Array.from({ length: size - 1 }, (_, index) =>
+                                        ringCells(center, index + 1),
+                                    ).flat(),
+                                    center,
+                                ].every((cell) => {
+                                    const tile = byKey.get(cellKey(cell));
+                                    return (
+                                        tile?.floor &&
+                                        !stationary.has(cellKey(cell)) &&
+                                        !tile.locked &&
+                                        !tile.protected &&
+                                        !reserved.has(cellKey(cell)) &&
+                                        (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
+                                    );
+                                }) &&
+                                reachableGate(
+                                    snapshot,
+                                    center,
+                                    size,
+                                    work,
+                                    byKey,
+                                    passable,
+                                    geometry?.gateCache,
+                                    geometry?.neighbors,
+                                ),
+                        ),
                     boundary = radius ? ringCells(center, radius) : [],
                     cells = [...boundary, center],
                     legal = cells.every((cell) => {
@@ -1094,6 +1105,81 @@
             delete group.noPlanSignature;
         }
         return result;
+    }
+
+    function initializeMapgenField(options = {}) {
+        const previous = api.SpinnerNativeField.state();
+        // This is called once by successful new-map objective placement. A
+        // revisit or previously invested field must never receive another body.
+        if (previous?.ai?.mapgenField || Object.keys(previous?.topology?.composites || {}).length)
+            return { status: "skipped", reason: "existing-field" };
+        const nativeSnapshot = nativeMapSnapshot(),
+            snapshot = { ...nativeSnapshot, cells: nativeSnapshot.cells.map((cell) => ({ ...cell })) },
+            protectedPoints = new Set((options.protectedPoints || []).map(cellKey));
+        for (const cell of snapshot.cells) if (protectedPoints.has(cellKey(cell))) cell.protected = true;
+        const encounter = api.SpinnerNativeField.ensureMap({ scenario: "mapgen-enclosure" }),
+            ai = ensureAI(encounter, { mapSeed: mapSeed(), mapIdentity: mapIdentity() }),
+            distances = routeDistances(snapshot);
+        encounter.autonomous = true;
+        auditGroups(ai, KDMapData.Entities, { mapSnapshot: snapshot, routeDistances: distances });
+        const choices = Object.values(ai.groups)
+            .filter((group) => !group.planId && !group.engagement && group.memberIds.length >= 2)
+            .flatMap((group) => {
+                const members = group.memberIds
+                    .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                    .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
+                if (members.length < 2) return [];
+                return analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, undefined, undefined, 4)
+                    .filter((candidate) => candidate.radius === 4)
+                    .map((candidate) => ({
+                        group,
+                        candidate,
+                        preferred: nearestDistance(candidate.center, options.preferredSites || []),
+                    }));
+            })
+            .sort(
+                (left, right) =>
+                    left.preferred - right.preferred ||
+                    left.candidate.travelDistance - right.candidate.travelDistance ||
+                    compareSites(left.candidate, right.candidate) ||
+                    left.group.id.localeCompare(right.group.id),
+            );
+        if (!choices.length) {
+            ai.mapgenField = { status: "skipped", reason: "no-legal-staffed-site" };
+            return clone(ai.mapgenField);
+        }
+        const { group, candidate } = choices[0],
+            plan = selectSavedPlan(ai, group, [candidate]),
+            added = api.SpinnerNativeField.addEnclosure({
+                compositeId: plan.compositeId,
+                groupId: group.id,
+                owners: group.memberIds,
+                layers: plan.layers,
+                constructionOrder: "outer-first",
+                autoSeal: false,
+                prebuiltOuter: true,
+                scenario: "mapgen-enclosure",
+            });
+        if (!added?.added) {
+            plan.status = "invalid";
+            plan.invalidReason = added?.reason || "creation-failed";
+            group.planId = null;
+            ai.mapgenField = { status: "skipped", reason: plan.invalidReason };
+        } else {
+            encounter.autonomous = true;
+            plan.provenance = "mapgen";
+            plan.status = "preparing";
+            ai.mapgenField = {
+                status: "placed",
+                compositeId: plan.compositeId,
+                groupId: group.id,
+                center: clone(plan.center),
+                radius: 4,
+            };
+        }
+        // The caller's extra mapgen reservations are not persistent terrain.
+        mapCache = undefined;
+        return clone(ai.mapgenField);
     }
 
     function taskCell(field, task) {
@@ -2520,6 +2606,8 @@
             known = groupObservation(group),
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             mustYield = required.has(cellKey(enemy)),
+            path = waypoint ? nativePath(enemy, waypoint) : [],
+            next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y),
             candidates = [
                 { x: enemy.x, y: enemy.y },
                 ...DIRECTIONS.map((direction) => ({
@@ -2542,12 +2630,16 @@
                     required: required.has(cellKey(cell)),
                     melee: known ? distance(cell, known) <= 1 : false,
                     visible: !actualSight || cellVisibleFrom(enemy, cell, target),
+                    followsRoute: !!next && cellKey(cell) === cellKey(next),
                     route: waypoint ? distance(cell, waypoint) : 0,
                 }))
                 .sort(
                     (a, b) =>
                         Number(a.required) - Number(b.required) ||
                         Number(a.melee) - Number(b.melee) ||
+                        // A legal path can temporarily leave sight or increase
+                        // geometric distance while going around a real wall.
+                        Number(b.followsRoute) - Number(a.followsRoute) ||
                         Number(b.visible) - Number(a.visible) ||
                         a.route - b.route ||
                         Number(b.staying) - Number(a.staying) ||
@@ -2646,18 +2738,18 @@
                 aiData.canShootPlayer
             );
         const assignment = group.assignments?.[enemy.id];
-        if (
-            group.engagement?.mode === "pressure" &&
-            String(group.engagement.lureId) === String(enemy.id) &&
-            !(observed && api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target))
-        )
-            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
         if (
             hasGateWork(encounter, group) &&
             ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(assignment?.type)
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
+        if (
+            group.engagement?.mode === "pressure" &&
+            String(group.engagement.lureId) === String(enemy.id) &&
+            !(observed && api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target))
+        )
+            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
         const known = groupObservation(group);
         if (
             assignment?.type === "rally" &&
@@ -2676,7 +2768,12 @@
             plan.compositeId &&
             api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target)
         )
-            return decide(enemy, group, "delegate-native", false);
+            // Native stationed/investigate commands can pull the lure back to
+            // its old mouth. Reach physical melee range through the legal path
+            // before returning the attack phase to the native AI.
+            return distance(enemy, target) > 1
+                ? pursueObservation(enemy, group, target, perceivedThreat)
+                : decide(enemy, group, "delegate-native", false);
         if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
             if (group.engagement.mode === "pursuit")
                 return groupObservation(group)
@@ -2752,12 +2849,20 @@
             if (sawTarget && engagement.lastKnown) {
                 const waypoint = planWaypoint(encounter, group),
                     approach = waypoint ? distance(engagement.lastKnown, waypoint) : Infinity,
-                    work = (group.metrics?.construction || 0) + (group.metrics?.repair || 0),
+                    lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId)),
+                    path = waypoint && lure ? nativePath(lure, waypoint) : [],
+                    route = waypoint && lure && distance(lure, waypoint) === 0 ? 0 : path.length || Infinity,
                     progress = engagement.progress;
-                const advanced = progress && (approach < progress.approach || work > progress.work);
+                // Only prey approach or this lure's useful travel extends the
+                // ambush. Remote construction must not hide an inert lure.
+                const sameLure = String(progress?.lureId) === String(engagement.lureId),
+                    advanced =
+                        progress &&
+                        (approach < progress.approach || (sameLure && route < (progress.route ?? Infinity)));
                 engagement.progress = {
                     approach: Math.min(progress?.approach ?? Infinity, approach),
-                    work,
+                    lureId: engagement.lureId,
+                    route: sameLure ? Math.min(progress?.route ?? Infinity, route) : route,
                     waits: advanced ? 0 : (progress?.waits || 0) + 1,
                 };
                 if (engagement.progress.waits >= AMBUSH_WAIT_TURNS) engagement.mode = "pressure";
@@ -2859,6 +2964,7 @@
         selectSavedPlan,
         reserveActions,
         beginTurn,
+        initializeMapgenField,
         preparePositiveTurn,
         handleBeforeMove,
         gateNativePhase,

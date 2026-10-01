@@ -38,6 +38,25 @@
         images[label] = PIXIapp.renderer.extract.canvas(container.Mesh).toDataURL("image/png");
         return mc;
     }
+    async function mapPhoto(enemy, label, shown = true) {
+        for (let y = 1; y < KDMapData.GridHeight - 1; y++)
+            for (let x = 1; x < KDMapData.GridWidth - 1; x++) KinkyDungeonVisionSet(x, y, 5);
+        KinkyDungeonSetEnemyFlag(enemy, "hidden", shown ? 0 : 100);
+        KinkyDungeonVisionSet(enemy.x, enemy.y, shown ? 5 : 0);
+        await new Promise((resolve) => setTimeout(resolve, 350));
+        await frame();
+        const graphic = kdgameboard.children.find((child) => child.name === "SpiderlingsSpellVisuals_actor");
+        const cocoonFills = (graphic?.geometry?.graphicsData || []).filter(
+            (shape) => shape.fillStyle.visible && shape.fillStyle.alpha > 0.9,
+        ).length;
+        const status = Spiderlings.WeaponWebbing.status(enemy);
+        expect(
+            cocoonFills === (shown && status?.cocoon ? 1 : 0),
+            `${label}: map cocoon renderer disagrees with native silk state (${cocoonFills})`,
+        );
+        images[label] = document.querySelector("canvas").toDataURL("image/png");
+        rows.push({ mapVisual: label, cocoon: !!status?.cocoon, cocoonFills, shown });
+    }
     KinkyDungeonStartNewGame(false);
     expect(
         !KinkyDungeonStatsPresets.SpiderlingsSpinnerDemo && !KDPerkStart.SpiderlingsSpinnerDemo,
@@ -52,9 +71,15 @@
     hit(enemy, 1);
     expect(enemy[KEY]?.tome > 0 && names(enemy).length === 0, "Light silk failed attribution or issued an early set");
     const light = Spiderlings.WeaponWebbing.status(enemy);
+    expect(!light.cocoon, "Light silk formed an early cocoon");
+    await mapPhoto(enemy, "map-partial-normal");
     hit(enemy, 24);
     const final = Spiderlings.WeaponWebbing.status(enemy);
     expect(final.pieces === 4 && KDHelpless(enemy), "Native helpless tome target did not receive the four-part set");
+    expect(final.cocoon, "Native helpless tome target did not form a complete cocoon");
+    const drawState = JSON.stringify(enemy[KEY]);
+    for (let i = 0; i < 24; i++) Spiderlings.WeaponWebbing.status(enemy);
+    expect(JSON.stringify(enemy[KEY]) === drawState, "Cocoon drawing changed saved silk state");
     expect(enemy.boundLevel === enemy[KEY].tome, "Equipment added a second binding payment");
     expect(
         Object.values(KDGetNPCRestraints(enemy.id)).every((item) => item.conjured),
@@ -85,6 +110,12 @@
                 `Not all four NPC pieces are drawable: ${JSON.stringify({ rendered, poses: mc.Poses, models: [...mc.Models.keys()] })}`,
             );
             rows.push({ color: pink ? "Pink" : "Normal", rendered });
+            await mapPhoto(enemy, pink ? "map-cocoon-pink" : "map-cocoon-normal");
+            const beforeFog = JSON.stringify(enemy[KEY]);
+            await mapPhoto(enemy, pink ? "map-cocoon-fog-pink" : "map-cocoon-fog-normal", false);
+            expect(JSON.stringify(enemy[KEY]) === beforeFog, "Fog drawing changed cocoon gameplay state");
+            KinkyDungeonSetEnemyFlag(enemy, "hidden", 0);
+            KinkyDungeonVisionSet(enemy.x, enemy.y, 5);
         } finally {
             Spiderlings.getSetting = previous;
         }
@@ -115,6 +146,8 @@
     }
     expect(names(restored).length === 0, "Native removal failed");
     Spiderlings.WeaponWebbing.status(restored);
+    KinkyDungeonAdvanceTime(1);
+    await frame();
     expect(restored[KEY].items.length === 0, "Native removal reissued equipment");
     expect(!KinkyDungeonInventoryGetSafe("SpiderlingsWebbingLv1Arm"), "Conjured item entered player inventory");
     KDTieUpEnemy(restored, -(restored.specialBoundLevel.Slime || 0), "Slime", {}, false, 0);
@@ -122,10 +155,40 @@
     const staff = spawn(2);
     hit(staff, 24, "SpiderlingsSilkenSnare");
     expect(Spiderlings.WeaponWebbing.status(staff)?.amount > 0 && names(staff).length === 0, "Staff formed a tome set");
+    expect(
+        Spiderlings.WeaponWebbing.status(staff)?.cocoon === KDHelpless(staff),
+        "Staff cocoon disagrees with native helplessness",
+    );
+    for (const pink of [false, true]) {
+        const previous = Spiderlings.getSetting;
+        Spiderlings.getSetting = (name) => (name === "spiderlingsPinkWebbing" ? pink : previous(name));
+        try {
+            await mapPhoto(staff, pink ? "map-staff-cocoon-pink" : "map-staff-cocoon-normal");
+        } finally {
+            Spiderlings.getSetting = previous;
+        }
+    }
+    KDTieUpEnemy(staff, -(staff.specialBoundLevel.Slime - staff.Enemy.maxhp * 0.5), "Slime", {}, false, 0);
+    expect(
+        Spiderlings.WeaponWebbing.status(staff)?.amount > 0 && !Spiderlings.WeaponWebbing.status(staff).cocoon,
+        "Partial native recovery failed to downgrade the staff cocoon",
+    );
+    for (const pink of [false, true]) {
+        const previous = Spiderlings.getSetting;
+        Spiderlings.getSetting = (name) => (name === "spiderlingsPinkWebbing" ? pink : previous(name));
+        try {
+            await mapPhoto(staff, pink ? "map-recovered-pink" : "map-recovered-normal");
+        } finally {
+            Spiderlings.getSetting = previous;
+        }
+    }
+    KDTieUpEnemy(staff, -(staff.specialBoundLevel.Slime || 0), "Slime", {}, false, 0);
+    expect(!Spiderlings.WeaponWebbing.status(staff), "Native staff recovery kept a complete cocoon");
     const mixed = spawn(3);
     KDTieUpEnemy(mixed, 100, "Slime", {}, false, 0);
     hit(mixed, 1);
     expect(names(mixed).length === 0 && mixed[KEY].tome < 100, "Unrelated Slime was claimed by the tome");
+    expect(!Spiderlings.WeaponWebbing.status(mixed)?.cocoon, "Unrelated Slime paid for a weapon cocoon");
     const shielded = spawn(4);
     shielded.shield = 1000;
     hit(shielded, 24);

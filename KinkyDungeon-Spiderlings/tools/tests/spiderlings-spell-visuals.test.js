@@ -13,6 +13,7 @@ function fixture({ mageSpells = false } = {}) {
         lines = [],
         dots = [],
         fills = [],
+        polygons = [],
         labels = [],
         lineStyles = [];
     const geometryAllocations = { sets: 0 };
@@ -24,6 +25,7 @@ function fixture({ mageSpells = false } = {}) {
             lines.length = 0;
             dots.length = 0;
             fills.length = 0;
+            polygons.length = 0;
             lineStyles.length = 0;
             return this;
         }
@@ -33,18 +35,23 @@ function fixture({ mageSpells = false } = {}) {
         }
         moveTo(x, y) {
             this.start = [x, y];
+            if (this.fill) this.fillPath.push([x, y]);
             return this;
         }
         lineTo(x, y) {
             lines.push([...this.start, x, y]);
+            if (this.fill) this.fillPath.push([x, y]);
             lineStyles.push(this.stroke);
             return this;
         }
         beginFill(color, alpha) {
             this.fill = { color, alpha };
+            this.fillPath = [];
             return this;
         }
         endFill() {
+            if (this.fillPath?.length > 2) polygons.push({ points: this.fillPath, ...this.fill });
+            this.fill = undefined;
             return this;
         }
         drawCircle(x, y, radius) {
@@ -138,6 +145,7 @@ function fixture({ mageSpells = false } = {}) {
         lines,
         dots,
         fills,
+        polygons,
         labels,
         lineStyles,
         draw,
@@ -179,6 +187,40 @@ test("Hex preserves sixteen warning cells and switches to ground silk without co
     assert.equal(r.labels.length, 0);
 });
 
+test("the exact native Witch rope launcher hit uses its existing Rope launcher art without changing the draw", () => {
+    const r = fixture();
+    const options = { alpha: 0.7, zIndex: 2, bullet: { source: 37, faction: "Witch" } };
+    const args = [
+        r.c.kdbulletboard,
+        r.c.kdpixisprites,
+        "native-witch-hit",
+        "Game/Bullets/WitchRopeBoltLaunchManyHit.png",
+        123,
+        234,
+        35,
+        45,
+        0.6,
+        options,
+    ];
+    const result = r.c.KDDraw(...args);
+    assert.equal(result.args[3], "Game/Bullets/RopeBoltLaunchManyHit.png");
+    assert.deepEqual(result.args.slice(0, 3), args.slice(0, 3));
+    assert.deepEqual(result.args.slice(4), args.slice(4));
+    assert.equal(result.args[9], options, "the native draw options and source retain their identity");
+    for (const path of [
+        "Game/Bullets/WitchRopeBoltLaunchSingleHit.png",
+        "Game/Bullets/WitchRopeBoltLaunchManyHitExtra.png",
+        "Game/Bullets/WitchRopeBoltLaunchMany.png",
+        "Other/Game/Bullets/WitchRopeBoltLaunchManyHit.png",
+    ]) {
+        const other = r.c.KDDraw(...args.slice(0, 3), path, ...args.slice(4));
+        assert.equal(other.args[3], path);
+        assert.equal(other.args[9], options);
+    }
+    const otherBoard = r.c.KDDraw(r.c.kdgameboard, ...args.slice(1));
+    assert.equal(otherBoard.args[3], args[3]);
+});
+
 test("weapon silk follows the visible actor, thickens with surviving silk and clears on release", () => {
     const r = fixture();
     const enemy = { id: 7, hp: 20, x: 4, y: 5, visual_x: 4.25, visual_y: 5.5, Enemy: { name: "Maidforce" } };
@@ -208,6 +250,31 @@ test("weapon silk follows the visible actor, thickens with surviving silk and cl
     coverage = undefined;
     r.draw();
     assert.equal(r.lines.length, 0);
+});
+
+test("only confirmed cocoons enclose the body, then downgrade immediately after native recovery", () => {
+    const r = fixture(),
+        enemy = { id: 7, hp: 20, x: 4, y: 5, Enemy: { name: "Maidforce" } };
+    let cocoon = false;
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.Spiderlings.WeaponWebbing = { status: () => ({ coverage: 1, cocoon }) };
+    r.draw();
+    assert.equal(r.polygons.length, 0, "coverage alone does not hide an active NPC");
+    cocoon = true;
+    r.draw();
+    assert.equal(r.polygons.length, 1);
+    assert.ok(r.polygons[0].alpha > 0.9);
+    assert.equal(r.polygons[0].points.length, 33);
+    cocoon = false;
+    r.draw();
+    assert.equal(r.polygons.length, 0);
+    r.c.Spiderlings.WeaponWebbing.status = () => undefined;
+    r.c.Spiderlings.NPCAdhesion = { hasSpiderHelplessness: () => true };
+    r.draw();
+    assert.equal(r.polygons.length, 1, "Mage and hunting silk share the same terminal visual");
+    enemy.hidden = true;
+    r.draw();
+    assert.equal(r.polygons.length, 0);
 });
 
 test("Collapse keeps its fixed cut-corner danger mask while its strands gather inward", () => {
@@ -376,7 +443,7 @@ test("fully resisted NPC hits and ground-trail contacts do not create false hit 
     assert.equal(r.draw().length, 0);
 });
 
-test("Mage bolts have a readable upright head and at most two world-aligned afterimages during camera motion", () => {
+test("Mage silk balls have an upright head and two thin thread trails during camera motion", () => {
     const r = fixture();
     const options = { alpha: 0.8, zIndex: 2 };
     const shot = { visual_x: 3, visual_y: 4 };
@@ -402,6 +469,8 @@ test("Mage bolts have a readable upright head and at most two world-aligned afte
     r.draws.length = 0;
     draw(252, 324); // The camera moved one tile right with the shot.
     assert.equal(r.draws[0][4], 180, "the old world position pans with the current camera");
+    assert.ok(r.draws[0][3].endsWith("WebSprayTrail.png"));
+    assert.ok(r.draws[0][7] < 72 * 0.3);
     for (let x = 5; x < 10; x++) {
         shot.visual_x = x;
         r.draws.length = 0;

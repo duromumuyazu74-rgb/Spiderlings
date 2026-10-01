@@ -211,16 +211,16 @@ SpiderlingsInfestationBlocked,Ты останавливаешься перед �
 SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (5/5)
 KDModButtonspiderlingsInfestationWeight,Вес нашествия (0: выкл.)
 KDModButtonspiderlingsHuntingGroundsWeight,Вес охотничьих угодий - только Maidforce (0: выкл.)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Книга шёлковых уз
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Посох ткача шёлка
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Схождение кокона
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Шёлковая петля
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Тонкий шёлк пронизывает корешок и обвивает раскрытые страницы. Прочитанные слова стягивают рассеянные нити к центру.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"В паутине на навершии теплится свет. Один взмах выпускает тонкие нити, оплетающие цель."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,В основной или второй руке: +15% к силе связывания. 4 маны; дальность 6; срабатывание через два хода после применения; перезарядка 8 ходов. Область из 21 клетки: урон и связывание усиливаются к центру. Стены блокируют эффект. Нити остаются на цели. Когда шёлка самой книги достаточно для обездвиживания врага, он сплетает путы на свободных руках, талии, ногах и щиколотках.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"2 маны; дальность 6; перезарядка 3 хода. Связывает первого поражённого врага, затем замедляет его на 2 хода. Стены останавливают нить." Нити движутся вместе с целью и исчезают по мере освобождения.
-ItemPickupSpiderlingsSilkenBindingTome,Вы подбираете книгу шёлковых уз.
-ItemPickupSpiderlingsSilkweaverStaff,Вы подбираете посох ткача шёлка.
+KinkyDungeonInventoryItemSpiderlingTome,Книга шёлковых уз
+KinkyDungeonInventoryItemSpiderlingStaff,Посох ткача шёлка
+KinkyDungeonSpecialSpiderlingTome,Схождение кокона
+KinkyDungeonSpecialSpiderlingStaff,Шёлковая петля
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Тонкий шёлк пронизывает корешок и обвивает раскрытые страницы. Прочитанные слова стягивают рассеянные нити к центру.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,"В паутине на навершии теплится свет. Один взмах выпускает тонкие нити, оплетающие цель."
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"В основной или второй руке: +20% к силе связывания. 4 маны; дальность 6; срабатывание через два хода; перезарядка 8 ходов. Область из 21 клетки: урон и связывание усиливаются к центру. Стены блокируют эффект. Когда шёлка оружия самого по себе достаточно для полной беспомощности врага, он образует цельный кокон, который раскрывается по мере освобождения."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 маны; дальность 6; перезарядка 3 хода. Связывает первого поражённого врага, затем замедляет его на 3 хода. Стены останавливают нить. Шёлк движется вместе с целью и образует цельный кокон, когда его самого по себе достаточно для полной беспомощности. Кокон раскрывается по мере освобождения."
+ItemPickupSpiderlingTome,Вы подбираете книгу шёлковых уз.
+ItemPickupSpiderlingStaff,Вы подбираете посох ткача шёлка.
 KDPrereqFailSpiderlingsCocoonConvergence,Нужно 4 маны и завершение перезарядки в 8 ходов.
 KDPrereqFailSpiderlingsSilkenSnare,Нужно 2 маны и завершение перезарядки в 3 хода.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Вы сплетаете круг из шёлка. Нити начинают сходиться к центру.

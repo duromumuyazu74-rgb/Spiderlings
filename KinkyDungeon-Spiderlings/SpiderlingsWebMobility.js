@@ -44,8 +44,9 @@
 
     function invalidateNavigation(webChanged = false) {
         routes = new Map();
-        routeMap = typeof KDMapData === "undefined" ? undefined : KDMapData;
-        webKeys = undefined;
+        const nextMap = typeof KDMapData === "undefined" ? undefined : KDMapData;
+        if (webChanged || routeMap !== nextMap) webKeys = undefined;
+        routeMap = nextMap;
         if (!webChanged || !routeMap) return;
         const graph = api.SpinnerNativeField?.state()?.topology;
         if (api.SpinnerTopology) webKeys = new Set(graph ? api.SpinnerTopology.solidCells(graph).map(key) : []);
