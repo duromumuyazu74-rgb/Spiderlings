@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"지금 상태로는 Targ
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 풀 수 없다."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."
+SpiderlingsRecoveryStand,버티기 (기력 {cost})
+SpiderlingsRecoverySelect,실 {number}/{count}
+SpiderlingsRecoveryCut,자르기 ({cost})
+SpiderlingsRecoveryRemove,풀기 ({cost})
+SpiderlingsRecoveryStruggle,몸부림 ({cost})
+SpiderlingsRecoveryStrandLoosened,선택한 견인 실을 느슨하게 했습니다.
+SpiderlingsRecoveryStrandSevered,선택한 견인 실에서 벗어났습니다.

@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"W obecnym stanie nie mo�
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz poluzować TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Pozostałe więzy uniemożliwiają ci rozluźnienie TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Pozostałe więzy uniemożliwiają ci rozluźnienie TargetRestraint."
+SpiderlingsRecoveryStand,Zaprzyj się ({cost} wytrzymałości)
+SpiderlingsRecoverySelect,Nić {number}/{count}
+SpiderlingsRecoveryCut,Przetnij ({cost})
+SpiderlingsRecoveryRemove,Rozwiąż ({cost})
+SpiderlingsRecoveryStruggle,Szarp się ({cost})
+SpiderlingsRecoveryStrandLoosened,Luzujesz wybraną jedwabną nić.
+SpiderlingsRecoveryStrandSevered,Uwalniasz się od wybranej jedwabnej nici.

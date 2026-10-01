@@ -2309,6 +2309,33 @@ test("terrain invalidation with only disabled owners pauses replanning until rec
     assert.ok(ai.plans[group.planId]);
 });
 
+test("a native gate lock invalidates a plan after repeated cached-snapshot checks", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        gate = plan.gates[0].cells[0];
+    for (let turn = 0; turn < 3; turn++) {
+        c.KinkyDungeonCurrentTick++;
+        r.begin();
+    }
+    assert.equal(group.planId, plan.id);
+    r.setMetadata(gate.x, gate.y, { Lock: "Red" });
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.equal(plan.status, "invalid");
+    assert.equal(plan.invalidReason, "terrain");
+    assert.notEqual(group.planId, plan.id);
+    const replacement = ai.plans[group.planId];
+    if (replacement)
+        assert.ok(
+            !(replacement.initialCells || replacement.cells).includes(cellKeyForTest(gate)),
+            "The refreshed cell index must exclude the newly locked gate from replacement work",
+        );
+});
+
 test("passage AI keeps its analysis and active field when paid gate work creates native collision proxies", () => {
     const worker = spinner(1, 5, 5),
         r = passageRuntime([worker]),

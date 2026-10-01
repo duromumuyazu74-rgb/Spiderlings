@@ -1664,8 +1664,19 @@
         return String(KDMapData?.RoomType ?? KDMapData?.MapMod ?? `${KDMapData?.GridWidth}x${KDMapData?.GridHeight}`);
     }
 
+    function snapshotCellsByKey(snapshot) {
+        // Native terrain and tile-metadata edits replace the cached snapshot;
+        // actor occupancy remains a fresh, separate query in planning.
+        if (mapCache?.snapshot === snapshot) {
+            if (!mapCache.cellsByKey)
+                mapCache.cellsByKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+            return mapCache.cellsByKey;
+        }
+        return new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+    }
+
     function staticCandidateLegal(candidate, snapshot) {
-        const cells = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+        const cells = snapshotCellsByKey(snapshot);
         if (candidate.kind === "passage")
             return (
                 candidate.gates.every((gate) =>
@@ -1778,7 +1789,7 @@
             radius = (outer.bounds.right - outer.bounds.left) / 2 + 1,
             center = plan.center,
             boundary = ringCells(center, radius),
-            byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
+            byKey = snapshotCellsByKey(snapshot),
             occupied = new Set(
                 KDMapData.Entities.filter(
                     (entity) =>

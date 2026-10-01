@@ -82,6 +82,34 @@ function buildAll(
     return { owners, encounter: started.encounter, handled };
 }
 
+test("retained crews skip immutable graph copies but real owner changes still update attribution", () => {
+    const r = runtime(),
+        c = r.context,
+        built = buildAll(r),
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        saved = built.encounter.topology,
+        proxyIds = c.KDMapData.Entities.filter(field.isOwnedProxy).map((entity) => entity.id),
+        native = topology.setFieldOwners;
+    let updates = 0;
+    topology.setFieldOwners = (...args) => {
+        updates++;
+        return native(...args);
+    };
+    for (let turn = 0; turn < 50; turn++) assert.equal(field.setOwners("doorway", [1, 2, 2]), true);
+    assert.equal(updates, 0, "Unchanged crews must not copy their entire accumulated field graph every turn");
+    assert.equal(built.encounter.topology, saved);
+    assert.equal(field.setOwners("doorway", [2]), true);
+    assert.equal(updates, 1);
+    assert.deepEqual(Array.from(field.fieldOwners("doorway")), [2]);
+    assert.deepEqual(Array.from(built.encounter.topology.owners), [2]);
+    assert.deepEqual(Array.from(saved.owners), [1, 2], "The real update still preserves the previous graph snapshot");
+    assert.deepEqual(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).map((entity) => entity.id),
+        proxyIds,
+    );
+});
+
 test("native capture boundaries draw SpinnerTrap sides and corners without changing saved authority", () => {
     for (const [pink, clockwise] of [
         [false, true],

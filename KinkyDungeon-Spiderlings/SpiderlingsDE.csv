@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"In deinem jetzigen Zusta
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht lösen."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
+SpiderlingsRecoveryStand,Standhalten ({cost} Ausdauer)
+SpiderlingsRecoverySelect,Faden {number}/{count}
+SpiderlingsRecoveryCut,Schneiden ({cost})
+SpiderlingsRecoveryRemove,Lösen ({cost})
+SpiderlingsRecoveryStruggle,Kämpfen ({cost})
+SpiderlingsRecoveryStrandLoosened,Du lockerst den ausgewählten Seidenfaden.
+SpiderlingsRecoveryStrandSevered,Du befreist dich vom ausgewählten Seidenfaden.

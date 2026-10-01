@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.80.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.82.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.82 adversarial gameplay corrections (2026-10-02)
+
+Test.82 provides native player controls for standing firm, selecting a recovery strand and paying to cut, remove or struggle against that strand. A legal paid native `Impossible` carrier result now settles its independently admitted strand work; truly blocked, inaccessible or unaffordable actions remain rejected. Local loosening and removal receive specific feedback. HUD previews preserve pending work, native progress and the existence/value of native `attempts`, including externally owned BasicLeash carriers. Static planning reuses the current terrain snapshot's cell index and skips immutable topology copies for unchanged field owners; locks, terrain, membership and current actor occupancy still update normally. Webbing escape, Mage, weapons, eight-source difficulty and supplied artwork are unchanged. See the [senior KD player simulation report](spiderlings-adversarial-gameplay-2026-10-02.zh-CN.md) and its numerical companion reports.
+
+The final ZIP has 169 source-matching entries and 24,824,249 bytes, SHA-256 `20a57bc18d65cdd1644acee29a4ac6d44a3b91d77d118ae7231a3d697ae5766b`. The same ZIP passes all 37 native stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `29219e97a362228e64d885fb569b1b35ec74b3ef`, reporting 5.5.3. The fetch completed at `2026-10-01T17:02:29.075Z`. Full evidence is `<cache>/runs/2026-10-01T17-02-29-091Z-0.92.36-test.82/acceptance.json`. The seven locale files now contain 254 keys each: all 14 native language groups pass, totaling 3,556 comparisons.
+
+The existing `player-recovery` stage now exercises legal source removal through native `KDSendInput` and checks ten repeated HUD draws under true low-chance native queries. Owned and external carriers with absent or fractional attempts retain exactly their item state, recovery ledger, stamina and tick. Separate final-package runs on both versions use real mouse input at 1366×768, verify all five buttons, actual turn/stamina payment, free strand selection, unchanged preview state and no overlap with other visible native buttons. The retained screenshots were visually inspected. These final-ZIP probes are in the parent workspace's `.scratch/gameplay-adversarial-20261002/*-spinner-ui-test82-small*` and `*-spinner-query-test82-result.json`.
+
+The old Test.80 ZIP and Test.81 candidate are retained. Test.81's full native suite passed, but real screenshot geometry and independent review found overlapping controls and query-induced attempts; it is superseded by Test.82. The large escape matrices reuse unchanged Test.80 Webbing source fingerprints, with dual-version Test.81 representative cases and final Test.82 native escape acceptance. Weapon matrices likewise reuse unchanged Test.80/81 combat modules. The reports distinguish controlled numerical simulations, native encounters and static conclusions; they do not treat an automated pass as player balance approval.
+
+KD 5.4.92 retains the historical native audio play/pause interruptions and native `Locks/Red.png` missing requests; no Spiderlings assets are missing. The GitHub result has no page errors, unhandled rejections or missing resources. Coverage remains isolated Chrome without desktop shell, arbitrary user saves, other Mods or a complete playthrough. Repository and package gate records are collected separately with `npm run report:delivery -- --base origin/test --evidence <acceptance.json>`.
+
+Full delivery gates pass: repository checks, 12 policy tests, 532 public tests and all 846 tests in the complete local watcher. The package checker reports zero errors, warnings or notes. Evidence is this checkout's `.scratch/delivery/2026-10-01T17-21-19-152Z-ahHcLX/`. After collection, only Markdown records add these results and the separate Spinner duty experiment; repository checks are rerun for those documentation changes. The delivered runtime and ZIP retain the recorded fingerprints.
 
 ## Native language acceptance tooling (2026-10-01)
 

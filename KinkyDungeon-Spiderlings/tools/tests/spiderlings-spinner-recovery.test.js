@@ -16,7 +16,8 @@ function recoveryRuntime(options = {}) {
         eligibleSourceIds = [41],
         cores = new Map([["field-1", { x: 5, y: 5 }]]),
         fieldOwners = new Map([["field-1", [41]]]),
-        staminaChanges = [];
+        staminaChanges = [],
+        messages = [];
     let nextItemId = 1,
         canAdd = options.canAdd !== false,
         blockers = options.blockers || [],
@@ -110,6 +111,13 @@ function recoveryRuntime(options = {}) {
             KinkyDungeonAdvanceTime(delta) {
                 contextRef.KinkyDungeonCurrentTick += delta;
             },
+            KinkyDungeonSendTextMessage(_priority, text) {
+                messages.push(text);
+            },
+            KinkyDungeonSendActionMessage(_priority, text) {
+                messages.push(text);
+            },
+            TextGet: (key) => key,
             KinkyDungeonEnemyLoop() {
                 nativeLoops++;
                 return { native: true };
@@ -205,6 +213,7 @@ function recoveryRuntime(options = {}) {
         map,
         tiles,
         staminaChanges,
+        messages,
         stamina: () => stamina,
         send,
         nativeLoops: () => nativeLoops,
@@ -661,18 +670,23 @@ test("source removal uses one Cut or two shared Remove/Struggle results without 
             struggleGroup: "ItemNeckRestraints",
             cost: -0.2,
             canCut: true,
-            result: "Fail",
+            result: type === "Cut" ? "Impossible" : "Fail",
         };
         before({}, carrier, attempt);
+        const snapshot = JSON.stringify(r.api.state());
+        before({}, carrier, { ...attempt, query: true });
+        assert.equal(JSON.stringify(r.api.state()), snapshot, "A native UI query must not cancel committed removal");
         carrier.cutProgress = 0.9;
         carrier.struggleProgress = 0.9;
         after({}, carrier, attempt);
         return "NativeStruggle";
     };
-    r.api.sourceRemovalInput({ sourceId: 42, type: "Remove" });
+    assert.equal(r.api.sourceRemovalInput({ sourceId: 42, type: "Remove" }), "SourceLoosened");
     assert.ok(r.api.state().sources["42"]);
-    r.api.sourceRemovalInput({ sourceId: 42, type: "Struggle" });
+    assert.equal(r.api.sourceRemovalInput({ sourceId: 42, type: "Struggle" }), "SourceRemoved");
     assert.equal(r.api.state().sources["42"], undefined);
+    assert.ok(r.messages.includes("SpiderlingsRecoveryStrandLoosened"));
+    assert.ok(r.messages.includes("SpiderlingsRecoveryStrandSevered"));
     assert.equal(carrier.cutProgress, 0.2);
     assert.equal(carrier.struggleProgress, 0.3);
 
@@ -688,6 +702,85 @@ test("source removal uses one Cut or two shared Remove/Struggle results without 
     r.hit(second);
     r.api.sourceRemovalInput({ sourceId: 42, type: "Cut" });
     assert.equal(r.api.state().sources["42"], undefined);
+});
+
+test("recovery HUD exposes paid native actions, source selection and live costs without advancing time", () => {
+    const r = recoveryRuntime(),
+        buttons = new Map(),
+        inputs = [];
+    const second = r.addSource(42);
+    r.player.x = 6;
+    r.leave();
+    r.hit();
+    r.hit(second);
+    Object.assign(r.c, {
+        KinkyDungeonDrawState: "Game",
+        KinkyDungeonShowInventory: false,
+        DrawButtonKDEx(name, callback, enabled, _x, _y, _width, _height, label) {
+            buttons.set(name, { callback, enabled, label });
+        },
+        KDSendInput(name, data) {
+            inputs.push({ name, data });
+            return r.c.KDInputTypes[name](data);
+        },
+        KinkyDungeonStruggle(group, type, index, query, data) {
+            assert.equal(group, "ItemNeckRestraints");
+            assert.equal(index, 0);
+            assert.equal(query, true);
+            data.cost = type === "Struggle" ? -3 : -0.2;
+            data.canCut = false;
+            r.gear[0].pickProgress = 0;
+            r.gear[0].unlockProgress = 0;
+            r.gear[0].attempts = (r.gear[0].attempts || 0) + 0.5;
+        },
+        TextGet: (key) =>
+            ({
+                SpiderlingsRecoveryStand: "Stand firm ({cost} stamina)",
+                SpiderlingsRecoverySelect: "Strand {number}/{count}",
+                SpiderlingsRecoveryRemove: "Remove ({cost})",
+                SpiderlingsRecoveryStruggle: "Struggle ({cost})",
+            })[key] || key,
+    });
+    const draw = () => r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerRecovery({}, {}),
+        before = JSON.stringify(r.api.state()),
+        gearBefore = JSON.stringify(r.gear),
+        tick = r.c.KinkyDungeonCurrentTick;
+    draw();
+    assert.equal(r.c.KinkyDungeonCurrentTick, tick);
+    assert.equal(JSON.stringify(r.api.state()), before, "Rendering may not audit or spend recovery state");
+    assert.equal(
+        JSON.stringify(r.gear),
+        gearBefore,
+        "Native cost queries must preserve carrier fields and absent attempts",
+    );
+    r.gear[0].attempts = 0.75;
+    draw();
+    assert.equal(r.gear[0].attempts, 0.75, "Native query must preserve existing impossible-attempt allowance");
+    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryStand").label, "Stand firm (7 stamina)");
+    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryCut").enabled, false, "Missing cut access disables the button");
+    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryRemove").label, "Remove (2)");
+    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryStruggle").label, "Struggle (30)");
+    buttons.get("SpiderlingsSpinnerRecoverySelect").callback();
+    draw();
+    assert.equal(buttons.get("SpiderlingsSpinnerRecoverySelect").label, "Strand 2/2");
+    buttons.get("SpiderlingsSpinnerRecoveryRemove").callback();
+    assert.deepEqual(JSON.parse(JSON.stringify(inputs[0])), {
+        name: "spiderlingsRecoveryRemoveSource",
+        data: { sourceId: 42, type: "Remove" },
+    });
+    buttons.get("SpiderlingsSpinnerRecoveryStand").callback();
+    assert.equal(r.c.KinkyDungeonCurrentTick, tick + 1);
+    assert.equal(r.staminaChanges.at(-1), -0.7);
+    for (const mode of ["Inventory", "Magic"]) {
+        buttons.clear();
+        r.c.KinkyDungeonDrawState = mode;
+        draw();
+        assert.equal(buttons.size, 0);
+    }
+    r.c.KinkyDungeonDrawState = "Game";
+    r.c.KinkyDungeonShowInventory = true;
+    draw();
+    assert.equal(buttons.size, 0, "Inventory overlay must retain its own clickable controls");
 });
 
 test("destination uses common core, unrelated majority, nearest tie, and executor fallback", () => {
