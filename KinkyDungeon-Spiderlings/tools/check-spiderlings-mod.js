@@ -5,6 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { spawnSync } = require("node:child_process");
 const { parseReleaseVersion } = require("./release-version.js");
+const { escapeTextKeys, inspectEscapeText } = require("./escape-text-contract.js");
 
 const modRoot = path.resolve(__dirname, "..");
 const workspaceRoot = path.resolve(modRoot, "..");
@@ -1801,6 +1802,8 @@ function checkRouting(state) {
 
 function checkTranslations(state) {
     const initialErrorCount = errors.length;
+    for (const error of inspectEscapeText(state.context.KinkyDungeonRestraints, (key) => state.texts[key]).errors)
+        fail(`English fallback ${error}`);
     const currentIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
         .concat(cocoon.id, "SpiderlingsSpinnerLegbinder");
@@ -1819,6 +1822,10 @@ function checkTranslations(state) {
         ),
     );
     runtimeMessageKeys.push(...escapeMessageKeys);
+    escapeMessageKeys.push(
+        ...escapeTextKeys(state.context.KinkyDungeonRestraints).filter((key) => !escapeMessageKeys.includes(key)),
+    );
+    runtimeMessageKeys.push(...escapeMessageKeys.filter((key) => !runtimeMessageKeys.includes(key)));
     runtimeMessageKeys.push("KinkyDungeonStatSpiderlingsCocoonStart", "KinkyDungeonStatDescSpiderlingsCocoonStart");
     runtimeMessageKeys.push(
         ...["Pull", "Contest", "Start", "Win", "Interrupt", "Tired", "Wrap", "Done", "Weave", "Escape"].map(
