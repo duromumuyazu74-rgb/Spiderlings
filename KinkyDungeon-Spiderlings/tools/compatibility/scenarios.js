@@ -39,7 +39,8 @@ const scenarios = [
         "passage-sites",
         "debug-stairs",
     ].map((name) => [name, `${name}.js`, null, ["normal-helpers"]]),
-].map(([name, file, variant, dependencies = []]) => ({ name, file, variant, dependencies }));
+    ["native-locales", null, null, [], "locales"],
+].map(([name, file, variant, dependencies = [], kind = "browser"]) => ({ name, file, variant, dependencies, kind }));
 
 function selectScenarios(requested = []) {
     const byName = new Map(scenarios.map((scenario) => [scenario.name, scenario]));
