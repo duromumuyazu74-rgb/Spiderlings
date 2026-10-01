@@ -25,6 +25,8 @@ function fixture() {
             getSetting: () => pink,
         },
         KDMapData: map,
+        KDCastConditions: {},
+        KinkyDungeonSpellListEnemies: [{ name: "SpiderlingsMageHex" }, { name: "SpiderlingsMageCollapse" }],
         KDGameData: { Collection: {} },
         KinkyDungeonPlayerEntity: player,
         KDGetFaction: (target) => target.faction,
@@ -124,6 +126,30 @@ test("Mage chooses each available spell and respects active-field and collapse l
     r.cast("SpiderlingsMageCollapse");
     r.random(0.5);
     assert.equal(r.c.Spiderlings.MageSpells.choose(r.mage), "SpiderlingsMageBolt");
+});
+
+test("native candidate conditions reject active Hex and pending or cooling Collapse before payment", () => {
+    const r = fixture();
+    const hex = r.c.KDCastConditions.SpiderlingsMageHex;
+    const collapse = r.c.KDCastConditions.SpiderlingsMageCollapse;
+    assert.equal(typeof hex, "function");
+    assert.equal(typeof collapse, "function");
+    for (const spell of r.c.KinkyDungeonSpellListEnemies) assert.equal(spell.castCondition, spell.name);
+    assert.equal(hex(r.mage), true);
+    assert.equal(collapse(r.mage), true);
+    r.cast("SpiderlingsMageHex");
+    r.cast("SpiderlingsMageCollapse");
+    const before = JSON.stringify(r.map.SpiderlingsMageSpells);
+    assert.equal(hex(r.mage), false);
+    assert.equal(collapse(r.mage), false);
+    assert.equal(JSON.stringify(r.map.SpiderlingsMageSpells), before, "candidate queries do not advance state");
+    assert.equal(r.cast("SpiderlingsMageHex").result, "Fail", "direct entry still rejects an active field");
+    assert.equal(r.cast("SpiderlingsMageCollapse").result, "Fail", "direct entry still rejects pending Collapse");
+    for (let count = 0; count < 6; count++) r.tick();
+    assert.equal(hex(r.mage), true, "Hex becomes eligible after its existing field expires");
+    assert.equal(collapse(r.mage), false, "resolved Collapse retains its existing cooldown");
+    for (let count = 0; count < 6; count++) r.tick();
+    assert.equal(collapse(r.mage), true);
 });
 
 test("Shield Hex warns twice, covers 4x4 for three turns and extends mark and shield fragility", () => {

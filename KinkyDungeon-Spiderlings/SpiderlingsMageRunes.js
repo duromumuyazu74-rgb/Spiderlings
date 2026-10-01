@@ -73,6 +73,18 @@
         return live || { id, hp: 1, faction: bullet.bullet.faction || "Enemy", Enemy: { name: MAGE } };
     }
 
+    function canPlaceRune(mage) {
+        return mage?.Enemy?.name === MAGE && activeRunes(mage.id) < LIMIT && legalCells(mage).length > 0;
+    }
+
+    // Older KD selects enemy spells without enumerateSpellOpts. Its native
+    // castCondition gate avoids spending a cooldown on an impossible placement.
+    for (const spell of KinkyDungeonSpellListEnemies) {
+        if (spell.name !== RUNE) continue;
+        spell.castCondition = RUNE;
+        KDCastConditions[RUNE] = canPlaceRune;
+    }
+
     function hostileMaid(bullet, target) {
         const source = mageRuneSource(bullet);
         const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
@@ -98,7 +110,7 @@
     KDAddEvent(KDEventMapGeneric, "enumerateSpellOpts", "SpiderlingsMageRuneChoice", (_event, data) => {
         const mage = data.enemy;
         if (mage?.Enemy?.name !== MAGE) return;
-        const canPlace = activeRunes(mage.id) < LIMIT && legalCells(mage).length > 0;
+        const canPlace = canPlaceRune(mage);
         const chosen = canPlace && KDRandom() < 0.25 ? RUNE : api.MageSpells?.choose?.(mage) || "SpiderlingsMageBolt";
         data.spellOptions.splice(0, data.spellOptions.length, chosen);
         data.spellPriority.splice(0, data.spellPriority.length);

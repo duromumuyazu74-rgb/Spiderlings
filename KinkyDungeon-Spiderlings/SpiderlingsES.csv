@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,La seda opaca baja desde la coronilla y e
 RestraintSpiderlingsWebbingLv3HoodDesc2,El cabello y los rasgos del rostro se ocultan bajo la seda; solo queda un contorno que oscila al moverte.
 RestraintSpiderlingsWebbingCocoon,Capullo de seda de arañita
 RestraintSpiderlingsWebbingCocoonDesc,La seda densa envuelve tu cuerpo en un capullo grueso. Su borde llega bajo tu boca y deja fuera la parte superior de la cabeza.
-RestraintSpiderlingsWebbingCocoonDesc2,La pared del capullo tiembla al retorcerte. Las hebras arrastradas susurran sobre el suelo, como si llevaran hacia la oscuridad el movimiento de su interior.
+RestraintSpiderlingsWebbingCocoonDesc2,El capullo forma pliegues cuando te mueves. Al abrirlo, las ataduras que haya debajo permanecen en su sitio.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 está bajo TargetLv2. Retira primero la capa exterior para alcanzar la seda de debajo.
 KinkyDungeonSpiderlingsCocoonAnchored,Las crías de araña tienden redes alrededor del capullo y te fijan firmemente al sitio.
 KDMapMod_SpiderlingsHuntingGrounds,Coto de caza de las arañitas
@@ -145,13 +145,13 @@ KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,"Tanteas el borde de Tar
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Desprendes TargetRestraint y recoges la seda suelta.
 KinkyDungeonStruggleCutFailSpiderlingsCocoon,Deslizas el filo por una unión de TargetRestraint y lo presionas contra las capas tejidas.
 KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Deslizas el filo por una unión de TargetRestraint y lo presionas contra las capas tejidas.
-KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Cortas la última unión de TargetRestraint. La envoltura desgarrada se desprende de tu cuerpo.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Cortas la última unión de TargetRestraint. La envoltura exterior del capullo se abre.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Empujas contra TargetRestraint. Se forman pequeños pliegues en la pared del capullo.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Empujas contra TargetRestraint. Se forman pequeños pliegues en la pared del capullo.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ensanchas la abertura de TargetRestraint y te escurres fuera del capullo flojo.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Abres a la fuerza la envoltura exterior de TargetRestraint y recoges la seda suelta.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
-KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Abres TargetRestraint desprendiendo sus capas y sales del capullo aflojado.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Desprendes la envoltura exterior de TargetRestraint y recoges el capullo aflojado.
 KDModButtonspiderlingsMapPopulationCap,Arañas por mapa (0: sin límite)
 KinkyDungeonStatSpiderlingsCocoonStart,Despertar de seda
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Despiertas en un capullo suave, envuelta en capas tupidas de seda de araña. Cada pequeño movimiento tira de los hilos ceñidos a tu cuerpo."

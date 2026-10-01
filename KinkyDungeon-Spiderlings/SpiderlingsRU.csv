@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,Непрозрачный шёлк спу�
 RestraintSpiderlingsWebbingLv3HoodDesc2,Волосы и черты лица скрываются под шёлковыми нитями; остаётся лишь покачивающийся силуэт.
 RestraintSpiderlingsWebbingCocoon,Кокон из паучьего шёлка
 RestraintSpiderlingsWebbingCocoonDesc,Плотный шёлк оборачивает тело толстым коконом. Край сходится подо ртом, оставляя верхнюю часть головы снаружи.
-RestraintSpiderlingsWebbingCocoonDesc2,Стенка кокона вздрагивает от движений. Волочащиеся нити шуршат по полу, словно передавая в темноту шевеление внутри.
+RestraintSpiderlingsWebbingCocoonDesc2,Стенка кокона покрывается складками при движении. После его раскрытия путы под ним остаются на месте.
 KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 скрывается под TargetLv2. Сначала сними внешний слой, чтобы добраться до шёлка под ним."
 KinkyDungeonSpiderlingsCocoonAnchored,Паучата протягивают паутину вокруг кокона и крепко пришпиливают тебя к месту!
 KDMapMod_SpiderlingsHuntingGrounds,Охотничьи угодья паучат
@@ -145,13 +145,13 @@ KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,"Ты поддеваеш
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Ты снимаешь TargetRestraint и собираешь освободившиеся нити.
 KinkyDungeonStruggleCutFailSpiderlingsCocoon,"Ты ведёшь лезвие вдоль шва TargetRestraint, прижимая его к слоям шёлка."
 KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,"Ты ведёшь лезвие вдоль шва TargetRestraint, прижимая его к слоям шёлка."
-KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Ты перерезаешь последний шов TargetRestraint. Рассечённая оболочка кокона спадает с тела.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Ты перерезаешь последний шов TargetRestraint. Наружная оболочка кокона раскрывается.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Ты давишь на TargetRestraint. По стенке кокона проходят неглубокие складки.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Ты давишь на TargetRestraint. По стенке кокона проходят неглубокие складки.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ты расширяешь разрыв в TargetRestraint и протискиваешься из обмякшей оболочки кокона.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ты раздвигаешь наружную оболочку TargetRestraint и собираешь свободный шёлк.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Ты поддеваешь край TargetRestraint, пытаясь разделить слипшиеся слои шёлка."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Ты поддеваешь край TargetRestraint, пытаясь разделить слипшиеся слои шёлка."
-KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Ты раскрываешь слои TargetRestraint и выбираешься из ослабленного кокона.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Ты снимаешь наружную оболочку TargetRestraint и собираешь ослабленный кокон.
 KDModButtonspiderlingsMapPopulationCap,Пауки на карте (0: без лимита)
 KinkyDungeonStatSpiderlingsCocoonStart,Пробуждение в коконе
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Ты просыпаешься в мягком коконе, укрытая плотными слоями паучьего шёлка. При каждом движении натягиваются нити, прилегающие к телу."

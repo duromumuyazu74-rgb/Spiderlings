@@ -58,6 +58,8 @@ test("KD 5.5 spell choice and dot launch keep one Mage action and a saved staged
     const context = {
         Spiderlings: {},
         KDMapData: map,
+        KDCastConditions: {},
+        KinkyDungeonSpellListEnemies: [{ name: "SpiderlingsMageRune" }],
         KinkyDungeonPlayerEntity: player,
         KinkyDungeonMovableTilesEnemy: ["0"],
         KinkyDungeonMapGet: (x, y) => (x >= 3 && x <= 8 && y >= 3 && y <= 8 ? "0" : "1"),
@@ -143,6 +145,8 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
         Spiderlings: { SpellVisuals: { hit: (target) => hitFlashes.push(target.id) } },
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { player: true },
+        KDCastConditions: {},
+        KinkyDungeonSpellListEnemies: [{ name: "SpiderlingsMageRune" }],
         KinkyDungeonMovableTilesEnemy: ["0"],
         KinkyDungeonMapGet: () => "0",
         KDRandom: () => 0,

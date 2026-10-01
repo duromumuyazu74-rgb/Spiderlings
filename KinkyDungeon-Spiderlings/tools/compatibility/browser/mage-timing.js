@@ -417,6 +417,134 @@
         expect(rune.time <= 0 && !KDMapData.Bullets.includes(rune), "Rune missed its native warning deadline");
         rows.push({ kind: "rune-adaptive-warning", restrained, slow, warning });
     }
+    // Real enemy selection must discard unavailable spells before charging its
+    // cooldown. KD 5.4.92 has no enumerateSpellOpts event, so direct cast tests
+    // alone cannot detect its repeated failed Hex after a native Flash retreat.
+    for (const strategy of ["wait", "flash-hold", "flash-retreat"]) {
+        for (let sample = 0; sample < 3; sample++) {
+            const seed = `mage-behavior-player-${sample}`;
+            setup(seed);
+            MiniGameKinkyDungeonLevel = 12;
+            for (let y = 1; y < KDMapData.GridHeight - 1; y++) {
+                for (let x = 1; x < KDMapData.GridWidth - 1; x++) {
+                    KinkyDungeonMapSet(x, y, "0");
+                    KinkyDungeonTilesDelete(`${x},${y}`);
+                    KinkyDungeonVisionSet(x, y, 5);
+                }
+            }
+            KDMovePlayer(12, 10, false);
+            const mage = spawn("MageSpiderlings", 10, 10, "Enemy");
+            KinkyDungeonSpells.push(KinkyDungeonFindSpell("Flash"));
+            KinkyDungeonApplyBuffToEntity(KDPlayer(), {
+                id: "ManaRegenSuspend",
+                type: "ManaRegenSuspend",
+                power: 1,
+                duration: 999,
+            });
+            const selection = {
+                kind: "mage-native-selection",
+                strategy,
+                seed,
+                before: {
+                    floor: MiniGameKinkyDungeonLevel,
+                    map: { width: KDMapData.GridWidth, height: KDMapData.GridHeight, interior: "open" },
+                    player: {
+                        x: KDPlayer().x,
+                        y: KDPlayer().y,
+                        stamina: KinkyDungeonStatStamina,
+                        staminaMax: KinkyDungeonStatStaminaMax,
+                        mana: KinkyDungeonStatMana,
+                        manaMax: KinkyDungeonStatManaMax,
+                        will: KinkyDungeonStatWill,
+                        willMax: KinkyDungeonStatWillMax,
+                        weapon: KinkyDungeonPlayerWeapon,
+                        restraints: gear(),
+                        perks: [...KinkyDungeonStatsChoice.entries()]
+                            .filter(([_name, selected]) => selected)
+                            .map(([name]) => name),
+                    },
+                    mage: {
+                        x: mage.x,
+                        y: mage.y,
+                        hp: mage.hp,
+                        maxhp: mage.Enemy.maxhp,
+                        movePoints: mage.Enemy.movePoints,
+                        attackPoints: mage.Enemy.attackPoints,
+                        attack: mage.Enemy.attack,
+                        kite: mage.Enemy.kite,
+                        visionRadius: mage.Enemy.visionRadius,
+                        spellCooldownMult: mage.Enemy.spellCooldownMult,
+                        spellCooldownMod: mage.Enemy.spellCooldownMod,
+                    },
+                },
+                casts: [],
+                steps: [],
+            };
+            const nativeCast = KinkyDungeonCastSpell;
+            let action;
+            KinkyDungeonCastSpell = function (x, y, spell, caster) {
+                const result = nativeCast.apply(this, arguments);
+                if (caster === mage)
+                    selection.casts.push({
+                        action,
+                        spell: spell.name,
+                        result: result.result,
+                        blind: mage.blind || 0,
+                        cooldown: mage.castCooldown,
+                    });
+                return result;
+            };
+            try {
+                for (action = 1; action <= 18; action++) {
+                    if (action === 1 && strategy !== "wait") {
+                        const spell = KinkyDungeonFindSpell("Flash");
+                        KinkyDungeonMoveDirection = { x: -1, y: 0 };
+                        KDInputTypes.tryCastSpell({
+                            tx: mage.x,
+                            ty: mage.y,
+                            spell,
+                            spellname: spell.name,
+                            player: KDPlayer(),
+                        });
+                    } else if (strategy === "flash-retreat" && action <= 5)
+                        KinkyDungeonMove({ x: 1, y: 0 }, 1, false, true);
+                    else {
+                        KinkyDungeonLastAction = "Wait";
+                        KinkyDungeonAdvanceTime(1, true);
+                    }
+                    selection.steps.push({
+                        action,
+                        x: KDPlayer().x,
+                        blind: mage.blind || 0,
+                        clock: KDMapData.SpiderlingsMageSpells.clock,
+                    });
+                }
+            } finally {
+                KinkyDungeonCastSpell = nativeCast;
+            }
+            expect(selection.casts.length > 0, "Native Mage selection produced no casts");
+            expect(
+                selection.casts.every((entry) => entry.result === "Cast"),
+                `Native Mage paid cooldown for an unavailable spell: ${JSON.stringify(selection)}`,
+            );
+            expect(
+                KDMapData.SpiderlingsMageSpells.clock === 18,
+                "Native spell selection or availability queries advanced the spell clock twice",
+            );
+            if (strategy !== "wait") {
+                expect(
+                    selection.steps.some((step) => step.blind > 0),
+                    "Native Flash failed to interrupt the Mage",
+                );
+                expect(
+                    selection.casts.some((entry) => entry.action >= 10 && entry.blind === 0),
+                    "Mage never resumed casting after the native blindness expired",
+                );
+            }
+            rows.push(selection);
+            await frame();
+        }
+    }
     KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();

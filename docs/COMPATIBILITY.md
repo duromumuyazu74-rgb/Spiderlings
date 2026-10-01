@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.82.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.83.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.83 gameplay and creature behavior follow-up (2026-10-02)
+
+Test.83 preserves assigned paid Spinner body work under recognized intrusion into an unfinished common core, while the lure applies native pressure. The lure releases a body task only when another actionable worker can reach a legal unreserved work position for that task. Gate work, Capture, Recovery, nest defense, actor occupancy and existing payment remain. Mage Hex, Collapse and Rune reuse their availability checks through native `castCondition`, avoiding unavailable choices before cooldown payment on both versions. English and all seven locales clarify that opening the outer Cocoon leaves existing inner bindings. Native escape and weapon values remain. See the [senior KD player simulation follow-up](spiderlings-gameplay-improvements-2026-10-02.zh-CN.md) and [construction decision](adr/0023-paid-construction-under-core-intrusion.md).
+
+The final ZIP has 169 source-matching entries and 24,824,642 bytes, SHA-256 `d6c08af2045b1f1a46a1695ff88408c2b40c53229bb14b34492c8ae4367167d6`. Its thirteen changed entries from Test.82 are five runtime JavaScript files, seven CSV files and the manifest. All artwork entries retain their bytes, including the supplied spider placeholder. The same ZIP passes all 37 native stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `29219e97a362228e64d885fb569b1b35ec74b3ef`, reporting 5.5.3. The fresh fetch completed at `2026-10-01T23:11:01.106Z`. Full evidence is `<cache>/runs/2026-10-01T23-11-01-121Z-0.92.36-test.83/acceptance.json`.
+
+The extended `spinner-work` stage uses three sustained core waits and actual occupancy, native stun and native death controls. Both versions complete the core encounters with 44 real construction payments per seed; 5.4.92 first captures at 62/62/66 and 5.5.3 at 66/66/66. Occupying the inner gate for 160 turns prevents closure on both, with 11 and 9 paid work actions respectively. Disabled workers spend no work during stun, and killing two workers prevents closure without fake completion. These controlled damage inputs test interruption, not Knife combat affordability. The final training scene records its native arousal-option flags and the one-time tutorial-message flag separately from character build perks.
+
+The extended `mage-timing` stage performs nine native Flash/wait/retreat encounters per game, checks actual cast results and verifies eighteen world actions advance exactly eighteen Mage clock steps. A separate final-ZIP matrix of 36 encounters and 612 actions per version reduces 5.4.92's six unavailable casts in 124 entries to zero; 5.5.3 remains zero in 130 with an identical spell/action/result sequence. Flash interruptions and immediate target handoff from helpless or removed prey remain. The 1,408 escape-pace comparisons use unchanged native numeric profiles and reject two Lv2 speed candidates because they break the ordinary two-action calibration. Complete original escape and weapon matrices are reused within their recorded source scope.
+
+All fourteen native locale groups pass 254 keys each, totaling 3,556 comparisons. KD 5.4.92 retains the historical native audio play/pause interruptions and `Locks/Red.png` missing requests, with no missing Spiderlings asset. The GitHub runtime reports no page errors, unhandled rejections or missing resources. Coverage is isolated Chrome, without arbitrary user saves, other Mods, desktop-shell acceptance or a full human playthrough. Repository and package gates are collected separately with the same final acceptance file.
+
+Full delivery gates pass: repository checks, 12 policy tests, 536 public tests and all 850 tests in the complete local watcher. The package checker reports zero errors, warnings or notes. Evidence is this checkout's `.scratch/delivery/2026-10-01T23-19-42-468Z-mMCDim/`. Inputs remain unchanged during collection. Afterwards only Markdown records the results and clarifies the single-item numerical scope; repository checks are rerun for those documents. Runtime, tooling and ZIP fingerprints remain as verified.
 
 ## Test.82 adversarial gameplay corrections (2026-10-02)
 

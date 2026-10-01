@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,Lichtundurchlässige Seide zieht sich vom
 RestraintSpiderlingsWebbingLv3HoodDesc2,Haarspitzen und Gesichtszüge verschwinden unter Seide; nur ein schwankender Umriss bleibt.
 RestraintSpiderlingsWebbingCocoon,Spinnenseidenkokon
 RestraintSpiderlingsWebbingCocoonDesc,Dichte Seide hüllt deinen Körper in einen dicken Kokon. Sein Rand reicht bis unter deinen Mund; der obere Teil deines Kopfes bleibt draußen.
-RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand zittert, wenn du dich windest. Nachschleifende Fäden rascheln über den Boden, als trügen sie die Regungen im Inneren in die Dunkelheit.
+RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand wirft Falten, wenn du dich bewegst. Beim Öffnen bleiben darunterliegende Fesseln bestehen.
 KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 liegt unter TargetLv2. Entferne zuerst die äußere Schicht, um an die Seide darunter zu gelangen."
 KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Kokon und halten dich fest an Ort und Stelle!
 KDMapMod_SpiderlingsHuntingGrounds,Jagdrevier der Jungspinnen
@@ -145,13 +145,13 @@ KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,"Du zupfst am Rand von T
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Du streifst TargetRestraint ab und sammelst die gelöste Seide ein.
 KinkyDungeonStruggleCutFailSpiderlingsCocoon,Du führst die Klinge an einer Naht von TargetRestraint entlang und drückst sie gegen die Seidenschichten.
 KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Du führst die Klinge an einer Naht von TargetRestraint entlang und drückst sie gegen die Seidenschichten.
-KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Du durchtrennst die letzte Naht von TargetRestraint. Die aufgeschnittene Kokonhülle fällt von dir ab.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Du durchtrennst die letzte Naht von TargetRestraint. Die äußere Kokonhülle öffnet sich.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Du drückst gegen TargetRestraint. Flache Falten ziehen sich über die Kokonwand.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Du drückst gegen TargetRestraint. Flache Falten ziehen sich über die Kokonwand.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Du drückst den Riss in TargetRestraint auseinander und zwängst dich aus der schlaffen Kokonhülle.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Du drückst die äußere Hülle von TargetRestraint auf und sammelst die lose Seide.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Schichten voneinander zu lösen."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Schichten voneinander zu lösen."
-KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Du schälst TargetRestraint auf und schlüpfst aus der gelösten Kokonhülle.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Du schälst die äußere Hülle von TargetRestraint auf und sammelst den gelösten Kokon.
 KDModButtonspiderlingsMapPopulationCap,Spinnen pro Karte (0: unbegrenzt)
 KinkyDungeonStatSpiderlingsCocoonStart,Erwachen im Kokon
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Du erwachst in einem weichen Kokon, umhüllt von dicht gewebter Spinnseide. Bei jeder kleinen Bewegung ziehen die Fäden an deinem Körper."

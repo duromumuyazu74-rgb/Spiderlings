@@ -109,6 +109,7 @@ function freshNewSaveRuntime() {
         KinkyDungeonFindWeapon() {},
         KDSetWeapon() {},
         KDPrereqs: {},
+        KDCastConditions: {},
         KinkyDungeonSpellSpecials: {},
         KinkyDungeonCastSpell() {},
         KDBulletCanHitEntity() {},

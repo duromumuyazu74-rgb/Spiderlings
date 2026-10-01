@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,Nieprzejrzysty jedwab spływa od czubka g
 RestraintSpiderlingsWebbingLv3HoodDesc2,Włosy i rysy twarzy znikają pod jedwabiem; zostaje tylko kontur kołyszący się z każdym ruchem.
 RestraintSpiderlingsWebbingCocoon,Kokon pajęczego jedwabiu
 RestraintSpiderlingsWebbingCocoonDesc,Gęsty jedwab otacza ciało grubym kokonem. Jego brzeg zbiera się pod ustami, pozostawiając górną część głowy na zewnątrz.
-RestraintSpiderlingsWebbingCocoonDesc2,Ściana kokonu drży przy każdym skręcie. Wleczone nici szeleszczą po podłodze, jakby niosły w ciemność poruszenia z jego wnętrza.
+RestraintSpiderlingsWebbingCocoonDesc2,Ściana kokonu marszczy się przy ruchu. Po jego otwarciu więzy znajdujące się pod spodem pozostają na miejscu.
 KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 leży pod TargetLv2. Najpierw zdejmij zewnętrzną warstwę, by dostać się do jedwabiu pod nią."
 KinkyDungeonSpiderlingsCocoonAnchored,Młode pająki rozpinają sieci wokół kokonu i mocno przytwierdzają cię do miejsca!
 KDMapMod_SpiderlingsHuntingGrounds,Teren łowiecki małych pająków
@@ -145,13 +145,13 @@ KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,"Skubiesz brzeg TargetRe
 KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Zdejmujesz TargetRestraint i zbierasz luźne nici.
 KinkyDungeonStruggleCutFailSpiderlingsCocoon,"Przesuwasz ostrze wzdłuż szwu TargetRestraint, dociskając je do utkanych warstw."
 KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,"Przesuwasz ostrze wzdłuż szwu TargetRestraint, dociskając je do utkanych warstw."
-KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Przecinasz ostatnie spojenie TargetRestraint. Rozcięta powłoka kokonu zsuwa się z ciała.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Przecinasz ostatnie spojenie TargetRestraint. Zewnętrzna powłoka kokonu otwiera się.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Naciskasz na TargetRestraint. Na ścianie kokonu pojawiają się płytkie fałdy.
 KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Naciskasz na TargetRestraint. Na ścianie kokonu pojawiają się płytkie fałdy.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Rozpychasz szczelinę w TargetRestraint i przeciskasz się poza obwisłą powłokę kokonu.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Rozpychasz zewnętrzną powłokę TargetRestraint i zbierasz luźny jedwab.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Skubiesz brzeg TargetRestraint, próbując rozdzielić sklejone warstwy."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Skubiesz brzeg TargetRestraint, próbując rozdzielić sklejone warstwy."
-KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Rozchylasz warstwy TargetRestraint i wysuwasz się z poluzowanego kokonu.
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Rozchylasz zewnętrzną powłokę TargetRestraint i zbierasz poluzowany kokon.
 KDModButtonspiderlingsMapPopulationCap,Pająki na mapie (0: bez limitu)
 KinkyDungeonStatSpiderlingsCocoonStart,Przebudzenie w jedwabiu
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Budzisz się w miękkim kokonie, otulona gęstymi warstwami pajęczego jedwabiu. Każdy drobny ruch napina nici przylegające do ciała."

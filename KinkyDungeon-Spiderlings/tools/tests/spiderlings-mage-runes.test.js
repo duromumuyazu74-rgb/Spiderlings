@@ -20,6 +20,8 @@ function fixture() {
         KinkyDungeonSlowLevel: 0,
         Spiderlings: { Webbing: { applyEnemyProgression: (...args) => calls.binds.push(args) } },
         KDMapData: map,
+        KDCastConditions: {},
+        KinkyDungeonSpellListEnemies: [{ name: "SpiderlingsMageRune" }],
         KinkyDungeonPlayerEntity: player,
         KinkyDungeonMovableTilesEnemy: ["0"],
         KinkyDungeonMapGet: (x, y) => (x >= 3 && x <= 8 && y >= 3 && y <= 8 ? "0" : "1"),
@@ -95,6 +97,24 @@ test("Mage runes reject non-Mage and ownerless casts while preserving other spel
     const spray = { name: "WebSpray" };
     assert.equal(r.c.KinkyDungeonCastSpell(6, 5, spray, webCaster).result, "Cast");
     assert.equal(r.calls.casts[0].spell.name, "WebSpray");
+});
+
+test("native candidate condition excludes Rune owner limits and maps without legal placement", () => {
+    const r = fixture();
+    const available = r.c.KDCastConditions.SpiderlingsMageRune;
+    assert.equal(typeof available, "function");
+    assert.equal(r.c.KinkyDungeonSpellListEnemies[0].castCondition, r.spell.name);
+    assert.equal(available(r.mage), true);
+    for (let count = 0; count < 3; count++) assert.equal(r.cast().result, "Cast");
+    assert.equal(available(r.mage), false);
+    assert.equal(r.cast().result, "Fail", "direct entry retains the three-rune limit");
+    r.map.Bullets[0].time = 0;
+    assert.equal(available(r.mage), true);
+    r.c.KinkyDungeonMapGet = () => "1";
+    const before = JSON.stringify(r.map.Bullets);
+    assert.equal(available(r.mage), false);
+    assert.equal(JSON.stringify(r.map.Bullets), before, "candidate queries leave placed runes unchanged");
+    assert.equal(r.cast().result, "Fail");
 });
 
 test("friendly runes ignore the player but still trigger on hostile NPCs after caster removal", () => {

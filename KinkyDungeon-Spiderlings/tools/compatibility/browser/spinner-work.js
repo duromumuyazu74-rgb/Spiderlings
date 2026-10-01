@@ -320,5 +320,287 @@
         KDMapData.Entities.filter((source) => source.Enemy?.name === "Spinner").length === presetActors.length,
         "Field creation granted uncontrolled Spinner reinforcement",
     );
-    return { rows, corner, preset: { ...preset, memberIds, paidInnerActions: reloaded.topology.actionLog.length } };
+    const coreDefense = await (async () => {
+        const { setup, spawn, turn, expect } = globalThis.normalAcceptance;
+        const rows = [];
+        globalThis.normalTrace = { rows };
+        const originalPaid = Spiderlings.SpinnerNativeField.applyPaidAction,
+            originalHit = KDPlayerEffects.SpiderlingsWebbingEnemyBind;
+        let row;
+        Spiderlings.SpinnerNativeField.applyPaidAction = function (source, action) {
+            const result = originalPaid.apply(this, arguments);
+            row?.actions.push({
+                tick: KinkyDungeonCurrentTick,
+                source: source.id,
+                type: action.type,
+                role: action.role,
+                fieldId: action.fieldId,
+                cell: action.cell || action.target,
+                result: structuredClone(result),
+                credit: source.SpinnerConstructionPoints,
+            });
+            return result;
+        };
+        KDPlayerEffects.SpiderlingsWebbingEnemyBind = function (
+            target,
+            _damage,
+            effect,
+            _spell,
+            _faction,
+            _bullet,
+            source,
+        ) {
+            const result = originalHit.apply(this, arguments);
+            if (target === KinkyDungeonPlayerEntity)
+                row?.hits.push({
+                    tick: KinkyDungeonCurrentTick,
+                    source: source?.id,
+                    profile: effect.profile,
+                    capture: !!Spiderlings.SpinnerCapture.state(),
+                });
+            return result;
+        };
+        const room = () => {
+            KDMapData.GridWidth = 36;
+            KDMapData.GridHeight = 24;
+            KDMapData.Grid =
+                Array.from({ length: 24 }, (_, y) =>
+                    Array.from({ length: 36 }, (_, x) => (x > 0 && y > 0 && x < 35 && y < 23 ? "0" : "1")).join(""),
+                ).join("\n") + "\n";
+            KDMapData.StartPosition = { x: 2, y: 2 };
+            KDMapData.EndPosition = { x: 33, y: 21 };
+            KDMapData.Tiles = {};
+            KDPathCache = new Map();
+            KDPathCacheIgnoreLocks = new Map();
+            KDUpdateEnemyCache = true;
+        };
+        try {
+            for (const [strategy, seed] of [
+                ["core", 0],
+                ["core", 1],
+                ["core", 2],
+                ["occupied-gate", 0],
+                ["stun", 0],
+                ["kill", 0],
+            ]) {
+                row = undefined;
+                setup(`adversarial-spinner-core-entry-${seed}`);
+                room();
+                KDMovePlayer(23, 10, false);
+                const actors = [
+                    [18, 10],
+                    [12, 7],
+                    [12, 13],
+                ].map(([x, y]) => spawn("Spinner", x, y));
+                for (const actor of actors) {
+                    actor.hostile = 999;
+                    actor.aware = false;
+                    actor.vp = 0;
+                }
+                const preset = Spiderlings.SpinnerAI.initializeMapgenField({ preferredSites: [{ x: 14, y: 10 }] }),
+                    encounter = Spiderlings.SpinnerNativeField.state(),
+                    group = encounter.ai.groups[preset.groupId],
+                    composite = encounter.topology.composites[preset.compositeId],
+                    inner = encounter.topology.fields[composite.layerIds[0]],
+                    target =
+                        strategy === "occupied-gate"
+                            ? inner.gateCell
+                            : { x: composite.core.x + 1, y: composite.core.y };
+                row = {
+                    strategy,
+                    seed: `adversarial-spinner-core-entry-${seed}`,
+                    preset,
+                    config: {
+                        floor: MiniGameKinkyDungeonLevel,
+                        weapon: KinkyDungeonPlayerDamage?.name,
+                        stamina: KinkyDungeonStatStamina,
+                        mana: KinkyDungeonStatMana,
+                        will: KinkyDungeonStatWill,
+                        gear: KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name),
+                        perks: [...KinkyDungeonStatsChoice].filter(([_, v]) => v).map(([key]) => key),
+                    },
+                    target,
+                    originalMembers: [...group.memberIds],
+                    actions: [],
+                    hits: [],
+                    turns: [],
+                };
+                rows.push(row);
+                KDMovePlayer(target.x, target.y, false);
+                let counterDone = !["stun", "kill"].includes(strategy);
+                for (let step = 1; step <= 160; step++) {
+                    const current = Spiderlings.SpinnerNativeField.state(),
+                        currentGroup = current.ai.groups[preset.groupId];
+                    if (!counterDone) {
+                        const workers = actors.filter(
+                            (actor) =>
+                                String(actor.id) !== String(currentGroup.engagement?.lureId) &&
+                                currentGroup.assignments[actor.id]?.role === "body",
+                        );
+                        if (workers.length === 2) {
+                            row.counter = {
+                                tick: KinkyDungeonCurrentTick,
+                                workerIds: workers.map((actor) => actor.id),
+                                beforePaid: current.topology.actionLog.length,
+                                damage:
+                                    strategy === "stun"
+                                        ? { damage: 0.1, type: "stun", time: 12, nocrit: true }
+                                        : { damage: 100, type: "slash", nocrit: true },
+                                before: workers.map((actor) => ({
+                                    id: actor.id,
+                                    hp: actor.hp,
+                                    stun: actor.stun,
+                                    credit: actor.SpinnerConstructionPoints,
+                                })),
+                            };
+                            for (const actor of workers)
+                                KinkyDungeonDamageEnemy(
+                                    actor,
+                                    row.counter.damage,
+                                    true,
+                                    true,
+                                    undefined,
+                                    undefined,
+                                    KinkyDungeonPlayerEntity,
+                                );
+                            row.counter.after = workers.map((actor) => ({
+                                id: actor.id,
+                                hp: actor.hp,
+                                stun: actor.stun,
+                                disabled: KinkyDungeonIsDisabled(actor),
+                            }));
+                            expect(
+                                workers.every((actor) =>
+                                    strategy === "stun" ? KinkyDungeonIsDisabled(actor) : actor.hp <= 0,
+                                ),
+                                `Native ${strategy} did not interrupt body workers`,
+                            );
+                            counterDone = true;
+                        }
+                    }
+                    const disabledBefore = actors
+                            .filter((actor) => KinkyDungeonIsDisabled(actor) || actor.hp <= 0)
+                            .map((actor) => actor.id),
+                        beforeActions = row.actions.length;
+                    await turn();
+                    expect(
+                        !row.actions
+                            .slice(beforeActions)
+                            .some((action) => disabledBefore.includes(action.source) && action.result.applied),
+                        "Disabled/dead workers paid phantom construction",
+                    );
+                    const after = Spiderlings.SpinnerNativeField.state();
+                    row.turns.push({
+                        step,
+                        tick: KinkyDungeonCurrentTick,
+                        paid: after.topology.actionLog.length,
+                        geometry: Spiderlings.SpinnerNativeField.captureGeometryReady(KinkyDungeonPlayerEntity),
+                        capture: !!Spiderlings.SpinnerCapture.state(),
+                        player: {
+                            x: KinkyDungeonPlayerEntity.x,
+                            y: KinkyDungeonPlayerEntity.y,
+                            will: KinkyDungeonStatWill,
+                            stamina: KinkyDungeonStatStamina,
+                            slow: KinkyDungeonSlowLevel,
+                        },
+                        lure: after.ai.groups[preset.groupId]?.engagement?.lureId,
+                        actors: actors.map((actor) => ({
+                            id: actor.id,
+                            x: actor.x,
+                            y: actor.y,
+                            hp: actor.hp,
+                            stun: actor.stun,
+                        })),
+                    });
+                    if (
+                        ["core", "stun"].includes(strategy) &&
+                        KinkyDungeonAllRestraintDynamic().some(
+                            ({ item }) => item.name === "SpiderlingsSpinnerLegbinder",
+                        ) &&
+                        composite.layerIds.every((id) => after.topology.fields[id].phase === "sealed")
+                    )
+                        break;
+                }
+                expect(counterDone, `Native ${strategy} did not reach its assigned work counter`);
+                const final = Spiderlings.SpinnerNativeField.state();
+                row.final = {
+                    geometry: Spiderlings.SpinnerNativeField.captureGeometryReady(KinkyDungeonPlayerEntity),
+                    capture: structuredClone(Spiderlings.SpinnerCapture.state()),
+                    fields: composite.layerIds.map((id) => ({ id, phase: final.topology.fields[id].phase })),
+                    memberIds: final.ai.groups[preset.groupId]?.memberIds,
+                    gear: KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name),
+                };
+                if (["core", "stun"].includes(strategy)) {
+                    expect(
+                        row.final.fields.every((field) => field.phase === "sealed"),
+                        "Recognized core prey starved retained paid construction",
+                    );
+                    expect(
+                        row.hits.some((hit) => hit.capture),
+                        "Closed geometry did not admit actual native melee capture",
+                    );
+                    expect(
+                        row.final.gear.includes("SpiderlingsSpinnerLegbinder"),
+                        "Actual capture did not equip the completed legbag",
+                    );
+                    expect(
+                        row.actions.filter((action) => action.result.paid && action.result.applied).length >= 40,
+                        "Closure skipped paid inner construction",
+                    );
+                    expect(
+                        row.originalMembers.every((id) => row.final.memberIds.includes(id)),
+                        "Core construction dispersed the retained crew",
+                    );
+                } else {
+                    expect(
+                        !row.final.geometry && !row.final.capture,
+                        `${strategy} should prevent a legal core closure`,
+                    );
+                    if (strategy === "occupied-gate")
+                        expect(
+                            !row.actions.some(
+                                (action) =>
+                                    action.result.applied && action.cell?.x === target.x && action.cell?.y === target.y,
+                            ),
+                            "A worker constructed through the player's occupied gate",
+                        );
+                    if (strategy === "kill")
+                        expect(
+                            !row.actions.some(
+                                (action) =>
+                                    action.tick > row.counter.tick &&
+                                    row.counter.workerIds.includes(action.source) &&
+                                    action.result.applied,
+                            ),
+                            "Killed builders continued paid work",
+                        );
+                }
+                const beforeZero = JSON.stringify({
+                    topology: final.topology,
+                    credits: actors.map((actor) => actor.SpinnerConstructionPoints),
+                });
+                KinkyDungeonAdvanceTime(0, true);
+                expect(
+                    beforeZero ===
+                        JSON.stringify({
+                            topology: Spiderlings.SpinnerNativeField.state().topology,
+                            credits: actors.map((actor) => actor.SpinnerConstructionPoints),
+                        }),
+                    "Zero-time core update paid or erased work",
+                );
+            }
+        } finally {
+            Spiderlings.SpinnerNativeField.applyPaidAction = originalPaid;
+            KDPlayerEffects.SpiderlingsWebbingEnemyBind = originalHit;
+        }
+        return { rows };
+    })();
+    const result = {
+        rows,
+        corner,
+        preset: { ...preset, memberIds, paidInnerActions: reloaded.topology.actionLog.length },
+        coreDefense,
+    };
+    globalThis.normalTrace = result;
+    return result;
 })();
