@@ -7,7 +7,7 @@
     KDToggles.Sound = false;
     try {
         for (const [zone, floor] of [
-            ["grv", 3],
+            ["grv", 5],
             ["cat", 7],
             ["lib", 12],
         ]) {
@@ -23,7 +23,7 @@
                     floor,
                     false,
                     false,
-                    undefined,
+                    "Maidforce",
                     { x: seed, y: floor },
                     false,
                 );

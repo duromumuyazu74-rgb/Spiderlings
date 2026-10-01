@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.76.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.77.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.76 shared-intelligence review fixes (2026-10-01)
+## Test.77 native escape, larger fields and Spinner recovery relay (2026-10-01)
+
+Test.77 replaces fixed Webbing and leg-bag escape counters with native chance, speed, progress and cost parameters. Ordinary-panel calibration targets one action for Lv1, two for Lv2 and roughly two-to-four for Lv3, with separate native Arm compensation. Complete leg bags take more work; Cocoon adds a substantial time/stamina cost and retains its twenty-three real inner items. Cut retains native tool/Sharp access. Old Lv2/Lv3 and leg-bag counted work migrates once below native completion without replacing equipment or locks. Existing Cocoon native progress is preserved. See the [simulation results and limits](spiderlings-test77-balance.md).
+
+New legal enclosures prefer a 9-by-9 outer perimeter and retain a 3-by-3 core, pay outer-to-inner construction and keep invested crews. Eight-source player Recovery remains intentionally extreme; eligible departed crew members can pay to join a rooted native-LOS relay. Zero-time updates and loading cannot add sources or pull; manual source removal requires another real hit before that source can rejoin. Initial attachment still requires a native hit and compatible collar. Mage Collapse charges for five turns, and Rune warning is sampled once from player SlowLevel. New special nodes start on ordinary floor 5 after the native first boss. Hunting Grounds keeps random NPC prey, favors additional random spiders and separates ordinary prey; idle wild spiders patrol without taking invested field crews. Nest spawning and weapon parameters remain unchanged.
+
+The final ZIP has 169 source-matching entries and 24,818,367 bytes, SHA-256 `9cf1247274106752ed662ccf8d60402764fab49a7a0a6073edb2b5e9a396f767`. Repository checks, 12 policy tests, 483 public tests and the complete 788-test local watcher pass. The same final ZIP passes all 35 native scenarios on each of KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`, checked at `2026-10-01T06:13:15.223Z`. Final external-cache evidence is `2026-10-01T06-13-15-239Z-0.92.36-test.77`.
+
+The new native escape scenario covers ordinary Legs/Arm calibration, full twenty-four-item Cocoon, true tool denial, query immutability and legacy progress migration. Native Recovery verifies paid remote relay joining, no join-and-pull operation, root loss, save/load and actual completed-bag pursuit. Mage timing verifies the fixed Rune deadline for free and hobbled players. Full-map Hunting Grounds population, construction, NPC cooperation, web breach and three-hundred-turn integration remain covered. Separate native simulations total 1,600 recorded cases across both runtimes, excluding parameter-search probes; they calibrate behavior rather than assert a universal player win rate.
+
+Earlier candidates exposed an empty-crew planning crash in the full GitHub Hunting Grounds scene (`2026-10-01T06-04-18-038Z-0.92.36-test.77`). New and invalidated plans now pause without an actionable member; disappearing and disabled crews have regressions and resume when eligible owners return. Native binding also exposed an unnamed unarmed HUD request for `Items/.png`; the owned Webbing/leg-bag display hook omits only that nonexistent image and preserves the native button and combat. Geometry boundary occupancy, radius-two expansion and immediate relay reattachment after cutting were also corrected during acceptance.
+
+Two earlier all-behavior runs (`2026-10-01T05-41-46-417Z-0.92.36-test.77` and `2026-10-01T05-53-45-041Z-0.92.36-test.77`) failed the final page-error gate on baseline native `Gothic/HemLowerBack.png`. The objective/stair fixture now isolates unrelated random encounters while keeping native task nests, guards, scenery and real transitions; the full population/hunting scene remains separate. Extended combat probes retain three baseline and four GitHub native missing-asset events and are not a clean-visual acceptance claim. No official game asset is altered or copied into the Mod. Chrome scenarios do not cover every player save, desktop shell or other Mod combination.
+
+## Test.76 shared-intelligence review fixes (2026-10-01, historical)
 
 Three review reproductions failed on Test.75: a remote report stole the sole enclosure builder, remote engagements prevented unpaid passage recruitment, and NPC awareness let pressure path toward an unrecognized live player coordinate. Test.76 distinguishes shared-only engagement, retains the last available enclosure builder until body preparation finishes, permits unpaid idle recruitment, and applies native player recognition to live pursuit. Personal contact, Recovery duties, compatible collars and invested field owners retain their priorities. Older origin-less engagements are classified from actual native sampling on the next positive turn.
 

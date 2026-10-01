@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Die Springspinne fixiert den Boden
 KDModButtonspiderlingsNestTunnelerCap,Tunneler je Nest insgesamt (0: keine)
 RestraintSpiderlingsSpinnerLegbinder,Seidener Beinbeutel
 RestraintSpiderlingsSpinnerLegbinderDesc,Seide umhüllt deine Beine von oberhalb der Knöchel bis zu den oberen Oberschenkeln. Füße und Arme bleiben frei.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Vier Schneideaktionen oder sechs Aktionen zum Abziehen oder Herauswinden; halb gewobene Seide benötigt die Hälfte. Gemischte Methoden teilen den Fortschritt.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Dichte Seide hält deine Beine zusammen. Schneidwerkzeuge helfen am besten; unfertige Seide bietet weniger Widerstand.
 SpiderlingsSpinnerPull,Losreißen · 10 Ausdauer · 1 Runde
 SpiderlingsSpinnerContest,Spinner: {count} · Weben +{rate}/Runde
 SpiderlingsSpinnerStart,Das intakte Netz hält dich fest. Fülle die Fluchtleiste zuerst; weitere Spinner erhöhen Webtempo und Fluchtziel.

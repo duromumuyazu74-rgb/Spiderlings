@@ -192,7 +192,17 @@ function loadWebbingRuntime(overrides = {}) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
     }
 
-    return { context, models, texts, equipped, addCalls, removeCalls };
+    function removeFixtureItem(id) {
+        const all = [];
+        for (let root of equipped.values())
+            while (root) {
+                all.push(root);
+                root = root.dynamicLink;
+            }
+        const target = all.find((item) => item.name === id);
+        return { completed: !!target && !!context.KinkyDungeonRemoveRestraintSpecific(target) };
+    }
+    return { context, models, texts, equipped, addCalls, removeCalls, removeFixtureItem };
 }
 
 module.exports = {

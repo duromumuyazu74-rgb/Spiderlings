@@ -199,7 +199,7 @@
             expect(hasArt(collapse.warning, "SpiderlingsMageRune"), "Collapse warning artwork is missing");
             if (mode === "owner-loss") KDRemoveEntity(caster, true, false);
             const initialWill = KinkyDungeonStatWill;
-            for (let tick = 1; tick <= 3; tick++) {
+            for (let tick = 1; tick <= 5; tick++) {
                 if (mode === "escape") {
                     KinkyDungeonMove({ x: 1, y: 0 }, 1, false, true);
                     await frame();
@@ -212,17 +212,17 @@
                     cooldown: caster.SpiderlingsCollapseCooldown,
                     gear: gear(),
                 });
-                if (mode === "impact" && tick === 3) {
+                if (mode === "impact" && tick === 5) {
                     images[`${color}-collapse-burst`] = await photo();
                     collapse.burst = rendered("burst_");
                     expect(hasArt(collapse.burst, "SpiderlingsMageRuneHit"), "Collapse resolved without burst artwork");
                 }
             }
-            expect(collapse.turns[1].gear.length === 0, "Collapse applied bindings before the third turn");
+            expect(collapse.turns[3].gear.length === 0, "Collapse applied bindings before the fifth turn");
             if (mode === "impact") {
                 expect(
-                    collapse.turns[2].gear.length > 0 && caster.SpiderlingsCollapseCooldown === 7,
-                    "Third-turn impact/cooldown missing",
+                    collapse.turns[4].gear.length > 0 && caster.SpiderlingsCollapseCooldown === 7,
+                    "Fifth-turn impact/cooldown missing",
                 );
                 expect(cast("SpiderlingsMageCollapse", caster).result === "Fail", "Collapse bypassed its cooldown");
                 for (let tick = 0; tick < 7; tick++) await turn();
@@ -232,7 +232,7 @@
                 );
             } else
                 expect(
-                    KinkyDungeonStatWill >= initialWill && collapse.turns[2].gear.length === 0,
+                    KinkyDungeonStatWill >= initialWill && collapse.turns[4].gear.length === 0,
                     "Escaped/cancelled Collapse still hit the player",
                 );
         }
@@ -245,8 +245,8 @@
         caster.stun = 999;
         expect(cast("SpiderlingsMageCollapse", caster).result === "Cast", "Lifecycle Collapse cast failed");
         const started = performance.now();
-        // All four native turns run in this JS task, without a requestAnimationFrame between them.
-        for (let tick = 0; tick < 4; tick++) {
+        // All six native turns run in this JS task, without a requestAnimationFrame between them.
+        for (let tick = 0; tick < 6; tick++) {
             KinkyDungeonLastAction = "Wait";
             KinkyDungeonAdvanceTime(1, true);
         }
@@ -277,7 +277,7 @@
         rows.push({
             kind: "burst-lifecycle",
             pink,
-            turnsWithoutDraw: 4,
+            turnsWithoutDraw: 6,
             deliverySprites: beforeLoad.length,
             elapsedMs: performance.now() - started,
             persistentStateUnchanged: true,
@@ -356,6 +356,39 @@
     await turn();
     expect(mark()?.stacks === 2, "Reentry into still-active Hex did not add a layer");
     rows.push({ kind: "hex-native-reentry", mark: structuredClone(mark()) });
+    for (const restrained of [false, true]) {
+        setup(`rune-native-warning-${restrained}`);
+        KDMovePlayer(12, 10, false);
+        if (restrained)
+            KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("SpiderlingsSpinnerLegbinder"), 0, false, "");
+        KinkyDungeonUpdateStats(0);
+        const mage = spawn("MageSpiderlings", 8, 8);
+        mage.stun = 999;
+        expect(cast("SpiderlingsMageRune", mage).result === "Cast", "Warning Rune cast failed");
+        const rune = KDMapData.Bullets.find((entry) => entry.bullet.spell?.name === "SpiderlingsMageRune");
+        KDMovePlayer(16, 10, false);
+        for (let n = 0; n < 6 && rune.SpiderlingsRunePhase !== "armed"; n++) await turn();
+        expect(rune.SpiderlingsRunePhase === "armed", "Warning Rune did not arm");
+        KDMovePlayer(rune.x, rune.y, false);
+        await turn();
+        const warning = rune.SpiderlingsRuneTurns,
+            slow = KinkyDungeonSlowLevel;
+        expect(
+            rune.SpiderlingsRunePhase === "triggered" && warning === 2 + Math.ceil(Math.max(0, slow) / 2),
+            "Rune did not snapshot its native Slow warning",
+        );
+        const state = JSON.stringify(rune);
+        KinkyDungeonSendEvent("tickAfter", { delta: 0 });
+        expect(JSON.stringify(rune) === state, "Zero-time Rune update changed its deadline");
+        for (let n = 1; n < warning; n++) {
+            await turn();
+            expect(rune.SpiderlingsRunePhase === "triggered", "Rune resolved before its adaptive warning elapsed");
+            expect(rune.SpiderlingsRuneTurns === warning - n, "Waiting refreshed the Rune warning");
+        }
+        await turn();
+        expect(rune.time <= 0 && !KDMapData.Bullets.includes(rune), "Rune missed its native warning deadline");
+        rows.push({ kind: "rune-adaptive-warning", restrained, slow, warning });
+    }
     KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();

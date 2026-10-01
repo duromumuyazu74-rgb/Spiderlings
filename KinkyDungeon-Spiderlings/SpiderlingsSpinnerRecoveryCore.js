@@ -42,6 +42,30 @@
         return removed;
     }
 
+    // A real near-target strand anchors the network. Cycles cannot keep a
+    // disconnected group attached, and every retained link needs native LOS.
+    function relayLinks(record, resolveSource, isActionable, touchesTarget, linked) {
+        const available = Object.values(sourceRecords(record))
+            .map((saved) => resolveSource(saved.id))
+            .filter((source) => source && isActionable(source));
+        const parents = new Map();
+        const pending = [];
+        for (const source of available) {
+            if (!touchesTarget(source)) continue;
+            parents.set(sourceKey(source.id), undefined);
+            pending.push(source);
+        }
+        for (let index = 0; index < pending.length; index++) {
+            const parent = pending[index];
+            for (const source of available) {
+                if (parents.has(sourceKey(source.id)) || !linked(parent, source)) continue;
+                parents.set(sourceKey(source.id), parent.id);
+                pending.push(source);
+            }
+        }
+        return parents;
+    }
+
     function chooseExecutor(record, onExecutorChange) {
         const ids = sourceIds(record).sort((left, right) => String(left).localeCompare(String(right)));
         if (ids.some((id) => sameId(id, record.executorId))) return record.executorId;
@@ -188,6 +212,7 @@
         pendingSource,
         upsertSource,
         auditSources,
+        relayLinks,
         chooseExecutor,
         destination,
         crossingValid,

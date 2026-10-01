@@ -19,6 +19,9 @@
         KDUpdateEnemyCache = true;
         KDToggles.Sound = false;
         KDsetSeed(seed);
+        KDSetWeapon("Knife");
+        KinkyDungeonUpdateStats(0);
+        KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
     };
     const spawn = (name, x, y, faction) => {
         const enemy = DialogueCreateEnemy(x, y, name);

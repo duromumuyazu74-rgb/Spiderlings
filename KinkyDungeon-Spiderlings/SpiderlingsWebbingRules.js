@@ -9,8 +9,6 @@
         PROFILE_FAMILIES,
         COCOON_ID,
         COCOON_REPAIR_AMOUNT,
-        COCOON_ESCAPE_ACTIONS,
-        ESCAPE_METHODS,
         WEBSPRAY_PROVENANCE,
         WEBSPRAY_MAX_STACKS,
         WEBSPRAY_INACTIVITY_TURNS,
@@ -39,21 +37,18 @@
             family: definition.family,
             group: definition.group,
             stage: "Lv1",
-            requiredActions: 1,
         }));
         const lv2 = FAMILY_DATA.filter((definition) => LV2_FAMILIES.includes(definition.family)).map((definition) => ({
             id: `SpiderlingsWebbingLv2${definition.family}`,
             family: definition.family,
             group: definition.group,
             stage: "Lv2",
-            requiredActions: 2,
         }));
         const lv3 = FAMILY_DATA.filter((definition) => LV3_FAMILIES.includes(definition.family)).map((definition) => ({
             id: `SpiderlingsWebbingLv3${definition.family}`,
             family: definition.family,
             group: definition.group,
             stage: "Lv3",
-            requiredActions: 2,
         }));
         return [
             ...lv1,
@@ -64,7 +59,6 @@
                 family: "Cocoon",
                 group: "ItemDevices",
                 stage: "Cocoon",
-                requiredActionsByMethod: COCOON_ESCAPE_ACTIONS,
             },
         ];
     }
@@ -516,53 +510,6 @@
                 groups: { ...(snapshot.groups || {}), [group]: ordered },
             };
             return { nextSnapshot, outcome: { normalized: true, changed, group, orderedInnerToOuter: ordered } };
-        }
-
-        if (action.type === "escapeAttempt") {
-            const item = action.item;
-            const descriptor = descriptors.get(item && item.name);
-            if (!descriptor)
-                return {
-                    nextSnapshot: snapshot,
-                    outcome: { completed: false, progressed: false, reason: "not-owned" },
-                };
-            if (!ESCAPE_METHODS.includes(action.method)) {
-                return {
-                    nextSnapshot: snapshot,
-                    outcome: { completed: false, progressed: false, reason: "unsupported-method" },
-                };
-            }
-            if (action.effective !== true) {
-                return { nextSnapshot: snapshot, outcome: { completed: false, progressed: false, reason: "blocked" } };
-            }
-            const stage = stageNumber(descriptor.stage);
-            const configuredActions =
-                descriptor.requiredActionsByMethod && descriptor.requiredActionsByMethod[action.method] != null
-                    ? descriptor.requiredActionsByMethod[action.method]
-                    : descriptor.requiredActions && typeof descriptor.requiredActions == "object"
-                      ? descriptor.requiredActions[action.method]
-                      : descriptor.requiredActions;
-            const requiredActions = Number(configuredActions || stage || 0);
-            if (!(requiredActions > 0)) {
-                return {
-                    nextSnapshot: snapshot,
-                    outcome: { completed: false, progressed: false, reason: "unsupported-stage" },
-                };
-            }
-            const previousActions = Number(action.progress || 0);
-            const effectiveActions = Math.min(requiredActions, previousActions + 1);
-            const completed = effectiveActions >= requiredActions;
-            return {
-                nextSnapshot: snapshot,
-                outcome: {
-                    completed,
-                    progressed: true,
-                    effectiveActions,
-                    requiredActions,
-                    method: action.method,
-                    keep: completed ? action.method !== "Cut" : undefined,
-                },
-            };
         }
 
         return { nextSnapshot: snapshot, outcome: { reason: "unsupported-action" } };

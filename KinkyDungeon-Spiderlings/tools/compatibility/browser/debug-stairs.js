@@ -5,10 +5,10 @@
     KDToggles.Sound = false;
     for (const mod of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
         KinkyDungeonStartNewGame(false);
-        MiniGameKinkyDungeonLevel = 3;
+        MiniGameKinkyDungeonLevel = 5;
         KDGameData.JourneyY = 3;
         KDsetSeed(`test70-debug-stairs-${mod}`);
-        KinkyDungeonCreateMap(KinkyDungeonMapParams.grv, "", mod, 3, false, false, undefined, { x: 0, y: 3 }, false);
+        KinkyDungeonCreateMap(KinkyDungeonMapParams.grv, "", mod, 5, false, false, undefined, { x: 0, y: 5 }, false);
         const objective = KDMapData[mod];
         expect(objective?.status === "active" && !objective.complete, "Native special-floor objective absent");
         const progress = JSON.stringify(objective);

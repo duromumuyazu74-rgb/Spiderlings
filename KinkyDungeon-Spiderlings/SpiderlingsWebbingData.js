@@ -44,13 +44,39 @@
     const COCOON_ANCHORED_MESSAGE = "KinkyDungeonSpiderlingsCocoonAnchored";
     const COCOON_ANCHORED_FALLBACK =
         "The spiderlings lay webs around the cocoon, securing it in place. You cannot move while they hold it there.";
-    const LV2_ESCAPE_EVENT = "SpiderlingsLv2Escape";
-    const LV3_ESCAPE_EVENT = "SpiderlingsLv3Escape";
     const COCOON_REPAIR_AMOUNT = 0.1;
-    const COCOON_ESCAPE_ACTIONS = Object.freeze({ Cut: 40, Struggle: 50, Remove: 50 });
-    const COCOON_ESCAPE_CHANCE = Object.freeze({ Cut: 0.025, Struggle: 0.02, Remove: 0.02 });
-    const COCOON_ESCAPE_GATE_PENALTY = 100;
-    const LV1_ESCAPE_CHANCE = 100;
+    // Native chance and speed, never a fixed number of successful inputs.
+    const ESCAPE_PROFILES = Object.freeze({
+        Lv1: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 4, Remove: 4, Struggle: 4 }),
+            speedMult: Object.freeze({ Cut: 1, Remove: 1, Struggle: 1 }),
+        }),
+        Lv2: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.18, Remove: 0.3, Struggle: 0.12 }),
+            speedMult: Object.freeze({ Cut: 1, Remove: 1, Struggle: 1 }),
+        }),
+        Lv3: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.1, Remove: 0.14, Struggle: 0.04 }),
+            speedMult: Object.freeze({ Cut: 0.75, Remove: 0.65, Struggle: 0.65 }),
+        }),
+        Legbinder: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.1, Remove: 0.1, Struggle: 0.05 }),
+            speedMult: Object.freeze({ Cut: 0.55, Remove: 0.5, Struggle: 0.55 }),
+        }),
+        Lv2Arm: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.18, Remove: 0.7, Struggle: 0.2 }),
+            speedMult: Object.freeze({ Cut: 1, Remove: 1, Struggle: 1 }),
+        }),
+        Lv3Arm: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.18, Remove: 0.5, Struggle: 0.15 }),
+            speedMult: Object.freeze({ Cut: 0.75, Remove: 0.65, Struggle: 0.65 }),
+        }),
+        Cocoon: Object.freeze({
+            escapeChance: Object.freeze({ Cut: 0.5, Remove: 0.04, Struggle: 0.03 }),
+            speedMult: Object.freeze({ Cut: 0.1, Remove: 0.2, Struggle: 0.24 }),
+        }),
+    });
+    const COCOON_COST_MULT = Object.freeze({ Cut: 2, Remove: 3, Struggle: 1.5 });
     const ESCAPE_METHODS = Object.freeze(["Cut", "Struggle", "Remove"]);
     const ESCAPE_TEXT = {
         SpiderlingsWebbing: {
@@ -97,7 +123,6 @@
         "Sounds/webs-sweep-away-by-hand-003_01.ogg",
         "Sounds/webs-sweep-away-by-hand-004_01.ogg",
     ]);
-    const ESCAPE_PROGRESS_KEY = "SpiderlingsEscapeActions";
     const ENEMY_BIND_EFFECT = "SpiderlingsWebbingEnemyBind";
     const PLAYER_HIT_DAMAGE_EVENT = "SpiderlingsWebbingPlayerHitDamage";
     const WEBSPRAY_EFFECT = "SpiderlingsWebSprayHit";
@@ -353,13 +378,9 @@
         VIGIL_IDLE_TURNS,
         COCOON_ANCHORED_MESSAGE,
         COCOON_ANCHORED_FALLBACK,
-        LV2_ESCAPE_EVENT,
-        LV3_ESCAPE_EVENT,
         COCOON_REPAIR_AMOUNT,
-        COCOON_ESCAPE_ACTIONS,
-        COCOON_ESCAPE_CHANCE,
-        COCOON_ESCAPE_GATE_PENALTY,
-        LV1_ESCAPE_CHANCE,
+        ESCAPE_PROFILES,
+        COCOON_COST_MULT,
         ESCAPE_METHODS,
         ESCAPE_TEXT,
         OUTER_GAG_TAG,
@@ -372,7 +393,6 @@
         PAIRED_OUTER_GATE_MARKER,
         EXTERNAL_UNLINK_MARKER,
         ESCAPE_SOUNDS,
-        ESCAPE_PROGRESS_KEY,
         ENEMY_BIND_EFFECT,
         PLAYER_HIT_DAMAGE_EVENT,
         WEBSPRAY_EFFECT,

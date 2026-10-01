@@ -97,6 +97,24 @@
         );
     }
 
+    function relayEligible(source, recovery) {
+        return (
+            allowedSource(recovery, source) &&
+            !(recovery.severedSourceIds || []).some((id) => sameId(id, source.id)) &&
+            sourceActionable(source, false) &&
+            !npcCaptureUsesSource(source.id) &&
+            !api.SpinnerNPCRecovery?.usesEntity?.(source.id) &&
+            !Object.values(api.NPCWrapping?.records?.() || {}).some((record) =>
+                record.sourceIds?.some((id) => sameId(id, source.id)),
+            )
+        );
+    }
+
+    function relayContact(left, right) {
+        const range = Math.max(Math.abs(left.x - right.x), Math.abs(left.y - right.y));
+        return range <= MAX_RANGE && KinkyDungeonCheckLOS(left, right, range, MAX_RANGE, false, false);
+    }
+
     function allowedSource(record, source) {
         return !!source && (record?.eligibleSourceIds || []).some((id) => sameId(id, source.id));
     }
@@ -226,7 +244,6 @@
                 (entity.x - data.CamX - (pans ? 0 : data.CamX_offset) + 0.5) * size,
                 (entity.y - data.CamY - (pans ? 0 : data.CamY_offset) + 0.5) * size,
             ],
-            target = point(player()),
             color = api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "",
             root = typeof KinkyDungeonRootDirectory === "string" ? KinkyDungeonRootDirectory : "";
         for (const id of sourceIds()) {
@@ -238,19 +255,22 @@
                 kdgameboard.addChild(entry.mask);
                 strandVisuals.set(String(id), entry);
             }
-            const from = point(source);
+            const parent = sourceById(sourceRecords()[sourceKey(id)]?.relayParentId);
+            const to = parent || player();
+            const from = point(source),
+                target = point(to);
             let visible = false;
             entry.mask.beginFill(0xffffff);
             // Per-cell pixel masking keeps the continuous silk inside visible
             // tiles, including a partly hidden source-to-player segment.
             for (
-                let y = Math.max(0, Math.min(source.y, player().y));
-                y <= Math.min(KDMapData.GridHeight - 1, Math.max(source.y, player().y));
+                let y = Math.max(0, Math.min(source.y, to.y));
+                y <= Math.min(KDMapData.GridHeight - 1, Math.max(source.y, to.y));
                 y++
             )
                 for (
-                    let x = Math.max(0, Math.min(source.x, player().x));
-                    x <= Math.min(KDMapData.GridWidth - 1, Math.max(source.x, player().x));
+                    let x = Math.max(0, Math.min(source.x, to.x));
+                    x <= Math.min(KDMapData.GridWidth - 1, Math.max(source.x, to.x));
                     x++
                 ) {
                     if (!(KinkyDungeonVisionGet(x, y) > 0)) continue;
@@ -373,12 +393,17 @@
         const originalSource = Object.values(sourceRecords(recovery))[0];
         recovery.compositeId ||= originalSource?.compositeId;
         recovery.groupId ||= originalSource?.groupId;
-        for (const id of core.auditSources(
+        const links = core.relayLinks(
             recovery,
             sourceById,
-            (source) => allowedSource(recovery, source) && sourceActionable(source),
-        ))
+            (source) => relayEligible(source, recovery),
+            (source) => sourceActionable(source),
+            relayContact,
+        );
+        for (const id of core.auditSources(recovery, sourceById, (source) => links.has(sourceKey(source.id))))
             delete recovery.sourceRemovalWork[core.sourceKey(id)];
+        for (const saved of Object.values(sourceRecords(recovery)))
+            saved.relayParentId = links.get(sourceKey(saved.id));
         if (!sourceIds(recovery).length) {
             recovery.executorId = undefined;
             recovery.resisted = false;
@@ -502,6 +527,7 @@
                 association = sourceAssociation(source, existing || departure() || departureFromRecovery(recovery)),
                 upserted = core.upsertSource(recovery, source, association, turn(), MAX_SOURCES);
             if (upserted.added) {
+                recovery.severedSourceIds = (recovery.severedSourceIds || []).filter((id) => !sameId(id, source.id));
                 delete recovery.sourceRemovalWork[key];
                 chooseExecutor(recovery);
                 feedback(true);
@@ -636,7 +662,23 @@
     function handleEnemyTurn(enemy, _target, delta) {
         if (!audit()) return undefined;
         const recovery = state();
-        if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) return undefined;
+        if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) {
+            if (!relayEligible(enemy, recovery) || strength(recovery) >= MAX_SOURCES) return undefined;
+            const donor = Object.values(sourceRecords(recovery))
+                .map((saved) => sourceById(saved.id))
+                .find((source) => source && relayContact(source, enemy));
+            if (!donor) return undefined;
+            if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta)) {
+                const association = sourceAssociation(enemy, recovery);
+                const added = core.upsertSource(recovery, enemy, association, turn(), MAX_SOURCES);
+                if (added.added) {
+                    added.source.relayParentId = donor.id;
+                    delete recovery.sourceRemovalWork[sourceKey(enemy.id)];
+                    feedback(true);
+                }
+            }
+            return result(enemy);
+        }
         if (api.SpinnerCapture?.isControllingPlayer?.()) return result(enemy);
         if (!sameId(recovery.executorId, enemy?.id)) return result(enemy);
         if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta) && !alreadyMovedThisTurn(recovery)) {
@@ -697,6 +739,8 @@
         if (!recovery.sources[key]) return false;
         const wasExecutor = sameId(recovery.executorId, id);
         delete recovery.sources[key];
+        recovery.severedSourceIds ||= [];
+        if (!recovery.severedSourceIds.some((saved) => sameId(saved, id))) recovery.severedSourceIds.push(id);
         delete recovery.sourceRemovalWork[key];
         if (wasExecutor) recovery.executorId = undefined;
         if (!sourceIds(recovery).length) {

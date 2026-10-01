@@ -651,6 +651,11 @@
             observation = api.SpinnerAI.groupObservation?.(group),
             focus = observation || origin,
             byKey = geometry?.byKey || new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+            stationary = new Set(
+                KDMapData.Entities.filter(
+                    (entity) => entity.hp > 0 && entity.Enemy?.immobile && !api.SpinnerNativeField.isOwnedProxy(entity),
+                ).map(cellKey),
+            ),
             occupied = new Set([
                 ...KDMapData.Entities.filter(
                     (entity) =>
@@ -686,7 +691,7 @@
                     work.candidatesExamined++;
                 }
                 if (!Number.isFinite(distances(origin, center))) continue;
-                const radius = [3, 2, 1].find(
+                const radius = [4, 3, 2, 1].find(
                         (size) =>
                             [
                                 ...ringCells(center, size),
@@ -696,10 +701,11 @@
                                 const tile = byKey.get(cellKey(cell));
                                 return (
                                     tile?.floor &&
+                                    !stationary.has(cellKey(cell)) &&
                                     !tile.locked &&
                                     !tile.protected &&
                                     !reserved.has(cellKey(cell)) &&
-                                    (cellKey(cell) === cellKey(center) || !occupied.has(cellKey(cell)))
+                                    (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
                                 );
                             }) &&
                             reachableGate(
@@ -750,16 +756,20 @@
                         travelDistance * 2 -
                         distance(focus, center) * 4;
                 if (!Number.isFinite(travelDistance)) continue;
+                const innerRadius = Math.min(radius, 2);
                 candidates.push({
                     id: `enclosure:${cellKey(center)}`,
                     type: "enclosure",
                     center: { x: center.x, y: center.y },
-                    anchors: rectangle(center, 1),
+                    anchors: rectangle(center, innerRadius),
                     radius,
                     area: (radius * 2 - 1) ** 2,
-                    gate: { x: center.x + Math.sign(gate.x - center.x), y: center.y + Math.sign(gate.y - center.y) },
-                    layers: Array.from({ length: radius }, (_, index) => {
-                        const size = index + 1;
+                    gate: {
+                        x: center.x + Math.sign(gate.x - center.x) * innerRadius,
+                        y: center.y + Math.sign(gate.y - center.y) * innerRadius,
+                    },
+                    layers: Array.from({ length: radius - innerRadius + 1 }, (_, index) => {
+                        const size = index + innerRadius;
                         return {
                             vertices: rectangle(center, size),
                             gate: {
@@ -1646,9 +1656,10 @@
         group.planId = null;
         group.selectionOrdinal++;
         const members = group.memberIds
-                .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
-                .filter((entity) => eligibleSpinner(entity)),
-            passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
+            .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+            .filter((entity) => eligibleSpinner(entity));
+        if (!members.length) return;
+        const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
             enclosures = [
                 ...passages,
                 ...analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work, enclosureGeometry?.()),
@@ -1677,7 +1688,8 @@
         composite.constructionOrder = "outer-first";
         plan.constructionOrder = "outer-first";
         if (!inner || composite.layerIds.length >= 3 || composite.closureArmed) return;
-        const radius = composite.layerIds.length + 1,
+        const outer = graph.fields[composite.layerIds.at(-1)],
+            radius = (outer.bounds.right - outer.bounds.left) / 2 + 1,
             center = plan.center,
             boundary = ringCells(center, radius),
             byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell])),
@@ -1922,6 +1934,7 @@
             const members = group.memberIds
                 .map((id) => entities.find((entity) => entity.id === id))
                 .filter((entity) => eligibleSpinner(entity, input));
+            if (!members.length) continue;
             const noPlanSignature = planningSignature(ai, members);
             if (group.noPlanSignature === noPlanSignature) continue;
             const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),

@@ -36,7 +36,6 @@ const groups = {
 };
 const cocoonId = "SpiderlingsWebbingCocoon";
 const cocoonModelId = "SpiderlingsWebbingCocoonModel";
-const cocoonEscapeEvent = "SpiderlingsCocoonEscape";
 const runtimeAsset = "Models/SpiderlingsWebbingCocoon/Cocoon.png";
 const kd55EscapeCosts = { Cut: -0.2, Struggle: -3, Remove: -0.5 };
 
@@ -293,27 +292,23 @@ function loadRuntime(options = {}) {
         return eventData;
     }
 
+    // Emit a native result for outer-web/event tests; actual numeric progression is covered in both game runtimes.
     function nativeEscapeCocoon(method) {
         const item = equipment.get("ItemDevices");
         if (!item || item.name !== cocoonId) return false;
         const data = inventoryEvent("beforeStruggleCalc", item, {
             restraint: item,
             query: false,
+            canCut: true,
             struggleType: method,
             cost: kd55EscapeCosts[method],
-            minSpeed: 0.4,
             escapeChance: item.restraint.escapeChance[method],
-            escapePenalty: 0,
-            limitChance: 0,
         });
-        const effectiveChance = Math.max(0, Number(data.escapeChance || 0) - Number(data.escapePenalty || 0));
-        const cutProgress = Number(item.cutProgress || 0);
-        const nativeCompletes = effectiveChance > 0 && cutProgress >= 1 - effectiveChance / 4;
-        if (!nativeCompletes && data.escapeSpeed === 0) {
+        if (!context.KinkyDungeonHasStamina(-data.cost, true)) return false;
+        if (Number(item.cutProgress || 0) + Number(item.struggleProgress || 0) < 1) {
             inventoryEvent("struggle", item, { restraint: item, struggleType: method, result: "Fail" });
             return false;
         }
-        if (!nativeCompletes) return false;
         const removal = inventoryEvent("beforeSuccessRemove", item, {
             restraint: item,
             struggleType: method,
@@ -490,81 +485,23 @@ test("dispersal cancels attacks and sets an outward native goal without moving t
     assert.equal(runtime.context.KDAIType.hunt.beforemove(spider, player, data), true);
 });
 
-test("counted escape feedback is selected only for an effective unfinished action", () => {
-    for (const name of [id(2, "Arm"), id(3, "Arm"), cocoonId]) {
-        for (const method of ["Cut", "Remove", "Struggle"]) {
-            for (const condition of ["effective", "query", "no-stamina", "no-tool", "group-blocked"]) {
-                const runtime = loadRuntime({
-                    hasStamina: condition !== "no-stamina",
-                    groupBlocked: () => condition === "group-blocked",
-                });
-                const group = name === cocoonId ? "ItemDevices" : "ItemArms";
-                const item = runtime.seedItem(name, group);
-                const data = runtime.inventoryEvent("beforeStruggleCalc", item, {
-                    restraint: item,
-                    struggleGroup: group,
-                    struggleType: method,
-                    cost: kd55EscapeCosts[method],
-                    query: condition === "query",
-                    canCut: condition !== "no-tool",
-                    failSuffix: "Native",
-                });
-                const counts =
-                    condition === "effective" ||
-                    (condition === "no-tool" && method !== "Cut") ||
-                    (condition === "group-blocked" && name === cocoonId);
-                const suffix = name === cocoonId ? "SpiderlingsCocoon" : "SpiderlingsWebbing";
-                assert.equal(data.failSuffix, counts ? suffix : "Native", `${name} ${method} ${condition}`);
-                assert.equal(item.data.SpiderlingsEscapeActions, undefined, "message selection cannot spend an action");
-                if (counts)
-                    for (const aroused of ["", "Aroused"]) {
-                        const text = runtime.text["KinkyDungeonStruggle" + method + "Fail" + suffix + aroused];
-                        assert.equal((text.match(/TargetRestraint/g) || []).length, 1);
-                    }
+test("native progress prose remains localized for all methods", () => {
+    const r = loadRuntime();
+    for (const method of ["Cut", "Remove", "Struggle"])
+        for (const suffix of ["SpiderlingsWebbing", "SpiderlingsCocoon"]) {
+            for (const aroused of ["", "Aroused"]) {
+                const text = r.text["KinkyDungeonStruggle" + method + "Fail" + suffix + aroused];
+                assert.equal((text.match(/TargetRestraint/g) || []).length, 1);
             }
         }
-    }
 });
 
-test("native assistance text redirects only inside the armed real Webbing attempt and clears on exceptions", () => {
-    let runtime;
-    let shouldThrow = false;
-    runtime = loadRuntime({
-        globals: {
-            KinkyDungeonStruggle(group, method, index, query) {
-                const item = runtime.equipment.get(group);
-                runtime.inventoryEvent("beforeStruggleCalc", item, {
-                    restraint: item,
-                    struggleGroup: group,
-                    struggleType: method,
-                    query,
-                    cost: -3,
-                });
-                if (shouldThrow) throw new Error("native error");
-                return ["2", "3"].map((suffix) =>
-                    runtime.context.TextGet("KinkyDungeonStruggle" + method + "Fail" + suffix),
-                );
-            },
-        },
-    });
-    const item = runtime.seedItem(id(2, "Arm"), "ItemArms");
-    const nativeKey = "KinkyDungeonStruggleStruggleFail2";
-    assert.equal(runtime.context.TextGet(nativeKey), nativeKey);
-    const result = runtime.context.KinkyDungeonStruggle("ItemArms", "Struggle");
-    const processText = runtime.text.KinkyDungeonStruggleStruggleFailSpiderlingsWebbing;
-    assert.ok(processText);
-    assert.deepEqual(result, [processText, processText]);
-    assert.equal(runtime.context.TextGet(nativeKey), nativeKey, "no lookup override leaks past the call");
-    assert.equal(runtime.context.KinkyDungeonStruggle("ItemArms", "Struggle", 0, true)[0], nativeKey);
-    runtime.setHasStamina(false);
-    assert.equal(runtime.context.KinkyDungeonStruggle("ItemArms", "Struggle")[0], nativeKey);
-    runtime.setHasStamina(true);
-    shouldThrow = true;
-    assert.throws(() => runtime.context.KinkyDungeonStruggle("ItemArms", "Struggle"), /native error/);
-    assert.equal(runtime.context.TextGet(nativeKey), nativeKey);
-    shouldThrow = false;
-    item.name = "ThirdPartyArm";
-    assert.equal(runtime.context.KinkyDungeonStruggle("ItemArms", "Struggle")[0], nativeKey);
+test("native struggle and text functions retain their own call context", () => {
+    const native = () => "native",
+        text = (key) => key;
+    const r = loadRuntime({ globals: { KinkyDungeonStruggle: native, TextGet: text } });
+    assert.equal(r.context.KinkyDungeonStruggle, native);
+    assert.equal(r.context.TextGet, text);
 });
 
 test("all 24 Webbing restraints select native success prose for every removal method", () => {
@@ -829,9 +766,9 @@ test("Cocoon uses the delivered standing art and retains its escape mechanics", 
     assert.notEqual(restraint.immobile, true);
     assert.equal(restraint.hobble, 3);
     assert.deepEqual(plain(restraint.addTag), ["FeetLinked", "BlockKneel", "BlockHogtie"]);
-    assert.deepEqual(plain(restraint.escapeChance), { Cut: 0.025, Struggle: 0.02, Remove: 0.02 });
-    assert.equal("struggleMinSpeed" in restraint, false);
-    assert.deepEqual(plain(restraint.alwaysEscapable), ["Cut", "Struggle", "Remove"]);
+    assert.deepEqual(plain(restraint.escapeChance), { Cut: 0.5, Remove: 0.04, Struggle: 0.03 });
+    assert.deepEqual(plain(restraint.struggleMinSpeed), { Cut: 0.01, Remove: 0.01, Struggle: 0.01 });
+    assert.deepEqual(plain(restraint.alwaysEscapable), ["Remove", "Struggle"]);
     assert.equal(restraint.weight, 0);
     assert.deepEqual(plain(restraint.enemyTags), {});
     for (const field of ["removePrison", "forceRemovePrison", "removeOnDefeat", "removeOnCapture"]) {
@@ -1262,136 +1199,71 @@ test("manual Cocoon equipment bypasses progression but clears slow only after na
     assert.equal(rejected.buffs.SpiderlingsWebSpraySlow.power, 1);
 });
 
-test("all three effective escape baselines finish, with final-method inventory fate and fresh re-equipment", () => {
-    for (const [method, target] of [
-        ["Cut", 40],
-        ["Struggle", 50],
-        ["Remove", 50],
-    ]) {
-        const runtime = loadRuntime();
-        const restraint = runtime.context.KinkyDungeonGetRestraintByName(cocoonId);
-        assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
-        const worn = runtime.equipment.get("ItemDevices");
-        assert.ok(
-            worn.restraint.events.some(
-                (event) => event.trigger === "beforeStruggleCalc" && event.type === cocoonEscapeEvent,
-            ),
-        );
-        for (let action = 1; action <= target; action += 1) {
-            assert.equal(runtime.nativeEscapeCocoon(method), action === target, `${method} action ${action}`);
-        }
-        assert.equal(runtime.equipment.has("ItemDevices"), false);
-        assert.equal(runtime.loose.has(cocoonId), method !== "Cut");
-        if (method !== "Cut") {
-            runtime.setAddResult(1);
-            assert.equal(runtime.context.KinkyDungeonAddRestraint(restraint, 0, true, ""), 1);
-            const fresh = runtime.equipment.get("ItemDevices");
-            assert.deepEqual(fresh.data, {});
-            assert.equal(fresh.cutProgress, undefined);
-            assert.equal(fresh.struggleProgress, undefined);
-        }
-        assert.equal("removePrison" in restraint, false);
+test("native Cocoon completion keeps final-method inventory fate", () => {
+    for (const method of ["Cut", "Remove", "Struggle"]) {
+        const r = loadRuntime();
+        r.manualEquipCocoon();
+        const worn = r.equipment.get("ItemDevices");
+        worn.cutProgress = 1;
+        assert.equal(r.nativeEscapeCocoon(method), true);
+        assert.equal(r.equipment.has("ItemDevices"), false);
+        assert.equal(r.loose.has(cocoonId), method !== "Cut");
+        assert.equal("removePrison" in worn.restraint, false);
     }
 });
 
-test("queries and stamina-blocked attempts do not advance the native Cocoon escape gate", () => {
-    const runtime = loadRuntime({ hasStamina: false });
-    assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
-    const worn = runtime.equipment.get("ItemDevices");
-    runtime.inventoryEvent("beforeStruggleCalc", worn, {
+test("Cocoon queries and stamina rejection never write escape progress", () => {
+    const r = loadRuntime({ hasStamina: false });
+    r.manualEquipCocoon();
+    const worn = r.equipment.get("ItemDevices");
+    const before = JSON.stringify(worn);
+    const data = r.inventoryEvent("beforeStruggleCalc", worn, {
         restraint: worn,
         query: true,
         struggleType: "Cut",
-        cost: 1,
-        minSpeed: 0.4,
-        escapeChance: 0.025,
-        escapePenalty: 0,
-        limitChance: 0,
+        cost: -0.2,
+        escapeChance: 0.06,
+        escapeSpeed: 0.2,
     });
-    assert.equal(worn.cutProgress, undefined);
-    assert.equal(runtime.nativeEscapeCocoon("Cut"), false);
-    assert.equal(worn.cutProgress, undefined);
-    runtime.setHasStamina(true);
-    assert.equal(runtime.nativeEscapeCocoon("Cut"), false);
-    assert.ok(Math.abs(worn.cutProgress - 0.025) < 1e-9);
+    assert.equal(data.cost, -0.4);
+    assert.equal(data.escapeSpeed, 0.2);
+    assert.equal(JSON.stringify(worn), before);
+    assert.equal(r.nativeEscapeCocoon("Cut"), false);
+    assert.equal(JSON.stringify(worn), before);
 });
 
-test("Cocoon counts only the post-cost Fail event and preserves KD 5.5 negative stamina costs", () => {
-    const runtime = loadRuntime({ hasStamina: () => true });
-    assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
-    const worn = runtime.equipment.get("ItemDevices");
-    const before = runtime.inventoryEvent("beforeStruggleCalc", worn, {
-        restraint: worn,
-        query: false,
-        struggleType: "Cut",
-        struggleGroup: "ItemDevices",
-        cost: -0.2,
-        minSpeed: 0.4,
-        escapeSpeed: 1,
-        escapeChance: 0.025,
-        escapePenalty: 0,
-        limitChance: 0,
-    });
-    assert.deepEqual(runtime.staminaChecks.at(-1), [0.2, true]);
-    assert.equal(worn.cutProgress, undefined, "beforeStruggleCalc must not grant a free action");
-    assert.equal(before.escapeSpeed, 0, "native delayed progress must be suppressed");
-    assert.ok(before.minSpeed > 0, "the native attempt must remain positive so KD consumes its turn and cost");
-    runtime.inventoryEvent("struggle", worn, {
-        restraint: worn,
-        struggleType: "Cut",
-        result: "Fail",
-    });
-    assert.ok(Math.abs(worn.cutProgress - 0.025) < 1e-9);
+test("Cocoon adjusts native stamina costs without suppressing delayed progress", () => {
+    const r = loadRuntime();
+    r.manualEquipCocoon();
+    const worn = r.equipment.get("ItemDevices");
+    for (const [method, mult] of [
+        ["Cut", 2],
+        ["Remove", 3],
+        ["Struggle", 1.5],
+    ]) {
+        const data = r.inventoryEvent("beforeStruggleCalc", worn, {
+            restraint: worn,
+            struggleType: method,
+            cost: kd55EscapeCosts[method],
+            escapeSpeed: 0.2,
+            escapeChance: 0.1,
+        });
+        assert.equal(data.cost, kd55EscapeCosts[method] * mult);
+        assert.equal(data.escapeSpeed, 0.2);
+        assert.equal(data.escapeChance, 0.1);
+        assert.equal(worn.cutProgress, undefined);
+        assert.equal(worn.struggleProgress, undefined);
+    }
 });
 
-test("Cocoon ignores post-Fail events for unarmed and group-blocked attempts", () => {
-    const unarmed = loadRuntime();
-    assert.equal(unarmed.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
-    const unarmedItem = unarmed.equipment.get("ItemDevices");
-    unarmed.inventoryEvent("beforeStruggleCalc", unarmedItem, {
-        restraint: unarmedItem,
-        query: false,
-        struggleType: "Cut",
-        struggleGroup: "ItemDevices",
-        canCut: false,
-        cost: -0.2,
-        minSpeed: 0.4,
-        escapeSpeed: 1,
-        escapeChance: 0.025,
-        escapePenalty: 0,
-        limitChance: 0,
-    });
-    unarmed.inventoryEvent("struggle", unarmedItem, {
-        restraint: unarmedItem,
-        struggleType: "Cut",
-        result: "Fail",
-    });
-    assert.equal(unarmedItem.cutProgress, undefined);
-    assert.equal(unarmedItem.struggleProgress, undefined);
-
-    const blocked = loadRuntime({ groupBlocked: () => true });
-    assert.equal(blocked.context.Spiderlings.Webbing.equipForDebug(cocoonId).applied, true);
-    const blockedItem = blocked.equipment.get("ItemDevices");
-    blockedItem.restraint.alwaysStruggleable = false;
-    blocked.inventoryEvent("beforeStruggleCalc", blockedItem, {
-        restraint: blockedItem,
-        query: false,
-        struggleType: "Struggle",
-        struggleGroup: "ItemDevices",
-        cost: -3,
-        minSpeed: 0.4,
-        escapeSpeed: 1,
-        escapeChance: 0.02,
-        escapePenalty: 0,
-        limitChance: 0,
-    });
-    blocked.inventoryEvent("struggle", blockedItem, {
-        restraint: blockedItem,
-        struggleType: "Struggle",
-        result: "Fail",
-    });
-    assert.equal(blockedItem.cutProgress, undefined);
-    assert.equal(blockedItem.struggleProgress, undefined);
+test("rejected native attempts cannot arm Cocoon reinforcement", () => {
+    const r = loadRuntime();
+    r.manualEquipCocoon();
+    const worn = r.equipment.get("ItemDevices");
+    for (const result of ["Impossible", "Blocked", "NeedEdge", "Invalid"])
+        r.inventoryEvent("struggle", worn, { restraint: worn, struggleType: "Cut", result });
+    assert.equal(worn.data[outerStateKey], undefined);
+    assert.equal(worn.cutProgress, undefined);
 });
 
 test("defeat, capture, prison, and Cocoon removal preserve the real inner equipment", () => {

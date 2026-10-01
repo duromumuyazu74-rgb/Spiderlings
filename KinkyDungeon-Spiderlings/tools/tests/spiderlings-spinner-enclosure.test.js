@@ -491,3 +491,26 @@ test("partial, sealed, and breached states survive JSON roundtrip", () => {
         assert.equal(JSON.stringify(restored), JSON.stringify(state));
     }
 });
+
+test("a rejected first enclosure returns its native reason without cloning absent state", () => {
+    const result = rules().addEnclosure(undefined, {
+        compositeId: "blocked-first",
+        owners: [1],
+        layers: [
+            {
+                id: "inner",
+                vertices: [
+                    { x: 2, y: 2 },
+                    { x: 6, y: 2 },
+                    { x: 6, y: 6 },
+                    { x: 2, y: 6 },
+                ],
+                gate: { x: 2, y: 4 },
+            },
+        ],
+        map: { ...floorMap(), occupied: ["2,3"] },
+    });
+    assert.equal(result.added, false);
+    assert.equal(result.reason, "occupied");
+    assert.equal(result.state, undefined);
+});
