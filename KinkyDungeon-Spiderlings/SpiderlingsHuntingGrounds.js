@@ -420,15 +420,14 @@
     const texts = {
         KDMapMod_SpiderlingsHuntingGrounds: "Spiderling Hunting Grounds",
         KinkyDungeonMapModSpiderlingsHuntingGrounds:
-            "Soft webs spread across the floor. Spiderlings move between their nests, and rustling follows you through the passages.",
+            "Webs spread across the floor. Spiderlings roam the passages between their nests.",
         KDEscapeMethod_SpiderlingsHuntingGrounds: "Destroy the marked nests",
-        KDEscapeMethodDesc_SpiderlingsHuntingGrounds:
-            "Soft threads fringe the nests first built here. Destroy these marked nests to continue downstairs.",
+        KDEscapeMethodDesc_SpiderlingsHuntingGrounds: "Destroy the marked nests to continue downstairs.",
         SpiderlingsHuntingGroundsProgress: "Marked nests destroyed: CURRENT/TARGET",
         SpiderlingsHuntingGroundsBlocked:
-            "Some marked nests remain. You cannot take the stairs down yet. (CURRENT/TARGET)",
+            "Marked nests still remain. Destroy them before going downstairs. (CURRENT/TARGET)",
         SpiderlingsHuntingGroundsComplete:
-            "All marked nests are destroyed. Loose threads settle, and you can continue down the stairs. (TARGET/TARGET)",
+            "The last marked nest is destroyed. You can now go downstairs. (TARGET/TARGET)",
     };
 
     function activeState(map = typeof KDMapData !== "undefined" ? KDMapData : null) {

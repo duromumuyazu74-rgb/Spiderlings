@@ -2,6 +2,8 @@
 
 Tracks the accepted follow-up in [Issue #113](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/113). Test.78 and its evidence remain preserved.
 
+The current package is Test.80. It retains these gameplay fixes and replaces the Test.79 AI-generated silk-ball candidate with the original spider-icon placeholder. The candidate is withdrawn and no longer used; thin silk trails and the spread-web impact remain. Replacement runtime artwork will be supplied by the user and artist. AI-generated assets will not be adopted. Test.79's measurements below remain historical evidence; Test.80 verification is recorded separately in [COMPATIBILITY.md](COMPATIBILITY.md).
+
 ## Spinner movement and fields
 
 The corner reproduction contains three Spinners: two continue paid construction while the lure has to route around a wall. Teammates' work previously reset the lure's six-turn wait for 65 observed turns. Progress now means prey approaching or the lure itself advancing on a legal route. Native movement credit, sensing, four-turn unseen report expiry and pressure fallback remain authoritative.
@@ -30,7 +32,7 @@ Native map generation also updates enemies at zero time. During that synchronous
 
 MageBolt inputs base 4 glue HP damage and explicit base 6 Slime binding to hostile NPCs. Six replaces implicit four; it does not add another six. Native resistance, shield and already-disabled multipliers still apply. The same hit records only actual added silk, once. Player power remains 0.5 glue and one eligible Webbing attempt.
 
-The original flying spider symbol is replaced by a transparent ivory/lilac silk ball generated with builtin imagegen on 2026-10-01. It has two short thin thread trails and a spread-web impact. Native trajectory, collision and lifetime are unchanged.
+The Test.79 candidate replaced the flying spider symbol with an AI-generated ivory/lilac silk ball. Test.80 withdraws that candidate and restores the original spider icon as a placeholder. The two short thin thread trails and spread-web impact remain. Native trajectory, collision and lifetime are unchanged.
 
 The expanded native NPC combat also exposed a missing derived Witch rope-launcher impact image. A precise bullet-board alias uses the same-family native Rope impact art available in both versions; gameplay names, hit effects and other images remain intact.
 

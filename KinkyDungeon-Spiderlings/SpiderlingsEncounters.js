@@ -717,27 +717,30 @@
     api.registerModConfigText = function () {
         if (typeof addTextKey != "function") return;
         addTextKey("KDModButtonSpiderlings", "Spiderlings");
-        addTextKey("KDModButtonspiderlingsPinkWebbing", "Pink webbing (off: original)");
-        addTextKey("KDModButtonspiderlingsEnableHood", "Spiderlings silk hood (off: never equip)");
+        addTextKey("KDModButtonspiderlingsPinkWebbing", "Pink silk, off for original color");
+        addTextKey("KDModButtonspiderlingsEnableHood", "Silk hood, off to prevent equipping");
         addTextKey("KinkyDungeonStatSpiderlingsSquad", "Spiderling Squad");
         addTextKey(
             "KinkyDungeonStatDescSpiderlingsSquad",
-            "Each new eligible ordinary map adds a hostile squad: two Spinners, one Tunneler, one Web Caster, one Jumper, and one Mage. Requires space and the spider population allowance.",
+            "Adds a hostile squad to each new ordinary map where spawning is allowed. The squad has two Spinners, one Tunneler, one Web Caster, one Jumper, and one Mage. Requires enough space and room within the spider limit.",
         );
-        addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Autonomous Spinner encounters");
-        addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiders per map (0: unlimited)");
-        addTextKey("KDModButtonspiderlingsInfestationWeight", "Infestation weight (0: off)");
-        addTextKey("KDModButtonspiderlingsHuntingGroundsWeight", "Hunting Grounds weight - Maidforce only (0: off)");
-        addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement weights (0: disabled)");
+        addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Spinner capture fields");
+        addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiderlings per map, 0 for no limit");
+        addTextKey("KDModButtonspiderlingsInfestationWeight", "Infestation weight, 0 to disable");
+        addTextKey(
+            "KDModButtonspiderlingsHuntingGroundsWeight",
+            "Hunting Grounds weight on Maidforce floors, 0 to disable",
+        );
+        addTextKey("KDModButtonspiderlingsNestSummonWeights", "Nest reinforcement weights, 0 to disable");
         addTextKey("KDModButtonspiderlingsNestSpinnerWeight", "Spinner weight");
         addTextKey("KDModButtonspiderlingsNestJumperWeight", "Jumper weight");
         addTextKey("KDModButtonspiderlingsNestWebCasterWeight", "Web Caster weight");
         addTextKey("KDModButtonspiderlingsNestTunnelerWeight", "Tunneler weight");
         addTextKey("KDModButtonspiderlingsNestMageWeight", "Mage weight");
-        addTextKey("KDModButtonspiderlingsNestReinforcementControl", "Living reinforcements per nest");
-        addTextKey("KDModButtonspiderlingsNestReinforcementCap", "Living reinforcements per nest");
-        addTextKey("KDModButtonspiderlingsNestTunnelerCap", "Lifetime Tunnelers per nest (0: none)");
-        addTextKey("KDModButtonspiderlingsNestReinforcementInterval", "Nest interval (turns)");
+        addTextKey("KDModButtonspiderlingsNestReinforcementControl", "Maximum living reinforcements per nest");
+        addTextKey("KDModButtonspiderlingsNestReinforcementCap", "Maximum living reinforcements per nest");
+        addTextKey("KDModButtonspiderlingsNestTunnelerCap", "Total Tunnelers per nest, 0 for none");
+        addTextKey("KDModButtonspiderlingsNestReinforcementInterval", "Reinforcement check interval in turns");
     };
 
     function currentRoomRules() {

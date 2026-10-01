@@ -468,7 +468,7 @@ test("squad is an optional native Enemies perk granting two displayed points ins
         { type: "boolean", default: true },
     );
     assert.equal(context.KDModSettings.Spiderlings.spiderlingsSpinnerEncounters, true);
-    assert.equal(texts.KDModButtonspiderlingsSpinnerEncounters, "Autonomous Spinner encounters");
+    assert.equal(texts.KDModButtonspiderlingsSpinnerEncounters, "Spinner capture fields");
     assert.equal(EncounterRules.planOrdinaryFallback, undefined);
     assert.equal(EncounterRules.ORDINARY_FALLBACK_MAP_FLAG, undefined);
     assert.equal(context.KDEventMapGeneric.postMapgen?.SpiderlingsOrdinaryFallback, undefined);

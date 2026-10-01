@@ -399,22 +399,22 @@
         [`KinkyDungeonSpellCast${SNARE}`]: "You send a strand of sticky silk toward your target.",
         [`KinkyDungeonInventoryItem${TOME}`]: "Tome of Silken Binding",
         [`KinkyDungeonInventoryItem${TOME}Desc`]:
-            "Fine silk runs through the spine and winds around the open pages. Read the woven words, and scattered threads draw inward.",
+            "Silk threads run through the spine and across the pages. As you read, they draw the surrounding silk inward.",
         [`KinkyDungeonInventoryItem${TOME}Desc2`]:
-            "Main or off hand: +20% binding strength. Cocoon Convergence: 4 mana, range 6, two-turn charge, 8-turn cooldown. Silk draws inward across 21 tiles, binding enemies more tightly near the center. Walls block the effect. Silk remains visible and forms a full cocoon when this weapon's silk alone leaves an enemy helpless. The cocoon opens as they free themselves.",
+            "Grants +20% binding strength in either hand. Cocoon Convergence costs 4 mana, reaches 6 tiles, charges for 2 turns, and has an 8-turn cooldown. It draws silk inward across 21 tiles and binds more strongly near the center. Walls block it. When this weapon's silk alone leaves an enemy helpless, it forms a cocoon. The weave opens as they struggle free.",
         [`KinkyDungeonInventoryItem${STAFF}`]: "Silkweaver's Staff",
         [`KinkyDungeonInventoryItem${STAFF}Desc`]:
-            "A faint glow rests in the web at the staff's tip. With a sweep, slender strands reach out and wind around their target.",
+            "A web glows at the staff's tip. A sweep sends its strands out to wrap around a target.",
         [`KinkyDungeonInventoryItem${STAFF}Desc2`]:
-            "Silken Snare: 2 mana, range 6, 3-turn cooldown. A strand of silk binds the first hostile target it hits, then slows them for 3 turns. Walls stop the strand. Silk follows the target, forms a full cocoon when the weapon silk alone leaves them helpless, and fades as they free themselves.",
+            "Silken Snare costs 2 mana, reaches 6 tiles, and has a 3-turn cooldown. Its strand binds the first hostile target hit and slows them for up to 3 turns. Walls stop it. When this weapon's silk alone leaves the enemy helpless, it forms a cocoon. The weave loosens as they struggle free.",
         [`ItemPickup${TOME}`]: "You pick up a Tome of Silken Binding.",
         [`ItemPickup${STAFF}`]: "You pick up a Silkweaver's Staff.",
         [`KinkyDungeonSpecial${TOME}`]: "Cocoon Convergence",
         [`KinkyDungeonSpecial${STAFF}`]: "Silken Snare",
         [`KinkyDungeonSpell${CONVERGENCE}`]: "Cocoon Convergence",
         [`KinkyDungeonSpell${SNARE}`]: "Silken Snare",
-        [`KDPrereqFail${CONVERGENCE}`]: "Cocoon Convergence needs 4 mana and must finish its 8-turn cooldown.",
-        [`KDPrereqFail${SNARE}`]: "Silken Snare needs 2 mana and must finish its 3-turn cooldown.",
+        [`KDPrereqFail${CONVERGENCE}`]: "Cocoon Convergence needs 4 mana. Its cooldown must also be over.",
+        [`KDPrereqFail${SNARE}`]: "Silken Snare needs 2 mana. Its cooldown must also be over.",
     };
     for (const [key, value] of Object.entries(text)) addTextKey(key, value);
     api.Weapons = Object.freeze({

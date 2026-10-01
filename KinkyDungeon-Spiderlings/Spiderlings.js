@@ -623,51 +623,33 @@ addTextKey("SpiderlingsNPCWrapping", "Wrapping");
 
 //Spinner
 addTextKey("NameSpinner", "Spiderling Spinner");
-addTextKey(
-    "AttackSpinner",
-    "The Spiderling Spinner takes tiny steps across your body, its fine legs brushing you with a faint tickle.",
-);
+addTextKey("AttackSpinner", "The Spiderling Spinner steps across your body. Its slender legs tickle your skin.");
 addTextKey(
     "AttackSpinnerBind",
-    "The Spiderling Spinner winds a loop of silk around your legs, then stays nearby to keep weaving. (+RestraintAdded)",
+    "The Spiderling Spinner draws silk around you and binds it in place. (+RestraintAdded)",
 );
-addTextKey("KillSpinner", "The Spiderling Spinner folds its fine legs, easing back and out of sight.");
+addTextKey("KillSpinner", "The Spiderling Spinner folds its legs and slips out of sight.");
 
 //Jumper
 addTextKey("NameJumper", "Spiderling Jumper");
-addTextKey(
-    "AttackJumper",
-    "The Spiderling Jumper springs lightly toward you, its fine legs brushing your body with a faint tickle.",
-);
-addTextKey(
-    "AttackJumperBind",
-    "The Spiderling Jumper lands on you, drawing its silk into a binding with the motion before hopping away. (+RestraintAdded)",
-);
-addTextKey("KillJumper", "The Spiderling Jumper draws in its fine legs, stepping back and soon out of sight.");
+addTextKey("AttackJumper", "The Spiderling Jumper springs onto you, its legs brushing your skin.");
+addTextKey("AttackJumperBind", "The Spiderling Jumper lands on you and loops silk around your body. (+RestraintAdded)");
+addTextKey("KillJumper", "The Spiderling Jumper folds its legs and hops out of sight.");
 
 //Tunneler
 addTextKey("NameTunneler", "Spiderling Tunneler");
-addTextKey(
-    "KillTunneler",
-    "The Spiderling Tunneler slips away along the ground, leaving a few fine threads to settle behind it.",
-);
+addTextKey("KillTunneler", "The Spiderling Tunneler slips away, trailing a few strands of silk.");
 
 //NestEntrance - Need to fix summon text
 addTextKey("NameNestEntrance", "Nest Entrance");
-addTextKey(
-    "KillNestEntrance",
-    "The nest entrance collapses, its silken fringe settling as the spiderlings within crawl out.",
-);
+addTextKey("KillNestEntrance", "The nest entrance collapses beneath a loose fringe of silk.");
 
 //WebCaster
 addTextKey("NameWebCaster", "Spiderling Web Caster");
-addTextKey(
-    "KillWebCaster",
-    "The Spiderling Web Caster draws its fine legs close and eases away, leaving a slender thread behind.",
-);
+addTextKey("KillWebCaster", "The Spiderling Web Caster draws its legs close and retreats along a thread of silk.");
 
 addTextKey("NameMageSpiderlings", "Spiderling Mage");
-addTextKey("NameSpiderlingsSpinnerTrap", "Capture field boundary");
+addTextKey("NameSpiderlingsSpinnerTrap", "Web boundary");
 addTextKey("KillMageSpiderlings", "The Spiderling Mage draws back its legs and retreats into the shadows.");
 
 //Enemy Spells--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1034,111 +1016,90 @@ SPIDERLINGS.addSpells([
 ]);
 
 //Enemy Spell Text--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Mage Silk Bolt");
+addTextKey("KinkyDungeonSpellSpiderlingsMageBolt", "Silk Ball");
 addTextKey("KinkyDungeonSpellSpiderlingsMageRune", "Silken Rune");
 addTextKey("KinkyDungeonSpellSpiderlingsMageHex", "Shield-Eating Sigil");
 addTextKey("KinkyDungeonSpellSpiderlingsMageCollapse", "Thousand-Silk Collapse");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageHex",
-    "The Spiderling Mage draws silk inward across marked ground. Each actual turn inside the active sigil adds one mark (up to three) and refreshes it; overlapping sigils grant no extra layer that turn.",
+    "The Spiderling Mage draws silk inward across the glowing sigil.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageCollapse",
-    "Silk gathers from the marked outer tiles toward the center before bursting.",
+    "Silk gathers toward the center of the marked ground, ready to burst.",
 );
 addTextKey("KinkyDungeonSpellCastSpiderlingsMageRune", "The Spiderling Mage marks a nearby tile with a glowing rune.");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsMageBolt",
-    "The Spiderling Mage gathers a bright knot of silk and casts it toward you.",
+    "The Spiderling Mage gathers a glowing ball of silk and sends it forward.",
 );
 addTextKey("KinkyDungeonSpellSummonSpinner", "Summon Spinner");
-addTextKey(
-    "KinkyDungeonSummonSummonSpinner",
-    "A Spiderling Spinner follows a strand of silk into view, its fine legs touching lightly down.",
-);
+addTextKey("KinkyDungeonSummonSummonSpinner", "A Spiderling Spinner steps into view along a strand of silk.");
 addTextKey(
     "KinkyDungeonSpellCastSummonSpinner",
-    "A soft patter stirs the slender threads; a Spiderling Spinner is about to emerge.",
+    "Tiny footsteps rustle along the silk. A Spiderling Spinner is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonJumper", "Summon Jumper");
-addTextKey(
-    "KinkyDungeonSummonSummonJumper",
-    "A Spiderling Jumper hops into view, its fine legs unfolding as it lands.",
-);
-addTextKey(
-    "KinkyDungeonSpellCastSummonJumper",
-    "A delicate rustling draws closer; a Spiderling Jumper is about to emerge.",
-);
+addTextKey("KinkyDungeonSummonSummonJumper", "A Spiderling Jumper hops into view and unfolds its legs.");
+addTextKey("KinkyDungeonSpellCastSummonJumper", "Rustling draws closer. A Spiderling Jumper is about to emerge.");
 
 addTextKey("KinkyDungeonSpellSummonWebCaster", "Summon Web Caster");
 addTextKey(
     "KinkyDungeonSummonSummonWebCaster",
-    "A Spiderling Web Caster crawls into view, laying a trailing thread along the ground.",
+    "A Spiderling Web Caster crawls into view, trailing silk along the ground.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSummonWebCaster",
-    "A strand of silk slowly draws into view; a Spiderling Web Caster is about to emerge.",
+    "A strand of silk slides into view. A Spiderling Web Caster is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonTunneler", "Summon Tunneler");
-addTextKey(
-    "KinkyDungeonSummonSummonTunneler",
-    "A Spiderling Tunneler emerges, taking tiny steps along the ground on its fine legs.",
-);
+addTextKey("KinkyDungeonSummonSummonTunneler", "A Spiderling Tunneler emerges and scurries along the ground.");
 addTextKey(
     "KinkyDungeonSpellCastSummonTunneler",
-    "A soft digging sound comes from the ground; a Spiderling Tunneler is about to emerge.",
+    "Scratching comes from beneath the ground. A Spiderling Tunneler is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonNestEntrance", "Dig a Spiderling Nest");
 addTextKey(
     "KinkyDungeonSummonSummonNestEntrance",
-    "An opening appears in the ground, fine silk lining its edges as a new nest entrance takes shape.",
+    "A new nest entrance opens in the ground, its edges lined with silk.",
 );
 addTextKey(
     "KinkyDungeonSpellCastSummonNestEntrance",
-    "The Spiderling Tunneler settles close to the ground to dig, laying silk along the cracks strand by strand.",
+    "The Spiderling Tunneler digs into the ground and lines the cracks with silk.",
 );
 
 addTextKey("KinkyDungeonSpellSpiderlingsJumperDash", "Jumper Dash");
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsJumperDash",
-    "The Spiderling Jumper watches the ground beneath you, lowering its body and folding its fine legs in preparation to leap.",
+    "The Spiderling Jumper crouches, its legs tucked beneath it, ready to leap at you.",
 );
 
 addTextKey("KinkyDungeonSpellWebSpray", "Web Spray");
 addTextKey(
     "KinkyDungeonSpellCastWebSpray",
-    "The Spiderling Web Caster sprays a bundle of silk toward you, its fine threads unfurling in the air.",
+    "The Spiderling Web Caster sprays silk toward you. The strands spread in the air.",
 );
 addTextKey(
     "KinkyDungeonSpellWebSprayDamage",
-    "The spray lands on you, its soft, clinging threads winding around you. (DamageDealt)",
+    "The silk spray lands, and sticky strands cling to your body. (DamageDealt)",
 );
-addTextKey(
-    "KinkyDungeonSpellWebSprayBind",
-    "The sprayed silk settles against your body, its strands joining into a close-fitting web.",
-);
+addTextKey("KinkyDungeonSpellWebSprayBind", "The sprayed strands join into a web against your body.");
 
 addTextKey("KinkyDungeonSpellSpiderWeb", "Ground Webbing");
-addTextKey(
-    "KinkyDungeonSpellCastSpiderWeb",
-    "Pliant threads settle onto the ground, spreading into an open mesh all around.",
-);
+addTextKey("KinkyDungeonSpellCastSpiderWeb", "Silk spreads over the ground in an open mesh.");
 addTextKey(
     "KinkyDungeonSpellSpiderWebDamage",
-    "You step into the web, drawing up clinging threads that wind around your feet. (DamageDealt)",
+    "You step into the web. Sticky strands cling to your feet. (DamageDealt)",
 );
-addTextKey(
-    "KinkyDungeonSpellSpiderWebBind",
-    "You step into the web, and soft, clinging threads curl around your feet in little loops.",
-);
+addTextKey("KinkyDungeonSpellSpiderWebBind", "Threads from the web loop around your feet.");
 
 KinkyDungeonRefreshRestraintsCache();
 KinkyDungeonRefreshEnemiesCache();
 
 addTextKey(
     "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
-    "The Spiderling Jumper watches the ground beneath its opponent and lowers its body, preparing to leap.",
+    "The Spiderling Jumper crouches, ready to leap at its opponent.",
 );

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.79.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.80.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.79 hunting, Spinner closure and silk combat (2026-10-01)
+## Test.80 artist placeholder and player text (2026-10-01)
+
+Test.80 restores `Bullets/SpiderlingsMageBolt.png` byte-for-byte from Test.78's supplied spider icon. It is identical to T_Swizzle's `SpiderlingsMageRuneIcon.png`: 722 bytes, SHA-256 `2a9f317673114f087c9ae2c63c331ff070235c326fe4b94bcfd4be93a68389ca`. The Test.79 AI-generated silk-ball candidate is withdrawn. Thin thread trails, spread-web impacts and all Test.79 gameplay fixes remain. Replacement artwork will be supplied by the user and artist; AI-generated artwork is not adopted.
+
+Player text is reviewed for consistent names, concrete silk descriptions and accurate effects. The seven locale files each retain 247 keys, their order, placeholders and per-line separators. Chinese changes 105 entries and the other six locales change 373; English fallback review covers 39 modules and changes 154 registered keys. Failed attempts describe an action and silk response without guaranteeing escape progress. The non-text runtime syntax, conditions, numbers and gameplay IDs retain Test.79 behavior. See the [text review](spiderlings-test80-text-review.md).
+
+The final ZIP has 169 source-matching allowlisted entries and 24,822,000 bytes, SHA-256 `4cf0e33e8322cd03f8978d9816d250a5aa67b11abf50b84ddd0edfef0cb913d1`. Repository checks, all 12 policy tests, 516 public tests and the complete 830-test local watcher pass. The package checker has zero errors, warnings or notes. Independent final review found two text defects, corrected the six locales' escape-failure promises and the Spanish conjunction, then found no remaining actionable defect.
+
+That same final ZIP passes all 36 native scenarios and final error gates on KD 5.4.92 and freshly fetched official 5.5.3 commit `29219e97a362228e64d885fb569b1b35ec74b3ef`, checked at `2026-10-01T14:02:08.263Z`. Full acceptance is `2026-10-01T14-02-08-289Z-0.92.36-test.80`. Baseline reports retain native audio play/pause interruptions and two missing `Locks/Red.png` requests; GitHub reports have no page errors or missing resources. The controlled Chrome coverage limits below remain applicable.
+
+An additional native language probe loads the final ZIP through KDLoadMod, KDExecuteMods, FileReader and KDLoadTranslations in a fresh runtime for each locale. Both exact game targets pass seven locales times 247 keys: 14 groups and 3,458 source/TextGet comparisons with zero mismatches or page script errors. Actual Chinese inventory screenshots show the weapon name, text and parameters; final combat screenshots show the restored spider placeholder in flight. Evidence is this checkout's `.scratch/test80-text-review/native-locales/4cf0e33e8322/`. PL is supported by the native Mod CSV branch after selecting that language binding; this does not add a Polish option to the official game menu.
+
+The earlier `f1a4dd764e36` candidate and its full native run `2026-10-01T13-36-35-573Z-0.92.36-test.80` are preserved, but are superseded by the corrected final ZIP. Initial public/local failures matched obsolete text literals; their setting, recovery, objective and inward-gathering assertions now accept the final wording while retaining behavior checks. Three final-package upstream fetch attempts failed during the configured local proxy's TLS handshake. The successful full run uses the unchanged compatibility runner with `remote.origin.proxy=` supplied only to its child Git process; it freshly fetches upstream and does not edit global settings or bypass TLS validation. Failed fetch logs remain in this checkout's `.scratch/test80-final-compatibility*.log`.
+
+## Test.79 hunting, Spinner closure and silk combat (2026-10-01, historical)
 
 Test.79 fixes corner lure progress, gives paid gate work priority over pressure, and approaches recognized core prey before native melee. New special floors can provide one legal open 9-by-9 outer field to an existing crew, retaining paid smaller inner bodies. Hunting Grounds keeps that large-site identity and native population reservation across generation stages. A rejected optional prefab falls back to a legal three-nest objective instead of cancelling the hunt. Crews remain together; player recognition, four-turn historical report expiry and collar-based Recovery admission remain native.
 
