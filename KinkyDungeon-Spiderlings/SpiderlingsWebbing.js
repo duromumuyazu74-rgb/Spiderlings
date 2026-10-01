@@ -66,7 +66,7 @@
     let crossfireMark = null;
     let crossfireBonusTurn = null;
     const CROSS_FIRE_MESSAGE = "KinkyDungeonSpiderlingsWebbingInterwoven";
-    const CROSS_FIRE_FALLBACK = "Two strands interweave against your body, binding another part of it.";
+    const CROSS_FIRE_FALLBACK = "The crossing strands weave together and bind another part of your body.";
 
     function restraintById(id) {
         if (typeof KinkyDungeonGetRestraintByName == "function") return KinkyDungeonGetRestraintByName(id);
@@ -1014,8 +1014,8 @@
             },
             text: [
                 "Spiderling Silk Cocoon",
-                "Layers of silk follow your body into a thick, soft cocoon. Its rim rests beneath your mouth, leaving the upper part of your head outside.",
-                "The cocoon forms shallow folds as you move, its trailing threads brushing the floor with a soft rustle.",
+                "Layers of silk enclose your body in a soft cocoon. Its rim ends below your mouth.",
+                "The cocoon creases when you move. Loose threads trail across the floor.",
             ],
         });
         return true;
@@ -1264,7 +1264,7 @@
             addTextKey("KinkyDungeonStat" + id, "Silken Awakening");
             addTextKey(
                 "KinkyDungeonStatDesc" + id,
-                "You awaken in a soft cocoon, completely wrapped from head to toe in close-woven layers of spider silk. Each small movement tugs at the threads nestled against you.",
+                "You awaken inside layers of close-woven spider silk. The cocoon shifts with each small movement.",
             );
         }
         if (typeof KinkyDungeonStatsPresets == "undefined" || typeof KDPerkStart == "undefined") return;

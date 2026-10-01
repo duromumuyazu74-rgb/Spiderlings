@@ -1872,7 +1872,7 @@ test("debug stair bypass releases both exit gates without changing objective pro
     Object.assign(c.KinkyDungeonPlayerEntity, originalPosition);
     assert.equal(objective.check(), true);
     assert.equal(r.event("beforeStairCancel", { toTile: "s", AdvanceAmount: 1 }).cancelevent, undefined);
-    assert.match(objective.doortext(), /bypass active/);
+    assert.match(objective.doortext(), /bypass is on/);
     delete c.KDMapData.SpiderlingsDebugStairBypass;
     assert.equal(JSON.stringify(c.KDMapData), state);
     assert.equal(objective.check(), false);

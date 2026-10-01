@@ -124,8 +124,8 @@
         },
         text: [
             "Silken Leg Bag",
-            "Silk encloses your legs from above the ankles to the upper thighs. Your feet and arms remain exposed.",
-            "A dense weave holds your legs together. Cutting tools work best; unfinished wrapping offers less resistance.",
+            "Silk wraps your legs from above the ankles to your upper thighs.",
+            "The dense weave holds your legs together. Cutting works best. Unfinished silk is easier to loosen.",
         ],
     });
     if (typeof AddModel === "function")
@@ -197,12 +197,13 @@
         SpiderlingsSpinnerWeave: "Binding: {value}/100",
         SpiderlingsSpinnerEscape: "Escape: {value}/{goal}",
         SpiderlingsSpinnerStart:
-            "The connected traps hold your legs together. Fill your escape bar before the binding bar; joining Spinners increase both their speed and your escape target.",
-        SpiderlingsSpinnerWin: "You pull the threads apart. All participating spinners are held for six turns.",
-        SpiderlingsSpinnerInterrupt: "The weaving breaks off. You can act again; any deposited silk remains.",
-        SpiderlingsSpinnerTired: "You need 10 stamina to pull. You can still wait or use a potion.",
-        SpiderlingsSpinnerWrap: "The spinners begin weaving a leg bag. Five world turns; your arms remain free.",
-        SpiderlingsSpinnerDone: "The leg bag is complete. You can attack, use items, move slowly, or remove it.",
+            "Threads from the surrounding webs draw your legs together. You can pull against them before the silk closes around you.",
+        SpiderlingsSpinnerWin: "You pull free, leaving the weaving Spinners stunned.",
+        SpiderlingsSpinnerInterrupt:
+            "The weaving stops. You can act again, but silk already wrapped around you remains.",
+        SpiderlingsSpinnerTired: "Pulling needs 10 stamina. You can wait or use a potion.",
+        SpiderlingsSpinnerWrap: "Spinners begin weaving a silk bag around your legs.",
+        SpiderlingsSpinnerDone: "The silk leg bag is complete. Walking in it is slow.",
     };
     if (typeof addTextKey === "function") for (const [key, text] of Object.entries(messages)) addTextKey(key, text);
     function eligible(enemy) {

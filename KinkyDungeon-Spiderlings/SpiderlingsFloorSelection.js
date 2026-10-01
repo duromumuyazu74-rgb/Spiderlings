@@ -44,13 +44,13 @@
         const translated = typeof TextGet === "function" ? TextGet(DEBUG_BYPASS) : DEBUG_BYPASS;
         return translated !== DEBUG_BYPASS && !translated.startsWith("[NotFound]")
             ? translated
-            : "Debug stair bypass active; marked nests remain unchanged.";
+            : "Debug stair bypass is on. Marked nests are unchanged.";
     };
     const canBypassObjective = () =>
         typeof KDMapData !== "undefined" && !!settings[KDMapData.MapMod] && grants.has(KDMapData[DEBUG_BYPASS]);
     api.FloorSelection = { weight, canBypassObjective, bypassText };
     if (typeof addTextKey === "function")
-        addTextKey(DEBUG_BYPASS, "Debug stair bypass active; marked nests remain unchanged.");
+        addTextKey(DEBUG_BYPASS, "Debug stair bypass is on. Marked nests are unchanged.");
     function grantDebugPass(map, result) {
         if (
             result === true &&

@@ -735,25 +735,37 @@ test("persistent warnings restore from saved phase without numeric labels and ke
     assert.equal(r.draws.length, 0);
 });
 
-test("Mage inward-gathering cast descriptions agree in English fallback and all locale files", () => {
+test("Mage cast descriptions express inward gathering in English and all seven locales", () => {
     const root = path.join(__dirname, "../..");
     const runtime = fs.readFileSync(path.join(root, "Spiderlings.js"), "utf8");
-    const english = [
-        "The Spiderling Mage draws silk inward across marked ground. Each actual turn inside the active sigil adds one mark (up to three) and refreshes it; overlapping sigils grant no extra layer that turn.",
-        "Silk gathers from the marked outer tiles toward the center before bursting.",
-    ];
-    for (const value of english) assert.ok(runtime.includes(value));
-    for (const locale of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
-        const csv = fs.readFileSync(path.join(root, `Spiderlings${locale}.csv`), "utf8");
-        if (locale === "CN") {
-            assert.ok(csv.includes("由外向内"));
-            assert.ok(csv.includes("准备爆发"));
-        } else {
-            assert.ok(csv.includes(english[1]), `${locale}: inward Collapse text`);
-            const hexLine = csv
-                .split(/\r?\n/)
-                .find((line) => line.startsWith("KinkyDungeonSpellCastSpiderlingsMageHex,"));
-            assert.ok(hexLine && hexLine.length > 80, `${locale}: localized Hex per-turn text`);
+    const hexKey = "KinkyDungeonSpellCastSpiderlingsMageHex";
+    const collapseKey = "KinkyDungeonSpellCastSpiderlingsMageCollapse";
+    const english = (key) => runtime.match(new RegExp('addTextKey\\(\\s*"' + key + '",\\s*"([^"\\r\\n]+)"'))?.[1];
+    assert.match(english(hexKey) || "", /\binward\b/i, "English Hex draws inward");
+    assert.match(
+        english(collapseKey) || "",
+        /\btoward(?:s)? (?:the )?cent(?:er|re)\b/i,
+        "English Collapse gathers toward the center",
+    );
+    const directions = {
+        CN: /向(?:中央|中心)收拢/,
+        DE: /zur Mitte/,
+        ES: /hacia el centro/,
+        JP: /中心へ/,
+        KR: /중심으로/,
+        PL: /ku środkowi/,
+        RU: /к центру/,
+    };
+    for (const [locale, direction] of Object.entries(directions)) {
+        const rows = fs.readFileSync(path.join(root, `Spiderlings${locale}.csv`), "utf8").split(/\r?\n/);
+        for (const key of [hexKey, collapseKey]) {
+            const row = rows.find((line) => line.startsWith(key + ","));
+            assert.ok(row, `${locale}: ${key} exists`);
+            const value = row
+                .slice(key.length + 1)
+                .replace(/^"|"$/g, "")
+                .replace(/""/g, '"');
+            assert.match(value, direction, `${locale}: ${key} gathers inward`);
         }
     }
 });

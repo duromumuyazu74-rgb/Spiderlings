@@ -912,7 +912,7 @@ test("native carrier rejection consumes the recovery hit with clear feedback; fr
         assert.equal(r.hit().effect, false);
         assert.equal(r.api.strength(), canAdd ? 1 : 0);
         assert.equal(messages.length, 1);
-        assert.ok(messages[0].includes(canAdd ? "1/8" : "no pull is established"));
+        assert.ok(messages[0].includes(canAdd ? "1/8" : "cannot attach"));
         if (canAdd) {
             r.hit();
             assert.equal(messages.length, 1, "Repeated source refresh does not spam attachment messages");

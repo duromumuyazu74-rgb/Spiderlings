@@ -489,11 +489,11 @@
     if (typeof addTextKey === "function") {
         addTextKey(
             "SpiderlingsRecoveryAttached",
-            "Spinner attaches a recovery silk strand ({count}/8). Its next available action can pull you back.",
+            "A Spinner attaches a silk leash to your collar ({count}/8). It can pull you back when it next acts.",
         );
         addTextKey(
             "SpiderlingsRecoveryAttachBlocked",
-            "The recovery strand hits but cannot attach to compatible neck gear. A new silk leash needs a collar and normal equipment access; no pull is established.",
+            "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
         );
     }
 
@@ -501,8 +501,8 @@
         if (typeof KinkyDungeonSendTextMessage !== "function") return;
         const key = attached ? "SpiderlingsRecoveryAttached" : "SpiderlingsRecoveryAttachBlocked",
             fallback = attached
-                ? "Spinner attaches a recovery silk strand ({count}/8). Its next available action can pull you back."
-                : "The recovery strand hits but cannot attach to compatible neck gear. A new silk leash needs a collar and normal equipment access; no pull is established.",
+                ? "A Spinner attaches a silk leash to your collar ({count}/8). It can pull you back when it next acts."
+                : "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
             localized = typeof TextGet === "function" ? TextGet(key) : key;
         KinkyDungeonSendTextMessage(
             8,
@@ -901,8 +901,8 @@
             },
             text: [
                 "Spiderling Silk Leash",
-                "After leaving a breached field, a fresh eligible Spinner hit can attach this collar-mounted silk leash. An available Spinner action then pulls you back.",
-                "A compatible collar and native equipment access are needed for a new leash. Active sources show silk strands; no sources leaves the leash slack.",
+                "A silk strand links your collar to a Spinner. It can tug the leash to draw you back toward the web field.",
+                "The leash needs a compatible collar and no equipment blocking it. The strands hang slack when no Spinner holds them.",
             ],
         });
         if (typeof KinkyDungeonRefreshRestraintsCache === "function") KinkyDungeonRefreshRestraintsCache();
