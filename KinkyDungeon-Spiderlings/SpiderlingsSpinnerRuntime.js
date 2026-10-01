@@ -4,6 +4,35 @@
 (() => {
     const api = globalThis.Spiderlings,
         KEY = "SpiderlingsSpinnerRuntime";
+    let nativeObserver;
+
+    if (typeof globalThis.KinkyDungeonTrackSneak === "function")
+        globalThis.KinkyDungeonTrackSneak = api.Hooks.wrap(
+            "Spinner.playerContact",
+            globalThis.KinkyDungeonTrackSneak,
+            (native) =>
+                function (enemy, delta, target) {
+                    const result = native.apply(this, arguments);
+                    if (
+                        delta > 0 &&
+                        nativeObserver?.enemy === enemy &&
+                        nativeObserver.delta > 0 &&
+                        target === KinkyDungeonPlayerEntity &&
+                        result >= 0.5
+                    )
+                        api.SpinnerAI?.reportPlayerContact(
+                            enemy,
+                            target,
+                            {
+                                recognized: true,
+                                canSensePlayer: true,
+                                hostile: KDHostile(enemy, target),
+                            },
+                            nativeObserver.delta,
+                        );
+                    return result;
+                },
+        );
 
     if (typeof KinkyDungeonEnemyLoop === "function")
         KinkyDungeonEnemyLoop = api.Hooks.wrap(
@@ -13,6 +42,7 @@
                 function (enemy, target, delta) {
                     target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
                     target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target) || target;
+                    target = api.SpinnerAI?.recoveryTarget?.(enemy, target, delta) || target;
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
@@ -32,9 +62,12 @@
                     const legacyField = api.SpinnerField.handleEnemyTurn(enemy, target, delta);
                     if (legacyField) return legacyField;
                     enemy.SpiderlingsSpinnerRuntimeDelta = delta;
+                    const previousObserver = nativeObserver;
+                    nativeObserver = { enemy, delta };
                     try {
                         return native.apply(this, arguments);
                     } finally {
+                        nativeObserver = previousObserver;
                         delete enemy.SpiderlingsSpinnerRuntimeDelta;
                     }
                 },
@@ -47,6 +80,7 @@
             (native) =>
                 function (enemy, target, aiData) {
                     const nativeResult = native.apply(this, arguments);
+                    api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                     if (nativeResult) return nativeResult;
                     const handled = api.SpinnerAI?.handleBeforeMove(enemy, target, aiData) || false;
                     // KD clears movement credit for idle enemies after the loop.
@@ -56,6 +90,18 @@
                 },
         );
     }
+
+    if (typeof KDAIType !== "undefined" && KDAIType.wander?.beforemove)
+        KDAIType.wander.beforemove = api.Hooks.wrap(
+            "Spinner.wanderContact",
+            KDAIType.wander.beforemove,
+            (native) =>
+                function (enemy, target, aiData) {
+                    const result = native.apply(this, arguments);
+                    api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
+                    return result;
+                },
+        );
 
     for (const phase of ["attack", "spell"])
         if (typeof KDAIType !== "undefined" && KDAIType.hunt?.[phase])

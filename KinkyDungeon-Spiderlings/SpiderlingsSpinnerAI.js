@@ -1350,7 +1350,7 @@
             if (plan?.kind !== "passage" || !field || ["invalid", "abandoned"].includes(plan.status)) continue;
             const members = group.memberIds.map((id) => KDMapData.Entities.find((entity) => entity.id === id)),
                 reserved = new Set(Object.values(group.assignments).map((action) => cellKey(action.workCell))),
-                known = group.engagement?.lastKnown,
+                known = groupObservation(group),
                 supporting =
                     known &&
                     known.age < 4 &&
@@ -1525,7 +1525,7 @@
     function adjustPassageApproach(encounter, group, snapshot, distances) {
         const plan = encounter.ai.plans[group.planId],
             field = encounter.topology?.fields?.[plan?.fieldId],
-            known = group.engagement?.lastKnown,
+            known = groupObservation(group),
             turn = encounter.ai.coordinationTurn || 0;
         if (
             plan?.kind !== "passage" ||
@@ -2056,7 +2056,7 @@
             preferred = new Set(preferredIds.map(String));
         let candidates = group.memberIds
             .map((id) => KDMapData.Entities.find((entity) => String(entity.id) === String(id)))
-            .filter((entity) => eligibleSpinner(entity));
+            .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
         const clear = candidates.filter((entity) => !required.has(cellKey(entity)));
         if (clear.length) candidates = clear;
         return candidates.sort(
@@ -2071,7 +2071,118 @@
         delete group.engagement;
     }
 
+    function playerObservation(encounter = api.SpinnerNativeField.state()) {
+        const report = encounter?.ai?.playerObservation;
+        return report?.source === "native" &&
+            report.age >= 0 &&
+            report.age < 4 &&
+            sameTarget(report.target, KinkyDungeonPlayerEntity)
+            ? clone(report)
+            : undefined;
+    }
+
+    function sharePlayerObservation(encounter, enemy, target, aiData, delta) {
+        if (
+            !(delta > 0) ||
+            !encounter?.ai ||
+            target !== KinkyDungeonPlayerEntity ||
+            !eligibleObserver(enemy) ||
+            !aiData.canSensePlayer ||
+            aiData.hostile !== true ||
+            !(aiData.recognized === true || recognizedPlayer(enemy, target))
+        )
+            return false;
+        const previous = playerObservation(encounter),
+            changed = !previous || previous.x !== target.x || previous.y !== target.y,
+            report = {
+                x: target.x,
+                y: target.y,
+                dx: changed ? (previous ? Math.sign(target.x - previous.x) : 0) : previous.dx,
+                dy: changed ? (previous ? Math.sign(target.y - previous.y) : 0) : previous.dy,
+                age: 0,
+                source: "native",
+                target: targetReference(target),
+                reporterId: enemy.id,
+            };
+        encounter.ai.playerObservation = report;
+        const visual = !!(
+            aiData.canSeePlayer ||
+            aiData.canSeePlayerChase ||
+            aiData.canSeePlayerMedium ||
+            aiData.canShootPlayer
+        );
+        for (const group of Object.values(encounter.ai.groups || {})) {
+            if (!targetIsHostile(group, target)) continue;
+            if (changed) delete group.noPlanSignature;
+            // Knowledge does not replace an ongoing native NPC engagement.
+            if (group.engagement && !sameTarget(group.engagement.target, target)) continue;
+            if (!group.engagement) {
+                const lure = selectLure(encounter, group, [enemy.id]);
+                group.engagement = {
+                    target: targetReference(target),
+                    lureId: lure?.id,
+                    mode: "lure",
+                    noSightTurns: 0,
+                    lureNoContactTurns: 0,
+                    compositeId: encounter.ai.plans[group.planId]?.compositeId || null,
+                };
+            }
+            const known = clone(report);
+            delete known.target;
+            delete known.reporterId;
+            group.engagement.lastKnown = known;
+            const observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() };
+            observations.sensed.add(`shared:${enemy.id}`);
+            // A remote visual report advances group pressure, never the lure's
+            // personal sight or native awareness/detection accumulator.
+            if (visual) observations.sight.add(`shared:${enemy.id}`);
+            observedGroups.set(group.id, observations);
+            if (visual && group.engagement.mode !== "pressure") group.engagement.mode = "lure";
+        }
+        return true;
+    }
+
+    function reportPlayerContact(enemy, target, aiData, delta) {
+        return sharePlayerObservation(api.SpinnerNativeField.state(), enemy, target, aiData, delta);
+    }
+
+    function eligibleObserver(enemy) {
+        return (
+            enemy?.hp > 0 &&
+            ["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance", "MageSpiderlings"].includes(
+                enemy.Enemy?.name,
+            ) &&
+            KDHostile(enemy) &&
+            !KDAllied(enemy) &&
+            !KDIsInParty(enemy) &&
+            !KDIsImprisoned(enemy) &&
+            !KinkyDungeonIsDisabled(enemy) &&
+            !KDHelpless(enemy) &&
+            ![enemy.stun, enemy.freeze, enemy.channel, enemy.teleporting].some((value) => value > 0) &&
+            !globalThis.KDIsDistracted?.(enemy)
+        );
+    }
+
+    function recognizedPlayer(enemy, target) {
+        // Awareness can originate from NPC combat. Player vp is the native
+        // target-specific recognition gate and must not inherit that awareness.
+        return (
+            typeof globalThis.KinkyDungeonTrackSneak === "function" &&
+            globalThis.KinkyDungeonTrackSneak({ ...enemy }, 0, target) >= 0.5
+        );
+    }
+
     function groupObservation(group) {
+        const shared = playerObservation();
+        if (
+            shared &&
+            targetIsHostile(group, KinkyDungeonPlayerEntity) &&
+            (!group.engagement || sameTarget(group.engagement.target, KinkyDungeonPlayerEntity))
+        ) {
+            const observation = clone(shared);
+            delete observation.reporterId;
+            return observation;
+        }
         const known = group.engagement?.lastKnown;
         return known?.source === "native" && known.age < 4
             ? { ...clone(known), target: clone(group.engagement.target) }
@@ -2079,6 +2190,7 @@
     }
 
     function recognizedContact(enemy, target) {
+        if (target === KinkyDungeonPlayerEntity) return recognizedPlayer(enemy, target);
         return !!(
             enemy.aware ||
             (typeof globalThis.KinkyDungeonTrackSneak === "function" &&
@@ -2088,10 +2200,7 @@
 
     function nativeContact(enemy) {
         if (
-            !eligibleSpinner(enemy) ||
-            enemy.Enemy.noAttack ||
-            [enemy.stun, enemy.freeze, enemy.channel, enemy.teleporting].some((value) => value > 0) ||
-            globalThis.KDIsDistracted?.(enemy) ||
+            !eligibleObserver(enemy) ||
             typeof globalThis.KinkyDungeonNearestPlayer !== "function" ||
             typeof globalThis.KinkyDungeonTrackSneak !== "function"
         )
@@ -2101,6 +2210,12 @@
         const observer = { ...enemy },
             target = globalThis.KinkyDungeonNearestPlayer(observer, false, true);
         if (!targetIsLiving(target) || !KDHostile(enemy, target)) return undefined;
+        const aiData = nativeSenses(enemy, target);
+        if (!aiData || !recognizedContact(enemy, target)) return undefined;
+        return { target, aiData: { ...aiData, recognized: true } };
+    }
+
+    function nativeSenses(enemy, target) {
         let radius = enemy.Enemy.visionRadius ? KDEnemyVisionRadius(enemy) : 0;
         if (enemy.Enemy.visionRadius && enemy.lifetime > 0) radius += enemy.Enemy.visionSummoned || 0;
         radius = Math.max(1.5, radius + KinkyDungeonGetBuffedStat(enemy.buffs, "Vision"));
@@ -2111,29 +2226,45 @@
             visible = KinkyDungeonCheckLOS(enemy, target, distance, radius, true, true),
             heard = globalThis.KDCanHearEnemy?.(enemy, target, 1) === true;
         if (!visible && !heard) return undefined;
-        const recognized = recognizedContact(enemy, target);
-        if (!recognized) return undefined;
         return {
-            target,
-            aiData: {
-                recognized: true,
-                hostile: true,
-                canSensePlayer: true,
-                canSeePlayer: visible && KinkyDungeonCheckLOS(enemy, target, distance, radius, false, false),
-            },
+            hostile: KDHostile(enemy, target),
+            canSensePlayer: true,
+            canSeePlayer: visible && KinkyDungeonCheckLOS(enemy, target, distance, radius, false, false),
         };
+    }
+
+    function recoveryTarget(enemy, target, delta) {
+        // Shared history guides approach; only this actor's real native sensory
+        // range can route an eligible player duty away from an NPC target.
+        if (
+            delta > 0 &&
+            eligibleSpinner(enemy) &&
+            eligibleObserver(enemy) &&
+            playerObservation() &&
+            api.SpinnerRecovery?.wantsPursuit?.(enemy, KinkyDungeonPlayerEntity) &&
+            nativeSenses(enemy, KinkyDungeonPlayerEntity)
+        )
+            return KinkyDungeonPlayerEntity;
+        return target;
     }
 
     function refreshObservations(encounter = api.SpinnerNativeField.state(), delta = 1) {
         if (!(delta > 0) || !encounter?.ai) return;
-        const byId = new Map(KDMapData.Entities.map((entity) => [String(entity.id), entity]));
+        const byId = new Map(KDMapData.Entities.map((entity) => [String(entity.id), entity])),
+            contacts = new Map();
+        for (const enemy of [...KDMapData.Entities].sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const contact = nativeContact(enemy);
+            if (contact) contacts.set(String(enemy.id), contact);
+            if (contact?.target === KinkyDungeonPlayerEntity)
+                sharePlayerObservation(encounter, enemy, contact.target, contact.aiData, delta);
+        }
         for (const group of Object.values(encounter.ai.groups)) {
             auditEngagement(encounter, group);
             const members = [...group.memberIds].sort((left, right) => String(left).localeCompare(String(right)));
             for (const id of members) {
                 const enemy = byId.get(String(id));
                 if (!enemy || sourceBusy(enemy)) continue;
-                const contact = nativeContact(enemy);
+                const contact = contacts.get(String(id));
                 if (contact) observeTarget(encounter, group, enemy, contact.target, contact.aiData);
             }
         }
@@ -2149,7 +2280,11 @@
         }
         if (engagement.lastKnown?.age >= 4 || engagement.lastKnown?.source !== "native") delete engagement.lastKnown;
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
-        if (!eligibleSpinner(lure) || !group.memberIds.some((id) => String(id) === String(lure?.id))) {
+        if (
+            !eligibleSpinner(lure) ||
+            sourceBusy(lure) ||
+            !group.memberIds.some((id) => String(id) === String(lure?.id))
+        ) {
             const replacement = selectLure(encounter, group);
             if (replacement) engagement.lureId = replacement.id;
             else delete engagement.lureId;
@@ -2159,6 +2294,8 @@
     }
 
     function observeTarget(encounter, group, enemy, target, aiData) {
+        if (target === KinkyDungeonPlayerEntity)
+            sharePlayerObservation(encounter, enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta ?? 1);
         const sensed =
             aiData.canSensePlayer &&
             aiData.hostile === true &&
@@ -2333,9 +2470,8 @@
 
     function moveLure(enemy, group, target, actualSight) {
         const encounter = api.SpinnerNativeField.state(),
-            engagement = group.engagement,
             waypoint = planWaypoint(encounter, group),
-            known = engagement.lastKnown,
+            known = groupObservation(group),
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             mustYield = required.has(cellKey(enemy)),
             candidates = [
@@ -2388,8 +2524,8 @@
         return mustYield ? "yield" : "lure-move";
     }
 
-    function pursueObservation(enemy, group, target, perceivedThreat) {
-        const known = group.engagement?.lastKnown,
+    function pursueObservation(enemy, group, target, perceivedThreat, observation) {
+        const known = observation || groupObservation(group),
             destination = perceivedThreat ? target : known;
         if (!destination) return decide(enemy, group, "delegate-native", false);
         if (distance(enemy, destination) <= 1)
@@ -2421,15 +2557,15 @@
         if (!state || enemy?.Enemy?.name !== "Spinner") return false;
         const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
         if (!group || !eligibleSpinner(enemy)) return false;
+        const playerDuty = api.SpinnerRecovery?.wantsPursuit?.(enemy, KinkyDungeonPlayerEntity),
+            recoveryTarget = playerDuty ? KinkyDungeonPlayerEntity : target,
+            recoveryKnown = playerDuty
+                ? playerObservation(encounter) || groupObservation(group)
+                : groupObservation(group);
         const perceivedThreat =
                 enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
-            recentObservation =
-                sameTarget(group.engagement?.target, target) &&
-                group.engagement?.lastKnown?.source === "native" &&
-                group.engagement.lastKnown.age < 4,
-            recoveryPursuit =
-                api.SpinnerRecovery?.wantsPursuit?.(enemy, target) ||
-                api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
+            recentObservation = recoveryKnown && sameTarget(recoveryKnown.target, recoveryTarget),
+            recoveryPursuit = playerDuty || api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
         // Departure creates a duty before a new melee hit can attach a recovery
         // strand. Construction and lure work must not suppress that first hit.
         if (recoveryPursuit) {
@@ -2437,7 +2573,9 @@
                 if (group.engagement && !sameTarget(group.engagement.target, target)) clearEngagement(group);
                 observeTarget(encounter, group, enemy, target, aiData);
             }
-            if (perceivedThreat || recentObservation) return pursueObservation(enemy, group, target, perceivedThreat);
+            const perceivedRecovery = recoveryTarget === target && perceivedThreat;
+            if (perceivedRecovery || recentObservation)
+                return pursueObservation(enemy, group, recoveryTarget, perceivedRecovery, recoveryKnown);
             auditEngagement(encounter, group);
             return decide(enemy, group, "delegate-native", false);
         }
@@ -2470,7 +2608,7 @@
             ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(assignment?.type)
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        const known = group.engagement?.lastKnown;
+        const known = groupObservation(group);
         if (
             assignment?.type === "rally" &&
             plan.kind === "passage" &&
@@ -2490,7 +2628,10 @@
         )
             return decide(enemy, group, "delegate-native", false);
         if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
-            if (group.engagement.mode === "pursuit") return decide(enemy, group, "delegate-native", false);
+            if (group.engagement.mode === "pursuit")
+                return groupObservation(group)
+                    ? pursueObservation(enemy, group, target, perceivedThreat)
+                    : decide(enemy, group, "delegate-native", false);
             return decide(
                 enemy,
                 group,
@@ -2586,6 +2727,10 @@
             )
                 clearEngagement(group);
         }
+        if (encounter.ai.playerObservation) {
+            encounter.ai.playerObservation.age++;
+            if (!playerObservation(encounter)) delete encounter.ai.playerObservation;
+        }
         observedGroups = new Map();
     }
 
@@ -2655,6 +2800,9 @@
         eligibleSpinner,
         ensureAI,
         groupObservation,
+        playerObservation,
+        reportPlayerContact,
+        recoveryTarget,
         refreshObservations,
         auditGroups,
         analyzeLineCandidates,
