@@ -69,6 +69,31 @@ function fixture(reverse = false) {
     return { context, api: context.Spiderlings.SpinnerAI, scout, helper, player, group, encounter, calls };
 }
 
+test("NPC awareness cannot redirect pressure toward an unrecognized live player position", () => {
+    const r = fixture(),
+        destinations = [];
+    r.api.refreshObservations(r.encounter, 1);
+    const known = r.api.playerObservation();
+    r.scout.aware = true;
+    r.scout.vp = 0;
+    r.group.engagement.mode = "pressure";
+    r.group.engagement.lureId = r.scout.id;
+    Object.assign(r.player, { x: 7, y: 13 });
+    r.context.KinkyDungeonFindPath = (fromX, fromY, toX, toY) => {
+        destinations.push({ x: toX, y: toY });
+        return [{ x: fromX, y: fromY + 1 }];
+    };
+    r.context.KinkyDungeonEnemyTryMove = () => true;
+    r.context.KinkyDungeonMovableTilesEnemy = "0";
+    r.api.handleBeforeMove(r.scout, r.player, { canSensePlayer: true, canSeePlayer: true, hostile: true });
+    assert.deepEqual(destinations, [{ x: known.x, y: known.y }], "Pressure must use the last recognized report");
+    assert.deepEqual(r.api.playerObservation(), known);
+    r.scout.vp = 0.7;
+    destinations.length = 0;
+    r.api.handleBeforeMove(r.scout, r.player, { canSensePlayer: true, canSeePlayer: true, hostile: true });
+    assert.deepEqual(destinations, [{ x: r.player.x, y: r.player.y }], "New native recognition admits live pursuit");
+});
+
 test("a recognized local scout shares its current observation before helper order matters", () => {
     for (const reverse of [false, true]) {
         const r = fixture(reverse);

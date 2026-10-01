@@ -315,7 +315,8 @@
             },
             location = (group) => activePlan(group)?.center || byId.get(group.memberIds[0]),
             idle = (group) =>
-                !group.engagement && !group.memberIds.some((id) => sourceBusy(byId.get(id)) || byId.get(id)?.aware);
+                (!group.engagement || group.engagement.sharedOnly === true) &&
+                !group.memberIds.some((id) => sourceBusy(byId.get(id)) || byId.get(id)?.aware);
         const groups = Object.values(ai.groups).sort(
             (a, b) =>
                 Number(!!activePlan(b)) - Number(!!activePlan(a)) ||
@@ -2050,7 +2051,27 @@
         return result.filter(Boolean);
     }
 
+    function needsSoleSharedBuilder(encounter, group) {
+        if (group.engagement?.sharedOnly !== true) return false;
+        const plan = encounter.ai.plans[group.planId],
+            composite = encounter.topology?.composites?.[plan?.compositeId];
+        if (
+            plan?.kind !== "enclosure" ||
+            !composite?.layerIds.some((id) => encounter.topology.fields[id]?.phase === "preparing")
+        )
+            return false;
+        // Remote knowledge alone must not take the last available builder away
+        // from an unfinished body. Personal contact and recovery keep priority.
+        return (
+            group.memberIds.filter((id) => {
+                const member = KDMapData.Entities.find((entity) => String(entity.id) === String(id));
+                return eligibleSpinner(member) && !sourceBusy(member);
+            }).length === 1
+        );
+    }
+
     function selectLure(encounter, group, preferredIds = []) {
+        if (needsSoleSharedBuilder(encounter, group)) return undefined;
         const waypoint = planWaypoint(encounter, group),
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             preferred = new Set(preferredIds.map(String));
@@ -2117,15 +2138,15 @@
             // Knowledge does not replace an ongoing native NPC engagement.
             if (group.engagement && !sameTarget(group.engagement.target, target)) continue;
             if (!group.engagement) {
-                const lure = selectLure(encounter, group, [enemy.id]);
                 group.engagement = {
                     target: targetReference(target),
-                    lureId: lure?.id,
+                    sharedOnly: true,
                     mode: "lure",
                     noSightTurns: 0,
                     lureNoContactTurns: 0,
                     compositeId: encounter.ai.plans[group.planId]?.compositeId || null,
                 };
+                group.engagement.lureId = selectLure(encounter, group, [enemy.id])?.id;
             }
             const known = clone(report);
             delete known.target;
@@ -2259,6 +2280,16 @@
                 sharePlayerObservation(encounter, enemy, contact.target, contact.aiData, delta);
         }
         for (const group of Object.values(encounter.ai.groups)) {
+            // Older saves did not distinguish a broadcast from personal contact.
+            // Classify them only on a positive turn using this native sample.
+            if (
+                group.engagement?.sharedOnly === undefined &&
+                sameTarget(group.engagement?.target, KinkyDungeonPlayerEntity)
+            )
+                group.engagement.sharedOnly = !group.memberIds.some((id) => {
+                    const member = byId.get(String(id));
+                    return !sourceBusy(member) && contacts.get(String(id))?.target === KinkyDungeonPlayerEntity;
+                });
             auditEngagement(encounter, group);
             const members = [...group.memberIds].sort((left, right) => String(left).localeCompare(String(right)));
             for (const id of members) {
@@ -2280,7 +2311,8 @@
         }
         if (engagement.lastKnown?.age >= 4 || engagement.lastKnown?.source !== "native") delete engagement.lastKnown;
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
-        if (
+        if (needsSoleSharedBuilder(encounter, group)) delete engagement.lureId;
+        else if (
             !eligibleSpinner(lure) ||
             sourceBusy(lure) ||
             !group.memberIds.some((id) => String(id) === String(lure?.id))
@@ -2326,6 +2358,7 @@
             ),
             observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() },
             firstObservation = observations.sensed.size === 0;
+        engagement.sharedOnly = false;
         observations.sensed.add(String(enemy.id));
         if (actualSight) observations.sight.add(String(enemy.id));
         observedGroups.set(group.id, observations);
@@ -2563,7 +2596,11 @@
                 ? playerObservation(encounter) || groupObservation(group)
                 : groupObservation(group);
         const perceivedThreat =
-                enemy.aware && aiData.canSensePlayer && aiData.hostile === true && targetIsLiving(target),
+                enemy.aware &&
+                aiData.canSensePlayer &&
+                aiData.hostile === true &&
+                targetIsLiving(target) &&
+                recognizedContact(enemy, target),
             recentObservation = recoveryKnown && sameTarget(recoveryKnown.target, recoveryTarget),
             recoveryPursuit = playerDuty || api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
         // Departure creates a duty before a new melee hit can attach a recovery

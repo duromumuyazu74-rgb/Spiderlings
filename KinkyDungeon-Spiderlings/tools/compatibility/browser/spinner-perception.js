@@ -1,5 +1,5 @@
-(() => {
-    const { setup, spawn, expect } = globalThis.normalAcceptance;
+(async () => {
+    const { setup, spawn, turn, expect } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []);
     const room = () => {
         KDMapData.GridWidth = 36;
@@ -119,7 +119,10 @@
             report = Spiderlings.SpinnerAI.playerObservation();
         expect(report?.x === 29 && report.reporterId === reporter.id, `${name} did not publish native contact`);
         expect(Spiderlings.SpinnerAI.groupObservation(group)?.x === 29, `${name} did not reach a remote crew`);
-        expect(group.memberIds.includes(group.engagement.lureId), "Remote reporter replaced the recipient's lure");
+        expect(
+            group.engagement.lureId === undefined || group.memberIds.includes(group.engagement.lureId),
+            "Remote reporter replaced the recipient's lure",
+        );
         expect(!recipient.aware && recipient.vp === 0, "Remote sharing granted individual awareness");
         expect(JSON.stringify([reporter, recipient]) === before, "Sharing mutated native observers");
         rows.push({ species: name, reporterId: reporter.id, recipientId: recipient.id, report });
@@ -147,5 +150,101 @@
     expect(firstReport?.reporterId === tunneler.id, "Native wander first recognition did not publish this turn");
     expect(!remote.aware, "Native first recognition granted remote Spinner awareness");
     rows.push({ firstNativeRecognition: true, report: firstReport, nativeVP: tunneler.vp });
+
+    setup("spinner-shared-sole-builder");
+    room();
+    // Keep personal LOS absent while the remote report persists. Both native
+    // map endpoints belong to the builder's component, so its field is legal.
+    for (let y = 1; y < 23; y++) KinkyDungeonMapSet(20, y, "1");
+    KDMapData.EndPosition = { x: 18, y: 21 };
+    KDPathCache = new Map();
+    KDPathCacheIgnoreLocks = new Map();
+    KDMovePlayer(29, 10, false);
+    KinkyDungeonPlayerEntity.sound = 0;
+    const builder = spawn("Spinner", 3, 10);
+    builder.aware = false;
+    builder.vp = 0;
+    builder.hostile = 999;
+    Spiderlings.SpinnerAI.beginTurn({ activate: true });
+    for (let tick = 0; tick < 40; tick++) {
+        await turn();
+        if (Spiderlings.SpinnerNativeField.state()?.topology?.actionLog.length > 0) break;
+    }
+    const paidBeforeReport = Spiderlings.SpinnerNativeField.state()?.topology?.actionLog.length || 0;
+    expect(paidBeforeReport > 0, "The native fixture did not establish partial enclosure work");
+    const reporter = spawn("Jumper", 24, 10),
+        reporterRatio = globalThis.KinkyDungeonTrackSneak({ ...reporter, vp: 1 }, 0, KinkyDungeonPlayerEntity);
+    reporter.hostile = 999;
+    reporter.aware = false;
+    reporter.vp = 0.7 / reporterRatio;
+    Spiderlings.SpinnerAI.beginTurn({ activate: true });
+    let constructionTurns = 0;
+    for (; constructionTurns < 60; constructionTurns++) {
+        reporter.x = 24;
+        reporter.y = 10;
+        reporter.aware = false;
+        reporter.vp = 0.7 / reporterRatio;
+        KDUpdateEnemyCache = true;
+        await turn();
+        if (Spiderlings.SpinnerNativeField.state().topology.actionLog.length > paidBeforeReport) break;
+    }
+    const solo = Spiderlings.SpinnerNativeField.state(),
+        soloGroup = Object.values(solo.ai.groups).find((entry) => entry.memberIds.includes(builder.id));
+    expect(Spiderlings.SpinnerAI.playerObservation(), "The sole-builder fixture lost its remote report");
+    expect(solo.ai.plans[soloGroup.planId]?.kind === "enclosure", "The sole builder did not plan an enclosure");
+    expect(
+        solo.topology.actionLog.length > paidBeforeReport,
+        "Remote contact starved the sole builder's native paid construction",
+    );
+    expect(!builder.aware, "The sole-builder fixture gained personal recognition");
+    expect(soloGroup.engagement.lureId === undefined, "An unfinished enclosure lost its only builder to luring");
+    rows.push({
+        soleSharedBuilder: true,
+        constructionTurns: constructionTurns + 1,
+        paidBeforeReport,
+        paidActions: solo.topology.actionLog.length,
+        group: structuredClone(soloGroup),
+    });
+
+    setup("spinner-npc-awareness-pressure");
+    room();
+    const pressure = actors(false);
+    Spiderlings.SpinnerAI.beginTurn({ activate: true });
+    const pressureState = Spiderlings.SpinnerNativeField.state(),
+        pressureGroup = Object.values(pressureState.ai.groups).find((entry) =>
+            entry.memberIds.includes(pressure.scout.id),
+        ),
+        historical = Spiderlings.SpinnerAI.playerObservation(),
+        destinations = [],
+        nativePath = globalThis.KinkyDungeonFindPath;
+    pressure.scout.aware = true;
+    pressure.scout.vp = 0;
+    pressure.scout.movePoints = 1.5;
+    pressureGroup.engagement.mode = "pressure";
+    pressureGroup.engagement.lureId = pressure.scout.id;
+    KDMovePlayer(7, 13, false);
+    KinkyDungeonPlayerEntity.sound = 0;
+    globalThis.KinkyDungeonFindPath = function (fromX, fromY, toX, toY) {
+        destinations.push({ x: toX, y: toY });
+        return nativePath.apply(this, arguments);
+    };
+    try {
+        Spiderlings.SpinnerAI.handleBeforeMove(pressure.scout, KinkyDungeonPlayerEntity, {
+            canSensePlayer: true,
+            canSeePlayer: true,
+            hostile: true,
+        });
+    } finally {
+        globalThis.KinkyDungeonFindPath = nativePath;
+    }
+    expect(
+        destinations.length > 0 && destinations.every((point) => point.x === historical.x && point.y === historical.y),
+        `NPC awareness used an unrecognized live position: ${JSON.stringify(destinations)}`,
+    );
+    expect(
+        JSON.stringify(Spiderlings.SpinnerAI.playerObservation()) === JSON.stringify(historical),
+        "NPC awareness refreshed the recognized player report",
+    );
+    rows.push({ npcAwarenessPressure: true, historical, destinations });
     return { rows };
 })();

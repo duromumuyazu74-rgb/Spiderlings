@@ -167,8 +167,25 @@
             actor.vp = 0;
             actor.hostile = 999;
         }
+        if (mode === "recruitment") {
+            // The report arrives before unpaid distant crews recruit. Its source
+            // has native contact in a separate room; the Spinners have none.
+            room(2, 2, 2, 3);
+            const reporter = spawn("Jumper", 2, 3),
+                ratio = globalThis.KinkyDungeonTrackSneak({ ...reporter, vp: 1 }, 0, KinkyDungeonPlayerEntity);
+            reporter.aware = false;
+            reporter.hostile = 999;
+            reporter.vp = 0.7 / ratio;
+            row.sharedReporterId = reporter.id;
+            KDUpdateEnemyCache = true;
+        }
         row.initialActors = actors.map((actor) => ({ id: actor.id, x: actor.x, y: actor.y }));
         ai.beginTurn({ activate: true });
+        if (mode === "recruitment")
+            expect(
+                ai.playerObservation()?.reporterId === row.sharedReporterId,
+                "Recruitment omitted remote native contact",
+            );
         return actors;
     }
     async function snapshotReload(label) {

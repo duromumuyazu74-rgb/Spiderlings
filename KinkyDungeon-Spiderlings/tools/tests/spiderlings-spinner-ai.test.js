@@ -215,6 +215,71 @@ function start(r, snapshot = mapSnapshot()) {
     return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
 }
 
+function remotePlayerReporter(context) {
+    const player = context.KinkyDungeonPlayerEntity,
+        reporter = {
+            id: 90,
+            hp: 2,
+            x: player.x + 1,
+            y: player.y,
+            vp: 1,
+            buffs: {},
+            Enemy: { name: "Jumper", visionRadius: 9 },
+        };
+    context.KDMapData.Entities.push(reporter);
+    context.KinkyDungeonNearestPlayer = (observer) => (observer.id === reporter.id ? player : undefined);
+    context.KDEnemyVisionRadius = (observer) => observer.Enemy.visionRadius;
+    context.KinkyDungeonStatsChoice = new Map();
+    return reporter;
+}
+
+test("a remote player report leaves the sole enclosure builder doing paid construction", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    remotePlayerReporter(c);
+    for (let turn = 0; turn < 12; turn++) {
+        const ai = start(r, snapshot);
+        if (turn === 0) {
+            // Emulate a Test.75 save whose broadcast has no origin marker.
+            const group = Object.values(ai.groups)[0];
+            delete group.engagement.sharedOnly;
+            group.engagement.lureId = worker.id;
+            c.Spiderlings.SpinnerAI.restoreAfterLoad();
+        }
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const encounter = c.Spiderlings.SpinnerNativeField.state(),
+        group = Object.values(encounter.ai.groups)[0];
+    assert.equal(encounter.ai.plans[group.planId].kind, "enclosure");
+    assert.ok(c.Spiderlings.SpinnerAI.playerObservation(), "The remote contact must remain available");
+    assert.ok(encounter.topology.actionLog.length > 0, "Shared knowledge must not starve real paid work");
+    assert.equal(group.engagement.lureId, undefined, "The only builder remains available until the body is ready");
+    worker.aware = true;
+    worker.vp = 1;
+    worker.testSense = true;
+    c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.engagement.lureId, worker.id, "Personal recognized contact retains native combat priority");
+});
+
+test("a remote player report still lets unpaid separated groups staff one passage", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+        r = largePassageRuntime(workers),
+        c = r.context;
+    remotePlayerReporter(c);
+    const ai = r.begin(),
+        groups = Object.values(ai.groups);
+    assert.ok(c.Spiderlings.SpinnerAI.playerObservation());
+    assert.equal(groups.length, 1, "A shared report is knowledge, not a native engagement blocking recruitment");
+    assert.deepEqual(plain(groups[0].memberIds).sort(), [1, 2, 3, 4]);
+    assert.equal(ai.plans[groups[0].planId].kind, "passage");
+    assert.equal(Object.values(ai.plans).filter((plan) => !["invalid", "abandoned"].includes(plan.status)).length, 1);
+});
+
 test("native zero-time load refresh preserves partial work, position and saved construction credit", () => {
     const worker = spinner(1, 8, 6),
         r = runtime([worker]),
