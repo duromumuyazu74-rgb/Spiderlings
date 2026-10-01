@@ -1,12 +1,16 @@
 "use strict";
 /* global KDLoadMod, KDExecuteMods, Spiderlings,
-          KinkyDungeonRefreshRestraintsCache, KinkyDungeonRefreshEnemiesCache, TextGet */
+          KinkyDungeonRefreshRestraintsCache, KinkyDungeonRefreshEnemiesCache, TextGet,
+          TranslationLanguage: writable, TextLoad, textProvider, KDToggles,
+          KDMods, KDModInfo, KDModLoadOrder, KDLoadTranslations: writable, model, AvaliableLanguages */
 
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createServer } = require("node:http");
+const { createHash } = require("node:crypto");
 const { chromium } = require("playwright");
 const { createDiagnostics, browserDiagnostics } = require("./diagnostics.js");
+const { languages } = require("./locales.js");
 
 async function createRuntime(game, output) {
     const roots = [game.overlay, game.root, ...[1, 2, 3, 4, 5].map((n) => path.join(game.root, `M${n}`))]
@@ -119,25 +123,100 @@ async function createRuntime(game, output) {
     }
 }
 
-async function loadPackage(page, filename) {
-    const base64 = (await fs.readFile(filename)).toString("base64");
-    await page.evaluate("KDExecuted = false; TranslationLanguage = 'EN';");
-    return page.evaluate(
-        async ({ base64, filename }) => {
-            await KDLoadMod([
-                new File([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], filename, {
-                    type: "application/zip",
-                }),
-            ]);
-            await KDExecuteMods();
-            await Spiderlings.loadSpiderlingsTextureAtlases?.();
-            await Spiderlings.preloadSpiderlingsDisplacementTextures?.(true);
-            KinkyDungeonRefreshRestraintsCache();
-            KinkyDungeonRefreshEnemiesCache();
-            return { version: TextGet("KDVersionStr") };
-        },
-        { base64, filename: path.basename(filename) },
-    );
+async function loadPackage(page, filename, { language = "EN" } = {}) {
+    if (language !== "EN" && !languages.includes(language)) throw new Error(`Unsupported Mod locale: ${language}`);
+    const bytes = await fs.readFile(filename);
+    const packageSha256 = createHash("sha256").update(bytes).digest("hex");
+    try {
+        await page.evaluate("KDExecuted = false;");
+        const loaded = await page.evaluate(
+            async ({ base64, filename, language }) => {
+                TranslationLanguage = language;
+                if (language !== "EN") {
+                    TextLoad();
+                    await textProvider.readyAll();
+                    KDToggles.Sound = false;
+                }
+                await KDLoadMod([
+                    new File([Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))], filename, {
+                        type: "application/zip",
+                    }),
+                ]);
+                if (language !== "EN") {
+                    const csvFile = `Spiderlings${language}.csv`;
+                    const entries = await model.getEntries(KDMods[filename], {});
+                    const matching = entries.filter((entry) => entry.filename === csvFile);
+                    if (matching.length !== 1) throw new Error(`ZIP must contain exactly one ${csvFile}`);
+                    const url = await model.getURL(matching[0], {});
+                    const csv = await fetch(url).then((response) => response.text());
+                    const keys = csv
+                        .replace(/\r\n?/g, "\n")
+                        .trim()
+                        .split("\n")
+                        .map((line) => line.slice(0, line.indexOf(",")));
+                    globalThis.compatibilityLocaleLoad = { csvFile, csv, keys, english: {}, nativeLoads: [] };
+                    globalThis.compatibilityNativeTranslations = KDLoadTranslations;
+                    KDLoadTranslations = function (...args) {
+                        const state = globalThis.compatibilityLocaleLoad;
+                        const selected = args[0] === state.csv;
+                        if (selected) {
+                            const source = textProvider.getGroupManager().getGroup("default");
+                            state.english = Object.fromEntries(state.keys.map((key) => [key, source.get(key)]));
+                        }
+                        const result = globalThis.compatibilityNativeTranslations.apply(this, args);
+                        state.nativeLoads.push({ language: TranslationLanguage, matchingSelectedZIPCSV: selected });
+                        return result;
+                    };
+                }
+                await KDExecuteMods();
+                await Spiderlings.loadSpiderlingsTextureAtlases?.();
+                await Spiderlings.preloadSpiderlingsDisplacementTextures?.(true);
+                KinkyDungeonRefreshRestraintsCache();
+                KinkyDungeonRefreshEnemiesCache();
+                return {
+                    version: TextGet("KDVersionStr"),
+                    language: TranslationLanguage,
+                    build: KDModInfo[filename]?.modbuild,
+                };
+            },
+            { base64: bytes.toString("base64"), filename: path.basename(filename), language },
+        );
+        if (language !== "EN") {
+            // KDExecuteMods returns before its native CSV FileReader callback finishes.
+            await page.waitForFunction(() =>
+                globalThis.compatibilityLocaleLoad.nativeLoads.some((entry) => entry.matchingSelectedZIPCSV),
+            );
+            loaded.locale = await page.evaluate(() => {
+                const state = globalThis.compatibilityLocaleLoad;
+                const source = textProvider.getGroupManager().getGroup("default");
+                return {
+                    language: TranslationLanguage,
+                    csvFile: state.csvFile,
+                    csv: state.csv,
+                    nativeLoads: state.nativeLoads,
+                    nativeBaseLanguageAvailable: AvaliableLanguages.includes(TranslationLanguage),
+                    nativeCSVFiles: KDModLoadOrder.flatMap((mod) =>
+                        mod.fileorder.filter((file) => file.endsWith(".csv")),
+                    ),
+                    values: state.keys.map((key) => ({
+                        key,
+                        english: state.english[key],
+                        source: source.get(key),
+                        rendered: TextGet(key),
+                    })),
+                };
+            });
+        }
+        return { ...loaded, packageSha256 };
+    } finally {
+        if (language !== "EN" && !page.isClosed())
+            await page.evaluate(() => {
+                if (globalThis.compatibilityNativeTranslations) {
+                    KDLoadTranslations = globalThis.compatibilityNativeTranslations;
+                    delete globalThis.compatibilityNativeTranslations;
+                }
+            });
+    }
 }
 
 module.exports = { createRuntime, loadPackage };

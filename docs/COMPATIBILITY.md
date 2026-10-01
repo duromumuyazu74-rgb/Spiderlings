@@ -15,6 +15,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Native language acceptance tooling (2026-10-01)
+
+The maintenance follow-up integrates language loading into the existing full compatibility command. It leaves Test.80 runtime files, artwork, version and final ZIP unchanged. Each game runs 36 behavior scenarios and the `native-locales` stage, which loads CN, DE, ES, JP, KR, PL and RU in separate native runtimes. Every packaged CSV value is compared with the native text source and `TextGet`; placeholder checks share the checker contract. Per-language details are embedded in the main results so the delivery collector retains the evidence.
+
+The unchanged ZIP with SHA-256 `4cf0e33e8322cd03f8978d9816d250a5aa67b11abf50b84ddd0edfef0cb913d1` passes all 37 stages on KD 5.4.92 and freshly fetched official 5.5.3 commit `29219e97a362228e64d885fb569b1b35ec74b3ef`, checked at `2026-10-01T15:28:48.881Z`. All 14 language groups pass 247 keys each, totaling 3,458 comparisons with no text mismatches or language-runtime script errors. Evidence is `<cache>/runs/2026-10-01T15-28-48-910Z-0.92.36-test.80/acceptance.json` and its per-version results.
+
+`--scenario native-locales` is partial debugging evidence. The full run still requires fresh official preparation and all behavior stages. PL covers native Mod CSV loading; the official game menu has no Polish option. Controlled Chrome coverage and the historical native audio/Red.png limits remain as recorded below. Earlier acceptance records preserve their original scope.
+
 ## Test.80 artist placeholder and player text (2026-10-01)
 
 Test.80 restores `Bullets/SpiderlingsMageBolt.png` byte-for-byte from Test.78's supplied spider icon. It is identical to T_Swizzle's `SpiderlingsMageRuneIcon.png`: 722 bytes, SHA-256 `2a9f317673114f087c9ae2c63c331ff070235c326fe4b94bcfd4be93a68389ca`. The Test.79 AI-generated silk-ball candidate is withdrawn. Thin thread trails, spread-web impacts and all Test.79 gameplay fixes remain. Replacement artwork will be supplied by the user and artist; AI-generated artwork is not adopted.

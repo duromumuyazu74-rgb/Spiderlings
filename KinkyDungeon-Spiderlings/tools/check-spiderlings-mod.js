@@ -6,6 +6,7 @@ const vm = require("node:vm");
 const { spawnSync } = require("node:child_process");
 const { parseReleaseVersion } = require("./release-version.js");
 const { escapeTextKeys, inspectEscapeText } = require("./escape-text-contract.js");
+const { inspectTranslationPlaceholders } = require("./translation-contract.js");
 
 const modRoot = path.resolve(__dirname, "..");
 const workspaceRoot = path.resolve(modRoot, "..");
@@ -653,6 +654,11 @@ function createMockState() {
         KDCastConditions: {},
         KDPlayerEffects: { TrapBindings: nativeTrapBindings },
         KDModConfigs: {},
+        KDMapMods: {},
+        KinkyDungeonEscapeTypes: {},
+        KDCancelEvents: {},
+        KinkyDungeonPlaceEnemies() {},
+        KDRemoveEntity() {},
         KDModSettings: {},
         KDModFiles: {},
         KinkyDungeonPlayer: {},
@@ -1819,6 +1825,7 @@ function checkRouting(state) {
 
 function checkTranslations(state) {
     const initialErrorCount = errors.length;
+    const localeTexts = {};
     for (const error of inspectEscapeText(state.context.KinkyDungeonRestraints, (key) => state.texts[key]).errors)
         fail(`English fallback ${error}`);
     const currentIds = [...families, ...lv2Families, ...lv3Families]
@@ -1869,6 +1876,7 @@ function checkTranslations(state) {
             continue;
         }
         const entries = parseCsv(localeFile);
+        localeTexts[localeFile] = entries;
         for (const id of currentIds) {
             for (const suffix of ["", "Desc", "Desc2"]) {
                 if (!String(entries.get(`Restraint${id}${suffix}`) || "").trim())
@@ -1889,6 +1897,7 @@ function checkTranslations(state) {
         }
         if (!String(entries.get(pairedGateKey) || "").trim()) fail(`${localeFile} is missing ${pairedGateKey}.`);
     }
+    for (const error of inspectTranslationPlaceholders(state.texts, localeTexts)) fail(error);
     const fallbackMissing = currentIds
         .flatMap((id) => ["", "Desc", "Desc2"].map((suffix) => `Restraint${id}${suffix}`))
         .concat(runtimeMessageKeys, pairedGateKey)

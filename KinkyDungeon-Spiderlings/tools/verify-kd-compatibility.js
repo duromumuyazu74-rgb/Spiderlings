@@ -7,6 +7,7 @@ const assert = require("node:assert/strict");
 const { remote, branch, hash, git, gameVersion, syncUpstream, compile } = require("./compatibility/prepare.js");
 const { createRuntime, loadPackage } = require("./compatibility/runtime.js");
 const { selectScenarios, parseArguments } = require("./compatibility/scenarios.js");
+const { languages, inspectLocale } = require("./compatibility/locales.js");
 const repository = path.resolve(__dirname, "../..");
 
 function configured(name) {
@@ -22,22 +23,89 @@ function outside(parent, child) {
     return path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`);
 }
 
-async function verifyGame(game, packagePath, output, selection = selectScenarios()) {
+async function verifyLocales(game, packagePath, output, packageSha256, runtimeFactory) {
+    const records = [];
+    for (const language of languages) {
+        const folder = path.join(output, "locales", language);
+        fs.mkdirSync(folder, { recursive: true });
+        const report = { game, packageSha256, language, status: "failed" };
+        let runtime;
+        try {
+            runtime = await runtimeFactory(game, folder);
+            await runtime.setContext({ scenario: `native-locales:${language}`, seed: null });
+            report.loaded = await loadPackage(runtime.page, packagePath, { language });
+            assert.equal(report.loaded.packageSha256, packageSha256, "ZIP changed during locale verification.");
+            assert.equal(report.loaded.version, game.version);
+            assert.equal(report.loaded.language, language);
+            assert.equal(
+                report.loaded.locale.language,
+                language,
+                "Native CSV callback changed the requested language.",
+            );
+            report.result = inspectLocale(report.loaded.locale);
+            await runtime.settleAssets();
+            report.rejections = await runtime.page.evaluate("globalThis.compatibilityRejections");
+            assert.deepEqual(
+                [...runtime.errors, ...report.rejections].filter(
+                    (error) => !error.startsWith("The play() request was interrupted by a call to pause()."),
+                ),
+                [],
+            );
+            assert.deepEqual(
+                runtime.missing.filter((url) => /Spiderlings|SpiderWeb|WebSpray/.test(url)),
+                [],
+            );
+            assert.deepEqual(report.result.errors, []);
+            report.status = "passed";
+        } catch (error) {
+            report.error = error.stack;
+        } finally {
+            report.errors = runtime?.errors;
+            report.missing = runtime?.missing;
+            if (runtime && !runtime.page.isClosed())
+                report.diagnostics = [
+                    ...runtime.diagnostics.events,
+                    ...(await runtime.page.evaluate(() => globalThis.compatibilityDiagnostics)),
+                ];
+            await runtime?.close();
+            fs.writeFileSync(path.join(folder, "result.json"), JSON.stringify(report, null, 2) + "\n");
+        }
+        records.push({
+            language,
+            status: report.status,
+            count: report.result?.count,
+            evidence: `locales/${language}/result.json`,
+            report,
+        });
+        console.log(`${game.version}: native-locales ${language} ${report.status}`);
+    }
+    return { status: records.every((record) => record.status === "passed") ? "passed" : "failed", records };
+}
+
+async function verifyGame(game, packagePath, output, selection = selectScenarios(), runtimeFactory = createRuntime) {
     fs.mkdirSync(output, { recursive: true });
     const { checks, ...verification } = selection;
     const report = { game, packageSha256: hash(packagePath), verification, checks: [] };
     let runtime, currentCheck;
     try {
-        runtime = await createRuntime(game, output);
+        runtime = await runtimeFactory(game, output);
         const { page } = runtime;
         report.loaded = await loadPackage(page, packagePath);
+        assert.equal(report.loaded.packageSha256, report.packageSha256, "ZIP changed during verification.");
         assert.equal(report.loaded.version, game.version);
         await page.evaluate(fs.readFileSync(path.join(__dirname, "escape-text-contract.js"), "utf8"));
         await runtime.setContext({ scenario: "package-loading", seed: null });
         await runtime.settleAssets();
-        for (const { name, file, variant } of checks) {
+        for (const { name, file, variant, kind } of checks) {
             currentCheck = name;
             await runtime.setContext({ scenario: name, seed: `compatibility-${name}` });
+            if (kind === "locales") {
+                const result = await verifyLocales(game, packagePath, output, report.packageSha256, runtimeFactory);
+                report.checks.push({ name, status: result.status, result });
+                fs.writeFileSync(path.join(output, "result.json"), JSON.stringify(report, null, 2) + "\n");
+                assert.equal(result.status, "passed", "Native locale verification failed; see per-language evidence.");
+                continue;
+            }
             await page.evaluate((seed) => globalThis.compatibilitySetSeed(seed), `compatibility-${name}`);
             const errorStart = runtime.errors.length,
                 missingStart = runtime.missing.length;
@@ -152,7 +220,7 @@ async function main() {
             version: "5.4.92",
             mainSha256: hash(path.join(baselineRoot, "out/main.js")),
         },
-        { id: "github", ...latest },
+        { id: "github", ...upstream, ...latest },
     ];
     const records = [];
     for (const game of games) {

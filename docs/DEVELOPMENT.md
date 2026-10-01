@@ -78,7 +78,21 @@ Selection includes dependencies automatically, such as `normal-helpers` for `nat
 
 Native acceptance also verifies custom escape messages from the restraints actually registered in the loaded ZIP. The checker and public regressions use the same native consumer contract for English, all seven locales and item placeholders. New custom suffixes and escape methods therefore acquire required keys automatically.
 
+Full compatibility runs additionally load CN, DE, ES, JP, KR, PL and RU from the final ZIP through the native Mod translation path, using a fresh runtime for each language. Every CSV entry must resolve through `TextGet` to its packaged value. Language checks use the same game builds, official commit and ZIP hash as the behavior checks; their failures fail the full run. The per-version `result.json` retains the language results. PL tests the native Mod CSV path; the official language menu does not expose it. Use `--scenario native-locales` for a focused two-version language check; this remains partial debugging evidence.
+
 Each scene starts with a named native RNG seed. The shared setup and Hunting Grounds fixture seed before new-game initialization and again before the controlled map, so initial map creation cannot consume an inherited random stream. Diagnostic records retain scene, seed, timestamp, resource URL/status and available error stacks. Request records keep the context at request initiation even if a response arrives in a later scene. Asset requests and subsequent render frames settle before switching scenes. A final runtime-error or Mod-asset failure names its gate rather than the last successful scene; the retained diagnostics identify originating resources. Failure traces include current actors and fixture state. These controls improve reproduction without certifying all native artwork as valid.
+
+## Text changes
+
+Run the read-only text audit against an explicit baseline to list changed text, structural differences and test references before the final package build:
+
+```powershell
+npm run audit:text -- --base HEAD
+npm run audit:text -- --base HEAD --target staged
+npm run audit:text -- --base <before-commit> --target <after-commit>
+```
+
+The default target is the working tree, including staged edits. Compare placeholder counts and existing per-line separators, and run the referenced test files with the existing Node test runner. Test references are literal matches; computed keys and escaped assertions still require caller review. Ambiguous strings and changes to keys, IDs, resource paths or event names require review; the audit only excludes text arguments at recognized registration points. Other manifest payload changes also require review. `--text-only` exits nonzero when these mechanical checks require review; it does not establish that descriptions match native behavior. Complete independent review of effect-bearing text in every affected language before freezing source for the final ZIP and acceptance. Verification scope remains governed by [CONTRIBUTING.md](../CONTRIBUTING.md#verification).
 
 ## Worktrees and cleanup
 

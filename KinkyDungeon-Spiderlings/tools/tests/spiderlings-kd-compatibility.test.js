@@ -9,6 +9,237 @@ const vm = require("node:vm");
 const { selectScenarios, parseArguments } = require("../compatibility/scenarios.js");
 const { createDiagnostics, browserDiagnostics } = require("../compatibility/diagnostics.js");
 
+test("native locale evidence checks the loaded ZIP, rendered text and placeholders", () => {
+    const { inspectLocale } = require("../compatibility/locales.js");
+    const csv = 'Label,Du versuchst TargetRestraint.\r\nCounter,"CURRENT/TARGET · {count}"\n';
+    const loaded = {
+        language: "DE",
+        csvFile: "SpiderlingsDE.csv",
+        csv,
+        nativeLoads: [{ language: "DE", matchingSelectedZIPCSV: true }],
+        nativeBaseLanguageAvailable: true,
+        values: [
+            {
+                key: "Label",
+                english: "You try TargetRestraint.",
+                source: "Du versuchst TargetRestraint.",
+                rendered: "Du versuchst TargetRestraint.",
+            },
+            {
+                key: "Counter",
+                english: "CURRENT/TARGET · {count}",
+                source: "CURRENT/TARGET · {count}",
+                rendered: "CURRENT/TARGET · {count}",
+            },
+        ],
+    };
+    const good = inspectLocale(loaded);
+    assert.equal(good.passed, true);
+    assert.equal(good.count, 2);
+    const stale = inspectLocale({
+        ...loaded,
+        values: [loaded.values[0], { ...loaded.values[1], rendered: "Counter" }],
+    });
+    assert.equal(stale.passed, false);
+    assert.match(stale.errors.join("\n"), /Counter.*TextGet/);
+    assert.equal(inspectLocale({ ...loaded, nativeLoads: [] }).passed, false);
+    assert.equal(inspectLocale({ ...loaded, csv: csv + "Label,duplicate\n" }).passed, false);
+    const badToken = inspectLocale({
+        ...loaded,
+        values: [{ ...loaded.values[0], english: "You try TargetRestraint {count}." }, loaded.values[1]],
+    });
+    assert.equal(badToken.passed, false);
+    assert.match(badToken.errors.join("\n"), /Label.*placeholder/);
+});
+
+function localeRuntime(game, behavior = {}, events = []) {
+    const texts = {};
+    const english = {
+        KDVersionStr: game.version,
+        Label: "You try TargetRestraint.",
+        Counter: "CURRENT/TARGET {count}",
+    };
+    const context = vm.createContext({
+        File,
+        atob,
+        setTimeout,
+        Uint8Array,
+        TranslationLanguage: "EN",
+        KDExecuted: false,
+        KDMods: {},
+        KDModInfo: {},
+        KDModLoadOrder: [],
+        KDToggles: { Sound: true },
+        Spiderlings: {},
+        AvaliableLanguages: ["EN", "CN", "DE", "ES", "JP", "KR", "RU"],
+        compatibilityRejections: [],
+        compatibilityDiagnostics: [],
+        TextLoad: () => events.push({ type: "language", language: context.TranslationLanguage }),
+        textProvider: {
+            readyAll: async () => {},
+            getGroupManager: () => ({ getGroup: () => ({ get: (key) => texts[key] }) }),
+        },
+        TextGet: (key) =>
+            context.TranslationLanguage === behavior.staleLanguage && key === "Counter" ? key : texts[key] || key,
+        KDLoadMod: async ([file]) => {
+            context.KDMods[file.name] = file;
+            context.KDModInfo[file.name] = { modbuild: "fixture" };
+        },
+        model: {
+            getEntries: async () =>
+                ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((language) => ({
+                    filename: `Spiderlings${language}.csv`,
+                })),
+            getURL: async (entry) => entry.filename,
+        },
+        fetch: async (filename) => ({
+            text: async () => `Label,${filename} TargetRestraint.\r\nCounter,"CURRENT/TARGET {count}"\n`,
+        }),
+        KDLoadTranslations: (csv) => {
+            events.push({ type: "native-csv", language: context.TranslationLanguage });
+            for (const line of csv.trim().split(/\r?\n/)) {
+                const comma = line.indexOf(",");
+                texts[line.slice(0, comma)] = line.slice(comma + 1).replace(/^"(.*)"$/, "$1");
+            }
+        },
+        KDExecuteMods: async () => {
+            Object.assign(texts, english);
+            if (context.TranslationLanguage !== "EN") {
+                const filename = `Spiderlings${context.TranslationLanguage}.csv`;
+                context.KDModLoadOrder = [{ fileorder: [filename] }];
+                if (context.TranslationLanguage !== behavior.skipLanguage)
+                    setTimeout(async () => {
+                        if (context.TranslationLanguage === behavior.wrongLanguage) context.TranslationLanguage = "EN";
+                        context.KDLoadTranslations(await (await context.fetch(filename)).text());
+                    }, 0);
+            }
+        },
+        KinkyDungeonRefreshRestraintsCache() {},
+        KinkyDungeonRefreshEnemiesCache() {},
+    });
+    const evaluate = (fn, argument) => {
+        context.testArgument = argument;
+        return vm.runInContext(typeof fn === "string" ? fn : `(${fn.toString()})(testArgument)`, context);
+    };
+    return {
+        page: {
+            evaluate: async (fn, argument) => evaluate(fn, argument),
+            waitForFunction: async (fn) => {
+                for (let count = 0; count < 30; count++) {
+                    if (evaluate(fn)) return;
+                    await new Promise((resolve) => setTimeout(resolve, 1));
+                }
+                throw Error("Native CSV callback did not finish");
+            },
+            isClosed: () => false,
+        },
+        errors: behavior.pageError ? ["fixture native page error"] : [],
+        missing: behavior.missingAsset ? ["/Game/Bullets/SpiderlingsMageBolt.png"] : [],
+        diagnostics: { events: [] },
+        setContext: async (value) => {
+            context.compatibilityContext = value;
+        },
+        settleAssets: async () => {},
+        close: async () => {
+            events.push({ type: "closed" });
+        },
+        context,
+    };
+}
+
+function localePackage(t) {
+    const root = path.resolve(__dirname, "../../../.scratch/compatibility-tests");
+    fs.mkdirSync(root, { recursive: true });
+    const output = fs.mkdtempSync(path.join(root, "locale-"));
+    const file = path.join(output, "fixture.zip");
+    fs.writeFileSync(file, "native loader fixture");
+    t.after(() => {
+        assert.ok(fs.realpathSync(output).startsWith(fs.realpathSync(root) + path.sep));
+        fs.rmSync(output, { recursive: true, force: true });
+    });
+    return { file, output };
+}
+
+test("package loading defaults to EN and awaits the genuine asynchronous selected CSV callback", async (t) => {
+    const { loadPackage } = require("../compatibility/runtime.js");
+    const { inspectLocale } = require("../compatibility/locales.js");
+    const { file } = localePackage(t),
+        events = [];
+    const runtime = localeRuntime({ version: "5.5.3" }, {}, events);
+    const nativeTranslations = runtime.context.KDLoadTranslations;
+    assert.equal((await loadPackage(runtime.page, file)).language, "EN");
+    const loaded = await loadPackage(runtime.page, file, { language: "PL" });
+    assert.equal(inspectLocale(loaded.locale).passed, true);
+    assert.equal(loaded.locale.nativeBaseLanguageAvailable, false);
+    assert.equal(events.filter((event) => event.type === "native-csv").length, 1);
+    assert.equal(runtime.context.KDLoadTranslations, nativeTranslations);
+    assert.deepEqual(
+        events.filter((event) => event.type === "language").map((event) => event.language),
+        ["PL"],
+    );
+    const missing = localeRuntime({ version: "5.5.3" }, { skipLanguage: "DE" });
+    const missingNative = missing.context.KDLoadTranslations;
+    await assert.rejects(loadPackage(missing.page, file, { language: "DE" }), /Native CSV callback/);
+    assert.equal(missing.context.KDLoadTranslations, missingNative);
+});
+
+test("native locale stage uses fresh instances of the prepared game and fails acceptance on bad text or native errors", async (t) => {
+    const { verifyGame } = require("../verify-kd-compatibility.js");
+    const { file, output } = localePackage(t);
+    const game = {
+        version: "5.5.3",
+        commit: "prepared-commit",
+        mainSha256: "prepared-runtime",
+        checkedAt: "prepared-time",
+    };
+    const selection = selectScenarios(["native-locales"]);
+    assert.equal(selection.mode, "partial");
+    assert.deepEqual(selection.executed, ["native-locales"]);
+    for (const [label, behavior] of [
+        ["good", {}],
+        ["stale", { staleLanguage: "ES" }],
+        ["wrong-language", { wrongLanguage: "ES" }],
+        ["native-error", { pageError: true }],
+        ["missing-asset", { missingAsset: true }],
+    ]) {
+        const events = [],
+            opened = [];
+        const factory = async (prepared, folder) => {
+            opened.push({ prepared, folder });
+            return localeRuntime(prepared, behavior, events);
+        };
+        const report = await verifyGame(game, file, path.join(output, label), selection, factory);
+        assert.equal(report.status, label === "good" ? "passed" : "failed");
+        const result = report.checks.find((entry) => entry.name === "native-locales").result;
+        assert.equal(result.records.length, 7);
+        assert.equal(opened.length, 8);
+        assert.equal(events.filter((event) => event.type === "closed").length, 8);
+        for (const { prepared } of opened) assert.equal(prepared, game);
+        const saved = JSON.parse(fs.readFileSync(path.join(output, label, "result.json"), "utf8"));
+        const savedLocales = saved.checks.find((entry) => entry.name === "native-locales").result;
+        for (const entry of savedLocales.records) {
+            const evidence = JSON.parse(fs.readFileSync(path.join(output, label, entry.evidence), "utf8"));
+            assert.equal(evidence.game.commit, game.commit);
+            assert.equal(evidence.game.checkedAt, game.checkedAt);
+            assert.equal(evidence.packageSha256, report.packageSha256);
+            assert.deepEqual(entry.report, evidence);
+            assert.ok(entry.report.loaded.locale.csv.includes("TargetRestraint"));
+            assert.equal(entry.report.loaded.locale.nativeLoads[0].matchingSelectedZIPCSV, true);
+            assert.equal(
+                entry.report.loaded.locale.values[0].source,
+                `Spiderlings${entry.language}.csv TargetRestraint.`,
+            );
+            assert.equal(entry.report.loaded.locale.values[0].rendered, entry.report.loaded.locale.values[0].source);
+            assert.deepEqual(entry.report.errors, behavior.pageError ? ["fixture native page error"] : []);
+            if (entry.status === "failed") assert.ok(entry.report.error);
+        }
+        if (label === "stale" || label === "wrong-language") {
+            assert.equal(result.records.find((entry) => entry.language === "ES").status, "failed");
+            assert.equal(result.records.filter((entry) => entry.status === "passed").length, 6);
+        }
+    }
+});
+
 test("selected scenes include their actual dependencies and preserve full-run ordering", () => {
     const escape = selectScenarios(["native-escape"]);
     assert.equal(escape.mode, "partial");
@@ -20,7 +251,9 @@ test("selected scenes include their actual dependencies and preserve full-run or
     const full = selectScenarios();
     assert.equal(full.mode, "full");
     assert.equal(full.total, full.executed.length);
+    assert.equal(full.checks.find((scenario) => scenario.name === "native-locales").kind, "locales");
     for (const scenario of full.checks) {
+        if (scenario.kind === "locales") continue;
         const source = fs.readFileSync(path.join(__dirname, "../compatibility/browser", scenario.file), "utf8");
         if (scenario.name !== "normal-helpers" && source.includes("globalThis.normalAcceptance"))
             assert.ok(scenario.dependencies.includes("normal-helpers"));
