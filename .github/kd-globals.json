@@ -110,6 +110,7 @@
   "KDUpdateMoveToEntity",
   "KDWorldMap",
   "KDistEuclidean",
+  "KinkyDungeonActionMessage",
   "KinkyDungeonAddRestraint",
   "KinkyDungeonAddRestraintIfWeaker",
   "KinkyDungeonAddRestraintText",

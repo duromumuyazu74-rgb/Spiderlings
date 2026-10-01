@@ -233,3 +233,15 @@ RestraintSpiderlingsSilkLeashDesc,Nach dem Verlassen eines durchbrochenen Netzfe
 RestraintSpiderlingsSilkLeashDesc2,Eine neue Leine erfordert ein kompatibles Halsband und normale Ausrüstungsbedingungen. Aktive Quellen zeigen Seidenstränge; ohne Quellen bleibt die Leine locker.
 SpiderlingsRecoveryAttached,Spinner befestigt einen Rückholstrang ({count}/8). Seine nächste verfügbare Aktion kann dich zurückziehen.
 SpiderlingsRecoveryAttachBlocked,"Der Rückholstrang trifft, kann aber nicht an kompatibler Halsausrüstung befestigt werden. Eine neue Leine braucht ein Halsband und normale Ausrüstungsbedingungen; kein Zurückziehen wurde eingerichtet."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Deine Fesseln verhindern, dass du die Klinge fest genug hältst, um TargetRestraint zu durchschneiden."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"Deine Fesseln verhindern, dass du die Klinge fest genug hältst, um TargetRestraint zu durchschneiden."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du dich nicht aus TargetRestraint befreien."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du dich nicht aus TargetRestraint befreien."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"Deine übrigen Fesseln sitzen zu eng, um dich aus TargetRestraint herauszuwinden."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"Deine übrigen Fesseln sitzen zu eng, um dich aus TargetRestraint herauszuwinden."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht lösen."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht lösen."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."

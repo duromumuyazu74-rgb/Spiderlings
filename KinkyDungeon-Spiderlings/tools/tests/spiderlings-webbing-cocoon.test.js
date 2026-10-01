@@ -504,6 +504,32 @@ test("native struggle and text functions retain their own call context", () => {
     assert.equal(r.context.TextGet, text);
 });
 
+test("native inability branches resolve every Webbing failure suffix", () => {
+    const runtime = loadRuntime();
+    for (const method of ["Cut", "Remove", "Struggle"])
+        for (const outcome of ["Impossible", "ImpossibleBound"])
+            for (const aroused of ["", "Aroused"]) {
+                const key = "KinkyDungeonStruggle" + method + outcome + "SpiderlingsWebbing" + aroused;
+                const text = runtime.context.TextGet(key);
+                assert.notEqual(text, key, key);
+                assert.equal((text.match(/TargetRestraint/g) || []).length, 1, key);
+            }
+});
+
+test("all seven locales cover native Webbing inability messages", () => {
+    for (const locale of ["CN", "DE", "ES", "JP", "KR", "PL", "RU"]) {
+        const rows = fs.readFileSync(path.join(modRoot, "Spiderlings" + locale + ".csv"), "utf8").split(/\r?\n/);
+        for (const method of ["Cut", "Remove", "Struggle"])
+            for (const outcome of ["Impossible", "ImpossibleBound"])
+                for (const aroused of ["", "Aroused"]) {
+                    const key = "KinkyDungeonStruggle" + method + outcome + "SpiderlingsWebbing" + aroused;
+                    const matches = rows.filter((row) => row.startsWith(key + ","));
+                    assert.equal(matches.length, 1, locale + ": " + key);
+                    assert.equal((matches[0].match(/TargetRestraint/g) || []).length, 1, locale + ": " + key);
+                }
+    }
+});
+
 test("all 24 Webbing restraints select native success prose for every removal method", () => {
     const runtime = loadRuntime();
     const definitions = runtime.context.KinkyDungeonRestraints.filter((r) => r.name.startsWith("SpiderlingsWebbing"));

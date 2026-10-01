@@ -233,3 +233,15 @@ RestraintSpiderlingsSilkLeashDesc,그물 구역의 틈으로 나온 뒤 조건�
 RestraintSpiderlingsSilkLeashDesc2,새 리드에는 호환되는 목줄과 기본 장비 조건이 필요하다. 활성 제어원은 비단 선으로 표시되며 없으면 느슨해진다.
 SpiderlingsRecoveryAttached,Spinner가 회수용 비단 선을 연결했다({count}/8). 다음 가능한 행동에서 끌어당길 수 있다.
 SpiderlingsRecoveryAttachBlocked,회수 선은 적중했지만 호환되는 목 장비에 연결할 수 없다. 새 리드에는 목줄과 기본 장비 조건이 필요하다. 이번에는 끌어당김이 성립하지 않았다.
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"다른 구속 때문에 칼날을 단단히 쥘 수 없어 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"다른 구속 때문에 칼날을 단단히 쥘 수 없어 TargetRestraint을 잘라낼 수 없다."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"다른 구속이 너무 단단해서 몸부림쳐도 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"다른 구속이 너무 단단해서 몸부림쳐도 TargetRestraint에서 빠져나올 수 없다."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 풀 수 없다."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 풀 수 없다."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."

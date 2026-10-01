@@ -1112,12 +1112,21 @@
     function registerEscapeText() {
         if (typeof addTextKey != "function") return;
         for (const [suffix, methods] of Object.entries(ESCAPE_TEXT)) {
-            for (const [method, [progress, success]] of Object.entries(methods)) {
+            for (const [method, [progress, success, impossible, impossibleBound]] of Object.entries(methods)) {
                 const prefix = "KinkyDungeonStruggle" + method;
                 addTextKey(prefix + "Fail" + suffix, progress);
                 // KD appends Aroused to an incomplete action even with a custom suffix.
                 addTextKey(prefix + "Fail" + suffix + "Aroused", progress);
                 addTextKey(prefix + "Success" + suffix, success);
+                // KD also consumes failSuffix after its impossible-attempt grace and bound-access checks.
+                for (const [outcome, text] of [
+                    ["Impossible", impossible],
+                    ["ImpossibleBound", impossibleBound],
+                ]) {
+                    if (!text) continue;
+                    addTextKey(prefix + outcome + suffix, text);
+                    addTextKey(prefix + outcome + suffix + "Aroused", text);
+                }
             }
         }
     }
