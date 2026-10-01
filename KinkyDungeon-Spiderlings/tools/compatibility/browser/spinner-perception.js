@@ -96,5 +96,56 @@
     Spiderlings.SpinnerAI.refreshObservations(encounter, 1);
     expect(!Spiderlings.SpinnerAI.groupObservation(group), "A wall and silent target supplied exact coordinates");
     rows.push({ nativeStealthRejected: true, nativeWallRejected: true, silentHearingRejected: true });
+
+    for (const name of ["Spinner", "Jumper", "WebCaster", "Tunneler", "NestEntrance", "MageSpiderlings"]) {
+        setup(`spinner-shared-${name}`);
+        room();
+        const reporter = spawn(name, 24, 10),
+            recipient = spawn("Spinner", 3, 10);
+        KDMapData.Entities = [recipient, reporter];
+        for (const actor of [reporter, recipient]) {
+            actor.aware = false;
+            actor.hostile = 999;
+            actor.vp = 0;
+        }
+        KDMovePlayer(29, 10, false);
+        KinkyDungeonPlayerEntity.sound = 0;
+        const ratio = globalThis.KinkyDungeonTrackSneak({ ...reporter, vp: 1 }, 0, KinkyDungeonPlayerEntity);
+        reporter.vp = 0.7 / ratio;
+        KDUpdateEnemyCache = true;
+        const before = JSON.stringify([reporter, recipient]),
+            ai = Spiderlings.SpinnerAI.beginTurn({ activate: true }),
+            group = Object.values(ai.groups).find((entry) => entry.memberIds.includes(recipient.id)),
+            report = Spiderlings.SpinnerAI.playerObservation();
+        expect(report?.x === 29 && report.reporterId === reporter.id, `${name} did not publish native contact`);
+        expect(Spiderlings.SpinnerAI.groupObservation(group)?.x === 29, `${name} did not reach a remote crew`);
+        expect(group.memberIds.includes(group.engagement.lureId), "Remote reporter replaced the recipient's lure");
+        expect(!recipient.aware && recipient.vp === 0, "Remote sharing granted individual awareness");
+        expect(JSON.stringify([reporter, recipient]) === before, "Sharing mutated native observers");
+        rows.push({ species: name, reporterId: reporter.id, recipientId: recipient.id, report });
+    }
+
+    setup("spinner-shared-first-native-recognition");
+    room();
+    const tunneler = spawn("Tunneler", 24, 10),
+        remote = spawn("Spinner", 3, 10);
+    KDMapData.Entities = [remote, tunneler];
+    KDUpdateEnemyCache = true;
+    KDMovePlayer(28, 10, false);
+    KinkyDungeonPlayerEntity.sound = 0;
+    for (const actor of [tunneler, remote]) {
+        actor.aware = false;
+        actor.hostile = 999;
+        actor.vp = 0;
+    }
+    const ratio = globalThis.KinkyDungeonTrackSneak({ ...tunneler, vp: 1 }, 0, KinkyDungeonPlayerEntity);
+    tunneler.vp = 0.49 / ratio;
+    Spiderlings.SpinnerAI.beginTurn({ activate: true });
+    expect(!Spiderlings.SpinnerAI.playerObservation(), "Partial recognition published too early");
+    KinkyDungeonAdvanceTime(1, true);
+    const firstReport = Spiderlings.SpinnerAI.playerObservation();
+    expect(firstReport?.reporterId === tunneler.id, "Native wander first recognition did not publish this turn");
+    expect(!remote.aware, "Native first recognition granted remote Spinner awareness");
+    rows.push({ firstNativeRecognition: true, report: firstReport, nativeVP: tunneler.vp });
     return { rows };
 })();

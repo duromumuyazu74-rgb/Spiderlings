@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.74.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.75.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.74 retained Spinner crews, outer-first fields and early observations (2026-10-01)
+## Test.75 map-wide Spiderlings player intelligence (2026-10-01)
+
+Test.75 retains Test.74's complete field crews, largest suitable legal site preference and paid outer-to-inner construction. It extends recognized player position sharing to all six hostile, living and actionable Spiderlings species on the current map, regardless of crew or reporter distance. A single saved player report records position, direction, age, player identity and reporter ID. Planning, openings, stations, pressure and pending player Recovery use the report; an ongoing NPC engagement retains its local target. Continuous credible hearing can guide investigation after visual contact has ceased.
+
+The positive-turn prepass samples native target choice, actual LOS/hearing and player recognition using detached observers. The actual positive native `KinkyDungeonTrackSneak` return at or above 0.5 also publishes first recognition during the same enemy loop, including wander AI and loops that skip beforemove. Native hunt/wander beforemove adds visual classification while preserving the original return. NPC combat awareness cannot bypass player recognition. Sharing does not write the recipient's native awareness or detection progress. Busy Capture, Recovery and NPCWrapping actors can relay credible contact without relinquishing control; a busy actor is not assigned as a lure. A shared visual report can advance group pressure without counting as the lure's own sight. Reports expire after four positive turns; hidden movement, zero-time updates and loading do not renew them, and another map owns a separate report.
+
+Pending player Recovery can follow the recorded player position even if native selection prefers an NPC. Only when the Spinner's own native sensory range can reach the player does Runtime route that duty to the real player target; native recognition, melee and equipment admission still decide attachment. Compatible collar requirements and readable attachment failure feedback remain effective.
+
+The final ZIP SHA-256 is `7b5190499412232ce20f41082e86aeb7d5bb99b3965bcc36058286406cebbbc8`, 24,817,539 bytes and 169 source-matching entries. Compared with Test.74, only `mod.json`, Spinner AI and Spinner Runtime payloads change. Repository checks, all 12 policy tests, 471 public tests and the complete local watcher with 773 tests pass. Focused AI and perception tests pass 84/84.
+
+The same final ZIP passes all 34 native checks each on KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`. Evidence is `2026-10-01T00-17-20-859Z-0.92.36-test.75` in the external compatibility cache. The native runner reads each scenario immediately before executing it; both result files include the final NPC-preference Recovery scenario.
+
+Both versions verify a recognized reporter of every species sharing with a distant Spinner without mutating either actor, and real Tunneler first recognition becoming available during its positive native turn. Existing construction, staffing, damage/repair and save/reload scenarios remain passing. Two completed-leg-bag departure scenes test ordinary native selection and forced persistent NPC preference with a Jumper reporter. Each scene delivers two real player hits, attaches two Recovery sources and pulls the player through the breach from (16,10) to the original core (14,10) in eight turns, preserving the same completed bag and progress. These controlled scenes do not establish balance on every natural map, user save or combination of other Mods.
+
+## Test.74 retained Spinner crews, outer-first fields and early observations (2026-10-01, historical)
 
 Test.74 withdraws Test.73's ordinary worker eviction and dispersal. Original crews retain their invested or completed fields; legal waiting stations reserve distinct cells without limiting membership. Idle groups cannot abandon a field with paid work simply to merge into another crew. Old empty groups can recover only their exact saved field owners. No entity is deleted or moved instantly to reduce crowding.
 

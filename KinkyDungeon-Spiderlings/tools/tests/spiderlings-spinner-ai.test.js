@@ -132,6 +132,7 @@ function runtime(entities = []) {
             KinkyDungeonCheckPath: () => true,
             KinkyDungeonCheckLOS: () => true,
             KinkyDungeonGetBuffedStat: () => 0,
+            KinkyDungeonTrackSneak: (enemy) => enemy.vp ?? (enemy.aware ? 1 : 0),
             KinkyDungeonMultiplicativeStat: () => 1,
             KDBoundEffects: () => 0,
             KinkyDungeonApplyBuffToEntity() {},
@@ -917,6 +918,7 @@ test("pending recovery pursues native observations before gate work without disc
     assert.equal(group.metrics.construction, construction);
     assert.equal(r.phaseCalls.length, 0);
     worker.testSense = false;
+    delete r.context.Spiderlings.SpinnerNativeField.state().ai.playerObservation;
     group.engagement = {
         target: { kind: "player", id: 0 },
         lureId: worker.id,
@@ -970,6 +972,33 @@ test("actual approach and paid field work renew the ambush window but stale sigh
     assert.equal(group.engagement.mode, "lure");
     advance();
     assert.equal(group.engagement.mode, "pressure");
+});
+
+test("continuous remote hearing still guides investigation after personal sight has been absent for eight turns", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity,
+        reporter = { ...spinner(90, 12, 3), Enemy: { name: "Jumper" } };
+    target.x = 12;
+    target.y = 3;
+    for (let tick = 0; tick < 9; tick++) {
+        r.context.Spiderlings.SpinnerAI.reportPlayerContact(
+            reporter,
+            target,
+            { recognized: true, hostile: true, canSensePlayer: true },
+            1,
+        );
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    }
+    assert.equal(group.engagement.mode, "pursuit");
+    const lure = actors.find((actor) => actor.id === group.engagement.lureId),
+        before = Math.max(Math.abs(lure.x - target.x), Math.abs(lure.y - target.y));
+    r.context.KinkyDungeonEnemyLoop(lure, target, 1);
+    assert.equal(Math.max(Math.abs(lure.x - target.x), Math.abs(lure.y - target.y)), before - 1);
+    assert.equal(lure.aware, undefined);
+    assert.equal(r.phaseCalls.length, 0, "investigation cannot spend the same turn on native attack");
 });
 
 test("a Spinner without a field plan leaves movement and attacks to native AI", () => {
