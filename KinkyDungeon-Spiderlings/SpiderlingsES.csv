@@ -211,16 +211,16 @@ SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo pro
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
 KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
 KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Tomo de ataduras de seda
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Bastón del tejedor de seda
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Convergencia del capullo
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Lazo de seda
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Mano principal o secundaria: +15% de fuerza de atadura. 4 de maná; alcance 6; carga de dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto. Los hilos permanecen visibles. Cuando la seda del tomo basta por sí sola para dejar al enemigo indefenso, forma ataduras en brazos, cintura, piernas y tobillos si están libres.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza durante 2 turnos. Las paredes detienen el hilo. Los hilos siguen al objetivo y desaparecen al liberarse.
-ItemPickupSpiderlingsSilkenBindingTome,Recoges un tomo de ataduras de seda.
-ItemPickupSpiderlingsSilkweaverStaff,Recoges un bastón del tejedor de seda.
+KinkyDungeonInventoryItemSpiderlingTome,Tomo de ataduras de seda
+KinkyDungeonInventoryItemSpiderlingStaff,Bastón del tejedor de seda
+KinkyDungeonSpecialSpiderlingTome,Convergencia del capullo
+KinkyDungeonSpecialSpiderlingStaff,Lazo de seda
+KinkyDungeonInventoryItemSpiderlingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
+KinkyDungeonInventoryItemSpiderlingStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Mano principal o secundaria: +20% de fuerza de atadura. 4 de maná; alcance 6; carga de dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto. Cuando la seda del arma basta por sí sola para dejar al enemigo indefenso, forma un capullo completo que se abre a medida que se libera."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza durante 3 turnos. Las paredes detienen el hilo. La seda sigue al objetivo y forma un capullo completo cuando basta por sí sola para dejarlo indefenso. Se abre a medida que se libera."
+ItemPickupSpiderlingTome,Recoges un tomo de ataduras de seda.
+ItemPickupSpiderlingStaff,Recoges un bastón del tejedor de seda.
 KDPrereqFailSpiderlingsCocoonConvergence,Requiere 4 de maná y que termine la recarga de 8 turnos.
 KDPrereqFailSpiderlingsSilkenSnare,Requiere 2 de maná y que termine la recarga de 3 turnos.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tejes un círculo de seda. Los hilos empiezan a recogerse hacia el centro.

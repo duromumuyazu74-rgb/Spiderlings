@@ -398,6 +398,42 @@ test("touching a boundary cannot bypass the sealed-field requirement for shield 
     assert.deepEqual(pressured, []);
 });
 
+test("moving actors only rescan entered or previously occupied enclosure cores", () => {
+    const c = runtime().context,
+        workers = [1, 2].map((id) => ({
+            id,
+            x: 10 + id,
+            y: 9 + id,
+            hp: 10,
+            Enemy: { name: "Spinner", tags: { spiderlings: true } },
+        }));
+    c.KDMapData.Entities.push(...workers);
+    const encounter = c.Spiderlings.SpinnerScenarios.setupNested({ ownerIds: [1, 2] }).encounter,
+        composite = Object.values(encounter.topology.composites)[0],
+        prey = { id: 70, x: 1, y: 1, hp: 8, Enemy: { name: "Maidforce", tags: {} } },
+        native = c.Spiderlings.SpinnerTopology.updateTarget;
+    let updates = 0;
+    c.Spiderlings.SpinnerTopology.updateTarget = (...args) => {
+        updates++;
+        return native(...args);
+    };
+    c.KDMapData.Entities.push(prey);
+    c.Spiderlings.SpinnerNativeField.onEntry(workers[0]);
+    c.Spiderlings.SpinnerNativeField.onEntry(prey);
+    assert.equal(updates, 0);
+    Object.assign(prey, composite.core);
+    c.Spiderlings.SpinnerNativeField.onEntry(prey);
+    assert.equal(updates, 1);
+    assert.equal(composite.closureArmed, true);
+    assert.equal(composite.targetId, prey.id);
+    prey.x = 1;
+    prey.y = 1;
+    c.Spiderlings.SpinnerNativeField.onEntry(prey);
+    assert.equal(updates, 2);
+    assert.equal(composite.closureArmed, false);
+    assert.equal(composite.targetId, undefined);
+});
+
 test("voluntary, forced, and NPC boundary entry never applies the retired ground-trap buff", () => {
     for (const entry of [
         { event: "playerMove", willing: true, npc: false },

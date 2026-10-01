@@ -201,3 +201,27 @@ test("weighted spider routing does not cut between blocked diagonal corners", ()
     assert.ok(path?.length > 1);
     assert.notDeepEqual({ ...path[0] }, { x: 2, y: 2 });
 });
+
+test("actor movement refreshes occupancy without rebuilding unchanged silk geometry", () => {
+    const { context } = fixture(),
+        spider = actor(1, { spiderlings: true });
+    let reads = 0;
+    context.Spiderlings.SpinnerTopology = {
+        solidCells: () => {
+            reads++;
+            return [{ x: 2, y: 3 }];
+        },
+    };
+    route(context, spider, spider, { x: 7, y: 3 });
+    assert.equal(reads, 1);
+    context.Spiderlings.WebMobility.invalidateNavigation();
+    context.KDMapData.Entities.push(actor(2, {}, 3, 3));
+    const path = route(context, spider, spider, { x: 7, y: 3 });
+    assert.ok(!path.some((cell) => cell.x === 3 && cell.y === 3));
+    assert.equal(reads, 1);
+    context.Spiderlings.WebMobility.invalidateNavigation(true);
+    assert.equal(reads, 2);
+    context.KDMapData = { Entities: [], Traffic: [] };
+    route(context, spider, spider, { x: 7, y: 3 });
+    assert.equal(reads, 3);
+});

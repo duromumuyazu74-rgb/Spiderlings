@@ -684,6 +684,7 @@
                       movable: KinkyDungeonMovableTiles,
                       anchors: earlyLayout.anchors,
                       huntingSites: earlyLayout.huntingSites,
+                      largeHuntingSite: earlyLayout.largeHuntingSite,
                       acceptNest: (point, reached) =>
                           !!reserveInitialGuards([point], passable, occupied, spawnPoints, reached),
                       random: KDRandom,
@@ -772,11 +773,19 @@
             destroyedIds: [],
             complete: false,
             garrisonVersion: 2,
+            fieldPreset: encounter?.presetSkipReason
+                ? { status: "skipped", reason: encounter.presetSkipReason }
+                : {
+                      status: "pending",
+                      preferredSites: encounter?.sites || earlyLayout?.huntingSites || [],
+                      protectedPoints: spawnPoints.map((point) => ({ x: point.x, y: point.y })),
+                  },
             clearing: plan.map((point) => ({ ...point })),
             layout: encounter
                 ? {
                       ...encounter.metrics,
                       sites: encounter.sites,
+                      largeHuntingSite: encounter.largeHuntingSite,
                       opened: earlyLayout.opened,
                       attempts: earlyLayout.attempts,
                       retries: earlyLayout.attempts - 1,
@@ -792,6 +801,7 @@
                       spawnPoints,
                   ),
         };
+        api.HuntingGroundsLayout?.reservePopulationBoundary(KDMapData, encounter?.largeHuntingSite);
         return true;
     }
 
@@ -974,7 +984,15 @@
         KDAddEvent(KDEventMapGeneric, "postMapgen", MOD, () => {
             api.HuntingGroundsLayout?.release(KDMapData);
             if (KDMapData.MapMod === MOD && !KDMapData[FIELD]) cancelInfestation("ineligible");
-            else trimInfestationPatrol();
+            else {
+                trimInfestationPatrol();
+                const preset = activeState()?.fieldPreset;
+                if (preset?.status === "pending")
+                    KDMapData[FIELD].fieldPreset = api.SpinnerAI?.initializeMapgenField(preset) || {
+                        status: "skipped",
+                        reason: "spinner-unavailable",
+                    };
+            }
         });
         if (!KinkyDungeonPlaceEnemies.SpiderlingsHuntingGroundsWrapped) {
             const original = KinkyDungeonPlaceEnemies;

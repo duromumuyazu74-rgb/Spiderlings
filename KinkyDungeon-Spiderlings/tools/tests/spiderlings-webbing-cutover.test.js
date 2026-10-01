@@ -49,8 +49,8 @@ const scripts = [
     "SpiderlingsSpellVisuals.js",
 ];
 const assets = [
-    "Items/SpiderlingsSilkenBindingTome.png",
-    "Items/SpiderlingsSilkweaverStaff.png",
+    "Items/SpiderlingTome.png",
+    "Items/SpiderlingStaff.png",
     "UI/MapMod/SpiderlingsInfestation.png",
     "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",

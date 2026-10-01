@@ -282,6 +282,27 @@
             });
         if (!added.added) return { added: false, reason: added.reason };
         encounter.topology = added.state;
+        if (input.prebuiltOuter) {
+            const graph = encounter.topology,
+                composite = graph.composites[input.compositeId],
+                outer = composite && graph.fields[composite.layerIds.at(-1)];
+            if (outer) {
+                const gate = cellKey(outer.gateCell);
+                for (const anchor of graph.anchors)
+                    if (anchor.owners.includes(outer.id) && cellKey(anchor) !== gate) anchor.built = true;
+                for (const link of graph.links) {
+                    if (!link.owners.includes(outer.id)) continue;
+                    link.builtCells = link.plannedCells
+                        .filter((cell) => cellKey(cell) !== gate)
+                        .map((cell) => ({ ...cell }));
+                    link.connected = link.builtCells.length === link.plannedCells.length;
+                }
+                composite.closureArmed = false;
+                composite.autoSeal = false;
+                composite.provenance = "mapgen";
+                topology().refresh(graph);
+            }
+        }
         reconcile();
         return { added: true, compositeId: input.compositeId };
     }
@@ -513,20 +534,24 @@
         return entity?.player ? "player" : entity?.id;
     }
 
-    function updatePreyTargets(graph) {
-        for (const composite of Object.values(graph.composites || {})) {
-            if (composite.autoSeal) continue;
-            const owners = fieldOwners(composite.id)
-                .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
-                .filter((entity) => entity?.hp > 0 && isSpiderling(entity));
-            const prey = [KinkyDungeonPlayerEntity, ...KDMapData.Entities].find(
+    function updatePreyTargets(graph, compositeIds) {
+        const actors = new Map(KDMapData.Entities.map((entity) => [entity.id, entity])),
+            candidates = [KinkyDungeonPlayerEntity, ...KDMapData.Entities].filter(
                 (entity) =>
                     entity &&
                     (entity.player || entity.hp > 0) &&
                     !isSpiderling(entity) &&
                     !isOwnedProxy(entity) &&
                     entity.Enemy?.name !== "NestEntrance" &&
-                    !entity.Enemy?.tags?.scenery &&
+                    !entity.Enemy?.tags?.scenery,
+            );
+        for (const composite of Object.values(graph.composites || {})) {
+            if (composite.autoSeal || (compositeIds && !compositeIds.has(composite.id))) continue;
+            const owners = fieldOwners(composite.id)
+                .map((id) => actors.get(id))
+                .filter((entity) => entity?.hp > 0 && isSpiderling(entity));
+            const prey = candidates.find(
+                (entity) =>
                     topology().isInsideCommonCore(graph, composite.id, entity) &&
                     owners.some((owner) => (entity.player ? KDHostile(owner) : KDHostile(owner, entity))),
             );
@@ -541,8 +566,25 @@
     function onEntry(entity) {
         const encounter = state(),
             id = targetId(entity);
-        if (!encounter?.topology || id === undefined) return false;
-        updatePreyTargets(encounter.topology);
+        if (
+            !encounter?.topology ||
+            id === undefined ||
+            isSpiderling(entity) ||
+            isOwnedProxy(entity) ||
+            entity.Enemy?.name === "NestEntrance" ||
+            entity.Enemy?.tags?.scenery
+        )
+            return false;
+        const graph = encounter.topology,
+            affected = new Set(
+                Object.values(graph.composites || {})
+                    .filter(
+                        (composite) =>
+                            composite.targetId === id || topology().isInsideCommonCore(graph, composite.id, entity),
+                    )
+                    .map((composite) => composite.id),
+            );
+        if (affected.size) updatePreyTargets(graph, affected);
         return false;
     }
 

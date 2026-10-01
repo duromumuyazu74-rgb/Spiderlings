@@ -2,8 +2,8 @@
     const expect = (value, message) => {
         if (!value) throw Error(message);
     };
-    const TOME = "SpiderlingsSilkenBindingTome",
-        STAFF = "SpiderlingsSilkweaverStaff";
+    const TOME = "SpiderlingTome",
+        STAFF = "SpiderlingStaff";
     const CONVERGENCE = "SpiderlingsCocoonConvergence",
         SNARE = "SpiderlingsSilkenSnare";
     const records = [];
@@ -171,7 +171,7 @@
         for (let i = 0; i < 3 && !trace.some((t) => t.spell === SNARE); i++) await turn();
         const hits = trace.filter((t) => t.spell === SNARE);
         expect(hits.length === 1 && hits[0].id === first.id, `Snare first enemy collision: ${JSON.stringify(hits)}`);
-        expect(hits[0].bind === 8 && hits[0].slow === 0, "Snare applied slow before binding");
+        expect(hits[0].bind === 10 && hits[0].slow === 0, "Snare applied slow before binding");
         expect(Spiderlings.WeaponWebbing.status(first)?.amount > 0, "Actual Snare lost persistent silk");
         expect(first.specialBoundLevel?.Slime > 0 && first.slow > 0, "Snare did not bind and slow");
         expect(!(behind.boundLevel > 0) && !(neutral.boundLevel > 0), "Snare pierced or hit ally");
@@ -197,8 +197,8 @@
         await turn();
         trace.length = 0;
         for (const [weapon, bind] of [
-            [TOME, 3],
-            [STAFF, 5],
+            [TOME, 4],
+            [STAFF, 7],
         ]) {
             KDSetWeapon(weapon);
             KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
@@ -211,7 +211,7 @@
             KDMapData.Entities = [];
             KDUpdateEnemyCache = true;
         }
-        expect(KinkyDungeonPlayerBuffs[TOME + "BindAmp"]?.power === 0.15, "Tome passive missing");
+        expect(KinkyDungeonPlayerBuffs[TOME + "BindAmp"]?.power === 0.2, "Tome passive missing");
         KDSetWeapon(TOME);
         KDGameData.Offhand = TOME;
         await turn();
@@ -219,7 +219,7 @@
             Object.values(KinkyDungeonPlayerBuffs).filter((b) => b.id === TOME + "BindAmp").length === 1,
             "Tome passive stacks with itself",
         );
-        records.push({ scenario: "melee", hits: trace.slice(), passive: 0.15 });
+        records.push({ scenario: "melee", hits: trace.slice(), passive: 0.2 });
 
         setup();
         KinkyDungeonInventoryRemove(KinkyDungeonInventoryGetWeapon(STAFF));
@@ -245,6 +245,132 @@
             expect(tex && tex.width === 72 && tex.height === 72, `${weapon} inventory art missing`);
         }
         records.push({ scenario: "loot-and-art", missingWeapon: STAFF, nativePickup: true });
+
+        setup();
+        const originalTomeID = KinkyDungeonInventoryGetWeapon(TOME).id;
+        const originalStaffID = KinkyDungeonInventoryGetWeapon(STAFF).id;
+        const variantID = KinkyDungeonGetItemID();
+        const containerID = KinkyDungeonGetItemID();
+        const oldTome = "SpiderlingsSilkenBindingTome",
+            oldStaff = "SpiderlingsSilkweaverStaff";
+        const carrier = target(11, 10);
+        carrier.items = [oldTome, oldStaff];
+        carrier.tempitems = [oldStaff];
+        KDUpdatePersistentNPC(carrier.id, true);
+        const nativeSave = KinkyDungeonSaveGame(true);
+        const legacySave =
+            typeof nativeSave === "string" ? JSON.parse(LZString.decompressFromBase64(nativeSave)) : nativeSave;
+        const oldNames = { [TOME]: oldTome, [STAFF]: oldStaff };
+        for (const item of legacySave.inventory) {
+            if (!oldNames[item.name]) continue;
+            item.name = oldNames[item.name];
+            for (const event of item.events || []) {
+                if (event.kind === TOME) {
+                    event.kind = oldTome;
+                    event.power = 0.15;
+                }
+            }
+        }
+        legacySave.wep = oldTome;
+        if (legacySave.stats) legacySave.stats.wep = oldTome;
+        Object.assign(legacySave.KDGameData, {
+            PlayerWeaponLastEquipped: oldTome,
+            Offhand: oldStaff,
+            OffhandOld: oldStaff,
+            OffhandReturn: oldTome,
+            PreviousWeapon: [oldTome, oldStaff, "Knife", "Unarmed"],
+        });
+        legacySave.choices_wep = [oldTome, oldStaff];
+        legacySave.weaponVariants ||= {};
+        legacySave.weaponVariants.SavedSilk = { template: oldStaff, events: [] };
+        legacySave.inventory.push({
+            name: "SavedSilk",
+            inventoryVariant: "SavedSilk",
+            type: Weapon,
+            id: variantID,
+            events: [],
+        });
+        legacySave.KDGameData.Containers.LegacySilk = {
+            name: "LegacySilk",
+            type: "Chest",
+            lock: "",
+            items: {
+                [oldStaff]: { name: oldStaff, type: Weapon, id: containerID, events: [] },
+            },
+        };
+        expect(
+            KinkyDungeonLoadGame(LZString.compressToBase64(JSON.stringify(legacySave)), true),
+            "Legacy weapon native load failed",
+        );
+        expect(
+            KinkyDungeonPlayerWeapon === TOME && KinkyDungeonPlayerDamage.name === TOME,
+            `Legacy equipped weapon migration differs: ${JSON.stringify({ weapon: KinkyDungeonPlayerWeapon, damage: KinkyDungeonPlayerDamage.name, last: KDGameData.PlayerWeaponLastEquipped, items: [...KinkyDungeonInventory.get(Weapon).values()] })}`,
+        );
+        expect(KinkyDungeonInventoryGetWeapon(TOME)?.id === originalTomeID, "Legacy tome identity changed");
+        expect(KinkyDungeonInventoryGetWeapon(STAFF)?.id === originalStaffID, "Legacy staff identity changed");
+        expect(
+            KDGameData.PlayerWeaponLastEquipped === TOME &&
+                KDGameData.OffhandOld === STAFF &&
+                KDGameData.OffhandReturn === TOME,
+            "Legacy weapon switching state failed migration",
+        );
+        expect(
+            KDGameData.PreviousWeapon[0] === TOME && KDGameData.PreviousWeapon[1] === STAFF,
+            "Legacy previous weapons failed migration",
+        );
+        expect(
+            KinkyDungeonWeaponChoices[0] === TOME && KinkyDungeonWeaponChoices[1] === STAFF,
+            "Legacy weapon quickslots failed migration",
+        );
+        expect(
+            KinkyDungeonWeaponVariants.SavedSilk.template === STAFF &&
+                KinkyDungeonInventoryGetWeapon("SavedSilk").id === variantID,
+            "Legacy variant identity or template changed",
+        );
+        expect(
+            KDGameData.Containers.LegacySilk.items[STAFF]?.name === STAFF,
+            "Legacy container weapon failed migration",
+        );
+        expect(
+            !Object.keys(KinkyDungeonWeapons).includes(oldTome) && KinkyDungeonWeapons[oldTome].name === TOME,
+            "Legacy resolve alias is duplicated in normal weapon listings",
+        );
+        expect(
+            KinkyDungeonInventoryGetWeapon(oldTome).id === originalTomeID,
+            "Legacy direct lookup no longer resolves",
+        );
+        expect(
+            KinkyDungeonInventoryGetWeapon(TOME).events.find((event) => event.buffType === "BindAmp").power === 0.2,
+            "Legacy saved weapon passive stayed at 15%",
+        );
+        const restoredCarrier = KDMapData.Entities.find((enemy) => enemy.id === carrier.id);
+        expect(
+            restoredCarrier.items[0] === TOME &&
+                restoredCarrier.items[1] === STAFF &&
+                restoredCarrier.tempitems[0] === STAFF,
+            "Native legacy NPC held weapons failed migration",
+        );
+        expect(KDPersistentNPCs[carrier.id].entity.items[0] === TOME, "Persistent held weapons failed migration");
+        KDDropStolenItems(restoredCarrier, KDMapData);
+        const stolenDrops = KDMapData.GroundItems.filter((item) => [TOME, STAFF].includes(item.name));
+        expect(stolenDrops.length === 1 && stolenDrops[0].name === TOME, "NPC temporary held weapon became extra loot");
+        expect(
+            KinkyDungeonFindWeapon(stolenDrops[0].name)?.rarity === 4 && KinkyDungeonFindWeapon(oldTome)?.name === TOME,
+            "Native stolen-weapon lookup lost the definition",
+        );
+        KinkyDungeonItemEvent(stolenDrops[0], true);
+        expect(
+            KinkyDungeonInventoryGetWeapon(TOME).id === originalTomeID,
+            "Returning stolen silk replaced the existing weapon identity",
+        );
+        records.push({
+            scenario: "legacy-weapon-save",
+            tomeID: originalTomeID,
+            staffID: originalStaffID,
+            variantID,
+            shortIDs: [TOME, STAFF],
+            nativeStolenPickup: true,
+        });
         // Leave the saved-turn inward animation visible for the acceptance screenshot.
         setup();
         await turn();

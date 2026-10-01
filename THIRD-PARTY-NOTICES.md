@@ -14,7 +14,9 @@ T_Swizzle created the Mage artwork under the existing CC BY-NC 4.0 artwork licen
 
 `Bullets/SpiderlingsMageRune.png` and `Bullets/SpiderlingsMageRuneIcon.png` preserve T_Swizzle's transparent `Spider Rune.png` and `Spider Rune Spider Icon.png` supplied by the maintainer in `T's Enemies (1)_2`, under the artwork license described above. `Bullets/SpiderlingsMageRuneHit.png` copies that transparent rune for the legacy native hit path; `Bullets/SpiderlingsMageBolt.png` copies the spider icon for the projectile.
 
-`Items/SpiderlingsSilkenBindingTome.png` and `Items/SpiderlingsSilkweaverStaff.png` are 72×72 transparent exports of T_Swizzle's `Tome of Webs` and `Web Staff` groups in the maintainer-supplied `WeaponDrops.clip`. Export preserves the original layer colors, alpha and outside stroke, excluding the paper background. The source CLIP remains an external artwork input. These exports use the existing artwork license above.
+`Items/SpiderlingTome.png` and `Items/SpiderlingStaff.png` are 72×72 transparent exports of T_Swizzle's `Tome of Webs` and `Web Staff` groups in the maintainer-supplied `WeaponDrops.clip`. Export preserves the original layer colors, alpha and outside stroke, excluding the paper background. The source CLIP remains an external artwork input. These exports use the existing artwork license above.
+
+`Bullets/SpiderlingsMageBolt.png` was originally generated with the built-in imagegen tool on 2026-10-01: a compact ivory and pale-purple silk ball with a few loose strands and no spider emblem.
 
 `Bullets/SpiderlingsMageBoltHit.png` is the 64×64 purple ring-and-diamond glyph drawn procedurally with Python/Pillow during Codex-assisted Mage development on September 23, 2026. It is retained for bolt impacts with the maintainer's approval. It was not supplied by T_Swizzle; the earlier attribution grouping was incorrect.
 

@@ -117,13 +117,47 @@
                 )
                     candidates.push(center);
             }
-        const anchors = [];
         diagnostics.candidates = candidates.length;
-        for (const target of preferred) {
-            const candidate = candidates
-                .filter((center) => anchors.every((placed) => chebyshev(placed, center) >= 9))
-                .sort((left, right) => chebyshev(left, target) - chebyshev(right, target))[0];
-            if (candidate) anchors.push(candidate);
+        const selectAnchors = (large) => {
+            const selected = [];
+            for (const target of preferred) {
+                const candidate = candidates
+                    .filter(
+                        (center) =>
+                            (!large || chebyshev(large, center) >= 9) &&
+                            selected.every((placed) => chebyshev(placed, center) >= 9),
+                    )
+                    .sort((left, right) => chebyshev(left, target) - chebyshev(right, target))[0];
+                if (candidate) selected.push(candidate);
+            }
+            return selected;
+        };
+        const largeTarget = { x: Math.round(width * 0.25), y: Math.round(height * 0.55) },
+            largeCandidates = candidates
+                .filter(
+                    (center) =>
+                        center.x >= 5 &&
+                        center.y >= 5 &&
+                        center.x < width - 5 &&
+                        center.y < height - 5 &&
+                        footprint(center, 4, natural),
+                )
+                .sort((left, right) => chebyshev(left, largeTarget) - chebyshev(right, largeTarget));
+        let anchors = [],
+            largeSite;
+        for (const center of largeCandidates.slice(0, 8)) {
+            const selected = selectAnchors(center);
+            if (selected.length < 3) continue;
+            largeSite = center;
+            anchors = selected;
+            break;
+        }
+        if (!largeSite) {
+            if (!options.fallback) {
+                diagnostics.failure = "large-field-site";
+                return null;
+            }
+            anchors = selectAnchors();
         }
         diagnostics.anchors = anchors;
         if (anchors.length < 3) {
@@ -216,6 +250,7 @@
                     siteCandidates.push(center);
             }
         const huntingSites = [];
+        if (largeSite) huntingSites.push(largeSite);
         for (const target of siteTargets) {
             const candidate = siteCandidates
                 .filter((center) => huntingSites.every((placed) => chebyshev(placed, center) >= 5))
@@ -223,7 +258,7 @@
             if (candidate) huntingSites.push(candidate);
         }
         for (const site of huntingSites) {
-            square(site, 2);
+            square(site, site === largeSite ? 4 : 2);
             links.push(corridor(site, crossroad));
         }
         for (const endpoint of [options.start, options.end, ...(options.shortcuts || [])])
@@ -249,7 +284,7 @@
         const reserved = [];
         if (options.reserve)
             for (const center of [...usableAnchors, ...huntingSites]) {
-                const radius = usableAnchors.includes(center) ? 4 : 2;
+                const radius = usableAnchors.includes(center) || center === largeSite ? 4 : 2;
                 for (let y = center.y - radius; y <= center.y + radius; y += 1)
                     for (let x = center.x - radius; x <= center.x + radius; x += 1)
                         if (x > 0 && y > 0 && x < width - 1 && y < height - 1 && tile(x, y) === "0" && !meta(x, y)) {
@@ -260,6 +295,7 @@
         return {
             anchors: usableAnchors,
             huntingSites,
+            largeHuntingSite: largeSite,
             crossroad,
             opened: proposed.size,
             width,
@@ -293,6 +329,37 @@
         }
         reservations.delete(map);
         if (typeof KinkyDungeonGenNavMap === "function") KinkyDungeonGenNavMap();
+    }
+
+    // Native random population respects OL; its authored spawnpoints bypass it.
+    // Reserve only future construction cells after nest placement has released
+    // the broad terrain reservations. No existing actor or terrain is moved.
+    function reservePopulationBoundary(map, center) {
+        if (map !== KDMapData || !center || map.MapMod !== "SpiderlingsHuntingGrounds") return 0;
+        const reserved = reservations.get(map) || new Set();
+        let added = 0;
+        for (let y = center.y - 4; y <= center.y + 4; y++)
+            for (let x = center.x - 4; x <= center.x + 4; x++) {
+                const name = `${x},${y}`;
+                const data = KinkyDungeonTilesGet(name);
+                if (
+                    chebyshev(center, { x, y }) < 2 ||
+                    KinkyDungeonMapGet(x, y) !== "0" ||
+                    data?.OL ||
+                    data?.Lock ||
+                    data?.Type ||
+                    data?.Protected ||
+                    data?.Jail ||
+                    data?.OffLimits ||
+                    data?.Priority
+                )
+                    continue;
+                KinkyDungeonTilesSet(name, { ...data, OL: true, SpiderlingsLayoutReserve: true });
+                reserved.add(name);
+                added++;
+            }
+        if (reserved.size) reservations.set(map, reserved);
+        return added;
     }
 
     function relocateReserved(list, reserved) {
@@ -338,6 +405,11 @@
         const floor = new Set();
         const protectedCells = new Set();
         const occupied = new Set((options.entities || []).filter((entity) => entity.hp !== 0).map(pointKey));
+        const constructionOccupied = new Set(
+            (options.entities || [])
+                .filter((entity) => entity.hp !== 0 && entity.Enemy?.tags?.spiderlings !== true)
+                .map(pointKey),
+        );
         const stationary = new Set(
             (options.entities || []).filter((entity) => entity.hp !== 0 && entity.Enemy?.immobile).map(pointKey),
         );
@@ -364,6 +436,28 @@
         diagnostics.preexistingUnreachable = mandatory.filter((point) => !initiallyReachable.has(pointKey(point)));
         const allProtected = new Set([...protectedCells, ...stationary]);
         const legal = (x, y) => floor.has(`${x},${y}`) && !allProtected.has(`${x},${y}`);
+        const requestedLargeSite = options.largeHuntingSite,
+            fieldProtected = new Set([...allProtected, ...spawnPointCells]),
+            largeLegal =
+                !requestedLargeSite ||
+                footprint(
+                    requestedLargeSite,
+                    4,
+                    (x, y) =>
+                        legal(x, y) &&
+                        !fieldProtected.has(`${x},${y}`) &&
+                        (chebyshev(requestedLargeSite, { x, y }) < 2 || !constructionOccupied.has(`${x},${y}`)),
+                );
+        const largeSite = largeLegal ? requestedLargeSite : undefined,
+            presetSkipReason = largeLegal ? undefined : "large-field-site";
+        // The optional prefab must not invalidate a legal native objective.
+        // If its spacing prevents a safe three-nest plan, retry that plan once
+        // without the prefab while preserving every native actor and tile.
+        const withoutLargeSite = () => {
+            if (!largeSite) return null;
+            const fallback = planEncounter({ ...options, largeHuntingSite: undefined, diagnostics: {} });
+            return fallback && { ...fallback, presetSkipReason: "large-field-site" };
+        };
         const available = [];
         for (let y = 4; y < height - 4; y += 1)
             for (let x = 4; x < width - 4; x += 1) {
@@ -372,6 +466,7 @@
                     !initiallyReachable.has(pointKey(point)) ||
                     occupied.has(pointKey(point)) ||
                     spawnPointCells.has(pointKey(point)) ||
+                    (largeSite && chebyshev(point, largeSite) < 9) ||
                     !footprint(point, 3, legal)
                 )
                     continue;
@@ -395,7 +490,7 @@
         diagnostics.nests = nests;
         if (nests.length !== 3) {
             diagnostics.failure = "nest-sites";
-            return null;
+            return withoutLargeSite();
         }
         const nestCells = new Set(nests.map(pointKey));
         const blocking = new Set([...stationary, ...nestCells]);
@@ -412,7 +507,7 @@
             )
         ) {
             diagnostics.failure = "route";
-            return null;
+            return withoutLargeSite();
         }
         const siteCandidates = [];
         for (let y = 2; y < height - 2; y += 1)
@@ -422,7 +517,7 @@
                 if (!reached.has(pointKey(point)) || !footprint(point, 1, legal)) continue;
                 siteCandidates.push(point);
             }
-        const sites = [];
+        const sites = largeSite ? [{ ...largeSite }] : [];
         for (const target of options.huntingSites || []) {
             const candidate = siteCandidates
                 .filter((point) => sites.every((site) => chebyshev(site, point) >= 3))
@@ -435,11 +530,13 @@
         diagnostics.sites = sites;
         if (sites.length !== 3) {
             diagnostics.failure = "field-sites";
-            return null;
+            return withoutLargeSite();
         }
         return {
             nests,
             sites,
+            largeHuntingSite: largeSite && { ...largeSite },
+            presetSkipReason,
             metrics: {
                 open: floor.size,
                 passable: passable.size,
@@ -577,7 +674,7 @@
                     reservations.set(KDMapData, reserved);
                 }
                 earlyPlans.set(KDMapData, shaped || { failed: true, attempts: attempt + 1, diagnostics });
-                if (shaped && (shaped.anchors.length >= 4 || attempt === 4)) break;
+                if (shaped && ((shaped.largeHuntingSite && shaped.anchors.length >= 3) || attempt === 4)) break;
             }
             return result;
         };
@@ -591,6 +688,7 @@
         planEncounter,
         earlyPlan: (map) => earlyPlans.get(map),
         release,
+        reservePopulationBoundary,
         register,
     });
     layout.SpiderlingsLayoutLoaded = true;

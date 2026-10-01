@@ -205,6 +205,122 @@ test("loading in a side room migrates stored three-nest floors and their own jou
     assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), false);
 });
 
+test("new Hunting Grounds requests one field preset only after native population and never on old maps", () => {
+    const r = runtime(),
+        calls = [];
+    r.context.Spiderlings.SpinnerAI = {
+        initializeMapgenField(options) {
+            calls.push(JSON.parse(JSON.stringify(options)));
+            return { status: "placed", compositeId: "fixture-preset" };
+        },
+    };
+    r.generate({});
+    assert.equal(calls.length, 0, "Placement waits for the complete native population");
+    const ids = [...r.context.KDMapData.SpiderlingsHuntingGrounds.targetIds];
+    r.event("postMapgen");
+    r.event("postMapgen");
+    assert.equal(calls.length, 1);
+    assert.deepEqual([...r.context.KDMapData.SpiderlingsHuntingGrounds.targetIds], ids);
+    assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.fieldPreset.status, "placed");
+    delete r.context.KDMapData.SpiderlingsHuntingGrounds.fieldPreset;
+    r.event("postMapgen");
+    assert.equal(calls.length, 1, "Existing objectives without the new marker remain unchanged");
+});
+
+test("new Hunting population retains its authored large construction boundary until field initialization", () => {
+    const r = runtime(),
+        c = r.context,
+        phases = [];
+    c.KDMapData.Tiles = {};
+    c.KinkyDungeonTilesGet = (name) => c.KDMapData.Tiles[name];
+    c.KinkyDungeonTilesSet = (name, value) => (c.KDMapData.Tiles[name] = value);
+    c.KinkyDungeonMapSet = () => {};
+    c.KinkyDungeonGenNavMap = () => {};
+    c.KinkyDungeonCreateMapGenType = { TileMaze() {} };
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8"), c);
+    c.KinkyDungeonCreateMapGenType.TileMaze();
+    const site = JSON.parse(JSON.stringify(c.Spiderlings.HuntingGroundsLayout.earlyPlan(c.KDMapData).largeHuntingSite));
+    assert.ok(site);
+    c.populationAction = () => {
+        phases.push("population");
+        assert.equal(c.KinkyDungeonTilesGet(`${site.x + 4},${site.y}`).OL, true);
+        assert.equal(c.KinkyDungeonTilesGet(`${site.x + 2},${site.y}`).OL, true);
+        assert.equal(c.KinkyDungeonTilesGet(`${site.x},${site.y}`), undefined);
+        assert.equal(c.KinkyDungeonMapGet(site.x + 4, site.y), "0", "birth reservation never invents wall terrain");
+        assert.equal(c.KDMapData.Entities.length, 15, "the same three native nest crews remain intact");
+    };
+    c.Spiderlings.SpinnerAI = {
+        initializeMapgenField(options) {
+            phases.push("field");
+            assert.deepEqual(JSON.parse(JSON.stringify(options.preferredSites[0])), site);
+            assert.equal(
+                Object.values(c.KDMapData.Tiles).some((tile) => tile.SpiderlingsLayoutReserve || tile.OL),
+                false,
+            );
+            return { status: "placed", center: site, radius: 4 };
+        },
+    };
+    r.generate();
+    assert.deepEqual(phases, ["population"]);
+    r.event("postMapgen");
+    assert.deepEqual(phases, ["population", "field"]);
+    assert.deepEqual(JSON.parse(JSON.stringify(c.KDMapData.SpiderlingsHuntingGrounds.layout.largeHuntingSite)), site);
+    assert.equal(c.KDMapData.Entities.length, 15);
+    const state = JSON.stringify(c.KDMapData),
+        player = JSON.stringify(c.KinkyDungeonPlayerEntity);
+    r.event("postMapgen");
+    assert.equal(JSON.stringify(c.KDMapData), state);
+    assert.equal(JSON.stringify(c.KinkyDungeonPlayerEntity), player);
+});
+
+test("a mobile NPC occupying only the optional preset keeps the native objective and guards", () => {
+    for (const failure of ["none", "nest", "guard"]) {
+        const r = runtime(),
+            c = r.context;
+        c.KDMapData.Tiles = {};
+        c.KinkyDungeonTilesGet = (name) => c.KDMapData.Tiles[name];
+        c.KinkyDungeonTilesSet = (name, value) => (c.KDMapData.Tiles[name] = value);
+        c.KinkyDungeonMapSet = () => {};
+        c.KinkyDungeonGenNavMap = () => {};
+        c.KinkyDungeonCreateMapGenType = { TileMaze() {} };
+        vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8"), c);
+        c.KinkyDungeonCreateMapGenType.TileMaze();
+        const site = c.Spiderlings.HuntingGroundsLayout.earlyPlan(c.KDMapData).largeHuntingSite,
+            maid = { id: 500, x: site.x + 3, y: site.y, hp: 10, Enemy: { name: "Maidforce" } },
+            original = JSON.stringify(maid);
+        c.KDMapData.Entities.push(maid);
+        if (failure === "nest") c.KinkyDungeonMapGet = (x, y) => (x === 1 && y === 1 ? "0" : "1");
+        if (failure === "guard") {
+            const nativeSummon = c.KinkyDungeonSummonEnemy;
+            c.KinkyDungeonSummonEnemy = (...args) => (args[2] === "MageSpiderlings" ? [] : nativeSummon(...args));
+        }
+        let fields = 0;
+        c.Spiderlings.SpinnerAI = { initializeMapgenField: () => fields++ };
+        r.generate();
+        const state = c.KDMapData.SpiderlingsHuntingGrounds;
+        assert.equal(state.status, failure === "none" ? "active" : "cancelled", failure);
+        if (failure === "none") {
+            assert.equal(c.KDMapData.MapMod, "SpiderlingsHuntingGrounds");
+            assert.equal(state.targetIds.length, 3);
+            assert.deepEqual(JSON.parse(JSON.stringify(state.fieldPreset)), {
+                status: "skipped",
+                reason: "large-field-site",
+            });
+            assert.equal(c.KDMapData.Entities.length, 16);
+        } else {
+            assert.equal(state.reason, failure === "nest" ? "insufficient-space" : "garrison-failed");
+            assert.deepEqual(c.KDMapData.Entities, [maid]);
+        }
+        r.event("postMapgen");
+        assert.equal(fields, 0);
+        assert.equal(JSON.stringify(maid), original);
+        assert.equal(
+            Object.values(c.KDMapData.Tiles).some((tile) => tile.SpiderlingsLayoutReserve || tile.OL),
+            false,
+        );
+    }
+});
+
 test("native modifier adds three independent nests and twelve attributable guards", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;

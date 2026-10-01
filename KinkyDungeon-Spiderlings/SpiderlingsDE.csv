@@ -211,16 +211,16 @@ SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nester
 SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
 KDModButtonspiderlingsInfestationWeight,Befall-Gewichtung (0: aus)
 KDModButtonspiderlingsHuntingGroundsWeight,Jagdgebiet-Gewichtung - nur Maidforce (0: aus)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,Foliant der Seidenfessel
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,Seidenweberstab
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,Kokonkonvergenz
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,Seidenfessel
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,Feine Seide durchzieht den Buchrücken und umschlingt die offenen Seiten. Die gewobenen Worte ziehen verstreute Fäden nach innen.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,Ein schwaches Leuchten ruht im Netz an der Stabspitze. Mit einem Schwung winden sich feine Fäden um das Ziel.
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,Haupt- oder Nebenhand: +15% Fesselstärke. 4 Mana; Reichweite 6; zwei Runden Vorbereitung; 8 Runden Abklingzeit. Auf 21 Feldern nehmen Schaden und Fesselung zum Zentrum hin zu. Wände blockieren die Wirkung. Die Fäden bleiben am Ziel sichtbar. Reicht die Seide dieses Buches allein zur Hilflosigkeit aus, entstehen an freien Stellen Fesseln für Arme, Taille, Beine und Knöchel.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,2 Mana; Reichweite 6; 3 Runden Abklingzeit. Fesselt das erste getroffene feindliche Ziel und verlangsamt es anschließend 2 Runden. Wände stoppen den Faden. Die Fäden bewegen sich mit dem Ziel und verschwinden beim Befreien.
-ItemPickupSpiderlingsSilkenBindingTome,Du hebst den Folianten der Seidenfessel auf.
-ItemPickupSpiderlingsSilkweaverStaff,Du hebst den Seidenweberstab auf.
+KinkyDungeonInventoryItemSpiderlingTome,Foliant der Seidenfessel
+KinkyDungeonInventoryItemSpiderlingStaff,Seidenweberstab
+KinkyDungeonSpecialSpiderlingTome,Kokonkonvergenz
+KinkyDungeonSpecialSpiderlingStaff,Seidenfessel
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Feine Seide durchzieht den Buchrücken und umschlingt die offenen Seiten. Die gewobenen Worte ziehen verstreute Fäden nach innen.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,Ein schwaches Leuchten ruht im Netz an der Stabspitze. Mit einem Schwung winden sich feine Fäden um das Ziel.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Haupt- oder Nebenhand: +20% Fesselstärke. 4 Mana; Reichweite 6; zwei Runden Vorbereitung; 8 Runden Abklingzeit. Auf 21 Feldern nehmen Schaden und Fesselung zum Zentrum hin zu. Wände blockieren die Wirkung. Reicht die Waffenseide allein zur Hilflosigkeit aus, hüllt sie den Gegner in einen vollständigen Kokon, der sich beim Befreien wieder öffnet."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 Mana; Reichweite 6; 3 Runden Abklingzeit. Fesselt das erste getroffene feindliche Ziel und verlangsamt es anschließend 3 Runden. Wände stoppen den Faden. Die Seide folgt dem Ziel und bildet einen vollständigen Kokon, wenn sie allein zur Hilflosigkeit ausreicht. Er öffnet sich beim Befreien."
+ItemPickupSpiderlingTome,Du hebst den Folianten der Seidenfessel auf.
+ItemPickupSpiderlingStaff,Du hebst den Seidenweberstab auf.
 KDPrereqFailSpiderlingsCocoonConvergence,Benötigt 4 Mana und eine abgeschlossene Abklingzeit von 8 Runden.
 KDPrereqFailSpiderlingsSilkenSnare,Benötigt 2 Mana und eine abgeschlossene Abklingzeit von 3 Runden.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Du webst einen Kreis aus Seide. Die Fäden ziehen sich nach innen.

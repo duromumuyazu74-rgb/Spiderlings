@@ -771,7 +771,7 @@
         return "";
     }
 
-    function fieldBodyComplete(state, field) {
+    function fieldBodyComplete(state, field, solidKeys) {
         if (field.kind === "passage")
             return (
                 field.nativeTerrainValid !== false &&
@@ -780,7 +780,7 @@
                     return link?.prepared && link.hp > 0 && !link.collapsed;
                 })
             );
-        const solids = new Set(solidCells(state).map(key)),
+        const solids = solidKeys || new Set(solidCells(state).map(key)),
             gate = key(field.gateCell);
         if (!field.boundaryCells.every((cell) => key(cell) === gate || solids.has(key(cell)))) return false;
         return state.links
@@ -788,12 +788,12 @@
             .every((link) => link.connected);
     }
 
-    function isLayerClosed(state, fieldId) {
+    function isLayerClosed(state, fieldId, solidKeys) {
         const field = state.fields?.[fieldId];
         if (!field) return false;
         if (field.kind === "passage")
             return (
-                fieldBodyComplete(state, field) &&
+                fieldBodyComplete(state, field, solidKeys) &&
                 field.gates.every((gate) => {
                     const link = state.links.find((candidate) => candidate.id === gate.linkId);
                     return (
@@ -802,7 +802,7 @@
                     );
                 })
             );
-        const solids = new Set(solidCells(state).map(key));
+        const solids = solidKeys || new Set(solidCells(state).map(key));
         return (
             field.boundaryCells.every((cell) => solids.has(key(cell))) &&
             state.links.filter((link) => link.owners.includes(field.id)).every((link) => link.connected && link.hp > 0)
@@ -810,13 +810,14 @@
     }
 
     function refresh(state) {
+        const solidKeys = new Set(solidCells(state).map(key));
         for (const field of Object.values(state.fields || {}).sort((a, b) => a.layer - b.layer)) {
             if (field.retired) {
                 field.phase = "retired";
                 continue;
             }
-            const closed = isLayerClosed(state, field.id),
-                body = fieldBodyComplete(state, field),
+            const closed = isLayerClosed(state, field.id, solidKeys),
+                body = fieldBodyComplete(state, field, solidKeys),
                 wasComplete = ["sealed", "breached"].includes(field.phase);
             if (field.kind === "passage") {
                 const armed = state.composites[field.compositeId]?.closureArmed,
@@ -1290,14 +1291,19 @@
     }
 
     function updateTarget(state, target, compositeId) {
+        let changed = false;
         for (const composite of Object.values(state.composites || {})) {
             if (compositeId && composite.id !== compositeId) continue;
             if (composite.autoSeal) continue;
             const inside = isInsideCommonCore(state, composite.id, target);
             composite.targetId = target?.id;
-            if (inside) composite.closureArmed = true;
-            else if (composite.closureArmed) {
+            if (inside && !composite.closureArmed) {
+                composite.closureArmed = true;
+                changed = true;
+            } else if (composite.closureArmed) {
+                if (inside) continue;
                 composite.closureArmed = false;
+                changed = true;
                 for (const fieldId of composite.layerIds) {
                     const field = state.fields[fieldId];
                     if (field.phase === "sealed" || (field.phase === "sealing" && !isLayerClosed(state, fieldId)))
@@ -1305,7 +1311,7 @@
                 }
             }
         }
-        refresh(state);
+        if (changed) refresh(state);
         return state;
     }
 

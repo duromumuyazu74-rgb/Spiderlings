@@ -211,16 +211,16 @@ SpiderlingsInfestationBlocked,계단 앞에서 발길이 멎는다. 둥지 깊�
 SpiderlingsInfestationComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (5/5)
 KDModButtonspiderlingsInfestationWeight,유충 침입 가중치 (0: 끄기)
 KDModButtonspiderlingsHuntingGroundsWeight,유충 사냥터 가중치 - Maidforce 전용 (0: 끄기)
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTome,비단 속박의 마도서
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaff,비단 직조자의 지팡이
-KinkyDungeonSpecialSpiderlingsSilkenBindingTome,천 가닥 고치
-KinkyDungeonSpecialSpiderlingsSilkweaverStaff,비단 올가미
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc,가는 거미줄이 책등을 지나 펼쳐진 책장을 감싼다. 짜인 주문을 읽으면 흩어진 실이 중심으로 모인다.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc,지팡이 끝의 그물에 희미한 빛이 머문다. 휘두르면 가느다란 실이 뻗어 대상을 여러 겹으로 감싼다.
-KinkyDungeonInventoryItemSpiderlingsSilkenBindingTomeDesc2,"주손 또는 보조 손에 들면 속박 강도 +15%. 마나 4, 사거리 6, 시전 후 2턴 뒤 수렴, 재사용 대기 8턴. 21칸에 영향을 주며 중심에 가까울수록 피해와 속박이 강해진다. 벽에 막힌다." 실은 대상에게 감긴 채 남는다. 마도서의 실만으로 적을 무력화할 수 있으면 비어 있는 팔·허리·다리·발목 부위에 구속을 짠다.
-KinkyDungeonInventoryItemSpiderlingsSilkweaverStaffDesc2,"마나 2, 사거리 6, 재사용 대기 3턴. 처음 맞힌 적을 속박한 뒤 2턴 동안 둔화시킨다. 실은 벽을 통과하지 못한다." 실은 대상을 따라 움직이며 풀려날수록 사라진다.
-ItemPickupSpiderlingsSilkenBindingTome,비단 속박의 마도서를 주웠다.
-ItemPickupSpiderlingsSilkweaverStaff,비단 직조자의 지팡이를 주웠다.
+KinkyDungeonInventoryItemSpiderlingTome,비단 속박의 마도서
+KinkyDungeonInventoryItemSpiderlingStaff,비단 직조자의 지팡이
+KinkyDungeonSpecialSpiderlingTome,천 가닥 고치
+KinkyDungeonSpecialSpiderlingStaff,비단 올가미
+KinkyDungeonInventoryItemSpiderlingTomeDesc,가는 거미줄이 책등을 지나 펼쳐진 책장을 감싼다. 짜인 주문을 읽으면 흩어진 실이 중심으로 모인다.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,지팡이 끝의 그물에 희미한 빛이 머문다. 휘두르면 가느다란 실이 뻗어 대상을 여러 겹으로 감싼다.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"주손 또는 보조 손에 들면 속박 강도 +20%. 마나 4, 사거리 6, 시전 후 2턴 뒤 수렴, 재사용 대기 8턴. 21칸에 영향을 주며 중심에 가까울수록 피해와 속박이 강해진다. 벽에 막힌다. 무기의 실만으로 적을 완전히 무력화하면 전신을 고치로 감싼다. 탈출이 진행되면 고치가 풀린다."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"마나 2, 사거리 6, 재사용 대기 3턴. 처음 맞힌 적을 속박한 뒤 3턴 동안 둔화시킨다. 실은 벽을 통과하지 못한다. 실은 대상을 따라 움직이며 무기의 실만으로 완전히 무력화하면 전신을 고치로 감싼다. 탈출이 진행되면 고치가 풀린다."
+ItemPickupSpiderlingTome,비단 속박의 마도서를 주웠다.
+ItemPickupSpiderlingStaff,비단 직조자의 지팡이를 주웠다.
 KDPrereqFailSpiderlingsCocoonConvergence,마나 4가 필요하며 8턴의 재사용 대기 시간이 끝나야 한다.
 KDPrereqFailSpiderlingsSilkenSnare,마나 2가 필요하며 3턴의 재사용 대기 시간이 끝나야 한다.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,거미줄로 원을 짰다. 실이 중심으로 모이기 시작한다.

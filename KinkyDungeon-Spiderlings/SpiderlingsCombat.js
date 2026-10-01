@@ -72,6 +72,20 @@
         return silkPayload(source, CONFIG[kind].bind, kind);
     }
 
+    // A native projectile may already own HP damage and hit bookkeeping. Mark
+    // its binding in place without adding a second contact or a pre-bind slow.
+    function nativeSilkDamage(source, damage, bind, attack) {
+        const marked = silkPayload(source, bind, attack, false);
+        return {
+            ...damage,
+            ...marked,
+            damage: damage.damage,
+            type: damage.type,
+            flags: [...new Set([...(damage.flags || []), FLAG])],
+            spiderlingsNativeDamage: true,
+        };
+    }
+
     function spraySource(bullet) {
         const data = bullet?.bullet;
         const effect = data?.playerEffect || data?.spell?.playerEffect;
@@ -169,7 +183,8 @@
     // retains reductions, but caps amplification at twice its scaled input:
     // native flat weakness bonuses (+0.5/+1) dwarf these tiny contacts.
     event("duringDamageEnemy", FLAG, (_event, data) => {
-        if (data.incomingDamage?.flags?.includes(FLAG)) data.dmgDealt = 0;
+        if (data.incomingDamage?.flags?.includes(FLAG) && !data.incomingDamage.spiderlingsNativeDamage)
+            data.dmgDealt = 0;
         else if (data.incomingDamage?.flags?.includes(CONTACT_FLAG))
             data.dmgDealt = Math.min(data.dmgDealt, Math.max(0, data.dmg) * 2);
     });
@@ -371,6 +386,7 @@
         damagePlayer,
         hitNPC,
         applySilkBinding,
+        nativeSilkDamage,
         pressureNPCShield,
         eligible,
     });
