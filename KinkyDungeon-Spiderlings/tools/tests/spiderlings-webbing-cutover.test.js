@@ -381,7 +381,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(entries.size, 247, `${csv}: floor modifiers, nest weights, squad perk, webs and NPC wrapping`);
+        assert.equal(entries.size, 254, `${csv}: floor modifiers, nest weights, squad perk, webs and NPC wrapping`);
         for (const key of [
             "KDMapMod_SpiderlingsInfestation",
             "KDMapMod_SpiderlingsHuntingGrounds",

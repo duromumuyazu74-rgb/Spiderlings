@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"В нынешнем со
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь ослабить TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Остальные путы мешают тебе развязать TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Остальные путы мешают тебе развязать TargetRestraint."
+SpiderlingsRecoveryStand,Упереться ({cost} выносливости)
+SpiderlingsRecoverySelect,Нить {number}/{count}
+SpiderlingsRecoveryCut,Разрезать ({cost})
+SpiderlingsRecoveryRemove,Снять ({cost})
+SpiderlingsRecoveryStruggle,Вырваться ({cost})
+SpiderlingsRecoveryStrandLoosened,Ты ослабляешь выбранную шёлковую нить.
+SpiderlingsRecoveryStrandSevered,Ты освобождаешься от выбранной шёлковой нити.

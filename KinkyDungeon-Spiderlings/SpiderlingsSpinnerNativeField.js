@@ -352,7 +352,12 @@
         const encounter = state(),
             field = fieldById(encounter, fieldId);
         if (!field) return false;
-        encounter.topology = topology().setFieldOwners(encounter.topology, fieldId, ownerIds);
+        const owners = Array.from(new Set(ownerIds || [])),
+            current = encounter.topology.fieldOwners[fieldId];
+        // Planning refreshes every retained crew each turn. Only an actual
+        // membership change needs the topology's immutable ownership update.
+        if (current?.length === owners.length && owners.every((id, index) => id === current[index])) return true;
+        encounter.topology = topology().setFieldOwners(encounter.topology, fieldId, owners);
         return true;
     }
 

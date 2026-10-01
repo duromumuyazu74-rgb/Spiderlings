@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"以你现在的状态，
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"以你现在的状态，还无法解开TargetRestraint。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"其他束缚妨碍着你的动作，让你无法解开TargetRestraint。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"其他束缚妨碍着你的动作，让你无法解开TargetRestraint。"
+SpiderlingsRecoveryStand,稳住（{cost} 体力）
+SpiderlingsRecoverySelect,丝线 {number}/{count}
+SpiderlingsRecoveryCut,割断（{cost}）
+SpiderlingsRecoveryRemove,拆开（{cost}）
+SpiderlingsRecoveryStruggle,挣脱（{cost}）
+SpiderlingsRecoveryStrandLoosened,你松动了选中的牵引丝线。
+SpiderlingsRecoveryStrandSevered,你摆脱了选中的牵引丝线。

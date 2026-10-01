@@ -170,6 +170,52 @@
                 await frame();
             }
             const beforeEscape = save();
+            await frame();
+            const controlNames = ["Stand", "Select", "Cut", "Remove", "Struggle"].map(
+                (name) => "SpiderlingsSpinnerRecovery" + name,
+            );
+            expect(
+                controlNames.every((name) => KDButtonsCache[name]),
+                "Active native recovery has no player action controls",
+            );
+            row.controls = controlNames;
+            if (count === 8) {
+                const liveCarrier = KinkyDungeonGetRestraintItem(recovery.GROUP),
+                    savedAttempts = { present: "attempts" in liveCarrier, value: liveCarrier.attempts },
+                    queryBuff = "SpiderlingsRecoveryQueryProbe";
+                KinkyDungeonApplyBuffToEntity(KinkyDungeonPlayerEntity, {
+                    id: queryBuff,
+                    type: "StrugglePower",
+                    power: -2,
+                    duration: 9999,
+                });
+                row.queries = [];
+                try {
+                    for (const attempts of [undefined, 0.75]) {
+                        if (attempts === undefined) delete liveCarrier.attempts;
+                        else liveCarrier.attempts = attempts;
+                        const before = {
+                            carrier: JSON.stringify(liveCarrier),
+                            recovery: JSON.stringify(recovery.state()),
+                            stamina: KinkyDungeonStatStamina,
+                            tick: KinkyDungeonCurrentTick,
+                        };
+                        for (let n = 0; n < 10; n++) KDEventMapGeneric.draw.SpiderlingsSpinnerRecovery({}, {});
+                        expect(
+                            JSON.stringify(liveCarrier) === before.carrier &&
+                                JSON.stringify(recovery.state()) === before.recovery &&
+                                KinkyDungeonStatStamina === before.stamina &&
+                                KinkyDungeonCurrentTick === before.tick,
+                            "Native HUD cost queries consumed carrier attempts, progress, resources or a turn",
+                        );
+                        row.queries.push({ initialAttempts: attempts ?? "absent", draws: 10, unchanged: true });
+                    }
+                } finally {
+                    KinkyDungeonExpireBuff(KinkyDungeonPlayerEntity, queryBuff);
+                    if (savedAttempts.present) liveCarrier.attempts = savedAttempts.value;
+                    else delete liveCarrier.attempts;
+                }
+            }
             const nativeEscape = KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape;
             row.escapePenalty = 0;
             KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape = function (_event, item, data) {
@@ -251,7 +297,12 @@
             expect(id !== undefined, "No surviving tether remained for native source-removal acceptance");
             if (id !== undefined) {
                 const actions = [];
-                for (let n = 0; n < 2; n++) actions.push(recovery.sourceRemovalInput({ sourceId: id, type: "Remove" }));
+                for (let n = 0; n < 2; n++) {
+                    const before = KinkyDungeonCurrentTick;
+                    actions.push(KDSendInput("spiderlingsRecoveryRemoveSource", { sourceId: id, type: "Remove" }));
+                    await frame();
+                    expect(KinkyDungeonCurrentTick > before, "The player input failed to pay a native world turn");
+                }
                 expect(
                     !recovery.sourceIds().includes(id),
                     "Two native removal actions did not release the chosen source",

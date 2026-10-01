@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"En tu estado actual, no 
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes aflojar TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Tus otras ataduras te impiden manipular TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Tus otras ataduras te impiden manipular TargetRestraint."
+SpiderlingsRecoveryStand,Resistir ({cost} de aguante)
+SpiderlingsRecoverySelect,Hilo {number}/{count}
+SpiderlingsRecoveryCut,Cortar ({cost})
+SpiderlingsRecoveryRemove,Retirar ({cost})
+SpiderlingsRecoveryStruggle,Forcejear ({cost})
+SpiderlingsRecoveryStrandLoosened,Aflojas el hilo de seda seleccionado.
+SpiderlingsRecoveryStrandSevered,Te liberas del hilo de seda seleccionado.

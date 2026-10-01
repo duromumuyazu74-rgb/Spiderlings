@@ -245,3 +245,10 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"今の状態ではTarget
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"今の状態ではTargetRestraintをほどくことはできない。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"ほかの拘束が動きを妨げ、TargetRestraintをほどけない。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"ほかの拘束が動きを妨げ、TargetRestraintをほどけない。"
+SpiderlingsRecoveryStand,踏ん張る（体力 {cost}）
+SpiderlingsRecoverySelect,糸 {number}/{count}
+SpiderlingsRecoveryCut,切る（{cost}）
+SpiderlingsRecoveryRemove,ほどく（{cost}）
+SpiderlingsRecoveryStruggle,もがく（{cost}）
+SpiderlingsRecoveryStrandLoosened,選んだ牽引糸が緩みました。
+SpiderlingsRecoveryStrandSevered,選んだ牽引糸から抜け出しました。

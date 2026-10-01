@@ -23,6 +23,7 @@
     let ownedMovement = false;
     let nativeMoveTick;
     let selectedSourceId;
+    let uiSourceId;
     const armedRemoval = new WeakMap(),
         strandVisuals = new Map();
 
@@ -299,8 +300,10 @@
                     undefined,
                     true,
                 );
-            if (entry.sprite) entry.sprite.mask = entry.mask;
-            else {
+            if (entry.sprite) {
+                entry.sprite.mask = entry.mask;
+                entry.sprite.alpha = sameId(id, uiSourceId) ? 1 : 0.65;
+            } else {
                 if (!entry.fallback || entry.fallback.destroyed) {
                     entry.fallback = new PIXI.Graphics();
                     kdgameboard.addChild(entry.fallback);
@@ -323,6 +326,7 @@
         ownedMovement = false;
         nativeMoveTick = undefined;
         selectedSourceId = undefined;
+        uiSourceId = undefined;
     }
 
     function clearRecoveryForCarrierLoss(recovery) {
@@ -495,6 +499,13 @@
             "SpiderlingsRecoveryAttachBlocked",
             "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
         );
+        addTextKey("SpiderlingsRecoveryStand", "Stand firm ({cost} stamina)");
+        addTextKey("SpiderlingsRecoverySelect", "Strand {number}/{count}");
+        addTextKey("SpiderlingsRecoveryCut", "Cut ({cost})");
+        addTextKey("SpiderlingsRecoveryRemove", "Remove ({cost})");
+        addTextKey("SpiderlingsRecoveryStruggle", "Struggle ({cost})");
+        addTextKey("SpiderlingsRecoveryStrandLoosened", "You loosen the selected silk strand.");
+        addTextKey("SpiderlingsRecoveryStrandSevered", "You free yourself from the selected silk strand.");
     }
 
     function feedback(attached) {
@@ -709,8 +720,9 @@
         return "Stand";
     }
 
-    function itemProgressSnapshot(item) {
+    function itemProgressSnapshot(item, query = false) {
         const fields = ["cutProgress", "struggleProgress", "pickProgress", "unlockProgress"];
+        if (query) fields.push("attempts");
         return Object.fromEntries(fields.map((field) => [field, { present: field in item, value: item[field] }]));
     }
 
@@ -725,6 +737,7 @@
         if (
             !data ||
             data.query ||
+            data.blocked ||
             !["Cut", "Remove", "Struggle"].includes(data.struggleType) ||
             (data.struggleType === "Cut" && data.canCut === false && !data.hasAffinity) ||
             (data.struggleGroup && typeof KDGroupBlocked === "function" && KDGroupBlocked(data.struggleGroup))
@@ -754,6 +767,18 @@
     }
 
     function beforeStruggle(_event, item, data) {
+        if (data?.query) {
+            const recovery = state();
+            if (
+                sameId(item?.id, recovery?.carrierId) &&
+                item === data.restraint &&
+                recovery.ownedCarrier &&
+                ["Cut", "Remove", "Struggle"].includes(data.struggleType)
+            )
+                data.escapePenalty =
+                    Number(data.escapePenalty || 0) + ESCAPE_PENALTY * Math.max(0, strength(recovery) - 1);
+            return;
+        }
         armedRemoval.delete(item);
         if (!audit()) return;
         const recovery = state();
@@ -780,7 +805,10 @@
         armedRemoval.delete(item);
         if (!armed) return;
         restoreItemProgress(item, armed.progress);
-        if (data?.result !== "Fail" || data.struggleType !== armed.method || !audit()) return;
+        // The selected strand suppresses carrier escape. Native affinity can
+        // label that paid result Impossible instead of Fail; both committed
+        // outcomes still perform the independently admitted strand work.
+        if (!["Fail", "Impossible"].includes(data?.result) || data.struggleType !== armed.method || !audit()) return;
         const recovery = state(),
             key = sourceKey(armed.sourceId);
         if (!recovery.sources[key]) return;
@@ -816,13 +844,27 @@
             ];
             if (typeof KDUpdateItemEventCache !== "undefined") KDUpdateItemEventCache = true;
         }
+        const previousWork = recovery.sourceRemovalWork[sourceKey(data.sourceId)]?.removeOrStruggle || 0;
         selectedSourceId = data.sourceId;
         try {
-            return KDInputTypes.struggle({
+            const outcome = KDInputTypes.struggle({
                 group: GROUP,
                 type: data.type || "Struggle",
                 index: carrierIndex >= 0 ? carrierIndex : undefined,
             });
+            const severed = (recovery.severedSourceIds || []).some((id) => sameId(id, data.sourceId)),
+                loosened = (recovery.sourceRemovalWork[sourceKey(data.sourceId)]?.removeOrStruggle || 0) > previousWork;
+            if (severed || loosened) {
+                KinkyDungeonSendActionMessage(
+                    10,
+                    TextGet(severed ? "SpiderlingsRecoveryStrandSevered" : "SpiderlingsRecoveryStrandLoosened"),
+                    "#C4A1EF",
+                    2,
+                    true,
+                );
+                return severed ? "SourceRemoved" : "SourceLoosened";
+            }
+            return outcome;
         } finally {
             selectedSourceId = undefined;
             if (needsEvents) {
@@ -830,6 +872,76 @@
                 else carrier.events = originalEvents;
                 if (typeof KDUpdateItemEventCache !== "undefined") KDUpdateItemEventCache = true;
             }
+        }
+    }
+
+    function drawControls() {
+        const recovery = state(),
+            ids = sourceIds(recovery),
+            carrier = carrierById(recovery?.carrierId);
+        if (
+            !carrier ||
+            !ids.length ||
+            api.SpinnerCapture?.isControllingPlayer?.() ||
+            KinkyDungeonDrawState !== "Game" ||
+            KinkyDungeonShowInventory
+        )
+            return;
+        if (!ids.some((id) => sameId(id, uiSourceId))) uiSourceId = recovery.executorId ?? ids[0];
+        const index = ids.findIndex((id) => sameId(id, uiSourceId)),
+            root = KinkyDungeonGetRestraintItem(GROUP),
+            carrierIndex = KDDynamicLinkListSurface(root).findIndex((item) => item === carrier),
+            standCost = standFirmCost(recovery);
+        const button = (name, callback, enabled, x, width, label) =>
+            DrawButtonKDEx(name, callback, enabled, x, 780, width, 45, label, enabled ? "#FFFFFF" : "#888888");
+        button(
+            STATE + "Stand",
+            () => {
+                KDSendInput("spiderlingsRecoveryStand", {});
+                return true;
+            },
+            KinkyDungeonHasStamina(standCost / 10, true),
+            700,
+            230,
+            TextGet("SpiderlingsRecoveryStand").replace("{cost}", standCost),
+        );
+        button(
+            STATE + "Select",
+            () => {
+                uiSourceId = ids[(index + 1) % ids.length];
+                return true;
+            },
+            ids.length > 1,
+            940,
+            170,
+            TextGet("SpiderlingsRecoverySelect")
+                .replace("{number}", index + 1)
+                .replace("{count}", ids.length),
+        );
+        for (const [method, x, width] of [
+            ["Cut", 1120, 140],
+            ["Remove", 1270, 140],
+            ["Struggle", 1420, 170],
+        ]) {
+            const attempt = {},
+                progress = itemProgressSnapshot(carrier, true);
+            KinkyDungeonStruggle(GROUP, method, carrierIndex >= 0 ? carrierIndex : undefined, true, attempt);
+            // Native cost queries initialize progress and consume impossible
+            // attempts even without a turn. A HUD preview
+            // must preserve an external carrier's existing item state.
+            restoreItemProgress(carrier, progress);
+            const cost = Math.round(-Number(attempt.cost || 0) * 100) / 10;
+            button(
+                STATE + method,
+                () => {
+                    KDSendInput("spiderlingsRecoveryRemoveSource", { sourceId: uiSourceId, type: method });
+                    return true;
+                },
+                legalRemovalAttempt({ ...attempt, query: false, struggleType: method }),
+                x,
+                width,
+                TextGet("SpiderlingsRecovery" + method).replace("{cost}", cost),
+            );
         }
     }
 
@@ -845,7 +957,10 @@
     }
 
     if (typeof KDEventMapGeneric !== "undefined")
-        event(KDEventMapGeneric, "draw", STATE, (_event, data) => drawStrands(data));
+        event(KDEventMapGeneric, "draw", STATE, (_event, data) => {
+            drawStrands(data);
+            if (typeof DrawButtonKDEx === "function") drawControls();
+        });
 
     if (typeof KDEventMapInventory !== "undefined") {
         event(KDEventMapInventory, "beforeStruggleCalc", ESCAPE_EVENT, beforeStruggle);
