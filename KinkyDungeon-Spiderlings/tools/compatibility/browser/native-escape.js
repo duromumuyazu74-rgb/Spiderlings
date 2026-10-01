@@ -145,6 +145,51 @@
     );
     expect(!("SpiderlingsEscapeActions" in migrated.data), "Old count gate survived migration");
     rows.push({ mode: "migration", nativeProgress: migrated.struggleProgress, cutProgress: migrated.cutProgress });
+    setup("native-escape-impossible-message");
+    equip(ids[2]);
+    KinkyDungeonApplyBuffToEntity(KinkyDungeonPlayerEntity, {
+        id: "Lockdown",
+        type: "Lockdown",
+        power: 3,
+        duration: 120,
+    });
+    const blocked = KinkyDungeonGetRestraintItem("ItemLegs"),
+        attempts = [];
+    for (let attempt = 0; attempt < 4; attempt++) {
+        const data = {};
+        KinkyDungeonStruggle("ItemLegs", "Struggle", 0, true, data);
+        expect(data.escapeChance < -0.12, "Fixture no longer reaches native impossibility");
+        for (let rests = 0; KinkyDungeonStatStamina < -data.cost && rests < 30; rests++) await wait();
+        expect(KinkyDungeonStatStamina >= -data.cost, "Native impossible attempt lacks stamina");
+        const nativeText = TextGet,
+            lookups = [],
+            before = clock;
+        TextGet = function (key) {
+            const value = nativeText.apply(this, arguments);
+            if (key.startsWith("KinkyDungeonStruggle")) lookups.push({ key, value });
+            return value;
+        };
+        try {
+            KDSendInput("struggle", { group: "ItemLegs", type: "Struggle", index: 0 });
+        } finally {
+            TextGet = nativeText;
+        }
+        await frame();
+        expect(clock > before, "Native impossible struggle input was rejected");
+        attempts.push({ attempt: attempt + 1, lookups, message: KinkyDungeonActionMessage });
+    }
+    const fourth = attempts[3],
+        impossible = fourth.lookups.find(
+            (entry) => entry.key === "KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing",
+        );
+    expect(impossible && !impossible.value.includes("[NotFound]"), "Native impossibility message is missing");
+    expect(
+        fourth.message === impossible.value.replace("TargetRestraint", TextGet("Restraint" + blocked.name)),
+        "Native impossibility message lost its equipped item name",
+    );
+    expect(KinkyDungeonGetRestraintItem("ItemLegs") === blocked, "Message repair changed equipment identity");
+    expect(!(blocked.cutProgress > 0) && !(blocked.struggleProgress > 0), "Impossible attempts gained progress");
+    rows.push({ mode: "impossible-message", attempts });
     delete KDEventMapGeneric.tickAfter.SpiderlingsNativeEscapeAcceptance;
     return { rows, profiles: Spiderlings.WebbingData.ESCAPE_PROFILES };
 })();

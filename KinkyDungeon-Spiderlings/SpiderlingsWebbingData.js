@@ -83,14 +83,20 @@
             Cut: [
                 "You cut carefully along a seam in TargetRestraint. A few threads part, extending the opening a little further.",
                 "You cut the last connecting threads of TargetRestraint, letting the fragments of silk fall gently away.",
+                "You cannot cut through TargetRestraint in your current condition.",
+                "Your bindings keep you from holding the blade firmly enough to cut TargetRestraint.",
             ],
             Struggle: [
                 "You push against TargetRestraint. The strands ease apart with your movements, widening the gaps in the weave.",
                 "You pull free of the last clinging threads of TargetRestraint and gather the loosened silk.",
+                "You cannot pull free of TargetRestraint in your current condition.",
+                "Your other bindings leave you too tightly restrained to struggle out of TargetRestraint.",
             ],
             Remove: [
                 "You tease apart the clinging threads of TargetRestraint, slowly lifting a small patch of the weave.",
                 "You peel away TargetRestraint, gathering the loosened threads together.",
+                "You cannot loosen TargetRestraint in your current condition.",
+                "Your other bindings prevent you from manipulating TargetRestraint.",
             ],
         },
         SpiderlingsCocoon: {

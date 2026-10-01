@@ -233,3 +233,15 @@ RestraintSpiderlingsSilkLeashDesc,Po wyjściu przez wyrwę w polu kolejne trafie
 RestraintSpiderlingsSilkLeashDesc2,Nowa smycz wymaga zgodnej obroży i zwykłych warunków wyposażenia. Aktywne źródła pokazują nici; bez nich smycz jest luźna.
 SpiderlingsRecoveryAttached,Spinner przypina nić powrotną ({count}/8). Jego następna dostępna akcja może przyciągnąć cię z powrotem.
 SpiderlingsRecoveryAttachBlocked,"Nić trafia, ale nie może zostać przypięta do zgodnego wyposażenia szyi. Nowa smycz wymaga obroży i zwykłych warunków wyposażenia; przyciąganie nie zostało uruchomione."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"W obecnym stanie nie możesz przeciąć TargetRestraint."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz przeciąć TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Pozostałe więzy nie pozwalają ci trzymać ostrza dość mocno, by przeciąć TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"Pozostałe więzy nie pozwalają ci trzymać ostrza dość mocno, by przeciąć TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"W obecnym stanie nie możesz wyrwać się z TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz wyrwać się z TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"Pozostałe więzy są zbyt ciasne, by pozwolić ci wyswobodzić się z TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"Pozostałe więzy są zbyt ciasne, by pozwolić ci wyswobodzić się z TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"W obecnym stanie nie możesz poluzować TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz poluzować TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Pozostałe więzy uniemożliwiają ci rozluźnienie TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Pozostałe więzy uniemożliwiają ci rozluźnienie TargetRestraint."

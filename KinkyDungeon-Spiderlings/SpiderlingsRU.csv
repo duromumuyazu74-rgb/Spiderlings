@@ -233,3 +233,15 @@ RestraintSpiderlingsSilkLeashDesc,После выхода через проло�
 RestraintSpiderlingsSilkLeashDesc2,Новый поводок требует совместимого ошейника и обычных условий экипировки. Активные источники показаны нитями; без них поводок ослаблен.
 SpiderlingsRecoveryAttached,Spinner прикрепляет возвратную нить ({count}/8). Его следующее доступное действие может потянуть вас назад.
 SpiderlingsRecoveryAttachBlocked,"Возвратная нить попала, но не может прикрепиться к совместимой экипировке шеи. Новый поводок требует ошейника и обычных условий экипировки; притягивание не установлено."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Остальные путы мешают крепко держать лезвие, чтобы разрезать TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"Остальные путы мешают крепко держать лезвие, чтобы разрезать TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"В нынешнем состоянии ты не можешь вырваться из TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь вырваться из TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"Остальные путы слишком туги, чтобы ты могла вырваться из TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"Остальные путы слишком туги, чтобы ты могла вырваться из TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"В нынешнем состоянии ты не можешь ослабить TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь ослабить TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Остальные путы мешают тебе развязать TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Остальные путы мешают тебе развязать TargetRestraint."

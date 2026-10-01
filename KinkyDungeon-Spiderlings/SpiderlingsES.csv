@@ -233,3 +233,15 @@ RestraintSpiderlingsSilkLeashDesc,"Tras salir por una brecha del campo, otro imp
 RestraintSpiderlingsSilkLeashDesc2,Una correa nueva requiere un collar compatible y las condiciones normales de equipamiento. Las fuentes activas muestran hilos; sin fuentes queda floja.
 SpiderlingsRecoveryAttached,Spinner conecta un hilo de recuperación ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
 SpiderlingsRecoveryAttachBlocked,"El hilo impacta, pero no puede unirse al equipo de cuello compatible. Una correa nueva necesita un collar y las condiciones normales de equipamiento; no se establece el arrastre."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes cortar TargetRestraint."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes cortar TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Tus ataduras te impiden sujetar la hoja con firmeza para cortar TargetRestraint."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"Tus ataduras te impiden sujetar la hoja con firmeza para cortar TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes liberarte de TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes liberarte de TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"Tus otras ataduras están demasiado apretadas para que puedas zafarte de TargetRestraint."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"Tus otras ataduras están demasiado apretadas para que puedas zafarte de TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes aflojar TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes aflojar TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Tus otras ataduras te impiden manipular TargetRestraint."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Tus otras ataduras te impiden manipular TargetRestraint."

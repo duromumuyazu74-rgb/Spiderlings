@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.77.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.78.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.77 native escape, larger fields and Spinner recovery relay (2026-10-01)
+## Test.78 native inability feedback (2026-10-01)
+
+Test.78 fixes native inability messages for ordinary Webbing. KD also consumes the custom failure suffix for Impossible and ImpossibleBound, including the bound branch's Aroused variant. English registration and all seven locale CSVs now provide all twelve keys. No escape parameter, native function, progress, stamina cost or equipment rule changes. Test.77's calibration, field, relay and ecology changes remain included; its ZIP is preserved.
+
+Both new message-contract regressions fail before the repair and pass afterward. They check the native outcome keys, unique locale entries and intact item placeholders. Repository checks, 12 policy tests, 485 public tests and the complete 790-test local watcher pass. The final ZIP has 169 source-matching entries and 24,819,976 bytes, SHA-256 `56ef65f97ce96d771c969a5acb9bfe0715c0e6acbbed47046b67a060eaf1bd99`.
+
+The added native regression makes four real struggle inputs under Lockdown, waits for stamina through native turns, and verifies the displayed inability message with its equipped item name. The item remains equipped and impossible attempts grant no positive escape progress. All existing native calibration and gameplay scenes continue to run on the same ZIP.
+
+The final same-ZIP run passes all 35 native scenarios and the final page-error gate on each of KD 5.4.92 and freshly fetched official 5.5.3 commit `12a77c8b9e72dbbf9501aed12f1de839ac655eb6`, checked at `2026-10-01T07:32:44.316Z`. Evidence: `2026-10-01T07-32-44-331Z-0.92.36-test.78`. Both reports have no non-audio page errors. Re-review of the Test.77 implementation and this correction found no further actionable defect. These controlled Chrome scenes retain the desktop-shell, player-save and other-Mod coverage limits stated below.
+
+The first Test.78 acceptance run (`2026-10-01T07-19-35-974Z-0.92.36-test.78`) failed the new fixture's message assertion because it read `globalThis.KinkyDungeonActionMessage`. Both runtimes declare that message with top-level `let`, so it is a shared global binding rather than a `globalThis` property. The fixture now reads the verified native binding; no package bytes changed for that test repair.
+
+The next run (`2026-10-01T07-25-08-252Z-0.92.36-test.78`) passes all 35 baseline scenes and all 35 GitHub scenario assertions, including the repaired inability message in both games. Its final GitHub page-error gate fails on the previously recorded native `Models/Gothic/HemLowerBack.png` request in the full Hunting Grounds population scene. This file is absent from both supplied game roots. The native asset and error filtering remain unchanged, and the failed evidence is retained; it is not a passing dual-version acceptance record.
+
+## Test.77 native escape, larger fields and Spinner recovery relay (2026-10-01, historical)
 
 Test.77 replaces fixed Webbing and leg-bag escape counters with native chance, speed, progress and cost parameters. Ordinary-panel calibration targets one action for Lv1, two for Lv2 and roughly two-to-four for Lv3, with separate native Arm compensation. Complete leg bags take more work; Cocoon adds a substantial time/stamina cost and retains its twenty-three real inner items. Cut retains native tool/Sharp access. Old Lv2/Lv3 and leg-bag counted work migrates once below native completion without replacing equipment or locks. Existing Cocoon native progress is preserved. See the [simulation results and limits](spiderlings-test77-balance.md).
 
