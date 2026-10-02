@@ -20,6 +20,7 @@ The native journey's choice of an eligible Spiderling theme, with fresh default 
 
 **Special-floor population (特殊楼层人口)**:
 The theme-specific mix of necessary nest crews, optional roaming crews and eligible native arrivals within the shared population budget. A required crew is born complete or its newly created members are removed; this does not mean restoring terrain already opened for the theme. Objective nests, escape progress and later nest reinforcement retain their distinct roles.
+`Spiderlings.Population` owns budget interpretation, initial crews and failed-birth cleanup. Floor modules own objective IDs and theme state. Each initial nest crew has two Spinners, one Jumper, two WebCasters and one Mage; the optional starting perk squad has a different composition. Original objective nests carry native red minimap quest markers. Later ordinary nests do not increase the descent quota.
 _Avoid_: whole-map rollback, global spider scheduler, treating optional patrol failure as required-crew failure
 
 **Special-floor prebuilt outer field**:

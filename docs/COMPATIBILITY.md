@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.86.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.87.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.87 special-floor crews and objective hints (2026-10-02)
+
+Test.87 is based on Test.86 commit `086ea103e0f3e350f6617213f76a34480bfaa2ff`. `SpiderlingsPopulation.js` owns shared cap interpretation, required crew creation, optional patrols and failed-birth cleanup. Floor modules retain terrain, objectives and escape state; native selector wrappers retain their order. Entry and blocked-stair messages explain original objective nests and red minimap quest markers in English and seven locales. Mage damage and Maidforce specialization remain. See the [implementation and independent review record](spiderlings-test87-population.zh-CN.md).
+
+The final ZIP contains 170 source-matching entries and 24,836,509 bytes, SHA-256 `07a7242e18aa67a0ea70bc449133777e4c7e7228891cecf10ac066ec866c816b`. All 114 images are byte-identical to Test.86. The same ZIP passes all 44 native stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `67d698a66b112481c67785de8c76e77542d0592a`, reporting 5.5.3, including seven locale loads per game. The fetch completed at `2026-10-02T08:02:34.204Z`; full evidence is `<cache>/runs/2026-10-02T08-02-34-220Z-0.92.36-test.87/acceptance.json`.
+
+The added `population-failure` scene checks insufficient capacity, required-crew failure and Hunting Grounds' optional patrol failure. `floor-objective-hints` checks actual native entry/blocked messages, red minimap marker rendering, original target quotas, later ordinary nests, save/load progress and completed descent. A separate final-package UI run covers English/Chinese, both themes and both games: eight groups, sixteen screenshots, with no text clipping. English entry text uses native scaling from 20 to approximately 16.79; Chinese and blocked messages retain 20.
+
+Independent Test.86/Test.87 comparisons find no differences in sixteen fixed-seed native maps and two wandering probes, including entity IDs/coordinates/roles, terrain, plan and escape fields, selector/summon traces, RNG calls, native save/load and repeated postMapgen. Six-member saved-roster tests compare all 64 survivor subsets and 160 replacement-role decisions against the old functions; historical four-member nests keep their original path. These are bounded samples and controlled native scenes, not long human playthroughs or arbitrary user-save/third-party-Mod coverage. Required-crew budget preflight intentionally consumes fewer births and RNG calls when existing residents leave insufficient capacity. Failed generation still retains previously opened terrain under the selected phase-one scope.
+
+The baseline retains native audio play/pause interruptions and two missing `Locks/Red.png` requests, with no missing Spiderlings assets. The GitHub runtime records no page errors, unhandled rejections or missing resources. Those diagnostics remain in the evidence.
+
+Final repository checks, all 12 policy tests, 557 public tests and the complete 871-test local watcher pass. Package verification reports zero errors, warnings or notes. Evidence is this checkout's `.scratch/delivery/2026-10-02T08-12-15-779Z-SOzl3P/REPORT.md`, binding full native acceptance to the same final ZIP; inputs remained unchanged throughout collection. Only these Markdown results are appended afterward, followed by repository checks and a focused local commit.
 
 ## Test.86 gameplay review fixes (2026-10-02)
 

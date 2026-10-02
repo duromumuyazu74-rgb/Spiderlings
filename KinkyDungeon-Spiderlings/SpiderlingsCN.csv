@@ -127,9 +127,9 @@ KinkyDungeonSpiderlingsCocoonAnchored,幼蛛在丝茧外织起蛛网，把茧身
 KDMapMod_SpiderlingsHuntingGrounds,幼蛛猎场
 KinkyDungeonMapModSpiderlingsHuntingGrounds,幼蛛在蛛巢间巡行，狭道与角落挂着蛛网，窸窣声时近时远。
 KDEscapeMethod_SpiderlingsHuntingGrounds,摧毁目标巢穴
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,这里最初筑起的几处蛛巢仍挂着丝缕。摧毁这些目标巢穴后，就能沿楼梯下行。
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,摧毁原始目标巢穴才能下行（小地图红色任务标记）；后建巢穴不计入目标。
 SpiderlingsHuntingGroundsProgress,目标巢穴已摧毁：CURRENT/TARGET
-SpiderlingsHuntingGroundsBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/TARGET）
+SpiderlingsHuntingGroundsBlocked,原始目标巢穴尚未清除，无法下行；请找小地图红色任务标记。（CURRENT/TARGET）
 SpiderlingsHuntingGroundsComplete,目标巢穴已全部摧毁，可以沿楼梯继续下行。（TARGET/TARGET）
 KDModButtonspiderlingsPinkWebbing,粉色蛛丝（关闭为原色）
 KDModButtonspiderlingsEnableHood,密织蛛丝头罩（关闭后不再穿戴）
@@ -205,9 +205,9 @@ SpiderlingsNPCWrapping,结茧中
 KDMapMod_SpiderlingsInfestation,幼蛛侵扰
 KinkyDungeonMapModSpiderlingsInfestation,角落铺着蛛网，幼蛛沿丝缕来往，四下响着窸窣声。
 KDEscapeMethod_SpiderlingsInfestation,摧毁目标巢穴
-KDEscapeMethodDesc_SpiderlingsInfestation,这里最初筑起的几处蛛巢仍挂着丝缕。摧毁这些目标巢穴后，就能沿楼梯下行。
+KDEscapeMethodDesc_SpiderlingsInfestation,摧毁原始目标巢穴才能下行（小地图红色任务标记）；后建巢穴不计入目标。
 SpiderlingsInfestationProgress,目标巢穴已摧毁：CURRENT/5
-SpiderlingsInfestationBlocked,还有目标巢穴尚未摧毁，暂时无法沿楼梯下行。（CURRENT/5）
+SpiderlingsInfestationBlocked,原始目标巢穴尚未清除，无法下行；请找小地图红色任务标记。（CURRENT/5）
 SpiderlingsInfestationComplete,目标巢穴已全部摧毁，可以沿楼梯继续下行。（5/5）
 KDModButtonspiderlingsInfestationWeight,幼蛛侵扰权重（0：关闭）
 KDModButtonspiderlingsHuntingGroundsWeight,幼蛛猎场权重，仅女仆主派系（0：关闭）

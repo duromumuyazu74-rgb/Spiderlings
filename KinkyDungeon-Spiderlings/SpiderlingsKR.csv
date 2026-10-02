@@ -127,9 +127,9 @@ KinkyDungeonSpiderlingsCocoonAnchored,새끼 거미들이 고치 둘레에 거�
 KDMapMod_SpiderlingsHuntingGrounds,새끼 거미 사냥터
 KinkyDungeonMapModSpiderlingsHuntingGrounds,부드러운 거미줄이 층 전체에 퍼져 있다. 새끼 거미들이 둥지 사이를 오가고 좁은 통로마다 바스락거리는 소리가 따라온다.
 KDEscapeMethod_SpiderlingsHuntingGrounds,목표 둥지 파괴
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,처음부터 있던 둥지 가장자리에 가는 거미줄이 늘어져 있다. 목표 둥지를 파괴하면 더 아래로 내려갈 수 있다.
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,아래층으로 가려면 원래의 목표 둥지를 파괴해야 한다(미니맵의 빨간 퀘스트 표식). 나중에 생긴 둥지는 포함되지 않는다.
 SpiderlingsHuntingGroundsProgress,파괴한 목표 둥지: CURRENT/TARGET
-SpiderlingsHuntingGroundsBlocked,계단 앞에서 발길이 멎는다. 둥지 깊은 곳의 바스락거림은 아직 잠잠해지지 않았다. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsBlocked,아래층으로 가려면 원래의 목표 둥지를 파괴해야 한다. 미니맵의 빨간 퀘스트 표식을 찾자. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,분홍색 거미줄 (끄기: 원래 색)
 KDModButtonspiderlingsEnableHood,새끼 거미 비단 두건 (끄기: 착용 안 함)
@@ -205,9 +205,9 @@ SpiderlingsNPCWrapping,고치로 감싸는 중
 KDMapMod_SpiderlingsInfestation,새끼 거미 창궐
 KinkyDungeonMapModSpiderlingsInfestation,구석마다 실이 뻗고 그림자 속에서 바스락거림이 서로 답한다. 이곳에는 오래전부터 다른 주민이 있었다.
 KDEscapeMethod_SpiderlingsInfestation,목표 둥지 파괴
-KDEscapeMethodDesc_SpiderlingsInfestation,처음부터 있던 둥지 가장자리에 가는 거미줄이 늘어져 있다. 목표 둥지를 파괴하면 더 아래로 내려갈 수 있다.
+KDEscapeMethodDesc_SpiderlingsInfestation,아래층으로 가려면 원래의 목표 둥지를 파괴해야 한다(미니맵의 빨간 퀘스트 표식). 나중에 생긴 둥지는 포함되지 않는다.
 SpiderlingsInfestationProgress,파괴한 목표 둥지: CURRENT/5
-SpiderlingsInfestationBlocked,계단 앞에서 발길이 멎는다. 둥지 깊은 곳의 바스락거림은 아직 잠잠해지지 않았다. (CURRENT/5)
+SpiderlingsInfestationBlocked,아래층으로 가려면 원래의 목표 둥지를 파괴해야 한다. 미니맵의 빨간 퀘스트 표식을 찾자. (CURRENT/5)
 SpiderlingsInfestationComplete,처음부터 이곳을 차지했던 둥지가 모두 무너졌다. 더 깊은 곳으로 향하는 계단이 눈앞에 있다. (5/5)
 KDModButtonspiderlingsInfestationWeight,새끼 거미 창궐 가중치 (0: 끄기)
 KDModButtonspiderlingsHuntingGroundsWeight,새끼 거미 사냥터 가중치 · Maidforce 전용 (0: 끄기)

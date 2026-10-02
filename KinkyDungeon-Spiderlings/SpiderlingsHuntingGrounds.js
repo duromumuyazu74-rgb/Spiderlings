@@ -253,7 +253,6 @@
     const MIN_FLOOR = 5;
     const TARGET = 3;
     const MOBILE = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]);
-    const CORE = ["Spinner", "Spinner", "Jumper", "WebCaster", "WebCaster", "MageSpiderlings"];
     const MOBILE_TAG = "SpiderlingsFloorMobile";
     const BATCH_TAG = "SpiderlingsFloorBatch";
     const POPULATION_TAG = MOD + "Population";
@@ -312,26 +311,6 @@
                 mobileCombatant(entity) && (!hostileOnly || typeof KDHostile !== "function" || KDHostile(entity)),
         );
         return { spiders: actors.filter((entity) => MOBILE.has(entity.Enemy.name)).length, total: actors.length };
-    }
-
-    function createPopulationPlan(kind) {
-        if (KDMapData.SpiderlingsPopulationPlan) return KDMapData.SpiderlingsPopulationPlan;
-        const configured = typeof api.getMapPopulationCap === "function" ? api.getMapPopulationCap() : 25;
-        const cap = Math.min(configured || 32, kind === MOD ? 32 : 25);
-        const targetRatio = kind === MOD ? 0.85 : 0.58;
-        KDMapData.SpiderlingsPopulationPlan = {
-            kind,
-            cap,
-            targetRatio,
-            mobileBudget:
-                kind === MOD
-                    ? cap + Math.max(1, Math.round((cap * 0.15) / 0.85))
-                    : Math.min(30, Math.floor(cap / targetRatio)),
-            version: 1,
-        };
-        if (kind === MOD)
-            KDMapData.SpiderlingsPopulationPlan.ecologyBudget = KDMapData.SpiderlingsPopulationPlan.mobileBudget + 1;
-        return KDMapData.SpiderlingsPopulationPlan;
     }
 
     function protectedSpawn(point) {
@@ -469,10 +448,11 @@
         KinkyDungeonMapModSpiderlingsHuntingGrounds:
             "Webs spread across the floor. Spiderlings roam the passages between their nests.",
         KDEscapeMethod_SpiderlingsHuntingGrounds: "Destroy the marked nests",
-        KDEscapeMethodDesc_SpiderlingsHuntingGrounds: "Destroy the marked nests to continue downstairs.",
+        KDEscapeMethodDesc_SpiderlingsHuntingGrounds:
+            "Destroy original target nests to descend (red minimap quest markers). Later nests do not count.",
         SpiderlingsHuntingGroundsProgress: "Marked nests destroyed: CURRENT/TARGET",
         SpiderlingsHuntingGroundsBlocked:
-            "Marked nests still remain. Destroy them before going downstairs. (CURRENT/TARGET)",
+            "Destroy original target nests to descend: red minimap quest markers. (CURRENT/TARGET)",
         SpiderlingsHuntingGroundsComplete:
             "The last marked nest is destroyed. You can now go downstairs. (TARGET/TARGET)",
     };
@@ -524,6 +504,30 @@
         return true;
     }
 
+    function cancelCreatedNests(created, reason, error) {
+        const failures = error ? [error] : [];
+        try {
+            for (const entity of created) {
+                if (!KDMapData.Entities.includes(entity)) continue;
+                try {
+                    KDRemoveEntity(entity, false, false, true);
+                    if (KDMapData.Entities.includes(entity))
+                        throw new Error("Spiderlings objective nest removal was refused");
+                } catch (failure) {
+                    failures.push(failure);
+                }
+            }
+        } finally {
+            cancelInfestation(reason);
+        }
+        if (failures.length > (error ? 1 : 0))
+            throw new AggregateError(failures, "Spiderlings objective nest cleanup failed", {
+                cause: error?.cause || error || failures[0],
+            });
+        if (error) throw error;
+        return false;
+    }
+
     function repairEarlyJourneyPreviews() {
         if (typeof KDGameData === "undefined") return;
         // Native room returns restore KDWorldMap without afterLoadGame or
@@ -554,208 +558,6 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", MOD, repairEarlyJourneyPreviews);
     }
 
-    function reserveInitialGuards(plan, passable, occupied, spawnPoints, accessibleOverride) {
-        const blocked = new Set([...occupied, ...plan.map(key)]);
-        const accessible =
-            accessibleOverride || reachableCells(KDMapData.StartPosition, passable, new Set(plan.map(key)));
-        const protectedPoints = [
-            KDMapData.StartPosition,
-            KDMapData.EndPosition,
-            KinkyDungeonPlayerEntity,
-            ...Object.values(KDMapData.ShortcutPositions || {}),
-            ...(KDMapData.JailPoints || []),
-            ...spawnPoints,
-        ].filter(Boolean);
-        const movable =
-            typeof KinkyDungeonMovableTilesEnemy !== "undefined"
-                ? KinkyDungeonMovableTilesEnemy
-                : KinkyDungeonMovableTiles;
-        const placements = [];
-        for (const nest of plan) {
-            const cells = [];
-            for (let dx = -2; dx <= 2; dx += 1)
-                for (let dy = -2; dy <= 2; dy += 1) {
-                    const point = { x: nest.x + dx, y: nest.y + dy };
-                    const name = key(point);
-                    const meta = KinkyDungeonTilesGet(name);
-                    if (
-                        Math.hypot(dx, dy) > 2.5 ||
-                        blocked.has(name) ||
-                        !accessible.has(name) ||
-                        !movable.includes(KinkyDungeonMapGet(point.x, point.y)) ||
-                        meta?.OL ||
-                        meta?.Lock ||
-                        meta?.Type ||
-                        protectedPoints.some((protectedPoint) => distance(protectedPoint, point) < 2) ||
-                        (typeof globalThis.KinkyDungeonNoEnemy === "function" &&
-                            !globalThis.KinkyDungeonNoEnemy(point.x, point.y, true))
-                    )
-                        continue;
-                    cells.push(point);
-                }
-            cells.sort((a, b) => Math.hypot(a.x - nest.x, a.y - nest.y) - Math.hypot(b.x - nest.x, b.y - nest.y));
-            if (cells.length < CORE.length) return null;
-            const guards = cells.slice(0, CORE.length);
-            for (const point of guards) blocked.add(key(point));
-            placements.push(guards);
-        }
-        return placements;
-    }
-
-    const CORE_ROLES = ["builder", "builder", "hunter", "hunter", "guard", "guard"];
-    function missingRosterNames(nest) {
-        const names = [...(nest.SpiderlingsNestRoster || [])];
-        for (const child of KDMapData.Entities)
-            if (child.hp > 0 && child[NEST_PARENT_ID] === nest.id) {
-                const index = names.indexOf(child.Enemy.name);
-                if (index >= 0) names.splice(index, 1);
-            }
-        return names;
-    }
-
-    function assignRosterRole(child, nest) {
-        const roles = CORE.map((name, index) => ({ name, role: CORE_ROLES[index] }));
-        for (const other of KDMapData.Entities)
-            if (other !== child && other.hp > 0 && other[NEST_PARENT_ID] === nest.id) {
-                let index = roles.findIndex(
-                    (slot) => slot.name === other.Enemy.name && slot.role === other.SpiderlingsHuntRole,
-                );
-                if (index < 0) index = roles.findIndex((slot) => slot.name === other.Enemy.name);
-                if (index >= 0) roles.splice(index, 1);
-            }
-        child.SpiderlingsHuntRole = roles.find((slot) => slot.name === child.Enemy.name)?.role || "hunter";
-    }
-
-    function summonCore(nest, positions, created) {
-        nest.SpiderlingsNestRosterTarget = CORE.length;
-        nest.SpiderlingsNestRoster = [...CORE];
-        for (const [index, name] of CORE.entries()) {
-            const position = positions[index];
-            const batch = KinkyDungeonSummonEnemy(
-                position.x,
-                position.y,
-                name,
-                1,
-                0,
-                false,
-                undefined,
-                false,
-                false,
-                KDGetFaction(nest),
-                true,
-                undefined,
-                true,
-                false,
-            );
-            const child = batch?.[0];
-            if (batch?.length !== 1 || child.x !== position.x || child.y !== position.y) {
-                for (const entity of batch || []) KDRemoveEntity(entity, false, false, true);
-                return false;
-            }
-            child[NEST_PARENT_ID] = nest.id;
-            child.SpiderlingsHuntRole = CORE_ROLES[index];
-            created.push(child);
-        }
-        return true;
-    }
-
-    function initializeInfestationPopulation(state, nests, spawnPoints) {
-        const plan = createPopulationPlan("SpiderlingsInfestation");
-        if (plan.cap < CORE.length * 2) return false;
-        const selected = [nests[0], [...nests].sort((a, b) => distance(b, nests[0]) - distance(a, nests[0]))[0]];
-        state.clearedTiles += api.Infestation.openNestClearing(
-            selected.map((nest) => [nest]),
-            spawnPoints,
-            5,
-        );
-        const passable = new Set();
-        for (let x = 1; x < KDMapData.GridWidth - 1; x++)
-            for (let y = 1; y < KDMapData.GridHeight - 1; y++)
-                if (
-                    KinkyDungeonMovableTiles.includes(KinkyDungeonMapGet(x, y)) &&
-                    !KinkyDungeonTilesGet(`${x},${y}`)?.Lock
-                )
-                    passable.add(`${x},${y}`);
-        const positions = reserveInitialGuards(selected, passable, new Set(KDMapData.Entities.map(key)), spawnPoints);
-        if (!positions) return false;
-        const created = [];
-        for (const [index, nest] of selected.entries())
-            if (!summonCore(nest, positions[index], created)) {
-                for (const child of created) KDRemoveEntity(child, false, false, true);
-                return false;
-            }
-        state.coreNestIds = selected.map((nest) => nest.id);
-        state.coreIds = created.map((child) => child.id);
-        state.fieldPreset.maxFields = 2;
-        return true;
-    }
-
-    function initializePatrol(passable, occupied, spawnPoints, sites) {
-        if (KDMapData.Entities.length + CORE.length > 300) return [];
-        if (typeof api.availableSpiderlingSlots === "function" && api.availableSpiderlingSlots() < CORE.length)
-            return [];
-        const candidates = [...passable]
-            .map((name) => {
-                const [x, y] = name.split(",").map(Number);
-                return { x, y };
-            })
-            .filter(
-                (point) =>
-                    !occupied.has(key(point)) &&
-                    KinkyDungeonMapGet(point.x, point.y) === "0" &&
-                    !KinkyDungeonTilesGet(key(point))?.OL &&
-                    !KinkyDungeonTilesGet(key(point))?.Type &&
-                    distance(point, KDMapData.StartPosition) >= 8 &&
-                    sites.every((site) => distance(point, site) > (site.radius || 2) + 3) &&
-                    !spawnPoints.some((spawn) => distance(point, spawn) < 2),
-            );
-        candidates.sort(
-            (a, b) =>
-                Math.min(...sites.map((site) => distance(a, site)), 99) -
-                Math.min(...sites.map((site) => distance(b, site)), 99),
-        );
-        let positions;
-        const reached = reachableCells(
-            KDMapData.StartPosition,
-            passable,
-            new Set(KDMapData.Entities.filter((entity) => entity.Enemy?.immobile).map(key)),
-        );
-        for (const candidate of candidates.slice(0, 64)) {
-            positions = reserveInitialGuards([candidate], passable, occupied, spawnPoints, reached)?.[0];
-            if (positions) break;
-        }
-        if (!positions) return [];
-        const created = [];
-        for (const [index, name] of CORE.entries()) {
-            const point = positions[index];
-            const batch = KinkyDungeonSummonEnemy(
-                point.x,
-                point.y,
-                name,
-                1,
-                0,
-                false,
-                undefined,
-                false,
-                false,
-                undefined,
-                true,
-                undefined,
-                true,
-                false,
-            );
-            const child = batch?.[0];
-            if (batch?.length !== 1 || child.x !== point.x || child.y !== point.y) {
-                for (const entity of [...created, ...(batch || [])]) KDRemoveEntity(entity, false, false, true);
-                return [];
-            }
-            child.SpiderlingsHuntRole = "hunter";
-            child.SpiderlingsPatrolCrew = true;
-            created.push(child);
-        }
-        return created;
-    }
-
     function placeNests(spawnPoints, floor, room = {}) {
         if (KDMapData.MapMod !== MOD || KDMapData[FIELD]) return !!activeState();
         if (
@@ -768,8 +570,8 @@
             cancelInfestation("ineligible");
             return false;
         }
-        const populationPlan = createPopulationPlan(MOD);
-        if (populationPlan.cap < TARGET * CORE.length) {
+        const populationPlan = api.Population.prepareFloor(MOD);
+        if (populationPlan.cap < populationPlan.requiredMembers) {
             cancelInfestation("population-budget");
             return false;
         }
@@ -817,18 +619,18 @@
                       huntingSites: earlyLayout.huntingSites,
                       largeHuntingSite: earlyLayout.largeHuntingSite,
                       acceptNest: (point, reached) =>
-                          !!reserveInitialGuards([point], passable, occupied, spawnPoints, reached),
+                          !!api.Population.planCrews({ nests: [point], passable, occupied, spawnPoints, reached }),
                       random: KDRandom,
                   })
                 : null;
         const plan = earlyLayout
             ? encounter?.nests
             : planIndependentNestPlacement({ start, passable, candidates, random: KDRandom });
-        const guards = plan && reserveInitialGuards(plan, passable, occupied, spawnPoints);
+        const guards = plan && api.Population.planCrews({ nests: plan, passable, occupied, spawnPoints });
         if (
             !guards ||
-            !["NestEntrance", ...CORE].every((name) => KinkyDungeonGetEnemyByName(name)) ||
-            KDMapData.Entities.length + TARGET * (CORE.length + 1) > 300
+            !KinkyDungeonGetEnemyByName("NestEntrance") ||
+            KDMapData.Entities.length + TARGET + populationPlan.requiredMembers > 300
         ) {
             cancelInfestation("insufficient-space");
             return false;
@@ -854,26 +656,24 @@
             );
             created.push(...(batch || []));
             if (batch?.length !== 1 || batch[0].x !== point.x || batch[0].y !== point.y) {
-                for (const entity of created) KDRemoveEntity(entity, false, false, true);
-                cancelInfestation("creation-failed");
-                return false;
+                return cancelCreatedNests(created, "creation-failed");
             }
             nests.push(batch[0]);
         }
-        for (let index = 0; index < nests.length; index += 1) {
-            const nest = nests[index];
-            if (!summonCore(nest, guards[index], created)) {
-                for (const entity of created) KDRemoveEntity(entity, false, false, true);
-                cancelInfestation("garrison-failed");
-                return false;
-            }
+        let population;
+        try {
+            population = api.Population.seedCrews({
+                kind: MOD,
+                nests,
+                spawnPoints,
+                positions: guards,
+                passable,
+                sites: encounter?.sites || [],
+            });
+        } catch (error) {
+            return cancelCreatedNests(created, "garrison-failed", error);
         }
-        const patrol = initializePatrol(
-            passable,
-            new Set(KDMapData.Entities.map(key)),
-            spawnPoints,
-            encounter?.sites || [],
-        );
+        if (!population.ok) return cancelCreatedNests(created, "garrison-failed");
         for (const entity of nests) {
             KinkyDungeonSetEnemyFlag(entity, "no_pers_wander", -1);
             KinkyDungeonSetEnemyFlag(entity, "questtarget", -1);
@@ -885,8 +685,8 @@
             destroyedIds: [],
             complete: false,
             garrisonVersion: 3,
-            coreIds: created.filter((entity) => MOBILE.has(entity.Enemy.name)).map((entity) => entity.id),
-            patrolIds: patrol.map((entity) => entity.id),
+            coreIds: population.coreIds,
+            patrolIds: population.patrolIds,
             fieldPreset: {
                 status: "pending",
                 maxFields: 3,
@@ -1388,12 +1188,8 @@
         planNestClearing,
         reachableCells,
         populationGroup,
-        createPopulationPlan,
         populationCounts,
         independentCombatant,
-        initializeInfestationPopulation,
-        missingRosterNames,
-        assignRosterRole,
         perceives,
         seekCrewDuty,
         handleCrewMove,

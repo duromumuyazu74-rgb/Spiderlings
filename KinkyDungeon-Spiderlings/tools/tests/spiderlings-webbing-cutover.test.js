@@ -9,6 +9,7 @@ const modRoot = path.join(__dirname, "..", "..");
 const csvFiles = ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((locale) => `Spiderlings${locale}.csv`);
 const scripts = [
     "SpiderlingsCore.js",
+    "SpiderlingsPopulation.js",
     "SpiderlingsEncounters.js",
     "SpiderlingsFloorSelection.js",
     "SpiderlingsWebCaster.js",

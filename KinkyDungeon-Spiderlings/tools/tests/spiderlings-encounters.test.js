@@ -31,7 +31,12 @@ function loadCoreRuntime(overrides = {}, nativeSources = []) {
     context.globalThis = context;
     vm.createContext(context);
     for (const source of nativeSources) vm.runInContext(stripTypeScriptTypes(source), context);
-    for (const file of ["SpiderlingsCore.js", "SpiderlingsEncounters.js", "SpiderlingsWebCaster.js"]) {
+    for (const file of [
+        "SpiderlingsCore.js",
+        "SpiderlingsPopulation.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
+    ]) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, "../..", file), "utf8"), context, { filename: file });
     }
     return context;
@@ -1688,7 +1693,6 @@ test("mixed nest crews replace missing roles through paid reinforcement without 
         Enemy: { name: "NestEntrance", visionRadius: 30 },
     };
     const born = [];
-    const assigned = [];
     let rolls = 0;
     const kd = loadCoreRuntime({
         KDMapData: { Entities: [nest] },
@@ -1704,19 +1708,22 @@ test("mixed nest crews replace missing roles through paid reinforcement without 
             return [child];
         },
     });
-    kd.Spiderlings.HuntingGrounds = {
-        missingRosterNames: () => ["MageSpiderlings"],
-        assignRosterRole(child, parent) {
-            assigned.push([child.SpiderlingsNestParentID, parent.id]);
-        },
-    };
+    for (const [index, name] of ["Spinner", "Spinner", "Jumper", "WebCaster", "WebCaster"].entries())
+        kd.KDMapData.Entities.push({
+            id: 20 + index,
+            hp: 1,
+            SpiderlingsNestParentID: nest.id,
+            SpiderlingsHuntRole: ["builder", "builder", "hunter", "hunter", "guard"][index],
+            Enemy: { name },
+        });
     kd.KDModSettings.Spiderlings = { spiderlingsNestMageWeight: 0 };
     assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 0);
     assert.equal(rolls, 0, "a disabled missing role does not roll another species or spend an attempt");
     kd.KDModSettings.Spiderlings.spiderlingsNestMageWeight = 2;
     assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 1);
     assert.equal(born[0].Enemy.name, "MageSpiderlings");
-    assert.deepEqual(assigned, [[11, 11]], "newborn role assignment sees the real shared parent");
+    assert.equal(born[0].SpiderlingsNestParentID, nest.id);
+    assert.equal(born[0].SpiderlingsHuntRole, "guard");
 });
 
 test("NestEntrance registration removes recurring spells but preserves death summons", () => {

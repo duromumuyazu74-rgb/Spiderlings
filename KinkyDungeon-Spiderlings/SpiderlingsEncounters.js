@@ -530,29 +530,6 @@
         return KDModSettings[MOD_ID][refvar] != null ? KDModSettings[MOD_ID][refvar] : fallback;
     };
 
-    api.getMapPopulationCap = function () {
-        const value = String(api.getSetting("spiderlingsMapPopulationCap")).trim();
-        const numeric = Number(value);
-        const settingCap = /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
-        const map = typeof KDMapData !== "undefined" ? KDMapData : undefined;
-        const plan = map?.SpiderlingsPopulationPlan;
-        if (plan?.kind !== map?.MapMod || !Number.isSafeInteger(plan?.cap) || plan.cap <= 0) return settingCap;
-        return settingCap === 0 ? plan.cap : Math.min(settingCap, plan.cap);
-    };
-
-    function availableSpiderlingSlots() {
-        const cap = api.getMapPopulationCap();
-        if (cap === 0) return Infinity;
-        const entities = typeof KDMapData != "undefined" ? KDMapData?.Entities || [] : [];
-        const living = entities.filter(
-            (entity) =>
-                entity.hp > 0 &&
-                MOBILE_SPIDERLINGS.has(typeof entity.Enemy == "string" ? entity.Enemy : entity.Enemy?.name),
-        ).length;
-        return Math.max(0, cap - living);
-    }
-    api.availableSpiderlingSlots = availableSpiderlingSlots;
-
     // Keep the native weighted selection and its fallback, excluding only our
     // registered species when the current map has no free spider slots.
     if (typeof KinkyDungeonGetEnemy == "function") {
@@ -573,7 +550,7 @@
                     },
                 };
             }
-            if (availableSpiderlingSlots() === 0) {
+            if (api.availableSpiderlingSlots() === 0) {
                 args[7] = [...(args[7] || []), "SpiderlingsMapPopulation"];
             }
             return nativeGetEnemy.apply(this, args);
@@ -588,7 +565,11 @@
         const nativeGetEnemyByName = KinkyDungeonGetEnemyByName;
         KinkyDungeonGetEnemyByName = function (_name) {
             const result = nativeGetEnemyByName.apply(this, arguments);
-            if (selectingWanderingSpawns && MOBILE_SPIDERLINGS.has(result?.name) && availableSpiderlingSlots() === 0)
+            if (
+                selectingWanderingSpawns &&
+                MOBILE_SPIDERLINGS.has(result?.name) &&
+                api.availableSpiderlingSlots() === 0
+            )
                 return undefined;
             return result;
         };
@@ -610,7 +591,7 @@
         KinkyDungeonSummonEnemy = function (x, y, summonType, count, ...rest) {
             const name = typeof summonType == "string" ? summonType : summonType?.name;
             if (MOBILE_SPIDERLINGS.has(name)) {
-                const slots = availableSpiderlingSlots();
+                const slots = api.availableSpiderlingSlots();
                 if (slots === 0) return [];
                 if (count > slots) return nativeSummonEnemy.call(this, x, y, summonType, slots, ...rest);
             }
@@ -766,7 +747,7 @@
             KDMapData[MAGE_STATE_FIELD] = "existing";
             return true;
         }
-        if (availableSpiderlingSlots() === 0 || (KDMapData.Entities || []).length >= 300) {
+        if (api.availableSpiderlingSlots() === 0 || (KDMapData.Entities || []).length >= 300) {
             KDMapData[MAGE_STATE_FIELD] = "population-capped";
             return false;
         }
@@ -841,7 +822,7 @@
             setSquadState(SQUAD_STATES.INELIGIBLE);
             return false;
         }
-        if (availableSpiderlingSlots() < SQUAD_MEMBERS.length) {
+        if (api.availableSpiderlingSlots() < SQUAD_MEMBERS.length) {
             setSquadState(SQUAD_STATES.POPULATION_CAPPED);
             return false;
         }
@@ -983,8 +964,9 @@
                 nest[NEST_TUNNELER_COUNT_FIELD] = index.knownTunnelersByParent.get(nest.id) || 0;
             let eligibleWeights =
                 nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
-            if (nest.SpiderlingsNestRosterTarget === 6 && api.HuntingGrounds?.missingRosterNames) {
-                const missing = new Set(api.HuntingGrounds.missingRosterNames(nest));
+            const missingRoles = api.Population.missingRoles(nest);
+            if (missingRoles) {
+                const missing = new Set(missingRoles.map((slot) => slot.name));
                 eligibleWeights = Object.fromEntries(
                     Object.entries(eligibleWeights).map(([name, weight]) => [name, missing.has(name) ? weight : 0]),
                 );
@@ -1008,7 +990,7 @@
             if (
                 !decision.attempt ||
                 totalWeight <= 0 ||
-                availableSpiderlingSlots() === 0 ||
+                api.availableSpiderlingSlots() === 0 ||
                 typeof KinkyDungeonSummonEnemy != "function"
             )
                 continue;
@@ -1052,7 +1034,8 @@
             if (!Array.isArray(created) || created.length === 0) continue;
 
             created[0][NEST_PARENT_ID_FIELD] = nest.id;
-            if (nest.SpiderlingsNestRosterTarget === 6) api.HuntingGrounds?.assignRosterRole?.(created[0], nest);
+            if (missingRoles)
+                created[0].SpiderlingsHuntRole = missingRoles.find((slot) => slot.name === enemyName)?.role || "hunter";
             if (enemyName === "Tunneler") nest[NEST_TUNNELER_COUNT_FIELD] += 1;
             successfulSummons += 1;
         }

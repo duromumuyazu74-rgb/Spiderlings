@@ -179,6 +179,7 @@ function loadWebbingRuntime(overrides = {}) {
 
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsPopulation.js",
         "SpiderlingsEncounters.js",
         "SpiderlingsWebCaster.js",
         "SpiderlingsModelRuntime.js",

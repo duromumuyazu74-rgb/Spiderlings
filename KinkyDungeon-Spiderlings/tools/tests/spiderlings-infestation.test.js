@@ -74,6 +74,7 @@ function runtime(overrides = {}, nativeSources = []) {
     };
     vm.createContext(context);
     for (const native of nativeSources) vm.runInContext(stripTypeScriptTypes(native), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsPopulation.js"), "utf8"), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), context);
     vm.runInContext(source, context);
     return {
@@ -123,8 +124,8 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
     assert.equal(mod.filter({ y: 5, Faction: "Maidforce" }), 1);
     assert.equal(mod.filter({ y: 5, RoomType: "PerkRoom" }), 0);
     assert.equal(r.generate(), "native-result");
-    assert.equal(r.context.KDMapData.Entities.length, 5);
-    const nests = r.context.KDMapData.Entities;
+    assert.equal(r.context.KDMapData.Entities.length, 17);
+    const nests = r.context.KDMapData.Entities.filter((entity) => entity.Enemy.name === "NestEntrance");
     assert.deepEqual(
         nests
             .map(
@@ -135,11 +136,11 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
             .sort(),
         [0, 1, 1, 1, 1],
     );
-    assert.ok(r.context.KDMapData.Entities.every((e) => e.flags.no_pers_wander === -1 && e.flags.questtarget === -1));
+    assert.ok(nests.every((e) => e.flags.no_pers_wander === -1 && e.flags.questtarget === -1));
     assert.equal(r.population[0][7], undefined, "keep the native population budget");
     r.generate();
     r.event("postMapgen");
-    assert.equal(r.context.KDMapData.Entities.length, 5);
+    assert.equal(r.context.KDMapData.Entities.length, 17);
     assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsInfestation.filterRandom(), 0);
 });
 
@@ -347,7 +348,7 @@ test("maid floors have no infestation objective; infestation floors place five n
     r.context.KDMapData.MapMod = "SpiderlingsInfestation";
     r.context.KDMapData.MapFaction = "Bandit";
     r.generate();
-    assert.equal(r.context.KDMapData.Entities.length, 5);
+    assert.equal(r.context.KDMapData.Entities.length, 17);
     assert.equal(r.context.Spiderlings.Infestation.activeState().targetIds.length, 5);
 });
 
@@ -417,7 +418,9 @@ test("five successful original-nest destructions count once regardless of attrib
     const r = runtime();
     r.generate();
     const c = r.context;
-    const original = [...c.KDMapData.Entities];
+    const original = c.KDMapData.Entities.filter((entity) =>
+        c.KDMapData.SpiderlingsInfestation.targetIds.includes(entity.id),
+    );
     const state = c.KDMapData.SpiderlingsInfestation;
     assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /0\/5/);
     assert.equal(r.event("calcEscapeMethod", { escapeMethod: "Key" }).escapeMethod, "SpiderlingsInfestation");
@@ -467,7 +470,7 @@ test("map JSON preserves partial and completed progress, registration is idempot
     const snapshot = JSON.stringify(c.KDMapData);
     c.KDMapData = JSON.parse(snapshot);
     r.generate();
-    assert.equal(c.KDMapData.Entities.length, 4);
+    assert.equal(c.KDMapData.Entities.length, 16);
     assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /1\/5/);
     for (const entity of [...c.KDMapData.Entities]) c.KDRemoveEntity(entity, true);
     c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
@@ -741,7 +744,12 @@ test("maid lethal damage lets only an original task nest release one Tunneler be
 test("task nest evacuation respects the map cap and reserves the last slot before ordinary death summons", () => {
     for (const count of [24, 25]) {
         const { c, nest, born, hit } = escapeRuntime();
-        for (let i = 0; i < count; i++) c.KDMapData.Entities.push({ id: 100 + i, hp: 1, Enemy: { name: "Spinner" } });
+        for (
+            let i = c.KDMapData.Entities.filter((entity) => entity.Enemy.name !== "NestEntrance").length;
+            i < count;
+            i++
+        )
+            c.KDMapData.Entities.push({ id: 100 + i, hp: 1, Enemy: { name: "Spinner" } });
         hit("Maidforce", 20);
         c.KDRemoveEntity(nest, true);
         assert.deepEqual(born, count === 24 ? ["Tunneler"] : []);
@@ -829,6 +837,7 @@ test("terrain opens only after all nests are created, refreshes navigation, and 
         KinkyDungeonMapGet: (x, y) => (wall && x === wall.x && y === wall.y ? "1" : "0"),
         KinkyDungeonMapSet: () => {
             writes++;
+            wall = undefined;
         },
         KinkyDungeonGenNavMap: () => nav++,
     });

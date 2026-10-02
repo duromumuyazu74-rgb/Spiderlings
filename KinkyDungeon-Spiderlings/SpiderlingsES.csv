@@ -127,9 +127,9 @@ KinkyDungeonSpiderlingsCocoonAnchored,Las crías de araña tienden redes alreded
 KDMapMod_SpiderlingsHuntingGrounds,Coto de caza de las arañitas
 KinkyDungeonMapModSpiderlingsHuntingGrounds,La seda se extiende por todo el piso. Las arañitas cruzan entre sus nidos y el roce de sus patas te sigue por los pasillos.
 KDEscapeMethod_SpiderlingsHuntingGrounds,Destruir los nidos marcados
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,De los nidos originales cuelgan finos hilos de seda. Destruye estos nidos marcados para seguir descendiendo.
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Destruye los nidos objetivo originales para bajar (marcas rojas de misión en el minimapa). Los nidos posteriores no cuentan.
 SpiderlingsHuntingGroundsProgress,Nidos marcados destruidos: CURRENT/TARGET
-SpiderlingsHuntingGroundsBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsBlocked,Destruye los nidos objetivo originales para bajar: marcas rojas de misión en el minimapa. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Telaraña rosa (no: original)
 KDModButtonspiderlingsEnableHood,Capucha de seda arácnida (no: nunca equipar)
@@ -205,9 +205,9 @@ SpiderlingsNPCWrapping,Envolviendo
 KDMapMod_SpiderlingsInfestation,Infestación de arañitas
 KinkyDungeonMapModSpiderlingsInfestation,La seda invade los rincones y unos susurros responden a otros en las sombras. Este lugar lleva tiempo teniendo otros habitantes.
 KDEscapeMethod_SpiderlingsInfestation,Destruir los nidos marcados
-KDEscapeMethodDesc_SpiderlingsInfestation,De los nidos originales cuelgan finos hilos de seda. Destruye estos nidos marcados para seguir descendiendo.
+KDEscapeMethodDesc_SpiderlingsInfestation,Destruye los nidos objetivo originales para bajar (marcas rojas de misión en el minimapa). Los nidos posteriores no cuentan.
 SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/5
-SpiderlingsInfestationBlocked,Te detienes ante la escalera. El susurro en lo profundo de los nidos aún no ha cesado. (CURRENT/5)
+SpiderlingsInfestationBlocked,Destruye los nidos objetivo originales para bajar: marcas rojas de misión en el minimapa. (CURRENT/5)
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
 KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
 KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)

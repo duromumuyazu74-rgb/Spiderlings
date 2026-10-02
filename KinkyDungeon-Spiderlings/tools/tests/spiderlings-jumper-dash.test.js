@@ -38,6 +38,7 @@ function loadDefinitions(options = {}) {
     vm.createContext(context);
     const files = [
         "SpiderlingsCore.js",
+        "SpiderlingsPopulation.js",
         "SpiderlingsEncounters.js",
         "SpiderlingsWebCaster.js",
         "Spiderlings.js",
