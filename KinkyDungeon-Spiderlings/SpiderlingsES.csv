@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,La seda opaca baja desde la coronilla y e
 RestraintSpiderlingsWebbingLv3HoodDesc2,El cabello y los rasgos del rostro se ocultan bajo la seda; solo queda un contorno que oscila al moverte.
 RestraintSpiderlingsWebbingCocoon,Capullo de seda de arañita
 RestraintSpiderlingsWebbingCocoonDesc,La seda densa envuelve tu cuerpo en un capullo grueso. Su borde llega bajo tu boca y deja fuera la parte superior de la cabeza.
-RestraintSpiderlingsWebbingCocoonDesc2,El capullo forma pliegues cuando te mueves. Al abrirlo, las ataduras que haya debajo permanecen en su sitio.
+RestraintSpiderlingsWebbingCocoonDesc2,Al moverte apenas, la suave pared del capullo forma leves pliegues que tiran suavemente de los hilos entrelazados.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 está bajo TargetLv2. Retira primero la capa exterior para alcanzar la seda de debajo.
 KinkyDungeonSpiderlingsCocoonAnchored,Las crías de araña tienden redes alrededor del capullo y te fijan firmemente al sitio.
 KDMapMod_SpiderlingsHuntingGrounds,Coto de caza de las arañitas
@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La cría de araña saltadora mira 
 KDModButtonspiderlingsNestTunnelerCap,Excavadoras totales por nido (0: ninguna)
 RestraintSpiderlingsSpinnerLegbinder,Saco de seda para las piernas
 RestraintSpiderlingsSpinnerLegbinderDesc,La seda envuelve tus piernas desde encima de los tobillos hasta la parte alta de los muslos.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Un tejido denso mantiene tus piernas juntas. Las herramientas de corte son más eficaces; el tejido incompleto ofrece menos resistencia.
+RestraintSpiderlingsSpinnerLegbinderDesc2,El tejido tupido sigue la forma de tus piernas, con su borde suave apoyado en los muslos.
 SpiderlingsSpinnerPull,Soltarse · 10 de energía · 1 turno
 SpiderlingsSpinnerContest,Hiladoras: {count} · tejido +{rate}/turno
 SpiderlingsSpinnerStart,Los hilos de la red que te rodea juntan tus piernas. Puedes tirar de ellos antes de que la seda termine de envolverte.
@@ -229,8 +229,8 @@ KinkyDungeonSpellSpiderlingsCocoonConvergence,Convergencia del capullo
 KinkyDungeonSpellSpiderlingsSilkenSnare,Lazo de seda
 SpiderlingsDebugStairBypass,Acceso de depuración a las escaleras activo; los nidos marcados no cambian.
 RestraintSpiderlingsSilkLeash,Correa de seda de araña
-RestraintSpiderlingsSilkLeashDesc,"Tras escapar por una brecha de la red, otro golpe de una hiladora puede unir la correa de seda a tu collar. La hiladora intentará arrastrarte de vuelta al campo."
-RestraintSpiderlingsSilkLeashDesc2,"La correa necesita un collar compatible y que ningún otro equipo la bloquee. Si ninguna hiladora tira de ella, la seda queda floja."
+RestraintSpiderlingsSilkLeashDesc,"Finos hilos de seda se reúnen en un cordón ligero de brillo tenue."
+RestraintSpiderlingsSilkLeashDesc2,"Sus finos hilos se tensan suavemente al estirar el cordón y forman una curva blanda cuando se afloja."
 SpiderlingsRecoveryAttached,Una hiladora une un hilo de seda ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
 SpiderlingsRecoveryAttachBlocked,La correa de seda no puede sujetarse. Necesita un collar compatible y que ningún otro equipo la bloquee.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes cortar TargetRestraint."

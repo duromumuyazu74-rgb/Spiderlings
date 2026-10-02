@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,Nieprzejrzysty jedwab spływa od czubka g
 RestraintSpiderlingsWebbingLv3HoodDesc2,Włosy i rysy twarzy znikają pod jedwabiem; zostaje tylko kontur kołyszący się z każdym ruchem.
 RestraintSpiderlingsWebbingCocoon,Kokon pajęczego jedwabiu
 RestraintSpiderlingsWebbingCocoonDesc,Gęsty jedwab otacza ciało grubym kokonem. Jego brzeg zbiera się pod ustami, pozostawiając górną część głowy na zewnątrz.
-RestraintSpiderlingsWebbingCocoonDesc2,Ściana kokonu marszczy się przy ruchu. Po jego otwarciu więzy znajdujące się pod spodem pozostają na miejscu.
+RestraintSpiderlingsWebbingCocoonDesc2,Lekki ruch układa miękką ścianę kokonu w płytkie fałdy, delikatnie napinając zachodzące na siebie nici.
 KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 leży pod TargetLv2. Najpierw zdejmij zewnętrzną warstwę, by dostać się do jedwabiu pod nią."
 KinkyDungeonSpiderlingsCocoonAnchored,Młode pająki rozpinają sieci wokół kokonu i mocno przytwierdzają cię do miejsca!
 KDMapMod_SpiderlingsHuntingGrounds,Teren łowiecki małych pająków
@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Młody pająk skoczek wpatruje si�
 KDModButtonspiderlingsNestTunnelerCap,Łączny limit kopaczy na gniazdo (0: brak)
 RestraintSpiderlingsSpinnerLegbinder,Jedwabny worek na nogi
 RestraintSpiderlingsSpinnerLegbinderDesc,Jedwab otula nogi od miejsca nad kostkami po górną część ud.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Gęsty jedwab trzyma nogi razem. Narzędzia tnące działają najlepiej; niedokończony splot stawia mniejszy opór.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Gęsty splot przylega do kształtu nóg, a miękki brzeg worka opiera się o uda.
 SpiderlingsSpinnerPull,Wyrwij się · 10 wytrzymałości · 1 tura
 SpiderlingsSpinnerContest,Prządki: {count} · tkanie +{rate}/turę
 SpiderlingsSpinnerStart,"Nici otaczającej sieci ściągają twoje nogi razem. Możesz je szarpać, zanim jedwab całkiem cię otuli."
@@ -229,8 +229,8 @@ KinkyDungeonSpellSpiderlingsCocoonConvergence,Splot kokonu
 KinkyDungeonSpellSpiderlingsSilkenSnare,Jedwabna pętla
 SpiderlingsDebugStairBypass,Debugowe pominięcie blokady schodów aktywne; oznaczone gniazda pozostają bez zmian.
 RestraintSpiderlingsSilkLeash,Pajęcza jedwabna smycz
-RestraintSpiderlingsSilkLeashDesc,Po ucieczce przez wyrwę w sieci kolejne trafienie prządki może przypiąć jedwabną smycz do twojej obroży. Prządka spróbuje przyciągnąć cię z powrotem na pole.
-RestraintSpiderlingsSilkLeashDesc2,"Smycz potrzebuje pasującej obroży, a inne wyposażenie nie może jej blokować. Gdy żadna prządka nie ciągnie, jedwab zwisa luźno."
+RestraintSpiderlingsSilkLeashDesc,Drobne jedwabne nici tworzą lekki sznur o łagodnym połysku.
+RestraintSpiderlingsSilkLeashDesc2,"Gdy sznur się prostuje, jego drobne nici delikatnie się napinają; po rozluźnieniu układa się w miękki łuk."
 SpiderlingsRecoveryAttached,Prządka przypina jedwabną nić ({count}/8). Przy następnej możliwej akcji może przyciągnąć cię z powrotem.
 SpiderlingsRecoveryAttachBlocked,"Jedwabnej smyczy nie da się przypiąć. Potrzebuje pasującej obroży, a inne wyposażenie nie może jej blokować."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"W obecnym stanie nie możesz przeciąć TargetRestraint."

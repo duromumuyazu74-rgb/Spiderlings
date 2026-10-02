@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,Lichtundurchlässige Seide zieht sich vom
 RestraintSpiderlingsWebbingLv3HoodDesc2,Haarspitzen und Gesichtszüge verschwinden unter Seide; nur ein schwankender Umriss bleibt.
 RestraintSpiderlingsWebbingCocoon,Spinnenseidenkokon
 RestraintSpiderlingsWebbingCocoonDesc,Dichte Seide hüllt deinen Körper in einen dicken Kokon. Sein Rand reicht bis unter deinen Mund; der obere Teil deines Kopfes bleibt draußen.
-RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand wirft Falten, wenn du dich bewegst. Beim Öffnen bleiben darunterliegende Fesseln bestehen.
+RestraintSpiderlingsWebbingCocoonDesc2,Bei einer kleinen Bewegung legt sich die weiche Kokonwand in flache Falten, und die übereinanderliegenden Fäden spannen sich sanft.
 KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 liegt unter TargetLv2. Entferne zuerst die äußere Schicht, um an die Seide darunter zu gelangen."
 KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Kokon und halten dich fest an Ort und Stelle!
 KDMapMod_SpiderlingsHuntingGrounds,Jagdrevier der Jungspinnen
@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Das Springer-Spinnenjunge fixiert 
 KDModButtonspiderlingsNestTunnelerCap,Gräber je Nest insgesamt (0: keine)
 RestraintSpiderlingsSpinnerLegbinder,Seidener Beinbeutel
 RestraintSpiderlingsSpinnerLegbinderDesc,Seide umhüllt deine Beine von oberhalb der Knöchel bis zu den oberen Oberschenkeln.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Dichte Seide hält deine Beine zusammen. Schneidwerkzeuge helfen am besten; unfertige Seide bietet weniger Widerstand.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Das dichte Gewebe folgt der Form deiner Beine, sein weicher Rand liegt an deinen Oberschenkeln an.
 SpiderlingsSpinnerPull,Losreißen · 10 Ausdauer · 1 Runde
 SpiderlingsSpinnerContest,Spinner: {count} · Weben +{rate}/Runde
 SpiderlingsSpinnerStart,"Die Fäden des umliegenden Netzes ziehen deine Beine zusammen. Du kannst daran ziehen, bevor die Seide dich ganz umschließt."
@@ -229,8 +229,8 @@ KinkyDungeonSpellSpiderlingsCocoonConvergence,Kokonkonvergenz
 KinkyDungeonSpellSpiderlingsSilkenSnare,Seidenfessel
 SpiderlingsDebugStairBypass,Debug-Treppenfreigabe aktiv; markierte Nester bleiben unverändert.
 RestraintSpiderlingsSilkLeash,Spinnen-Seidenleine
-RestraintSpiderlingsSilkLeashDesc,"Nach deiner Flucht durch eine Netzlücke kann ein erneuter Spinner-Treffer die Seidenleine an deinem Halsband befestigen. Der Spinner versucht dann, dich ins Fangfeld zurückzuziehen."
-RestraintSpiderlingsSilkLeashDesc2,"Die Leine braucht ein passendes Halsband; andere Ausrüstung darf sie nicht blockieren. Zieht kein Spinner daran, hängt die Seide locker."
+RestraintSpiderlingsSilkLeashDesc,"Feine Seidenfäden bilden eine leichte Schnur mit sanftem Schimmer."
+RestraintSpiderlingsSilkLeashDesc2,"Wird die Schnur gestreckt, spannen sich ihre feinen Fäden sanft. Lässt die Spannung nach, sinkt sie in einen weichen Bogen."
 SpiderlingsRecoveryAttached,Ein Spinner befestigt einen Seidenstrang ({count}/8). Bei seiner nächsten möglichen Aktion kann er dich zurückziehen.
 SpiderlingsRecoveryAttachBlocked,Die Seidenleine lässt sich nicht befestigen. Sie braucht ein passendes Halsband; andere Ausrüstung darf sie nicht blockieren.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."

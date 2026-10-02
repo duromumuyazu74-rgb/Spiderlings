@@ -125,7 +125,7 @@
         text: [
             "Silken Leg Bag",
             "Silk wraps your legs from above the ankles to your upper thighs.",
-            "The dense weave holds your legs together. Cutting works best. Unfinished silk is easier to loosen.",
+            "The close weave follows the shape of your legs, its soft rim resting against your thighs.",
         ],
     });
     if (typeof AddModel === "function")

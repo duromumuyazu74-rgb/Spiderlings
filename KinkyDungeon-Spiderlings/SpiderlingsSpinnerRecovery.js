@@ -1016,8 +1016,8 @@
             },
             text: [
                 "Spiderling Silk Leash",
-                "A silk strand links your collar to a Spinner. It can tug the leash to draw you back toward the web field.",
-                "The leash needs a compatible collar and no equipment blocking it. The strands hang slack when no Spinner holds them.",
+                "Fine silk threads gather into a light cord with a soft sheen.",
+                "Its fine threads draw gently taut when the cord is stretched, then settle into a soft curve as it slackens.",
             ],
         });
         if (typeof KinkyDungeonRefreshRestraintsCache === "function") KinkyDungeonRefreshRestraintsCache();

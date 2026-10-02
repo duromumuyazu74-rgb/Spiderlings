@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,빛을 막는 거미줄이 정수리에�
 RestraintSpiderlingsWebbingLv3HoodDesc2,머리카락과 얼굴의 세부는 실 아래 숨고, 움직임을 따라 흔들리는 윤곽만 남았다.
 RestraintSpiderlingsWebbingCocoon,새끼 거미 실고치
 RestraintSpiderlingsWebbingCocoonDesc,촘촘한 거미줄이 몸을 두꺼운 고치로 감쌌다. 가장자리는 입 아래까지 오므라들고 머리 윗부분만 밖에 남아 있다.
-RestraintSpiderlingsWebbingCocoonDesc2,몸을 움직이면 고치 벽에 얕은 주름이 생긴다. 겉고치를 열어도 안쪽의 구속은 그대로 남는다.
+RestraintSpiderlingsWebbingCocoonDesc2,몸을 살짝 움직이면 부드러운 고치 벽에 얕은 주름이 잡히고, 겹겹이 포개진 실이 가볍게 당겨진다.
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1은 TargetLv2 아래에 있다. 안쪽 거미줄을 풀려면 먼저 바깥층을 벗겨야 한다.
 KinkyDungeonSpiderlingsCocoonAnchored,새끼 거미들이 고치 둘레에 거미줄을 겹겹이 당겨 당신을 그 자리에 단단히 고정한다!
 KDMapMod_SpiderlingsHuntingGrounds,새끼 거미 사냥터
@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,새끼 거미 도약자가 상대�
 KDModButtonspiderlingsNestTunnelerCap,둥지별 굴착자 누적 한도 (0: 소환 안 함)
 RestraintSpiderlingsSpinnerLegbinder,거미줄 다리 주머니
 RestraintSpiderlingsSpinnerLegbinderDesc,거미줄이 발목 위부터 허벅지 윗부분까지 다리를 감싼다.
-RestraintSpiderlingsSpinnerLegbinderDesc2,촘촘한 비단이 두 다리를 묶고 있다. 날붙이가 가장 효과적이며 덜 짜인 부분은 저항이 약하다.
+RestraintSpiderlingsSpinnerLegbinderDesc2,촘촘한 실 표면이 두 다리의 윤곽을 따라 내려오고, 주머니 입구의 부드러운 가장자리가 허벅지에 닿아 있다.
 SpiderlingsSpinnerPull,거미줄 떼기 · 체력 10 · 1턴
 SpiderlingsSpinnerContest,방적자: {count} · 턴당 직조 +{rate}
 SpiderlingsSpinnerStart,주변 그물에서 뻗은 실이 두 다리를 모은다. 실이 온전히 감기기 전에 당겨서 떨쳐 낼 수 있다.
@@ -229,8 +229,8 @@ KinkyDungeonSpellSpiderlingsCocoonConvergence,천 가닥 고치
 KinkyDungeonSpellSpiderlingsSilkenSnare,비단 올가미
 SpiderlingsDebugStairBypass,디버그 계단 통과가 활성화되었습니다. 표시된 둥지는 그대로 유지됩니다.
 RestraintSpiderlingsSilkLeash,거미 비단 리드
-RestraintSpiderlingsSilkLeashDesc,그물의 틈으로 달아난 뒤 방적자의 공격이 다시 맞으면 목줄에 거미줄 끈이 연결될 수 있다. 방적자는 포획 구역으로 끌어당기려 한다.
-RestraintSpiderlingsSilkLeashDesc2,끈을 연결할 수 있는 목줄이 필요하며 다른 장비가 가로막으면 연결되지 않는다. 끌어당기는 방적자가 없으면 실은 느슨하게 늘어진다.
+RestraintSpiderlingsSilkLeashDesc,가늘고 부드러운 거미줄을 모아 만든 가벼운 끈으로, 표면에는 은은한 비단 광택이 돈다.
+RestraintSpiderlingsSilkLeashDesc2,끈을 펴면 가는 실들이 하나씩 가볍게 팽팽해지고, 느슨해지면 부드러운 곡선을 그린다.
 SpiderlingsRecoveryAttached,방적자가 거미줄 끈을 연결했다({count}/8). 다음에 행동할 수 있을 때 끌어당길 수 있다.
 SpiderlingsRecoveryAttachBlocked,거미줄 끈을 연결할 수 없다. 맞는 목줄이 필요하며 다른 장비가 가로막으면 연결되지 않는다.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
