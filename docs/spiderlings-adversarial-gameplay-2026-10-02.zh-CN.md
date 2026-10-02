@@ -2,6 +2,8 @@
 
 后续 test.83 按本报告建议改进施工分工、Mage 无效施法和外茧结果文案。比较及复测见[玩法改进记录](spiderlings-gameplay-improvements-2026-10-02.zh-CN.md)。下文保留本次 test.80 至 test.82 的历史证据。
 
+用户后续要求蜘蛛占据楼层优势、成组围捕，并重新定义武器外观和续航。test.84 的新原生调查、候选数值及优化前方案见[楼层特色与武器调查](spiderlings-floor-identity-and-weapons-proposal-2026-10-02.zh-CN.md)，其中推荐尚未实现。
+
 本报告模拟熟悉 KD 机制的玩家，记录脚本实际采取的策略及其结果，不代表真人试玩反馈。基线是当前保留开发 checkout 的 `0.92.36-test.80`、提交 `9de47ba`，不是默认目录中的旧 `test.14`，也不是远端 `test.71` 或历史 Mod 快照。
 
 基线 ZIP 为 `Spiderlings_0.92.36-test.80.zip`，SHA-256 `4cf0e33e8322cd03f8978d9816d250a5aa67b11abf50b84ddd0edfef0cb913d1`。源码与包位于 `C:/Users/59275/Desktop/Korlne/KD/.scratch/spinner-coordination-20260930/`。KD 5.4.92 输入为 `C:/Game1/kinky-dungeon-win_64 (2)/resources/app`；另一输入为刚获取的官方 GitHub `5.5` 提交 `29219e97a362228e64d885fb569b1b35ec74b3ef`，版本标记 5.5.3。官方历史游戏目录与安装输入均只读。
