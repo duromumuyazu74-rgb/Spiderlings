@@ -17,6 +17,9 @@ function fixture() {
         inventory = new Map();
     let random = 0,
         mana = 20,
+        stamina = 10,
+        manaGain = 0,
+        nativeFail = false,
         wall = false,
         visible = true;
     const c = {
@@ -36,6 +39,20 @@ function fixture() {
         KDMapData: { Entities: [], GroundItems: [] },
         KDWorldMap: {},
         KDPersistentNPCs: {},
+        KinkyDungeonTargetX: 0,
+        KinkyDungeonTargetY: 0,
+        KinkyDungeonActivateWeaponSpell: (instant) =>
+            instant
+                ? c.KinkyDungeonCastSpell(
+                      c.KinkyDungeonTargetX,
+                      c.KinkyDungeonTargetY,
+                      c.KinkyDungeonSpellListEnemies.find((spell) => spell.name === CONVERGENCE),
+                      undefined,
+                      c.KinkyDungeonPlayerEntity,
+                  )
+                : true,
+        KinkyDungeonDrawActionBar: () => "native-actionbar",
+        MouseIn: () => false,
         KinkyDungeonWeapons: {},
         KinkyDungeonWeaponVariants: {},
         KinkyDungeonWeaponChoices: [],
@@ -71,14 +88,23 @@ function fixture() {
         KDAllied: (target) => target.allied,
         KinkyDungeonHasMana: (cost) => mana >= cost,
         KinkyDungeonGetManaCost: (spell) => spell.manacost,
+        KDChangeMana: (src, type, trig, amount) => {
+            const data = { src, type, trig, Amount: amount, mult: amount > 0 ? 1 + manaGain : 1 };
+            events.changeMana?.(null, data);
+            mana = Math.min(20, Math.max(0, mana + data.Amount * data.mult));
+        },
+        KDChangeStamina: (_src, _type, _trig, amount) => {
+            stamina = Math.min(10, Math.max(0, stamina + amount));
+        },
         KinkyDungeonTransparentObjects: "0",
         KinkyDungeonMapGet: () => "0",
         KinkyDungeonCheckPath: () => !wall,
         KinkyDungeonVisionGet: () => Number(visible),
         KinkyDungeonUpdateSingleBulletVisual() {},
         KinkyDungeonCastSpell: (x, y, spell) => {
+            if (nativeFail) return { result: "Fail" };
             c.KinkyDungeonSpellSpecials[spell.special]?.(spell, {}, x, y, x, y);
-            mana -= spell.manacost;
+            c.KDChangeMana(spell.name, "spell", "cast", -c.KinkyDungeonGetManaCost(spell));
             return { result: "Cast", data: { bulletfired: { bullet: { spell } } } };
         },
         KDBulletCanHitEntity: () => true,
@@ -97,6 +123,10 @@ function fixture() {
             if (!enemy.noDrop && (enemy.playerdmg || !enemy.summoned) && !enemy.droppedItems) enemy.droppedItems = true;
         },
     };
+    Object.defineProperties(c, {
+        KinkyDungeonStatMana: { get: () => mana },
+        KinkyDungeonStatStamina: { get: () => stamina },
+    });
     vm.createContext(c);
     vm.runInContext(source, c);
     const enemy = (x = 7, y = 7, extra = {}) => ({
@@ -107,14 +137,16 @@ function fixture() {
         Enemy: { name: "Maidforce", tags: {} },
         ...extra,
     });
-    const cast = (name = CONVERGENCE, x = 7, y = 7) =>
-        c.KinkyDungeonCastSpell(
+    const cast = (name = CONVERGENCE, x = 7, y = 7) => {
+        c.KDSetWeapon(name === CONVERGENCE ? TOME : STAFF);
+        return c.KinkyDungeonCastSpell(
             x,
             y,
             c.KinkyDungeonSpellListEnemies.find((s) => s.name === name),
             undefined,
             c.KinkyDungeonPlayerEntity,
         );
+    };
     return {
         c,
         events,
@@ -124,6 +156,10 @@ function fixture() {
         cast,
         tick: () => events.tickAfter(null, { delta: 1 }),
         mana: () => mana,
+        stamina: () => stamina,
+        setStamina: (value) => (stamina = value),
+        manaGain: (value) => (manaGain = value),
+        nativeFail: (value) => (nativeFail = value),
         setMana: (value) => (mana = value),
         random: (value) => (random = value),
         wall: (value) => (wall = value),
@@ -405,4 +441,169 @@ test("stolen weapons migrate on current, cached and persistent NPCs while tempor
             "Native weapon pickup cannot inspect rarity",
         );
     }
+});
+
+test("same Convergence action charges 1/1.5/4.5, each successful upgrade pays 2 and extends exactly once", () => {
+    const r = fixture();
+    r.c.KDMapData.Entities.push(r.enemy());
+    r.cast();
+    r.tick();
+    r.setMana(2);
+    const spell = r.c.KinkyDungeonSpellListEnemies.find((s) => s.name === CONVERGENCE);
+    assert.equal(r.c.KinkyDungeonGetManaCost(spell), 2);
+    assert.equal(r.c.KDPrereqs[CONVERGENCE](), true);
+    assert.equal(r.cast(CONVERGENCE, 10, 9).result, "Cast");
+    assert.equal(r.mana(), 0);
+    assert.equal(r.c.Spiderlings.Weapons.visualState().collapses[0].x, 7);
+    assert.equal(r.cast().result, "Fail", "A zero-time repeated call cannot upgrade twice");
+    r.tick();
+    r.setMana(2);
+    assert.equal(r.cast().result, "Cast");
+    r.tick();
+    const cast = r.c.Spiderlings.Weapons.visualState().collapses[0];
+    assert.equal(cast.stage, 3);
+    assert.equal(cast.explodeAt, 5);
+    assert.equal(r.c.Spiderlings.Weapons.remaining(CONVERGENCE), 9);
+    r.tick();
+    assert.equal(r.hits.length, 0);
+    r.tick();
+    assert.equal(r.hits[0].damage.bind, 108);
+    assert.equal(r.hits[0].damage.damage, 6);
+});
+
+test("failed, out-of-range and wrong-hand upgrades preserve the circle; a late charge has only one action left", () => {
+    const r = fixture();
+    r.cast();
+    r.tick();
+    r.tick();
+    const cast = r.c.Spiderlings.Weapons.visualState().collapses[0],
+        before = JSON.stringify(cast);
+    r.setMana(1);
+    assert.equal(r.cast().result, "Fail");
+    r.setMana(20);
+    r.nativeFail(true);
+    assert.equal(r.cast().result, "Fail");
+    r.nativeFail(false);
+    r.c.KinkyDungeonPlayerEntity.x = 20;
+    assert.equal(r.cast().result, "Fail");
+    r.c.KinkyDungeonPlayerEntity.x = 5;
+    r.c.KDSetWeapon(STAFF);
+    assert.equal(r.c.KDPrereqs[CONVERGENCE](), false);
+    assert.equal(JSON.stringify(cast), before);
+    r.cast();
+    assert.equal(cast.stage, 2);
+    assert.equal(cast.explodeAt, 4);
+    r.tick();
+    assert.equal(cast.explodeAt - r.c.Spiderlings.Weapons.visualState().clock, 1);
+    r.c.KDMapData = JSON.parse(JSON.stringify(r.c.KDMapData));
+    r.c.KDGameData = JSON.parse(JSON.stringify(r.c.KDGameData));
+    r.tick();
+    assert.equal(r.c.Spiderlings.Weapons.visualState().collapses.length, 0);
+    r.events.postMapgen();
+    assert.equal(r.c.Spiderlings.Weapons.visualState().collapses.length, 0);
+    assert.equal(r.c.Spiderlings.Weapons.remaining(CONVERGENCE), 5);
+});
+
+test("melee refunds follow actual native payment, survive a weapon switch and need positive world time", () => {
+    for (const [weapon, cost, refund] of [
+        [TOME, 1.5, 0.3],
+        [STAFF, 3, 0.6],
+    ]) {
+        const r = fixture();
+        r.c.KDSetWeapon(weapon);
+        r.c.KinkyDungeonGetPlayerWeaponDamage();
+        r.events.beforePlayerLaunchAttack();
+        r.c.Spiderlings.Weapons.rewardHit({ enemy: { id: 1 } }, true, false);
+        assert.equal(r.stamina(), 10);
+        r.c.KDChangeStamina("attack", "weapon", "attack", -cost);
+        assert.equal(r.stamina(), 10 - cost);
+        r.c.KDSetWeapon("Knife");
+        r.events.tickAfter(null, { delta: 0 });
+        assert.equal(r.stamina(), 10 - cost);
+        r.tick();
+        assert.ok(Math.abs(r.stamina() - (10 - cost + refund)) < 1e-9);
+        r.tick();
+        assert.ok(Math.abs(r.stamina() - (10 - cost + refund)) < 1e-9);
+    }
+});
+
+test("spell multi-hit stamina is once per cast; mana credit after StatGain stays within the paid budget", () => {
+    const r = fixture();
+    r.setStamina(5);
+    r.manaGain(0.5);
+    const result = r.cast(SNARE),
+        spell = result.data.bulletfired.bullet.spell;
+    for (let i = 0; i < 6; i++) r.c.Spiderlings.Weapons.rewardHit({ spell, enemy: { id: i } }, true, true);
+    r.c.KDMapData = JSON.parse(JSON.stringify(r.c.KDMapData));
+    r.tick();
+    assert.equal(r.stamina(), 5.6);
+    assert.equal(r.mana(), 19, "2 paid mana permits only 1 actual mana credit after +50% gain");
+    r.tick();
+    assert.equal(r.mana(), 19);
+    const budget = Object.values(r.c.KDMapData.SpiderlingsWeapons.casts)[0];
+    assert.equal(budget.manaReturned, 1);
+});
+
+test("a legal free Snare still returns stamina while its zero mana budget returns no magic", () => {
+    const r = fixture(),
+        cost = r.c.KinkyDungeonGetManaCost;
+    r.c.KinkyDungeonGetManaCost = (spell) => (spell.name === SNARE ? 0 : cost(spell));
+    r.setStamina(5);
+    const result = r.cast(SNARE),
+        spell = result.data.bulletfired.bullet.spell;
+    r.c.Spiderlings.Weapons.rewardHit({ spell, enemy: { id: 1 } }, true, true);
+    r.events.tickAfter(null, { delta: 0 });
+    assert.equal(r.stamina(), 5);
+    r.tick();
+    assert.equal(r.stamina(), 5.6);
+    assert.equal(r.mana(), 20);
+    assert.equal(Object.values(r.c.KDMapData.SpiderlingsWeapons.casts)[0].manaReturned, 0);
+});
+
+test("skill hover uses a readable native panel and leaves clock, resources and input result intact", () => {
+    const r = fixture();
+    r.cast();
+    r.tick();
+    const draw = [],
+        boxes = [];
+    Object.assign(r.c, {
+        MouseIn: () => true,
+        MouseX: 605,
+        MouseY: 850,
+        TextGet: (key) => key,
+        KinkyDungeonWordWrap: (text) => text,
+        FillRectKD: (_board, _sprites, _id, box) => boxes.push(box),
+        kdcanvas: {},
+        kdpixisprites: new Map(),
+        DrawTextFitKD: (...args) => draw.push(args),
+    });
+    const before = JSON.stringify({ map: r.c.KDMapData, game: r.c.KDGameData, mana: r.mana(), stamina: r.stamina() });
+    assert.equal(r.c.KinkyDungeonDrawActionBar(), "native-actionbar");
+    assert.equal(boxes.length, 1);
+    assert.equal(boxes[0].alpha, 0.85);
+    assert.ok(boxes[0].Left >= 520 && boxes[0].Top >= 30 && boxes[0].Top + boxes[0].Height <= 970);
+    assert.ok(draw.some((args) => args[6] === 26));
+    assert.ok(draw.some((args) => args[6] === 22));
+    assert.ok(draw.filter((args) => args[6] === 20).length > 0);
+    assert.equal(
+        JSON.stringify({ map: r.c.KDMapData, game: r.c.KDGameData, mana: r.mana(), stamina: r.stamina() }),
+        before,
+    );
+});
+
+test("repeat native weapon button upgrades the original circle without a second target", () => {
+    const r = fixture();
+    r.cast();
+    r.tick();
+    r.setMana(2);
+    r.c.KinkyDungeonGetPlayerWeaponDamage();
+    r.c.KinkyDungeonTargetX = 100;
+    r.c.KinkyDungeonTargetY = 100;
+    r.c.KinkyDungeonTargetingSpell = { name: CONVERGENCE };
+    assert.equal(r.c.KinkyDungeonActivateWeaponSpell().result, "Cast");
+    assert.equal(r.c.Spiderlings.Weapons.visualState().collapses[0].stage, 2);
+    assert.equal(r.c.KinkyDungeonTargetingSpell, null);
+    assert.equal(r.c.KinkyDungeonTargetX, 100);
+    assert.equal(r.c.KinkyDungeonTargetY, 100);
+    assert.equal(r.mana(), 0);
 });

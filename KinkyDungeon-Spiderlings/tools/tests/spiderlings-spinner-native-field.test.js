@@ -82,6 +82,74 @@ function buildAll(
     return { owners, encounter: started.encounter, handled };
 }
 
+test("reconciliation shares one physical-cell snapshot while reading current shared HP", () => {
+    const r = runtime(),
+        c = r.context,
+        built = buildAll(r),
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        native = topology.solidCells,
+        ids = c.KDMapData.Entities.filter(field.isOwnedProxy).map((proxy) => proxy.id);
+    let scans = 0;
+    topology.solidCells = (...args) => {
+        scans++;
+        return native(...args);
+    };
+    assert.equal(ids.length, 5);
+    assert.equal(field.reconcile().reused, ids.length);
+    assert.equal(scans, 1, "Each retained projection must reuse the physical cell already found for this reconcile");
+    assert.deepEqual(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).map((proxy) => proxy.id),
+        ids,
+    );
+
+    const middle = c.KDMapData.Entities.find((proxy) => field.isOwnedProxy(proxy) && proxy.x === 5 && proxy.y === 5),
+        before = built.encounter.topology.links[0].hp;
+    assert.equal(field.onNativeDamage({ enemy: middle, dmgDealt: 1 }), true);
+    assert.equal(built.encounter.topology.links[0].hp, before - 0.7);
+    assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === before - 0.7));
+    assert.equal(middle.maxhp, middle.hp);
+
+    scans = 0;
+    field.reconcile();
+    assert.equal(scans, 1, "A later reconcile must derive its own current topology instead of retaining the old HP");
+    assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === before - 0.7));
+});
+
+test("recreating a missing projection uses its physical IDs and post-admission HP", () => {
+    const r = runtime(),
+        c = r.context,
+        built = buildAll(r),
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        nativeCells = topology.solidCells,
+        nativeCreate = c.DialogueCreateEnemy,
+        missing = c.KDMapData.Entities.find((proxy) => field.isOwnedProxy(proxy) && proxy.x === 5 && proxy.y === 5);
+    c.KDMapData.Entities.splice(c.KDMapData.Entities.indexOf(missing), 1);
+    let scans = 0;
+    topology.solidCells = (...args) => {
+        scans++;
+        return nativeCells(...args);
+    };
+    c.DialogueCreateEnemy = (...args) => {
+        const admitted = nativeCreate(...args);
+        built.encounter.topology.links[0].hp = 3.25;
+        return admitted;
+    };
+    assert.equal(field.reconcile().created, 1);
+    assert.equal(scans, 1, "A newly admitted projection also receives the physical cell from this reconcile");
+    const rebuilt = c.KDMapData.Entities.find((proxy) => field.isOwnedProxy(proxy) && proxy.x === 5 && proxy.y === 5);
+    assert.ok(rebuilt);
+    assert.notEqual(rebuilt.id, missing.id);
+    assert.equal(rebuilt.hp, 3.25, "Native admission callbacks must not leave a captured numeric HP stale");
+    assert.equal(rebuilt.maxhp, 3.25);
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 5);
+    scans = 0;
+    assert.equal(field.reconcile().reused, 5);
+    assert.equal(scans, 1);
+    assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === 3.25));
+});
+
 test("retained crews skip immutable graph copies but real owner changes still update attribution", () => {
     const r = runtime(),
         c = r.context,

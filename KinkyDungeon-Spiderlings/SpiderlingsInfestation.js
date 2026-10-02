@@ -261,10 +261,11 @@
     function planNestClearing(plan, options) {
         const cells = [];
         if (!plan?.length) return cells;
-        const minX = Math.max(1, Math.min(...plan.map((p) => p.x)) - 1);
-        const maxX = Math.min(options.width - 2, Math.max(...plan.map((p) => p.x)) + 1);
-        const minY = Math.max(1, Math.min(...plan.map((p) => p.y)) - 1);
-        const maxY = Math.min(options.height - 2, Math.max(...plan.map((p) => p.y)) + 1);
+        const radius = options.radius || 1;
+        const minX = Math.max(1, Math.min(...plan.map((p) => p.x)) - radius);
+        const maxX = Math.min(options.width - 2, Math.max(...plan.map((p) => p.x)) + radius);
+        const minY = Math.max(1, Math.min(...plan.map((p) => p.y)) - radius);
+        const maxY = Math.min(options.height - 2, Math.max(...plan.map((p) => p.y)) + radius);
         for (let x = minX; x <= maxX; x++)
             for (let y = minY; y <= maxY; y++) {
                 const tile = options.tile(x, y);
@@ -306,7 +307,7 @@
         return cells;
     }
 
-    function openNestClearing(groups, spawnPoints) {
+    function openNestClearing(groups, spawnPoints, radius = 1) {
         const protectedPoints = [
             KDMapData.StartPosition,
             KDMapData.EndPosition,
@@ -315,6 +316,7 @@
             ...spawnPoints,
         ].filter(Boolean);
         const options = {
+            radius,
             width: KDMapData.GridWidth,
             height: KDMapData.GridHeight,
             tile: KinkyDungeonMapGet,
@@ -366,9 +368,6 @@
     const FIELD = "SpiderlingsInfestation";
     const MIN_FLOOR = 5;
     const TARGET = 5;
-    const QUIET_TURNS = 15;
-    const GARRISON = 5;
-    const NEARBY_RADIUS = 12;
     const MOBILE = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]);
 
     const texts = {
@@ -502,70 +501,6 @@
         return false;
     }
 
-    function retireQuietSpiders(_event, data, sampleOnly = false) {
-        const state = activeState();
-        if (!state || !(data?.delta > 0)) return;
-        const entities = KDMapData.Entities;
-        const nests = entities.filter((e) => e.hp > 0 && state.targetIds.includes(e.id));
-        const anchors = (state.clearing ||= nests.map((e) => ({ x: e.x, y: e.y })));
-        if (!anchors.length) return;
-        const near = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) <= NEARBY_RADIUS;
-        const spiders = entities.filter((e) => wildSpider(e) && anchors.some((p) => near(e, p)));
-        // Only a capable, perceptible opponent keeps the garrison in combat.
-        // Partial binding still counts; native helplessness does not. Recovery
-        // is rechecked at both turn boundaries, just like a newly arrived enemy.
-        const defenders = [...nests, ...spiders];
-        const opponents = entities.filter(
-            (e) =>
-                e.hp > 0 &&
-                !KDHelpless(e) &&
-                !KDIsImprisoned(e) &&
-                !(e.stun > 0) &&
-                !(e.freeze > 0) &&
-                !e.Enemy?.noAttack,
-        );
-        // Apply to the whole encounter, including nests: they do not use the
-        // mobile spider's Cocoon dispersal AI but must share its peace state.
-        if (typeof KinkyDungeonPlayerEntity !== "undefined" && !api.Webbing?.isCocoonPassive())
-            opponents.push(KinkyDungeonPlayerEntity);
-        const perceives = (actor, target) => {
-            const radius = actor.blind && !actor.aware ? 1.5 : KDEnemyVisionRadius(actor);
-            return KinkyDungeonCheckLOS(
-                actor,
-                target,
-                Math.hypot(actor.x - target.x, actor.y - target.y),
-                Math.min(NEARBY_RADIUS, radius),
-                true,
-                true,
-            );
-        };
-        const threatened = defenders.some((e) =>
-            opponents.some(
-                (other) =>
-                    e !== other &&
-                    near(e, other) &&
-                    (KDHostile(e, other) || (!other.player && KDHostile(other, e))) &&
-                    (!other.player ||
-                        typeof KinkyDungeonAggressive !== "function" ||
-                        KinkyDungeonAggressive(e, other)) &&
-                    (perceives(e, other) || (!other.player && perceives(other, e))),
-            ),
-        );
-        if (sampleOnly) {
-            state.threatThisTurn = threatened;
-            return;
-        }
-        state.quietTurns =
-            threatened || state.threatThisTurn ? 0 : Math.min(QUIET_TURNS, (state.quietTurns || 0) + data.delta);
-        delete state.threatThisTurn;
-        if (state.quietTurns < QUIET_TURNS || spiders.length <= GARRISON) return;
-        // Keep the five closest to the original nest positions. Use non-kill native removal
-        // for the rest: no death burst, loot, objective progress or quota refund.
-        const range = (e) => Math.min(...anchors.map((p) => Math.hypot(e.x - p.x, e.y - p.y)));
-        spiders.sort((a, b) => range(a) - range(b) || a.id - b.id);
-        for (const enemy of spiders.slice(GARRISON)) KDRemoveEntity(enemy, false);
-    }
-
     function progressText(blocked = false, compact = false) {
         const state = activeState();
         const name =
@@ -578,6 +513,7 @@
     }
 
     function cancelInfestation(reason) {
+        delete KDMapData.SpiderlingsPopulationPlan;
         KDMapData[FIELD] = { status: "cancelled", reason };
         KDMapData.MapMod = "None";
         KDGameData.MapMod = "None";
@@ -613,6 +549,10 @@
             room.escapeMethod
         ) {
             cancelInfestation("ineligible");
+            return false;
+        }
+        if (api.HuntingGrounds?.createPopulationPlan && api.HuntingGrounds.createPopulationPlan(MOD).cap < 12) {
+            cancelInfestation("population-budget");
             return false;
         }
         const passable = new Set();
@@ -708,6 +648,14 @@
             clearing: plan.map((point) => ({ ...point })),
             clearedTiles: openNestClearing(groups, spawnPoints),
         };
+        if (
+            api.HuntingGrounds?.initializeInfestationPopulation &&
+            !api.HuntingGrounds.initializeInfestationPopulation(KDMapData[FIELD], created, spawnPoints)
+        ) {
+            for (const entity of created) KDRemoveEntity(entity, false, false, true);
+            cancelInfestation("population-budget");
+            return false;
+        }
         return true;
     }
 
@@ -739,6 +687,7 @@
     function evacuateTaskNest(enemy, _entry, map) {
         if (map !== KDMapData || !enemy[MAID_FINISHER] || !isObjectiveNest(map, enemy)) return;
         delete enemy[MAID_FINISHER];
+        if (KDRandom() >= 0.25) return;
         // A separate death allowance, attempted before the ordinary burst.
         // The shared summon wrapper still enforces the map's mobile spider cap.
         for (const radius of [2.5, 5, 7.5]) {
@@ -794,8 +743,6 @@
         )
             return;
         for (const [name, text] of Object.entries(texts)) addTextKey(name, text);
-        KDAddEvent(KDEventMapGeneric, "tick", MOD, (event, data) => retireQuietSpiders(event, data, true));
-        KDAddEvent(KDEventMapGeneric, "tickAfter", MOD, retireQuietSpiders);
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", MOD, recordTaskNestDamage);
         if (typeof KDOndeath !== "undefined") KDOndeath[ESCAPE_DEATH] = evacuateTaskNest;
         // FloorSelection draws this only after the native primary faction is known.
@@ -886,6 +833,7 @@
         selectNestDistribution,
         seekPatrol,
         planNestClearing,
+        openNestClearing,
         reachableCells,
         activeState,
         register,

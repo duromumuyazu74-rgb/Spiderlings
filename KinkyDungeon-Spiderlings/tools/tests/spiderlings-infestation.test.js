@@ -116,7 +116,7 @@ test("new Infestation requests one field preset after native population and leav
 test("native modifier selects eligible floors and adds five grouped nests alongside native population", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsInfestation;
-    assert.equal(mod.weight, 50);
+    assert.equal(mod.weight, 200);
     assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
     assert.equal(mod.filter({ y: 5 }), 0);
@@ -290,11 +290,12 @@ test("native journey rejects a cached infestation through the first boss floor a
     assert.equal(eligible.Faction, "Bandit", "Infestation preserves the native primary faction");
 });
 
-test("infestation defaults to weight fifty without forcing a faction", () => {
+test("infestation defaults to weight two hundred without forcing a faction", () => {
     const r = nativeJourneyRuntime();
     const mods = r.context.KDMapMods;
-    assert.equal(mods.SpiderlingsInfestation.weight, mods.Slime.weight);
-    assert.equal(mods.SpiderlingsInfestation.weight, mods.Mold.weight);
+    assert.equal(mods.SpiderlingsInfestation.weight, 200);
+    assert.equal(mods.Slime.weight, 50);
+    assert.equal(mods.Mold.weight, 50);
     assert.equal(mods.SpiderlingsInfestation.faction, undefined);
 });
 test("repeated native new journeys cannot reuse deep-floor infestation candidates on floor two", () => {
@@ -705,7 +706,7 @@ test("insufficient space rejects the complete batch without accepting fewer targ
 });
 
 function escapeRuntime() {
-    const r = runtime();
+    const r = runtime({ KDRandom: () => 0.1 });
     r.generate();
     const c = r.context,
         nest = c.KDMapData.Entities[0],
@@ -859,202 +860,25 @@ test("terrain opens only after all nests are created, refreshes navigation, and 
     assert.equal(failedWrites, 0);
 });
 
-function quietRuntime() {
-    const r = runtime({
-        KDHostile: (a, b) =>
-            a !== b && (a.Enemy?.name === "MaidforceMini" || b?.Enemy?.name === "MaidforceMini" || b?.player),
-        KDAllied: (e) => !!e.allied,
-        KDIsInParty: (e) => !!e.party,
-        KDIsImprisoned: (e) => !!e.prisoner,
-        KinkyDungeonAggressive: () => true,
-        KDHelpless: (e) => !!e.helpless,
-        KDEnemyVisionRadius: () => 12,
-        KinkyDungeonCheckLOS: (a, b) => !a.hidden && !b.hidden,
-    });
+test("quiet floors retain living spiders and invested crews through long waits and serialization", () => {
+    const r = runtime();
     r.generate();
     const c = r.context,
-        state = c.KDMapData.SpiderlingsInfestation;
-    const anchor = state.clearing[0];
-    c.KinkyDungeonPlayerEntity = { x: -100, y: -100, player: true };
-    const spiders = Array.from({ length: 9 }, (_, i) => ({
-        id: 100 + i,
-        x: anchor.x + 1,
-        y: anchor.y,
-        hp: 1,
-        Enemy: { name: i % 2 ? "WebCaster" : "Spinner" },
-    }));
-    c.KDMapData.Entities.push(...spiders);
-    const tick = (delta) => r.event("tickAfter", { delta });
-    return { ...r, c, state, anchor, spiders, tick };
-}
-
-test("one shared fifteen-turn peace timer leaves five wild spiders and every nest", () => {
-    const { c, state, spiders, tick } = quietRuntime();
-    tick(0);
-    tick(14);
-    assert.ok(spiders.every((e) => c.KDMapData.Entities.includes(e)));
-    tick(1);
-    assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5);
-    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 5);
-    assert.equal(state.destroyedIds.length, 0);
-    assert.equal(state.complete, false);
-    tick(15);
-    assert.equal(c.KDMapData.Entities.length, 10);
-});
-
-test("nearby capable hostile NPCs and players reset peace, including partial binding and edge fights", () => {
-    for (const kind of ["maid", "player", "bound", "edge"]) {
-        const { c, state, anchor, spiders, tick } = quietRuntime();
-        tick(14);
-        const opponent = { id: 500, x: anchor.x, y: anchor.y, hp: 10, Enemy: { name: "MaidforceMini" } };
-        if (kind === "bound") opponent.boundLevel = 100;
-        if (kind === "edge") {
-            spiders[8].x = anchor.x + 10;
-            opponent.x = anchor.x + 20;
-        }
-        if (kind === "player") c.KinkyDungeonPlayerEntity = { ...opponent, player: true, Enemy: undefined };
-        else c.KDMapData.Entities.push(opponent);
-        tick(1);
-        assert.equal(state.quietTurns, 0, kind);
-        assert.ok(
-            spiders.every((e) => c.KDMapData.Entities.includes(e)),
-            kind,
-        );
-        c.KinkyDungeonPlayerEntity = { x: -100, y: -100, player: true };
-        c.KDMapData.Entities = c.KDMapData.Entities.filter((e) => e !== opponent);
-        tick(14);
-        assert.ok(
-            spiders.every((e) => c.KDMapData.Entities.includes(e)),
-            kind,
-        );
-        tick(1);
-        assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5, kind);
-    }
-});
-
-test("helpless, imprisoned, incapacitated and imperceptible NPCs do not hold the garrison", () => {
-    for (const reason of ["helpless", "prisoner", "stun", "freeze", "hidden", "noAttack"]) {
-        const { c, state, anchor, spiders, tick } = quietRuntime();
-        const maid = { id: 500, x: anchor.x, y: anchor.y, hp: 10, Enemy: { name: "MaidforceMini" }, [reason]: true };
-        if (reason === "noAttack") maid.Enemy.noAttack = true;
-        c.KDMapData.Entities.push(maid);
-        tick(14);
-        assert.equal(state.quietTurns, 14, reason);
-        tick(1);
-        assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5, reason);
-    }
-});
-
-test("an NPC recovering from helplessness resets the quiet timer", () => {
-    const { c, state, anchor, spiders, tick } = quietRuntime();
-    const maid = { id: 500, x: anchor.x, y: anchor.y, hp: 10, Enemy: { name: "MaidforceMini" }, helpless: true };
-    c.KDMapData.Entities.push(maid);
-    tick(14);
-    assert.equal(state.quietTurns, 14);
-    maid.helpless = false;
-    tick(1);
-    assert.equal(state.quietTurns, 0);
-    assert.ok(spiders.every((e) => c.KDMapData.Entities.includes(e)));
-});
-
-test("the player waiting inside a Cocoon does not keep either spiders or objective nests in combat", () => {
-    const { c, state, anchor, spiders, tick, event } = quietRuntime();
-    c.KinkyDungeonPlayerEntity = { player: true, x: anchor.x, y: anchor.y };
-    let passive = true;
-    c.Spiderlings.Webbing = { isCocoonPassive: () => passive };
-    for (let turn = 1; turn <= 14; turn++) {
-        event("tick", { delta: 1 });
-        tick(1);
-    }
-    assert.equal(state.quietTurns, 14);
-    // The next turn starts with resistance, even if the player becomes passive
-    // again before its end. All five objective nests can perceive the player.
-    passive = false;
-    event("tick", { delta: 1 });
-    passive = true;
-    tick(1);
-    assert.equal(state.quietTurns, 0);
-    assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 9);
-    for (let turn = 1; turn <= 15; turn++) {
-        event("tick", { delta: 1 });
-        tick(1);
-    }
-    assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5);
-    assert.equal(state.quietTurns, 15);
-    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 5);
-});
-
-test("a capable NPC still interrupts retirement beside a passive Cocoon player", () => {
-    const { c, state, anchor, spiders, tick } = quietRuntime();
-    c.KinkyDungeonPlayerEntity = { player: true, x: anchor.x, y: anchor.y };
-    c.Spiderlings.Webbing = { isCocoonPassive: () => true };
-    tick(14);
-    c.KDMapData.Entities.push({ id: 501, x: anchor.x, y: anchor.y, hp: 10, Enemy: { name: "MaidforceMini" } });
-    tick(1);
-    assert.equal(state.quietTurns, 0);
-    assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 9);
-});
-
-test("retirement preserves allied, party and captive spiders, remote fighters and ordinary maps", () => {
-    const { c, spiders, tick } = quietRuntime();
-    const protectedSpiders = [
-        { ...spiders[0], id: 201, allied: true },
-        { ...spiders[0], id: 202, party: true },
-        { ...spiders[0], id: 203, prisoner: true },
-        { ...spiders[0], id: 204, faction: "Player" },
-        { ...spiders[0], id: 205, x: 200, y: 200 },
-    ];
-    c.KDMapData.Entities.push(...protectedSpiders);
-    tick(15);
-    assert.ok(protectedSpiders.every((e) => c.KDMapData.Entities.includes(e)));
-    assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5);
-    const ordinary = quietRuntime();
-    delete ordinary.c.KDMapData.SpiderlingsInfestation;
-    ordinary.tick(100);
-    assert.equal(ordinary.c.KDMapData.Entities.length, 14);
-});
-
-test("peace survives entity/map serialization and retirement honors native removal cancellation", () => {
-    const { c, state, tick } = quietRuntime();
-    tick(14);
+        before = c.KDMapData.Entities.map((e) => e.id);
+    for (let turn = 0; turn < 300; turn++)
+        for (const trigger of ["tick", "tickAfter"])
+            c.KDEventMapGeneric[trigger]?.[c.KDMapData.MapMod]?.({}, { delta: 1 });
+    assert.deepEqual(
+        c.KDMapData.Entities.map((e) => e.id),
+        before,
+    );
     c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
-    c.cancelRemoval = true;
-    tick(1);
-    assert.equal(c.KDMapData.Entities.length, 14);
-    c.cancelRemoval = false;
-    tick(1);
-    assert.equal(c.KDMapData.Entities.length, 10);
-    assert.equal(c.KDMapData.SpiderlingsInfestation.quietTurns, 15);
-    assert.equal(state.quietTurns, 14, "saved map contains its own timer");
-});
-
-test("hostility within the spider garrison prevents retirement", () => {
-    const { c, state, spiders, tick } = quietRuntime();
-    tick(14);
-    const native = c.KDHostile;
-    c.KDHostile = (a, b) => a !== b && (a.rage > 0 || native(a, b));
-    spiders[0].rage = 10;
-    tick(1);
-    assert.equal(state.quietTurns, 0);
-    assert.ok(spiders.every((e) => c.KDMapData.Entities.includes(e)));
-});
-
-test("an enemy leaving during the turn cannot make a contested turn count as quiet", () => {
-    const { c, state, anchor, spiders, tick, event } = quietRuntime();
-    tick(14);
-    const maid = { id: 501, x: anchor.x, y: anchor.y, hp: 10, Enemy: { name: "MaidforceMini" } };
-    c.KDMapData.Entities.push(maid);
-    event("tick", { delta: 1 });
-    c.KDMapData.Entities = c.KDMapData.Entities.filter((e) => e !== maid);
-    tick(1);
-    assert.equal(state.quietTurns, 0);
-    assert.ok(spiders.every((e) => c.KDMapData.Entities.includes(e)));
-    event("tick", { delta: 14 });
-    tick(14);
-    assert.ok(spiders.every((e) => c.KDMapData.Entities.includes(e)));
-    event("tick", { delta: 1 });
-    tick(1);
-    assert.equal(spiders.filter((e) => c.KDMapData.Entities.includes(e)).length, 5);
+    for (let turn = 0; turn < 30; turn++) c.KDEventMapGeneric.tickAfter?.[c.KDMapData.MapMod]?.({}, { delta: 1 });
+    assert.deepEqual(
+        c.KDMapData.Entities.map((e) => e.id),
+        before,
+    );
+    assert.equal(c.KDEventMapGeneric.tickAfter?.[c.KDMapData.MapMod], undefined);
 });
 
 test("clearing cannot open a wall around a locked room, including diagonal access", () => {

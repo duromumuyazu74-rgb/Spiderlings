@@ -41,7 +41,7 @@
             (native) =>
                 function (enemy, target, delta) {
                     target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
-                    target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target) || target;
+                    target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target, delta) || target;
                     target = api.SpinnerAI?.recoveryTarget?.(enemy, target, delta) || target;
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
@@ -82,7 +82,10 @@
                     const nativeResult = native.apply(this, arguments);
                     api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                     if (nativeResult) return nativeResult;
-                    const handled = api.SpinnerAI?.handleBeforeMove(enemy, target, aiData) || false;
+                    const handled =
+                        api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData) ||
+                        api.SpinnerAI?.handleBeforeMove(enemy, target, aiData) ||
+                        false;
                     // KD clears movement credit for idle enemies after the loop.
                     // Construction and lure turns must retain credit across ticks.
                     if (handled) aiData.idle = false;

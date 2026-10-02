@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.84.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.85.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,23 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.84 item descriptions (2026-10-02)
+## Test.85 hunting crews and weaving weapons (2026-10-02)
+
+Test.85 gives Infestation two mixed six-member crews and Hunting Grounds three nest crews plus a roaming crew. Fresh Hunting Grounds need at least two staffed fields; native births reserve their footprints and single-actor prey budget before placement. Protected authored actors retain admission. Hunters preserve native perception, ranged kiting, action credit and retaliation. Real NPC projectiles now alert task-nest defenders through a live source; statues and Shop actors are excluded from added hunting and rivalry. See the [senior KD player simulation report](spiderlings-test85-hunting-weapons.zh-CN.md).
+
+The Tome deepens the same circle through three paid tiers, using binding multipliers 1/1.5/4.5 without increasing its 21-cell damage mask. Effective hits and first lifetime complete owned-silk cocoons return bounded resources; actual payment and native StatGain remain decisive. Partial NPC binding shows a brief web impact, and independently sufficient owned silk plus native helplessness displays the existing artist Cocoon. Automatic Tome Lv1 equipment is retired. Item descriptions retain material and form; skill rules stay in ability feedback. New default floor weights are 200/1500 and nest species weights are 8/2/4/1/2; saved custom values remain intact.
+
+The final ZIP has 169 source-matching entries and 24,832,990 bytes, SHA-256 `19758b62f1038d5f831c64489f038ffb8c8ddea458b1de8a5205e2ddeeb8e6b4`. All 114 image files remain byte-identical to Test.84, including the artist's spider placeholder. The same final ZIP passes all 40 native stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `67d698a66b112481c67785de8c76e77542d0592a`, reporting 5.5.3, fetched at `2026-10-02T05:59:43.805Z`. Full evidence is `<cache>/runs/2026-10-02T05-59-43-832Z-0.92.36-test.85/acceptance.json`. Each game passes 384 controlled charge cases, 16 Cocoon visual cases, 11 native crew-duty cases and seven locale groups of 260 source/TextGet keys, totaling 3,640 locale comparisons.
+
+Additional final-ZIP ecology runs retain native AI and rendering across 22 maps and 6,600 world turns. The 20 naturally qualified Hunting Grounds retain 13–25 mobile spiders after 300 turns, while legal NPCs can kill hunters and destroy nests. Forced Hell controls are reported separately, including the baseline's three survivors. Spider-to-Statue damage events fall to zero. A 150-generation candidate dataset is reused only for unchanged birth/layout code and retains six insufficient-space cancellations; it is not a random player-route or whole-playthrough estimate.
+
+Two confirmed CPU hotspots now avoid repeated same-sync geometry and String-ID membership scans without caching live HP or occupancy. Related regressions and a controlled baseline event comparison preserve action and combat results. The measured whole-turn timings do not establish consistent overall acceleration; the report retains the slower median in its full-state controlled run and distinguishes world, generation and render sampling. No FPS claim is made.
+
+The baseline retains native audio play/pause interruptions and two missing `Locks/Red.png` requests, with no missing Spiderlings asset. The GitHub runtime has no page errors, unhandled rejections or missing resources. Controlled Chrome scenes cover the stated builds, rather than arbitrary player saves, other Mods, the desktop shell or a complete human playthrough.
+
+Final delivery gates pass: repository checks, all 12 policy tests, 549 public tests and the complete 859-test local watcher, with zero package-check errors, warnings or notes. Evidence is this checkout's `.scratch/delivery/2026-10-02T06-18-17-438Z-W63biW/REPORT.md`, binding the native acceptance to the same final ZIP and unchanged inputs throughout verification. Earlier retained failed collector attempts exposed obsolete fixture APIs and a 254-key assertion; the VM entry points and six new required keys are updated without weakening behavior checks or changing package bytes. Only Markdown results are appended after collection, followed by repository checks.
+
+## Test.84 item descriptions (2026-10-02, historical)
 
 Test.84 describes the Cocoon, leg bag and silk leash through their own material, form and movement. Four description keys change in English and all seven locales, removing inner-equipment rules, collar admission and escape advice. Action-result feedback remains. See the [description correction](spiderlings-test84-item-descriptions.zh-CN.md).
 

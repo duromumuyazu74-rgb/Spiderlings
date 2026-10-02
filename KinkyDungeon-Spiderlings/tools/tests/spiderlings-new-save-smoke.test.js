@@ -112,6 +112,13 @@ function freshNewSaveRuntime() {
         KDCastConditions: {},
         KinkyDungeonSpellSpecials: {},
         KinkyDungeonCastSpell() {},
+        KinkyDungeonActivateWeaponSpell() {},
+        KinkyDungeonGetManaCost(spell) {
+            return spell.manacost || 0;
+        },
+        KDChangeMana() {},
+        KDChangeStamina() {},
+        KinkyDungeonDrawActionBar() {},
         KDBulletCanHitEntity() {},
         KDBulletAoECanHitEntity() {},
         KDDropItems() {},
@@ -130,6 +137,10 @@ function freshNewSaveRuntime() {
         KinkyDungeonPlayerBuffs: {},
         KDGameData: { PrisonerState: "" },
         KDMapData: { Entities: [] },
+        KDAddEntity(entity) {
+            context.KDMapData.Entities.push(entity);
+            return entity;
+        },
         KDWorldMap: {},
         KDPersistentNPCs: {},
         KDCurrentModels: new Map(),

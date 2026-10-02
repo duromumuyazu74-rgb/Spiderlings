@@ -1,4 +1,5 @@
 "use strict";
+/* global DrawCharacter: writable */
 
 (() => {
     const api = globalThis.Spiderlings;
@@ -24,10 +25,16 @@
     let frame;
     let visionCache;
     const masks = new Map();
+    const cocoons = new Map();
+    const cocoonTextures = new Map();
+    let npcCharacters = new WeakMap();
     const now = () => (typeof CommonTime === "function" ? CommonTime() : Date.now());
     const pink = () => (api.getSetting?.("spiderlingsPinkWebbing") === true ? "Pink" : "");
 
     function reset() {
+        for (const view of cocoons.values()) disposeCocoon(view);
+        cocoons.clear();
+        npcCharacters = new WeakMap();
         for (const mask of masks.values()) disposeMask(mask);
         masks.clear();
         visionCache = undefined;
@@ -241,7 +248,7 @@
         }
     }
 
-    function warning(cells, id, effect, clock, start, end, x, y, core) {
+    function warning(cells, id, effect, clock, start, end, x, y, core, stage = 1) {
         if (!cells.some((cell) => visible(cell.x, cell.y))) return;
         outline(cells, false, WARNING, 0.12, 1);
         for (const cell of cells) {
@@ -284,8 +291,8 @@
             "Bullets/SpiderlingsMageRune.png",
             x,
             y,
-            0.8 + progress * 0.3,
-            0.55 + progress * 0.35,
+            0.8 + progress * 0.3 + (stage - 1) * 0.1,
+            Math.min(1, 0.55 + progress * 0.35 + (stage - 1) * 0.1),
             0,
             -0.02,
             undefined,
@@ -295,8 +302,9 @@
         const g = graphics("ground");
         const reach = Math.max(...cells.map((cell) => Math.max(Math.abs(cell.x - x), Math.abs(cell.y - y))));
         // Thin staggered filaments are pulled inward, rather than translating eight web decals.
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI) / 4 + (i % 2 ? 0.1 : -0.07);
+        const strands = 8 + (stage - 1) * 2;
+        for (let i = 0; i < strands; i++) {
+            const angle = (i * Math.PI * 2) / strands + (i % 2 ? 0.1 : -0.07);
             const pull = Math.min(1, Math.max(0, progress * 1.12 - (i % 3) * 0.055));
             const head = reach * (1 - pull),
                 tail = Math.min(reach, head + 0.3 + (i % 3) * 0.08);
@@ -312,7 +320,11 @@
                 if (!visible(ax, ay) || !visible(bx, by)) continue;
                 const pa = xy(ax, ay),
                     pb = xy(bx, by);
-                g.lineStyle(1.4, pink() ? 0xffd9ec : 0xe9d5ff, (0.7 - step * 0.14) * (0.65 + progress * 0.35));
+                g.lineStyle(
+                    1.4 + (stage - 1) * 0.3,
+                    pink() ? 0xffd9ec : 0xe9d5ff,
+                    (0.7 - step * 0.14) * (0.65 + progress * 0.35),
+                );
                 g.moveTo(pa[0], pa[1]);
                 g.lineTo(pb[0], pb[1]);
             }
@@ -373,6 +385,7 @@
             collapse.x,
             collapse.y,
             `collapse_${id}`,
+            collapse.stage || 1,
         );
     }
 
@@ -541,74 +554,186 @@
         }
     }
 
-    function drawCocoon(g, x, y, size, color) {
-        const center = y + size * 0.08,
-            rx = size * 0.27,
-            ry = size * 0.4;
-        g.lineStyle(2, 0x72586d, 0.85).beginFill(color, 0.96);
-        for (let step = 0; step <= 32; step++) {
-            const angle = (step / 32) * Math.PI * 2,
-                xx = x + Math.cos(angle) * rx,
-                yy = center + Math.sin(angle) * ry;
-            if (!step) g.moveTo(xx, yy);
-            else g.lineTo(xx, yy);
+    function hasCocoon(target) {
+        return (
+            target?.hp > 0 &&
+            !!(api.WeaponWebbing?.status(target)?.cocoon || api.NPCAdhesion?.hasSpiderHelplessness(target, false))
+        );
+    }
+
+    function disposeCocoon(view) {
+        if (!view.native.destroyed && view.native.mask === view.head) view.native.mask = view.previousMask;
+        view.layer.parent?.removeChild(view.layer);
+        view.layer.destroy({ children: true });
+    }
+
+    function syncTransform(to, from) {
+        to.position.copyFrom(from.position);
+        to.pivot.copyFrom(from.pivot);
+        to.scale.copyFrom(from.scale);
+        to.rotation = from.rotation;
+    }
+
+    function cocoonTexture(trimmed) {
+        const path = `Models/SpiderlingsWebbingCocoon${pink()}/Cocoon.png`,
+            source = KDTex(path);
+        if (!source?.valid) return;
+        if (!trimmed) return source;
+        let entry = cocoonTextures.get(source);
+        if (!entry) {
+            // Atlas frames are already losslessly trimmed; direct PNGs use the
+            // same authored alpha bounds. Neither path changes the shared art.
+            const rect = source.trim ? source.frame : new PIXI.Rectangle(813, 620, 777, 2662);
+            entry = new PIXI.Texture(source.baseTexture, rect);
+            cocoonTextures.set(source, entry);
         }
-        g.endFill();
-        // The body is enclosed; the upper face remains visible above the silk.
-        for (let band = -4; band <= 4; band++) {
-            const height = center + band * size * 0.075,
-                width = rx * Math.sqrt(1 - ((height - center) / ry) ** 2);
-            g.lineStyle(2, pink() ? 0xd294bf : 0xcbbdce, 0.8);
-            g.moveTo(x - width, height - size * 0.014);
-            g.lineTo(x + width, height + size * 0.014);
-            g.lineStyle(1.2, 0xfffbff, 0.9);
-            g.moveTo(x - width * 0.95, height + size * 0.016);
-            g.lineTo(x + width * 0.95, height - size * 0.016);
+        return entry;
+    }
+
+    function cocoonView(target, native, texture) {
+        let view = cocoons.get(native);
+        if (!view) {
+            const layer = new PIXI.Container(),
+                body = new PIXI.Container(),
+                head = new PIXI.Graphics(),
+                silk = new PIXI.Sprite(texture);
+            layer.name = `${KEY}_cocoon_${target.id}`;
+            silk.name = "SpiderlingsNPCCocoon";
+            body.addChild(head, silk);
+            layer.addChild(body);
+            native.parent.addChild(layer);
+            view = { target, native, layer, body, head, silk, previousMask: native.mask };
+            cocoons.set(native, view);
+        }
+        view.silk.texture = texture;
+        view.silk.tint = native.tint ?? 0xffffff;
+        view.layer.visible = true;
+        view.layer.alpha = native.alpha;
+        view.layer.zIndex = native.zIndex + 0.001;
+        // Preserve a foreign clipping mask on the combined appearance.
+        view.layer.mask = view.previousMask;
+        native.mask = view.head;
+        return view;
+    }
+
+    function modelCocoon(target, container) {
+        const texture = cocoonTexture(false),
+            native = container?.Mesh;
+        if (!texture || !native?.parent) return;
+        const view = cocoonView(target, native, texture),
+            scale = container.Zoom * MODEL_SCALE;
+        view.container = container;
+        syncTransform(view.layer, native);
+        syncTransform(view.body, container.Container);
+        view.silk.position.set(0, 0);
+        view.silk.scale.set(scale);
+        if (view.headScale !== scale) {
+            // The authored neck begins at y=620. Native chibi head scaling
+            // keeps its neck at this same anchor and expands above y=0;
+            // sleeves and skirts below the neck stay out.
+            view.head
+                .clear()
+                .beginFill(0xffffff)
+                .drawRect(-2480 * scale, -3508 * scale, 7440 * scale, 4168 * scale)
+                .endFill();
+            view.headScale = scale;
         }
     }
 
-    function drawWeaponWebbing() {
-        for (const target of KDMapData.Entities) {
-            if (!(target.hp > 0) || !visible(target.x, target.y, target)) continue;
-            const web = api.WeaponWebbing?.status(target);
-            const cocoon = web?.cocoon || api.NPCAdhesion?.hasSpiderHelplessness(target, false);
-            if (!web && !cocoon) continue;
-            const [x, y] = xy(target.visual_x ?? target.x, target.visual_y ?? target.y);
-            const size = KinkyDungeonGridSizeDisplay;
-            const g = graphics("actor");
-            const color = pink() ? 0xefb7df : 0xf4eef5;
-            if (cocoon) {
-                drawCocoon(g, x, y, size, color);
-                continue;
-            }
-            const bands = 2 + Math.floor(web.coverage * 6);
-            // Bands occupy the actor's body; the head remains readable at every coverage.
-            for (let band = 0; band < bands; band++) {
-                const height = y + size * (0.31 - band * 0.065);
-                const width = size * (0.18 + Math.sin(((band + 1) / (bands + 1)) * Math.PI) * 0.07);
-                g.lineStyle(2 + web.coverage, 0x72586d, 0.65);
-                for (let pass = 0; pass < 2; pass++) {
-                    if (pass) g.lineStyle(1.1 + web.coverage, color, 0.9);
-                    for (let step = 0; step <= 12; step++) {
-                        const angle = (step / 12) * Math.PI * 2;
-                        const xx = x + Math.cos(angle) * width;
-                        const yy = height + Math.sin(angle) * size * 0.025;
-                        if (!step) g.moveTo(xx, yy);
-                        else g.lineTo(xx, yy);
-                    }
-                }
-            }
+    function spriteCocoon(target, native) {
+        const texture = cocoonTexture(true);
+        if (!texture || !native?.parent) return;
+        const view = cocoonView(target, native, texture),
+            width = native.texture.orig.width,
+            height = native.texture.orig.height;
+        syncTransform(view.layer, native);
+        view.body.position.set(-native.anchor.x * width, -native.anchor.y * height);
+        const bodyHeight = height * 0.72,
+            bodyWidth = bodyHeight * (777 / 2662);
+        view.silk.position.set((width - bodyWidth) / 2, height * 0.25);
+        view.silk.width = bodyWidth;
+        view.silk.height = bodyHeight;
+        if (view.headWidth !== width || view.headHeight !== height) {
+            view.head
+                .clear()
+                .beginFill(0xffffff)
+                .drawRect(0, 0, width, height * 0.32)
+                .endFill();
+            view.headWidth = width;
+            view.headHeight = height;
         }
+    }
+
+    function drawCocoons() {
+        for (const [native, view] of cocoons) {
+            if (
+                native.destroyed ||
+                !KDMapData.Entities.includes(view.target) ||
+                !hasCocoon(view.target) ||
+                !visible(view.target.x, view.target.y, view.target)
+            ) {
+                disposeCocoon(view);
+                cocoons.delete(native);
+            } else view.layer.visible = native.visible;
+        }
+    }
+
+    if (typeof DrawCharacter === "function") {
+        const nativeDrawCharacter = DrawCharacter;
+        DrawCharacter = function (character, ...args) {
+            currentMap();
+            const result = nativeDrawCharacter.call(this, character, ...args);
+            const id = KDNPCChar_ID.get(character);
+            if (id === undefined) return result;
+            let target = npcCharacters.get(character);
+            if (!target || target.id !== id) {
+                target = KDMapData.Entities.find((enemy) => enemy.id === id);
+                if (target) npcCharacters.set(character, target);
+            }
+            if (hasCocoon(target) && visible(target.x, target.y, target)) {
+                const mc = KDCurrentModels.get(character),
+                    container =
+                        cocoons.get(result)?.container ||
+                        [...(mc?.Containers.values() || [])].find((entry) => entry.Mesh === result);
+                modelCocoon(target, container);
+            } else if (cocoons.has(result)) {
+                disposeCocoon(cocoons.get(result));
+                cocoons.delete(result);
+            }
+            return result;
+        };
+    }
+
+    if (typeof KDDrawEnemySprite === "function") {
+        const nativeDrawEnemy = KDDrawEnemySprite;
+        KDDrawEnemySprite = function (board, target, ...args) {
+            currentMap();
+            const enclosed = hasCocoon(target) && visible(target.x, target.y, target);
+            const weaponSilk = api.WeaponWebbing?.status(target),
+                onlyWeaponSilk = weaponSilk?.amount > 0 && weaponSilk.amount >= (target.boundLevel || 0);
+            const fixedSprite = kdpixisprites.get(`spr_${target.id}${args[6] || ""}`);
+            if (!enclosed && cocoons.has(fixedSprite)) {
+                disposeCocoon(cocoons.get(fixedSprite));
+                cocoons.delete(fixedSprite);
+            }
+            // Fixed bound sprites can be folded sideways. Use the upright native
+            // face for this appearance only, without changing combat or equipment.
+            const actor =
+                enclosed || onlyWeaponSilk ? { ...target, Enemy: { ...target.Enemy, bound: undefined } } : target;
+            const result = nativeDrawEnemy.call(this, board, actor, ...args);
+            if (enclosed) spriteCocoon(target, kdpixisprites.get(`spr_${target.id}${args[6] || ""}`));
+            return result;
+        };
     }
 
     function drawFrame(data) {
         frame = data;
         for (const drawing of drawings.values()) drawing.clear();
         drawMage();
-        drawWeaponWebbing();
+        drawCocoons();
         const weapons = api.Weapons?.visualState();
         for (const collapse of weapons?.collapses || [])
-            drawCollapse(collapse, weapons.clock, `weapon_${collapse.ownerId}`, 2);
+            drawCollapse(collapse, weapons.clock, `weapon_${collapse.ownerId}`);
         for (const [id, effect] of impacts) {
             const age = (now() - effect.start) / DURATION;
             if (age >= 1) {

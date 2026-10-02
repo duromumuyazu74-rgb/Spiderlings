@@ -4,6 +4,15 @@
     const api = globalThis.Spiderlings;
     // Mod configuration constants / Mod 配置常量。
     const MOD_ID = "Spiderlings";
+    // The settings panel and runtime fallback use the same weight table.
+    // 设置面板与运行时回退共用同一套权重。
+    const SHARED_SPIDERLING_OPTIONS = Object.freeze([
+        Object.freeze({ enemy: "Spinner", refvar: "spiderlingsNestSpinnerWeight", default: 8 }),
+        Object.freeze({ enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 2 }),
+        Object.freeze({ enemy: "WebCaster", refvar: "spiderlingsNestWebCasterWeight", default: 4 }),
+        Object.freeze({ enemy: "Tunneler", refvar: "spiderlingsNestTunnelerWeight", default: 1 }),
+        Object.freeze({ enemy: "MageSpiderlings", refvar: "spiderlingsNestMageWeight", default: 2 }),
+    ]);
     const MOD_CONFIG = [
         {
             type: "boolean",
@@ -39,7 +48,7 @@
             type: "string",
             name: "spiderlingsInfestationWeight",
             refvar: "spiderlingsInfestationWeight",
-            default: "50",
+            default: "200",
             block: undefined,
         },
         { type: "text", refvar: "spiderlingsHuntingGroundsWeight" },
@@ -47,60 +56,20 @@
             type: "string",
             name: "spiderlingsHuntingGroundsWeight",
             refvar: "spiderlingsHuntingGroundsWeight",
-            default: "1000",
+            default: "1500",
             block: undefined,
         },
         { type: "text", refvar: "spiderlingsNestSummonWeights" },
-        {
+        ...SHARED_SPIDERLING_OPTIONS.map((option) => ({
             type: "range",
-            name: "spiderlingsNestSpinnerWeight",
-            refvar: "spiderlingsNestSpinnerWeight",
-            default: 4,
+            name: option.refvar,
+            refvar: option.refvar,
+            default: option.default,
             rangelow: 0,
             rangehigh: 10,
             stepcount: 1,
             block: undefined,
-        },
-        {
-            type: "range",
-            name: "spiderlingsNestJumperWeight",
-            refvar: "spiderlingsNestJumperWeight",
-            default: 1,
-            rangelow: 0,
-            rangehigh: 10,
-            stepcount: 1,
-            block: undefined,
-        },
-        {
-            type: "range",
-            name: "spiderlingsNestWebCasterWeight",
-            refvar: "spiderlingsNestWebCasterWeight",
-            default: 2,
-            rangelow: 0,
-            rangehigh: 10,
-            stepcount: 1,
-            block: undefined,
-        },
-        {
-            type: "range",
-            name: "spiderlingsNestTunnelerWeight",
-            refvar: "spiderlingsNestTunnelerWeight",
-            default: 1,
-            rangelow: 0,
-            rangehigh: 10,
-            stepcount: 1,
-            block: undefined,
-        },
-        {
-            type: "range",
-            name: "spiderlingsNestMageWeight",
-            refvar: "spiderlingsNestMageWeight",
-            default: 1,
-            rangelow: 0,
-            rangehigh: 10,
-            stepcount: 1,
-            block: undefined,
-        },
+        })),
         { type: "text", refvar: "spiderlingsNestReinforcementControl" },
         {
             type: "string",
@@ -130,13 +99,6 @@
     ];
 
     // Nest reinforcement population weights / 巢穴增援种群权重。
-    const SHARED_SPIDERLING_OPTIONS = Object.freeze([
-        Object.freeze({ enemy: "Spinner", refvar: "spiderlingsNestSpinnerWeight", default: 4 }),
-        Object.freeze({ enemy: "Jumper", refvar: "spiderlingsNestJumperWeight", default: 1 }),
-        Object.freeze({ enemy: "WebCaster", refvar: "spiderlingsNestWebCasterWeight", default: 2 }),
-        Object.freeze({ enemy: "Tunneler", refvar: "spiderlingsNestTunnelerWeight", default: 1 }),
-        Object.freeze({ enemy: "MageSpiderlings", refvar: "spiderlingsNestMageWeight", default: 1 }),
-    ]);
     const DEFAULT_SPIDERLING_WEIGHTS = Object.freeze(
         Object.fromEntries(SHARED_SPIDERLING_OPTIONS.map((option) => [option.enemy, option.default])),
     );
@@ -571,7 +533,11 @@
     api.getMapPopulationCap = function () {
         const value = String(api.getSetting("spiderlingsMapPopulationCap")).trim();
         const numeric = Number(value);
-        return /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
+        const settingCap = /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
+        const map = typeof KDMapData !== "undefined" ? KDMapData : undefined;
+        const plan = map?.SpiderlingsPopulationPlan;
+        if (plan?.kind !== map?.MapMod || !Number.isSafeInteger(plan?.cap) || plan.cap <= 0) return settingCap;
+        return settingCap === 0 ? plan.cap : Math.min(settingCap, plan.cap);
     };
 
     function availableSpiderlingSlots() {
@@ -585,6 +551,7 @@
         ).length;
         return Math.max(0, cap - living);
     }
+    api.availableSpiderlingSlots = availableSpiderlingSlots;
 
     // Keep the native weighted selection and its fallback, excluding only our
     // registered species when the current map has no free spider slots.
@@ -725,7 +692,10 @@
             "Adds a hostile squad to each new ordinary map where spawning is allowed. The squad has two Spinners, one Tunneler, one Web Caster, one Jumper, and one Mage. Requires enough space and room within the spider limit.",
         );
         addTextKey("KDModButtonspiderlingsSpinnerEncounters", "Spinner capture fields");
-        addTextKey("KDModButtonspiderlingsMapPopulationCap", "Spiderlings per map, 0 for no limit");
+        addTextKey(
+            "KDModButtonspiderlingsMapPopulationCap",
+            "Global mobile spider cap (0 disables this cap; themed floors keep their budgets)",
+        );
         addTextKey("KDModButtonspiderlingsInfestationWeight", "Infestation weight, 0 to disable");
         addTextKey(
             "KDModButtonspiderlingsHuntingGroundsWeight",
@@ -1011,8 +981,14 @@
             // once from attributable children still present in the loaded map.
             if (!Number.isSafeInteger(nest[NEST_TUNNELER_COUNT_FIELD]) || nest[NEST_TUNNELER_COUNT_FIELD] < 0)
                 nest[NEST_TUNNELER_COUNT_FIELD] = index.knownTunnelersByParent.get(nest.id) || 0;
-            const eligibleWeights =
+            let eligibleWeights =
                 nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
+            if (nest.SpiderlingsNestRosterTarget === 6 && api.HuntingGrounds?.missingRosterNames) {
+                const missing = new Set(api.HuntingGrounds.missingRosterNames(nest));
+                eligibleWeights = Object.fromEntries(
+                    Object.entries(eligibleWeights).map(([name, weight]) => [name, missing.has(name) ? weight : 0]),
+                );
+            }
             const totalWeight = Object.values(eligibleWeights).reduce((sum, weight) => sum + weight, 0);
             const livingOffspring = index.livingOffspringByParent.get(nest.id) || 0;
             const decision = advanceNestTimer({
@@ -1023,7 +999,7 @@
                     infestation?.status === "active" &&
                     infestation.garrisonVersion >= 1 &&
                     infestation.targetIds?.includes(nest.id)
-                        ? Math.min(cap, 4)
+                        ? Math.min(cap, nest.SpiderlingsNestRosterTarget === 6 ? 6 : 4)
                         : cap,
                 livingOffspring,
                 eligible: nestCanReinforce(nest, index.hostileNests),
@@ -1076,6 +1052,7 @@
             if (!Array.isArray(created) || created.length === 0) continue;
 
             created[0][NEST_PARENT_ID_FIELD] = nest.id;
+            if (nest.SpiderlingsNestRosterTarget === 6) api.HuntingGrounds?.assignRosterRole?.(created[0], nest);
             if (enemyName === "Tunneler") nest[NEST_TUNNELER_COUNT_FIELD] += 1;
             successfulSummons += 1;
         }

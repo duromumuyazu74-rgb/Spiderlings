@@ -1043,15 +1043,20 @@ test("one mapgen outer body retains a real crew, leaves paid inner work and surv
     );
 });
 
-test("mapgen field rejects insufficient staffing and protected large sites without forcing a smaller enclosure", () => {
+test("mapgen field rejects solo crews and downgrades protected large sites without occupying protected terrain", () => {
     for (const variant of ["solo", "protected"]) {
         const r = runtime(variant === "solo" ? [spinner(1, 5, 3)] : [spinner(1, 5, 3), spinner(2, 5, 9)]);
         if (variant === "protected")
             for (let x = 1; x < 17; x++) r.tiles.set(`${x},6`, { Type: "Quest", Protected: true });
         const result = r.context.Spiderlings.SpinnerAI.initializeMapgenField();
-        assert.equal(result.status, "skipped", variant);
-        assert.equal(r.context.KDMapData.Entities.some(r.context.Spiderlings.SpinnerNativeField.isOwnedProxy), false);
-        assert.equal(r.context.KDMapData.Entities.length, variant === "solo" ? 1 : 2);
+        assert.equal(result.status, variant === "solo" ? "skipped" : "placed", variant);
+        const proxies = r.context.KDMapData.Entities.filter(r.context.Spiderlings.SpinnerNativeField.isOwnedProxy);
+        assert.equal(proxies.length > 0, variant === "protected");
+        assert.equal(
+            proxies.some((entity) => r.tiles.get(`${entity.x},${entity.y}`)?.Protected),
+            false,
+        );
+        if (variant === "protected") assert.equal(result.radius, 2);
     }
 });
 

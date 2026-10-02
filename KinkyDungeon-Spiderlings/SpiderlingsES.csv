@@ -152,7 +152,7 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Abres a la fuerza la envolt
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Desprendes la envoltura exterior de TargetRestraint y recoges el capullo aflojado.
-KDModButtonspiderlingsMapPopulationCap,Arañas por mapa (0: sin límite)
+KDModButtonspiderlingsMapPopulationCap,Límite global de arañitas móviles (0 desactiva este límite; los pisos temáticos mantienen su cupo)
 KinkyDungeonStatSpiderlingsCocoonStart,Despertar de seda
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Despiertas en un capullo suave, envuelta en capas tupidas de seda de araña. Cada pequeño movimiento tira de los hilos ceñidos a tu cuerpo."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La cría de araña saltadora mira el suelo bajo su rival y se agacha para saltar.
@@ -215,14 +215,14 @@ KinkyDungeonInventoryItemSpiderlingTome,Tomo de ataduras de seda
 KinkyDungeonInventoryItemSpiderlingStaff,Bastón del tejedor de seda
 KinkyDungeonSpecialSpiderlingTome,Convergencia del capullo
 KinkyDungeonSpecialSpiderlingStaff,Lazo de seda
-KinkyDungeonInventoryItemSpiderlingTomeDesc,"La seda atraviesa el lomo y rodea las páginas abiertas. Al leer las palabras tejidas, los hilos dispersos se recogen hacia el centro."
-KinkyDungeonInventoryItemSpiderlingStaffDesc,"Una luz tenue descansa en la red de la punta. Al blandir el bastón, finos hilos se enrollan alrededor del objetivo."
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"En la mano principal o secundaria: +20% de fuerza de atadura. 4 de maná; alcance 6; efecto tras dos turnos; recarga de 8 turnos. Afecta 21 casillas: el daño y las ataduras aumentan hacia el centro. Las paredes bloquean el efecto. Si la seda de esta arma basta por sí sola para dejar al enemigo indefenso, forma un capullo completo. Al liberarse, el capullo vuelve a deshacerse en hilos."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 de maná; alcance 6; recarga de 3 turnos. Ata al primer enemigo alcanzado y después lo ralentiza hasta 3 turnos. Las paredes detienen el hilo. Si la seda de esta arma basta por sí sola para dejar al objetivo indefenso, forma un capullo completo. Al liberarse, el capullo vuelve a deshacerse en hilos."
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Suaves hilos de seda atraviesan el lomo y se extienden sobre las páginas.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,Una fina red sostiene un tenue resplandor en la punta del bastón.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,Hilos pegajosos se estiran entre las páginas al pasar y vuelven al lomo cuando el libro se cierra. Un leve pulso responde al roce de un dedo.
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,Finos hilos cuelgan tensos de la punta. Un tenue resplandor los recorre hacia la empuñadura y titila con cada tirón.
 ItemPickupSpiderlingTome,Recoges un tomo de ataduras de seda.
 ItemPickupSpiderlingStaff,Recoges un bastón del tejedor de seda.
-KDPrereqFailSpiderlingsCocoonConvergence,Necesita 4 de maná. La recarga también debe haber terminado.
-KDPrereqFailSpiderlingsSilkenSnare,Necesita 2 de maná. La recarga también debe haber terminado.
+KDPrereqFailSpiderlingsCocoonConvergence,"Debes sostener el tomo y tener maná suficiente para este tejido. Tras cerrarse el círculo, espera a que termine la recarga antes de crear otro."
+KDPrereqFailSpiderlingsSilkenSnare,"Debes sostener el bastón, tener maná suficiente y esperar a que termine la recarga."
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tejes un círculo de seda. Los hilos empiezan a recogerse hacia el centro.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Lanzas un hilo de seda pegajosa hacia tu objetivo.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Convergencia del capullo
@@ -252,3 +252,9 @@ SpiderlingsRecoveryRemove,Retirar ({cost})
 SpiderlingsRecoveryStruggle,Forcejear ({cost})
 SpiderlingsRecoveryStrandLoosened,Aflojas el hilo de seda seleccionado.
 SpiderlingsRecoveryStrandSevered,Te liberas del hilo de seda seleccionado.
+KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Cada refuerzo cuesta 20 de maná base. Fuerza de atadura: 1 / 1,5 / 4,5; recarga desde el primer tejido: 8 / 9 / 12 turnos. Los impactos efectivos devuelven 6 de resistencia una vez por círculo. El primer capullo completo de una presa devuelve maná, hasta la mitad del maná pagado y un máximo de 20 por círculo."
+KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Teje un círculo de seda a un máximo de 6 casillas. Se cierra tras dos acciones más y ata con mayor fuerza cerca del centro. Usa de nuevo esta habilidad para reforzar el mismo tejido hasta tres niveles. Cada refuerzo consume maná y una acción, y retrasa el cierre un turno. Las paredes detienen la seda."
+KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,"Lanza seda pegajosa hasta 6 casillas hacia el primer objetivo hostil. El hilo ata y ralentiza a la presa; las paredes lo detienen. Recarga: 3 turnos. Un impacto efectivo devuelve 6 de resistencia. El primer capullo completo de una presa devuelve maná, hasta la mitad del maná pagado."
+KDSpiderlingsWeaponSustainSpiderlingTome,"+20% de fuerza de atadura en la mano principal o secundaria. Los impactos cuerpo a cuerpo efectivos devuelven el 20% de la resistencia pagada, hasta un valor base de 3. El primer capullo de seda creado cuerpo a cuerpo para cada presa devuelve un valor base de 7,5 de maná una sola vez."
+KDSpiderlingsWeaponSustainSpiderlingStaff,"Los impactos cuerpo a cuerpo efectivos devuelven el 20% de la resistencia pagada, hasta un valor base de 6. El primer capullo de seda creado cuerpo a cuerpo para cada presa devuelve un valor base de 7,5 de maná una sola vez."
+KDSpiderlingsWeaponWeaveStatus,Tejido STAGE/3. Próximo coste de maná: COST. Nuevo círculo en COOLDOWN turnos.

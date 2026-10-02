@@ -19,7 +19,59 @@ function fixture({ mageSpells = false } = {}) {
     const geometryAllocations = { sets: 0 };
     let clock = 0,
         pink = false;
-    class Graphics {
+    const point = (x = 0, y = 0) => ({
+        x,
+        y,
+        set(xx, yy = xx) {
+            this.x = xx;
+            this.y = yy;
+        },
+        copyFrom(value) {
+            this.x = value.x;
+            this.y = value.y;
+        },
+    });
+    class Container {
+        constructor() {
+            this.position = point();
+            this.pivot = point();
+            this.scale = point(1, 1);
+            this.children = [];
+            this.visible = true;
+            this.zIndex = 0;
+            this.rotation = 0;
+        }
+        addChild(...children) {
+            for (const child of children) {
+                child.parent = this;
+                this.children.push(child);
+            }
+        }
+        removeChild(child) {
+            child.parent = null;
+            this.children.splice(this.children.indexOf(child), 1);
+        }
+        destroy(options) {
+            this.destroyed = true;
+            if (options?.children) for (const child of this.children) child.destroy();
+        }
+    }
+    class Texture {
+        constructor(baseTexture = {}, frame = { width: 2480, height: 3508 }) {
+            this.baseTexture = baseTexture;
+            this.frame = frame;
+            this.orig = frame;
+            this.valid = true;
+        }
+    }
+    class Sprite extends Container {
+        constructor(texture) {
+            super();
+            this.texture = texture;
+            this.anchor = point();
+        }
+    }
+    class Graphics extends Container {
         clear() {
             this.rectangles = [];
             lines.length = 0;
@@ -90,7 +142,25 @@ function fixture({ mageSpells = false } = {}) {
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { x: 3, y: 3, player: true },
         CommonTime: () => clock,
-        PIXI: { Graphics },
+        PIXI: {
+            Graphics,
+            Container,
+            Sprite,
+            Texture,
+            Rectangle: class {
+                constructor(x, y, width, height) {
+                    Object.assign(this, { x, y, width, height });
+                }
+            },
+        },
+        MODEL_SCALE: 1000 / 3508,
+        KDCurrentModels: new Map(),
+        KDNPCChar_ID: new Map(),
+        KDTex: (name) => {
+            const texture = new Texture();
+            texture.path = name;
+            return texture;
+        },
         KinkyDungeonGridSizeDisplay: 72,
         KinkyDungeonRootDirectory: "Game/",
         KinkyDungeonVisionGet: () => 1,
@@ -115,6 +185,20 @@ function fixture({ mageSpells = false } = {}) {
             c.kdpixisprites.set(args[2], rendered);
             return rendered;
         },
+        KDDrawEnemySprite: (_board, enemy, ...args) => {
+            c.lastNativeActor = enemy;
+            const id = `spr_${enemy.id}${args[6] || ""}`;
+            let sprite = c.kdpixisprites.get(id);
+            if (!sprite) {
+                sprite = new Sprite(new Texture({}, { width: 72, height: 72 }));
+                board.addChild(sprite);
+                c.kdpixisprites.set(id, sprite);
+            }
+            sprite.position.set(args[0] * 72, args[1] * 72);
+            sprite.scale.x = enemy.flip ? -1 : 1;
+            return enemy.Enemy.name;
+        },
+        DrawCharacter: (character) => character.container.Mesh,
     };
     if (mageSpells) {
         c.KDCastConditions = {};
@@ -223,60 +307,134 @@ test("the exact native Witch rope launcher hit uses its existing Rope launcher a
     assert.equal(otherBoard.args[3], args[3]);
 });
 
-test("weapon silk follows the visible actor, thickens with surviving silk and clears on release", () => {
-    const r = fixture();
-    const enemy = { id: 7, hp: 20, x: 4, y: 5, visual_x: 4.25, visual_y: 5.5, Enemy: { name: "Maidforce" } };
-    let coverage = 0.1;
-    r.c.KDMapData.Entities.push(enemy);
-    r.c.Spiderlings.WeaponWebbing = { status: () => (coverage === undefined ? undefined : { coverage }) };
-    r.draw();
-    const light = r.lines.map((line) => [...line]);
-    assert.ok(light.length > 0);
-    enemy.visual_x += 1;
-    enemy.visual_y += 2;
-    r.draw();
-    const moved = light.map(([x, y, xx, yy]) => [x + 72, y + 144, xx + 72, yy + 144]);
-    assert.equal(r.lines.length, moved.length);
-    assert.ok(r.lines.every((line, i) => line.every((value, n) => Math.abs(value - moved[i][n]) < 1e-8)));
-    coverage = 1;
-    r.draw();
-    assert.ok(r.lines.length > light.length);
-    enemy.hidden = true;
-    r.draw();
-    assert.equal(r.lines.length, 0);
-    enemy.hidden = false;
-    r.c.KinkyDungeonVisionGet = () => 0;
-    r.draw();
-    assert.equal(r.lines.length, 0);
-    r.c.KinkyDungeonVisionGet = () => 1;
-    coverage = undefined;
-    r.draw();
-    assert.equal(r.lines.length, 0);
-});
-
-test("only confirmed cocoons enclose the body, then downgrade immediately after native recovery", () => {
+test("partial weapon silk only flashes on impact and never accumulates body geometry", () => {
     const r = fixture(),
         enemy = { id: 7, hp: 20, x: 4, y: 5, Enemy: { name: "Maidforce" } };
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.Spiderlings.WeaponWebbing = { status: () => ({ coverage: 1, cocoon: false }) };
+    r.c.Spiderlings.SpellVisuals.hit(enemy);
+    r.draw();
+    assert.equal(r.draws.filter((d) => d[3].includes("SpiderWebHit")).length, 1);
+    assert.equal(r.lines.length, 0);
+    r.time(241);
+    r.draw();
+    assert.equal(r.draws.length, 0);
+    assert.equal(r.lines.length, 0);
+    assert.equal(r.polygons.length, 0);
+});
+
+test("confirmed cocoons use authored silk, retain only the native head and clear after recovery, fog and death", () => {
+    const r = fixture(),
+        enemy = { id: 7, hp: 20, x: 4, y: 5, Enemy: { name: "Maidforce", bound: "Maidforce" } };
     let cocoon = false;
     r.c.KDMapData.Entities.push(enemy);
     r.c.Spiderlings.WeaponWebbing = { status: () => ({ coverage: 1, cocoon }) };
-    r.draw();
-    assert.equal(r.polygons.length, 0, "coverage alone does not hide an active NPC");
+    const render = () => {
+        r.c.KDDrawEnemySprite(r.c.kdgameboard, enemy, enemy.x, enemy.y, 0, 0);
+        r.draw();
+    };
+    const layer = () => r.c.kdgameboard.children.find((c) => c.name === "SpiderlingsSpellVisuals_cocoon_7");
+    render();
+    assert.equal(layer(), undefined);
     cocoon = true;
-    r.draw();
-    assert.equal(r.polygons.length, 1);
-    assert.ok(r.polygons[0].alpha > 0.9);
-    assert.equal(r.polygons[0].points.length, 33);
+    render();
+    const initial = layer(),
+        actor = r.c.kdpixisprites.get("spr_7"),
+        silk = initial.children[0].children[1];
+    assert.ok(actor.mask);
+    assert.equal(actor.mask.rectangles[0].height, 72 * 0.32);
+    assert.equal(silk.width / silk.height, 777 / 2662);
+    assert.equal(enemy.Enemy.bound, "Maidforce", "drawing does not change the native definition");
+    enemy.flip = true;
+    render();
+    assert.equal(layer(), initial, "stationary rendering reuses display objects");
+    assert.equal(layer().scale.x, -1);
+    r.pink(true);
+    render();
+    assert.equal(layer(), initial, "changing color only changes the shared texture");
     cocoon = false;
-    r.draw();
-    assert.equal(r.polygons.length, 0);
-    r.c.Spiderlings.WeaponWebbing.status = () => undefined;
+    render();
+    assert.equal(layer(), undefined);
+    assert.equal(actor.mask, undefined);
     r.c.Spiderlings.NPCAdhesion = { hasSpiderHelplessness: () => true };
-    r.draw();
-    assert.equal(r.polygons.length, 1, "Mage and hunting silk share the same terminal visual");
+    render();
+    assert.ok(layer(), "Mage and hunting silk use the same terminal art");
     enemy.hidden = true;
     r.draw();
-    assert.equal(r.polygons.length, 0);
+    assert.equal(layer(), undefined);
+    assert.equal(actor.mask, undefined);
+    enemy.hidden = false;
+    render();
+    assert.ok(layer());
+    enemy.hp = 0;
+    r.draw();
+    assert.equal(layer(), undefined);
+    enemy.hp = 20;
+    render();
+    assert.ok(layer());
+    r.events.afterLoadGame();
+    assert.equal(layer(), undefined);
+    assert.equal(actor.mask, undefined);
+});
+
+test("model and chibi cocoons follow native source transforms without adding equipment or rendering new textures", () => {
+    const r = fixture(),
+        enemy = { id: 8, hp: 20, x: 4, y: 5, Enemy: { name: "Maidforce" } },
+        char = {};
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.Spiderlings.WeaponWebbing = { status: () => ({ cocoon: true }) };
+    const container = { Mesh: new r.c.PIXI.Container(), Container: new r.c.PIXI.Container(), Zoom: 0.08 };
+    char.container = container;
+    r.c.kdgameboard.addChild(container.Mesh);
+    container.Mesh.position.set(150, 200);
+    container.Container.position.set(60, 80);
+    container.Container.pivot.set(30, 40);
+    r.c.KDNPCChar_ID.set(char, enemy.id);
+    r.c.KDCurrentModels.set(char, { Containers: new Map([["npc", container]]) });
+    r.c.DrawCharacter(char);
+    const view = r.c.kdgameboard.children.find((c) => c.name === "SpiderlingsSpellVisuals_cocoon_8");
+    assert.deepEqual([view.position.x, view.position.y], [150, 200]);
+    assert.deepEqual([view.children[0].pivot.x, view.children[0].pivot.y], [30, 40]);
+    assert.equal(view.children[0].children[1].scale.x, container.Zoom * r.c.MODEL_SCALE);
+    assert.equal(view.children[0].children[1].texture.path, "Models/SpiderlingsWebbingCocoon/Cocoon.png");
+    assert.ok(
+        Math.abs(
+            container.Mesh.mask.rectangles[0].y +
+                container.Mesh.mask.rectangles[0].height -
+                660 * (container.Zoom * r.c.MODEL_SCALE),
+        ) < 1e-8,
+    );
+    const mask = container.Mesh.mask;
+    for (let i = 0; i < 24; i++) r.c.DrawCharacter(char);
+    assert.equal(container.Mesh.mask, mask);
+    assert.equal(view.children.length, 1);
+    r.events.afterLoadGame();
+    assert.equal(container.Mesh.mask, undefined);
+});
+test("only weapon-owned binding suppresses the native bound sprite and foreign masks survive release", () => {
+    const r = fixture(),
+        enemy = { id: 9, hp: 20, x: 4, y: 5, boundLevel: 8, Enemy: { name: "Maidforce", bound: "Maidforce" } };
+    let cocoon = false;
+    r.c.KDMapData.Entities.push(enemy);
+    r.c.Spiderlings.WeaponWebbing = { status: () => ({ amount: 8, cocoon }) };
+    const render = () => r.c.KDDrawEnemySprite(r.c.kdgameboard, enemy, 4, 5, 0, 0);
+    render();
+    assert.equal(r.c.lastNativeActor.Enemy.bound, undefined, "partial weapon silk has no native rope appearance");
+    assert.equal(enemy.Enemy.bound, "Maidforce");
+    enemy.boundLevel = 12;
+    render();
+    assert.equal(r.c.lastNativeActor, enemy, "unrelated binding keeps its native appearance");
+    const actor = r.c.kdpixisprites.get("spr_9"),
+        foreign = new r.c.PIXI.Graphics();
+    actor.mask = foreign;
+    cocoon = true;
+    render();
+    const layer = r.c.kdgameboard.children.find((c) => c.name === "SpiderlingsSpellVisuals_cocoon_9");
+    assert.equal(layer.mask, foreign);
+    cocoon = false;
+    render();
+    assert.equal(actor.mask, foreign);
+    assert.equal(foreign.destroyed, undefined);
 });
 
 test("Collapse keeps its fixed cut-corner danger mask while its strands gather inward", () => {
@@ -308,6 +466,28 @@ test("Collapse keeps its fixed cut-corner danger mask while its strands gather i
     r.draw();
     assert.equal(r.lines.length, 0);
     assert.equal(r.draws.length, 0);
+});
+
+test("Tome charge tiers deepen the weave while preserving the same twenty-one dangerous cells", () => {
+    const r = fixture(),
+        collapse = { x: 4, y: 4, startAt: 1, explodeAt: 5, ownerId: 1, stage: 1 };
+    r.c.Spiderlings.Weapons = { visualState: () => ({ clock: 1, collapses: [collapse] }) };
+    let cells,
+        previousSize = 0;
+    for (const stage of [1, 2, 3]) {
+        collapse.stage = stage;
+        r.draw();
+        const danger = r.draws.filter((d) => d[2].includes("danger_")).map((d) => d.slice(4, 6));
+        assert.equal(danger.length, 21);
+        if (cells) assert.deepEqual(danger, cells);
+        cells = danger;
+        const core = r.draws.find((d) => d[2].endsWith("collapse_weapon_1"));
+        assert.ok(core[6] > previousSize);
+        previousSize = core[6];
+        const strands = r.lineStyles.filter((style) => Math.abs(style.width - (1.4 + (stage - 1) * 0.3)) < 1e-8);
+        assert.equal(strands.length, (8 + (stage - 1) * 2) * 3);
+        assert.equal(r.labels.length, 0);
+    }
 });
 
 test("mark bursts keep exact footprints and visibly resolve before fading without another game turn", () => {

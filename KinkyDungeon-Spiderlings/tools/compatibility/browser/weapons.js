@@ -99,6 +99,24 @@
             clock = Spiderlings.Weapons.visualState().clock;
         KinkyDungeonActivateWeaponSpell();
         expect(KinkyDungeonTargetingSpell?.name === CONVERGENCE, "Tome special did not activate from native weapon UI");
+        let previewCells = 0;
+        for (let dx = -3; dx <= 3; dx++)
+            for (let dy = -3; dy <= 3; dy++) {
+                const shown = globalThis.AOECondition(
+                    11,
+                    10,
+                    11 + dx,
+                    10 + dy,
+                    KinkyDungeonTargetingSpell.aoe,
+                    KinkyDungeonTargetingSpell.aoetype,
+                    KinkyDungeonPlayerEntity.x,
+                    KinkyDungeonPlayerEntity.y,
+                );
+                const actual = Spiderlings.MageSpells.collapseDistance(11, 10, { x: 11 + dx, y: 10 + dy }) >= 0;
+                expect(shown === actual, "Native Convergence preview disagrees with the real circle");
+                if (shown) previewCells++;
+            }
+        expect(previewCells === 21, "Native Convergence preview included the four inactive corners");
         expect(cast(CONVERGENCE, 11, 10) === "Cast", "Convergence input cast failed");
         expect(Spiderlings.Weapons.visualState().clock === clock + 1, "Casting did not use one native action");
         expect(
@@ -220,6 +238,65 @@
             "Tome passive stacks with itself",
         );
         records.push({ scenario: "melee", hits: trace.slice(), passive: 0.2 });
+
+        for (const enemyName of ["Spinner", "NestEntrance"])
+            for (const weapon of [TOME, STAFF])
+                for (const mode of ["ordinary", "lethal", "full-shield"]) {
+                    setup();
+                    await turn();
+                    KDSetWeapon(weapon);
+                    KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
+                    const npc = DialogueCreateEnemy(9, 10, enemyName);
+                    npc.hostile = 999;
+                    npc.stun = 999;
+                    npc.Enemy = { ...npc.Enemy, movePoints: 1000, attackPoints: 1000, spells: [], summon: [] };
+                    if (mode === "lethal") npc.hp = 0.6;
+                    if (mode === "full-shield") npc.shield = 20;
+                    const beforeHP = npc.hp,
+                        beforeSlime = npc.specialBoundLevel?.Slime || 0;
+                    const change = KDChangeStamina;
+                    let returned = 0;
+                    KDChangeStamina = function (src) {
+                        const before = KinkyDungeonStatStamina,
+                            result = change.apply(this, arguments);
+                        if (src === "SpiderlingsWeapons") returned += Math.max(0, KinkyDungeonStatStamina - before);
+                        return result;
+                    };
+                    try {
+                        KinkyDungeonLaunchAttack(npc);
+                    } finally {
+                        KDChangeStamina = change;
+                    }
+                    const expected = mode === "full-shield" ? 0 : weapon === TOME ? 0.3 : 0.6;
+                    expect(
+                        Math.abs(returned - expected) < 0.01,
+                        "HP-only native refund differs: " +
+                            JSON.stringify({
+                                enemyName,
+                                weapon,
+                                mode,
+                                returned,
+                                expected,
+                                beforeHP,
+                                afterHP: npc.hp,
+                                slime: npc.specialBoundLevel?.Slime,
+                            }),
+                    );
+                    expect(
+                        (npc.specialBoundLevel?.Slime || 0) === beforeSlime && !npc.SpiderlingsWeaponCocoonRewarded,
+                        "Unbindable target issued owned material or mana marker",
+                    );
+                    records.push({
+                        scenario: "native-HP-only-sustain",
+                        enemyName,
+                        weapon,
+                        mode,
+                        returnedStamina: returned,
+                        beforeHP,
+                        afterHP: npc.hp,
+                        slimeAdded: (npc.specialBoundLevel?.Slime || 0) - beforeSlime,
+                    });
+                }
 
         setup();
         KinkyDungeonInventoryRemove(KinkyDungeonInventoryGetWeapon(STAFF));
@@ -371,6 +448,138 @@
             shortIDs: [TOME, STAFF],
             nativeStolenPickup: true,
         });
+        setup();
+        await turn();
+        for (const [x, y] of [
+            [11, 10],
+            [12, 10],
+            [13, 10],
+            [11, 11],
+            [12, 11],
+            [13, 11],
+        ]) {
+            const prey = target(x, y);
+            prey.Enemy = { ...prey.Enemy, maxhp: 8 };
+            prey.hp = 8;
+        }
+        KinkyDungeonStatStamina = 4;
+        expect(cast(CONVERGENCE, 11, 10) === "Cast", "First tier failed");
+        KinkyDungeonStatMana = 2;
+        expect(
+            KDPrereqs[CONVERGENCE]() && KinkyDungeonGetManaCost(KinkyDungeonFindSpell(CONVERGENCE, true)) === 2,
+            "Native UI blocked a 2-mana upgrade below base4",
+        );
+        KinkyDungeonTargetX = 19;
+        KinkyDungeonTargetY = 17;
+        KinkyDungeonActivateWeaponSpell();
+        expect(!KinkyDungeonTargetingSpell, "Upgrade displayed a second false target");
+        let circle = Spiderlings.Weapons.visualState().collapses[0];
+        expect(
+            circle.stage === 2 && circle.x === 11 && circle.y === 10,
+            "Repeat button failed or moved the original circle",
+        );
+        const stageTwo = JSON.stringify(circle),
+            paidBudget = KDMapData.SpiderlingsWeapons.casts[circle.token].paidMana;
+        const noAction = Spiderlings.Weapons.visualState().clock;
+        KinkyDungeonStatMana = 1;
+        expect(cast(CONVERGENCE, 11, 10) === "Fail", "Unaffordable upgrade succeeded");
+        expect(
+            JSON.stringify(circle) === stageTwo && Spiderlings.Weapons.visualState().clock === noAction,
+            "Failed upgrade changed stage, deadline or time",
+        );
+        KDSetWeapon(STAFF);
+        expect(!KDPrereqs[CONVERGENCE](), "Swapped-away tome remained usable");
+        KDSetWeapon(TOME);
+        KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
+        await turn();
+        KinkyDungeonStatMana = 2;
+        KinkyDungeonApplyBuffToEntity(KinkyDungeonPlayerEntity, {
+            id: "WeaponAcceptanceManaGain",
+            type: "StatGainMana",
+            power: 0.5,
+            duration: 99,
+        });
+        KinkyDungeonActivateWeaponSpell();
+        circle = Spiderlings.Weapons.visualState().collapses[0];
+        expect(
+            circle.stage === 3 && circle.explodeAt - Spiderlings.Weapons.visualState().clock === 1,
+            "Late upgrade reset the warning instead of adding one action",
+        );
+        const token = circle.token,
+            paid = KDMapData.SpiderlingsWeapons.casts[token].paidMana;
+        expect(
+            Math.abs(paid - paidBudget - 2) < 0.01,
+            "Final native payment was not accumulated to the original budget",
+        );
+        const chargedSave = KinkyDungeonSaveGame(true);
+        expect(
+            KinkyDungeonLoadGame(
+                typeof chargedSave === "string" ? chargedSave : LZString.compressToBase64(JSON.stringify(chargedSave)),
+                true,
+            ),
+            "Charged native save failed",
+        );
+        expect(
+            Spiderlings.Weapons.visualState().collapses[0].stage === 3 &&
+                KDMapData.SpiderlingsWeapons.casts[token].paidMana === paid,
+            "Save lost stage or payment budget",
+        );
+        KDSetWeapon(STAFF);
+        const manaBefore = KinkyDungeonStatMana;
+        await turn();
+        const finalBudget = KDMapData.SpiderlingsWeapons.casts[token];
+        expect(
+            finalBudget.manaReturned > 0 && finalBudget.manaReturned <= Math.min(2, paid * 0.5) + 1e-9,
+            "Gain-amplified multi-cocoon refund exceeded actual paid budget",
+        );
+        expect(
+            Math.abs(finalBudget.manaReturned - 2) < 0.01,
+            "Six-target +50% gain probe failed to reach the shared cap",
+        );
+        expect(
+            KDMapData.Entities.filter((e) => e.SpiderlingsWeaponCocoonRewarded).length === 6,
+            "First cocoon markers were not per prey",
+        );
+        expect(Spiderlings.Weapons.visualState().collapses.length === 0, "Charged circle did not resolve exactly once");
+        records.push({
+            scenario: "charge-low-mana-late-save-budget",
+            paidMana: paid,
+            returnedMana: finalBudget.manaReturned,
+            stage: 3,
+            lateWarningRemaining: 1,
+            swapRetained: true,
+            saveRetained: true,
+            prey: 6,
+            statGainMana: 0.5,
+            manaBefore,
+            manaAfter: KinkyDungeonStatMana,
+        });
+
+        setup();
+        await turn();
+        KDSetWeapon(STAFF);
+        KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
+        delete KinkyDungeonPlayerBuffs.ManaRegenSuspend;
+        KinkyDungeonStatStamina = 4;
+        const freeTarget = target(10, 10);
+        const freeStart = KinkyDungeonStatMana;
+        expect(cast(SNARE, 14, 10) === "Cast", "Discounted Snare failed");
+        expect(costs.at(-1).actual === 0, "Native ManaRegen did not supply the zero-cost fixture");
+        for (let i = 0; i < 3 && !(freeTarget.specialBoundLevel?.Slime > 0); i++) await turn();
+        const freeBudget = Object.values(KDMapData.SpiderlingsWeapons.casts)[0];
+        expect(
+            freeBudget.paidMana === 0 && freeBudget.manaReturned === 0 && freeBudget.staminaReturned,
+            "Free legal Snare did not separate stamina reward from zero mana budget",
+        );
+        records.push({
+            scenario: "native-free-snare",
+            paidMana: freeBudget.paidMana,
+            returnedMana: freeBudget.manaReturned,
+            effectiveSlime: freeTarget.specialBoundLevel.Slime,
+            stamina: KinkyDungeonStatStamina,
+            manaStart: freeStart,
+        });
+
         // Leave the saved-turn inward animation visible for the acceptance screenshot.
         setup();
         await turn();

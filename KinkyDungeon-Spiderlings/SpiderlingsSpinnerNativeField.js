@@ -50,15 +50,7 @@
         api.WebMobility?.invalidateNavigation(true);
     }
 
-    function topologyCell(field, cell) {
-        return topology()
-            .solidCells(field)
-            .find((candidate) => candidate.x === cell.x && candidate.y === cell.y);
-    }
-
-    function hpAtCell(field, cell) {
-        const physical = topologyCell(field, cell);
-        if (!physical) return 0;
+    function hpAtCell(field, physical) {
         const anchorHP = physical.anchorIds.map((id) => field.anchors.find((anchor) => anchor.id === id)?.hp || 0),
             linkHP = physical.linkIds.map((id) => field.links.find((link) => link.id === id)?.hp || 0);
         return Math.max(0, ...anchorHP, ...linkHP);

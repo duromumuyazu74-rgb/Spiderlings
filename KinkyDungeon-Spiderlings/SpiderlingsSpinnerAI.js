@@ -663,15 +663,17 @@
                     (entity) => entity.hp > 0 && entity.Enemy?.immobile && !api.SpinnerNativeField.isOwnedProxy(entity),
                 ).map(cellKey),
             ),
-            occupied = new Set([
-                ...KDMapData.Entities.filter(
-                    (entity) =>
-                        entity.hp > 0 &&
-                        entity.Enemy?.tags?.spiderlings !== true &&
-                        !api.SpinnerNativeField.isOwnedProxy(entity),
-                ).map(cellKey),
-                cellKey(KinkyDungeonPlayerEntity),
-            ]),
+            occupied =
+                geometry?.occupied ||
+                new Set([
+                    ...KDMapData.Entities.filter(
+                        (entity) =>
+                            entity.hp > 0 &&
+                            entity.Enemy?.tags?.spiderlings !== true &&
+                            !api.SpinnerNativeField.isOwnedProxy(entity),
+                    ).map(cellKey),
+                    cellKey(KinkyDungeonPlayerEntity),
+                ]),
             routeKeys =
                 geometry?.routeKeys ||
                 new Set(routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey)),
@@ -1109,8 +1111,7 @@
 
     function initializeMapgenField(options = {}) {
         const previous = api.SpinnerNativeField.state();
-        // This is called once by successful new-map objective placement. A
-        // revisit or previously invested field must never receive another body.
+        // Both legacy single-field and new multi-field saves are one-time investments.
         if (previous?.ai?.mapgenField || Object.keys(previous?.topology?.composites || {}).length)
             return { status: "skipped", reason: "existing-field" };
         const nativeSnapshot = nativeMapSnapshot(),
@@ -1119,69 +1120,85 @@
         for (const cell of snapshot.cells) if (protectedPoints.has(cellKey(cell))) cell.protected = true;
         const encounter = api.SpinnerNativeField.ensureMap({ scenario: "mapgen-enclosure" }),
             ai = ensureAI(encounter, { mapSeed: mapSeed(), mapIdentity: mapIdentity() }),
-            distances = routeDistances(snapshot);
+            distances = routeDistances(snapshot, undefined, new Set(), options.maxFields > 1),
+            fields = [],
+            attempted = new Set(),
+            maximum = Math.max(1, Math.min(3, options.maxFields || 1));
         encounter.autonomous = true;
         auditGroups(ai, KDMapData.Entities, { mapSnapshot: snapshot, routeDistances: distances });
-        const choices = Object.values(ai.groups)
-            .filter((group) => !group.planId && !group.engagement && group.memberIds.length >= 2)
-            .flatMap((group) => {
-                const members = group.memberIds
-                    .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
-                    .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
-                if (members.length < 2) return [];
-                return analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, undefined, undefined, 4)
-                    .filter((candidate) => candidate.radius === 4)
-                    .map((candidate) => ({
+        while (fields.length < maximum) {
+            const occupied =
+                maximum > 1 ? new Set(KDMapData.Entities.filter((entity) => entity.hp > 0).map(cellKey)) : undefined;
+            const passable =
+                maximum > 1
+                    ? new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey))
+                    : undefined;
+            const choices = Object.values(ai.groups)
+                .filter(
+                    (group) =>
+                        !group.planId && !group.engagement && group.memberIds.length >= 2 && !attempted.has(group.id),
+                )
+                .flatMap((group) => {
+                    const members = group.memberIds
+                        .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+                        .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
+                    if (members.length < 2) return [];
+                    return analyzeEnclosureCandidates(
+                        snapshot,
+                        { ...group, members },
+                        distances,
+                        undefined,
+                        { occupied, passable },
+                        2,
+                    ).map((candidate) => ({
                         group,
                         candidate,
                         preferred: nearestDistance(candidate.center, options.preferredSites || []),
                     }));
-            })
-            .sort(
-                (left, right) =>
-                    left.preferred - right.preferred ||
-                    left.candidate.travelDistance - right.candidate.travelDistance ||
-                    compareSites(left.candidate, right.candidate) ||
-                    left.group.id.localeCompare(right.group.id),
-            );
-        if (!choices.length) {
-            ai.mapgenField = { status: "skipped", reason: "no-legal-staffed-site" };
-            return clone(ai.mapgenField);
-        }
-        const { group, candidate } = choices[0],
-            plan = selectSavedPlan(ai, group, [candidate]),
-            added = api.SpinnerNativeField.addEnclosure({
-                compositeId: plan.compositeId,
-                groupId: group.id,
-                owners: group.memberIds,
-                layers: plan.layers,
-                constructionOrder: "outer-first",
-                autoSeal: false,
-                prebuiltOuter: true,
-                scenario: "mapgen-enclosure",
-            });
-        if (!added?.added) {
-            plan.status = "invalid";
-            plan.invalidReason = added?.reason || "creation-failed";
-            group.planId = null;
-            ai.mapgenField = { status: "skipped", reason: plan.invalidReason };
-        } else {
-            encounter.autonomous = true;
+                })
+                .sort(
+                    (left, right) =>
+                        right.candidate.radius - left.candidate.radius ||
+                        left.preferred - right.preferred ||
+                        left.candidate.travelDistance - right.candidate.travelDistance ||
+                        compareSites(left.candidate, right.candidate) ||
+                        left.group.id.localeCompare(right.group.id),
+                );
+            if (!choices.length) break;
+            const { group, candidate } = choices[0];
+            attempted.add(group.id);
+            const plan = selectSavedPlan(ai, group, [candidate]),
+                added = api.SpinnerNativeField.addEnclosure({
+                    compositeId: plan.compositeId,
+                    groupId: group.id,
+                    owners: group.memberIds,
+                    layers: plan.layers,
+                    constructionOrder: "outer-first",
+                    autoSeal: false,
+                    prebuiltOuter: true,
+                    scenario: "mapgen-enclosure",
+                });
+            if (!added?.added) {
+                plan.status = "invalid";
+                plan.invalidReason = added?.reason || "creation-failed";
+                group.planId = null;
+                continue;
+            }
             plan.provenance = "mapgen";
             plan.status = "preparing";
-            ai.mapgenField = {
-                status: "placed",
+            fields.push({
                 compositeId: plan.compositeId,
                 groupId: group.id,
                 center: clone(plan.center),
-                radius: 4,
-            };
+                radius: candidate.radius,
+            });
         }
-        // The caller's extra mapgen reservations are not persistent terrain.
+        ai.mapgenField = fields.length
+            ? { status: "placed", ...fields[0], fields }
+            : { status: "skipped", reason: "no-legal-staffed-site", fields: [] };
         mapCache = undefined;
         return clone(ai.mapgenField);
     }
-
     function taskCell(field, task) {
         if (task.type === "placeAnchor" || task.type === "repairAnchor") {
             const anchor = field.anchors.find((candidate) => candidate.id === task.anchorId);
@@ -2765,7 +2782,7 @@
             clearEngagement(group);
             return decide(enemy, group, "delegate-native", false);
         }
-        const homeGuard = group.source?.type === "nest" && plan.kind !== "passage";
+        const homeGuard = group.source?.type === "nest" && plan.kind !== "passage" && !enemy.SpiderlingsHuntRole;
         if (homeGuard) clearEngagement(group);
         else auditEngagement(encounter, group);
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);

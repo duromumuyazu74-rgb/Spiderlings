@@ -39,7 +39,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             typeof KDMapData !== "undefined" &&
             KDMapData.MapMod === "SpiderlingsHuntingGrounds" &&
-            KDMapData.SpiderlingsHuntingGrounds?.garrisonVersion === 2
+            KDMapData.SpiderlingsHuntingGrounds?.garrisonVersion >= 2
         );
     }
     function isHuntingPrey(enemy, other) {
@@ -48,6 +48,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             isHostileSpiderlingTarget(enemy) &&
             other !== enemy &&
             isIndependentNPC(other) &&
+            SPIDERLINGS.HuntingGrounds.independentCombatant(other) &&
             other.Enemy.name !== "NestEntrance" &&
             KDGetFaction(other) !== KDGetFaction(enemy) &&
             !other.Enemy.tags?.scenery &&
@@ -83,6 +84,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             entity?.Enemy &&
             KDGetFaction(entity) === "Maidforce" &&
+            (!onHuntingGrounds() || SPIDERLINGS.HuntingGrounds.independentCombatant(entity)) &&
             !entity.allied &&
             !entity.Enemy.allied &&
             !(entity.ceasefire > 0) &&
@@ -115,10 +117,16 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             isMaidRival(entity) ||
             isHostileSpiderlingTarget(entity) ||
-            (onHuntingGrounds() &&
-                isIndependentNPC(entity) &&
-                !entity.Enemy.tags?.scenery &&
-                !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(entity))
+            (onHuntingGrounds() && isIndependentNPC(entity) && SPIDERLINGS.HuntingGrounds.independentCombatant(entity))
+        );
+    }
+    function perceivesRival(enemy, target) {
+        if (onHuntingGrounds() && SPIDERLINGS.HuntingGrounds.perceives)
+            return SPIDERLINGS.HuntingGrounds.perceives(enemy, target);
+        const radius = enemy.blind && !enemy.aware ? 1.5 : KDEnemyVisionRadius(enemy);
+        return (
+            KDCanDetect(enemy, target) &&
+            KinkyDungeonCheckLOS(enemy, target, Math.hypot(target.x - enemy.x, target.y - enemy.y), radius, true, true)
         );
     }
     KDHostile = function (enemy, other) {
@@ -161,14 +169,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
                             isHuntingPrey(enemy, other) &&
                             !KDHelpless(other) &&
                             !KDIsImprisoned(other) &&
-                            KinkyDungeonCheckLOS(
-                                enemy,
-                                other,
-                                Math.hypot(other.x - enemy.x, other.y - enemy.y),
-                                radius,
-                                true,
-                                true,
-                            ),
+                            perceivesRival(enemy, other),
                     )
                     .sort(
                         (a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y),
@@ -191,14 +192,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
                         !other.Enemy.noAttack &&
                         !KDHelpless(other) &&
                         !KDIsImprisoned(other) &&
-                        KinkyDungeonCheckLOS(
-                            enemy,
-                            other,
-                            Math.hypot(other.x - enemy.x, other.y - enemy.y),
-                            radius,
-                            true,
-                            true,
-                        ),
+                        perceivesRival(enemy, other),
                 )
             )
                 enemy.aware = true;
@@ -217,8 +211,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
         if (enemy?.hp > 0 && (isMaidRival(enemy) || isHostileSpiderlingTarget(enemy)))
             KinkyDungeonSetEnemyFlag(enemy, provokedFlag, provokedTurns);
     }
-    // Give roaming rivals a reachable search destination, not extra vision or an
-    // unseen combat target. Native movement and target acquisition still execute.
+    // Rivals can follow observed NPCs. Unobserved hunting belongs to patrol routes,
+    // so walls cannot disclose live prey coordinates to the search destination.
     function seekRival(enemy, player, aiData) {
         if (
             !(isMaidRival(enemy) || (isHostileSpiderlingTarget(enemy) && !enemy.Enemy.immobile)) ||
@@ -245,7 +239,8 @@ const SPIDERLINGS = globalThis.Spiderlings;
                 KDHostile(enemy, target) &&
                 (!target.Enemy.noAttack || isHuntingPrey(enemy, target)) &&
                 !KDHelpless(target) &&
-                !KDIsImprisoned(target),
+                !KDIsImprisoned(target) &&
+                perceivesRival(enemy, target),
         );
         candidates.sort((a, b) => Math.hypot(a.x - enemy.x, a.y - enemy.y) - Math.hypot(b.x - enemy.x, b.y - enemy.y));
         for (const target of candidates) {
@@ -268,20 +263,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             enemy.gx = target.x;
             enemy.gy = target.y;
             enemy.path = route;
-            // KD otherwise refuses NPC acquisition when both unaware actors are off
-            // the player's screen. Alert the searching actor only on actual perception.
-            const radius = enemy.blind && !enemy.aware ? 1.5 : KDEnemyVisionRadius(enemy);
-            if (
-                KinkyDungeonCheckLOS(
-                    enemy,
-                    target,
-                    Math.hypot(target.x - enemy.x, target.y - enemy.y),
-                    radius,
-                    true,
-                    true,
-                )
-            )
-                enemy.aware = true;
+            enemy.aware = true;
             return true;
         }
         return false;
@@ -294,6 +276,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
                 if (zeroTimeUpdate) return nativeAfterMove.apply(this, arguments);
                 return (
                     nativeAfterMove.apply(this, arguments) ||
+                    SPIDERLINGS.HuntingGrounds.seekCrewDuty?.(enemy, player, aiData) ||
                     seekRival(enemy, player, aiData) ||
                     SPIDERLINGS.Infestation?.seekPatrol(enemy, player, aiData) ||
                     false
