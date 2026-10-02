@@ -492,7 +492,7 @@
     function vigilEnemy(enemy, player) {
         return (
             player?.player &&
-            ["Spinner", "Jumper", "WebCaster", "Tunneler"].includes(enemy?.Enemy?.name) &&
+            ["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"].includes(enemy?.Enemy?.name) &&
             enemy.hp > 0 &&
             typeof KDHostile == "function" &&
             KDHostile(enemy, player) &&

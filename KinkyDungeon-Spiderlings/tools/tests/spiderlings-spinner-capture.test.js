@@ -444,6 +444,48 @@ test("same-map load audits saved IDs without free work and transitions clear onl
     assert.equal(r.c.KDMapData.Entities.length, 3);
 });
 
+test("zero-time load refresh audits Capture without admitting sources or spending saved movement", () => {
+    for (const delta of [0, -1]) {
+        const movement = [],
+            r = contestRuntime(2, {
+                KinkyDungeonMovableTilesSmartEnemy: ".0",
+                KinkyDungeonEnemyAt: () => false,
+                KinkyDungeonEnemyCanMove: () => true,
+                KinkyDungeonEnemyTryMove(enemy, _direction, elapsed, x, y) {
+                    movement.push({ id: enemy.id, elapsed });
+                    enemy.x = x;
+                    enemy.y = y;
+                    return true;
+                },
+            });
+        r.start();
+        const [hitter, helper] = r.c.KDMapData.Entities;
+        hitter.movePoints = 1.5;
+        r.c.KDGameData = JSON.parse(JSON.stringify(r.c.KDGameData));
+        r.send("afterLoadGame");
+        const before = JSON.stringify(r.api.state());
+        r.c.KinkyDungeonAdvanceTime(delta);
+        assert.equal(JSON.stringify(r.api.state()), before);
+        assert.deepEqual(movement, []);
+        assert.equal(hitter.movePoints, 1.5);
+
+        r.c.KinkyDungeonEnemyAt = () => true;
+        r.wait();
+        assert.deepEqual(Array.from(r.api.state().sourceIds), [hitter.id, helper.id]);
+        assert.equal(r.api.state().weaveProgress, 6.25, "the helper's paid join contributes no weaving");
+        r.wait();
+        assert.equal(r.api.state().weaveProgress, 18.75);
+
+        helper.hp = 0;
+        r.c.KinkyDungeonAdvanceTime(delta);
+        assert.deepEqual(Array.from(r.api.state().sourceIds), [hitter.id], "invalid saved sources still leave");
+        assert.equal(r.api.state().weaveProgress, 18.75);
+        hitter.hp = 0;
+        r.c.KinkyDungeonAdvanceTime(delta);
+        assert.equal(r.api.state(), undefined, "losing every source still releases temporary control");
+    }
+});
+
 test("successful escape holds only effective sources for six later hostile operations", () => {
     const r = contestRuntime(2);
     r.start();

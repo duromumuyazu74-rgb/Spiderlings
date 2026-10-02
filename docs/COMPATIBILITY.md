@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.85.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.86.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.86 gameplay review fixes (2026-10-02)
+
+Test.86 is based on local Test.85 (`bf7d0ece6022b88936167de2b71082d59c86364b`). Mage now shares passive Cocoon dispersal with Spinner, Jumper, WebCaster and Tunneler; pending WebCaster reinforcement remains an exception. Player Capture audits sources but permits joining, movement and weaving only with positive elapsed time. Mage retains its intended specialization against Maidforce, including two unmitigated bolts killing an ordinary 8-HP Maid. See the [fixes and detailed investigation](spiderlings-review-followup-2026-10-02.zh-CN.md).
+
+The final ZIP contains 169 source-matching entries and 24,833,083 bytes, SHA-256 `2fb062412a7efcbe71b5255eeee82157a013f9c6d4cb11a649a649426bdbb7cd`. Only the manifest and the two corrected runtime files differ from Test.85; all 114 images are byte-identical. Both KD 5.4.92 and freshly fetched official GitHub `5.5` commit `67d698a66b112481c67785de8c76e77542d0592a`, reporting 5.5.3, pass all 42 native stages with the same ZIP, including seven locale loads per game. The upstream fetch completed at `2026-10-02T07:05:01.834Z`; full evidence is `<cache>/runs/2026-10-02T07-05-01-850Z-0.92.36-test.86/acceptance.json`.
+
+The added `capture-reload` scene performs actual native SaveGame/LoadGame plus a zero-time update, preserves Capture membership and movement credit, then verifies paid joining separately from subsequent weaving. `cocoon-vigil` runs five species through 24/25-turn inactivity, twelve native AI turns, resumed player movement and the pending WebCaster exception. The old Test.85 package fails the Mage dispersal assertion on both runtimes. These are controlled native scenes; prior projectiles and areas, arbitrary user saves, other Mods and a complete human playthrough are outside the new scenes' scope.
+
+The baseline retains native audio play/pause interruptions and two missing `Locks/Red.png` requests, with no missing Spiderlings assets. The GitHub runtime records no page errors, unhandled rejections or missing resources. These diagnostics are retained in the evidence, not discarded.
 
 ## Test.85 hunting crews and weaving weapons (2026-10-02)
 
