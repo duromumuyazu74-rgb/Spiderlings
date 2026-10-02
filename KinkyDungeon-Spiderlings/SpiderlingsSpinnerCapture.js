@@ -631,7 +631,13 @@
     }
     function handleEnemyTurn(enemy, target, delta) {
         if (enemy[REWARD] > 0) return { idle: true, defeat: false, defeatEnemy: enemy };
-        if (auditSources() && state().sourceIds.includes(enemy.id)) {
+        const active = auditSources();
+        // Native load and UI refreshes run the enemy loop without paying a world turn.
+        if (!(delta > 0))
+            return active && (state().sourceIds.includes(enemy.id) || holdsSpiderAttack(enemy, target))
+                ? { idle: false, defeat: false, defeatEnemy: enemy }
+                : undefined;
+        if (active && state().sourceIds.includes(enemy.id)) {
             if (state().phase === "wrap" || state().phase === "contest") {
                 // A legal adjacent weaving action is sufficient in a narrow corridor.
                 // When space permits, use the native move budget for a step around the player.

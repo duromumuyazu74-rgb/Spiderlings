@@ -437,6 +437,45 @@ test("struggle, attack, spell and anchored movement attempts restart the full vi
     }
 });
 
+test("Mage joins Cocoon dispersal while only pending WebCaster reinforcement delays retreat", () => {
+    for (const name of ["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]) {
+        const runtime = loadRuntime();
+        runtime.manualEquipCocoon();
+        const player = runtime.context.KinkyDungeonPlayerEntity;
+        Object.assign(player, { x: 0, y: 0 });
+        const spider = { Enemy: { name }, hp: 1, x: 1, y: 0, attackPoints: 2, warningTiles: [{}] };
+        runtime.event("tick", { delta: 24 });
+        assert.equal(runtime.context.KDOverrideIgnore(spider, player), true, `${name}: still watching at 24`);
+        assert.equal(runtime.context.Spiderlings.Webbing.isCocoonDispersing(spider, player), false);
+        runtime.event("tick", { delta: 1 });
+        for (const pending of [false, true]) {
+            runtime.equipment.get("ItemDevices").data.SpiderlingsCocoonOuterWebs = {
+                anchored: false,
+                reinforcementPending: pending,
+            };
+            const reinforcing = name === "WebCaster" && pending;
+            const data = { ignore: false, wantsToAttack: true };
+            runtime.context.KDAIType.hunt.beforemove(spider, player, data);
+            assert.equal(data.ignore, !reinforcing, `${name}: pending=${pending}`);
+            assert.equal(data.wantsToAttack, reinforcing, `${name}: pending=${pending}`);
+            assert.equal(runtime.context.KDOverrideIgnore(spider, player), reinforcing);
+            if (!reinforcing) {
+                assert.equal(spider.attackPoints, 0);
+                assert.equal(spider.warningTiles.length, 0);
+                assert.ok(Math.hypot(spider.gx, spider.gy) > 1);
+                assert.equal(spider.x, 1, "native movement owns the step");
+            }
+        }
+        runtime.event("beforeMove", { x: 1, y: 0 });
+        runtime.event("tick", { delta: 1 });
+        assert.equal(runtime.context.Spiderlings.Webbing.isCocoonDispersing(spider, player), false, name);
+        assert.equal(runtime.context.KDOverrideIgnore(spider, player), true, `${name}: player resumes activity`);
+        const resumed = { ignore: false, wantsToAttack: true };
+        runtime.context.KDAIType.hunt.beforemove(spider, player, resumed);
+        assert.equal(resumed.wantsToAttack, true);
+    }
+});
+
 test("vigil stays scoped to hostile spiders and clears on removal, re-equipment and transitions", () => {
     const runtime = loadRuntime();
     const player = runtime.context.KinkyDungeonPlayerEntity;
