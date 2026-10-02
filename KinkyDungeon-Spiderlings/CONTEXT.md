@@ -2,6 +2,10 @@
 
 This glossary defines the terms used when evolving the Spiderlings mod for KD 5.5.
 
+## Item descriptions
+
+`Desc` and `Desc2` describe the item's own material, form, coverage, texture and response to movement, in Spiderlings' gentle silk-weaving style. Keep other equipment, admission conditions, encounter procedures and escape-method advice out of restraint descriptions. Actual blocked actions and attachment results retain their accurate short feedback. A Cocoon description does not explain its inner-equipment gate; that rule belongs to action feedback and technical documentation.
+
 ## Spiderlings encounters
 
 **Spiderling Hunting Grounds (幼蛛猎场)**:

@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,绵密不透光的蛛丝从头顶顺着�
 RestraintSpiderlingsWebbingLv3HoodDesc2,头发与面庞都藏在丝罩下，转头时，表面叠起细褶。
 RestraintSpiderlingsWebbingCocoon,幼蛛丝茧
 RestraintSpiderlingsWebbingCocoonDesc,层层蛛丝贴合身体织成厚软的丝茧，茧口拢至嘴部下缘，将头部上半留在外面。
-RestraintSpiderlingsWebbingCocoonDesc2,茧壁会随扭动泛起浅褶。拆开外茧后，原有的内层束缚仍会留在身上。
+RestraintSpiderlingsWebbingCocoonDesc2,稍一扭动，厚软的茧壁便泛起浅褶，交叠的丝缕随之轻轻牵动。
 KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1覆在TargetLv2下面。先移除外层，才能处理里面的蛛丝。
 KinkyDungeonSpiderlingsCocoonAnchored,幼蛛在丝茧外织起蛛网，把茧身牵在原地。你暂时无法移动。
 KDMapMod_SpiderlingsHuntingGrounds,幼蛛猎场
@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,跃击幼蛛盯住对手脚下的�
 KDModButtonspiderlingsNestTunnelerCap,每巢累计掘穴幼蛛上限（0 为不召唤）
 RestraintSpiderlingsSpinnerLegbinder,蛛丝腿袋
 RestraintSpiderlingsSpinnerLegbinderDesc,蛛丝从脚踝上方裹至大腿上段，双脚露在袋外。
-RestraintSpiderlingsSpinnerLegbinderDesc2,厚实的蛛丝连片裹住双腿。切割最有效，尚未织完的部分更容易挣脱。
+RestraintSpiderlingsSpinnerLegbinderDesc2,细密的丝面顺着双腿的轮廓伏下，袋口的丝边柔软地贴着大腿。
 SpiderlingsSpinnerPull,挣开蛛丝 · 体力 10 · 1 回合
 SpiderlingsSpinnerContest,参与织网幼蛛：{count} · 每回合织网 +{rate}
 SpiderlingsSpinnerStart,脚边的连网牵住双腿，织网幼蛛正沿着连接丝继续缠织。你可以拉扯蛛丝，试着挣开。
@@ -229,8 +229,8 @@ KinkyDungeonSpellCastSpiderlingsCocoonConvergence,你织起一圈蛛丝，散开
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,你挥出一束黏韧的蛛丝，朝目标缠去。
 SpiderlingsDebugStairBypass,调试楼梯绕过已启用；标记巢穴保持原状。
 RestraintSpiderlingsSilkLeash,蛛丝牵引绳
-RestraintSpiderlingsSilkLeashDesc,离开破开的围网后，追来的织网幼蛛可在再次命中时把丝绳接到项圈上，并尝试将你牵回场内。
-RestraintSpiderlingsSilkLeashDesc2,需要兼容的项圈，且没有装备挡住丝绳。丝线连着参与牵引的幼蛛；没有幼蛛牵引时，绳子便松垂下来。
+RestraintSpiderlingsSilkLeashDesc,细软的蛛丝拢成一束丝绳，绳身轻巧，表面泛着柔和的丝光。
+RestraintSpiderlingsSilkLeashDesc2,丝绳拉直时，细缕一根根轻轻绷起；松开后便弯成柔软的弧线。
 SpiderlingsRecoveryAttached,织网幼蛛接上了牵引丝线（{count}/8），下一次能够行动时，可能会将你拉回。
 SpiderlingsRecoveryAttachBlocked,蛛丝命中了，却没能挂住。需要兼容的项圈，且没有装备挡住丝绳；这次没有接上牵引绳。
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"以你现在的状态，还无法割开TargetRestraint。"

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.83.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.84.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,19 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
-## Test.83 gameplay and creature behavior follow-up (2026-10-02)
+## Test.84 item descriptions (2026-10-02)
+
+Test.84 describes the Cocoon, leg bag and silk leash through their own material, form and movement. Four description keys change in English and all seven locales, removing inner-equipment rules, collar admission and escape advice. Action-result feedback remains. See the [description correction](spiderlings-test84-item-descriptions.zh-CN.md).
+
+The final ZIP has 169 source-matching entries and 24,824,374 bytes, SHA-256 `98d03b60e86fe7a503a99225cac69e4f890a19441fc726b70503bd2396444262`. Its eleven changed entries from Test.83 are three runtime JavaScript files, seven CSV files and the manifest. All artwork bytes remain identical to Test.83.
+
+The same final ZIP passes all 37 native stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `b21a2029f1398336b0df411475464acffada7c41`, reporting 5.5.3. The fresh fetch completed at `2026-10-02T00:34:04.440Z`. Full evidence is `<cache>/runs/2026-10-02T00-36-08-650Z-0.92.36-test.84/acceptance.json`. All fourteen native locale groups pass 254 keys each, totaling 3,556 source/TextGet comparisons. Independent review checks all 32 changed descriptions before the build.
+
+The baseline retains its native audio play/pause interruptions and two missing `Locks/Red.png` requests, with no missing Spiderlings asset. The GitHub runtime has no page errors, unhandled rejections or missing resources. The sole upstream commit since Test.83 adjusts vibration audio and does not change translation loading or gameplay calculations; this is a source-diff finding. Earlier numerical reports retain their own recorded commit scope. This delivery exercises controlled native Chrome scenes, not a full human playthrough, arbitrary user saves, other Mods or the desktop shell.
+
+Repository checks, all 12 policy tests, 536 public tests and the complete 850-test local watcher pass. Package verification has zero errors, warnings or notes. Full delivery evidence is this checkout's `.scratch/delivery/2026-10-02T00-44-43-163Z-U8v0RA/REPORT.md`, binding the native acceptance to the same final ZIP. The source and package remain unchanged throughout those checks; only documentation results are appended afterward.
+
+## Test.83 gameplay and creature behavior follow-up (2026-10-02, historical)
 
 Test.83 preserves assigned paid Spinner body work under recognized intrusion into an unfinished common core, while the lure applies native pressure. The lure releases a body task only when another actionable worker can reach a legal unreserved work position for that task. Gate work, Capture, Recovery, nest defense, actor occupancy and existing payment remain. Mage Hex, Collapse and Rune reuse their availability checks through native `castCondition`, avoiding unavailable choices before cooldown payment on both versions. English and all seven locales clarify that opening the outer Cocoon leaves existing inner bindings. Native escape and weapon values remain. See the [senior KD player simulation follow-up](spiderlings-gameplay-improvements-2026-10-02.zh-CN.md) and [construction decision](adr/0023-paid-construction-under-core-intrusion.md).
 

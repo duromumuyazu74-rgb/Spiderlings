@@ -121,7 +121,7 @@ RestraintSpiderlingsWebbingLv3HoodDesc,Непрозрачный шёлк спу�
 RestraintSpiderlingsWebbingLv3HoodDesc2,Волосы и черты лица скрываются под шёлковыми нитями; остаётся лишь покачивающийся силуэт.
 RestraintSpiderlingsWebbingCocoon,Кокон из паучьего шёлка
 RestraintSpiderlingsWebbingCocoonDesc,Плотный шёлк оборачивает тело толстым коконом. Край сходится подо ртом, оставляя верхнюю часть головы снаружи.
-RestraintSpiderlingsWebbingCocoonDesc2,Стенка кокона покрывается складками при движении. После его раскрытия путы под ним остаются на месте.
+RestraintSpiderlingsWebbingCocoonDesc2,При лёгком движении мягкая стенка кокона собирается в неглубокие складки, слегка натягивая переплетённые нити.
 KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 скрывается под TargetLv2. Сначала сними внешний слой, чтобы добраться до шёлка под ним."
 KinkyDungeonSpiderlingsCocoonAnchored,Паучата протягивают паутину вокруг кокона и крепко пришпиливают тебя к месту!
 KDMapMod_SpiderlingsHuntingGrounds,Охотничьи угодья паучат
@@ -159,7 +159,7 @@ KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Паучонок-прыгун см
 KDModButtonspiderlingsNestTunnelerCap,Всего землекопов на гнездо (0: не призывать)
 RestraintSpiderlingsSpinnerLegbinder,Шёлковый мешок для ног
 RestraintSpiderlingsSpinnerLegbinderDesc,Шёлк охватывает ноги от места над щиколотками до верхней части бёдер.
-RestraintSpiderlingsSpinnerLegbinderDesc2,Плотный шёлк удерживает ноги вместе. Режущие инструменты наиболее эффективны; незавершённое плетение слабее.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Плотное плетение повторяет очертания ног, а мягкий край мешка прилегает к бёдрам.
 SpiderlingsSpinnerPull,Разорвать нити · 10 выносливости · 1 ход
 SpiderlingsSpinnerContest,Прядильщики: {count} · плетение +{rate}/ход
 SpiderlingsSpinnerStart,"Нити окружающей паутины сводят твои ноги вместе. Ты можешь тянуть их, пока шёлк не окутал тебя полностью."
@@ -229,8 +229,8 @@ KinkyDungeonSpellSpiderlingsCocoonConvergence,Схождение кокона
 KinkyDungeonSpellSpiderlingsSilkenSnare,Шёлковая петля
 SpiderlingsDebugStairBypass,Отладочный обход блокировки лестницы включён; отмеченные гнёзда не изменены.
 RestraintSpiderlingsSilkLeash,Паучий шёлковый поводок
-RestraintSpiderlingsSilkLeashDesc,После побега через разрыв в паутине новое попадание прядильщика может прикрепить шёлковый поводок к твоему ошейнику. Прядильщик попробует втянуть тебя обратно в ловушку.
-RestraintSpiderlingsSilkLeashDesc2,"Поводку нужен подходящий ошейник, а другое снаряжение не должно мешать креплению. Если ни один прядильщик не тянет, нить свободно провисает."
+RestraintSpiderlingsSilkLeashDesc,Тонкие шелковистые нити собраны в лёгкий шнур с мягким блеском.
+RestraintSpiderlingsSilkLeashDesc2,"Когда шнур выпрямляется, его тонкие нити слегка натягиваются, а при ослаблении ложатся мягкой дугой."
 SpiderlingsRecoveryAttached,Прядильщик прикрепляет шёлковую нить ({count}/8). При следующем доступном действии он может втянуть тебя обратно.
 SpiderlingsRecoveryAttachBlocked,"Шёлковый поводок не крепится. Нужен подходящий ошейник, а другое снаряжение не должно мешать креплению."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
