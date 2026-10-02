@@ -78,6 +78,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
     };
     vm.createContext(context);
     for (const native of nativeSources) vm.runInContext(stripTypeScriptTypes(native), context);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsPopulation.js"), "utf8"), context);
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), context);
     if (withOld) vm.runInContext(oldSource, context);
     vm.runInContext(source, context);
@@ -95,6 +96,168 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
         },
     };
 }
+
+test("both themes preserve population-plan publication, objective timing and selector cancellation", () => {
+    for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
+        for (const fail of [false, true]) {
+            const r = runtime({}, [], true),
+                c = r.context,
+                births = [],
+                summon = c.KinkyDungeonSummonEnemy;
+            c.KDMapData.MapMod = c.KDGameData.MapMod = kind;
+            c.KinkyDungeonSummonEnemy = (...args) => {
+                births.push({
+                    name: args[2],
+                    plan: c.KDMapData.SpiderlingsPopulationPlan?.kind,
+                    state: c.KDMapData[kind]?.status,
+                });
+                return fail && args[2] === "MageSpiderlings" ? [] : summon(...args);
+            };
+            let nativeFilters;
+            c.populationAction = () => {
+                const event = { filterTagsBase: ["minor", "boss"] };
+                c.KDEventMapGeneric.afterGetSpawnBoxes.SpiderlingsHuntingGrounds({}, event);
+                nativeFilters = Array.from(event.filterTagsBase);
+            };
+            r.generate();
+            assert.ok(births.every((birth) => birth.plan === kind));
+            assert.ok(
+                births.filter((birth) => birth.name === "NestEntrance").every((birth) => birth.state === undefined),
+            );
+            assert.ok(
+                births
+                    .filter((birth) => birth.name !== "NestEntrance")
+                    .every((birth) => birth.state === (kind === "SpiderlingsInfestation" ? "active" : undefined)),
+            );
+            assert.equal(c.KDMapData[kind].status, fail ? "cancelled" : "active");
+            assert.deepEqual(
+                nativeFilters,
+                fail && kind === "SpiderlingsHuntingGrounds" ? ["minor", "boss"] : ["boss"],
+            );
+            if (fail) assert.equal(c.KDMapData.SpiderlingsPopulationPlan, undefined);
+        }
+    }
+});
+
+test("required crew failure keeps the theme's existing terrain result", () => {
+    for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
+        let wall,
+            writes = 0;
+        const r = runtime(
+                {
+                    KinkyDungeonMapGet: (x, y) => (wall && wall.x === x && wall.y === y ? "1" : "0"),
+                    KinkyDungeonMapSet: () => {
+                        writes++;
+                        wall = undefined;
+                    },
+                },
+                [],
+                true,
+            ),
+            c = r.context,
+            summon = c.KinkyDungeonSummonEnemy;
+        c.KDMapData.MapMod = c.KDGameData.MapMod = kind;
+        c.KinkyDungeonSummonEnemy = (...args) => {
+            if (args[2] === "MageSpiderlings") return [];
+            const born = summon(...args);
+            if (
+                args[2] === "NestEntrance" &&
+                c.KDMapData.Entities.length === (kind === "SpiderlingsInfestation" ? 5 : 3)
+            ) {
+                const first = c.KDMapData.Entities.slice(0, 2);
+                wall = { x: Math.round((first[0].x + first[1].x) / 2), y: Math.round((first[0].y + first[1].y) / 2) };
+            }
+            return born;
+        };
+        r.generate();
+        assert.equal(c.KDMapData[kind].status, "cancelled");
+        assert.equal(c.KDMapData.Entities.length, 0);
+        assert.equal(writes, kind === "SpiderlingsInfestation" ? 1 : 0);
+    }
+});
+
+test("native crew exceptions remove only the failed theme's births and still propagate", () => {
+    for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
+        const r = runtime({}, [], true),
+            c = r.context,
+            summon = c.KinkyDungeonSummonEnemy,
+            resident = { id: 900, x: 2, y: 2, hp: 3, Enemy: { name: "Bandit" } },
+            failure = new Error("native summon failed after insertion");
+        c.KDMapData.MapMod = c.KDGameData.MapMod = kind;
+        c.KDMapData.Entities.push(resident);
+        c.KinkyDungeonSummonEnemy = (...args) => {
+            const born = summon(...args);
+            if (args[2] === "MageSpiderlings") throw failure;
+            return born;
+        };
+        assert.throws(
+            () => r.generate(),
+            (error) => error === failure,
+        );
+        assert.deepEqual(c.KDMapData.Entities, [resident]);
+        assert.equal(c.KDMapData[kind].status, "cancelled");
+        assert.equal(c.KDMapData.SpiderlingsPopulationPlan, undefined);
+        const event = { filterTagsBase: ["minor", "boss"] };
+        c.KDEventMapGeneric.afterGetSpawnBoxes.SpiderlingsHuntingGrounds({}, event);
+        assert.deepEqual(event.filterTagsBase, ["minor", "boss"]);
+    }
+});
+
+test("objective cleanup attempts every nest and cancels the floor without masking crew failures", () => {
+    for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
+        for (const throwBirth of [false, true]) {
+            for (const throwRemoval of [false, true]) {
+                const r = runtime({}, [], true),
+                    c = r.context,
+                    summon = c.KinkyDungeonSummonEnemy,
+                    remove = c.KDRemoveEntity,
+                    resident = { id: 900, x: 2, y: 2, hp: 3, Enemy: { name: "Bandit" } },
+                    birthFailure = new Error("native summon failed"),
+                    cleanupFailure = new Error("native removal failed"),
+                    attempted = [];
+                c.KDMapData.MapMod = c.KDGameData.MapMod = kind;
+                c.KDMapData.EscapeMethod = kind;
+                c.KDMapData.Entities.push(resident);
+                c.KinkyDungeonSummonEnemy = (...args) => {
+                    if (args[2] === "MageSpiderlings") {
+                        if (throwBirth) throw birthFailure;
+                        return [];
+                    }
+                    return summon(...args);
+                };
+                let refused;
+                c.KDRemoveEntity = (entity, ...args) => {
+                    if (entity.Enemy.name === "NestEntrance") {
+                        assert.deepEqual(args, [false, false, true]);
+                        attempted.push(entity.id);
+                        if (!refused) {
+                            refused = entity;
+                            if (throwRemoval) throw cleanupFailure;
+                            return false;
+                        }
+                    }
+                    return remove(entity, ...args);
+                };
+                assert.throws(
+                    () => r.generate(),
+                    (error) => {
+                        assert.match(error.message, /cleanup failed/);
+                        if (throwBirth) assert.equal(error.cause, birthFailure);
+                        if (throwRemoval) assert.ok(error.errors.includes(cleanupFailure));
+                        return true;
+                    },
+                );
+                assert.equal(attempted.length, kind === "SpiderlingsInfestation" ? 5 : 3);
+                assert.equal(new Set(attempted).size, attempted.length);
+                assert.deepEqual(c.KDMapData.Entities, [resident, refused]);
+                assert.equal(c.KDMapData[kind].status, "cancelled");
+                assert.equal(c.KDMapData.SpiderlingsPopulationPlan, undefined);
+                assert.equal(c.KDMapData.MapMod, "None");
+                assert.equal(c.KDMapData.EscapeMethod, "Key");
+            }
+        }
+    }
+});
 
 test("old Infestation and Hunting Grounds register independently in one Mod", () => {
     const r = runtime({}, [], true);
@@ -1601,7 +1764,7 @@ test("terrain opens only after all nests are created, refreshes navigation, and 
             args[2] === "NestEntrance" &&
             c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length === 3
         ) {
-            wall = { x: born[0].x + 1, y: born[0].y };
+            wall = { x: born[0].x + 3, y: born[0].y };
         }
         return born;
     };
@@ -1813,29 +1976,32 @@ test("ecology budget excludes scenery, owned field cells, shops and subordinate 
 test("six-member roster assigns two guards from the same core and refills only missing native roles", () => {
     const r = runtime();
     r.generate();
-    const c = r.context,
-        h = c.Spiderlings.HuntingGrounds;
+    const c = r.context;
     const nest = c.KDMapData.Entities.find((entity) => entity.Enemy.name === "NestEntrance");
     const children = c.KDMapData.Entities.filter((entity) => entity.SpiderlingsNestParentID === nest.id);
     assert.equal(children.length, 6);
     assert.equal(children.filter((entity) => entity.SpiderlingsHuntRole === "guard").length, 2);
     assert.equal(children.filter((entity) => entity.SpiderlingsHuntRole === "builder").length, 2);
-    assert.equal(h.missingRosterNames(nest).length, 0);
+    assert.equal(c.Spiderlings.Population.missingRoles(nest).length, 0);
     const lost = children.find((entity) => entity.SpiderlingsHuntRole === "guard" && entity.Enemy.name === "WebCaster");
     lost.hp = 0;
-    assert.deepEqual(Array.from(h.missingRosterNames(nest)), ["WebCaster"]);
+    assert.deepEqual(
+        Array.from(c.Spiderlings.Population.missingRoles(nest), (slot) => slot.name),
+        ["WebCaster"],
+    );
+    const role = c.Spiderlings.Population.missingRoles(nest)[0];
     const replacement = c.KinkyDungeonSummonEnemy(nest.x + 1, nest.y, "WebCaster")[0];
     replacement.SpiderlingsNestParentID = nest.id;
-    h.assignRosterRole(replacement, nest);
+    replacement.SpiderlingsHuntRole = role.role;
     assert.equal(replacement.SpiderlingsHuntRole, "guard");
-    assert.equal(h.missingRosterNames(nest).length, 0);
+    assert.equal(c.Spiderlings.Population.missingRoles(nest).length, 0);
 });
 
 test("a low saved map cap cancels a new floor before spawning or splitting its mandatory crews", () => {
     const r = runtime({
         Spiderlings: {
             EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules,
-            getMapPopulationCap: () => 17,
+            getSetting: () => 17,
         },
     });
     r.generate();
@@ -2081,7 +2247,7 @@ test("native generic rank boxes cannot exceed the prey budget with a boss's depe
     h.register();
     for (let id = 1; id <= 24; id++) c.KDMapData.Entities.push({ id, hp: 1, Enemy: { name: "Spinner" } });
     c.KDMapData.Entities.push({ id: 25, hp: 1, Enemy: { name: "Maidforce", faction: "Maidforce" } });
-    h.createPopulationPlan("SpiderlingsHuntingGrounds");
+    c.Spiderlings.Population.prepareFloor("SpiderlingsHuntingGrounds");
     for (let roll = 0; roll < 50; roll++) {
         const selected = r.select([], 10, "grv", "0", ["boss"]);
         assert.ok(selected);
@@ -2111,7 +2277,7 @@ test("generic template births respect field reservation while explicit authored 
         ];
     let actual;
     c.KDMapData.SpiderlingsHuntingGrounds = { status: "active", targetIds: [], garrisonVersion: 3 };
-    c.Spiderlings.HuntingGrounds.createPopulationPlan("SpiderlingsHuntingGrounds");
+    c.Spiderlings.Population.prepareFloor("SpiderlingsHuntingGrounds");
     c.populationAction = (spawnPoints) => {
         actual = spawnPoints;
     };

@@ -375,9 +375,11 @@
         KinkyDungeonMapModSpiderlingsInfestation:
             "Webs line the corners, rustling as spiderlings move along the threads.",
         KDEscapeMethod_SpiderlingsInfestation: "Destroy the marked nests",
-        KDEscapeMethodDesc_SpiderlingsInfestation: "Destroy the marked nests to continue downstairs.",
+        KDEscapeMethodDesc_SpiderlingsInfestation:
+            "Destroy original target nests to descend (red minimap quest markers). Later nests do not count.",
         SpiderlingsInfestationProgress: "Marked nests destroyed: CURRENT/5",
-        SpiderlingsInfestationBlocked: "Marked nests still remain. Destroy them before going downstairs. (CURRENT/5)",
+        SpiderlingsInfestationBlocked:
+            "Destroy original target nests to descend: red minimap quest markers. (CURRENT/5)",
         SpiderlingsInfestationComplete: "The last marked nest is destroyed. You can now go downstairs. (5/5)",
     };
 
@@ -525,6 +527,30 @@
         if (KDMapData.EscapeMethod === MOD) KDMapData.EscapeMethod = "Key";
     }
 
+    function cancelCreatedNests(created, reason, error) {
+        const failures = error ? [error] : [];
+        try {
+            for (const entity of created) {
+                if (!KDMapData.Entities.includes(entity)) continue;
+                try {
+                    KDRemoveEntity(entity, false, false, true);
+                    if (KDMapData.Entities.includes(entity))
+                        throw new Error("Spiderlings objective nest removal was refused");
+                } catch (failure) {
+                    failures.push(failure);
+                }
+            }
+        } finally {
+            cancelInfestation(reason);
+        }
+        if (failures.length > (error ? 1 : 0))
+            throw new AggregateError(failures, "Spiderlings objective nest cleanup failed", {
+                cause: error?.cause || error || failures[0],
+            });
+        if (error) throw error;
+        return false;
+    }
+
     function repairEarlyJourneyPreviews() {
         if (typeof KDGameData === "undefined") return;
         for (const slot of Object.values(KDGameData.JourneyMap || {})) {
@@ -551,7 +577,8 @@
             cancelInfestation("ineligible");
             return false;
         }
-        if (api.HuntingGrounds?.createPopulationPlan && api.HuntingGrounds.createPopulationPlan(MOD).cap < 12) {
+        const populationPlan = api.Population.prepareFloor(MOD);
+        if (populationPlan.cap < populationPlan.requiredMembers) {
             cancelInfestation("population-budget");
             return false;
         }
@@ -614,9 +641,7 @@
             );
             created.push(...(batch || []));
             if (batch?.length !== 1 || batch[0].x !== point.x || batch[0].y !== point.y) {
-                for (const entity of created) KDRemoveEntity(entity, false, false, true);
-                cancelInfestation("creation-failed");
-                return false;
+                return cancelCreatedNests(created, "creation-failed");
             }
         }
         for (const entity of created) {
@@ -648,14 +673,26 @@
             clearing: plan.map((point) => ({ ...point })),
             clearedTiles: openNestClearing(groups, spawnPoints),
         };
-        if (
-            api.HuntingGrounds?.initializeInfestationPopulation &&
-            !api.HuntingGrounds.initializeInfestationPopulation(KDMapData[FIELD], created, spawnPoints)
-        ) {
-            for (const entity of created) KDRemoveEntity(entity, false, false, true);
-            cancelInfestation("population-budget");
-            return false;
+        const coreNests = [
+            created[0],
+            [...created].sort((a, b) => distance(b, created[0]) - distance(a, created[0]))[0],
+        ];
+        const state = KDMapData[FIELD];
+        state.clearedTiles += openNestClearing(
+            coreNests.map((nest) => [nest]),
+            spawnPoints,
+            5,
+        );
+        let population;
+        try {
+            population = api.Population.seedCrews({ kind: MOD, nests: coreNests, spawnPoints });
+        } catch (error) {
+            return cancelCreatedNests(created, "population-budget", error);
         }
+        if (!population.ok) return cancelCreatedNests(created, "population-budget");
+        state.coreNestIds = population.coreNestIds;
+        state.coreIds = population.coreIds;
+        state.fieldPreset.maxFields = 2;
         return true;
     }
 

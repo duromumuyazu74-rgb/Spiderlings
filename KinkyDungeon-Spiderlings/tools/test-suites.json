@@ -29,6 +29,7 @@
     "spiderlings-npc-adhesion.test.js",
     "spiderlings-npc-wrapping.test.js",
     "spiderlings-hunting-grounds-layout.test.js",
+    "spiderlings-population.test.js",
     "spiderlings-release-version.test.js",
     "spiderlings-release-package.test.js",
     "spiderlings-runtime-boundaries.test.js",

@@ -127,9 +127,9 @@ KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Koko
 KDMapMod_SpiderlingsHuntingGrounds,Jagdrevier der Jungspinnen
 KinkyDungeonMapModSpiderlingsHuntingGrounds,Weiche Netze ziehen sich durch die ganze Etage. Jungspinnen huschen zwischen ihren Nestern umher und ein leises Rascheln folgt dir durch die Gänge.
 KDEscapeMethod_SpiderlingsHuntingGrounds,Markierte Nester zerstören
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,"An den ursprünglichen Nestern hängen feine Seidenfäden. Zerstöre diese markierten Nester, um weiter hinabzusteigen."
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Zerstöre die ursprünglichen Zielnester zum Abstieg (rote Aufgabenmarkierungen auf der Minikarte). Spätere Nester zählen nicht.
 SpiderlingsHuntingGroundsProgress,Markierte Nester zerstört: CURRENT/TARGET
-SpiderlingsHuntingGroundsBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsBlocked,Zerstöre die ursprünglichen Zielnester zum Abstieg: rote Aufgabenmarkierungen auf der Minikarte. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Rosa Spinnweben (aus: Original)
 KDModButtonspiderlingsEnableHood,Seidene Spinnenhaube (aus: nie anlegen)
@@ -205,9 +205,9 @@ SpiderlingsNPCWrapping,Einspinnen
 KDMapMod_SpiderlingsInfestation,Spinnenbefall
 KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
 KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
-KDEscapeMethodDesc_SpiderlingsInfestation,"An den ursprünglichen Nestern hängen feine Seidenfäden. Zerstöre diese markierten Nester, um weiter hinabzusteigen."
+KDEscapeMethodDesc_SpiderlingsInfestation,Zerstöre die ursprünglichen Zielnester zum Abstieg (rote Aufgabenmarkierungen auf der Minikarte). Spätere Nester zählen nicht.
 SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/5
-SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/5)
+SpiderlingsInfestationBlocked,Zerstöre die ursprünglichen Zielnester zum Abstieg: rote Aufgabenmarkierungen auf der Minikarte. (CURRENT/5)
 SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
 KDModButtonspiderlingsInfestationWeight,Befall-Gewichtung (0: aus)
 KDModButtonspiderlingsHuntingGroundsWeight,Jagdgebiet-Gewichtung - nur Maidforce (0: aus)

@@ -127,9 +127,9 @@ KinkyDungeonSpiderlingsCocoonAnchored,Młode pająki rozpinają sieci wokół ko
 KDMapMod_SpiderlingsHuntingGrounds,Teren łowiecki małych pająków
 KinkyDungeonMapModSpiderlingsHuntingGrounds,Miękka pajęczyna pokrywa całe piętro. Małe pająki krążą między gniazdami, a szelest podąża za tobą wąskimi korytarzami.
 KDEscapeMethod_SpiderlingsHuntingGrounds,Zniszcz oznaczone gniazda
-KDEscapeMethodDesc_SpiderlingsHuntingGrounds,"Z pierwotnych gniazd zwisają cienkie nici. Zniszcz te oznaczone gniazda, by zejść niżej."
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,"Zniszcz pierwotne gniazda docelowe, by zejść niżej (czerwone znaczniki zadania na minimapie). Późniejsze gniazda się nie liczą."
 SpiderlingsHuntingGroundsProgress,Zniszczone oznaczone gniazda: CURRENT/TARGET
-SpiderlingsHuntingGroundsBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsBlocked,"Zniszcz pierwotne gniazda docelowe, by zejść niżej: czerwone znaczniki zadania na minimapie. (CURRENT/TARGET)"
 SpiderlingsHuntingGroundsComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (TARGET/TARGET)
 KDModButtonspiderlingsPinkWebbing,Różowa pajęczyna (wył.: oryginalna)
 KDModButtonspiderlingsEnableHood,Jedwabny kaptur pająków (wył.: nie zakładaj)
@@ -205,9 +205,9 @@ SpiderlingsNPCWrapping,Owijanie
 KDMapMod_SpiderlingsInfestation,Inwazja małych pająków
 KinkyDungeonMapModSpiderlingsInfestation,Jedwab pełznie po kątach, a w cieniach szelest odpowiada szelestowi. To miejsce od dawna ma innych mieszkańców.
 KDEscapeMethod_SpiderlingsInfestation,Zniszcz oznaczone gniazda
-KDEscapeMethodDesc_SpiderlingsInfestation,"Z pierwotnych gniazd zwisają cienkie nici. Zniszcz te oznaczone gniazda, by zejść niżej."
+KDEscapeMethodDesc_SpiderlingsInfestation,"Zniszcz pierwotne gniazda docelowe, by zejść niżej (czerwone znaczniki zadania na minimapie). Późniejsze gniazda się nie liczą."
 SpiderlingsInfestationProgress,Zniszczone oznaczone gniazda: CURRENT/5
-SpiderlingsInfestationBlocked,Zatrzymujesz się przed schodami. Szelest w głębi gniazd wciąż nie ucichł. (CURRENT/5)
+SpiderlingsInfestationBlocked,"Zniszcz pierwotne gniazda docelowe, by zejść niżej: czerwone znaczniki zadania na minimapie. (CURRENT/5)"
 SpiderlingsInfestationComplete,Wszystkie gniazda pierwszych mieszkańców runęły. Przed tobą są schody prowadzące w głąb. (5/5)
 KDModButtonspiderlingsInfestationWeight,Waga inwazji (0: wyłączona)
 KDModButtonspiderlingsHuntingGroundsWeight,Waga łowiska - tylko Maidforce (0: wyłączone)

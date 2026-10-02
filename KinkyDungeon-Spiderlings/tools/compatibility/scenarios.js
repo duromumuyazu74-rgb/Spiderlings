@@ -39,6 +39,8 @@ const scenarios = [
         "mage-timing",
         "player-recovery",
         "action-cadence",
+        "population-failure",
+        "floor-objective-hints",
         "normal-integration",
         "normal-visuals",
         "passage-sites",
