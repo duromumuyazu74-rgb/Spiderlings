@@ -80,7 +80,7 @@
     }
 
     function targetEligible(target) {
-        if (entity(target?.id) !== target || protectedTarget(target)) return false;
+        if (!entities().includes(target) || protectedTarget(target)) return false;
         const rivals = entities().filter((candidate) => SPIDERS.has(candidate.Enemy?.name));
         const silkSource = api.NPCAdhesion?.silkSource?.(target);
         return rivals.length

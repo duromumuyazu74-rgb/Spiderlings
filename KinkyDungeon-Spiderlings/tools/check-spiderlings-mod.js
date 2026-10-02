@@ -642,6 +642,16 @@ function createMockState() {
         KDPrereqs: {},
         KinkyDungeonSpellSpecials: {},
         KinkyDungeonCastSpell() {},
+        KinkyDungeonActivateWeaponSpell() {},
+        KinkyDungeonGetManaCost(spell) {
+            return spell.manacost || 0;
+        },
+        KDChangeMana() {},
+        KDChangeStamina() {},
+        KinkyDungeonDrawActionBar() {},
+        KDAddEntity(entity) {
+            return entity;
+        },
         KDBulletCanHitEntity() {},
         KDBulletAoECanHitEntity() {},
         KDDropItems() {},

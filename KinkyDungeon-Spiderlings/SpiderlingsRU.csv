@@ -152,7 +152,7 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ты раздвигаешь
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Ты поддеваешь край TargetRestraint, пытаясь разделить слипшиеся слои шёлка."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Ты поддеваешь край TargetRestraint, пытаясь разделить слипшиеся слои шёлка."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Ты снимаешь наружную оболочку TargetRestraint и собираешь ослабленный кокон.
-KDModButtonspiderlingsMapPopulationCap,Пауки на карте (0: без лимита)
+KDModButtonspiderlingsMapPopulationCap,Общий предел подвижных паучков (0 снимает этот предел; тематические этажи сохраняют свой бюджет)
 KinkyDungeonStatSpiderlingsCocoonStart,Пробуждение в коконе
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Ты просыпаешься в мягком коконе, укрытая плотными слоями паучьего шёлка. При каждом движении натягиваются нити, прилегающие к телу."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Паучонок-прыгун смотрит под ноги противнику и припадает к земле перед прыжком.
@@ -215,14 +215,14 @@ KinkyDungeonInventoryItemSpiderlingTome,Книга шёлковых уз
 KinkyDungeonInventoryItemSpiderlingStaff,Посох ткача шёлка
 KinkyDungeonSpecialSpiderlingTome,Схождение кокона
 KinkyDungeonSpecialSpiderlingStaff,Шёлковая петля
-KinkyDungeonInventoryItemSpiderlingTomeDesc,Тонкий шёлк пронизывает корешок и обвивает раскрытые страницы. Прочитанные слова стягивают рассеянные нити к центру.
-KinkyDungeonInventoryItemSpiderlingStaffDesc,"В паутине на навершии теплится свет. Один взмах выпускает тонкие нити, оплетающие цель."
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"В основной или второй руке: +20% к силе связывания. 4 маны; дальность 6; срабатывает через два хода; перезарядка 8 ходов. На 21 клетке урон и связывание усиливаются к центру. Стены блокируют эффект. Если шёлка этого оружия самого по себе хватает, чтобы сделать врага беспомощным, он образует цельный кокон. По мере освобождения кокон снова распадается на нити."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 маны; дальность 6; перезарядка 3 хода. Связывает первого поражённого врага, затем замедляет его максимум на 3 хода. Стены останавливают нить. Если шёлка этого оружия самого по себе хватает, чтобы сделать цель беспомощной, он образует цельный кокон. По мере освобождения кокон снова распадается на нити."
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Мягкие шёлковые нити проходят через корешок и лежат на страницах.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,Тонкая паутина мягко удерживает слабое свечение на навершии посоха.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Липкие нити тянутся между перелистываемыми страницами и собираются у корешка, когда книга закрывается. На прикосновение пальца они отвечают лёгкой пульсацией."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,Тонкие нити туго свисают с навершия. Тусклое сияние струится по ним к рукояти и мерцает при каждом натяжении.
 ItemPickupSpiderlingTome,Вы подбираете книгу шёлковых уз.
 ItemPickupSpiderlingStaff,Вы подбираете посох ткача шёлка.
-KDPrereqFailSpiderlingsCocoonConvergence,Нужно 4 маны. Перезарядка также должна закончиться.
-KDPrereqFailSpiderlingsSilkenSnare,Нужно 2 маны. Перезарядка также должна закончиться.
+KDPrereqFailSpiderlingsCocoonConvergence,"Нужно держать фолиант в руке и иметь достаточно маны для этого слоя. После смыкания круга дождись окончания перезарядки, прежде чем плести новый."
+KDPrereqFailSpiderlingsSilkenSnare,"Нужно держать посох в руке, иметь достаточно маны и дождаться окончания перезарядки."
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Вы сплетаете круг из шёлка. Нити начинают сходиться к центру.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Вы выпускаете липкую шёлковую нить в сторону цели.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Схождение кокона
@@ -252,3 +252,9 @@ SpiderlingsRecoveryRemove,Снять ({cost})
 SpiderlingsRecoveryStruggle,Вырваться ({cost})
 SpiderlingsRecoveryStrandLoosened,Ты ослабляешь выбранную шёлковую нить.
 SpiderlingsRecoveryStrandSevered,Ты освобождаешься от выбранной шёлковой нити.
+KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Каждый дополнительный слой стоит базовые 20 маны. Сила связывания: 1 / 1,5 / 4,5; перезарядка от первого слоя: 8 / 9 / 12 ходов. Эффективные попадания возвращают 6 выносливости один раз за круг. Первый полный шёлковый кокон каждой жертвы возвращает ману: не более половины уплаченной маны и всего до 20 за круг."
+KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Сплети круг шёлка на расстоянии до 6 клеток. Он сомкнётся после двух следующих действий; ближе к центру связывает сильнее. Повторное применение усиливает тот же круг до трёх ступеней. Каждый дополнительный слой расходует ману и одно действие, задерживая смыкание на ход. Стены останавливают шёлк."
+KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Пошли липкий шёлк на расстояние до 6 клеток к первой враждебной цели. Нить связывает и замедляет жертву; стены её останавливают. Перезарядка: 3 хода. Эффективное попадание возвращает 6 выносливости. Первый полный шёлковый кокон жертвы возвращает не более половины уплаченной маны.
+KDSpiderlingsWeaponSustainSpiderlingTome,"+20% к силе связывания в основной или второй руке. Эффективные удары в ближнем бою возвращают 20% уплаченной выносливости, с базовым пределом 3. Первый шёлковый кокон каждой жертвы, созданный в ближнем бою, один раз возвращает базовые 7,5 маны."
+KDSpiderlingsWeaponSustainSpiderlingStaff,"Эффективные удары в ближнем бою возвращают 20% уплаченной выносливости, с базовым пределом 6. Первый шёлковый кокон каждой жертвы, созданный в ближнем бою, один раз возвращает базовые 7,5 маны."
+KDSpiderlingsWeaponWeaveStatus,Плетение STAGE/3. Следующая стоимость маны: COST. Новый круг через COOLDOWN ходов.

@@ -118,6 +118,23 @@ function fixture() {
     return { calls, context, map, target, spiders, wrap, act, blockedTiles };
 }
 
+test("target eligibility requires the current live object across removal and map reload", () => {
+    const r = fixture(),
+        clone = JSON.parse(JSON.stringify(r.target));
+    assert.equal(r.wrap.targetEligible(r.target), true);
+    assert.equal(r.wrap.targetEligible(clone), false, "A matching native ID does not admit a detached alias");
+    assert.equal(r.wrap.targetEligible(undefined), false);
+    assert.equal(r.wrap.targetEligible(null), false);
+    r.map.Entities.splice(r.map.Entities.indexOf(r.target), 1);
+    assert.equal(r.wrap.targetEligible(r.target), false, "Removal must take effect immediately within this turn");
+    r.map.Entities.push(r.target);
+    assert.equal(r.wrap.targetEligible(r.target), true);
+    r.context.KDMapData = { Entities: [...r.spiders, clone] };
+    r.wrap.afterLoad();
+    assert.equal(r.wrap.targetEligible(r.target), false, "The previous map's object cannot survive as a live target");
+    assert.equal(r.wrap.targetEligible(clone), true, "The freshly loaded object with the same ID is now authoritative");
+});
+
 test("wrapping visuals follow target and source visibility without clearing capture progress", () => {
     const r = fixture();
     r.act(r.spiders[0]);

@@ -1,7 +1,7 @@
 /* exported KDGenMapCallback */
 (async () => {
     const results = (globalThis.normalTrace = []);
-    const expected = ["MageSpiderlings", "Spinner", "Spinner", "WebCaster"].sort().join(",");
+    const expected = ["MageSpiderlings", "Spinner", "Spinner", "Jumper", "WebCaster", "WebCaster"].sort().join(",");
     const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
     // Keep native SFX I/O out of timing and avoid the upstream MiniWind path defect.
     const sound = KDToggles.Sound;
@@ -41,7 +41,11 @@
                         .map((enemy) => enemy.Enemy.name)
                         .sort(),
                 }));
-                const cancelled = state?.status === "cancelled" && state.reason === "insufficient-space";
+                const cancelled =
+                    state?.status === "cancelled" &&
+                    ["insufficient-space", "population-budget", "garrison-failed", "creation-failed"].includes(
+                        state.reason,
+                    );
                 if (cancelled && (nests.length || KDMapData.MapMod === "SpiderlingsHuntingGrounds"))
                     throw Error("Cancelled floor retained an impossible objective");
                 if (
@@ -57,29 +61,96 @@
                             throw Error("Original objective nests overlap");
                 const fieldPreset = state?.fieldPreset,
                     initialWebCells = KDMapData.Entities.filter(Spiderlings.SpinnerNativeField.isOwnedProxy).length;
-                if (!cancelled && !["placed", "skipped"].includes(fieldPreset?.status))
-                    throw Error("New floor did not settle its one-time field preset");
+                if (!cancelled && (fieldPreset?.status !== "placed" || fieldPreset.fields?.length < 2))
+                    throw Error(
+                        `New Hunting Grounds did not initialize at least two staffed fields: ${JSON.stringify({
+                            zone,
+                            floor,
+                            seed,
+                            state,
+                            fieldPreset,
+                            guards,
+                            actors: KDMapData.Entities.filter(
+                                (e) => !Spiderlings.SpinnerNativeField.isOwnedProxy(e),
+                            ).map((e) => ({
+                                id: e.id,
+                                name: e.Enemy.name,
+                                x: e.x,
+                                y: e.y,
+                                parent: e.SpiderlingsNestParentID,
+                            })),
+                        })}`,
+                    );
                 if (fieldPreset?.status === "placed") {
                     const encounter = Spiderlings.SpinnerNativeField.state(),
-                        composite = encounter?.topology?.composites?.[fieldPreset.compositeId],
-                        outer = encounter?.topology?.fields?.[composite?.layerIds.at(-1)],
-                        crew = encounter?.ai?.groups?.[fieldPreset.groupId];
+                        seenCrews = new Set();
+                    let expectedWebCells = 0;
                     if (
-                        Object.keys(encounter?.topology?.composites || {}).length !== 1 ||
-                        !outer ||
-                        outer.bounds.right - outer.bounds.left !== 8 ||
-                        outer.phase !== "ready" ||
-                        initialWebCells !== 31 ||
-                        Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(outer.gateCell) ||
-                        encounter.topology.actionLog.length !== 0 ||
-                        !crew ||
-                        crew.memberIds.length < 2 ||
-                        composite.layerIds.some((id) =>
-                            crew.memberIds.some((owner) => !encounter.topology.fieldOwners[id].includes(owner)),
-                        )
+                        Object.keys(encounter.topology.composites).length !== fieldPreset.fields.length ||
+                        encounter.topology.actionLog.length !== 0
                     )
-                        throw Error("New floor's large open outer field changed ownership, cost or entity budget");
+                        throw Error("Preset field count or free initialization changed");
+                    for (const field of fieldPreset.fields) {
+                        const composite = encounter.topology.composites[field.compositeId],
+                            outer = encounter.topology.fields[composite?.layerIds.at(-1)],
+                            crew = encounter.ai.groups[field.groupId];
+                        expectedWebCells += field.radius * 8 - 1;
+                        if (
+                            !outer ||
+                            ![2, 3, 4].includes(field.radius) ||
+                            outer.bounds.right - outer.bounds.left !== field.radius * 2 ||
+                            outer.phase !== "ready" ||
+                            Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(outer.gateCell) ||
+                            !crew ||
+                            seenCrews.has(crew.id) ||
+                            crew.memberIds.filter((id) =>
+                                KDMapData.Entities.some((e) => e.id === id && e.hp > 0 && e.Enemy.name === "Spinner"),
+                            ).length < 2 ||
+                            composite.layerIds.some((id) =>
+                                crew.memberIds.some((owner) => !encounter.topology.fieldOwners[id].includes(owner)),
+                            )
+                        )
+                            throw Error("Preset fields lost live Spinner ownership, open gates or geometry downgrade");
+                        seenCrews.add(crew.id);
+                    }
+                    if (initialWebCells !== expectedWebCells)
+                        throw Error("Preset field proxy count differs from its outer geometry");
                 }
+                const mobileNames = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]),
+                    strictEnemies = KDMapData.Entities.filter(
+                        (e) =>
+                            e.hp > 0 &&
+                            KDHostile(e) &&
+                            !e.Enemy.immobile &&
+                            !e.Enemy.noAttack &&
+                            !e.Enemy.tags?.scenery &&
+                            !Spiderlings.SpinnerNativeField.isOwnedProxy(e) &&
+                            !KDEnemyHasFlag(e, "Shop") &&
+                            !KDIsInParty(e) &&
+                            !KDIsImprisoned(e) &&
+                            !KDAllied(e),
+                    ),
+                    hostileSpiders = strictEnemies.filter((e) => mobileNames.has(e.Enemy.name)).length,
+                    hostileRatio = hostileSpiders / strictEnemies.length;
+                if (!cancelled && !KDIsHellFloor(floor) && (hostileRatio < 0.8 || hostileRatio > 0.9))
+                    throw Error(
+                        `Hunting Grounds native hostile population missed quota: ${JSON.stringify({
+                            zone,
+                            floor,
+                            seed,
+                            hostileSpiders,
+                            total: strictEnemies.length,
+                            plan: KDMapData.SpiderlingsPopulationPlan,
+                            enemies: strictEnemies.map((e) => ({
+                                id: e.id,
+                                name: e.Enemy.name,
+                                x: e.x,
+                                y: e.y,
+                                master: e.Enemy.master,
+                                keys: e.keys,
+                            })),
+                        })}`,
+                    );
                 const initialEntities = KDMapData.Entities.length;
                 // Observe the complete ecology off the entrance stair; waiting on
                 // that stair can otherwise queue a native ShopStart transition.
@@ -148,6 +219,10 @@
                     fieldPreset: fieldPreset ? structuredClone(fieldPreset) : undefined,
                     finalEntities: KDMapData.Entities.length,
                     guards,
+                    validNatural: !KDIsHellFloor(floor),
+                    strictEnemies: strictEnemies.length,
+                    hostileSpiders,
+                    hostileRatio,
                 });
             }
         }

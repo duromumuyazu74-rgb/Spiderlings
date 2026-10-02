@@ -250,15 +250,25 @@
                     siteCandidates.push(center);
             }
         const huntingSites = [];
-        if (largeSite) huntingSites.push(largeSite);
+        if (largeSite) huntingSites.push({ ...largeSite, radius: 4 });
         for (const target of siteTargets) {
             const candidate = siteCandidates
-                .filter((center) => huntingSites.every((placed) => chebyshev(placed, center) >= 5))
+                .map((center) => ({
+                    ...center,
+                    radius: [4, 3, 2].find(
+                        (radius) =>
+                            footprint(center, radius, natural) &&
+                            anchors.every((anchor) => chebyshev(anchor, center) > radius + 3) &&
+                            huntingSites.every((placed) => chebyshev(placed, center) > radius + placed.radius),
+                    ),
+                }))
+                .filter((center) => center.radius)
                 .sort((left, right) => chebyshev(left, target) - chebyshev(right, target))[0];
             if (candidate) huntingSites.push(candidate);
+            if (huntingSites.length >= 3) break;
         }
         for (const site of huntingSites) {
-            square(site, site === largeSite ? 4 : 2);
+            square(site, site.radius);
             links.push(corridor(site, crossroad));
         }
         for (const endpoint of [options.start, options.end, ...(options.shortcuts || [])])
@@ -284,7 +294,7 @@
         const reserved = [];
         if (options.reserve)
             for (const center of [...usableAnchors, ...huntingSites]) {
-                const radius = usableAnchors.includes(center) || center === largeSite ? 4 : 2;
+                const radius = usableAnchors.includes(center) ? 4 : center.radius;
                 for (let y = center.y - radius; y <= center.y + radius; y += 1)
                     for (let x = center.x - radius; x <= center.x + radius; x += 1)
                         if (x > 0 && y > 0 && x < width - 1 && y < height - 1 && tile(x, y) === "0" && !meta(x, y)) {
@@ -334,12 +344,12 @@
     // Native random population respects OL; its authored spawnpoints bypass it.
     // Reserve only future construction cells after nest placement has released
     // the broad terrain reservations. No existing actor or terrain is moved.
-    function reservePopulationBoundary(map, center) {
+    function reservePopulationBoundary(map, center, radius = 4) {
         if (map !== KDMapData || !center || map.MapMod !== "SpiderlingsHuntingGrounds") return 0;
         const reserved = reservations.get(map) || new Set();
         let added = 0;
-        for (let y = center.y - 4; y <= center.y + 4; y++)
-            for (let x = center.x - 4; x <= center.x + 4; x++) {
+        for (let y = center.y - radius; y <= center.y + radius; y++)
+            for (let x = center.x - radius; x <= center.x + radius; x++) {
                 const name = `${x},${y}`;
                 const data = KinkyDungeonTilesGet(name);
                 if (
@@ -514,21 +524,22 @@
             for (let x = 2; x < width - 2; x += 1) {
                 const point = { x, y };
                 if (nests.some((nest) => chebyshev(nest, point) <= 5)) continue;
-                if (!reached.has(pointKey(point)) || !footprint(point, 1, legal)) continue;
-                siteCandidates.push(point);
+                if (!reached.has(pointKey(point)) || !footprint(point, 2, legal)) continue;
+                siteCandidates.push({ ...point, radius: 2 });
             }
-        const sites = largeSite ? [{ ...largeSite }] : [];
+        const sites = largeSite ? [{ ...largeSite, radius: 4 }] : [];
         for (const target of options.huntingSites || []) {
             const candidate = siteCandidates
-                .filter((point) => sites.every((site) => chebyshev(site, point) >= 3))
+                .filter((point) => sites.every((site) => chebyshev(site, point) > site.radius + point.radius))
                 .sort((left, right) => chebyshev(left, target) - chebyshev(right, target))[0];
             if (candidate) sites.push(candidate);
             if (sites.length === 3) break;
         }
         for (const point of siteCandidates)
-            if (sites.length < 3 && sites.every((site) => chebyshev(site, point) >= 3)) sites.push(point);
+            if (sites.length < 3 && sites.every((site) => chebyshev(site, point) > site.radius + point.radius))
+                sites.push(point);
         diagnostics.sites = sites;
-        if (sites.length !== 3) {
+        if (sites.length < 2) {
             diagnostics.failure = "field-sites";
             return withoutLargeSite();
         }
@@ -689,6 +700,7 @@
         earlyPlan: (map) => earlyPlans.get(map),
         release,
         reservePopulationBoundary,
+        isPopulationReserved: (map, point) => reservations.get(map)?.has(pointKey(point)) || false,
         register,
     });
     layout.SpiderlingsLayoutLoaded = true;

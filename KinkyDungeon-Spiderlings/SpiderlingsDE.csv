@@ -152,7 +152,7 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Du drückst die äußere H�
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Schichten voneinander zu lösen."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Schichten voneinander zu lösen."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Du schälst die äußere Hülle von TargetRestraint auf und sammelst den gelösten Kokon.
-KDModButtonspiderlingsMapPopulationCap,Spinnen pro Karte (0: unbegrenzt)
+KDModButtonspiderlingsMapPopulationCap,Globale Grenze beweglicher Jungspinnen (0 hebt diese Grenze auf; Themenebenen behalten ihr Budget)
 KinkyDungeonStatSpiderlingsCocoonStart,Erwachen im Kokon
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Du erwachst in einem weichen Kokon, umhüllt von dicht gewebter Spinnseide. Bei jeder kleinen Bewegung ziehen die Fäden an deinem Körper."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Das Springer-Spinnenjunge fixiert den Boden unter seinem Gegner und duckt sich zum Sprung.
@@ -215,14 +215,14 @@ KinkyDungeonInventoryItemSpiderlingTome,Foliant der Seidenfessel
 KinkyDungeonInventoryItemSpiderlingStaff,Seidenweberstab
 KinkyDungeonSpecialSpiderlingTome,Kokonkonvergenz
 KinkyDungeonSpecialSpiderlingStaff,Seidenfessel
-KinkyDungeonInventoryItemSpiderlingTomeDesc,Feine Seide durchzieht den Buchrücken und umschlingt die offenen Seiten. Die gewobenen Worte ziehen verstreute Fäden nach innen.
-KinkyDungeonInventoryItemSpiderlingStaffDesc,Ein schwaches Leuchten ruht im Netz an der Stabspitze. Mit einem Schwung winden sich feine Fäden um das Ziel.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"In Haupt- oder Nebenhand: +20% Fesselstärke. 4 Mana; Reichweite 6; Wirkung nach zwei Runden; 8 Runden Abklingzeit. Auf 21 Feldern nehmen Schaden und Fesselung zur Mitte hin zu. Wände blockieren die Wirkung. Wenn die Seide dieser Waffe allein den Gegner hilflos macht, bildet sie einen vollständigen Kokon. Beim Befreien löst er sich wieder in einzelne Fäden."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 Mana; Reichweite 6; 3 Runden Abklingzeit. Fesselt das erste getroffene feindliche Ziel und verlangsamt es anschließend bis zu 3 Runden. Wände stoppen den Faden. Wenn die Seide dieser Waffe allein das Ziel hilflos macht, bildet sie einen vollständigen Kokon. Beim Befreien löst er sich wieder in einzelne Fäden."
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Weiche Seidenfäden durchziehen den Buchrücken und liegen über den Seiten.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,Ein feines Netz trägt ein schwaches Leuchten an der Stabspitze.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,Klebrige Fäden spannen sich zwischen den umgeblätterten Seiten und sammeln sich beim Schließen wieder im Buchrücken. Eine Fingerspitze spürt ein leises Pulsieren.
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,Feine Fäden hängen straff von der Spitze. Ein schwaches Leuchten läuft an ihnen entlang zum Griff und flackert bei jedem Zug.
 ItemPickupSpiderlingTome,Du hebst den Folianten der Seidenfessel auf.
 ItemPickupSpiderlingStaff,Du hebst den Seidenweberstab auf.
-KDPrereqFailSpiderlingsCocoonConvergence,Benötigt 4 Mana. Die Abklingzeit muss ebenfalls vorbei sein.
-KDPrereqFailSpiderlingsSilkenSnare,Benötigt 2 Mana. Die Abklingzeit muss ebenfalls vorbei sein.
+KDPrereqFailSpiderlingsCocoonConvergence,"Halte den Folianten in der Hand und habe genug Mana für diese Lage. Nach dem Schließen muss der Kreis abklingen, bevor ein neuer entsteht."
+KDPrereqFailSpiderlingsSilkenSnare,Halte den Stab in der Hand; du brauchst genug Mana und die Abklingzeit muss vorüber sein.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Du webst einen Kreis aus Seide. Die Fäden ziehen sich nach innen.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Du schleuderst einen klebrigen Seidenfaden auf dein Ziel.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Kokonkonvergenz
@@ -252,3 +252,9 @@ SpiderlingsRecoveryRemove,Lösen ({cost})
 SpiderlingsRecoveryStruggle,Kämpfen ({cost})
 SpiderlingsRecoveryStrandLoosened,Du lockerst den ausgewählten Seidenfaden.
 SpiderlingsRecoveryStrandSevered,Du befreist dich vom ausgewählten Seidenfaden.
+KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Zusätzliche Lagen kosten jeweils 20 Mana als Grundwert. Fesselstärke: 1 / 1,5 / 4,5; Abklingzeit ab der ersten Lage: 8 / 9 / 12 Runden. Wirksame Treffer geben einmal pro Kreis 6 Ausdauer zurück. Der erste vollständige Seidenkokon eines Ziels gibt Mana zurück: höchstens die Hälfte des bezahlten Manas und insgesamt maximal 20 pro Kreis."
+KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Webe einen Seidenkreis in bis zu 6 Feldern Entfernung. Nach zwei weiteren Aktionen zieht er sich zusammen; zur Mitte hin wird die Fesselung stärker. Nutze diese Fähigkeit erneut, um denselben Kreis bis auf drei Stufen zu verstärken. Jede zusätzliche Lage kostet Mana und eine Aktion und verzögert das Schließen um eine Runde. Wände halten die Seide auf."
+KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Schicke klebrige Seide bis zu 6 Felder weit auf das erste feindliche Ziel. Der Faden fesselt und verlangsamt es; Wände stoppen ihn. Abklingzeit: 3 Runden. Ein wirksamer Treffer gibt 6 Ausdauer zurück. Der erste vollständige Seidenkokon eines Ziels gibt höchstens die Hälfte des bezahlten Manas zurück.
+KDSpiderlingsWeaponSustainSpiderlingTome,"+20% Fesselstärke in Haupt- oder Nebenhand. Wirksame Nahkampftreffer geben 20% der bezahlten Ausdauer zurück, als Grundwert höchstens 3. Der erste im Nahkampf erzeugte Seidenkokon jedes Ziels gibt einmalig 7,5 Mana als Grundwert zurück."
+KDSpiderlingsWeaponSustainSpiderlingStaff,"Wirksame Nahkampftreffer geben 20% der bezahlten Ausdauer zurück, als Grundwert höchstens 6. Der erste im Nahkampf erzeugte Seidenkokon jedes Ziels gibt einmalig 7,5 Mana als Grundwert zurück."
+KDSpiderlingsWeaponWeaveStatus,Gewebe STAGE/3. Nächste Manakosten: COST. Neuer Kreis in COOLDOWN Runden.

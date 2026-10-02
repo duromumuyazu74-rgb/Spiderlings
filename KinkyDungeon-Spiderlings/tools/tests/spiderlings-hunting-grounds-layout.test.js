@@ -118,21 +118,35 @@ test("fixed seeds create a connected whole-floor hunting layout with three nest 
     }
 });
 
-test("the smallest supported fixture keeps three nests and distinct construction space", () => {
-    const map = fixture(23);
+test("small layouts require real nonoverlapping five-cell fields before retaining the floor", () => {
+    assert.equal(fixture(23).plan, null, "three nominal 3x3 points do not constitute two usable hunting fields");
+    const map = fixture(24);
     assert.ok(map.plan);
     assert.ok(map.plan.metrics.nestCandidates >= 3);
     assert.equal(map.plan.sites.length, 3);
     assert.equal(map.plan.metrics.reachable, map.plan.metrics.passable - 3);
+    for (const site of map.plan.sites) {
+        assert.ok(
+            footprint(site, site.radius).every((name) => {
+                const [x, y] = name.split(",").map(Number);
+                return map.get(x, y) === "0";
+            }),
+        );
+        for (const other of map.plan.sites)
+            if (site !== other)
+                assert.ok(
+                    Math.max(Math.abs(site.x - other.x), Math.abs(site.y - other.y)) > site.radius + other.radius,
+                );
+    }
 });
 
 test("the authored large field retains its complete footprint and identity through nest planning", () => {
-    for (const size of [23, 28, 30, 44]) {
+    for (const size of [24, 28, 30, 44]) {
         const map = fixture(size),
             site = map.shaped.largeHuntingSite;
         assert.ok(site, `size ${size} retains a large site`);
         assert.deepEqual(map.plan.largeHuntingSite, site);
-        assert.deepEqual(map.plan.sites[0], site);
+        assert.deepEqual(map.plan.sites[0], { ...site, radius: 4 });
         assert.ok(map.plan.nests.every((nest) => Math.max(Math.abs(nest.x - site.x), Math.abs(nest.y - site.y)) >= 9));
         assert.ok(
             footprint(site, 4).every((name) => {

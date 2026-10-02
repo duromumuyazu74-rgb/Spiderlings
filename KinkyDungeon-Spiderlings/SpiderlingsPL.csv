@@ -152,7 +152,7 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Rozpychasz zewnętrzną pow
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Skubiesz brzeg TargetRestraint, próbując rozdzielić sklejone warstwy."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Skubiesz brzeg TargetRestraint, próbując rozdzielić sklejone warstwy."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Rozchylasz zewnętrzną powłokę TargetRestraint i zbierasz poluzowany kokon.
-KDModButtonspiderlingsMapPopulationCap,Pająki na mapie (0: bez limitu)
+KDModButtonspiderlingsMapPopulationCap,Globalny limit ruchomych pajączków (0 wyłącza ten limit; piętra tematyczne zachowują swój limit)
 KinkyDungeonStatSpiderlingsCocoonStart,Przebudzenie w jedwabiu
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Budzisz się w miękkim kokonie, otulona gęstymi warstwami pajęczego jedwabiu. Każdy drobny ruch napina nici przylegające do ciała."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Młody pająk skoczek wpatruje się w ziemię pod przeciwnikiem i przyczaja się do skoku.
@@ -215,14 +215,14 @@ KinkyDungeonInventoryItemSpiderlingTome,Księga jedwabnych więzów
 KinkyDungeonInventoryItemSpiderlingStaff,Kostur tkacza jedwabiu
 KinkyDungeonSpecialSpiderlingTome,Splot kokonu
 KinkyDungeonSpecialSpiderlingStaff,Jedwabna pętla
-KinkyDungeonInventoryItemSpiderlingTomeDesc,Cienki jedwab przenika grzbiet i oplata otwarte strony. Odczytane słowa ściągają rozproszone nici ku środkowi.
-KinkyDungeonInventoryItemSpiderlingStaffDesc,"W sieci na końcu kostura tli się blask. Jeden ruch wysyła cienkie nici, które oplatają cel."
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"W głównej lub drugiej ręce: +20% siły więzów. 4 many; zasięg 6; efekt po dwóch turach; odnowienie 8 tur. Działa na 21 polach; obrażenia i więzy rosną ku środkowi. Ściany blokują efekt. Gdy jedwab tej broni sam wystarczy do obezwładnienia wroga, tworzy pełny kokon. W miarę uwalniania kokon znów rozpada się na nici."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"2 many; zasięg 6; odnowienie 3 tury. Wiąże pierwszego trafionego wroga, a potem spowalnia go na maksymalnie 3 tury. Ściany zatrzymują nić. Gdy jedwab tej broni sam wystarczy do obezwładnienia celu, tworzy pełny kokon. W miarę uwalniania kokon znów rozpada się na nici."
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Miękkie jedwabne nici przechodzą przez grzbiet i spoczywają na stronach.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,Delikatna sieć otula słaby blask na końcu kostura.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,Lepkie nici rozciągają się między przewracanymi stronami i zbierają z powrotem przy grzbiecie po zamknięciu księgi. Dotknięcie palcem wywołuje delikatne pulsowanie.
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"Cienkie nici zwisają napięte z końca laski. Słaby blask płynie po nich ku uchwytowi, migocząc przy każdym pociągnięciu."
 ItemPickupSpiderlingTome,Podnosisz księgę jedwabnych więzów.
 ItemPickupSpiderlingStaff,Podnosisz kostur tkacza jedwabiu.
-KDPrereqFailSpiderlingsCocoonConvergence,Potrzeba 4 many. Czas odnowienia również musi się skończyć.
-KDPrereqFailSpiderlingsSilkenSnare,Potrzeba 2 many. Czas odnowienia również musi się skończyć.
+KDPrereqFailSpiderlingsCocoonConvergence,Musisz trzymać księgę w ręce i mieć dość many na tę warstwę. Po zamknięciu kręgu trzeba zaczekać na odnowienie przed utkaniem następnego.
+KDPrereqFailSpiderlingsSilkenSnare,"Musisz trzymać laskę w ręce, mieć dość many i zaczekać na odnowienie."
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Tkasz krąg jedwabiu. Nici zaczynają ściągać się do środka.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,Posyłasz lepką jedwabną nić w stronę celu.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,Splot kokonu
@@ -252,3 +252,9 @@ SpiderlingsRecoveryRemove,Rozwiąż ({cost})
 SpiderlingsRecoveryStruggle,Szarp się ({cost})
 SpiderlingsRecoveryStrandLoosened,Luzujesz wybraną jedwabną nić.
 SpiderlingsRecoveryStrandSevered,Uwalniasz się od wybranej jedwabnej nici.
+KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Każda dodatkowa warstwa kosztuje bazowo 20 many. Siła więzów: 1 / 1,5 / 4,5; odnowienie od pierwszego splotu: 8 / 9 / 12 tur. Skuteczne trafienia zwracają 6 wytrzymałości raz na krąg. Pierwszy pełny jedwabny kokon danej ofiary zwraca manę: do połowy zapłaconej many i najwyżej 20 łącznie na krąg."
+KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Utkaj krąg jedwabiu w odległości do 6 pól. Zamyka się po dwóch kolejnych działaniach, wiążąc mocniej bliżej środka. Użyj tej zdolności ponownie, by wzmocnić ten sam splot do trzech poziomów. Każda dodatkowa warstwa kosztuje manę i jedno działanie oraz opóźnia zamknięcie o turę. Ściany zatrzymują jedwab."
+KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Wyślij lepki jedwab do 6 pól w stronę pierwszego wrogiego celu. Nić wiąże i spowalnia ofiarę; ściany ją zatrzymują. Odnowienie: 3 tury. Skuteczne trafienie zwraca 6 wytrzymałości. Pierwszy pełny jedwabny kokon danej ofiary zwraca do połowy zapłaconej many.
+KDSpiderlingsWeaponSustainSpiderlingTome,"+20% siły więzów w głównej lub drugiej ręce. Skuteczne trafienia wręcz zwracają 20% zapłaconej wytrzymałości, z wartością bazową do 3. Pierwszy jedwabny kokon każdej ofiary utworzony w walce wręcz zwraca jednorazowo bazowe 7,5 many."
+KDSpiderlingsWeaponSustainSpiderlingStaff,"Skuteczne trafienia wręcz zwracają 20% zapłaconej wytrzymałości, z wartością bazową do 6. Pierwszy jedwabny kokon każdej ofiary utworzony w walce wręcz zwraca jednorazowo bazowe 7,5 many."
+KDSpiderlingsWeaponWeaveStatus,Splot STAGE/3. Następny koszt many: COST. Nowy krąg za COOLDOWN tur.

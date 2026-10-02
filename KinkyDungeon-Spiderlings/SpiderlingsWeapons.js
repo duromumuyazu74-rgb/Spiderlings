@@ -12,6 +12,9 @@
     const CONVERGENCE = "SpiderlingsCocoonConvergence";
     const SNARE = "SpiderlingsSilkenSnare";
     const cooldowns = { [CONVERGENCE]: 8, [SNARE]: 3 };
+    const stages = [1, 1.5, 4.5];
+    const chargeCooldowns = [8, 9, 12];
+    let casting, attacking, manaLimit;
 
     // Run-wide cooldowns survive map changes and weapon swaps; pending casts belong to the map.
     function state() {
@@ -19,7 +22,10 @@
     }
 
     function pending() {
-        return (KDMapData[KEY] ||= { collapses: [] });
+        const value = (KDMapData[KEY] ||= { collapses: [] });
+        value.casts ||= {};
+        value.rewards ||= [];
+        return value;
     }
 
     function hostile(target) {
@@ -28,6 +34,110 @@
 
     function remaining(name) {
         return Math.max(0, (state().readyAt[name] || 0) - state().clock);
+    }
+
+    function held() {
+        return resolveName(KinkyDungeonWeaponVariants[KinkyDungeonPlayerWeapon]?.template || KinkyDungeonPlayerWeapon);
+    }
+
+    function charging() {
+        return pending().collapses.find((cast) => (cast.stage || 1) < 3 && cast.explodeAt > state().clock);
+    }
+
+    function available(name) {
+        const cast = name === CONVERGENCE && charging();
+        return (
+            held() === (name === CONVERGENCE ? TOME : STAFF) &&
+            (cast ? state().clock > (cast.lastChargedAt ?? cast.startAt - 1) : remaining(name) === 0)
+        );
+    }
+
+    // UI prerequisites, targeting preview and native payment must use the same tier snapshot.
+    const nativeManaCost = KinkyDungeonGetManaCost;
+    KinkyDungeonGetManaCost = function (spell) {
+        if (spell?.name === CONVERGENCE && !spell.spiderlingsWeaponCostSnapshot)
+            return nativeManaCost.call(
+                this,
+                { ...spell, manacost: charging() ? 2 : 4 },
+                ...Array.from(arguments).slice(1),
+            );
+        return nativeManaCost.apply(this, arguments);
+    };
+
+    const nativeMana = KDChangeMana;
+    KDChangeMana = function (src, type, trig, amount) {
+        const before = KinkyDungeonStatMana;
+        const result = nativeMana.apply(this, arguments);
+        if (casting && src === casting.name && type === "spell" && trig === "cast" && amount < 0)
+            casting.paid += Math.max(0, before - KinkyDungeonStatMana);
+        return result;
+    };
+    KDAddEvent(KDEventMapGeneric, "changeMana", KEY, (_event, data) => {
+        if (data.src === KEY && manaLimit !== undefined && data.Amount > 0 && data.mult > 0)
+            data.Amount = Math.min(data.Amount, manaLimit / data.mult);
+    });
+
+    KDAddEvent(KDEventMapGeneric, "beforePlayerLaunchAttack", KEY, () => {
+        const weapon = resolveName(KinkyDungeonPlayerDamage?.name);
+        attacking = [TOME, STAFF].includes(weapon) ? { weapon, effective: false, cocoons: [] } : undefined;
+    });
+    const nativeStamina = KDChangeStamina;
+    KDChangeStamina = function (src, type, trig, _amount) {
+        const before = KinkyDungeonStatStamina;
+        const result = nativeStamina.apply(this, arguments);
+        if (attacking && src === "attack" && type === "weapon" && trig === "attack") {
+            const paid = Math.max(0, before - KinkyDungeonStatStamina);
+            if (attacking.effective)
+                pending().rewards.push({
+                    stamina: Math.min(paid * 0.2, attacking.weapon === TOME ? 0.3 : 0.6),
+                    cocoons: attacking.cocoons.length,
+                });
+            attacking = undefined;
+        }
+        return result;
+    };
+
+    function rewardHit(data, effective, cocoon) {
+        if (!effective) return false;
+        const token = data.spell?.spiderlingsWeaponCast;
+        if (token) {
+            const cast = pending().casts[token];
+            if (!cast) return false;
+            if (!cast.staminaReturned) {
+                cast.staminaReturned = true;
+                pending().rewards.push({ stamina: 0.6 });
+            }
+            if (cocoon) pending().rewards.push({ cast: token, cocoons: 1 });
+            return true;
+        } else if (!data.spell && attacking) {
+            attacking.effective = true;
+            if (cocoon) attacking.cocoons.push(data.enemy.id);
+            return true;
+        }
+        return false;
+    }
+
+    function payRewards() {
+        const rewards = pending().rewards.splice(0);
+        for (const reward of rewards) {
+            if (reward.stamina) KDChangeStamina(KEY, "weapon", "silk", reward.stamina);
+            const cast = reward.cast && pending().casts[reward.cast];
+            let budget = cast
+                ? Math.min(cast.paidMana * 0.5, cast.name === CONVERGENCE ? 2 : Infinity) - cast.manaReturned
+                : Infinity;
+            for (let i = 0; i < (reward.cocoons || 0) && budget > 0; i++) {
+                const before = KinkyDungeonStatMana;
+                manaLimit = budget;
+                try {
+                    KDChangeMana(KEY, "weapon", "cocoon", 0.75);
+                } finally {
+                    manaLimit = undefined;
+                }
+                const credited = Math.max(0, KinkyDungeonStatMana - before);
+                budget -= credited;
+                if (cast) cast.manaReturned += credited;
+            }
+        }
     }
 
     KinkyDungeonWeapons[TOME] = {
@@ -221,8 +331,9 @@
         manacost: 4,
         level: 1,
         range: 6,
-        aoe: 2,
-        aoetype: "box",
+        // Native targeting must show the same 21 cells as the saved inward circle.
+        aoe: 2.5,
+        aoetype: "",
         power: 6,
         damage: "glue",
         bind: 24,
@@ -255,14 +366,28 @@
     };
     for (const spell of [convergence, snare]) {
         api.registerNamed(KinkyDungeonSpellListEnemies, spell);
-        KDPrereqs[spell.name] = () =>
-            remaining(spell.name) === 0 && KinkyDungeonHasMana(KinkyDungeonGetManaCost(spell));
+        KDPrereqs[spell.name] = () => available(spell.name) && KinkyDungeonHasMana(KinkyDungeonGetManaCost(spell));
     }
 
-    KinkyDungeonSpellSpecials[CONVERGENCE] = (_spell, _data, _targetX, _targetY, x, y) => {
-        const clock = state().clock;
-        pending().collapses.push({ x, y, startAt: clock + 1, explodeAt: clock + 3, ownerId: clock });
-        // Undefined lets native casting finish: debit mana once and emit player-cast events.
+    // Commit the circle only after native payment and a successful Cast result.
+    KinkyDungeonSpellSpecials[CONVERGENCE] = () => {};
+
+    const nativeActivate = KinkyDungeonActivateWeaponSpell;
+    KinkyDungeonActivateWeaponSpell = function () {
+        const charge = held() === TOME && charging();
+        if (!charge || KinkyDungeonPlayerDamage?.special?.spell !== CONVERGENCE)
+            return nativeActivate.apply(this, arguments);
+        const previousX = KinkyDungeonTargetX,
+            previousY = KinkyDungeonTargetY;
+        KinkyDungeonTargetX = charge.x;
+        KinkyDungeonTargetY = charge.y;
+        KinkyDungeonTargetingSpell = null;
+        try {
+            return nativeActivate.call(this, true);
+        } finally {
+            KinkyDungeonTargetX = previousX;
+            KinkyDungeonTargetY = previousY;
+        }
     };
 
     const nativeCast = KinkyDungeonCastSpell;
@@ -272,10 +397,15 @@
             enemy ||
             bullet ||
             !player?.player ||
-            remaining(spell.name) > 0 ||
+            !available(spell.name) ||
             !KinkyDungeonHasMana(KinkyDungeonGetManaCost(spell))
         )
             return { result: "Fail" };
+        const charge = spell.name === CONVERGENCE && charging();
+        if (charge) {
+            x = charge.x;
+            y = charge.y;
+        }
         if (Math.hypot(x - player.x, y - player.y) > 6 || !Number.isInteger(x) || !Number.isInteger(y))
             return { result: "Fail" };
         if (
@@ -285,9 +415,49 @@
                 !KinkyDungeonCheckPath(player.x, player.y, x, y, true, false))
         )
             return { result: "Fail" };
-        const result = nativeCast.apply(this, arguments);
+        const token = charge?.token || `silk${(state().serial = (state().serial || 0) + 1)}`;
+        const snapshot = {
+            ...spell,
+            manacost: charge ? 2 : spell.manacost,
+            spiderlingsWeaponCostSnapshot: true,
+            spiderlingsWeaponCast: token,
+        };
+        const args = Array.from(arguments);
+        args[0] = x;
+        args[1] = y;
+        args[2] = snapshot;
+        const payment = { name: spell.name, paid: 0 };
+        const previous = casting;
+        let result;
+        casting = payment;
+        try {
+            result = nativeCast.apply(this, args);
+        } finally {
+            casting = previous;
+        }
         if (result?.result === "Cast") {
-            state().readyAt[spell.name] = state().clock + cooldowns[spell.name];
+            const budget = (pending().casts[token] ||= { name: spell.name, paidMana: 0, manaReturned: 0 });
+            budget.paidMana += payment.paid;
+            if (spell.name === CONVERGENCE) {
+                if (charge) {
+                    charge.stage = (charge.stage || 1) + 1;
+                    charge.explodeAt += 1;
+                    charge.lastChargedAt = state().clock;
+                    charge.token = token;
+                } else
+                    pending().collapses.push({
+                        x,
+                        y,
+                        stage: 1,
+                        startAt: state().clock + 1,
+                        explodeAt: state().clock + 3,
+                        ownerId: state().clock,
+                        lastChargedAt: state().clock,
+                        token,
+                    });
+                const current = charge || pending().collapses.at(-1);
+                state().readyAt[spell.name] = current.startAt - 1 + chargeCooldowns[(current.stage || 1) - 1];
+            } else state().readyAt[spell.name] = state().clock + cooldowns[spell.name];
             if (spell.name === SNARE && result.data?.bulletfired) {
                 const fired = result.data.bulletfired;
                 fired.bullet.name = "SpiderlingsMageBolt";
@@ -348,7 +518,7 @@
                 target,
                 {
                     damage: power * 2,
-                    bind: power * 8,
+                    bind: power * 8 * stages[(collapse.stage || 1) - 1],
                     bindType: "Slime",
                     type: "glue",
                     time: 0,
@@ -357,7 +527,7 @@
                 },
                 true,
                 false,
-                convergence,
+                { ...convergence, spiderlingsWeaponCast: collapse.token },
                 undefined,
                 KinkyDungeonPlayerEntity,
             );
@@ -370,11 +540,72 @@
         const due = pending().collapses.filter((cast) => cast.explodeAt <= state().clock);
         pending().collapses = pending().collapses.filter((cast) => cast.explodeAt > state().clock);
         for (const cast of due) resolve(cast);
+        payRewards();
     });
     for (const event of ["postMapgen", "defeat", "passout", "postPrisonIntro"])
         KDAddEvent(KDEventMapGeneric, event, KEY, () => {
             delete KDMapData[KEY];
         });
+
+    const nativeActionBar = KinkyDungeonDrawActionBar;
+    KinkyDungeonDrawActionBar = function () {
+        const weapon = held();
+        const hover = [TOME, STAFF].includes(weapon) && MouseIn(580, 825, 50, 90);
+        if (!hover) return nativeActionBar.apply(this, arguments);
+        const title = TextGet(`KinkyDungeonSpecial${weapon}`),
+            nativeText = DrawTextFitKD;
+        let result;
+        // Replace only the native name-only tooltip; keep the button and its input intact.
+        DrawTextFitKD = function (text) {
+            if (text !== title) return nativeText.apply(this, arguments);
+        };
+        try {
+            result = nativeActionBar.apply(this, arguments);
+        } finally {
+            DrawTextFitKD = nativeText;
+        }
+        const spell = weapon === TOME ? convergence : snare;
+        const sections = [TextGet(`KinkyDungeonSpellDescription${spell.name}`)];
+        let status;
+        if (weapon === TOME) {
+            sections.push(TextGet(`KinkyDungeonSpellDescription2${spell.name}`));
+            const stage = pending().collapses.at(-1)?.stage || 0;
+            status = TextGet("KDSpiderlingsWeaponWeaveStatus")
+                .replace("STAGE", stage)
+                .replace("COST", Math.round(KinkyDungeonGetManaCost(spell) * 10))
+                .replace("COOLDOWN", remaining(spell.name));
+        }
+        sections.push(TextGet(`KDSpiderlingsWeaponSustain${weapon}`));
+        const lines = KinkyDungeonWordWrap(sections.join("\n"), 42, 78).split("\n");
+        const width = 920,
+            left = Math.max(520, Math.min(1960 - width, MouseX + 35));
+        const height = 64 + (status ? 30 : 0) + lines.length * 24;
+        const top = Math.max(30, Math.min(970 - height, MouseY - 20 - height));
+        FillRectKD(kdcanvas, kdpixisprites, `${KEY}Tooltip`, {
+            Left: left,
+            Top: top,
+            Width: width,
+            Height: height,
+            Color: "#151019",
+            alpha: 0.85,
+            zIndex: 149,
+        });
+        DrawTextFitKD(title, left + 20, top + 26, width - 40, "#f2d5fc", "#231527", 26, "left", 150);
+        if (status) DrawTextFitKD(status, left + 20, top + 56, width - 40, "#ffe6a1", "#231527", 22, "left", 150);
+        for (let i = 0; i < lines.length; i++)
+            DrawTextFitKD(
+                lines[i],
+                left + 20,
+                top + 58 + (status ? 30 : 0) + i * 24,
+                width - 40,
+                "#f2d5fc",
+                "#231527",
+                20,
+                "left",
+                150,
+            );
+        return result;
+    };
 
     const nativeDrop = KDDropItems;
     KDDropItems = function (enemy, mapData) {
@@ -398,28 +629,39 @@
         [`KinkyDungeonSpellCast${CONVERGENCE}`]: "You weave a circle of silk. The strands begin to draw inward.",
         [`KinkyDungeonSpellCast${SNARE}`]: "You send a strand of sticky silk toward your target.",
         [`KinkyDungeonInventoryItem${TOME}`]: "Tome of Silken Binding",
-        [`KinkyDungeonInventoryItem${TOME}Desc`]:
-            "Silk threads run through the spine and across the pages. As you read, they draw the surrounding silk inward.",
+        [`KinkyDungeonInventoryItem${TOME}Desc`]: "Soft silk threads run through the spine and lie across the pages.",
         [`KinkyDungeonInventoryItem${TOME}Desc2`]:
-            "Grants +20% binding strength in either hand. Cocoon Convergence costs 4 mana, reaches 6 tiles, charges for 2 turns, and has an 8-turn cooldown. It draws silk inward across 21 tiles and binds more strongly near the center. Walls block it. When this weapon's silk alone leaves an enemy helpless, it forms a cocoon. The weave opens as they struggle free.",
+            "Sticky threads stretch between the turning pages and gather back into the spine when the book closes. A faint pulse answers the touch of a fingertip.",
         [`KinkyDungeonInventoryItem${STAFF}`]: "Silkweaver's Staff",
-        [`KinkyDungeonInventoryItem${STAFF}Desc`]:
-            "A web glows at the staff's tip. A sweep sends its strands out to wrap around a target.",
+        [`KinkyDungeonInventoryItem${STAFF}Desc`]: "A fine web cups a faint glow at the staff's tip.",
         [`KinkyDungeonInventoryItem${STAFF}Desc2`]:
-            "Silken Snare costs 2 mana, reaches 6 tiles, and has a 3-turn cooldown. Its strand binds the first hostile target hit and slows them for up to 3 turns. Walls stop it. When this weapon's silk alone leaves the enemy helpless, it forms a cocoon. The weave loosens as they struggle free.",
+            "Fine strands hang taut from the tip. A dim glow runs along them toward the grip, flickering with each tug.",
         [`ItemPickup${TOME}`]: "You pick up a Tome of Silken Binding.",
         [`ItemPickup${STAFF}`]: "You pick up a Silkweaver's Staff.",
         [`KinkyDungeonSpecial${TOME}`]: "Cocoon Convergence",
         [`KinkyDungeonSpecial${STAFF}`]: "Silken Snare",
         [`KinkyDungeonSpell${CONVERGENCE}`]: "Cocoon Convergence",
         [`KinkyDungeonSpell${SNARE}`]: "Silken Snare",
-        [`KDPrereqFail${CONVERGENCE}`]: "Cocoon Convergence needs 4 mana. Its cooldown must also be over.",
-        [`KDPrereqFail${SNARE}`]: "Silken Snare needs 2 mana. Its cooldown must also be over.",
+        [`KinkyDungeonSpellDescription${CONVERGENCE}`]:
+            "Weave a silk circle up to 6 tiles away. It closes after two further actions, binding more strongly toward the center. Use this special again to deepen the same weave, up to three tiers; each added weave spends mana and one action and delays the closure by one turn. Walls block the silk.",
+        [`KinkyDungeonSpellDescription2${CONVERGENCE}`]:
+            "Additional weaves cost 20 base mana each. Binding strength: 1 / 1.5 / 4.5; cooldown: 8 / 9 / 12 turns from the first weave. Effective hits restore 6 stamina once per circle. A prey's first complete silk cocoon returns magic, limited to half the circle's paid mana and at most 20 mana.",
+        [`KinkyDungeonSpellDescription${SNARE}`]:
+            "Send sticky silk up to 6 tiles toward the first hostile target. The strand binds and slows its prey; walls stop it. Cooldown: 3 turns. An effective hit restores 6 stamina; a prey's first complete silk cocoon returns magic, limited to half the paid mana.",
+        [`KDSpiderlingsWeaponSustain${TOME}`]:
+            "+20% binding in either hand. Effective melee restores 20% of paid stamina, up to 3 base stamina. A prey's first silk cocoon made by melee returns 7.5 base mana once.",
+        [`KDSpiderlingsWeaponSustain${STAFF}`]:
+            "Effective melee restores 20% of paid stamina, up to 6 base stamina. A prey's first silk cocoon made by melee returns 7.5 base mana once.",
+        KDSpiderlingsWeaponWeaveStatus: "Weave STAGE/3. Next mana cost: COST. New circle in COOLDOWN turns.",
+        [`KDPrereqFail${CONVERGENCE}`]:
+            "The tome must be in your hand, with enough mana for this weave. A finished circle must recover before another begins.",
+        [`KDPrereqFail${SNARE}`]: "The staff must be in your hand, with enough mana and its cooldown over.",
     };
     for (const [key, value] of Object.entries(text)) addTextKey(key, value);
     api.Weapons = Object.freeze({
         resolveName,
         remaining,
+        rewardHit,
         visualState: () => ({ clock: state().clock, collapses: pending().collapses }),
     });
 })();

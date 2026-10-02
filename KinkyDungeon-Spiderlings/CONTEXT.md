@@ -9,22 +9,23 @@ This glossary defines the terms used when evolving the Spiderlings mod for KD 5.
 ## Spiderlings encounters
 
 **Spiderling Hunting Grounds (幼蛛猎场)**:
-A post-first-boss floor occupied by Spiderlings, with three original objective nests, roaming Spiderlings, and scattered random NPC prey. New ordinary journey nodes become eligible at floor 5; visited maps retain their history. Its independent saved and scripted identifier is `SpiderlingsHuntingGrounds`. Earlier three-nest saves under `SpiderlingsInfestation` migrate when loaded, including cached rooms in `KDWorldMap` and their journey slots. Returning from a side room preserves the three objectives and completed progress.
+A post-first-boss, Maidforce-qualified floor occupied by Spiderlings, with three objective nests, two or three staffed capture fields and dispersed legal NPC prey. Fresh maps provide three six-member nest crews and a roaming crew, aiming for 80–90% Spiderlings among mobile combat enemies hostile to the player; protected neutral actors and structures are separate.
+_Avoid_: every NPC is a spider, one isolated arena, rewriting visited maps
 
 **Spiderling Infestation (幼蛛侵扰)**:
-The separate five-nest modifier, saved as `SpiderlingsInfestation`, with the native primary faction and default weight 50. New maps normally arrange the nests in groups of 2+2+1, sometimes 2+3, and rarely one connected group of five. At the first eligible ordinary floor 5 the probabilities are 78%, 18%, and 4%; the five-nest chance gains one percentage point per floor up to 30%, taken from 2+2+1. Different groups remain at least eight Euclidean tiles apart. Terrain can force a legal alternate distribution. The selected groups persist with the map; existing nests are not relocated. Hunting Grounds retains its separate three objectives.
+The separate five-nest floor that preserves the native primary faction while two mixed six-member spider crews establish an expanding presence. Fresh maps target at least 50% Spiderlings among mobile combat enemies hostile to the player; existing objective groups and saved maps keep their history.
 
-From test.41, `SpiderlingsFloorSelection.js` draws both modifiers after the native primary faction is resolved and before side-room selection. Infestation accepts any primary faction; Hunting Grounds is eligible only for Maidforce. They replace the selected modifier and escape objective without changing the faction or stacking modifiers. Test.42 defaults are Infestation 50, Hunting Grounds 1000, and keep-native 800, calibrated across complete normal journeys to about 5.35% each. The two configurable weights accept nonnegative integers; zero disables new selections. Set weights before starting a new game, because KD generates the whole journey map up front. Existing previews, maps, progress and saved configuration values remain intact. To adopt the new default, manually change a previously saved 750 to 1000. Biome frequencies and player routes still differ.
-
-Idle Infestation offspring and roaming WebCasters, Jumpers, and Mages leave crowded nest positions for distinct reachable patrol destinations at least six tiles from every objective nest. Native movement and perception still govern their travel and combat. Construction, capture, scripted behavior, allies, and incapacitated actors take priority. Patrol goals persist and are replaced after eight turns without progress. This dispersal performs no removal or teleportation; the existing quiet-retirement rule remains separate.
+**Special-floor selection**:
+The native journey's choice of an eligible Spiderling theme, with fresh default Infestation/Hunting Grounds weights of 200/1500 against keep-native 800. Zero disables that selection, saved custom values persist, and the weights apply to newly generated journeys rather than forcing a percentage of every biome or visited floor.
 
 **Special-floor prebuilt outer field**:
-Fresh Hunting Grounds and Infestation maps attempt one legal 9-by-9 outer ring with an open gate and 31 physical web cells for an existing actionable two-Spinner crew. Smaller inner bodies remain unbuilt and require paid work. Terrain or crew failure records a skipped attempt. Saved maps/revisits do not add a field, and no new reinforcement loop or worker dispersal is introduced.
+A staffed open capture area present at the start of a fresh Spiderling theme, with smaller bodies still requiring paid construction. Hunting Grounds needs at least two legal sites, prefers large fields and permits a smaller usable field when space requires it; insufficient space cancels the theme before births, and existing crews are not scattered to staff empty arenas.
 
-Hunting Grounds preserves a large-site identity across terrain, objective and population placement. Temporary native `OL` reserves future boundary cells from random births, then releases before the field is created. Authored actors and protected terrain retain admission priority. A rejected optional large site skips the prefab and permits one safe three-nest planning fallback; it does not cancel an otherwise legal hunt. Actual nest, mandatory-route or garrison failure still rejects the objective.
+**Persistent spider patrol**:
+Idle mobile spiders travelling to distinct reachable destinations and hunting through native perception while invested Spinners keep their fields. Combat, capture, construction and recovery take priority; quiet time or completion of the escape objective does not retire living crews.
 
 **Map Spiderling population cap**:
-The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero means unlimited. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
+The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero disables this global cap, while themed floors retain their own mobile-spider budgets. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs four slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
 _Avoid_: per-nest offspring cap, total spawns over a floor, nest count limit
 
 **Native Spiderlings population**:
@@ -44,18 +45,21 @@ A complete six-cell placement selected from legal `3×2` or `2×3` rectangles fi
 _Avoid_: partial squad, arbitrary scatter, single-member fallback
 
 **Nest reinforcement**:
-A recurring child spawn owned and capped by one living hostile NestEntrance. It runs when the nest is aware of a visible player, natively perceives a hostile Maidforce target, or retains its short native alert flag from a hostile NPC attack. The attack alert spans one configured interval plus the current tick; it does not grant an immediate spawn. It is separate from native population, the guaranteed squad, Tunneler-created entrances, and the entrance's death burst. Configured zero excludes that species; an all-zero pool pauses spawning. Mage reinforcement uses its configured weight without the natural floor/security restriction.
-_Avoid_: global reinforcement budget, NestEntrance spell list, death summon
+A recurring child spawn owned by a living hostile nest, subject to its living guard limit, lifetime Tunneler allowance, legal placement and the shared map budget. Species weights have one shared default table (Spinner8/Jumper2/WebCaster4/Tunneler1/Mage2); saved custom values and zero exclusions persist, and alerting a nest does not grant an immediate free spawn.
+_Avoid_: global reinforcement budget, guaranteed Tunneler chance, death summon
 
 **Independent Hunting Grounds nests**:
-Three original objectives are at least nine tiles apart in Chebyshev distance. Their blocked cells retain map connectivity and an attackable neighbor for each nest. Each starts with two Spinners, one WebCaster and one Mage Spiderling attributed to that nest; recurring reinforcement has at most four living attributed guards per task nest. Other spiders can roam the floor. A failed complete placement cancels the objective. Existing saved maps retain their original target IDs and count, including five-nest maps.
-The two attributed Spinners form a separate construction group. A Maidforce hit against a living task nest makes nearby Spiderlings prioritize the attacker for four ticks; this does not add a reinforcement or change the nest's death burst. Spinner construction keeps native movement credit between turns, and unassigned Spinners use native AI.
-_Avoid_: grouped task nests, a movement leash for wild spiders, relocating saved objectives
+Three original objective nests, each initially owning two Spinners, one Jumper, two WebCasters and one Mage, with six living guard places on fresh maps. Previously saved four-member guard budgets remain compatible; destruction ends that nest's replenishment without relocating its field or regenerating an objective.
+_Avoid_: a movement leash for wild spiders, relocating saved objectives
+
+**Nest defense report**:
+A short report of a task nest being attacked by a native hostile NPC, including a live native projectile source. Nearby defenders can investigate the known nest position without knowing an unseen attacker's current coordinates; builders retain invested work unless local danger justifies defense.
 
 **Hunting Grounds population and prey**:
 
 During native enemy initialization at zero or negative time, added rivalry, targeting, awareness and projectile-faction adaptation yield to native behavior. Their synchronous scope restores after nested updates or exceptions; normal positive turns enable the hunting rules below.
-The floor is occupied by ordinary Spiderlings, using the same enemy definitions as other floors. On this modifier, wild spiders patrol for NPCs of a different KD faction within twelve tiles; actual target lock still requires native vision and line of sight. The same independent prey pair drives bidirectional hostility, native nearest-target selection and projectile collision, allowing prey to retaliate. Allies, party members, servants, ceasefire, same-faction actors and scenery are not added as prey, and final wrapping follows native `KDCapturable` and persistent `alwaysEscape` limits. The Maidforce main faction is a native population selection setting, not ownership of the floor. Random initial population weights favor spiders at 9 over maids at 0.35, Dressmaker at 0.2, Nurse at 0.2 and other random NPCs at 0.1. Ordinary random non-Spiderlings remain eligible; their floor-local definition suppresses native cluster spawning. Initial mobile prey are placed apart on reachable legal cells, preferring six-cell separation where space permits. Idle wild spiders use distinct patrol goals across the floor while invested Spinner crews remain with their fields. After generation, at most three Maidforce or Dressmaker patrol NPCs remain on Hunting Grounds; shopkeepers and scripted spawn actors retain their native placement. Preset actor IDs remain protected through the final postMapgen population cap, independently of their runSpawnAI flag. Wandering arrivals of those factions are removed without death. The separate five-nest Infestation uses native population. Ordinary Maidforce floors retain their original population weights and wandering.
+The same ordinary Spiderling species hunt independent mobile combat NPCs through native vision, perception, hostility and action payment, allowing prey to retaliate. Shopkeepers, prisoners, allies, party members, servants, ceasefire actors, scenery, immobile actors and dependent followers are excluded from added hunting, while already valid native combat and protected authored births retain their rules.
+_Avoid_: hunting statues, faction-wide NPC immunity, counting nests or web walls as enemies
 
 **Nest lifetime Tunneler budget**:
 The configurable number of successful Tunneler reinforcements from one nest over its lifetime. Defaults to 3; zero disables that species for recurring reinforcement. Its entity counter survives saves and map revisits; child death or nest construction does not refund it. New nests have independent budgets. It coexists with the living offspring and map caps. Legacy nests initialize from attributable Tunnelers still present, without reconstructing removed historical entities.
@@ -178,16 +182,11 @@ Two distinct currently qualified WebCasters successfully increasing the same hos
 _Avoid_: extra player restraints on NPCs, guaranteed capture, shared player/NPC cooldown
 
 **Task nest evacuation**:
-A Maidforce lethal HP crossing on an original infestation objective permits one extra Tunneler death summon before the normal burst, only when native death removal succeeds. The separate death allowance ignores lifetime/offspring quotas but respects the map cap and placement; it has no parent reinforcement ID. Normal nests, other finishers and non-kill removals do not get this allowance. Any replacement nest remains ordinary, and objective destruction still counts.
+An independent 25% chance of an extra Tunneler when a Maidforce lethal hit successfully destroys an original task nest, subject to legal placement and the shared map budget. It is separate from weighted recurring reinforcement and does not replace the destroyed objective or refund its progress.
 _Avoid_: last nonlethal attacker attribution, guaranteed spawn on a full map, regenerating objective IDs
 
-**Nest clearing and quiet garrison**:
-Each new task nest opens ordinary walls and debris within three tiles, retaining interactive/protected tiles and borders. Carving occurs only after successful placement of all objective nests and their initial guards: three on Hunting Grounds, five on Infestation. It refreshes native navigation. Saved maps are not carved again. On either modifier, wild mobile spiders without a nest parent ID and within twelve Euclidean tiles of an original nest share a fifteen-turn peace timer. A perceptible hostile player or capable NPC within twelve tiles of a participating spider, attributed guard or surviving objective nest resets it. Perception uses native vision, blind sight and LOS from either NPC; player threats require spider perception and aggression. Helpless, imprisoned, stunned, frozen and noAttack NPCs do not count, while partial binding and recovery still count. After fifteen quiet turns, retain the five closest parentless wild spiders and remove excess without killing. Attributed guards, ordinary nest offspring, allies, party/captive spiders, remote spiders and all nests remain. Timer/anchor positions persist on the map, and ordinary maps are unaffected.
-_Avoid_: removing attributed guards or ordinary nest offspring, killing quiet spiders, reopening old map terrain
-
-Clearing also preserves walls bordering areas inaccessible from the start before carving, using native eight-direction accessibility (including locked/interactable cells). Quiet-turn sampling checks both turn start and end and includes hostility between participating spiders; a contested turn cannot become quiet merely because its opponent leaves or dies before the end.
-
-A player waiting inside an equipped Cocoon, without pending reinforcement, does not veto peace for either spiders or objective nests. This fifteen-turn garrison timer is independent of the twenty-five-turn Cocoon movement vigil. Attacks, struggles, spells and attempted movement (including anchored blocked movement) interrupt peace; Cocoon removal restores normal player threat checks. Nearby capable NPCs still veto peace.
+**Nest clearing**:
+The opening of ordinary walls and debris around newly placed task nests so guards and attackers can reach them, preserving interactive/protected terrain and previously inaccessible areas. Saved maps are not carved again; clearing grants neither free movement nor retirement of quiet spiders.
 
 **NPC Dash target**:
 The hostile NPC identity and ground tile selected when a Jumper begins its wind-up. Moving off that tile evades the impact; a replacement occupant is not the target. Death or lost hostility cancels the wind-up.
@@ -212,5 +211,12 @@ The Lv3 and Cocoon artwork that hides covered inner model layers through cover p
 _Avoid_: inner-item removal, cumulative duplicate rendering, Cocoon-implied Hood
 
 **Player weapon silk**:
-The surviving native Slime attributable to player tome/staff melee and their own spells. Its saved enemy ledger drives visible bands; native silk removal reduces ownership conservatively. Either weapon forms a complete body cocoon visual only when its surviving owned silk independently reaches native helplessness. Native recovery downgrades the visual, and draw/status queries do not mutate equipment or the saved ledger. Canonical weapon IDs are SpiderlingTome and SpiderlingStaff, with legacy main/offhand, variant and stored-item migration. When the tome's own silk independently subdues a hostile NPC, it may form the existing Lv1 Arm, Belly, Legs and Ankles in compatible free slots as conjured restraints against already-paid binding. This is separate from Spiderlings adhesion, wrapping and nonlethal collection.
-_Avoid_: spending unrelated Slime, adding binding again on equipment creation, automatic NPC collection, reissuing pieces on load
+The surviving native Slime attributable to player tome/staff melee and their spells, distinct from other binding and enemy adhesion. Partial silk gives a brief web impact; a fully helpless NPC displays the existing artist Cocoon only when owned silk alone is sufficient, and recovery removes that appearance without creating equipment.
+_Avoid_: permanent partial bands, automatic Lv1 equipment, automatic NPC collection
+
+**Tome convergence charge**:
+Further weaving of the same fixed spell circle through its native weapon button before closure, up to three tiers. Each added tier costs real mana and a world action, delays closure and increases binding rather than expanding the damage mask or moving the target.
+
+**Weapon sustain**:
+Limited resource recovery from an effective paid hit and each independent prey's first lifetime complete owned-silk cocoon. Empty or unchanged hits, repeated recapture and player-created summons provide no renewable reward; spell mana recovery stays within half the actual paid cost and the convergence circle's final cap.
+_Avoid_: repeatable mana extraction, invented free-spell mana cost, reward from unrelated binding

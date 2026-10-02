@@ -7,8 +7,8 @@
     // modifier after its primary faction is known; they never replace the faction.
     const KEEP_WEIGHT = 800;
     const settings = {
-        SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 50 },
-        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 1000 },
+        SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 200 },
+        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 1500 },
     };
 
     function weight(name) {

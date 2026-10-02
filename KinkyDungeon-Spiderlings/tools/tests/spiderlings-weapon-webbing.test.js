@@ -11,19 +11,25 @@ const KEY = "SpiderlingsWeaponWebbing";
 function fixture() {
     const events = {},
         restraints = {},
-        changes = [];
+        changes = [],
+        rewards = [];
     let serial = 100,
         blocked;
     const enemy = { id: 1, hp: 20, boundLevel: 0, specialBoundLevel: {}, Enemy: { maxhp: 20 } };
     const c = {
         Spiderlings: {
             Weapons: {
+                rewardHit: (data, effective, cocoon) => {
+                    rewards.push({ effective, cocoon, id: data.enemy.id });
+                    return true;
+                },
                 resolveName: (name) =>
                     ({ SpiderlingsSilkenBindingTome: "SpiderlingTome", SpiderlingsSilkweaverStaff: "SpiderlingStaff" })[
                         name
                     ] || name,
             },
         },
+        KDAddEntity: (enemy) => enemy,
         KDMapData: { Entities: [enemy] },
         KDEventMapGeneric: {},
         KDAddEvent: (_map, event, _key, handler) => {
@@ -75,6 +81,7 @@ function fixture() {
         events,
         restraints,
         changes,
+        rewards,
         hit,
         block: (family) => {
             blocked = family;
@@ -95,85 +102,46 @@ test("only actual player weapon silk is attributed; staff never creates a tome s
     assert.equal(f.changes.length, 0, "unrelated slime must not pay for a full set");
 });
 
-test("tome silk becomes four conjured native pieces without adding binding or replacing equipment", () => {
+test("complete tome silk is a cocoon without equipment or pose mutations", () => {
     const f = fixture();
-    const original = { name: "Existing", id: 42, lock: "Red" };
-    f.restraints.other = original;
+    const original = { name: "OtherArmbinder", id: 42, lock: "Red" };
+    f.restraints.arms = original;
     f.hit("tome", 40);
+    assert.equal(f.c.Spiderlings.WeaponWebbing.status(f.enemy).cocoon, true);
+    assert.equal(f.enemy[KEY].items.length, 0);
+    assert.equal(f.changes.length, 0);
+    assert.equal(f.restraints.arms, original);
+    assert.equal(f.events.afterDress, undefined);
     assert.equal(f.enemy.boundLevel, 40);
-    assert.equal(f.enemy.specialBoundLevel.Slime, 40);
-    assert.equal(f.enemy[KEY].items.length, 4);
-    assert.equal(f.restraints.other, original);
-    assert.ok(f.changes.every((change) => change.item.conjured && change.item.lock === ""));
-    const ids = f.enemy[KEY].items.map((item) => item.id);
-    f.hit("tome", 4);
-    assert.deepEqual(
-        f.enemy[KEY].items.map((item) => item.id),
-        ids,
-    );
 });
 
-test("blocked and occupied native slots retain their exact item", () => {
+test("legacy cleanup requires matching ledger identity, conjured flag and known silk name", () => {
     const f = fixture();
-    const original = { name: "OtherArmbinder", id: 42, lock: "Red" };
-    f.restraints.SpiderlingsWebbingLv1Arm = original;
-    f.block("Belly");
-    f.hit("tome", 40);
-    assert.equal(f.enemy[KEY].items.length, 2);
-    assert.equal(f.restraints.SpiderlingsWebbingLv1Arm, original);
-});
-
-test("a restraint in another native slot of the same body group keeps its pose and identity", () => {
-    const f = fixture();
-    const original = { name: "OtherArmbinder", id: 42, lock: "Red" };
-    f.restraints.differentSlot = original;
-    f.c.KinkyDungeonGetRestraintByName = (name) => ({
-        name,
-        Group: name === "OtherArmbinder" || name.endsWith("Arm") ? "ItemArms" : name,
-    });
-    f.hit("tome", 40);
-    assert.equal(f.enemy[KEY].items.length, 3);
-    assert.equal(f.restraints.differentSlot, original);
-    assert.ok(!f.changes.some((change) => change.item?.name.endsWith("Arm")));
-});
-
-test("native dressing applies silk poses only while the owned physical pieces remain", () => {
-    const f = fixture();
-    const character = {},
-        mc = { Poses: { Boxtie: true, Spread: true } };
-    f.c.KDNPCChar_ID = new Map([[character, 1]]);
-    f.c.KDGetGlobalEntity = () => f.enemy;
-    f.c.KDCurrentModels = new Map([[character, mc]]);
-    f.hit("tome", 40);
-    f.events.afterDress(null, { Character: character });
-    assert.deepEqual(mc.Poses, { Wristtie: true, Closed: true, FeetLinked: true });
-    for (const slot of Object.keys(f.restraints)) delete f.restraints[slot];
-    mc.Poses = { Boxtie: true, Spread: true };
-    f.events.afterDress(null, { Character: character });
-    assert.deepEqual(mc.Poses, { Boxtie: true, Spread: true });
-});
-
-test("struggle removes only unsupported owned pieces and saved state restores without issuing a set", () => {
-    const f = fixture();
-    f.hit("other", 100);
-    f.hit("tome", 40);
-    f.enemy[KEY] = JSON.parse(JSON.stringify(f.enemy[KEY]));
-    const ids = f.enemy[KEY].items.map((item) => item.id);
+    f.enemy.specialBoundLevel.Slime = f.enemy.boundLevel = 40;
+    f.enemy[KEY] = {
+        version: 1,
+        tome: 40,
+        staff: 0,
+        lastSlime: 40,
+        items: [
+            { id: 10, amount: 4 },
+            { id: 11, amount: 4 },
+            { id: 12, amount: 4 },
+        ],
+    };
+    f.restraints.remove = { id: 10, name: "SpiderlingsWebbingLv1Arm", conjured: true };
+    f.restraints.manual = { id: 11, name: "SpiderlingsWebbingLv1Legs", conjured: false };
+    f.restraints.other = { id: 12, name: "OtherArmbinder", conjured: true };
+    f.restraints.unregistered = { id: 13, name: "SpiderlingsWebbingLv1Belly", conjured: true };
     f.events.afterLoadGame();
-    assert.deepEqual(
-        f.enemy[KEY].items.map((item) => item.id),
-        ids,
-    );
-    f.enemy.specialBoundLevel.Slime = 110;
-    f.enemy.boundLevel = 110;
-    f.events.tickAfter(null, { delta: 1 });
-    assert.equal(f.enemy[KEY].tome, 10);
-    assert.equal(f.enemy[KEY].items.length, 2);
-    assert.equal(f.enemy.boundLevel, 110, "already-paid native struggle must not be debited again");
-    f.enemy.specialBoundLevel.Slime = 100;
-    f.events.tickAfter(null, { delta: 1 });
-    assert.equal(f.enemy[KEY], undefined);
-    assert.equal(Object.keys(f.restraints).length, 0);
+    assert.equal(f.restraints.remove, undefined);
+    assert.equal(Object.keys(f.restraints).length, 3);
+    assert.equal(f.enemy[KEY].items.length, 0);
+    assert.equal(f.enemy.specialBoundLevel.Slime, 40);
+    assert.equal(f.enemy.boundLevel, 40);
+    const count = f.changes.length;
+    f.events.afterLoadGame();
+    assert.equal(f.changes.length, count);
 });
 
 test("allied, non-player, resisted and lethal hits cannot create weapon silk", () => {
@@ -189,17 +157,14 @@ test("allied, non-player, resisted and lethal hits cannot create weapon silk", (
     assert.equal(f.changes.length, 0);
 });
 
-test("native removal is respected and death clears remaining conjured silk", () => {
+test("death clears owned material without generating or removing unrelated equipment", () => {
     const f = fixture();
     f.hit("tome", 40);
-    delete f.restraints.SpiderlingsWebbingLv1Arm;
-    f.events.tickAfter(null, { delta: 1 });
-    assert.equal(f.enemy[KEY].items.length, 3);
-    assert.equal(f.restraints.SpiderlingsWebbingLv1Arm, undefined);
+    f.restraints.manual = { id: 17, name: "SpiderlingsWebbingLv1Arm" };
     f.enemy.hp = 0;
     f.events.tickAfter(null, { delta: 1 });
     assert.equal(f.enemy[KEY], undefined);
-    assert.equal(Object.keys(f.restraints).length, 0);
+    assert.equal(Object.keys(f.restraints).length, 1);
 });
 
 test("both weapons form a cocoon only when their surviving silk alone meets native helpless thresholds", () => {
@@ -259,4 +224,40 @@ test("later unrelated Slime cannot hide native recovery of weapon silk before th
         undefined,
         "Other Slime concealed recovery of owned silk",
     );
+});
+
+test("HP-only and lethal effective native hits qualify; shield damage alone does not", () => {
+    const f = fixture();
+    f.hit("tome", 0, { dmgDealt: 1 });
+    assert.equal(f.rewards.length, 1);
+    f.hit("staff", 0, { dmgDealt: 0, dmgShieldDealt: 20 });
+    assert.equal(f.rewards.length, 1);
+    const data = { enemy: f.enemy, attacker: { player: true }, weapon: { name: "SpiderlingStaff" }, dmgDealt: 20 };
+    f.events.beforeDamageEnemy(null, data);
+    f.enemy.hp = 0;
+    f.events.afterDamageEnemy(null, data);
+    assert.equal(f.rewards.length, 2);
+    assert.equal(f.enemy[KEY], undefined);
+});
+
+test("first owned cocoon marker survives native recovery, save and weapon switching", () => {
+    const f = fixture();
+    f.hit("tome", 40);
+    assert.equal(f.rewards.filter((r) => r.cocoon).length, 1);
+    f.enemy.specialBoundLevel.Slime = f.enemy.boundLevel = 0;
+    f.events.tickAfter(null, { delta: 1 });
+    f.enemy.SpiderlingsWeaponCocoonRewarded = JSON.parse(JSON.stringify(f.enemy.SpiderlingsWeaponCocoonRewarded));
+    f.hit("staff", 40);
+    assert.equal(f.rewards.filter((r) => r.cocoon).length, 1);
+});
+
+test("released player-created summons retain reward exclusion", () => {
+    const f = fixture();
+    f.enemy.summoned = true;
+    f.enemy.faction = "Player";
+    f.c.KDAddEntity(f.enemy);
+    f.enemy.faction = "Enemy";
+    f.hit("tome", 40, { dmgDealt: 1 });
+    assert.equal(f.rewards.length, 0);
+    assert.equal(f.c.Spiderlings.WeaponWebbing.status(f.enemy).cocoon, true);
 });

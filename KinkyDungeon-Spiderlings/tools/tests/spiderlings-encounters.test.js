@@ -41,15 +41,15 @@ function loadCoreRuntime(overrides = {}, nativeSources = []) {
 // checkout; retain its failing player-as-enemy behavior in the regression.
 test("fresh nest settings reach the runtime selector while saved zero and custom weights survive", () => {
     for (const [saved, expected, selected] of [
-        [{}, { Spinner: 4, Jumper: 1, WebCaster: 2, Tunneler: 1, MageSpiderlings: 1 }, "Spinner"],
+        [{}, { Spinner: 8, Jumper: 2, WebCaster: 4, Tunneler: 1, MageSpiderlings: 2 }, "Spinner"],
         [
             { spiderlingsNestSpinnerWeight: 0, spiderlingsNestJumperWeight: 7 },
-            { Spinner: 0, Jumper: 7, WebCaster: 2, Tunneler: 1, MageSpiderlings: 1 },
+            { Spinner: 0, Jumper: 7, WebCaster: 4, Tunneler: 1, MageSpiderlings: 2 },
             "Jumper",
         ],
         [
             { spiderlingsNestSpinnerWeight: 2, spiderlingsNestJumperWeight: 2 },
-            { Spinner: 2, Jumper: 2, WebCaster: 2, Tunneler: 1, MageSpiderlings: 1 },
+            { Spinner: 2, Jumper: 2, WebCaster: 4, Tunneler: 1, MageSpiderlings: 2 },
             "Jumper",
         ],
     ]) {
@@ -474,13 +474,13 @@ test("squad is an optional native Enemies perk granting two displayed points ins
     assert.equal(context.KDEventMapGeneric.postMapgen?.SpiderlingsOrdinaryFallback, undefined);
 });
 
-test("nest selection gives Mage the same default weight as Tunneler", () => {
+test("recommended nest weights make Tunneler the rarest default reinforcement", () => {
     assert.deepEqual(EncounterRules.DEFAULT_WEIGHTS, {
-        Spinner: 4,
-        Jumper: 1,
-        WebCaster: 2,
+        Spinner: 8,
+        Jumper: 2,
+        WebCaster: 4,
         Tunneler: 1,
-        MageSpiderlings: 1,
+        MageSpiderlings: 2,
     });
     assert.equal(
         EncounterRules.selectWeightedSpiderling({}, () => 0.1),
@@ -1665,8 +1665,58 @@ test("only original three-nest objectives have a four-guard living cap", () => {
     assert.equal(tick(), 1, "removing a guard frees one slot");
     assert.equal(c.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === 11).length, 4);
     assert.equal(tick(), 0);
+    task.SpiderlingsNestRosterTarget = 6;
+    assert.equal(tick(), 1, "new mixed crews share the same parent reinforcement pool");
+    assert.equal(tick(), 1);
+    assert.equal(c.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === 11).length, 6);
+    assert.equal(tick(), 0, "the mixed crew's two patrol guards still occupy their parent slots");
+    c.KDModSettings.Spiderlings = { spiderlingsNestReinforcementCap: "3" };
+    assert.equal(tick(), 0, "the player's lower nest cap remains authoritative");
+    c.KDModSettings.Spiderlings.spiderlingsNestReinforcementCap = "6";
     c.KDMapData.Entities = [ordinary, ...children(12, 4)];
     assert.equal(tick(), 1, "new ordinary nests keep the configured six-child cap");
+});
+
+test("mixed nest crews replace missing roles through paid reinforcement without bypassing zero weights", () => {
+    const nest = {
+        id: 11,
+        x: 2,
+        y: 2,
+        hp: 12,
+        aware: true,
+        SpiderlingsNestRosterTarget: 6,
+        Enemy: { name: "NestEntrance", visionRadius: 30 },
+    };
+    const born = [];
+    const assigned = [];
+    let rolls = 0;
+    const kd = loadCoreRuntime({
+        KDMapData: { Entities: [nest] },
+        KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
+        KDHostile: () => true,
+        KinkyDungeonCheckLOS: () => true,
+        KDGetFaction: () => "Enemy",
+        KDRandom: () => (rolls++, 0),
+        KinkyDungeonSummonEnemy(x, y, name) {
+            const child = { id: 100, x, y, hp: 1, Enemy: { name } };
+            born.push(child);
+            kd.KDMapData.Entities.push(child);
+            return [child];
+        },
+    });
+    kd.Spiderlings.HuntingGrounds = {
+        missingRosterNames: () => ["MageSpiderlings"],
+        assignRosterRole(child, parent) {
+            assigned.push([child.SpiderlingsNestParentID, parent.id]);
+        },
+    };
+    kd.KDModSettings.Spiderlings = { spiderlingsNestMageWeight: 0 };
+    assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 0);
+    assert.equal(rolls, 0, "a disabled missing role does not roll another species or spend an attempt");
+    kd.KDModSettings.Spiderlings.spiderlingsNestMageWeight = 2;
+    assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 1);
+    assert.equal(born[0].Enemy.name, "MageSpiderlings");
+    assert.deepEqual(assigned, [[11, 11]], "newborn role assignment sees the real shared parent");
 });
 
 test("NestEntrance registration removes recurring spells but preserves death summons", () => {
@@ -1960,13 +2010,13 @@ test("native wandering respawn queues stop at the map cap without consuming defe
 test("floor weight defaults preserve saved zero, previous defaults and custom values", () => {
     const kd = nativePopulationRuntime();
     for (const [refvar, fallback] of [
-        ["spiderlingsInfestationWeight", "50"],
-        ["spiderlingsHuntingGroundsWeight", "1000"],
+        ["spiderlingsInfestationWeight", "200"],
+        ["spiderlingsHuntingGroundsWeight", "1500"],
     ]) {
         const config = kd.KDModConfigs.Spiderlings.find((entry) => entry.type === "string" && entry.refvar === refvar);
         assert.equal(config.default, fallback);
         assert.equal(kd.Spiderlings.getSetting(refvar), fallback);
-        for (const saved of ["0", "750", "120"]) {
+        for (const saved of ["0", "50", "1000", "750", "120"]) {
             kd.KDModSettings.Spiderlings[refvar] = saved;
             kd.KDEventMapGeneric.afterModConfig.Spiderlings();
             kd.KDEventMapGeneric.afterModSettingsLoad.Spiderlings();
@@ -1982,6 +2032,30 @@ test("new settings allow exactly 25 living spiders by default", () => {
     assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Tunneler", 1, 1).length, 0);
     kd.KDMapData.Entities[0].hp = 0;
     assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Tunneler", 1, 1).length, 1);
+});
+
+test("themed map budgets share the real population pool and honor saved lower limits", () => {
+    const kd = nativePopulationRuntime();
+    const map = kd.KDMapData;
+    const settings = kd.KDModSettings.Spiderlings;
+    map.MapMod = "SpiderlingsHuntingGrounds";
+    map.SpiderlingsPopulationPlan = { kind: map.MapMod, cap: 30 };
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 25);
+    settings.spiderlingsMapPopulationCap = "0";
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 30);
+    assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Spinner", 40, 1).length, 30);
+    assert.equal(kd.Spiderlings.availableSpiderlingSlots(), 0);
+    map.Entities[0].hp = 0;
+    assert.equal(kd.Spiderlings.availableSpiderlingSlots(), 1);
+    assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Jumper", 2, 1).length, 1);
+    settings.spiderlingsMapPopulationCap = "12";
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 12);
+    assert.equal(map.Entities.length, 31, "changing a budget never deletes an invested crew");
+    map.MapMod = "";
+    settings.spiderlingsMapPopulationCap = "0";
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 0, "a stale plan cannot limit a different floor");
+    map.Entities = [];
+    assert.equal(kd.Spiderlings.availableSpiderlingSlots(), Infinity);
 });
 
 test("map cap settings persist, accept zero as unlimited and preserve existing over-cap populations", () => {

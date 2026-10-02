@@ -24,6 +24,9 @@ const scenarios = [
     ["owned-effects", "owned-effects.js"],
     ["normal-helpers", "normal-helpers.js"],
     ...[
+        "npc-cocoon-visuals",
+        "weapon-charge",
+        "crew-native-duties",
         "native-escape",
         "adhesion-offense",
         "adhesion-recovery",

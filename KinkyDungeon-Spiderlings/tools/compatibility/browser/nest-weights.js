@@ -25,11 +25,11 @@
             expect(
                 JSON.stringify(defaults) ===
                     JSON.stringify({
-                        Spinner: 4,
-                        Jumper: 1,
-                        WebCaster: 2,
+                        Spinner: 8,
+                        Jumper: 2,
+                        WebCaster: 4,
                         Tunneler: 1,
-                        MageSpiderlings: 1,
+                        MageSpiderlings: 2,
                     }),
                 `Fresh initialized weights are wrong: ${JSON.stringify(defaults)}`,
             );
@@ -72,7 +72,7 @@
             Spiderlings.ensureModSettings();
             const saved = Spiderlings.getSharedSpiderlingWeights();
             expect(
-                saved.Spinner === 0 && saved.Jumper === 7 && saved.WebCaster === 2,
+                saved.Spinner === 0 && saved.Jumper === 7 && saved.WebCaster === 4,
                 "Explicit saved zero/custom values were replaced",
             );
             let calls = 0;

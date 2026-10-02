@@ -152,7 +152,7 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,당신은 TargetRestraint�
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,당신은 TargetRestraint의 가장자리를 더듬으며 서로 달라붙은 거미줄 층을 떼어 내려고 한다.
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,당신은 TargetRestraint의 가장자리를 더듬으며 서로 달라붙은 거미줄 층을 떼어 내려고 한다.
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,당신은 TargetRestraint의 바깥 껍질을 벗겨 열고 느슨해진 고치를 챙긴다.
-KDModButtonspiderlingsMapPopulationCap,맵당 새끼 거미 상한 (0: 무제한)
+KDModButtonspiderlingsMapPopulationCap,"움직이는 어린 거미의 전체 한도 (0은 이 한도 해제, 테마 층의 정원은 유지)"
 KinkyDungeonStatSpiderlingsCocoonStart,고치 속에서 깨어나다
 KinkyDungeonStatDescSpiderlingsCocoonStart,"부드러운 고치 안에서 깨어난다. 촘촘히 겹친 거미줄이 몸을 감싸고, 살짝 움직일 때마다 실이 당겨진다."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,새끼 거미 도약자가 상대의 발밑을 바라보며 몸을 낮추고 뛸 준비를 한다.
@@ -215,14 +215,14 @@ KinkyDungeonInventoryItemSpiderlingTome,비단 속박의 마도서
 KinkyDungeonInventoryItemSpiderlingStaff,비단 직조자의 지팡이
 KinkyDungeonSpecialSpiderlingTome,천 가닥 고치
 KinkyDungeonSpecialSpiderlingStaff,비단 올가미
-KinkyDungeonInventoryItemSpiderlingTomeDesc,가는 거미줄이 책등을 지나 펼쳐진 책장을 감싼다. 짜인 주문을 읽으면 흩어진 실이 중심으로 모인다.
-KinkyDungeonInventoryItemSpiderlingStaffDesc,지팡이 끝의 그물에 희미한 빛이 머문다. 휘두르면 가느다란 실이 뻗어 대상을 여러 겹으로 감싼다.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"주손이나 보조 손에 들면 속박 강도 +20%. 마나 4, 사거리 6, 2턴 뒤 발동, 재사용 대기 8턴. 21칸에 영향을 주며 중심에 가까울수록 피해와 속박이 강해진다. 벽에 막힌다. 이 무기의 실만으로 적을 무력하게 만들면 전신을 감싸는 고치가 된다. 적이 벗어날수록 고치가 풀려 다시 실로 흩어진다."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"마나 2, 사거리 6, 재사용 대기 3턴. 처음 맞힌 적을 속박한 뒤 최대 3턴 동안 둔화시킨다. 실은 벽을 통과하지 못한다. 이 무기의 실만으로 대상을 무력하게 만들면 전신을 감싸는 고치가 된다. 대상이 벗어날수록 고치가 풀려 다시 실로 흩어진다."
+KinkyDungeonInventoryItemSpiderlingTomeDesc,부드러운 거미줄이 책등을 지나 책장 위에 가만히 펼쳐져 있다.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,지팡이 끝의 고운 그물에 희미한 빛이 머문다.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"책장을 넘기면 끈적한 실이 길게 늘어나고, 책을 닫으면 다시 책등으로 모인다. 손끝으로 건드리면 희미한 맥동이 느껴진다."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"가느다란 실이 팽팽하게 당겨진 채 지팡이 끝에서 드리워져 있다. 은은한 빛이 실을 따라 손잡이로 흐르며, 당길 때마다 깜박인다."
 ItemPickupSpiderlingTome,비단 속박의 마도서를 주웠다.
 ItemPickupSpiderlingStaff,비단 직조자의 지팡이를 주웠다.
-KDPrereqFailSpiderlingsCocoonConvergence,마나 4가 필요하다. 재사용 대기 시간도 끝나야 한다.
-KDPrereqFailSpiderlingsSilkenSnare,마나 2가 필요하다. 재사용 대기 시간도 끝나야 한다.
+KDPrereqFailSpiderlingsCocoonConvergence,마도서를 손에 들고 이번에 실을 짤 마나가 충분해야 한다. 원이 닫힌 뒤에는 재사용 대기가 끝나야 새 원을 짤 수 있다.
+KDPrereqFailSpiderlingsSilkenSnare,지팡이를 손에 들고 마나가 충분하며 재사용 대기가 끝나야 한다.
 KinkyDungeonSpellCastSpiderlingsCocoonConvergence,거미줄로 원을 짰다. 실이 중심으로 모이기 시작한다.
 KinkyDungeonSpellCastSpiderlingsSilkenSnare,끈끈한 비단실을 대상에게 날렸다.
 KinkyDungeonSpellSpiderlingsCocoonConvergence,천 가닥 고치
@@ -252,3 +252,9 @@ SpiderlingsRecoveryRemove,풀기 ({cost})
 SpiderlingsRecoveryStruggle,몸부림 ({cost})
 SpiderlingsRecoveryStrandLoosened,선택한 견인 실을 느슨하게 했습니다.
 SpiderlingsRecoveryStrandSevered,선택한 견인 실에서 벗어났습니다.
+KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"추가로 짤 때마다 기본 마나 20을 소비한다. 속박 배율: 1 / 1.5 / 4.5. 최초로 짠 시점부터 재사용 대기: 8 / 9 / 12턴. 유효한 명중은 원마다 한 번만 체력 6을 돌려준다. 먹잇감의 첫 완전한 실 고치는 마나를 돌려주며, 원 전체에서 실제 소비 마나의 절반, 최대 20까지다."
+KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,6칸 이내에 실의 원을 짠다. 두 번 더 행동하면 오므라들며 중심에 가까울수록 강하게 속박한다. 닫히기 전에 같은 능력을 다시 사용하면 같은 원을 최대 3단계까지 더 짤 수 있다. 추가할 때마다 마나와 행동 한 번을 소비하고 닫히는 시점이 1턴 늦어진다. 벽은 실을 막는다.
+KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,6칸 이내의 첫 적대 대상에게 끈적한 실을 보내 속박하고 둔화시킨다. 벽은 실을 막는다. 재사용 대기: 3턴. 유효한 명중은 체력 6을 돌려준다. 먹잇감의 첫 완전한 실 고치는 실제 소비 마나의 절반까지 돌려준다.
+KDSpiderlingsWeaponSustainSpiderlingTome,"주손이나 보조 손에 들면 속박 강도 +20%. 유효한 근접 명중은 실제 소비 체력의 20%, 기본값 최대 3을 돌려준다. 먹잇감마다 근접 공격으로 처음 실 고치에 감쌌을 때 기본값 마나 7.5를 한 번만 돌려준다."
+KDSpiderlingsWeaponSustainSpiderlingStaff,"유효한 근접 명중은 실제 소비 체력의 20%, 기본값 최대 6을 돌려준다. 먹잇감마다 근접 공격으로 처음 실 고치에 감쌌을 때 기본값 마나 7.5를 한 번만 돌려준다."
+KDSpiderlingsWeaponWeaveStatus,짜기 STAGE/3. 다음 마나 소비: COST. 새 원까지 COOLDOWN턴.
