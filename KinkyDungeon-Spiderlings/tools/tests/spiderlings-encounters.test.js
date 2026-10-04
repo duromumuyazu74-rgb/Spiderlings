@@ -2017,8 +2017,8 @@ test("native wandering respawn queues stop at the map cap without consuming defe
 test("floor weight defaults preserve saved zero, previous defaults and custom values", () => {
     const kd = nativePopulationRuntime();
     for (const [refvar, fallback] of [
-        ["spiderlingsInfestationWeight", "200"],
-        ["spiderlingsHuntingGroundsWeight", "1500"],
+        ["spiderlingsInfestationWeight", "180"],
+        ["spiderlingsHuntingGroundsWeight", "1400"],
     ]) {
         const config = kd.KDModConfigs.Spiderlings.find((entry) => entry.type === "string" && entry.refvar === refvar);
         assert.equal(config.default, fallback);

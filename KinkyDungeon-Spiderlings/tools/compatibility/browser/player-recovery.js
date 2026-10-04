@@ -247,6 +247,83 @@
         rows.push({ mode: "moving-recovery", count, trace });
     }
 
+    {
+        setup("crowded-core-recovery");
+        for (let y = 2; y < 23; y++)
+            for (let x = 2; x < 28; x++) {
+                KinkyDungeonMapSet(x, y, "0");
+                KinkyDungeonTilesDelete(`${x},${y}`);
+            }
+        KDMovePlayer(10, 15, false);
+        const actors = [spawn("Spinner", 10, 11), spawn("Spinner", 11, 14)],
+            blocker = spawn("WebCaster", 10, 10),
+            field = Spiderlings.SpinnerNativeField,
+            recovery = Spiderlings.SpinnerRecovery;
+        blocker.movePoints = -1000;
+        blocker.Enemy = { ...blocker.Enemy, noAttack: true, spells: [] };
+        blocker.modified = true;
+        for (const actor of [...actors, blocker]) actor.hostile = 999;
+        const encounter = field.initializeEnclosure({
+            compositeId: "crowded-return",
+            owners: actors.map((a) => a.id),
+            built: true,
+            layers: [
+                {
+                    id: "crowded-inner",
+                    vertices: [
+                        { x: 8, y: 8 },
+                        { x: 12, y: 8 },
+                        { x: 12, y: 12 },
+                        { x: 8, y: 12 },
+                    ],
+                    gate: { x: 10, y: 12 },
+                },
+            ],
+        });
+        expect(encounter.topology.fields["crowded-inner"], "Crowded fixture enclosure was rejected");
+        encounter.topology = Spiderlings.SpinnerTopology.damageAt(encounter.topology, {
+            cell: { x: 10, y: 12 },
+            damage: 1000,
+        }).state;
+        field.reconcile();
+        KDMovePlayer(10, 12, false);
+        encounter.builders = {};
+        Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
+        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
+        KDGameData[recovery.DEPARTURE] = {
+            version: 1,
+            compositeId: "crowded-return",
+            eligibleSourceIds: actors.map((a) => a.id),
+        };
+        for (const actor of actors) expect(recovery.hit(actor), "Crowded return could not attach native sources");
+        const trace = [];
+        for (let i = 0; i < 35; i++) {
+            await turn();
+            trace.push({
+                i,
+                player: { x: KDPlayer().x, y: KDPlayer().y },
+                actors: actors.map((a) => ({ x: a.x, y: a.y })),
+                phase: encounter.topology.fields["crowded-inner"].phase,
+            });
+            if (encounter.topology.fields["crowded-inner"].phase === "sealed") break;
+        }
+        expect(
+            trace.slice(0, 3).some((step) => step.actors[1].x !== 11 || step.actors[1].y !== 14),
+            "Nearby helper stayed behind the player",
+        );
+        expect(
+            field.containsComposite("crowded-return", KDPlayer()) && !recovery.state(),
+            `Crowded core prevented native return: ${JSON.stringify(trace)}`,
+        );
+        expect(
+            encounter.topology.fields["crowded-inner"].phase === "sealed",
+            `Returned prey was not sealed in again: ${JSON.stringify(trace)}`,
+        );
+        expect(blocker.x === 10 && blocker.y === 10, "Fixture blocker unexpectedly vacated the core");
+        rows.push({ mode: "crowded-core-return", trace });
+        images["crowded-core-return"] = await photo();
+    }
+
     for (const preferNPC of [false, true]) {
         setup(`recovery-automatic-departure-${preferNPC}`);
         KDMovePlayer(14, 10, false);

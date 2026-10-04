@@ -631,25 +631,61 @@
         const goal = destination(recovery);
         if (!goal || !(delta > 0)) return false;
         const leading = sameId(source.id, recovery.executorId);
-        if (!leading && Math.max(Math.abs(source.x - player().x), Math.abs(source.y - player().y)) <= 2) return false;
-        let endpoint = leading ? goal : player();
-        if (leading && source.x === goal.x && source.y === goal.y)
-            endpoint = { x: goal.x + Math.sign(goal.x - player().x), y: goal.y + Math.sign(goal.y - player().y) };
-        const path = KinkyDungeonFindPath(
-            source.x,
-            source.y,
-            endpoint.x,
-            endpoint.y,
-            true,
-            false,
-            false,
-            KinkyDungeonMovableTilesEnemy,
-            undefined,
-            undefined,
-            undefined,
-            source,
+        const graph = api.SpinnerNativeField?.state?.()?.topology;
+        const occupied = (cell) => {
+            const entity = KinkyDungeonEntityAt(cell.x, cell.y);
+            return entity && entity !== source && !api.SpinnerNativeField?.isOwnedProxy?.(entity);
+        };
+        // All attached workers head into the same core. Native pathfinding accepts
+        // occupied end cells, so choose a free endpoint before asking it for a route.
+        // A one-cell interior needs one paid step beyond its center to pull the
+        // player into the vacated cell through the native 1.5-cell tether.
+        const beyondCore =
+            leading && source.x === goal.x && source.y === goal.y
+                ? { x: goal.x + Math.sign(goal.x - player().x), y: goal.y + Math.sign(goal.y - player().y) }
+                : undefined;
+        const endpoints = [];
+        for (let dy = -1; dy <= 1; dy++)
+            for (let dx = -1; dx <= 1; dx++) {
+                const cell = { x: goal.x + dx, y: goal.y + dy };
+                if (
+                    (cell.x === player().x && cell.y === player().y) ||
+                    occupied(cell) ||
+                    (leading && cell.x === source.x && cell.y === source.y) ||
+                    (goal.compositeId &&
+                        !api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, cell) &&
+                        !(beyondCore && cell.x === beyondCore.x && cell.y === beyondCore.y))
+                )
+                    continue;
+                endpoints.push(cell);
+            }
+        const coreDistance = (cell) => (cell.x - goal.x) ** 2 + (cell.y - goal.y) ** 2;
+        const forward = (cell) => (cell.x - goal.x) * (goal.x - player().x) + (cell.y - goal.y) * (goal.y - player().y);
+        endpoints.sort(
+            (a, b) => coreDistance(a) - coreDistance(b) || forward(b) - forward(a) || a.y - b.y || a.x - b.x,
         );
-        const next = path?.find((cell) => cell.x !== source.x || cell.y !== source.y);
+        let next;
+        for (const endpoint of endpoints) {
+            if (endpoint.x === source.x && endpoint.y === source.y) break;
+            const path = KinkyDungeonFindPath(
+                source.x,
+                source.y,
+                endpoint.x,
+                endpoint.y,
+                true,
+                true,
+                false,
+                KinkyDungeonMovableTilesEnemy,
+                undefined,
+                undefined,
+                undefined,
+                source,
+            );
+            const step = path?.find((cell) => cell.x !== source.x || cell.y !== source.y);
+            if (!step || occupied(step) || (step.x === player().x && step.y === player().y)) continue;
+            next = step;
+            break;
+        }
         let moved = false;
         if (
             next &&
@@ -668,7 +704,12 @@
         if (leading && bindNativeTether(recovery)) {
             const ownerDistance = Math.max(Math.abs(source.x - goal.x), Math.abs(source.y - goal.y)),
                 playerDistance = Math.max(Math.abs(player().x - goal.x), Math.abs(player().y - goal.y));
-            if (ownerDistance < playerDistance && (moved || !next)) player().leash.length = 1.5;
+            const atCore = goal.compositeId
+                ? api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, source)
+                : source.x === goal.x && source.y === goal.y;
+            // An obstructed route is not arrival: tighten only after paid progress
+            // or when the executor already stands inside the destination.
+            if (ownerDistance < playerDistance && (moved || atCore)) player().leash.length = 1.5;
             KinkyDungeonUpdateTether(delta, true, player());
         }
         return moved;

@@ -117,7 +117,7 @@ test("new Infestation requests one field preset after native population and leav
 test("native modifier selects eligible floors and adds five grouped nests alongside native population", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsInfestation;
-    assert.equal(mod.weight, 200);
+    assert.equal(mod.weight, 180);
     assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
     assert.equal(mod.filter({ y: 5 }), 0);
@@ -291,10 +291,10 @@ test("native journey rejects a cached infestation through the first boss floor a
     assert.equal(eligible.Faction, "Bandit", "Infestation preserves the native primary faction");
 });
 
-test("infestation defaults to weight two hundred without forcing a faction", () => {
+test("infestation defaults to weight one hundred eighty without forcing a faction", () => {
     const r = nativeJourneyRuntime();
     const mods = r.context.KDMapMods;
-    assert.equal(mods.SpiderlingsInfestation.weight, 200);
+    assert.equal(mods.SpiderlingsInfestation.weight, 180);
     assert.equal(mods.Slime.weight, 50);
     assert.equal(mods.Mold.weight, 50);
     assert.equal(mods.SpiderlingsInfestation.faction, undefined);
