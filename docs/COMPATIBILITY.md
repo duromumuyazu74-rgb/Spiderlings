@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.93.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.94.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.94 Hunting Grounds population and staffed fields (2026-10-05)
+
+Hunting Grounds now uses the global map spider setting plus twenty, including zero becoming twenty. Fresh maps fill spider capacity, retain three complete nest crews, add patrol crews and target five elite Maids, one Dressmaker and one Nurse at the default cap of 45 spiders. Existing native guards count toward prey quotas, including shop guards; protected scene actors remain. Generic boss templates no longer bypass the ecology. Crew members reinforce an observed NPC, acquire live targets through their own native perception, and investigate shared old coordinates for fewer than four turns. Active nest defense takes priority. Native lethal damage and complete-silk vulnerability remain.
+
+Two required 9-by-9 outer capture fields use the existing Spinner pairs from their nest crews. Terrain planning preserves outside routes, native setpiece reservations protect the sites, and TileMaze retries restore shared placement lists in place. Native walkable floor variants remain valid. Inner construction and closure still require paid actions. Saved maps receive the cap and hunting behavior without reseeding residents or rebuilding fields.
+
+The package contains 170 entries and 24,839,328 bytes, SHA-256 `a05e5e459ed1530b8df5a70fb72a9d17b70a360a4f44162f6bbe08ed14b641ae`. The earlier unpublished diagnostic candidate is retained separately; Test.93 was not replaced. Fault-injection and objective fixtures use a native seed that can accommodate the required large fields. Budget failure now occupies real spider slots before crew creation, preserving the assertions for cleanup and existing actors.
+
+The final ZIP passed all 47 native stages per game, including seven locale loads, on KD 5.4.92 and official 5.5.3 at commit `9dbf8c666ed4e158b4416f125d1d8d043b61ac74`. Upstream was fetched at `2026-10-04T15:53:17.411Z`. Full evidence is `<cache>/runs/2026-10-04T15-53-17-426Z-0.92.36-test.94/acceptance.json`. Each version sampled thirty Hunting Grounds maps across three regions. Respectively 13 and 14 maps retained the theme, all with 45 spiders and both staffed large fields; other maps cancelled for insufficient legal space. Active maps had 80.36–86.54% spiders among independent mobile combat actors, including shop guards. Native cooperation required two actual attackers to add silk to the same NPC. The existing desktop process and user save were not changed.
+
+Repository checks, 12 policy tests, 558 public tests, the complete 879-test local watcher and final package verification passed. The collector recorded unchanged source and ZIP during checks. Delivery evidence is `.scratch/delivery/2026-10-04T16-01-41-079Z-waPLhx/REPORT.md`. Only documentation of these results was appended afterward, followed by repository and diff checks.
+
+An isolated sequential comparison used the final ZIP on 5.5.3, injecting only the old WebMobility for the comparison arm. Four active maps each had 45 spiders and matching initial fields/populations; two unsuitable maps cancelled. Observed mean turn time was 40.26 to 37.19 ms, with weighted-path CPU samples of 1864 to 1241 ms. Native rendering consumes shared randomness, so subsequent combat trajectories differed. The maximum sampled turn increased from 80.4 to 107.1 ms; this does not establish that all stutter is gone. See the [detailed fix and performance record](spiderlings-test94-hunting-grounds.zh-CN.md).
 
 ## Test.93 field placement without combat waiting (2026-10-04)
 

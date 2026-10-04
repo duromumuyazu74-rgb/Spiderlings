@@ -11,10 +11,15 @@
             ["SpiderlingsHuntingGrounds", 3],
             ["SpiderlingsInfestation", 5],
         ]) {
+            const seed =
+                modifier === "SpiderlingsHuntingGrounds"
+                    ? "normal-acceptance-grv-5-6"
+                    : `integration-objective-${modifier}`;
+            globalThis.compatibilitySetSeed(seed);
             KinkyDungeonStartNewGame(false);
             KDToggles.Sound = false;
             MiniGameKinkyDungeonLevel = 5;
-            KDsetSeed(`integration-objective-${modifier}`);
+            globalThis.compatibilitySetSeed(seed);
             KinkyDungeonCreateMap(
                 KinkyDungeonMapParams.grv,
                 "",
@@ -22,8 +27,8 @@
                 5,
                 false,
                 false,
-                undefined,
-                { x: 0, y: 5 },
+                "Maidforce",
+                { x: 6, y: 5 },
                 false,
             );
             const map = KDMapData,

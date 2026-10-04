@@ -1050,6 +1050,51 @@ test("one mapgen outer body retains a real crew, leaves paid inner work and surv
     );
 });
 
+test("authored hunting sites receive their own fresh crews before nearby substitute enclosures", () => {
+    const sites = [
+            { x: 10, y: 10, radius: 4 },
+            { x: 26, y: 10, radius: 4 },
+        ],
+        actors = [
+            spinner(1, 2, 10, { SpiderlingsPresetFieldCenter: sites[0] }),
+            spinner(2, 3, 10, { SpiderlingsPresetFieldCenter: sites[0] }),
+            spinner(3, 25, 10, { SpiderlingsPresetFieldCenter: sites[1] }),
+            spinner(4, 27, 10, { SpiderlingsPresetFieldCenter: sites[1] }),
+            spinner(5, 5, 5, { SpiderlingsNestParentID: 90 }),
+            spinner(6, 6, 5, { SpiderlingsNestParentID: 90 }),
+        ],
+        r = runtime(actors),
+        c = r.context;
+    Object.assign(c.KDMapData, {
+        GridWidth: 38,
+        GridHeight: 24,
+        StartPosition: { x: 1, y: 12 },
+        EndPosition: { x: 36, y: 12 },
+    });
+    c.KinkyDungeonMapGet = (x, y) => (x > 0 && y > 0 && x < 37 && y < 23 ? "." : "1");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 1, y: 12 });
+    const before = actors.map(({ id, x, y }) => ({ id, x, y })),
+        result = c.Spiderlings.SpinnerAI.initializeMapgenField({ maxFields: 2, preferredSites: sites });
+    assert.equal(result.status, "placed");
+    const fields = [...result.fields].sort((a, b) => a.center.x - b.center.x);
+    assert.deepEqual(
+        plain(fields.map(({ center }) => center)),
+        sites.map(({ x, y }) => ({ x, y })),
+    );
+    assert.ok(result.fields.every((field) => field.radius === 4));
+    const encounter = c.Spiderlings.SpinnerNativeField.state();
+    for (let index = 0; index < sites.length; index++) {
+        const field = fields[index],
+            members = encounter.ai.groups[field.groupId].memberIds;
+        assert.deepEqual([...members].sort(), index === 0 ? [1, 2] : [3, 4]);
+    }
+    assert.deepEqual(
+        actors.filter((actor) => actor.id < 1000).map(({ id, x, y }) => ({ id, x, y })),
+        before,
+    );
+    assert.equal(encounter.topology.actionLog.length, 0);
+});
+
 test("mapgen field rejects solo crews and downgrades protected large sites without occupying protected terrain", () => {
     for (const variant of ["solo", "protected"]) {
         const r = runtime(variant === "solo" ? [spinner(1, 5, 3)] : [spinner(1, 5, 3), spinner(2, 5, 9)]);

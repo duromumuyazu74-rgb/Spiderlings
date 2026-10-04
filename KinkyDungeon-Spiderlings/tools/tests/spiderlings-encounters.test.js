@@ -2041,25 +2041,25 @@ test("new settings allow exactly 25 living spiders by default", () => {
     assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Tunneler", 1, 1).length, 1);
 });
 
-test("themed map budgets share the real population pool and honor saved lower limits", () => {
+test("Hunting Grounds summons use the setting plus twenty and preserve living over-cap crews", () => {
     const kd = nativePopulationRuntime();
     const map = kd.KDMapData;
     const settings = kd.KDModSettings.Spiderlings;
     map.MapMod = "SpiderlingsHuntingGrounds";
-    map.SpiderlingsPopulationPlan = { kind: map.MapMod, cap: 30 };
-    assert.equal(kd.Spiderlings.getMapPopulationCap(), 25);
-    settings.spiderlingsMapPopulationCap = "0";
-    assert.equal(kd.Spiderlings.getMapPopulationCap(), 30);
-    assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Spinner", 40, 1).length, 30);
+    map.SpiderlingsPopulationPlan = { kind: map.MapMod, cap: 25 };
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 45);
+    assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Spinner", 50, 1).length, 45);
     assert.equal(kd.Spiderlings.availableSpiderlingSlots(), 0);
     map.Entities[0].hp = 0;
     assert.equal(kd.Spiderlings.availableSpiderlingSlots(), 1);
     assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Jumper", 2, 1).length, 1);
     settings.spiderlingsMapPopulationCap = "12";
-    assert.equal(kd.Spiderlings.getMapPopulationCap(), 12);
-    assert.equal(map.Entities.length, 31, "changing a budget never deletes an invested crew");
-    map.MapMod = "";
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 32);
+    assert.equal(kd.KinkyDungeonSummonEnemy(12, 12, "Jumper", 1, 1).length, 0);
+    assert.equal(map.Entities.length, 46, "changing a budget never deletes an invested crew");
     settings.spiderlingsMapPopulationCap = "0";
+    assert.equal(kd.Spiderlings.getMapPopulationCap(), 20);
+    map.MapMod = "";
     assert.equal(kd.Spiderlings.getMapPopulationCap(), 0, "a stale plan cannot limit a different floor");
     map.Entities = [];
     assert.equal(kd.Spiderlings.availableSpiderlingSlots(), Infinity);

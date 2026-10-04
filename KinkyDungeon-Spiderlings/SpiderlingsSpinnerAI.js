@@ -609,6 +609,43 @@
         return cells;
     }
 
+    function enclosureGeometryFor(snapshot, includeDoors = false) {
+        const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
+            passable = new Set(
+                (snapshot.cells || [])
+                    .filter((cell) => (includeDoors ? cell.walkable : cell.floor) && !cell.locked)
+                    .map(cellKey),
+            ),
+            neighbors = new Map();
+        for (const key of passable) {
+            const [x, y] = key.split(",").map(Number);
+            neighbors.set(
+                key,
+                DIRECTIONS.flatMap((direction) => {
+                    const next = `${x + direction.x},${y + direction.y}`;
+                    return passable.has(next)
+                        ? [
+                              {
+                                  key: next,
+                                  corners:
+                                      direction.x && direction.y
+                                          ? [`${x + direction.x},${y}`, `${x},${y + direction.y}`]
+                                          : undefined,
+                              },
+                          ]
+                        : [];
+                }),
+            );
+        }
+        return {
+            byKey,
+            passable,
+            neighbors,
+            routeKeys: new Set(routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey)),
+            gateCache: new Map(),
+        };
+    }
+
     function reachableGate(
         snapshot,
         center,
@@ -688,10 +725,10 @@
             candidates = [];
         if (!origin) return candidates;
         // Prefer nearby work, then search the connected map before abandoning enclosure construction.
-        for (const nearby of [true, false]) {
+        for (const nearby of geometry?.candidateCenters ? [null] : [true, false]) {
             if (candidates.length) break;
-            for (const center of snapshot.cells || []) {
-                if (distance(focus, center) <= 6 !== nearby) continue;
+            for (const center of geometry?.candidateCenters || snapshot.cells || []) {
+                if (nearby !== null && distance(focus, center) <= 6 !== nearby) continue;
                 if (observation && !nearby && !approach.some((cell) => distance(cell, center) <= 2)) continue;
                 if (work) {
                     work.candidateCells++;
@@ -699,7 +736,7 @@
                 }
                 if (!Number.isFinite(distances(origin, center))) continue;
                 const radius = [4, 3, 2, 1]
-                        .filter((size) => size >= minimumRadius)
+                        .filter((size) => size >= minimumRadius && (!center.radius || size === center.radius))
                         .find(
                             (size) =>
                                 [
@@ -1119,18 +1156,21 @@
         const encounter = api.SpinnerNativeField.ensureMap({ scenario: "mapgen-enclosure" }),
             ai = ensureAI(encounter, { mapSeed: mapSeed(), mapIdentity: mapIdentity() }),
             distances = routeDistances(snapshot, undefined, new Set(), options.maxFields > 1),
+            geometry = enclosureGeometryFor(snapshot, options.maxFields > 1),
+            authoredSites = options.maxFields > 1 ? options.preferredSites || [] : [],
             fields = [],
             attempted = new Set(),
             maximum = Math.max(1, Math.min(3, options.maxFields || 1));
         encounter.autonomous = true;
         auditGroups(ai, KDMapData.Entities, { mapSnapshot: snapshot, routeDistances: distances });
+        const assignedSites = new Set(
+            KDMapData.Entities.filter((entity) => entity.SpiderlingsPresetFieldCenter).map((entity) =>
+                cellKey(entity.SpiderlingsPresetFieldCenter),
+            ),
+        );
         while (fields.length < maximum) {
             const occupied =
                 maximum > 1 ? new Set(KDMapData.Entities.filter((entity) => entity.hp > 0).map(cellKey)) : undefined;
-            const passable =
-                maximum > 1
-                    ? new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey))
-                    : undefined;
             const choices = Object.values(ai.groups)
                 .filter(
                     (group) =>
@@ -1141,12 +1181,18 @@
                         .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
                         .filter((entity) => eligibleSpinner(entity) && !sourceBusy(entity));
                     if (members.length < 2) return [];
+                    const assigned = members[0].SpiderlingsPresetFieldCenter,
+                        candidateCenters = authoredSites.length
+                            ? authoredSites.filter((site) =>
+                                  assigned ? cellKey(site) === cellKey(assigned) : !assignedSites.has(cellKey(site)),
+                              )
+                            : undefined;
                     return analyzeEnclosureCandidates(
                         snapshot,
                         { ...group, members },
                         distances,
                         undefined,
-                        { occupied, passable },
+                        { ...geometry, occupied, candidateCenters },
                         2,
                     ).map((candidate) => ({
                         group,
@@ -2046,40 +2092,7 @@
             },
             currentEnclosureGeometry = () => {
                 if (!enclosureGeometry) {
-                    const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
-                        passable = new Set(
-                            (snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey),
-                        ),
-                        neighbors = new Map();
-                    for (const key of passable) {
-                        const [x, y] = key.split(",").map(Number);
-                        neighbors.set(
-                            key,
-                            DIRECTIONS.flatMap((direction) => {
-                                const next = `${x + direction.x},${y + direction.y}`;
-                                return passable.has(next)
-                                    ? [
-                                          {
-                                              key: next,
-                                              corners:
-                                                  direction.x && direction.y
-                                                      ? [`${x + direction.x},${y}`, `${x},${y + direction.y}`]
-                                                      : undefined,
-                                          },
-                                      ]
-                                    : [];
-                            }),
-                        );
-                    }
-                    enclosureGeometry = {
-                        byKey,
-                        passable,
-                        neighbors,
-                        routeKeys: new Set(
-                            routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey),
-                        ),
-                        gateCache: new Map(),
-                    };
+                    enclosureGeometry = enclosureGeometryFor(snapshot);
                 }
                 return enclosureGeometry;
             };

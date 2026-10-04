@@ -176,3 +176,67 @@ test("completed crew initialization cannot duplicate a saved roster even with un
     assert.equal(r.seed().ok, false);
     assert.equal(JSON.stringify(c.KDMapData), before);
 });
+
+test("Hunting Grounds adds twenty slots to the setting and ignores obsolete saved ceilings", () => {
+    const { c, api, settings } = runtime("SpiderlingsHuntingGrounds");
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 45);
+    assert.equal(c.KDMapData.SpiderlingsPopulationPlan.cap, 45);
+    for (const [setting, expected] of [
+        [10, 30],
+        [50, 70],
+        [0, 20],
+    ]) {
+        settings.cap = setting;
+        c.KDMapData.SpiderlingsPopulationPlan.cap = 25;
+        assert.equal(c.Spiderlings.getMapPopulationCap(), expected);
+        api.prepareFloor("SpiderlingsHuntingGrounds");
+        assert.equal(c.KDMapData.SpiderlingsPopulationPlan.cap, expected);
+    }
+    c.KDMapData.MapMod = "";
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 0);
+    assert.equal(c.Spiderlings.availableSpiderlingSlots(), Infinity);
+});
+
+test("two large fields receive their original nest Spinner pairs even at the minimum hunting cap", () => {
+    const { c, api, nests, settings, seed } = runtime("SpiderlingsHuntingGrounds");
+    settings.cap = 0;
+    api.prepareFloor("SpiderlingsHuntingGrounds");
+    const sites = [
+        { x: 20, y: 20, radius: 4 },
+        { x: 30, y: 30, radius: 4 },
+    ];
+    const result = seed({ sites });
+    assert.equal(result.ok, true);
+    assert.equal(result.coreIds.length, 18);
+    assert.equal(result.fieldIds.length, 4);
+    assert.equal(result.patrolIds.length, 0);
+    for (const [index, site] of sites.entries()) {
+        const pair = c.KDMapData.Entities.filter((actor) => actor.SpiderlingsPresetFieldCenter?.x === site.x);
+        assert.equal(pair.length, 2);
+        assert.ok(
+            pair.every((actor) => actor.Enemy.name === "Spinner" && actor.SpiderlingsNestParentID === nests[index].id),
+        );
+        assert.deepEqual(
+            pair.map((actor) => [actor.x, actor.y]),
+            [
+                [site.x - 1, site.y],
+                [site.x + 1, site.y],
+            ],
+        );
+        assert.equal(api.missingRoles(nests[index]).length, 0);
+    }
+});
+
+test("separate patrol births retain separate shared crew identities", () => {
+    const { c, seed } = runtime("SpiderlingsHuntingGrounds");
+    const result = seed();
+    assert.equal(result.patrolIds.length, 24);
+    const crews = new Map();
+    for (const actor of c.KDMapData.Entities.filter((actor) => result.patrolIds.includes(actor.id))) {
+        const members = crews.get(actor.SpiderlingsHuntCrewID) || [];
+        members.push(actor.id);
+        crews.set(actor.SpiderlingsHuntCrewID, members);
+    }
+    assert.equal(crews.size, 4);
+    assert.ok([...crews.values()].every((crew) => crew.length === 6));
+});
