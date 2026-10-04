@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.92.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.93.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.93 field placement without combat waiting (2026-10-04)
+
+The user clarified that ambush means placing the capture field. Test.92 still made the contact member evade nearby prey and wait at its preferred field position, with a two-turn timeout. Test.93 removes that movement policy and timeout. Contact members immediately approach a native observation and open native combat at melee range, while assigned gate/body construction keeps its existing paid priority. The saved `lureId` remains a compatible role identifier; legacy lure modes and wait progress no longer postpone contact.
+
+The regression reproduced retreat and suppressed native attack phases on Test.92. It now covers first-contact pursuit, adjacent combat, five saved/new engagement states, approaching prey during construction and a wall detour to prey. The native outside-field scene requires immediate pressure, pursuit on the first turn without gate work and a real Spiderlings binding hit. Its first two turns pay for reopening after prey departure; native tracing distinguishes that construction from the removed ambush wait. The first movement attempt follows immediately on turn three, and the first native binding hit lands on turn eight in both versions. The earlier fixture failures required movement before that paid reopening had finished; the corrected fixture retains the reopening, native movement payment and actual-hit assertions.
+
+The final ZIP contains 170 entries and 24,835,452 bytes, SHA-256 `3552b783cb6dea79e85366cdca94b3110fb207b5ffdf862363342989060dd5a9`. It passes all 47 native stages per game, including seven locale loads, on KD 5.4.92 and official 5.5.3 at commit `9dbf8c666ed4e158b4416f125d1d8d043b61ac74`. Upstream was fetched at `2026-10-04T14:17:16.565Z`; full evidence is `<cache>/runs/2026-10-04T14-17-16-582Z-0.92.36-test.93/acceptance.json`. Review against `381795d` traced the changed contact policy through runtime movement/attack gates and found no remaining actionable defect. The existing desktop process and original save were not modified.
+
+Final delivery gates pass: repository checks, 12 policy tests, 550 public tests, the complete 865-test local watcher and ZIP verification. The full report is this checkout's `.scratch/delivery/2026-10-04T14-25-58-251Z-cnckvi/REPORT.md`; source and ZIP remained stable during collection. This Markdown result was appended afterward, followed by repository checks and the focused local commit.
 
 ## Test.92 construction duties, recovery routes and mark refresh (2026-10-04)
 

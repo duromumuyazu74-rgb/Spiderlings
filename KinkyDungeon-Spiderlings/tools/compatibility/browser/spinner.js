@@ -90,28 +90,62 @@
     }
     Spiderlings.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity);
     KDUpdateEnemyCache = true;
-    const turns = [];
-    for (let i = 0; i < 40; i++) {
-        KinkyDungeonAdvanceTime(1);
-        turns.push({
-            x: actors[0].x,
-            y: actors[0].y,
-            mode: group.engagement?.mode,
-            capture: !!KDGameData.SpiderlingsSpinnerCapture,
-        });
-        if (turns.at(-1).capture) break;
-        await new Promise((resolve) => requestAnimationFrame(resolve));
+    const turns = [],
+        moves = [],
+        decisions = [],
+        nativeBind = KDPlayerEffects.SpiderlingsWebbingEnemyBind,
+        nativeMove = KinkyDungeonEnemyTryMove,
+        nativeDecision = Spiderlings.SpinnerAI.handleBeforeMove;
+    let hits = 0;
+    KDPlayerEffects.SpiderlingsWebbingEnemyBind = function (...args) {
+        if (args[2]?.profile === "Spinner") hits++;
+        return nativeBind.apply(this, args);
+    };
+    KinkyDungeonEnemyTryMove = function (...args) {
+        const result = nativeMove.apply(this, args);
+        if (args[0] === actors[0]) moves.push({ turn: turns.length, x: args[3], y: args[4], moved: result });
+        return result;
+    };
+    Spiderlings.SpinnerAI.handleBeforeMove = function (...args) {
+        const assignment = group.assignments[args[0].id]?.type;
+        const result = nativeDecision.apply(this, args);
+        if (args[0] === actors[0])
+            decisions.push({ turn: turns.length, assignment, action: group.lastAction, handled: result });
+        return result;
+    };
+    try {
+        for (let i = 0; i < 40; i++) {
+            KinkyDungeonAdvanceTime(1);
+            turns.push({
+                x: actors[0].x,
+                y: actors[0].y,
+                mode: group.engagement?.mode,
+                capture: !!KDGameData.SpiderlingsSpinnerCapture,
+                hits,
+            });
+            if (turns.at(-1).capture || (outside && hits > 0)) break;
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+    } finally {
+        KDPlayerEffects.SpiderlingsWebbingEnemyBind = nativeBind;
+        KinkyDungeonEnemyTryMove = nativeMove;
+        Spiderlings.SpinnerAI.handleBeforeMove = nativeDecision;
     }
     if (outside) {
-        // Test.92 shortens the no-progress ambush to two turns. Movement after
-        // that window is required pressure, not idle lure oscillation.
-        if (new Set(turns.slice(0, 2).map((t) => `${t.x},${t.y}`)).size !== 1)
-            throw new Error("Lure oscillates during the initial ambush window.");
-        if (!turns.slice(0, 5).some((t) => t.mode === "pressure"))
-            throw new Error("Spinner did not leave its shortened no-progress ambush.");
-        if (new Set(turns.map((t) => `${t.x},${t.y}`)).size < 2)
-            throw new Error("A continuously visible stationary player never triggers Spinner pressure.");
+        if (turns[0].mode !== "pressure")
+            throw new Error(`Contact started with an ambush wait: ${JSON.stringify(turns)}`);
+        // This scene first pays to reopen the field after prey leaves. The
+        // contact role must start pursuit on its first turn without gate work.
+        const contactTurn = decisions.find(
+            (decision) => !["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(decision.assignment),
+        )?.turn;
+        if (moves[0]?.turn !== contactTurn || moves[0]?.x <= 10 || !moves.some((move) => move.moved))
+            throw new Error(
+                `The contact Spinner did not start paid pursuit immediately: ${JSON.stringify({ moves, decisions })}`,
+            );
+        if (hits === 0)
+            throw new Error(`The outside player never received a native Spinner hit: ${JSON.stringify(turns)}`);
     }
     if (!outside && !turns.at(-1).capture) throw new Error("Prey in enclosure was not captured within 40 turns.");
-    return { outside, turns };
+    return { outside, turns, moves, decisions };
 })();
