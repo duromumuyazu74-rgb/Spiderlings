@@ -247,6 +247,55 @@ function recoveryRuntime(options = {}) {
     };
 }
 
+test("returning to the common core ends recovery duty and preserves the real carrier", () => {
+    const r = recoveryRuntime();
+    r.player.x = 6;
+    r.leave();
+    r.hit();
+    assert.ok(r.api.state());
+    const carrier = r.gear[0];
+    r.player.x = 5;
+    r.player.y = 5;
+    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.api.departure(), undefined);
+    assert.equal(r.gear[0], carrier);
+    assert.equal(r.nativeLoops(), 1);
+});
+
+test("load migrates only the owned legacy collar event and preserves item state", () => {
+    const owned = {
+        id: 50,
+        name: "SpiderlingsSpinnerSilkLeash",
+        lock: "Blue",
+        cutProgress: 0.4,
+        events: [
+            { trigger: "postRemoval", type: "RequireCollar" },
+            { trigger: "tick", type: "Foreign" },
+        ],
+    };
+    const r = recoveryRuntime();
+    owned.name = r.api.LEASH;
+    const foreign = structuredClone(owned);
+    foreign.name = "BasicLeash";
+    r.gear.push(owned, foreign);
+    r.api.afterLoad();
+    assert.equal(owned.events[0].type, "SpiderlingsRecoveryAnchor");
+    assert.equal(owned.events[1].type, "Foreign");
+    assert.equal(owned.lock, "Blue");
+    assert.equal(owned.cutProgress, 0.4);
+    assert.equal(foreign.events[0].type, "RequireCollar");
+});
+
+test("rejected recovery admission leaves the hit available for ordinary Webbing", () => {
+    const r = recoveryRuntime({ canAdd: false });
+    r.player.x = 6;
+    r.leave();
+    assert.equal(r.api.hit(r.source), false);
+    assert.equal(r.api.state(), undefined);
+    assert.ok(r.api.departure());
+});
+
 function externalLeash(id = "external-1") {
     return {
         id,

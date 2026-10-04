@@ -1,4 +1,6 @@
-# Spiderlings 0.92.36-test.87 维护说明
+# Spiderlings 0.92.36-test.88 维护说明
+
+当前 test.88 修复 Spinner 施工、拘束偏好、腿袋牵引和边界状态，并补充两件武器的特殊能力描述；见[现场调查与验证](../docs/spiderlings-test88-spinner-fixes.zh-CN.md)。历史版本记录保持原貌，当前机制以本文后续机制段落及 CONTEXT 为准。
 
 test.87 按已确认的人口方案，将两种特殊楼层的初始队伍、人口预算和失败清理统一到 `SpiderlingsPopulation.js`。模块先核对整队余量及出生格，出生失败时撤回本批实体并恢复巢穴登记；原生召唤先插入再抛错也纳入清理，无关 hook 出生保留。可选巡逻队普通失败保留必需守卫。地形失败行为、选择器 hook 顺序和存档字段保持原有规则。进层与下楼受阻提示说明原始目标巢穴、小地图红色任务标记及后建巢穴不计数。Mage 对 Maid 专攻和伤害保持。见[实施与复审记录](../docs/spiderlings-test87-population.zh-CN.md)。
 
@@ -120,7 +122,7 @@ test.38 修复 Spinner 施工拥堵：附近没有合法 3×3 围场时搜索更
 
 对抗使用独立拘束条和挣脱条，不提前装备物品。失败只进入 wrapping；第一次付费 wrapping 行动通过原生 ItemLegs 兼容检查后创建腿袋并写入 20%，随后四次行动继续更新同一物品。中断保留物品 ID、锁、原生解除字段、事件、逃脱进度和 `data.wrapProgress`；临时捕获状态不保存进度副本。场地与连接保存在地图数据中；捕获阶段、参与者及活动腿袋 ID 保存在 KDGameData；实际沉积和逃脱进度只保存在物品 data 中。图形对象与计时器句柄不写入存档。绘制只读物品进度和临时状态；读档事件审计 schema 3 状态和精确物品 ID，旧捕获状态不会迁移。
 
-玩家离开已破损围场后，尚未接回的合法来源通过只读 `wantsPursuit(source, target)` 请求追击；AI 在施工和诱敌前处理，但仍要求原生感知或不足四回合的匹配观察；玩家待回收职责可使用全地图玩家报告，即使本队当前交战目标是 NPC。该职责有新鲜玩家报告且本人确有原生玩家感知时，运行入口可将 NPC 候选改为真实玩家，识别和近战仍由原生循环判定。新的 Spinner 有效命中可建立或复用一条真实 leash。新挂绳保留兼容项圈及原生装备可访问性检查，失败显示 `SpiderlingsRecoveryAttachBlocked`，说明本次未建立拉回。Recovery schema 2 最多保存八个来源及其 field 关联；重复命中只刷新，审计移除的来源必须再次命中才能接回。单一 executor 支付拖拽，目的地按共同核心、无关 field 多数、最近可达核心和 executor fallback 依次决定。跨越连续实体蛛网按每格两个付费拖拽动作累计，最终动作才移动。Stand firm 的显示体力费用为 `5 + 2 × (来源数 - 1)`；自有 leash 的原生挣脱惩罚候选为每个额外来源 `0.05`，仍待实机平衡校准。外部 leash 的物品、锁、进度、链接和原生 tether owner 均不修改。
+玩家离开已破损围场后，尚未接回的合法来源通过只读 `wantsPursuit(source, target)` 请求追击；AI 在施工和诱敌前处理，但仍要求原生感知或不足四回合的匹配观察；玩家待回收职责可使用全地图玩家报告，即使本队当前交战目标是 NPC。该职责有新鲜玩家报告且本人确有原生玩家感知时，运行入口可将 NPC 候选改为真实玩家，识别和近战仍由原生循环判定。新的 Spinner 有效命中可建立或复用一条真实 leash。新挂绳接受兼容项圈或带 `SpiderlingsLegbinderAnchor` 的蛛丝腿袋，并保留原生装备可访问性检查；失败显示 `SpiderlingsRecoveryAttachBlocked`，本次仍可尝试普通拘束。到达目的地共同核心后结束临时牵引职责，保留真实丝绳并恢复后续束缚。Recovery schema 2 最多保存八个来源及其 field 关联；重复命中只刷新，审计移除的来源必须再次命中才能接回。单一 executor 支付拖拽，目的地按共同核心、无关 field 多数、最近可达核心和 executor fallback 依次决定。跨越连续实体蛛网按每格两个付费拖拽动作累计，最终动作才移动。Stand firm 的显示体力费用为 `5 + 2 × (来源数 - 1)`；自有 leash 的原生挣脱惩罚候选为每个额外来源 `0.05`，仍待实机平衡校准。外部 leash 的物品、锁、进度、链接和原生 tether owner 均不修改。
 
 NPC 回收复用 `SpiderlingsSpinnerRecoveryCore.js` 的待接回来源、来源、executor、目的地和 crossing 规则，不创建 leash 或其他物品。玩家与 NPC 使用同一追击意愿 interface，NPC 仍只接受原生已选择的目标，不向 AI 提供实时目标坐标。`enemyMove` 只有在 NPC 实际离开破损外边界时记录 departure；随后真实 Spinner 近战增加 Slime 才接入来源。付费拖拽使用原生 `KDMoveEntity(..., false)`，返回修复后的共同核心不会自动开始 Capture；还需下一次真实命中重新满足闭合围场、两只合法来源和绑定增加条件。
 

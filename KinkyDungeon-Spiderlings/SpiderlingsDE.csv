@@ -217,8 +217,8 @@ KinkyDungeonSpecialSpiderlingTome,Kokonkonvergenz
 KinkyDungeonSpecialSpiderlingStaff,Seidenfessel
 KinkyDungeonInventoryItemSpiderlingTomeDesc,Weiche Seidenfäden durchziehen den Buchrücken und liegen über den Seiten.
 KinkyDungeonInventoryItemSpiderlingStaffDesc,Ein feines Netz trägt ein schwaches Leuchten an der Stabspitze.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,Klebrige Fäden spannen sich zwischen den umgeblätterten Seiten und sammeln sich beim Schließen wieder im Buchrücken. Eine Fingerspitze spürt ein leises Pulsieren.
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,Feine Fäden hängen straff von der Spitze. Ein schwaches Leuchten läuft an ihnen entlang zum Griff und flackert bei jedem Zug.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Kokonkonvergenz: Ein Seidenkreis in bis zu 6 Feldern Entfernung zieht sich nach zwei weiteren Aktionen zu; die Mitte fesselt am stärksten. Erneut einsetzen, bevor er sich schließt: höchstens drei Stufen. Jede weitere Lage kostet Mana und eine Aktion und verzögert den Schluss um eine Runde. In jeder Hand +20% Fesselstärke. Wirksame Treffer können Ausdauer erstatten; der erste vollständige Kokon dieser Seide pro Beute kann begrenzt Mana zurückgeben."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,Seidenfessel: Schießt Seide bis zu 6 Felder weit. Sie fesselt und verlangsamt das erste getroffene feindliche Ziel; Wände halten sie auf. Wirksame Treffer können Ausdauer erstatten; der erste vollständige Kokon dieser Seide pro Beute kann begrenzt Mana zurückgeben.
 ItemPickupSpiderlingTome,Du hebst den Folianten der Seidenfessel auf.
 ItemPickupSpiderlingStaff,Du hebst den Seidenweberstab auf.
 KDPrereqFailSpiderlingsCocoonConvergence,"Halte den Folianten in der Hand und habe genug Mana für diese Lage. Nach dem Schließen muss der Kreis abklingen, bevor ein neuer entsteht."
@@ -232,7 +232,7 @@ RestraintSpiderlingsSilkLeash,Spinnen-Seidenleine
 RestraintSpiderlingsSilkLeashDesc,"Feine Seidenfäden bilden eine leichte Schnur mit sanftem Schimmer."
 RestraintSpiderlingsSilkLeashDesc2,"Wird die Schnur gestreckt, spannen sich ihre feinen Fäden sanft. Lässt die Spannung nach, sinkt sie in einen weichen Bogen."
 SpiderlingsRecoveryAttached,Ein Spinner befestigt einen Seidenstrang ({count}/8). Bei seiner nächsten möglichen Aktion kann er dich zurückziehen.
-SpiderlingsRecoveryAttachBlocked,Die Seidenleine lässt sich nicht befestigen. Sie braucht ein passendes Halsband; andere Ausrüstung darf sie nicht blockieren.
+SpiderlingsRecoveryAttachBlocked,Die Seidenleine lässt sich nicht befestigen. Sie braucht ein passendes Halsband oder einen Seidenbeinsack; andere Ausrüstung darf sie nicht blockieren.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
 KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Deine Fesseln verhindern, dass du die Klinge fest genug hältst, um TargetRestraint zu durchschneiden."

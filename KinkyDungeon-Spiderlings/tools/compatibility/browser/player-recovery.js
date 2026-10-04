@@ -81,10 +81,11 @@
                 "Bare-neck rejection changed equipment or established recovery",
             );
             expect(
-                rejectionMessages.length === 1 && !rejectionMessages[0].includes("[NotFound]"),
+                rejectionMessages.includes(TextGet("SpiderlingsRecoveryAttachBlocked")) &&
+                    rejectionMessages.every((message) => !message.includes("[NotFound]")),
                 "Rejected recovery hit has no readable feedback",
             );
-            // Native leash admission requires a collar; a rejected slot never forces replacement.
+            // A collar anchors either leash; a rejected slot never forces replacement.
             KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
             let carrier;
             if (external) {
@@ -261,7 +262,7 @@
                     x: KinkyDungeonPlayerEntity.x,
                     y: KinkyDungeonPlayerEntity.y,
                     state: structuredClone(recovery.state()),
-                    goal: recovery.destination(recovery.state()),
+                    goal: recovery.state() && recovery.destination(recovery.state()),
                     core: Spiderlings.SpinnerNativeField.commonCore("recovery-test"),
                     path: KinkyDungeonFindPath(
                         KinkyDungeonPlayerEntity.x,
@@ -283,6 +284,8 @@
                 row.positions.some((position) => position.x < 16),
                 "Recovery ignored the open breach",
             );
+            // Source removal is exercised before a successful return releases pulling duty.
+            restore(beforeEscape);
             // Move the source cluster with the player so only native source-removal work is under test.
             for (const [index, actor] of actors.entries())
                 KDMoveEntity(
@@ -347,7 +350,6 @@
                 },
             ],
         });
-        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
         KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName(Spiderlings.SpinnerCapture.ID), 0, false, "");
         const bag = Spiderlings.SpinnerCapture.item();
         expect(bag, "The automatic pursuit fixture could not equip the leg bag");
@@ -416,6 +418,8 @@
         );
         expect(Spiderlings.SpinnerCapture.item() === bag, "Automatic recovery replaced the completed leg bag");
         expect(bag.data.wrapProgress === 1, "Automatic recovery changed the completed leg bag's progress");
+        await turn();
+        expect(!recovery.state(), "Arriving in the common core did not release temporary pulling duty");
         images[`automatic-departure-${preferNPC}`] = await photo();
     }
     setup("recovery-remote-relay");

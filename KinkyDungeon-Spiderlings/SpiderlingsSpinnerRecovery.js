@@ -493,11 +493,11 @@
     if (typeof addTextKey === "function") {
         addTextKey(
             "SpiderlingsRecoveryAttached",
-            "A Spinner attaches a silk leash to your collar ({count}/8). It can pull you back when it next acts.",
+            "A Spinner attaches a silk leash ({count}/8). It can pull you back when it next acts.",
         );
         addTextKey(
             "SpiderlingsRecoveryAttachBlocked",
-            "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
+            "The silk leash cannot attach. It needs a compatible collar or silken leg bag, with no other equipment blocking it.",
         );
         addTextKey("SpiderlingsRecoveryStand", "Stand firm ({cost} stamina)");
         addTextKey("SpiderlingsRecoverySelect", "Strand {number}/{count}");
@@ -512,8 +512,8 @@
         if (typeof KinkyDungeonSendTextMessage !== "function") return;
         const key = attached ? "SpiderlingsRecoveryAttached" : "SpiderlingsRecoveryAttachBlocked",
             fallback = attached
-                ? "A Spinner attaches a silk leash to your collar ({count}/8). It can pull you back when it next acts."
-                : "The silk leash cannot attach. It needs a compatible collar, with no other equipment blocking it.",
+                ? "A Spinner attaches a silk leash ({count}/8). It can pull you back when it next acts."
+                : "The silk leash cannot attach. It needs a compatible collar or silken leg bag, with no other equipment blocking it.",
             localized = typeof TextGet === "function" ? TextGet(key) : key;
         KinkyDungeonSendTextMessage(
             8,
@@ -532,6 +532,7 @@
         audit();
         const recovery = state();
         if (recovery) {
+            if (finishReturn(recovery)) return false;
             if (!allowedSource(recovery, source) || !sourceActionable(source)) return false;
             const key = sourceKey(source.id),
                 existing = recovery.sources[key],
@@ -548,9 +549,9 @@
         }
         const eligibility = departure();
         if (!eligibility || !allowedSource(eligibility, source) || !sourceActionable(source)) return false;
-        feedback(attach(source, eligibility));
-        // A legal recovery hit is consumed even when native equipment rules reject the carrier.
-        return true;
+        const attached = attach(source, eligibility);
+        feedback(attached);
+        return attached;
     }
 
     function onPlayerMove(data) {
@@ -670,9 +671,20 @@
         return core.advancePull(recovery, player(), source, recoveryAdapters()).moved;
     }
 
+    function finishReturn(recovery) {
+        const fallback = !sourceIds(recovery).length && api.SpinnerNativeField?.commonCore?.(recovery.compositeId);
+        const goal = destination(recovery) || (fallback && { ...fallback, compositeId: recovery.compositeId });
+        if (!goal?.compositeId || player().x !== goal.x || player().y !== goal.y) return false;
+        // The real carrier remains equipped. Returning to the field releases
+        // the temporary pulling duty so native hits can resume Webbing.
+        clearControl();
+        return true;
+    }
+
     function handleEnemyTurn(enemy, _target, delta) {
         if (!audit()) return undefined;
         const recovery = state();
+        if (finishReturn(recovery)) return undefined;
         if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) {
             if (!relayEligible(enemy, recovery) || strength(recovery) >= MAX_SOURCES) return undefined;
             const donor = Object.values(sourceRecords(recovery))
@@ -950,6 +962,15 @@
         ownedMovement = false;
         nativeMoveTick = undefined;
         selectedSourceId = undefined;
+        // Native saves retain each item's event list, including the old collar-only guard.
+        for (const item of allItems()) {
+            if (item.name !== LEASH || !Array.isArray(item.events)) continue;
+            for (const savedEvent of item.events) {
+                if (savedEvent.trigger !== "postRemoval" || savedEvent.type !== "RequireCollar") continue;
+                savedEvent.type = "SpiderlingsRecoveryAnchor";
+                if (typeof KDUpdateItemEventCache !== "undefined") KDUpdateItemEventCache = true;
+            }
+        }
         const pending = departure();
         if (pending?.version !== 1) delete KDGameData[DEPARTURE];
         if (!audit()) return;
@@ -963,6 +984,15 @@
         });
 
     if (typeof KDEventMapInventory !== "undefined") {
+        event(KDEventMapInventory, "postRemoval", "SpiderlingsRecoveryAnchor", (_event, item, data) => {
+            if (data.Character !== KinkyDungeonPlayer || data.add || data.item === item) return;
+            const anchored = allItems().some(
+                (candidate) =>
+                    candidate.name === "SpiderlingsSpinnerLegbinder" ||
+                    definition(candidate)?.shrine?.includes("Collars"),
+            );
+            if (!anchored) KinkyDungeonRemoveRestraintSpecific(item, false, false, false);
+        });
         event(KDEventMapInventory, "beforeStruggleCalc", ESCAPE_EVENT, beforeStruggle);
         event(KDEventMapInventory, "struggle", ESCAPE_EVENT, afterStruggle);
     }
@@ -998,9 +1028,9 @@
                     Cut: ["SharpTug", "SharpHookOrFoot"],
                     Struggle: ["Tug", "HookOrFoot"],
                 },
-                requireAllTagsToEquip: ["Collars"],
+                requireSingleTagToEquip: ["Collars", "SpiderlingsLegbinderAnchor"],
                 events: [
-                    { trigger: "postRemoval", type: "RequireCollar" },
+                    { trigger: "postRemoval", type: "SpiderlingsRecoveryAnchor" },
                     { inheritLinked: true, trigger: "beforeStruggleCalc", type: ESCAPE_EVENT },
                     { inheritLinked: true, trigger: "struggle", type: ESCAPE_EVENT },
                 ],

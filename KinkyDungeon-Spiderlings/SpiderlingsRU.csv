@@ -217,8 +217,8 @@ KinkyDungeonSpecialSpiderlingTome,Схождение кокона
 KinkyDungeonSpecialSpiderlingStaff,Шёлковая петля
 KinkyDungeonInventoryItemSpiderlingTomeDesc,Мягкие шёлковые нити проходят через корешок и лежат на страницах.
 KinkyDungeonInventoryItemSpiderlingStaffDesc,Тонкая паутина мягко удерживает слабое свечение на навершии посоха.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Липкие нити тянутся между перелистываемыми страницами и собираются у корешка, когда книга закрывается. На прикосновение пальца они отвечают лёгкой пульсацией."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,Тонкие нити туго свисают с навершия. Тусклое сияние струится по ним к рукояти и мерцает при каждом натяжении.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Схождение кокона: круг шёлка в пределах 6 клеток стягивается после двух следующих действий; в центре связывает сильнее. Повторите до смыкания, чтобы получить до трёх ступеней. Каждое добавление требует маны и действия и откладывает смыкание на ход. В любой руке: +20% к связыванию. Действенные попадания могут вернуть выносливость; первый полный кокон из этой нити для каждой жертвы может вернуть ограниченное количество маны."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"Шёлковая петля: выпускает нить на расстояние до 6 клеток, связывая и замедляя первую поражённую враждебную цель. Стены останавливают нить. Действенные попадания могут вернуть выносливость; первый полный кокон из этой нити для каждой жертвы может вернуть ограниченное количество маны."
 ItemPickupSpiderlingTome,Вы подбираете книгу шёлковых уз.
 ItemPickupSpiderlingStaff,Вы подбираете посох ткача шёлка.
 KDPrereqFailSpiderlingsCocoonConvergence,"Нужно держать фолиант в руке и иметь достаточно маны для этого слоя. После смыкания круга дождись окончания перезарядки, прежде чем плести новый."
@@ -232,7 +232,7 @@ RestraintSpiderlingsSilkLeash,Паучий шёлковый поводок
 RestraintSpiderlingsSilkLeashDesc,Тонкие шелковистые нити собраны в лёгкий шнур с мягким блеском.
 RestraintSpiderlingsSilkLeashDesc2,"Когда шнур выпрямляется, его тонкие нити слегка натягиваются, а при ослаблении ложатся мягкой дугой."
 SpiderlingsRecoveryAttached,Прядильщик прикрепляет шёлковую нить ({count}/8). При следующем доступном действии он может втянуть тебя обратно.
-SpiderlingsRecoveryAttachBlocked,"Шёлковый поводок не крепится. Нужен подходящий ошейник, а другое снаряжение не должно мешать креплению."
+SpiderlingsRecoveryAttachBlocked,Шёлковый поводок не крепится. Нужен подходящий ошейник или шёлковый мешок для ног; другое снаряжение не должно мешать креплению.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
 KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Остальные путы мешают крепко держать лезвие, чтобы разрезать TargetRestraint."

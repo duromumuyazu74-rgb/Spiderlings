@@ -217,8 +217,8 @@ KinkyDungeonSpecialSpiderlingTome,천 가닥 고치
 KinkyDungeonSpecialSpiderlingStaff,비단 올가미
 KinkyDungeonInventoryItemSpiderlingTomeDesc,부드러운 거미줄이 책등을 지나 책장 위에 가만히 펼쳐져 있다.
 KinkyDungeonInventoryItemSpiderlingStaffDesc,지팡이 끝의 고운 그물에 희미한 빛이 머문다.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,"책장을 넘기면 끈적한 실이 길게 늘어나고, 책을 닫으면 다시 책등으로 모인다. 손끝으로 건드리면 희미한 맥동이 느껴진다."
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"가느다란 실이 팽팽하게 당겨진 채 지팡이 끝에서 드리워져 있다. 은은한 빛이 실을 따라 손잡이로 흐르며, 당길 때마다 깜박인다."
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"천 가닥 고치: 6칸 이내에 실 고리를 짜며, 이후 두 번 행동하면 안쪽으로 조인다. 중심일수록 속박이 강하다. 닫히기 전에 다시 사용하면 최대 3단계까지 덧짤 수 있다. 덧짤 때마다 마나와 행동 하나를 쓰고 닫힘이 한 턴 늦어진다. 주무기나 보조무기로 들면 속박 강도 +20%. 유효한 명중으로 체력 일부를 돌려받을 수 있으며, 먹잇감마다 이 실로 처음 완전한 고치를 만들면 한도 내에서 마나를 돌려받을 수 있다."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"비단 올가미: 최대 6칸까지 끈끈한 실을 쏘아 처음 맞은 적대적 대상을 속박하고 느리게 한다. 벽은 실을 막는다. 유효한 명중으로 체력 일부를 돌려받을 수 있으며, 먹잇감마다 이 실로 처음 완전한 고치를 만들면 한도 내에서 마나를 돌려받을 수 있다."
 ItemPickupSpiderlingTome,비단 속박의 마도서를 주웠다.
 ItemPickupSpiderlingStaff,비단 직조자의 지팡이를 주웠다.
 KDPrereqFailSpiderlingsCocoonConvergence,마도서를 손에 들고 이번에 실을 짤 마나가 충분해야 한다. 원이 닫힌 뒤에는 재사용 대기가 끝나야 새 원을 짤 수 있다.
@@ -232,7 +232,7 @@ RestraintSpiderlingsSilkLeash,거미 비단 리드
 RestraintSpiderlingsSilkLeashDesc,가늘고 부드러운 거미줄을 모아 만든 가벼운 끈으로, 표면에는 은은한 비단 광택이 돈다.
 RestraintSpiderlingsSilkLeashDesc2,끈을 펴면 가는 실들이 하나씩 가볍게 팽팽해지고, 느슨해지면 부드러운 곡선을 그린다.
 SpiderlingsRecoveryAttached,방적자가 거미줄 끈을 연결했다({count}/8). 다음에 행동할 수 있을 때 끌어당길 수 있다.
-SpiderlingsRecoveryAttachBlocked,거미줄 끈을 연결할 수 없다. 맞는 목줄이 필요하며 다른 장비가 가로막으면 연결되지 않는다.
+SpiderlingsRecoveryAttachBlocked,거미줄 끈을 연결할 수 없다. 맞는 목줄이나 거미줄 다리 자루가 필요하며 다른 장비가 가로막으면 연결되지 않는다.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
 KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"다른 구속 때문에 칼날을 단단히 쥘 수 없어 TargetRestraint을 잘라낼 수 없다."

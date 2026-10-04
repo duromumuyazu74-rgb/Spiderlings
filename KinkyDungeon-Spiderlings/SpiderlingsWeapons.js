@@ -631,11 +631,11 @@
         [`KinkyDungeonInventoryItem${TOME}`]: "Tome of Silken Binding",
         [`KinkyDungeonInventoryItem${TOME}Desc`]: "Soft silk threads run through the spine and lie across the pages.",
         [`KinkyDungeonInventoryItem${TOME}Desc2`]:
-            "Sticky threads stretch between the turning pages and gather back into the spine when the book closes. A faint pulse answers the touch of a fingertip.",
+            "Cocoon Convergence: a silk circle within 6 tiles closes after two further actions, strongest at its center. Reuse before closure to reach up to three tiers; each extra weave costs mana and an action, delaying closure one turn. +20% binding in either hand. Its effective hits can restore stamina; each prey's first complete cocoon of this silk can return limited mana.",
         [`KinkyDungeonInventoryItem${STAFF}`]: "Silkweaver's Staff",
         [`KinkyDungeonInventoryItem${STAFF}Desc`]: "A fine web cups a faint glow at the staff's tip.",
         [`KinkyDungeonInventoryItem${STAFF}Desc2`]:
-            "Fine strands hang taut from the tip. A dim glow runs along them toward the grip, flickering with each tug.",
+            "Silken Snare: fire silk up to 6 tiles, binding and slowing the first hostile target hit. Walls block it. Its effective hits can restore stamina; each prey's first complete cocoon of this silk can return limited mana.",
         [`ItemPickup${TOME}`]: "You pick up a Tome of Silken Binding.",
         [`ItemPickup${STAFF}`]: "You pick up a Silkweaver's Staff.",
         [`KinkyDungeonSpecial${TOME}`]: "Cocoon Convergence",

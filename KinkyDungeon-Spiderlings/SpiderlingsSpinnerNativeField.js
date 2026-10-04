@@ -12,6 +12,7 @@
     const cellKey = (cell) => `${cell.x},${cell.y}`;
     const result = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
     let activeMove;
+    const artworkByGraph = new WeakMap();
 
     function fieldById(encounter, fieldId) {
         const graph = encounter?.topology;
@@ -50,10 +51,24 @@
         api.WebMobility?.invalidateNavigation(true);
     }
 
-    function hpAtCell(field, physical) {
-        const anchorHP = physical.anchorIds.map((id) => field.anchors.find((anchor) => anchor.id === id)?.hp || 0),
-            linkHP = physical.linkIds.map((id) => field.links.find((link) => link.id === id)?.hp || 0);
+    function hpAtCell(field, physical, property = "hp") {
+        const anchorHP = physical.anchorIds.map(
+                (id) => field.anchors.find((anchor) => anchor.id === id)?.[property] || 0,
+            ),
+            linkHP = physical.linkIds.map((id) => field.links.find((link) => link.id === id)?.[property] || 0);
         return Math.max(0, ...anchorHP, ...linkHP);
+    }
+
+    function syncProxyHP(enemy, field, physical) {
+        const definition = KinkyDungeonEnemies.find((entry) => entry.name === PROXY);
+        const maxhp = hpAtCell(field, physical, "maxHp");
+        // Native bars and tooltips read Enemy.maxhp, not the entity's maxhp.
+        // Each web cell can project structures of different lengths/durability.
+        if (enemy.Enemy?.name !== PROXY || enemy.Enemy.maxhp !== maxhp) enemy.Enemy = { ...definition, maxhp };
+        // KDUnPackEnemy otherwise replaces the per-cell definition on native refresh/load.
+        enemy.modified = true;
+        enemy.hp = hpAtCell(field, physical);
+        enemy.maxhp = maxhp;
     }
 
     function createProxy(field, physical) {
@@ -76,8 +91,7 @@
         enemy.hostile = 999;
         KinkyDungeonSetEnemyFlag(enemy, "targetedForAttack", -1);
         enemy.SpiderlingsSpinnerProxy = { fieldId: field.fieldId, cell: cellKey(physical) };
-        enemy.hp = hpAtCell(field, physical);
-        enemy.maxhp = enemy.hp;
+        syncProxyHP(enemy, field, physical);
         return enemy;
     }
 
@@ -111,9 +125,7 @@
             }
             enemy.x = physical.x;
             enemy.y = physical.y;
-            enemy.Enemy = KinkyDungeonEnemies.find((definition) => definition.name === PROXY);
-            enemy.hp = hpAtCell(field, physical);
-            enemy.maxhp = enemy.hp;
+            syncProxyHP(enemy, field, physical);
             enemy.hostile = 999;
             KinkyDungeonSetEnemyFlag(enemy, "targetedForAttack", -1);
             kept.set(expectedKey, enemy);
@@ -544,6 +556,7 @@
             );
         for (const composite of Object.values(graph.composites || {})) {
             if (composite.autoSeal || (compositeIds && !compositeIds.has(composite.id))) continue;
+            if (composite.layerIds.every((id) => graph.fields[id]?.retired)) continue;
             const owners = fieldOwners(composite.id)
                 .map((id) => actors.get(id))
                 .filter((entity) => entity?.hp > 0 && isSpiderling(entity));
@@ -669,8 +682,12 @@
     function containingComposite(target) {
         const encounter = state();
         if (!encounter?.topology) return undefined;
-        return Object.values(encounter.topology.composites || {}).find((composite) =>
+        const candidates = Object.values(encounter.topology.composites || {}).filter((composite) =>
             topology().containsDeclaredField(encounter.topology, composite.layerIds[0], target),
+        );
+        return (
+            candidates.find((composite) => topology().captureGeometryReady(encounter.topology, composite.id, target)) ||
+            candidates[0]
         );
     }
 
@@ -744,9 +761,14 @@
 
     // Select border pieces from the declared perimeter; drawing never edits construction or HP.
     function borderArtwork(graph, cell) {
+        let artwork = artworkByGraph.get(graph);
+        if (!artwork) artworkByGraph.set(graph, (artwork = new Map()));
+        const key = cellKey(cell);
+        if (artwork.has(key)) return artwork.get(key);
         const parts = new Map();
         const add = (part, rotation) => parts.set(`${part}:${rotation}`, { part, rotation });
         for (const field of [...Object.values(graph.fields || {}), ...Object.values(graph.lineFields || {})]) {
+            if (field.retired) continue;
             if (field.kind === "passage") {
                 const gate = field.gates.find((candidate) =>
                     candidate.cells.some((position) => cellKey(position) === cellKey(cell)),
@@ -802,7 +824,9 @@
                 add(a.y === b.y ? "Top" : "Side", a.y === b.y ? (b.x < a.x ? Math.PI : 0) : b.y > a.y ? Math.PI : 0);
             }
         }
-        return [...parts.values()];
+        const result = [...parts.values()];
+        artwork.set(key, result);
+        return result;
     }
 
     // Prepared silk at an open passage is a visual cue only, never an entity or obstruction.

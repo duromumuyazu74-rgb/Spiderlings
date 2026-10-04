@@ -47,12 +47,13 @@ const SPIDERLINGS = globalThis.Spiderlings;
             onHuntingGrounds() &&
             isHostileSpiderlingTarget(enemy) &&
             other !== enemy &&
-            isIndependentNPC(other) &&
-            SPIDERLINGS.HuntingGrounds.independentCombatant(other) &&
+            other?.Enemy &&
             other.Enemy.name !== "NestEntrance" &&
             KDGetFaction(other) !== KDGetFaction(enemy) &&
             !other.Enemy.tags?.scenery &&
-            !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other)
+            !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other) &&
+            isIndependentNPC(other) &&
+            SPIDERLINGS.HuntingGrounds.independentCombatant(other)
         );
     }
     SPIDERLINGS.HuntingGrounds = { active: onHuntingGrounds, isPrey: isHuntingPrey };

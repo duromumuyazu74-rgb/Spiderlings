@@ -4,6 +4,36 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { runtime } = require("./helpers/spinner-native-runtime.js");
 
+test("a retired overlapping enclosure cannot mask a new sealed capture field", () => {
+    const c = runtime().context,
+        field = c.Spiderlings.SpinnerNativeField;
+    const input = (id) => ({
+        compositeId: id,
+        owners: [1, 2],
+        built: true,
+        autoSeal: true,
+        layers: [
+            {
+                id,
+                vertices: [
+                    { x: 4, y: 4 },
+                    { x: 6, y: 4 },
+                    { x: 6, y: 6 },
+                    { x: 4, y: 6 },
+                ],
+                gate: { x: 5, y: 4 },
+            },
+        ],
+    });
+    field.initializeEnclosure(input("old"));
+    field.retireField("old");
+    field.addEnclosure(input("new"));
+    const target = { x: 5, y: 5 };
+    assert.equal(c.Spiderlings.SpinnerTopology.containsDeclaredField(field.state().topology, "old", target), false);
+    assert.equal(field.containingComposite(target)?.id, "new");
+    assert.equal(field.captureGeometryReady(target), true);
+});
+
 test("legacy native entity admission projects silk under an occupant without kicking it", () => {
     const r = runtime(),
         c = r.context;
@@ -108,7 +138,9 @@ test("reconciliation shares one physical-cell snapshot while reading current sha
     assert.equal(field.onNativeDamage({ enemy: middle, dmgDealt: 1 }), true);
     assert.equal(built.encounter.topology.links[0].hp, before - 0.7);
     assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === before - 0.7));
-    assert.equal(middle.maxhp, middle.hp);
+    assert.equal(middle.maxhp, before);
+    assert.equal(middle.Enemy.maxhp, before, "Native tooltip keeps the full shared durability after damage");
+    assert.equal(middle.modified, true, "Native unpacking must preserve the owned per-cell definition");
 
     scans = 0;
     field.reconcile();
@@ -142,7 +174,8 @@ test("recreating a missing projection uses its physical IDs and post-admission H
     assert.ok(rebuilt);
     assert.notEqual(rebuilt.id, missing.id);
     assert.equal(rebuilt.hp, 3.25, "Native admission callbacks must not leave a captured numeric HP stale");
-    assert.equal(rebuilt.maxhp, 3.25);
+    assert.equal(rebuilt.maxhp, built.encounter.topology.links[0].maxHp);
+    assert.equal(rebuilt.Enemy.maxhp, rebuilt.maxhp);
     assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 5);
     scans = 0;
     assert.equal(field.reconcile().reused, 5);

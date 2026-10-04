@@ -531,7 +531,7 @@ test("new-save resolver keeps profiles, no-op, WebSpray provenance, cap, and tim
     const runtime = freshNewSaveRuntime();
     const api = runtime.context.Spiderlings.Webbing;
     assert.deepEqual(plain(api.ENEMY_PROFILES), {
-        Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
+        Spinner: [0.25, 0.25, 0.25, 0.25, 2, 1, 1, 0.25, 0.25, 0.25, 0.25],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
         MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],

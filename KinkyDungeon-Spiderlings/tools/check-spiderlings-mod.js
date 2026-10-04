@@ -923,7 +923,8 @@ function checkRuntime(state) {
         leash.leash !== true ||
         leash.tether !== 2.9 ||
         leash.power !== 1 ||
-        JSON.stringify(leash.requireAllTagsToEquip) !== JSON.stringify(["Collars"])
+        JSON.stringify(leash.requireSingleTagToEquip) !== JSON.stringify(["Collars", "SpiderlingsLegbinderAnchor"]) ||
+        !bag?.addTag?.includes("SpiderlingsLegbinderAnchor")
     )
         fail("Spiderlings Silk leash does not preserve the BasicLeash carrier contract.");
     if (
@@ -1577,7 +1578,7 @@ function checkRouting(state) {
     }
     const webbing = state.context.Spiderlings && state.context.Spiderlings.Webbing;
     const expectedProfiles = {
-        Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
+        Spinner: [0.25, 0.25, 0.25, 0.25, 2, 1, 1, 0.25, 0.25, 0.25, 0.25],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
         MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
