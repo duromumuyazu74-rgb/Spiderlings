@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,Acceso de depuración a las escaleras activo; los ni
 RestraintSpiderlingsSilkLeash,Correa de seda de araña
 RestraintSpiderlingsSilkLeashDesc,"Finos hilos de seda se reúnen en un cordón ligero de brillo tenue."
 RestraintSpiderlingsSilkLeashDesc2,"Sus finos hilos se tensan suavemente al estirar el cordón y forman una curva blanda cuando se afloja."
-SpiderlingsRecoveryAttached,Una hiladora une un hilo de seda ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
+SpiderlingsRecoveryAttached,Una hiladora une un hilo de seda ({count}). El hilo tenso puede arrastrarte de vuelta.
 SpiderlingsRecoveryAttachBlocked,La correa de seda no puede sujetarse. Necesita un collar compatible o un saco de seda para las piernas y que ningún otro equipo la bloquee.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes cortar TargetRestraint."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes cortar TargetRestraint."
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"En tu estado actual, no 
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes aflojar TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Tus otras ataduras te impiden manipular TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Tus otras ataduras te impiden manipular TargetRestraint."
-SpiderlingsRecoveryStand,Resistir ({cost} de aguante)
-SpiderlingsRecoverySelect,Hilo {number}/{count}
-SpiderlingsRecoveryCut,Cortar ({cost})
-SpiderlingsRecoveryRemove,Retirar ({cost})
-SpiderlingsRecoveryStruggle,Forcejear ({cost})
-SpiderlingsRecoveryStrandLoosened,Aflojas el hilo de seda seleccionado.
-SpiderlingsRecoveryStrandSevered,Te liberas del hilo de seda seleccionado.
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Cada refuerzo cuesta 20 de maná base. Fuerza de atadura: 1 / 1,5 / 4,5; recarga desde el primer tejido: 8 / 9 / 12 turnos. Los impactos efectivos devuelven 6 de resistencia una vez por círculo. El primer capullo completo de una presa devuelve maná, hasta la mitad del maná pagado y un máximo de 20 por círculo."
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Teje un círculo de seda a un máximo de 6 casillas. Se cierra tras dos acciones más y ata con mayor fuerza cerca del centro. Usa de nuevo esta habilidad para reforzar el mismo tejido hasta tres niveles. Cada refuerzo consume maná y una acción, y retrasa el cierre un turno. Las paredes detienen la seda."
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,"Lanza seda pegajosa hasta 6 casillas hacia el primer objetivo hostil. El hilo ata y ralentiza a la presa; las paredes lo detienen. Recarga: 3 turnos. Un impacto efectivo devuelve 6 de resistencia. El primer capullo completo de una presa devuelve maná, hasta la mitad del maná pagado."

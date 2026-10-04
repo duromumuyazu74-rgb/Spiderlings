@@ -321,6 +321,14 @@
         return { added: true, compositeId: input.compositeId, fieldId: input.fieldId };
     }
 
+    function setEnclosureGate(fieldId, cell) {
+        const encounter = state();
+        if (!encounter?.topology) return { changed: false };
+        const changed = topology().setEnclosureGate(encounter.topology, fieldId, cell);
+        if (changed.changed) encounter.topology = changed.state;
+        return { changed: changed.changed };
+    }
+
     function setPassageOpenGates(fieldId, gateIds) {
         const encounter = state();
         if (!encounter?.topology) return { changed: false, reason: "inactive" };
@@ -985,6 +993,7 @@
         addEnclosure,
         addPassage,
         setPassageOpenGates,
+        setEnclosureGate,
         auditPassageTerrain,
         addEnclosureLayer,
         retireField,

@@ -1664,6 +1664,55 @@
         }
     }
 
+    function resetLureApproach(group) {
+        if (!group.engagement) return;
+        group.engagement.mode = "lure";
+        delete group.engagement.progress;
+    }
+
+    function adjustEnclosureApproach(encounter, group, snapshot, distances) {
+        const plan = encounter.ai.plans[group.planId],
+            composite = encounter.topology?.composites?.[plan?.compositeId],
+            known = groupObservation(group),
+            turn = encounter.ai.coordinationTurn || 0;
+        if (
+            plan?.kind !== "enclosure" ||
+            !composite ||
+            composite.closureArmed ||
+            composite.autoSeal ||
+            !known ||
+            known.age >= 4 ||
+            turn - (plan.lastGateTurn ?? -8) < 8
+        )
+            return;
+        let changed = false;
+        for (const id of composite.layerIds) {
+            const field = encounter.topology.fields[id];
+            if (!field || field.retired || field.reopenPending) continue;
+            const cells = snapshotCellsByKey(snapshot),
+                candidates = field.boundaryCells.filter(
+                    (cell) =>
+                        !encounter.topology.anchors.some((anchor) => cellKey(anchor) === cellKey(cell)) &&
+                        (cells.get(cellKey(cell))?.walkable ?? cells.get(cellKey(cell))?.floor) &&
+                        !cells.get(cellKey(cell))?.protected,
+                ),
+                gate = candidates.sort(
+                    (a, b) =>
+                        distances(a, known) - distances(b, known) ||
+                        distance(a, field.core) - distance(b, field.core) ||
+                        Number(cellKey(b) === cellKey(field.gateCell)) -
+                            Number(cellKey(a) === cellKey(field.gateCell)) ||
+                        cellKey(a).localeCompare(cellKey(b)),
+                )[0];
+            if (gate) changed = api.SpinnerNativeField.setEnclosureGate(id, gate).changed || changed;
+        }
+        if (changed) {
+            plan.lastGateTurn = turn;
+            group.assignments = {};
+            resetLureApproach(group);
+        }
+    }
+
     function adjustPassageApproach(encounter, group, snapshot, distances) {
         const plan = encounter.ai.plans[group.planId],
             field = encounter.topology?.fields?.[plan?.fieldId],
@@ -1674,13 +1723,12 @@
             !field ||
             !known ||
             known.age >= 4 ||
-            field.phase !== "ready" ||
+            field.retired ||
+            encounter.topology.composites[field.compositeId]?.closureArmed ||
             turn - (plan.lastGateTurn ?? -8) < 8 ||
             group.memberIds.some((id) => sourceBusy(KDMapData.Entities.find((entity) => entity.id === id)))
         )
             return;
-        const links = field.gates.map((gate) => encounter.topology.links.find((link) => link.id === gate.linkId));
-        if (links.some((link) => !link || link.hp < link.maxHp || link.collapsed)) return;
         const sorted = [...field.gates].sort(
                 (a, b) => distances(a.cells[0], known) - distances(b.cells[0], known) || a.id.localeCompare(b.id),
             ),
@@ -1698,6 +1746,7 @@
         if (result.changed) {
             plan.lastGateTurn = turn;
             group.assignments = {};
+            resetLureApproach(group);
         }
     }
 
@@ -1926,7 +1975,8 @@
                 id,
                 kind: "enclosure",
                 groupId: group.id,
-                fieldId: graph.fieldId,
+                fieldId: composite.layerIds[0],
+                fieldIds: [...composite.layerIds],
                 compositeId: composite.id,
                 status: "preparing",
                 anchors: graph.anchors.map((anchor) => ({ x: anchor.x, y: anchor.y })),
@@ -2132,6 +2182,7 @@
                     api.SpinnerNativeField.setOwners(fieldId, group.memberIds);
             auditEngagement(encounter, group);
             adjustPassageApproach(encounter, group, snapshot, distances);
+            adjustEnclosureApproach(encounter, group, snapshot, distances);
         }
         reserveActions(encounter, snapshot, distances);
         reserveRallyPositions(encounter, snapshot, distances);
@@ -2824,7 +2875,8 @@
         // through the same paid movement, occupancy and construction checks.
         if (
             group.engagement &&
-            assignment?.role === "body" &&
+            assignment &&
+            assignment.type !== "rally" &&
             String(group.engagement?.lureId) !== String(enemy.id) &&
             plan.compositeId
         )

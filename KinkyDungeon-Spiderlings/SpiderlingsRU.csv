@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,Отладочный обход блокировки
 RestraintSpiderlingsSilkLeash,Паучий шёлковый поводок
 RestraintSpiderlingsSilkLeashDesc,Тонкие шелковистые нити собраны в лёгкий шнур с мягким блеском.
 RestraintSpiderlingsSilkLeashDesc2,"Когда шнур выпрямляется, его тонкие нити слегка натягиваются, а при ослаблении ложатся мягкой дугой."
-SpiderlingsRecoveryAttached,Прядильщик прикрепляет шёлковую нить ({count}/8). При следующем доступном действии он может втянуть тебя обратно.
+SpiderlingsRecoveryAttached,Прядильщик прикрепляет шёлковую нить ({count}). Натянутая нить может потянуть тебя обратно.
 SpiderlingsRecoveryAttachBlocked,Шёлковый поводок не крепится. Нужен подходящий ошейник или шёлковый мешок для ног; другое снаряжение не должно мешать креплению.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь разрезать TargetRestraint."
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"В нынешнем со
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"В нынешнем состоянии ты не можешь ослабить TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Остальные путы мешают тебе развязать TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Остальные путы мешают тебе развязать TargetRestraint."
-SpiderlingsRecoveryStand,Упереться ({cost} выносливости)
-SpiderlingsRecoverySelect,Нить {number}/{count}
-SpiderlingsRecoveryCut,Разрезать ({cost})
-SpiderlingsRecoveryRemove,Снять ({cost})
-SpiderlingsRecoveryStruggle,Вырваться ({cost})
-SpiderlingsRecoveryStrandLoosened,Ты ослабляешь выбранную шёлковую нить.
-SpiderlingsRecoveryStrandSevered,Ты освобождаешься от выбранной шёлковой нити.
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Каждый дополнительный слой стоит базовые 20 маны. Сила связывания: 1 / 1,5 / 4,5; перезарядка от первого слоя: 8 / 9 / 12 ходов. Эффективные попадания возвращают 6 выносливости один раз за круг. Первый полный шёлковый кокон каждой жертвы возвращает ману: не более половины уплаченной маны и всего до 20 за круг."
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Сплети круг шёлка на расстоянии до 6 клеток. Он сомкнётся после двух следующих действий; ближе к центру связывает сильнее. Повторное применение усиливает тот же круг до трёх ступеней. Каждый дополнительный слой расходует ману и одно действие, задерживая смыкание на ход. Стены останавливают шёлк."
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Пошли липкий шёлк на расстояние до 6 клеток к первой враждебной цели. Нить связывает и замедляет жертву; стены её останавливают. Перезарядка: 3 хода. Эффективное попадание возвращает 6 выносливости. Первый полный шёлковый кокон жертвы возвращает не более половины уплаченной маны.

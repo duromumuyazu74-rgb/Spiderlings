@@ -1,327 +1,252 @@
 (async () => {
-    const { setup, spawn, turn, frame, expect, photo, save, restore, enemy } = globalThis.normalAcceptance;
+    const { setup, spawn, turn, frame, expect, photo, save, restore } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []),
         images = {};
-    for (const count of [2, 4, 8])
-        for (const external of [false, true]) {
-            setup(`recovery-${count}-${external}`);
-            KDModSettings.Spiderlings.spiderlingsPinkWebbing = external;
-            KDMovePlayer(14, 10, false);
-            const positions = [
-                [17, 9],
-                [18, 9],
-                [19, 9],
-                [17, 10],
-                [18, 10],
-                [19, 10],
-                [17, 11],
-                [18, 11],
-            ];
-            const actors = positions.slice(0, count).map(([x, y]) => spawn("Spinner", x, y));
-            for (const actor of actors) {
-                actor.stun = 999;
-                actor.hostile = 999;
+    {
+        setup("gate-reorientation");
+        for (let y = 2; y < 23; y++)
+            for (let x = 2; x < 28; x++) {
+                KinkyDungeonMapSet(x, y, "0");
+                KinkyDungeonTilesDelete(`${x},${y}`);
             }
-            const encounter = Spiderlings.SpinnerNativeField.initializeEnclosure({
-                compositeId: "recovery-test",
-                owners: actors.map((actor) => actor.id),
-                built: true,
-                autoSeal: true,
-                layers: [
-                    {
-                        id: "inner",
-                        vertices: [
-                            { x: 13, y: 9 },
-                            { x: 15, y: 9 },
-                            { x: 15, y: 11 },
-                            { x: 13, y: 11 },
-                        ],
-                        gate: { x: 13, y: 10 },
-                    },
-                ],
-            });
-            expect(encounter.topology.fields.inner.phase === "sealed", "Recovery fixture is not sealed");
-            KDSetWeapon(null);
-            KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
-            let attacks = 0;
-            while (Spiderlings.SpinnerNativeField.isSpiderlingsWebCell({ x: 15, y: 10 }) && attacks < 20) {
-                KinkyDungeonMove({ x: 1, y: 0 }, 1, true, true);
-                await frame();
-                attacks++;
-            }
-            expect(attacks > 0 && attacks < 20, "Unarmed player could not break the wall");
-            KDMovePlayer(16, 10, false);
-            expect(
-                Spiderlings.SpinnerRecovery.departure(),
-                "Leaving the breached field did not record recovery eligibility",
-            );
-            const rejectionMessages = [],
-                nativeMessage = KinkyDungeonSendTextMessage;
-            actors[0].stun = 0;
-            KinkyDungeonSendTextMessage = function (_priority, text) {
-                rejectionMessages.push(text);
-                return nativeMessage.apply(this, arguments);
-            };
-            try {
-                KDPlayerEffects.SpiderlingsWebbingEnemyBind(
-                    KinkyDungeonPlayerEntity,
-                    "glue",
-                    { profile: "Spinner" },
-                    undefined,
-                    "Enemy",
-                    undefined,
-                    actors[0],
-                );
-            } finally {
-                KinkyDungeonSendTextMessage = nativeMessage;
-                actors[0].stun = 999;
-            }
-            expect(
-                Spiderlings.SpinnerRecovery.strength() === 0 && !KinkyDungeonGetRestraintItem("ItemNeckRestraints"),
-                "Bare-neck rejection changed equipment or established recovery",
-            );
-            expect(
-                rejectionMessages.includes(TextGet("SpiderlingsRecoveryAttachBlocked")) &&
-                    rejectionMessages.every((message) => !message.includes("[NotFound]")),
-                "Rejected recovery hit has no readable feedback",
-            );
-            // A collar anchors either leash; a rejected slot never forces replacement.
-            KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-            let carrier;
-            if (external) {
-                KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicLeash"), 0, false, "");
-                carrier = KinkyDungeonGetRestraintItem("ItemNeckRestraints");
-                carrier.cutProgress = 0.37;
-                carrier.struggleProgress = 0.23;
-            }
-            for (const actor of actors) {
-                actor.stun = 0;
-                KDPlayerEffects.SpiderlingsWebbingEnemyBind(
-                    KinkyDungeonPlayerEntity,
-                    "glue",
-                    { profile: "Spinner" },
-                    undefined,
-                    "Enemy",
-                    undefined,
-                    actor,
-                );
-            }
-            const recovery = Spiderlings.SpinnerRecovery;
-            expect(
-                recovery.strength() === count,
-                `Only ${recovery.strength()}/${count} sources attached: ${JSON.stringify({ departure: recovery.departure(), state: recovery.state(), capture: Spiderlings.SpinnerCapture.state(), gear: KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name), actors: actors.map((actor) => ({ id: actor.id, present: KDMapData.Entities.includes(actor), x: actor.x, y: actor.y, hp: actor.hp, active: recovery.sourceActionable(actor), hostile: KDHostile(actor) })) })}`,
-            );
-            const row = {
-                count,
-                external,
-                rejectionMessages,
-                attacks,
-                strength: recovery.strength(),
-                standCost: recovery.standFirmCost(),
-                positions: [],
-            };
-            rows.push(row);
-            await frame();
-            await frame();
-            await new Promise((resolve) => setTimeout(resolve, 700));
-            images[`recovery-${count}-${external}-strands`] = await photo();
-            const strands = () =>
-                recovery.sourceIds().map((id) => kdpixisprites.get(`SpiderlingsRecoveryTether_${id}`));
-            expect(
-                strands().length === count &&
-                    strands().every((sprite) => sprite?.visible && sprite.texture.valid && sprite.mask),
-                "Recovery sources have no visible masked silk art",
-            );
-            row.visual = {
-                strands: strands().length,
-                pink: external,
-                unchangedNativeLeash: structuredClone(KinkyDungeonPlayerEntity.leash || null),
-            };
-            if (count === 2) {
-                const nativeVision = KinkyDungeonVisionGet,
-                    logicBefore = JSON.stringify(recovery.state()),
-                    leashBefore = JSON.stringify(KinkyDungeonPlayerEntity.leash);
-                try {
-                    KinkyDungeonVisionGet = (x, y) =>
-                        x === KinkyDungeonPlayerEntity.x && y === KinkyDungeonPlayerEntity.y ? 5 : 0;
-                    await frame();
-                    await frame();
-                    expect(
-                        strands().every((sprite) => sprite.mask.geometry.graphicsData.length === 1),
-                        "Partly hidden silk mask includes hidden cells",
-                    );
-                    images[`recovery-${external}-one-visible-cell`] = await photo();
-                    KinkyDungeonVisionGet = () => 0;
-                    await frame();
-                    await frame();
-                    expect(
-                        strands().every((sprite) => !sprite || !sprite.visible),
-                        "Fully hidden recovery silk remains visible",
-                    );
-                    row.visual.hiddenEarlyDraw = false;
-                } finally {
-                    KinkyDungeonVisionGet = nativeVision;
-                }
-                expect(
-                    JSON.stringify(recovery.state()) === logicBefore &&
-                        JSON.stringify(KinkyDungeonPlayerEntity.leash) === leashBefore,
-                    "Rendering changed recovery or native movement ownership",
-                );
-                await frame();
-                await frame();
-            }
-            const beforeEscape = save();
-            await frame();
-            const controlNames = ["Stand", "Select", "Cut", "Remove", "Struggle"].map(
-                (name) => "SpiderlingsSpinnerRecovery" + name,
-            );
-            expect(
-                controlNames.every((name) => KDButtonsCache[name]),
-                "Active native recovery has no player action controls",
-            );
-            row.controls = controlNames;
-            if (count === 8) {
-                const liveCarrier = KinkyDungeonGetRestraintItem(recovery.GROUP),
-                    savedAttempts = { present: "attempts" in liveCarrier, value: liveCarrier.attempts },
-                    queryBuff = "SpiderlingsRecoveryQueryProbe";
-                KinkyDungeonApplyBuffToEntity(KinkyDungeonPlayerEntity, {
-                    id: queryBuff,
-                    type: "StrugglePower",
-                    power: -2,
-                    duration: 9999,
-                });
-                row.queries = [];
-                try {
-                    for (const attempts of [undefined, 0.75]) {
-                        if (attempts === undefined) delete liveCarrier.attempts;
-                        else liveCarrier.attempts = attempts;
-                        const before = {
-                            carrier: JSON.stringify(liveCarrier),
-                            recovery: JSON.stringify(recovery.state()),
-                            stamina: KinkyDungeonStatStamina,
-                            tick: KinkyDungeonCurrentTick,
-                        };
-                        for (let n = 0; n < 10; n++) KDEventMapGeneric.draw.SpiderlingsSpinnerRecovery({}, {});
-                        expect(
-                            JSON.stringify(liveCarrier) === before.carrier &&
-                                JSON.stringify(recovery.state()) === before.recovery &&
-                                KinkyDungeonStatStamina === before.stamina &&
-                                KinkyDungeonCurrentTick === before.tick,
-                            "Native HUD cost queries consumed carrier attempts, progress, resources or a turn",
-                        );
-                        row.queries.push({ initialAttempts: attempts ?? "absent", draws: 10, unchanged: true });
-                    }
-                } finally {
-                    KinkyDungeonExpireBuff(KinkyDungeonPlayerEntity, queryBuff);
-                    if (savedAttempts.present) liveCarrier.attempts = savedAttempts.value;
-                    else delete liveCarrier.attempts;
-                }
-            }
-            const nativeEscape = KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape;
-            row.escapePenalty = 0;
-            KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape = function (_event, item, data) {
-                const before = data.escapePenalty || 0;
-                const result = nativeEscape.apply(this, arguments);
-                row.escapePenalty += (data.escapePenalty || 0) - before;
-                return result;
-            };
-            try {
-                row.escapeResult = KDInputTypes.struggle({ group: recovery.GROUP, type: "Struggle" });
-            } finally {
-                KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape = nativeEscape;
-            }
-            expect(
-                Math.abs(row.escapePenalty - (external ? 0 : 0.05 * (count - 1))) < 1e-8,
-                "Native ordinary escape calculation used the wrong source penalty",
-            );
-            restore(beforeEscape);
-            const stamina = [];
-            const nativeStamina = KDChangeStamina;
-            KDChangeStamina = function (source, type, trigger, amount) {
-                if (trigger === "spiderlingsRecoveryStand") stamina.push(amount);
-                return nativeStamina.apply(this, arguments);
-            };
-            try {
-                expect(KDInputTypes.spiderlingsRecoveryStand() === "Stand", "Native stand-firm input failed");
-            } finally {
-                KDChangeStamina = nativeStamina;
-            }
-            expect(
-                stamina.length === 1 && Math.abs(stamina[0] + (5 + 2 * (count - 1)) / 10) < 1e-8,
-                "Stand-firm charged the wrong stamina",
-            );
-            row.stamina = stamina[0];
-            await frame();
-            await frame();
-            restore(save());
-            expect(recovery.strength() === count, "Reload changed active tether sources");
-            images[`${external ? "pink" : "normal"}-${count}`] = await photo();
-            for (let tick = 0; tick < 8; tick++) {
+        KDMovePlayer(19, 10, false);
+        const actors = [spawn("Spinner", 12, 8), spawn("Spinner", 12, 12)],
+            reporter = spawn("WebCaster", 19, 8),
+            field = Spiderlings.SpinnerNativeField,
+            ai = Spiderlings.SpinnerAI;
+        reporter.Enemy = { ...reporter.Enemy, movePoints: 999, attackPoints: 999, spells: [] };
+        reporter.modified = true;
+        reporter.hostile = 999;
+        reporter.aware = true;
+        reporter.vp = 10;
+        for (const actor of actors) {
+            actor.hostile = 999;
+            actor.aware = false;
+        }
+        field.initializeEnclosure({
+            compositeId: "rotating",
+            owners: actors.map((a) => a.id),
+            built: true,
+            layers: [
+                {
+                    id: "rotating-inner",
+                    vertices: [
+                        { x: 11, y: 7 },
+                        { x: 15, y: 7 },
+                        { x: 15, y: 13 },
+                        { x: 11, y: 13 },
+                    ],
+                    gate: { x: 11, y: 10 },
+                },
+            ],
+        });
+        field.state().builders = {};
+        ai.beginTurn({ activate: true, adoptExisting: true });
+        const gateRows = [];
+        for (const x of [19, 7]) {
+            KDMovePlayer(x, 10, false);
+            KDMoveEntity(reporter, x, 8, true, undefined, true, true);
+            reporter.vp = 10;
+            reporter.aware = true;
+            for (let tick = 0; tick < 90; tick++) {
                 await turn();
-                row.positions.push({
-                    x: KinkyDungeonPlayerEntity.x,
-                    y: KinkyDungeonPlayerEntity.y,
-                    state: structuredClone(recovery.state()),
-                    goal: recovery.state() && recovery.destination(recovery.state()),
-                    core: Spiderlings.SpinnerNativeField.commonCore("recovery-test"),
-                    path: KinkyDungeonFindPath(
-                        KinkyDungeonPlayerEntity.x,
-                        KinkyDungeonPlayerEntity.y,
-                        14,
-                        10,
-                        true,
-                        false,
-                        false,
-                        KinkyDungeonMovableTilesEnemy,
-                        undefined,
-                        undefined,
-                        undefined,
-                        enemy(actors[0].id),
-                    ),
+                const f = field.state().topology.fields["rotating-inner"];
+                gateRows.push({
+                    tick: KinkyDungeonCurrentTick,
+                    playerX: x,
+                    gate: f.gateCell,
+                    phase: f.phase,
+                    actions: field.state().topology.actionLog.length,
+                    assignment: Object.values(field.state().ai.groups).map((g) => g.assignments),
+                    actors: actors.map((a) => ({ x: a.x, y: a.y })),
                 });
+                if ((x > 13 ? f.gateCell.x === 15 : f.gateCell.x === 11) && f.phase === "ready") break;
             }
+            const f = field.state().topology.fields["rotating-inner"];
             expect(
-                row.positions.some((position) => position.x < 16),
-                "Recovery ignored the open breach",
+                (x > 13 ? f.gateCell.x === 15 : f.gateCell.x === 11) && f.phase === "ready",
+                `gate failed ${JSON.stringify(gateRows.slice(-3))}`,
             );
-            // Source removal is exercised before a successful return releases pulling duty.
-            restore(beforeEscape);
-            // Move the source cluster with the player so only native source-removal work is under test.
-            for (const [index, actor] of actors.entries())
-                KDMoveEntity(
-                    enemy(actor.id),
-                    KinkyDungeonPlayerEntity.x + 1 + (index % 2),
-                    KinkyDungeonPlayerEntity.y - 1 + Math.floor(index / 2),
-                    false,
-                );
-            recovery.audit();
-            const id = recovery.sourceIds()[0],
-                before = recovery.strength();
-            expect(id !== undefined, "No surviving tether remained for native source-removal acceptance");
-            if (id !== undefined) {
-                const actions = [];
-                for (let n = 0; n < 2; n++) {
-                    const before = KinkyDungeonCurrentTick;
-                    actions.push(KDSendInput("spiderlingsRecoveryRemoveSource", { sourceId: id, type: "Remove" }));
-                    await frame();
-                    expect(KinkyDungeonCurrentTick > before, "The player input failed to pay a native world turn");
-                }
-                expect(
-                    !recovery.sourceIds().includes(id),
-                    "Two native removal actions did not release the chosen source",
-                );
-                row.removal = { actions, before, after: recovery.strength() };
+            const solids = new Set(
+                Spiderlings.SpinnerTopology.solidCells(field.state().topology).map((c) => `${c.x},${c.y}`),
+            );
+            expect(
+                f.boundaryCells.filter((c) => !solids.has(`${c.x},${c.y}`)).length === 1,
+                "Old entrance was not rebuilt",
+            );
+        }
+
+        rows.push({ mode: "gate-reorientation", turns: gateRows });
+        images["gate-reorientation"] = await photo();
+    }
+    for (const count of [1, 2, 4, 8, 12]) {
+        setup(`native-recovery-debt-${count}`);
+        for (let y = 2; y < 23; y++)
+            for (let x = 2; x < 28; x++) {
+                KinkyDungeonMapSet(x, y, "0");
+                KinkyDungeonTilesDelete(`${x},${y}`);
             }
-            if (external) {
-                carrier = KinkyDungeonAllRestraintDynamic()
-                    .map(({ item }) => item)
-                    .find((item) => item.name === "BasicLeash");
+        KDMovePlayer(15, 10, false);
+        KDGameData.MovePoints = 0;
+        globalThis.KinkyDungeonToggleAutoSprint = count === 4;
+        const positions = [
+                { x: 13, y: 10 },
+                ...Array.from({ length: 15 }, (_, i) => ({ x: 12 + (i % 3), y: 8 + Math.floor(i / 3) })).filter(
+                    (p) => p.x !== 13 || p.y !== 10,
+                ),
+            ],
+            actors = positions.slice(0, count).map((p) => spawn("Spinner", p.x, p.y));
+        // Isolate player movement cost from escort travel; native movement/input,
+        // tether checks, world turns, source auditing and saves remain active.
+        for (const actor of actors) {
+            actor.hostile = 999;
+            actor.aware = true;
+            // KD 5.5 lowers the active native leash holder's threshold to one,
+            // regardless of Enemy.movePoints. Withhold movement credit for this
+            // interval-only fixture; the moving-escort cases below use normal credit.
+            actor.movePoints = -1000;
+        }
+        const field = Spiderlings.SpinnerNativeField,
+            recovery = Spiderlings.SpinnerRecovery;
+        field.initializeEnclosure({
+            compositeId: "movement",
+            owners: actors.map((a) => a.id),
+            built: false,
+            layers: [
+                {
+                    id: "inner",
+                    vertices: [
+                        { x: 7, y: 8 },
+                        { x: 11, y: 8 },
+                        { x: 11, y: 12 },
+                        { x: 7, y: 12 },
+                    ],
+                    gate: { x: 11, y: 10 },
+                },
+            ],
+        });
+        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
+        const external = count === 4;
+        if (external) KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicLeash"), 0, false, "");
+        const originalCarrier = external && KinkyDungeonGetRestraintItem(recovery.GROUP);
+        if (originalCarrier) {
+            originalCarrier.cutProgress = 0.37;
+            originalCarrier.struggleProgress = 0.23;
+        }
+        const originalContents = originalCarrier && JSON.stringify(originalCarrier);
+        KDGameData[recovery.DEPARTURE] = {
+            version: 1,
+            compositeId: "movement",
+            eligibleSourceIds: actors.map((a) => a.id),
+        };
+        for (const actor of actors) expect(recovery.hit(actor), "Native tether admission failed");
+        expect(
+            KDPlayer().leash?.reason === recovery.TETHER_REASON &&
+                KDPlayer().leash.restraintID === recovery.state().carrierId,
+            "Recovery lacks a real native tether",
+        );
+        expect(
+            !KDInputTypes.spiderlingsRecoveryStand && !KDInputTypes.spiderlingsRecoveryRemoveSource,
+            "Independent recovery inputs remain registered",
+        );
+        KinkyDungeonUpdateStats(0);
+        const moves = [];
+        let direction = -1;
+        for (let i = 0; i < count * 3 + 2; i++) {
+            const before = { x: KDPlayer().x, y: KDPlayer().y };
+            KinkyDungeonMove({ x: 0, y: direction }, 1, true, true);
+            await frame();
+            if (KDPlayer().x !== before.x || KDPlayer().y !== before.y) {
+                moves.push({ input: i, tick: KinkyDungeonCurrentTick, points: KDGameData.MovePoints });
+                direction *= -1;
+            }
+            if (i === 0 && count === 12) {
+                const debt = KDGameData.MovePoints,
+                    carrier = recovery.state().carrierId;
+                KinkyDungeonDressPlayer();
+                UpdateModels(KinkyDungeonPlayer);
+                DrawCharacter(KinkyDungeonPlayer, 0, 0, 1);
+                restore(save());
                 expect(
-                    carrier?.cutProgress === 0.37 && carrier?.struggleProgress === 0.23,
-                    "Source removal changed the external leash progress",
+                    KDGameData.MovePoints === debt &&
+                        recovery.strength() === count &&
+                        KDPlayer().leash.restraintID === carrier,
+                    "Native reload changed movement debt or tether ownership",
                 );
             }
         }
+        expect(recovery.strength() === count, "Movement silently lost a live connected tether source");
+        expect(
+            moves.length >= 3 && moves.slice(1).every((move, i) => move.input - moves[i].input === count),
+            `Wrong native movement interval: ${JSON.stringify({ count, moves })}`,
+        );
+        if (originalCarrier)
+            expect(JSON.stringify(originalCarrier) === originalContents, "Borrowed native leash contents changed");
+        rows.push({ mode: "native-movement", count, moves, external });
+        images[`native-${count}`] = await photo();
+        const carrier = KinkyDungeonAllRestraintDynamic().find(
+            ({ item }) => item.id === recovery.state().carrierId,
+        ).item;
+        KinkyDungeonRemoveRestraintSpecific(carrier, false, false, false);
+        expect(!KDPlayer().leash && !recovery.state(), "Native carrier removal left recovery active");
+    }
+    for (const count of [1, 4, 12]) {
+        setup(`moving-recovery-${count}`);
+        for (let y = 2; y < 23; y++)
+            for (let x = 2; x < 28; x++) {
+                KinkyDungeonMapSet(x, y, "0");
+                KinkyDungeonTilesDelete(`${x},${y}`);
+            }
+        KDMovePlayer(15, 10, false);
+        globalThis.KinkyDungeonToggleAutoSprint = false;
+        const positions = [
+                { x: 13, y: 10 },
+                ...Array.from({ length: 15 }, (_, i) => ({ x: 12 + (i % 3), y: 8 + Math.floor(i / 3) })).filter(
+                    (p) => p.x !== 13 || p.y !== 10,
+                ),
+            ],
+            actors = positions.slice(0, count).map((p) => spawn("Spinner", p.x, p.y)),
+            field = Spiderlings.SpinnerNativeField,
+            recovery = Spiderlings.SpinnerRecovery;
+        for (const actor of actors) actor.hostile = 999;
+        field.initializeEnclosure({
+            compositeId: "move-home",
+            owners: actors.map((a) => a.id),
+            built: false,
+            layers: [
+                {
+                    id: "inner",
+                    vertices: [
+                        { x: 5, y: 8 },
+                        { x: 9, y: 8 },
+                        { x: 9, y: 12 },
+                        { x: 5, y: 12 },
+                    ],
+                    gate: { x: 9, y: 10 },
+                },
+            ],
+        });
+        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
+        KDGameData[recovery.DEPARTURE] = {
+            version: 1,
+            compositeId: "move-home",
+            eligibleSourceIds: actors.map((a) => a.id),
+        };
+        for (const a of actors) expect(recovery.hit(a), "hit failed");
+        const trace = [];
+        for (let i = 0; i < 30; i++) {
+            KinkyDungeonMove({ x: 1, y: 0 }, 1, true, true);
+            await frame();
+            trace.push({ x: KDPlayer().x, y: KDPlayer().y, sources: recovery.strength(), debt: KDGameData.MovePoints });
+            if (KDPlayer().x < 10) break;
+        }
+        expect(
+            trace.some((t) => t.x < 15),
+            `No native drag against repeated movement ${JSON.stringify({ count, trace })}`,
+        );
+        rows.push({ mode: "moving-recovery", count, trace });
+    }
+
     for (const preferNPC of [false, true]) {
         setup(`recovery-automatic-departure-${preferNPC}`);
         KDMovePlayer(14, 10, false);
@@ -422,80 +347,5 @@
         expect(!recovery.state(), "Arriving in the common core did not release temporary pulling duty");
         images[`automatic-departure-${preferNPC}`] = await photo();
     }
-    setup("recovery-remote-relay");
-    for (let y = 5; y <= 15; y++)
-        for (let x = 5; x < KDMapData.GridWidth - 1; x++) {
-            KinkyDungeonMapSet(x, y, "0");
-            KinkyDungeonTilesDelete(`${x},${y}`);
-        }
-    KDMovePlayer(10, 10, false);
-    const relays = Array.from({ length: 8 }, (_, index) => spawn("Spinner", 14 + index * 2, 10));
-    for (const actor of relays) {
-        actor.stun = 999;
-        actor.hostile = 999;
-    }
-    const relayField = Spiderlings.SpinnerNativeField;
-    relayField.initializeEnclosure({
-        compositeId: "remote-relay",
-        owners: relays.map((actor) => actor.id),
-        built: true,
-        autoSeal: true,
-        layers: [
-            {
-                id: "relay-inner",
-                vertices: [
-                    { x: 9, y: 9 },
-                    { x: 11, y: 9 },
-                    { x: 11, y: 11 },
-                    { x: 9, y: 11 },
-                ],
-                gate: { x: 11, y: 10 },
-            },
-        ],
-    });
-    KDSetWeapon(null);
-    KinkyDungeonGetPlayerWeaponDamage(KinkyDungeonCanUseWeapon());
-    for (let attempts = 0; relayField.isSpiderlingsWebCell({ x: 11, y: 10 }) && attempts < 20; attempts++) {
-        KinkyDungeonMove({ x: 1, y: 0 }, 1, true, true);
-        await frame();
-    }
-    expect(!relayField.isSpiderlingsWebCell({ x: 11, y: 10 }), "Relay fixture could not breach its exit");
-    KDMovePlayer(12, 10, false);
-    const recovery = Spiderlings.SpinnerRecovery;
-    expect(recovery.departure(), "Relay fixture did not depart a real field");
-    KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-    relays[0].stun = 0;
-    KDPlayerEffects.SpiderlingsWebbingEnemyBind(
-        KinkyDungeonPlayerEntity,
-        "glue",
-        { profile: "Spinner" },
-        undefined,
-        "Enemy",
-        undefined,
-        relays[0],
-    );
-    expect(recovery.strength() === 1, "Relay root did not establish a native carrier");
-    const beforeJoin = { x: KinkyDungeonPlayerEntity.x, y: KinkyDungeonPlayerEntity.y };
-    for (const actor of relays.slice(1)) {
-        actor.stun = 0;
-        recovery.handleEnemyTurn(actor, KinkyDungeonPlayerEntity, 0);
-        expect(!recovery.sourceIds().includes(actor.id), "Zero-time relay joined without payment");
-        recovery.handleEnemyTurn(actor, KinkyDungeonPlayerEntity, 2);
-        expect(recovery.sourceIds().includes(actor.id), "Connected remote Spinner failed paid relay admission");
-        expect(
-            KinkyDungeonPlayerEntity.x === beforeJoin.x && KinkyDungeonPlayerEntity.y === beforeJoin.y,
-            "Relay admission also pulled the player",
-        );
-    }
-    expect(recovery.strength() === 8, "A single physical root did not support eight relay sources");
-    restore(save());
-    expect(recovery.strength() === 8, "Native reload lost a connected relay chain");
-    const savedRelays = relays.map((actor) => enemy(actor.id));
-    const chain = structuredClone(recovery.state());
-    savedRelays[0].stun = 1;
-    recovery.audit();
-    expect(recovery.strength() === 0, "Disconnected remote relay cycle anchored itself");
-    rows.push({ mode: "remote-relay", sources: chain, joiningDidNotPull: true, rootLossPruned: true });
-    KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
     return { rows, images };
 })();

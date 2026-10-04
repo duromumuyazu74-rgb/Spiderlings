@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,デバッグによる階段の制限解除が有効�
 RestraintSpiderlingsSilkLeash,蜘蛛の絹リード
 RestraintSpiderlingsSilkLeashDesc,細く柔らかな蛛糸を束ねた軽い綱。表面には穏やかな絹の光沢がある。
 RestraintSpiderlingsSilkLeashDesc2,綱が伸びると細い糸が一本ずつそっと張り、緩むと柔らかな弧を描く。
-SpiderlingsRecoveryAttached,糸紡ぎが蛛糸を結びつけた（{count}/8）。次に行動できる時、引き戻されることがある。
+SpiderlingsRecoveryAttached,糸紡ぎが蛛糸を結びつけた（{count}）。糸が張ると、引き戻されることがある。
 SpiderlingsRecoveryAttachBlocked,蛛糸の引き綱を結べない。対応する首輪か蛛糸の脚袋が必要で、ほかの装備が邪魔をしていると結べない。
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"今の状態ではTargetRestraintを切り開くことはできない。"
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"今の状態ではTargetRestraintを切り開くことはできない。"
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"今の状態ではTarget
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"今の状態ではTargetRestraintをほどくことはできない。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"ほかの拘束が動きを妨げ、TargetRestraintをほどけない。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"ほかの拘束が動きを妨げ、TargetRestraintをほどけない。"
-SpiderlingsRecoveryStand,踏ん張る（体力 {cost}）
-SpiderlingsRecoverySelect,糸 {number}/{count}
-SpiderlingsRecoveryCut,切る（{cost}）
-SpiderlingsRecoveryRemove,ほどく（{cost}）
-SpiderlingsRecoveryStruggle,もがく（{cost}）
-SpiderlingsRecoveryStrandLoosened,選んだ牽引糸が緩みました。
-SpiderlingsRecoveryStrandSevered,選んだ牽引糸から抜け出しました。
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,追加の織り込みは1回につき基本魔力20。拘束倍率：1／1.5／4.5。最初に織ってからの再使用時間：8／9／12ターン。有効な命中で輪ごとに1度だけ体力6を回復する。獲物を初めて完全な糸の繭に包むと魔力が戻る。輪全体で実際に払った魔力の半分、最大20まで。
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,6マス以内に糸の輪を織る。さらに2回行動すると収束し、中心に近いほど強く拘束する。収束前に同じ能力を再使用すると、同じ輪を最大3段階まで織り重ねられる。追加ごとに魔力と1回の行動を消費し、収束が1ターン遅れる。壁は糸を遮る。
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,6マス以内の最初の敵対対象へ粘る糸を放ち、拘束して減速させる。壁は糸を遮る。再使用時間は3ターン。有効な命中で体力6を回復する。獲物を初めて完全な糸の繭に包むと、実際に払った魔力の半分まで戻る。

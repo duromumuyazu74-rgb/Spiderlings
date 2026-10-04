@@ -32,6 +32,51 @@ const rectangle = (left, top, right, bottom) => [
     { x: left, y: bottom },
 ];
 
+test("moving an enclosure entrance preserves silk until paid opening and closes the former gate", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "adaptive",
+        owners: [1, 2],
+        map: floorMap(),
+        layers: [{ id: "inner", vertices: rectangle(10, 6, 14, 10), gate: { x: 10, y: 8 } }],
+    });
+    for (let n = 0; n < 60; n++) {
+        const action = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    assert.equal(state.fields.inner.phase, "ready");
+    const solids = JSON.stringify(topology.solidCells(state)),
+        hp = state.links.map((link) => link.hp);
+    const change = topology.setEnclosureGate(state, "inner", { x: 14, y: 8 });
+    assert.equal(change.changed, true);
+    assert.equal(JSON.stringify(topology.solidCells(change.state)), solids);
+    state = topology.restore(JSON.parse(JSON.stringify(change.state)));
+    const open = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+    assert.equal(open.type, "reopenGate");
+    assert.deepEqual(JSON.parse(JSON.stringify(open.cell)), { x: 14, y: 8 });
+    state = topology.applyAction(state, { ...open, ownerId: 1 }, clear(open.cell)).state;
+    for (let n = 0; n < 60; n++) {
+        const action = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    assert.equal(state.fields.inner.phase, "ready");
+    assert.ok(topology.solidCells(state).some((cell) => cell.x === 10 && cell.y === 8));
+    assert.ok(!topology.solidCells(state).some((cell) => cell.x === 14 && cell.y === 8));
+    assert.deepEqual(
+        state.links.map((link) => link.hp),
+        hp,
+    );
+    topology.updateTarget(state, { id: "player", x: 12, y: 8 }, "adaptive");
+    assert.equal(
+        topology.setEnclosureGate(state, "inner", { x: 12, y: 6 }).changed,
+        false,
+        "Captured prey cannot rotate an armed gate",
+    );
+});
+
 test("declared regular and concave enclosures preserve a free 3x3 core", () => {
     const topology = rules(),
         regular = topology.createEnclosure({
