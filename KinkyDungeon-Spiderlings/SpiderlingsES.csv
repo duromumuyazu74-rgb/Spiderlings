@@ -201,7 +201,7 @@ KinkyDungeonSpellCastSpiderlingsMageCollapse,"La seda se reúne desde el borde d
 SpiderlingsNPCAdhesionInitial,Inmovilizado
 SpiderlingsNPCAdhesionFull,Atado con seda
 SpiderlingsNPCAdhesionHelpless,Indefenso
-SpiderlingsNPCWrapping,Envolviendo
+SpiderlingsNPCWrapping,Vulnerable por seda
 KDMapMod_SpiderlingsInfestation,Infestación de arañitas
 KinkyDungeonMapModSpiderlingsInfestation,La seda invade los rincones y unos susurros responden a otros en las sombras. Este lugar lleva tiempo teniendo otros habitantes.
 KDEscapeMethod_SpiderlingsInfestation,Destruir los nidos marcados

@@ -93,13 +93,22 @@
     const turns = [];
     for (let i = 0; i < 40; i++) {
         KinkyDungeonAdvanceTime(1);
-        turns.push({ x: actors[0].x, y: actors[0].y, capture: !!KDGameData.SpiderlingsSpinnerCapture });
+        turns.push({
+            x: actors[0].x,
+            y: actors[0].y,
+            mode: group.engagement?.mode,
+            capture: !!KDGameData.SpiderlingsSpinnerCapture,
+        });
         if (turns.at(-1).capture) break;
         await new Promise((resolve) => requestAnimationFrame(resolve));
     }
     if (outside) {
-        if (new Set(turns.slice(0, 5).map((t) => `${t.x},${t.y}`)).size !== 1)
+        // Test.92 shortens the no-progress ambush to two turns. Movement after
+        // that window is required pressure, not idle lure oscillation.
+        if (new Set(turns.slice(0, 2).map((t) => `${t.x},${t.y}`)).size !== 1)
             throw new Error("Lure oscillates during the initial ambush window.");
+        if (!turns.slice(0, 5).some((t) => t.mode === "pressure"))
+            throw new Error("Spinner did not leave its shortened no-progress ambush.");
         if (new Set(turns.map((t) => `${t.x},${t.y}`)).size < 2)
             throw new Error("A continuously visible stationary player never triggers Spinner pressure.");
     }

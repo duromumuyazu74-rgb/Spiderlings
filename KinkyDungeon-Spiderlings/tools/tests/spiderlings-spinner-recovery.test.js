@@ -612,3 +612,36 @@ test("a one-cell core lets its executor take a paid step beyond center", () => {
     assert.equal(r.source.y, 5);
     assert.equal(r.player.leash.length, 1.5);
 });
+
+test("recovery clears native attack warnings for attached and joining sources on refresh", () => {
+    const r = attached(),
+        helper = r.addSource(42, 8, 6);
+    r.api.state().eligibleSourceIds.push(helper.id);
+    for (const actor of [r.source, helper]) {
+        actor.attackPoints = 4;
+        actor.warningTiles = [{ x: r.player.x, y: r.player.y }];
+        r.api.handleEnemyTurn(actor, r.player, 0);
+        assert.equal(actor.attackPoints, 0);
+        assert.equal(actor.warningTiles.length, 0);
+        assert.equal(actor.movePoints, undefined);
+    }
+    assert.equal(r.api.strength(), 1, "A refresh cannot pay for a new relay");
+});
+
+test("recovery detours a native faction route blocked by a coworker with paid movement", () => {
+    const r = attached({ pathFinder: (x) => (x === 7 ? [{ x: 5, y: 5 }] : [{ x: 8, y: 4 }]) });
+    r.c.KDMapData.GridWidth = r.c.KDMapData.GridHeight = 15;
+    const blocker = { id: 99, x: 8, y: 4, hp: 3, Enemy: { name: "WebCaster" } };
+    r.c.KDMapData.Entities.push(blocker);
+    r.webCells.add("8,4");
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerAI.js"), "utf8"), r.c);
+    r.source.Enemy.movePoints = 2;
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.deepEqual({ x: r.source.x, y: r.source.y }, { x: 9, y: 5 });
+    assert.equal(r.source.movePoints, 1);
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.deepEqual({ x: r.source.x, y: r.source.y }, { x: 8, y: 6 });
+    assert.deepEqual({ x: blocker.x, y: blocker.y }, { x: 8, y: 4 });
+    assert.deepEqual({ x: r.player.x, y: r.player.y }, { x: 7, y: 5 });
+    assert.ok(r.c.tetherCalls.length > 0, "The native tether still owns dragging");
+});

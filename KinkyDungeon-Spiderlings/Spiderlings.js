@@ -603,7 +603,7 @@ SPIDERLINGS.addEnemies([
 addTextKey("SpiderlingsNPCAdhesionInitial", "Pinned");
 addTextKey("SpiderlingsNPCAdhesionFull", "Silk-bound");
 addTextKey("SpiderlingsNPCAdhesionHelpless", "Helpless");
-addTextKey("SpiderlingsNPCWrapping", "Wrapping");
+addTextKey("SpiderlingsNPCWrapping", "Silk-bound vulnerability");
 
 //Spinner
 addTextKey("NameSpinner", "Spiderling Spinner");

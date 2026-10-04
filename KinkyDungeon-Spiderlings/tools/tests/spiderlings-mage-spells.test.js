@@ -357,3 +357,28 @@ test("Hex actual-turn identity survives overlap, repeated processing and reload;
     for (let n = 0; n < 6; n++) next();
     assert.equal(r.c.Spiderlings.MageSpells.markFor(r.player), undefined, "Gone area never refreshes old marks");
 });
+
+test("field replenishment preserves the pending burst interval through hits and reload", () => {
+    const r = fixture();
+    r.cast("SpiderlingsMageHex");
+    for (let n = 0; n < 3; n++) r.tick();
+    const contact = () =>
+        r.c.KDPlayerEffects.SpiderlingsWebbingEnemyBind(r.player, 0, {}, {}, "Enemy", undefined, {
+            Enemy: { name: "Spinner" },
+        });
+    contact();
+    const mark = () => r.c.Spiderlings.MageSpells.markFor(r.player);
+    assert.equal(mark().stacks, 0, "a successful hit consumes the current mark");
+    r.tick();
+    assert.equal(mark().stacks, 1, "the next active turn still adds a layer");
+    assert.equal(mark().expiresAt, r.map.SpiderlingsMageSpells.clock + 3);
+    r.map.SpiderlingsMageSpells = JSON.parse(JSON.stringify(r.map.SpiderlingsMageSpells));
+    contact();
+    assert.equal(mark().stacks, 1, "replenishment and reload cannot bypass the burst interval");
+    assert.equal(r.map.SpiderlingsMageSpells.blasts.filter((b) => b.detonateAt).length, 1);
+    r.tick();
+    assert.equal(mark().stacks, 2);
+    assert.equal(mark().expiresAt, r.map.SpiderlingsMageSpells.clock + 4);
+    contact();
+    assert.equal(mark().stacks, 0, "a later accepted hit consumes the replenished mark");
+});

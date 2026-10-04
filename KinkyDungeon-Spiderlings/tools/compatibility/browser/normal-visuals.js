@@ -92,19 +92,16 @@
         await snap(`${colorName(pink)}-npc-states`);
         rows.push({ kind: "adhesion-labels", pink, states });
         KDMapData.Entities = KDMapData.Entities.filter((target) => ![initial, helpless].includes(target));
-        while (full.boundLevel < 38) Spiderlings.Combat.hitNPC(caster, full, "direct");
-        KDMoveEntity(caster, 13, 10, false);
-        caster.stun = 0;
-        for (let tick = 0; tick < 4 && !Spiderlings.NPCWrapping.record(full)?.progress; tick++) await turn();
-        expect(Spiderlings.NPCWrapping.record(full)?.progress > 0, "No paid wrapping feedback to inspect");
+        expect(Spiderlings.NPCWrapping.vulnerable(full), "No silk vulnerability label to inspect");
         KDDamageQueue.length = 0;
         KinkyDungeonFloaters.length = 0;
         await new Promise((resolve) => setTimeout(resolve, 500));
         await snap(`${colorName(pink)}-npc-wrapping`);
         rows.push({
-            kind: "wrapping-label",
+            kind: "silk-vulnerability-label",
             pink,
-            record: structuredClone(Spiderlings.NPCWrapping.record(full)),
+            vulnerable: Spiderlings.NPCWrapping.vulnerable(full),
+            multiplier: Spiderlings.NPCWrapping.DAMAGE_MULTIPLIER,
             source: { x: caster.x, y: caster.y, visual_x: caster.visual_x, visual_y: caster.visual_y },
         });
 

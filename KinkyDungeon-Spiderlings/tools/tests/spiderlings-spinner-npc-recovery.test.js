@@ -259,8 +259,8 @@ test("NPC departure requests native pursuit before a fresh binding hit and after
     r.c.Spiderlings.SpinnerCapture.sourceIds = () => [source.id];
     assert.equal(r.api.wantsPursuit(source, r.target), false, "player capture sources cannot chase an NPC");
     r.c.Spiderlings.SpinnerCapture.sourceIds = () => [];
-    r.c.Spiderlings.NPCWrapping = { records: () => ({ wrap: { targetId: r.target.id, sourceIds: [2] } }) };
-    assert.equal(r.api.wantsPursuit(source, r.target), false, "wrapping owns its target");
+    r.c.Spiderlings.NPCWrapping = { vulnerable: () => true };
+    assert.equal(r.api.wantsPursuit(source, r.target), true, "silk vulnerability does not own NPC pursuit");
     r.c.Spiderlings.NPCWrapping = undefined;
     r.target.x = 5;
     assert.equal(r.api.wantsPursuit(source, r.target), false, "returning to the field releases pursuit");

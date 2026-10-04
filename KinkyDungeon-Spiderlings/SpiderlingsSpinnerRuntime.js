@@ -55,8 +55,6 @@
                     if (npcCapture) return npcCapture;
                     const npcRecovery = api.SpinnerNPCRecovery?.handleEnemyTurn(enemy, target, delta);
                     if (npcRecovery) return npcRecovery;
-                    const npcWrapping = api.NPCWrapping?.handleEnemyTurn(enemy, target, delta);
-                    if (npcWrapping) return npcWrapping;
                     const nativeField = api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
                     if (nativeField) return nativeField;
                     const legacyField = api.SpinnerField.handleEnemyTurn(enemy, target, delta);
@@ -123,7 +121,7 @@
             api.SpinnerAI?.preparePositiveTurn(data?.delta);
             if (data?.delta > 0) api.SpinnerRollout?.preparePositiveTurn();
             api.SpinnerNPCCapture?.prepareTurn(data?.delta);
-            api.NPCWrapping?.prepareTurn(data?.delta);
+            if (data?.delta > 0) api.NPCWrapping?.preemptNativeCapture();
         });
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) =>
             api.SpinnerNativeField.onNativeDamage(data),
@@ -148,13 +146,11 @@
             api.SpinnerRecovery?.audit();
             api.SpinnerNPCCapture?.settleTurn(data?.delta);
             if (data?.delta > 0) api.SpinnerNPCRecovery?.audit();
-            api.NPCWrapping?.tickAfter(data?.delta);
         });
         KDAddEvent(KDEventMapGeneric, "postRemoval", KEY, () => {
             api.SpinnerRecovery?.audit();
             api.SpinnerNPCCapture?.auditSources();
             api.SpinnerNPCRecovery?.audit();
-            api.NPCWrapping?.audit();
         });
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             api.WebMobility?.invalidateNavigation(true);

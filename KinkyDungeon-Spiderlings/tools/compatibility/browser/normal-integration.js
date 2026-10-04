@@ -158,11 +158,11 @@
     sustained.turns = [];
     sustained.actions = [];
     sustained.damage = [];
-    sustained.captures = [];
+    sustained.defeats = [];
     sustained.newNests = [];
     sustained.initialNativeTick = KinkyDungeonCurrentTick;
     sustained.fixture =
-        "Ordinary empty room; player isolated behind walls; four native builders; five repeated native silk preconditions and stunned wrapping targets.";
+        "Ordinary empty room; player isolated behind walls; four native builders; five repeated native silk vulnerability preconditions and damage knockdowns.";
     let tick = 0;
     let batch;
     const nativeAction = Spiderlings.SpinnerNativeField.applyPaidAction;
@@ -172,9 +172,9 @@
         if (result.applied) sustained.actions.push({ tick, source: source.id, type: action.type });
         return result;
     };
-    KDRemoveEntity = function (enemy, kill, capture) {
+    KDRemoveEntity = function (enemy, kill) {
         const result = nativeRemove.apply(this, arguments);
-        if (capture && result) sustained.captures.push({ tick, id: enemy.id, name: enemy.Enemy.name });
+        if (kill && result) sustained.defeats.push({ tick, id: enemy.id, name: enemy.Enemy.name });
         return result;
     };
     function audit() {
@@ -186,10 +186,8 @@
             proxies.length === solids.length && coordinates.size === proxies.length,
             `Stale or duplicate web projection at turn ${tick}`,
         );
-        const records = [
-            ...Object.values(Spiderlings.NPCWrapping.records()),
-            ...Object.values(Spiderlings.SpinnerNPCCapture.records()),
-        ];
+        const records = Object.values(Spiderlings.SpinnerNPCCapture.records());
+        expect(!KDMapData.SpiderlingsNPCWrapping, "Removed countdown state returned");
         expect(
             records.every((record) => KDMapData.Entities.some((enemy) => String(enemy.id) === String(record.targetId))),
             `Capture record survived target removal at turn ${tick}`,
@@ -235,10 +233,19 @@
                 batch = { targetId: target.id, sourceIds: sources.map((source) => source.id) };
             }
             if ([16, 76, 136, 196, 256].includes(tick)) {
-                expect(
-                    !KDMapData.Entities.some((enemy) => enemy.id === batch.targetId),
-                    "Repeated wrapping target failed to exit",
+                const prey = KDMapData.Entities.find((enemy) => enemy.id === batch.targetId);
+                expect(prey, "Silk-bound prey exited through an obsolete countdown");
+                KinkyDungeonDamageEnemy(
+                    prey,
+                    { type: "arcane", damage: 10000, nocrit: true },
+                    true,
+                    true,
+                    undefined,
+                    undefined,
+                    KinkyDungeonPlayerEntity,
                 );
+                expect(prey.hp <= 0.001, "Native damage failed to defeat silk-bound prey");
+                KDRemoveEntity(prey, true, false);
                 for (const id of batch.sourceIds) {
                     const source = KDMapData.Entities.find((enemy) => enemy.id === id);
                     if (source) KDRemoveEntity(source, false, false);
@@ -285,7 +292,7 @@
             sustained.finalNativeTick - sustained.initialNativeTick >= 310,
             "Sustained fixture did not advance 310 native world turns",
         );
-        expect(sustained.captures.length >= 5, "Sustained scene did not finish five native captures");
+        expect(sustained.defeats.length >= 5, "Sustained scene did not finish five native defeats");
         expect(
             sustained.actions.some((action) => action.type === "placeAnchor"),
             "Sustained scene had no paid construction",

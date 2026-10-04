@@ -1080,7 +1080,7 @@ test("a lure holds its best safe tile during the bounded ambush window", () => {
     worker.testSense = true;
     group.assignments = {};
     const original = { x: worker.x, y: worker.y };
-    for (let turn = 0; turn < 5; turn++) {
+    for (let turn = 0; turn < 1; turn++) {
         r.context.KinkyDungeonCurrentTick++;
         r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
         r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
@@ -1116,7 +1116,7 @@ test("visible stationary prey ends ambush waiting without resetting pressure on 
     worker.aware = true;
     worker.testSense = true;
     group.assignments = {};
-    for (let turn = 0; turn < 6; turn++) {
+    for (let turn = 0; turn < 2; turn++) {
         r.context.KinkyDungeonCurrentTick++;
         r.context.KinkyDungeonEnemyLoop(worker, target, 1);
         r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
@@ -1206,14 +1206,13 @@ test("prey approach renews the ambush window but unrelated paid field work does 
         r.context.KinkyDungeonEnemyLoop(worker, target, 1);
         r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
     };
-    for (let turn = 0; turn < 4; turn++) advance();
+    advance();
     target.x--;
     advance();
     assert.equal(group.engagement.progress.waits, 0, "Prey approaching the core is encounter progress");
-    for (let turn = 0; turn < 4; turn++) advance();
     group.metrics.construction++;
     advance();
-    assert.equal(group.engagement.progress.waits, 5, "Another builder cannot renew an inert lure's window");
+    assert.equal(group.engagement.progress.waits, 1, "Another builder cannot renew an inert lure's window");
     assert.equal(group.engagement.mode, "lure");
     group.metrics.repair++;
     advance();
@@ -1257,7 +1256,7 @@ test("lure follows a real wall detour while another builder's work cannot hide s
     }
     assert.ok(reached, "A lure must take the necessary detour to its field");
     assert.equal(group.engagement.mode, "pressure", "Stationary prey cannot be lured forever by remote building");
-    assert.equal(group.engagement.progress.waits, 6);
+    assert.equal(group.engagement.progress.waits, 2);
     assert.ok(
         r.movement.some((step) => step.y <= 2),
         "The route must go around the wall's end",
@@ -3261,3 +3260,52 @@ test("enclosure gates follow fresh player reports through paid work and keep uns
         "Unseen movement must not reorient the field",
     );
 });
+
+for (const obstruction of ["target", "workstations"])
+    test(`enclosure crew finds another same-layer paid job when its nearest ${obstruction} is occupied`, () => {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+            r = runtime([...actors]),
+            c = r.context,
+            { SpinnerAI: planner, SpinnerNativeField: native } = c.Spiderlings,
+            placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+            encounter = native.state(),
+            group = encounter.ai.groups[placed.groupId],
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        start(r, snapshot);
+        const worker = actors.find((actor) => group.assignments[actor.id]?.role === "body"),
+            original = plain(group.assignments[worker.id]),
+            blockedCells =
+                obstruction === "target"
+                    ? [original.target]
+                    : [-1, 0, 1].flatMap((dy) =>
+                          [-1, 0, 1].flatMap((dx) =>
+                              dx || dy ? [{ x: original.target.x + dx, y: original.target.y + dy }] : [],
+                          ),
+                      );
+        // Keep the selected worker outside the occupied ring so none of its
+        // current cells can legitimately serve as a retained workstation.
+        if (blockedCells.some((cell) => cell.x === worker.x && cell.y === worker.y)) {
+            worker.x = 15;
+            worker.y = 9;
+        }
+        for (const [index, cell] of blockedCells.entries())
+            c.KDMapData.Entities.push({ id: 700 + index, ...cell, hp: 3, Enemy: { name: "Bandit" } });
+        const before = plain(encounter.topology.actionLog || []);
+        start(r, snapshot);
+        const replacement = group.assignments[worker.id];
+        assert.ok(replacement, "An occupied nearest job must not remove the worker's entire construction duty");
+        assert.notEqual(cellKeyForTest(replacement.target), cellKeyForTest(original.target));
+        assert.equal(replacement.fieldId, original.fieldId, "Do not skip the unfinished outer layer");
+        assert.deepEqual(plain(encounter.topology.actionLog || []), before, "Assignment itself cannot build");
+        // Execute the assigned alternative through the same movement and paid-work interface.
+        worker.x = replacement.workCell.x;
+        worker.y = replacement.workCell.y;
+        worker.SpinnerConstructionPoints = 0;
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        assert.deepEqual(plain(encounter.topology.actionLog || []), before, "The first credit is not free work");
+        c.KinkyDungeonCurrentTick++;
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        assert.ok(encounter.topology.actionLog.length > before.length);
+        assert.equal(encounter.ai.plans[group.planId].compositeId, placed.compositeId);
+    });

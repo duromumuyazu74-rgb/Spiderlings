@@ -459,11 +459,25 @@
                     visualX,
                     visualY - 0.55,
                     0.75,
-                    1,
+                    mark.stacks >= 3 ? 1 : 0.7,
                     0,
                     LAYERS.actor,
                     target,
                 );
+                if (mark.stacks >= 3) {
+                    const glow = sprite(
+                        `mark_glow_${key}`,
+                        "Bullets/SpiderlingsMageRuneIcon.png",
+                        visualX,
+                        visualY - 0.55,
+                        0.75,
+                        0.4,
+                        0,
+                        LAYERS.actor + 0.001,
+                        target,
+                    );
+                    if (glow) glow.blendMode = PIXI.BLEND_MODES.ADD;
+                }
                 const [x, y] = xy(visualX, visualY - 0.23);
                 const g = graphics("actor");
                 g.lineStyle(0).beginFill(PURPLE, 1);

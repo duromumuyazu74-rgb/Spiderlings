@@ -6,7 +6,7 @@
         GROUP_RADIUS = 10,
         SHORTLIST_SIZE = 8,
         MAX_LINE_LENGTH = 5,
-        AMBUSH_WAIT_TURNS = 6,
+        AMBUSH_WAIT_TURNS = 2,
         DIRECTIONS = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
@@ -245,7 +245,6 @@
             api.SpinnerRecovery?.sourceIds?.().includes(id) ||
             api.SpinnerNPCCapture?.usesSource?.(id) ||
             api.SpinnerNPCRecovery?.usesEntity?.(id) ||
-            Object.values(api.NPCWrapping?.records?.() || {}).some((record) => record.sourceIds?.includes(id)) ||
             entity?.SpiderlingsTaskNestDefenderTarget !== undefined
         );
     }
@@ -1399,6 +1398,9 @@
                     retainedWork = previous?.workCell,
                     canRetain =
                         retainedTask &&
+                        (!api.SpinnerNativeField.snapshot(previous.target).actorOccupied ||
+                            cellKey(previous.target) === cellKey(member) ||
+                            previous.type.startsWith("repair")) &&
                         !(
                             lureKeepsPressure &&
                             previous.role === "body" &&
@@ -1429,25 +1431,43 @@
                     continue;
                 }
                 if (!field && graph?.fields && plan?.compositeId) {
-                    const action = api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...reservedTasks]);
-                    if (!action?.cell) continue;
-                    if (
-                        lureKeepsPressure &&
-                        action.role === "body" &&
-                        String(member.id) === String(group.engagement?.lureId) &&
-                        bodyWorkerAvailable(action)
-                    )
-                        continue;
-                    const work = workCells(action.cell, snapshot, member)
-                        .filter((cell) => !reservedWork.has(cellKey(cell)))
-                        .sort(
-                            (a, b) =>
-                                distances(member, a) - distances(member, b) || cellKey(a).localeCompare(cellKey(b)),
-                        )[0];
-                    if (!work || !Number.isFinite(distances(member, work))) continue;
-                    group.assignments[member.id] = assignmentFromAction(action, work);
-                    reservedTasks.add(assignmentKey(action));
-                    reservedWork.add(cellKey(work));
+                    // Topology owns layer order; an occupied job must not hide other
+                    // legal work in that layer. Skips are local to this worker, since
+                    // a colleague on the other side may still reach the same job.
+                    const skipped = new Set(reservedTasks);
+                    let action = api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...skipped]);
+                    const firstField = action?.fieldId;
+                    while (action?.cell && action.fieldId === firstField) {
+                        const key = assignmentKey(action);
+                        if (skipped.has(key)) break;
+                        skipped.add(key);
+                        const blockedTarget =
+                            api.SpinnerNativeField.snapshot(action.cell).actorOccupied &&
+                            cellKey(action.cell) !== cellKey(member) &&
+                            !action.type.startsWith("repair");
+                        const keepsPressure =
+                            lureKeepsPressure &&
+                            action.role === "body" &&
+                            String(member.id) === String(group.engagement?.lureId) &&
+                            bodyWorkerAvailable(action);
+                        const work =
+                            !blockedTarget && !keepsPressure
+                                ? workCells(action.cell, snapshot, member)
+                                      .filter((cell) => !reservedWork.has(cellKey(cell)))
+                                      .sort(
+                                          (a, b) =>
+                                              distances(member, a) - distances(member, b) ||
+                                              cellKey(a).localeCompare(cellKey(b)),
+                                      )[0]
+                                : undefined;
+                        if (work && Number.isFinite(distances(member, work))) {
+                            group.assignments[member.id] = assignmentFromAction(action, work);
+                            reservedTasks.add(key);
+                            reservedWork.add(cellKey(work));
+                            break;
+                        }
+                        action = api.SpinnerTopology.nextWorkAction(graph, member.id, member, [...skipped]);
+                    }
                     continue;
                 }
                 const options = tasks
@@ -2666,16 +2686,7 @@
             // with blockEnemy set. Only retry such a blocked step; keep the
             // native route for normal work and do not walk through actors.
             if (assignment.type !== "rally" && next && api.SpinnerNativeField.snapshot(next).actorOccupied) {
-                const snapshot = nativeMapSnapshot(),
-                    blocked = new Set([
-                        ...KDMapData.Entities.filter(
-                            (entity) =>
-                                entity.hp > 0 && entity.id !== enemy.id && !api.SpinnerNativeField.isOwnedProxy(entity),
-                        ).map(cellKey),
-                        cellKey(KinkyDungeonPlayerEntity),
-                    ]),
-                    passable = new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey));
-                path = routeOnSnapshot(snapshot, enemy, assignment.workCell, blocked, passable);
+                path = occupancyRoute(enemy, assignment.workCell);
                 next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
             }
             if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
@@ -2711,6 +2722,24 @@
             delete group.assignments[enemy.id];
         } else record(group, outcome.reason === "occupied" ? "wait" : "wait");
         return "field-work";
+    }
+
+    function occupancyRoute(enemy, destination) {
+        const snapshot = nativeMapSnapshot(),
+            blocked = new Set([
+                ...KDMapData.Entities.filter(
+                    (entity) => entity.hp > 0 && entity.id !== enemy.id && !api.SpinnerNativeField.isOwnedProxy(entity),
+                ).map(cellKey),
+                cellKey(KinkyDungeonPlayerEntity),
+            ]),
+            passable = new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey));
+        const destinations = Array.isArray(destination) ? destination : [destination];
+        return (
+            destinations
+                .map((point) => routeOnSnapshot(snapshot, enemy, point, blocked, passable))
+                .filter((path) => path.length)
+                .sort((a, b) => a.length - b.length)[0] || []
+        );
     }
 
     function cellVisibleFrom(enemy, cell, target) {
@@ -3110,5 +3139,6 @@
         auditSavedState,
         inspect,
         routeOnSnapshot,
+        occupancyRoute,
     };
 })();

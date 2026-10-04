@@ -94,11 +94,6 @@
             sourceActionable(source, target, departure, false) &&
             !api.SpinnerCapture?.sourceIds?.().some((id) => core.sameId(id, source.id)) &&
             !api.SpinnerNPCCapture?.blocksVoluntaryMove?.(target) &&
-            !Object.values(api.NPCWrapping?.records?.() || {}).some(
-                (wrapping) =>
-                    core.sameId(wrapping.targetId, target.id) ||
-                    wrapping.sourceIds?.some((id) => core.sameId(id, source.id)),
-            ) &&
             api.SpinnerNativeField?.compositeById?.(departure.compositeId) &&
             !api.SpinnerNativeField?.containsComposite?.(departure.compositeId, target)
         );

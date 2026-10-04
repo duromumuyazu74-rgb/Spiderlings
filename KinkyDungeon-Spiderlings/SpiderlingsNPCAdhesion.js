@@ -123,7 +123,7 @@
         return current === "initial" || current === "full";
     }
 
-    function recordNativeSilk(source, target, amount, attack, actionId, contributors) {
+    function recordNativeSilk(source, target, amount, attack, actionId, contributors, previousSlime) {
         if (!(amount > 0) || !(target?.hp > 0) || !target.Enemy || target.player) return;
         const actual = slime(target);
         if (!(actual > 0)) return;
@@ -140,8 +140,9 @@
         }
         // Reconcile earlier native struggle before adding this particular hit.
         const before = Math.max(0, actual - amount);
-        if (value.lastSlime > before) {
-            const removed = value.lastSlime - before;
+        const previous = previousSlime ?? value.lastSlime;
+        if (previous > before) {
+            const removed = previous - before;
             const oldOwned = value.ownedSilk;
             value.ownedSilk = Math.max(0, oldOwned - removed);
             const fraction = oldOwned > 0 ? value.ownedSilk / oldOwned : 0;
@@ -174,14 +175,18 @@
 
     function onDisplacement(target) {
         if (!target?.[KEY]) return;
-        api.NPCWrapping?.onDisplacement?.(target);
         api.SpinnerNPCCapture?.auditSources?.();
     }
 
     if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "beforeDamageEnemy", KEY, (_event, data) => {
-            if (data.incomingDamage?.flags?.includes("SpiderlingsNPCSilk"))
+            if (data.incomingDamage?.flags?.includes("SpiderlingsNPCSilk")) {
+                // Contact damage can query exposure before this hit is recorded.
+                // Reconcile old losses now and retain the pre-hit ledger position.
+                reconcile(data.enemy);
                 data.spiderlingsAdhesionBefore = slime(data.enemy);
+                data.spiderlingsAdhesionLastSlime = record(data.enemy)?.lastSlime;
+            }
         });
         KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) => {
             const incoming = data.incomingDamage;
@@ -200,6 +205,7 @@
                     attack,
                     incoming.spiderlingsActionId,
                     incoming.spiderlingsContributors,
+                    data.spiderlingsAdhesionLastSlime,
                 );
             }
         });

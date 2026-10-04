@@ -70,7 +70,7 @@
         }
         setup(`mage-hex-${pink}`);
         KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
-        KDMovePlayer(8, 10, false);
+        KDMovePlayer(12, 11, false);
         const mage = spawn("MageSpiderlings", 8, 8),
             target = spawn("MaidKnightHeavy", 12, 10, "Maidforce");
         mage.stun = 999;
@@ -88,8 +88,31 @@
                 shield: current.shield,
                 hp: current.hp,
                 mark: structuredClone(Spiderlings.MageSpells.markFor(current)),
+                playerMark: structuredClone(Spiderlings.MageSpells.markFor(KinkyDungeonPlayerEntity)),
                 fields: structuredClone(state.fields),
             });
+            if (tick >= 3 && tick <= 5) {
+                for (const mark of [row.turns[tick].mark, row.turns[tick].playerMark])
+                    expect(
+                        mark?.stacks === tick - 2 && mark.expiresAt - state.clock === tick,
+                        "Active Hex must add one layer and refresh its 3/4/5-turn duration",
+                    );
+                await frame();
+                await frame();
+                const glow = rendered("mark_glow_player");
+                expect(
+                    rendered("mark_player")[0]?.alpha === (tick === 5 ? 1 : 0.7),
+                    "Mark opacity failed to brighten at the full stack count",
+                );
+                expect(glow.length === (tick === 5 ? 1 : 0), "Full mark brightness does not follow real stacks");
+                if (tick === 5) {
+                    expect(
+                        kdpixisprites.get(glow[0].id).blendMode === PIXI.BLEND_MODES.ADD,
+                        "Full mark is missing its additive brightness",
+                    );
+                    images[`${color}-mark-full`] = await photo();
+                }
+            }
             if ([1, 3, 5].includes(tick)) {
                 images[`${color}-hex-${tick}`] = await photo();
                 row.turns[tick].sprites = rendered(`hex_${mage.id}`);
@@ -115,6 +138,42 @@
         );
         expect(row.turns[6].fields.length === 0, "Hex active field outlived three turns");
         expect(row.turns[3].hp === row.turns[0].hp, "Shield-only activation overflowed into HP");
+        setup(`hex-contact-refresh-${pink}`);
+        KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
+        KDMovePlayer(12, 10, false);
+        const contactMage = spawn("MageSpiderlings", 8, 8),
+            hitter = spawn("Spinner", 11, 10);
+        contactMage.stun = 999;
+        hitter.stun = 999;
+        expect(cast("SpiderlingsMageHex", contactMage).result === "Cast", "Contact Hex cast failed");
+        for (let n = 0; n < 3; n++) await turn();
+        const contact = () =>
+            KDPlayerEffects.SpiderlingsWebbingEnemyBind(
+                KinkyDungeonPlayerEntity,
+                0,
+                {},
+                {},
+                "Enemy",
+                undefined,
+                enemy(hitter.id),
+            );
+        const currentMark = () => Spiderlings.MageSpells.markFor(KinkyDungeonPlayerEntity);
+        expect(contact()?.effect, "Native binding contact failed");
+        expect(currentMark().stacks === 0, "An accepted hit must consume the mark");
+        await turn();
+        expect(currentMark().stacks === 1, "Pending burst blocked the next field layer");
+        restore(save());
+        expect(contact()?.effect, "Second native binding contact failed");
+        expect(currentMark().stacks === 1, "Refresh/reload reset the pending burst interval");
+        await turn();
+        expect(currentMark().stacks === 2, "Continuing field contact failed to add a second layer");
+        expect(
+            currentMark().expiresAt - KDMapData.SpiderlingsMageSpells.clock === 4,
+            "Second layer failed to extend the refreshed duration",
+        );
+        expect(contact()?.effect, "Later native binding contact failed");
+        expect(currentMark().stacks === 0, "Later accepted hit failed to consume replenished layers");
+        rows.push({ pink, kind: "hex-contact-refresh", state: structuredClone(KDMapData.SpiderlingsMageSpells) });
         for (const mode of ["impact", "escape", "owner-loss"]) {
             setup(`collapse-${pink}-${mode}`);
             KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;

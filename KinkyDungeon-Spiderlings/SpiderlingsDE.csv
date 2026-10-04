@@ -201,7 +201,7 @@ KinkyDungeonSpellCastSpiderlingsMageCollapse,Seide zieht sich vom Rand der marki
 SpiderlingsNPCAdhesionInitial,Fixiert
 SpiderlingsNPCAdhesionFull,Vollständig gefesselt
 SpiderlingsNPCAdhesionHelpless,Hilflos
-SpiderlingsNPCWrapping,Einspinnen
+SpiderlingsNPCWrapping,Verwundbar im Spinnennetz
 KDMapMod_SpiderlingsInfestation,Spinnenbefall
 KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
 KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören

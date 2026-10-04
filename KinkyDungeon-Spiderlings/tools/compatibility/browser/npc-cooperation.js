@@ -3,27 +3,15 @@
     const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
     const nativeCast = KinkyDungeonCastSpell;
     const nativeRemove = KDRemoveEntity;
-    const nativePayment = Spiderlings.SpinnerNativeField.accrueConstructionAction;
     // Native 5.5 MinigunWindup passes a bare MiniWind audio path; exercise combat with SFX disabled.
     const sound = KDToggles.Sound;
     KDToggles.Sound = false;
-    let casts, hits, target, turn, removals, cancelled, retryPayments;
+    let casts, hits, target, turn, removals;
     KDRemoveEntity = function (enemy, kill, capture) {
-        const progress = enemy === target ? Spiderlings.NPCWrapping.record(target)?.progress : undefined;
         const result = nativeRemove.apply(this, arguments);
-        if (enemy === target) removals.push({ turn, kill: !!kill, capture: !!capture, progress, result });
+        if (enemy === target) removals.push({ turn, kill: !!kill, capture: !!capture, result });
         return result;
     };
-    Spiderlings.SpinnerNativeField.accrueConstructionAction = function () {
-        if (cancelled && Spiderlings.NPCWrapping.record(target)?.progress === 3) retryPayments++;
-        return nativePayment.apply(this, arguments);
-    };
-    KDAddEvent(KDEventMapGeneric, "removeEnemy", "SpiderlingsCooperationAcceptance", (_e, data) => {
-        if (data.enemy === target && target.Enemy.name === "DragonGirlCrystal" && data.capture && !cancelled) {
-            data.cancel = true;
-            cancelled = true;
-        }
-    });
     KinkyDungeonCastSpell = function (x, y, spell, enemy) {
         const result = nativeCast.apply(this, arguments);
         if (result?.result === "Cast" && enemy)
@@ -107,8 +95,6 @@
             casts = [];
             hits = [];
             removals = [];
-            cancelled = false;
-            retryPayments = 0;
             KDsetSeed(`cooperation-combat-${name}`);
             const samples = [];
             const initial = {
@@ -129,7 +115,7 @@
                     slime: target.specialBoundLevel?.Slime || 0,
                     status: Spiderlings.NPCAdhesion.status(target),
                     pressure: Spiderlings.NPCAdhesion.pressure(target),
-                    wrapping: structuredClone(KDMapData.SpiderlingsNPCWrapping),
+                    vulnerable: Spiderlings.NPCWrapping.vulnerable(target),
                     present: KDMapData.Entities.includes(target),
                     sources: actors.map((e) => ({ id: e.id, x: e.x, y: e.y, hp: e.hp, target: e.target })),
                 });
@@ -139,37 +125,19 @@
             const strong = ["MaidKnightHeavy", "DragonGirlCrystal", "DragonGirlShadow"].includes(name);
             if (!casts.length || new Set(casts.map((row) => row.source)).size < 2)
                 throw Error(`${name}: native AI did not cooperate`);
-            if (strong && !samples.some((row) => row.status === "full"))
-                throw Error(`${name}: coordinated native attacks did not reach capable full pin`);
+            if (strong && !samples.some((row) => row.status === "full" || row.status === "native-helpless"))
+                throw Error(
+                    `${name}: coordinated native attacks did not pin or incapacitate prey: ${JSON.stringify(samples)}`,
+                );
             if (!strong && !samples.some((row) => row.status === "native-helpless"))
                 throw Error(`${name}: native binding did not independently incapacitate the target`);
             if (name === "BlindZombie" && !samples.at(-1).present) throw Error("Native nocapture target was removed");
-            for (const sample of samples)
-                if (
-                    casts.some(
-                        (cast) => cast.turn === sample.turn && sample.wrapping?.paidSourceIds.includes(cast.source),
-                    )
-                )
-                    throw Error(`${name}: a paid wrapping operation also cast a new spell`);
+            if (KDMapData.SpiderlingsNPCWrapping || removals.some((entry) => entry.capture))
+                throw Error(`${name}: obsolete wrapping countdown captured prey`);
             const stolen = KDMapData.GroundItems.filter((item) => ["RedKey", "PotionMana"].includes(item.name))
                 .map((item) => item.name)
                 .sort();
-            if (name === "DragonGirlCrystal") {
-                if (
-                    !cancelled ||
-                    removals.filter((row) => row.result).length !== 1 ||
-                    removals.some((row) => row.kill) ||
-                    retryPayments
-                )
-                    throw Error(`Native cancelled capture retry: ${JSON.stringify({ removals, retryPayments })}`);
-                if (
-                    JSON.stringify(stolen) !== JSON.stringify(["PotionMana", "RedKey"]) ||
-                    target.items.length ||
-                    KDGetPersistentNPC(target.id).id !== target.id
-                )
-                    throw Error("Native capture lost identity or duplicated stolen property");
-            }
-            results.push({ name, initial, casts, hits, samples, removals, retryPayments, stolen });
+            results.push({ name, initial, casts, hits, samples, removals, stolen });
         }
         const setupEcology = (seed) => {
             globalThis.compatibilitySetSeed(seed);
@@ -229,7 +197,6 @@
                 hits = [];
                 casts = [];
                 removals = [];
-                cancelled = false;
                 const selected = KinkyDungeonNearestPlayer(target, true, true);
                 if (selected !== spider || !KDHostile(target, spider) || !KDHostile(spider, target))
                     throw Error(`${name}: hunting rivalry did not acquire the spider while the player was closer`);
@@ -275,7 +242,6 @@
         hits = [];
         casts = [];
         removals = [];
-        cancelled = false;
         const bolt = KinkyDungeonFindSpell("SpiderlingsMageBolt", true);
         const samples = [];
         for (turn = 1; turn <= 2; turn++) {
@@ -412,9 +378,7 @@
     } finally {
         KinkyDungeonCastSpell = nativeCast;
         KDRemoveEntity = nativeRemove;
-        Spiderlings.SpinnerNativeField.accrueConstructionAction = nativePayment;
         KDToggles.Sound = sound;
-        delete KDEventMapGeneric.removeEnemy.SpiderlingsCooperationAcceptance;
         delete KDEventMapGeneric.afterDamageEnemy.SpiderlingsCooperationAcceptance;
     }
     return results;

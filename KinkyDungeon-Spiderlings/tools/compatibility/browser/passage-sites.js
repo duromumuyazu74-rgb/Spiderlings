@@ -151,7 +151,10 @@
         tick = 0;
         const positions =
             mode === "crowding"
-                ? Array.from({ length: 12 }, (_entry, index) => [3 + (index % 4), 9 + Math.floor(index / 4)])
+                ? // Keep twelve workers crowded together, with a reachable center aisle.
+                  // A solid 4x3 block traps assigned workers until native idle wandering
+                  // happens to clear an edge; it cannot guarantee a paid movement turn.
+                  Array.from({ length: 12 }, (_entry, index) => [3 + (index % 6), 9 + 2 * Math.floor(index / 6)])
                 : mode === "recruitment"
                   ? [
                         [6, 9],
