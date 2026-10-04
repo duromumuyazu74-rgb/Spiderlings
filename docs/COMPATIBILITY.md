@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.89.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.90.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.90 saved floor weights (2026-10-04)
+
+Test.90 corrects the missing upgrade from saved floor weights 50/1000 to the intended 200/1500. Migration runs after native settings load and persists a marker, preserving other settings and subsequent deliberate changes. Legacy saves receive one supplemental draw for untouched future ordinary nodes; current/past nodes, cached maps, native primary factions and existing Spiderlings objectives remain. New games use the new weights without a supplemental draw. Reloading does not redraw migrated journeys. See the [saved-game investigation](spiderlings-test90-floor-weights.zh-CN.md).
+
+The final ZIP contains 170 entries and 24,836,562 bytes, SHA-256 `0aace83ea89de3c1b9217bf521a14edfdfb6aaac536e43499f8ee6462603d0ab`. Only `mod.json` and `SpiderlingsFloorSelection.js` differ from Test.89. The copied desktop save loads with upgraded weights, preserves entered maps, and survives save/reload without another draw. Its selected future Infestation generates five active objective nests while retaining the native Dragon faction. The active desktop process and original save were not modified.
+
+The same ZIP passes all 46 stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `9dbf8c666ed4e158b4416f125d1d8d043b61ac74`, reporting 5.5.3. The final upstream check completed at `2026-10-04T08:42:14.834Z`. Full evidence is `<cache>/runs/2026-10-04T08-42-14-850Z-0.92.36-test.90/acceptance.json`. The added `floor-weights` stage exercises real journey generation, legacy settings and protected-map migration. Baseline diagnostics retain native audio interruptions and two missing native `Locks/Red.png` requests; the GitHub run has no errors, rejections or missing resources. No Spiderlings asset is missing.
+
+Final delivery gates pass: repository checks, 12 policy tests, 551 public tests, the complete 866-test local watcher and package verification. The full report is this checkout's `.scratch/delivery/2026-10-04T08-50-23-255Z-G379Er/REPORT.md`; source and ZIP remained stable during collection. Only this Markdown result is appended afterward, followed by repository checks and a focused local commit.
 
 ## Test.89 native player recovery and field entrances (2026-10-04)
 

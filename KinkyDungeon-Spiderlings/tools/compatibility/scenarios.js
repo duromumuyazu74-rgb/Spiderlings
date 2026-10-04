@@ -46,6 +46,7 @@ const scenarios = [
         "normal-visuals",
         "passage-sites",
         "debug-stairs",
+        "floor-weights",
     ].map((name) => [name, `${name}.js`, null, ["normal-helpers"]]),
     ["native-locales", null, null, [], "locales"],
 ].map(([name, file, variant, dependencies = [], kind = "browser"]) => ({ name, file, variant, dependencies, kind }));
