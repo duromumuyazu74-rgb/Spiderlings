@@ -886,35 +886,42 @@ function cellKeyForTest(cell) {
     return `${cell.x},${cell.y}`;
 }
 
-test("recognized prey in an unfinished core leaves assigned builders paying for its enclosure", () => {
-    const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
-        r = runtime([...actors]),
-        c = r.context,
-        { SpinnerAI: planner, SpinnerNativeField: native } = c.Spiderlings,
-        placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
-        encounter = native.state(),
-        group = encounter.ai.groups[placed.groupId],
-        originalMembers = [...group.memberIds],
-        composite = encounter.topology.composites[placed.compositeId],
-        snapshot = mapSnapshot();
-    delete snapshot.candidateLines;
-    Object.assign(c.KinkyDungeonPlayerEntity, { x: composite.core.x + 1, y: composite.core.y });
-    native.onEntry(c.KinkyDungeonPlayerEntity, c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y);
-    for (const actor of actors) actor.aware = actor.testSense = true;
-    for (let turn = 0; turn < 200 && !native.captureGeometryReady(c.KinkyDungeonPlayerEntity); turn++) {
-        start(r, snapshot);
-        for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
-        planner.completePositiveTurn(1);
-        c.KinkyDungeonCurrentTick++;
-    }
-    assert.ok(native.captureGeometryReady(c.KinkyDungeonPlayerEntity), "Standing inside cannot starve paid inner work");
-    assert.deepEqual([...group.memberIds], originalMembers, "The original crew must retain its enclosure");
-    assert.ok(native.state().topology.actionLog.length > 20, "The inner rings must use real paid construction");
-    assert.ok(
-        r.phaseCalls.some((entry) => entry.phase === "attack"),
-        "The lure retains native melee pressure",
-    );
-});
+for (const outside of [false, true])
+    test(`recognized prey ${outside ? "outside" : "inside"} an unfinished core leaves assigned builders paying for its enclosure`, () => {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+            r = runtime([...actors]),
+            c = r.context,
+            { SpinnerAI: planner, SpinnerNativeField: native } = c.Spiderlings,
+            placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+            encounter = native.state(),
+            group = encounter.ai.groups[placed.groupId],
+            originalMembers = [...group.memberIds],
+            composite = encounter.topology.composites[placed.compositeId],
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: outside ? 16 : composite.core.x + 1, y: composite.core.y });
+        native.onEntry(c.KinkyDungeonPlayerEntity, c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y);
+        for (const actor of actors) actor.aware = actor.testSense = true;
+        const constructionReady = () =>
+            outside
+                ? composite.layerIds.every((id) =>
+                      ["ready", "sealed"].includes(native.state().topology.fields[id].phase),
+                  )
+                : native.captureGeometryReady(composite.core);
+        for (let turn = 0; turn < 200 && !constructionReady(); turn++) {
+            start(r, snapshot);
+            for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+            planner.completePositiveTurn(1);
+            c.KinkyDungeonCurrentTick++;
+        }
+        assert.ok(constructionReady(), `Observed prey cannot starve paid inner work: ${JSON.stringify(group)}`);
+        assert.deepEqual([...group.memberIds], originalMembers, "The original crew must retain its enclosure");
+        assert.ok(native.state().topology.actionLog.length > 20, "The inner rings must use real paid construction");
+        assert.ok(
+            r.phaseCalls.some((entry) => entry.phase === "attack"),
+            "The lure retains native melee pressure",
+        );
+    });
 
 test("unfinished-core role allocation hands body work away from an active lure without erasing progress", () => {
     for (const variant of [
@@ -1699,6 +1706,10 @@ test("fresh native approach redirects an unpaid plan while hidden coordinates an
     assert.ok(redirected.cells.length > 0);
     start(r, snapshot);
     assert.equal(group.planId, redirected.id, "The same report cannot repeatedly reroll an unpaid approach");
+    group.engagement.lastKnown = { x: 2, y: 7, dx: 1, dy: 0, age: 0, source: "native" };
+    ai.coordinationTurn = 8;
+    start(r, snapshot);
+    assert.equal(group.planId, redirected.id, "A moving prey gives assigned workers time to reach their first task");
     // Pay a real topology operation, then change both target location and approach.
     const native = c.Spiderlings.SpinnerNativeField,
         graph = native.state().topology;

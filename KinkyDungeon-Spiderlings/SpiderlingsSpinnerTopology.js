@@ -1442,7 +1442,13 @@
     }
 
     function containsDeclaredField(state, fieldId, target) {
-        return !!state.fields?.[fieldId]?.interiorCells.some((cell) => sameCell(cell, target));
+        const field = state.fields?.[fieldId];
+        return (
+            !!field &&
+            !field.retired &&
+            field.phase !== "retired" &&
+            field.interiorCells.some((cell) => sameCell(cell, target))
+        );
     }
 
     function isInsideCommonCore(state, compositeId, target) {

@@ -217,8 +217,8 @@ KinkyDungeonSpecialSpiderlingTome,Splot kokonu
 KinkyDungeonSpecialSpiderlingStaff,Jedwabna pętla
 KinkyDungeonInventoryItemSpiderlingTomeDesc,Miękkie jedwabne nici przechodzą przez grzbiet i spoczywają na stronach.
 KinkyDungeonInventoryItemSpiderlingStaffDesc,Delikatna sieć otula słaby blask na końcu kostura.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,Lepkie nici rozciągają się między przewracanymi stronami i zbierają z powrotem przy grzbiecie po zamknięciu księgi. Dotknięcie palcem wywołuje delikatne pulsowanie.
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,"Cienkie nici zwisają napięte z końca laski. Słaby blask płynie po nich ku uchwytowi, migocząc przy każdym pociągnięciu."
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Splot kokonu: krąg jedwabiu w zasięgu 6 pól zamyka się po dwóch kolejnych akcjach; najmocniej wiąże w środku. Użyj ponownie przed zamknięciem, aby osiągnąć najwyżej trzy poziomy. Każdy dodatkowy splot kosztuje manę i akcję oraz opóźnia zamknięcie o turę. W dowolnej ręce: +20% siły wiązania. Skuteczne trafienia mogą zwrócić wytrzymałość; pierwszy pełny kokon z tej nici dla danej ofiary może zwrócić ograniczoną ilość many."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,"Jedwabna pętla: wystrzeliwuje nić na maksymalnie 6 pól, wiążąc i spowalniając pierwszy trafiony wrogi cel. Ściany zatrzymują nić. Skuteczne trafienia mogą zwrócić wytrzymałość; pierwszy pełny kokon z tej nici dla danej ofiary może zwrócić ograniczoną ilość many."
 ItemPickupSpiderlingTome,Podnosisz księgę jedwabnych więzów.
 ItemPickupSpiderlingStaff,Podnosisz kostur tkacza jedwabiu.
 KDPrereqFailSpiderlingsCocoonConvergence,Musisz trzymać księgę w ręce i mieć dość many na tę warstwę. Po zamknięciu kręgu trzeba zaczekać na odnowienie przed utkaniem następnego.
@@ -232,7 +232,7 @@ RestraintSpiderlingsSilkLeash,Pajęcza jedwabna smycz
 RestraintSpiderlingsSilkLeashDesc,Drobne jedwabne nici tworzą lekki sznur o łagodnym połysku.
 RestraintSpiderlingsSilkLeashDesc2,"Gdy sznur się prostuje, jego drobne nici delikatnie się napinają; po rozluźnieniu układa się w miękki łuk."
 SpiderlingsRecoveryAttached,Prządka przypina jedwabną nić ({count}/8). Przy następnej możliwej akcji może przyciągnąć cię z powrotem.
-SpiderlingsRecoveryAttachBlocked,"Jedwabnej smyczy nie da się przypiąć. Potrzebuje pasującej obroży, a inne wyposażenie nie może jej blokować."
+SpiderlingsRecoveryAttachBlocked,Jedwabnej smyczy nie da się przypiąć. Potrzebuje pasującej obroży lub jedwabnego worka na nogi; inne wyposażenie nie może jej blokować.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"W obecnym stanie nie możesz przeciąć TargetRestraint."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz przeciąć TargetRestraint."
 KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Pozostałe więzy nie pozwalają ci trzymać ostrza dość mocno, by przeciąć TargetRestraint."

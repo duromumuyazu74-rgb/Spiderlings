@@ -114,7 +114,7 @@
             minLevel: 0,
             allFloors: true,
             shrine: ["Wrapping", "Latex", "SpiderlingsWebbingLegsLayer"],
-            addTag: ["FeetLinked", "BlockKneel", "BlockHogtie"],
+            addTag: ["FeetLinked", "BlockKneel", "BlockHogtie", "SpiderlingsLegbinderAnchor"],
             LinkableBy: [],
             renderWhenLinked: [],
             events: [

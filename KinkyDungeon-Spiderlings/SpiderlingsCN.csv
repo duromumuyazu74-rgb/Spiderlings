@@ -213,10 +213,10 @@ KDModButtonspiderlingsInfestationWeight,幼蛛侵扰权重（0：关闭）
 KDModButtonspiderlingsHuntingGroundsWeight,幼蛛猎场权重，仅女仆主派系（0：关闭）
 KinkyDungeonInventoryItemSpiderlingTome,织缚魔典
 KinkyDungeonInventoryItemSpiderlingTomeDesc,柔细蛛丝穿过书脊，贴着书页铺开。
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,黏丝在翻动的书页之间抽长，合书时又聚回书脊。指尖轻触，能感觉到细微的脉动。
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,千丝归茧：在6格内织起丝圈，再行动两次后向内收束，中心束缚最强。收束前再次发动，可将丝圈加织至最多三层；每次加织消耗法力和一个行动，收束延后一回合。主手或副手持有时，束缚强度提高20%。有效命中可返还部分体力；每名猎物首次被此蛛丝完全裹成茧可返还有限法力。
 KinkyDungeonInventoryItemSpiderlingStaff,缠丝法杖
 KinkyDungeonInventoryItemSpiderlingStaffDesc,杖头的细网轻托着一缕微光。
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,细丝从杖尖垂下，绷得紧紧的。幽光沿着丝束流向握柄，随着每一次牵动微微闪烁。
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,缠丝束：射出最多飞行6格的黏丝，束缚并减速首个命中的敌对目标；墙壁会挡住丝束。有效命中可返还部分体力；每名猎物首次被此蛛丝完全裹成茧可返还有限法力。
 ItemPickupSpiderlingTome,你拾起了织缚魔典。
 ItemPickupSpiderlingStaff,你拾起了缠丝法杖。
 KinkyDungeonSpecialSpiderlingTome,千丝归茧
@@ -232,7 +232,7 @@ RestraintSpiderlingsSilkLeash,蛛丝牵引绳
 RestraintSpiderlingsSilkLeashDesc,细软的蛛丝拢成一束丝绳，绳身轻巧，表面泛着柔和的丝光。
 RestraintSpiderlingsSilkLeashDesc2,丝绳拉直时，细缕一根根轻轻绷起；松开后便弯成柔软的弧线。
 SpiderlingsRecoveryAttached,织网幼蛛接上了牵引丝线（{count}/8），下一次能够行动时，可能会将你拉回。
-SpiderlingsRecoveryAttachBlocked,蛛丝命中了，却没能挂住。需要兼容的项圈，且没有装备挡住丝绳；这次没有接上牵引绳。
+SpiderlingsRecoveryAttachBlocked,蛛丝命中了，却没能挂住。需要兼容的项圈或蛛丝腿袋，且没有装备挡住丝绳；这次没有接上牵引绳。
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"以你现在的状态，还无法割开TargetRestraint。"
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"以你现在的状态，还无法割开TargetRestraint。"
 KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"其他束缚让你握不稳刀刃，无法割开TargetRestraint。"

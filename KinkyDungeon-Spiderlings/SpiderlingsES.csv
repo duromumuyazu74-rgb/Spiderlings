@@ -217,8 +217,8 @@ KinkyDungeonSpecialSpiderlingTome,Convergencia del capullo
 KinkyDungeonSpecialSpiderlingStaff,Lazo de seda
 KinkyDungeonInventoryItemSpiderlingTomeDesc,Suaves hilos de seda atraviesan el lomo y se extienden sobre las páginas.
 KinkyDungeonInventoryItemSpiderlingStaffDesc,Una fina red sostiene un tenue resplandor en la punta del bastón.
-KinkyDungeonInventoryItemSpiderlingTomeDesc2,Hilos pegajosos se estiran entre las páginas al pasar y vuelven al lomo cuando el libro se cierra. Un leve pulso responde al roce de un dedo.
-KinkyDungeonInventoryItemSpiderlingStaffDesc2,Finos hilos cuelgan tensos de la punta. Un tenue resplandor los recorre hacia la empuñadura y titila con cada tirón.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,Convergencia del capullo: un círculo de seda a hasta 6 casillas se cierra tras dos acciones más; ata con más fuerza en el centro. Úsalo de nuevo antes del cierre para alcanzar hasta tres niveles. Cada tejido adicional cuesta maná y una acción y retrasa el cierre un turno. +20% de atadura en cualquiera de las manos. Los golpes efectivos pueden devolver aguante; el primer capullo completo de esta seda por presa puede devolver maná limitado.
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,Lazo de seda: dispara seda hasta 6 casillas para atar y ralentizar al primer objetivo hostil alcanzado. Los muros la detienen. Los golpes efectivos pueden devolver aguante; el primer capullo completo de esta seda por presa puede devolver maná limitado.
 ItemPickupSpiderlingTome,Recoges un tomo de ataduras de seda.
 ItemPickupSpiderlingStaff,Recoges un bastón del tejedor de seda.
 KDPrereqFailSpiderlingsCocoonConvergence,"Debes sostener el tomo y tener maná suficiente para este tejido. Tras cerrarse el círculo, espera a que termine la recarga antes de crear otro."
@@ -232,7 +232,7 @@ RestraintSpiderlingsSilkLeash,Correa de seda de araña
 RestraintSpiderlingsSilkLeashDesc,"Finos hilos de seda se reúnen en un cordón ligero de brillo tenue."
 RestraintSpiderlingsSilkLeashDesc2,"Sus finos hilos se tensan suavemente al estirar el cordón y forman una curva blanda cuando se afloja."
 SpiderlingsRecoveryAttached,Una hiladora une un hilo de seda ({count}/8). Su próxima acción disponible puede arrastrarte de vuelta.
-SpiderlingsRecoveryAttachBlocked,La correa de seda no puede sujetarse. Necesita un collar compatible y que ningún otro equipo la bloquee.
+SpiderlingsRecoveryAttachBlocked,La correa de seda no puede sujetarse. Necesita un collar compatible o un saco de seda para las piernas y que ningún otro equipo la bloquee.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"En tu estado actual, no puedes cortar TargetRestraint."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"En tu estado actual, no puedes cortar TargetRestraint."
 KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Tus ataduras te impiden sujetar la hoja con firmeza para cortar TargetRestraint."

@@ -1244,7 +1244,7 @@
     }
 
     function workCells(target, snapshot, member) {
-        const byKey = new Map(snapshot.cells.map((cell) => [cellKey(cell), cell]));
+        const byKey = snapshotCellsByKey(snapshot);
         return DIRECTIONS.map((direction) => ({ x: target.x + direction.x, y: target.y + direction.y }))
             .filter((cell) => {
                 const value = byKey.get(cellKey(cell));
@@ -2054,10 +2054,29 @@
                         distance(observation, previousObservation) >= 4 ||
                         observation.dx * previousObservation.dx + observation.dy * previousObservation.dy < 0 ||
                         JSON.stringify(observation.target) !== JSON.stringify(previousObservation.target));
+            if (observedPlan && previousObservation) {
+                const approachDistance = Math.min(
+                    ...Object.entries(group.assignments || {}).map(([id, assignment]) => {
+                        const member = entities.find((entity) => String(entity.id) === id);
+                        return member && assignment.workCell ? distances(member, assignment.workCell) : Infinity;
+                    }),
+                );
+                if (
+                    Number.isFinite(approachDistance) &&
+                    (!observedPlan.approachProgress || approachDistance < observedPlan.approachProgress.distance)
+                )
+                    observedPlan.approachProgress = { distance: approachDistance, turn: ai.coordinationTurn || 0 };
+            }
+            const constructionApproachActive =
+                previousObservation &&
+                ((ai.coordinationTurn || 0) - previousObservation.turn < 12 ||
+                    (observedPlan?.approachProgress &&
+                        (ai.coordinationTurn || 0) - observedPlan.approachProgress.turn < 8));
             if (
                 observedPlan &&
                 observationChanged &&
                 !planHasPaidWork(encounter, observedPlan) &&
+                !constructionApproachActive &&
                 (ai.coordinationTurn || 0) - (previousObservation?.turn ?? -4) >= 4
             ) {
                 // A fresh native report may redirect an unpaid approach. Paid
@@ -2804,12 +2823,10 @@
         // The lure keeps melee pressure while assigned body workers finish
         // through the same paid movement, occupancy and construction checks.
         if (
-            observed &&
+            group.engagement &&
             assignment?.role === "body" &&
             String(group.engagement?.lureId) !== String(enemy.id) &&
-            plan.compositeId &&
-            api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target) &&
-            !api.SpinnerNativeField.captureGeometryReady(target)
+            plan.compositeId
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
         if (

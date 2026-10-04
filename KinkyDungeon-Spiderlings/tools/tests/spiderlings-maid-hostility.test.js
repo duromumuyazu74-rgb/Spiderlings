@@ -228,6 +228,22 @@ test("Hunting Grounds spiders seek other NPCs without locking onto their own fac
     assert.equal(kd.KinkyDungeonNearestPlayer(hunter, false, true), prey);
 });
 
+test("same-faction Hunting Grounds candidates skip expensive combatant eligibility", () => {
+    const { context: kd, make } = loadRuntime();
+    kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
+    kd.KDMapData.SpiderlingsHuntingGrounds = { garrisonVersion: 2 };
+    const hunter = make("Spinner"),
+        other = make("Spinner");
+    let queries = 0;
+    const native = kd.Spiderlings.HuntingGrounds.independentCombatant;
+    kd.Spiderlings.HuntingGrounds.independentCombatant = function () {
+        queries++;
+        return native.apply(this, arguments);
+    };
+    assert.equal(kd.Spiderlings.HuntingGrounds.isPrey(hunter, other), false);
+    assert.equal(queries, 0);
+});
+
 test("Hunting Grounds warriors and nurses select their spider attacker even with the player closer", () => {
     const { context: kd, make, nativeHostile } = loadRuntime();
     kd.KDMapData.MapMod = "SpiderlingsHuntingGrounds";

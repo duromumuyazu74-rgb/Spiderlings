@@ -252,7 +252,7 @@ test("enemy profiles preserve canonical family weights and exclude Tunneler/Nest
     const runtime = loadRuntime();
     const profiles = plain(runtime.context.Spiderlings.Webbing.ENEMY_PROFILES);
     assert.deepEqual(profiles, {
-        Spinner: [0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0],
+        Spinner: [0.25, 0.25, 0.25, 0.25, 2, 1, 1, 0.25, 0.25, 0.25, 0.25],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
         MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -336,12 +336,18 @@ test("Mage bolts repair an existing Cocoon without WebCaster anchoring", () => {
     assert.equal(runtime.addCalls.length, 0);
 });
 
-test("Spinner player bindings stop at the three lower families and never create Cocoon", () => {
+test("each binding profile can complete every inner item without a specialist", () => {
     const r = loadRuntime(),
         catalog = syntheticCatalog([1, 2, 3]);
-    for (const random of [0, 0.499, 0.5, 0.749, 0.75, 1]) {
-        const result = select(r, { profile: "Spinner", catalog, random });
-        assert.ok(["Legs", "Ankles", "Foot"].includes(result.family));
+    for (const profile of ["Spinner", "Jumper", "WebCaster", "MageSpiderlings"]) {
+        const items = [];
+        for (let hit = 0; hit < catalog.length; hit++) {
+            const result = select(r, { profile, catalog, items, random: 0.5 });
+            assert.ok(result.selectedId, `${profile} stalled after ${hit} hits`);
+            assert.ok(!items.some((item) => item.name === result.selectedId));
+            items.push({ name: result.selectedId, group: result.group });
+        }
+        assert.deepEqual(new Set(items.map((item) => item.name)), new Set(catalog.map((item) => item.id)));
     }
     const items = catalog.filter((e) => e.stage !== "Cocoon").map((e) => ({ name: e.id, group: e.group }));
     const snapshot = snapshotFor(items);
@@ -489,7 +495,7 @@ test("Lv3 preserves each source's body and head preferences with complete inner 
         ...lv2Families.map((family) => ownedItem(2, family)),
     ];
     for (const [profile, weights] of Object.entries({
-        Spinner: [0, 0, 2, 1, 1, 0, 0],
+        Spinner: [0.25, 0.25, 2, 1, 1, 0.25, 0.25],
         Jumper: [1, 2, 3, 3, 3, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2],
     })) {

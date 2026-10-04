@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.87.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.88.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,22 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.88 Spinner field, binding and recovery fixes (2026-10-04)
+
+Test.88 is based on Test.87 commit `a2d17cb`. Observed builders retain paid construction and unpaid approaches stop repeatedly changing sites while making progress. Retired fields no longer shadow active capture geometry. Boundary proxies preserve their physical maximum HP through native refresh and save/load. Spinner retains its leg preference while allowing every compatible inner family; Jumper consumption and Tunneler nest work remain. A leg bag can anchor an owned recovery leash, old saved leash events migrate, rejected attachments no longer consume ordinary binding, and reaching the core ends temporary recovery control. See the [investigation, weapon text and performance record](spiderlings-test88-spinner-fixes.zh-CN.md).
+
+Weapon item details now explain their specials and bounded resource returns in English and all seven locales. The Tome describes delayed inward closure, up to three paid tiers and its main/offhand binding bonus; the Staff describes first-target binding, slow and walls. Short material descriptions remain alongside native weapon statistics. Sixteen changed descriptions received independent semantic review.
+
+A final-package inventory UI run passes both games, eight languages and both weapons: 32 screenshots with the native named ability present and the wrapped description within the panel. Evidence is this checkout's `.scratch/weapon-final-ui-1791083373135/result.json`. The longest descriptions use 16 native lines, with a 20-pixel font and 32-pixel line spacing. This uses the tested default panel/font settings.
+
+The final ZIP contains 170 entries and 24,838,040 bytes, SHA-256 `fee64bc3ec57cda572c8c121fac3886f220850b6536702cf767b8df335d9b8e2`. All 114 PNGs remain byte-identical to Test.87. Controlled scenes reconstruct the reported leg-bag encounter because the copied desktop save had no restraints at its last saved tick, 886. The active desktop process was not patched. Reduced boundary drawing costs do not establish a whole-game FPS or lag improvement.
+
+The same final ZIP passes all 45 native stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `248506db998a881218c83ba53a4f8dbbc29f6a42`, reporting 5.5.3, including seven locale loads per game. The fetch completed at `2026-10-04T03:09:37.178Z`; full evidence is `<cache>/runs/2026-10-04T03-09-37-197Z-0.92.36-test.88/acceptance.json`. The added scene exercises all four attacker profiles, legacy owned-leash save migration, bag-only anchoring, and 2/4/8 observed builders performing real paid work. Existing recovery scenes now also verify actual hits and return with no collar.
+
+The baseline retains native audio play/pause interruptions and two missing `Locks/Red.png` requests, with no missing Spiderlings asset. The GitHub runtime records no page errors, unhandled rejections or missing resources. These diagnostics remain in the evidence. Tests cover the stated controlled native scenes and the copied save, not arbitrary other Mods or a complete human playthrough.
+
+Final delivery gates pass: repository checks, all 12 policy tests, 562 public tests and the complete 877-test local watcher. Package verification reports zero errors, warnings or notes. Evidence is this checkout's `.scratch/delivery/2026-10-04T03-22-22-087Z-qJA4Lz/REPORT.md`, binding full native acceptance to the same ZIP; source and package remained unchanged throughout collection. Only this Markdown result is appended afterward, followed by repository checks and a focused local commit.
 
 ## Test.87 special-floor crews and objective hints (2026-10-02)
 
