@@ -1067,79 +1067,38 @@ test("mapgen field rejects solo crews and downgrades protected large sites witho
     }
 });
 
-test("a lure holds its best safe tile during the bounded ambush window", () => {
-    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
-        r = runtime(actors),
-        ai = start(r),
-        group = Object.values(ai.groups)[0],
-        plan = ai.plans[group.planId],
-        worker = actors[0];
-    worker.x = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.x, 0) / plan.anchors.length);
-    worker.y = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.y, 0) / plan.anchors.length);
-    worker.aware = true;
-    worker.testSense = true;
-    group.assignments = {};
-    const original = { x: worker.x, y: worker.y };
-    for (let turn = 0; turn < 1; turn++) {
-        r.context.KinkyDungeonCurrentTick++;
-        r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
-        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
-        assert.deepEqual({ x: worker.x, y: worker.y }, original);
-    }
-    assert.equal(r.movement.length, 0);
-    assert.equal(r.phaseCalls.length, 0, "waiting for prey outside the field does not spend an attack");
-
-    const target = r.context.KinkyDungeonPlayerEntity;
-    target.x = worker.x + 1;
-    target.y = worker.y;
-    r.context.KinkyDungeonCurrentTick++;
-    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
-    assert.ok(
-        Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)) > 1,
-        "holding still must not prevent retreat from a nearby target outside the core",
-    );
-    assert.equal(r.movement.length, 1);
-});
-
-test("visible stationary prey ends ambush waiting without resetting pressure on sight or reload", () => {
-    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
-        r = runtime(actors),
-        ai = start(r),
-        group = Object.values(ai.groups)[0],
-        plan = ai.plans[group.planId],
-        worker = actors[0],
-        target = r.context.KinkyDungeonPlayerEntity;
-    worker.x = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.x, 0) / plan.anchors.length);
-    worker.y = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.y, 0) / plan.anchors.length);
-    target.x = worker.x + 4;
-    target.y = worker.y;
-    worker.aware = true;
-    worker.testSense = true;
-    group.assignments = {};
-    for (let turn = 0; turn < 2; turn++) {
+test("field placement does not delay first-contact pursuit or adjacent combat, including old ambush saves", () => {
+    for (const savedMode of [undefined, "lure", "search", "pressure", "pursuit"]) {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+            r = runtime(actors),
+            ai = start(r),
+            group = Object.values(ai.groups)[0],
+            worker = actors[0],
+            target = r.context.KinkyDungeonPlayerEntity;
+        Object.assign(worker, { x: 5, y: 6, aware: true, testSense: true });
+        Object.assign(target, { x: 9, y: 6 });
+        group.assignments = {};
+        if (savedMode) {
+            group.engagement = {
+                target: { kind: "player", id: 0 },
+                lureId: worker.id,
+                mode: savedMode,
+                progress: { waits: 0, approach: 4, route: 0 },
+                lastKnown: { x: target.x, y: target.y, age: 0, source: "native" },
+            };
+            r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+        }
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), 3, savedMode);
+        assert.equal(r.phaseCalls.length, 0, "A paid approach cannot also attack");
+        assert.equal(group.engagement.progress, undefined, "Old ambush timers cannot postpone contact");
+        Object.assign(target, { x: worker.x + 1, y: worker.y });
+        const position = { x: worker.x, y: worker.y };
         r.context.KinkyDungeonCurrentTick++;
         r.context.KinkyDungeonEnemyLoop(worker, target, 1);
-        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        assert.deepEqual({ x: worker.x, y: worker.y }, position, "Do not retreat from adjacent prey");
+        assert.equal(r.phaseCalls.length, 2, "Native attack and spell phases open immediately");
     }
-    assert.equal(group.engagement.noSightTurns, 0);
-    assert.equal(group.engagement.mode, "pressure");
-    const encounter = r.context.Spiderlings.SpinnerNativeField.state();
-    r.context.KDMapData.SpiderlingsSpinnerEncounter = plain(encounter);
-    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
-    const restored = Object.values(
-        r.context.Spiderlings.SpinnerAI.ensureAI(r.context.Spiderlings.SpinnerNativeField.state()).groups,
-    )[0];
-    const before = { x: worker.x, y: worker.y };
-    r.context.KinkyDungeonCurrentTick++;
-    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
-    assert.equal(restored.engagement.mode, "pressure", "Native sight must not undo committed pressure");
-    assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), 3);
-    assert.notDeepEqual({ x: worker.x, y: worker.y }, before);
-    assert.equal(r.phaseCalls.length, 0, "A paid pursuit move cannot also attack");
-    target.x = worker.x + 1;
-    r.context.KinkyDungeonCurrentTick++;
-    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
-    assert.equal(r.phaseCalls.length, 2, "Adjacent pressure reopens native combat");
 });
 
 test("pending recovery pursues native observations before gate work without discovering an unseen target", () => {
@@ -1186,40 +1145,31 @@ test("pending recovery pursues native observations before gate work without disc
     assert.equal(r.movement.length, moveCount, "Expired knowledge cannot pursue the target's new coordinate");
 });
 
-test("prey approach renews the ambush window but unrelated paid field work does not", () => {
+test("approaching prey and remote construction never restart an ambush wait", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
         r = runtime(actors),
         ai = start(r),
         group = Object.values(ai.groups)[0],
-        plan = ai.plans[group.planId],
         worker = actors[0],
         target = r.context.KinkyDungeonPlayerEntity;
-    worker.x = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.x, 0) / plan.anchors.length);
-    worker.y = Math.round(plan.anchors.reduce((sum, cell) => sum + cell.y, 0) / plan.anchors.length);
-    worker.aware = true;
-    worker.testSense = true;
-    target.x = worker.x + 4;
-    target.y = worker.y;
+    Object.assign(worker, { x: 5, y: 6, aware: true, testSense: true });
+    Object.assign(target, { x: 10, y: 6 });
     group.assignments = {};
-    const advance = () => {
+    for (let turn = 0; turn < 2; turn++) {
+        const before = Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y));
         r.context.KinkyDungeonCurrentTick++;
         r.context.KinkyDungeonEnemyLoop(worker, target, 1);
         r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
-    };
-    advance();
-    target.x--;
-    advance();
-    assert.equal(group.engagement.progress.waits, 0, "Prey approaching the core is encounter progress");
-    group.metrics.construction++;
-    advance();
-    assert.equal(group.engagement.progress.waits, 1, "Another builder cannot renew an inert lure's window");
-    assert.equal(group.engagement.mode, "lure");
-    group.metrics.repair++;
-    advance();
-    assert.equal(group.engagement.mode, "pressure");
+        assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), before - 1);
+        group.metrics.construction++;
+        target.x--;
+    }
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(r.phaseCalls.length, 2);
 });
 
-test("lure follows a real wall detour while another builder's work cannot hide stationary waiting", () => {
+test("contact pursuit routes around a wall to prey without returning to a field waiting point", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
         r = runtime(actors),
         ai = start(r),
@@ -1237,30 +1187,20 @@ test("lure follows a real wall detour while another builder's work cannot hide s
         snapshot.cells.find((cell) => cell.x === x && cell.y === y)?.floor ? "." : "1";
     r.context.KinkyDungeonFindPath = (fromX, fromY, toX, toY) =>
         r.context.Spiderlings.SpinnerAI.routeOnSnapshot(snapshot, { x: fromX, y: fromY }, { x: toX, y: toY }).slice(1);
-    worker.x = 11;
-    worker.y = 6;
-    worker.aware = true;
-    worker.testSense = true;
-    target.x = 15;
-    target.y = 6;
+    Object.assign(worker, { x: 8, y: 6, aware: true, testSense: true });
+    Object.assign(target, { x: 12, y: 6 });
     group.assignments = {};
-    let reached = false;
-    for (let turn = 0; turn < 25; turn++) {
-        group.metrics.construction++;
+    for (let turn = 0; turn < 20 && !r.phaseCalls.length; turn++) {
         r.context.KinkyDungeonCurrentTick++;
         r.context.KinkyDungeonEnemyLoop(worker, target, 1);
         r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
-        assert.equal(r.context.KinkyDungeonMapGet(worker.x, worker.y), ".", "No movement through wall terrain");
-        if (worker.x === 8 && worker.y === 6) reached = true;
-        if (group.engagement.mode === "pressure") break;
+        assert.equal(r.context.KinkyDungeonMapGet(worker.x, worker.y), ".");
     }
-    assert.ok(reached, "A lure must take the necessary detour to its field");
-    assert.equal(group.engagement.mode, "pressure", "Stationary prey cannot be lured forever by remote building");
-    assert.equal(group.engagement.progress.waits, 2);
     assert.ok(
         r.movement.some((step) => step.y <= 2),
         "The route must go around the wall's end",
     );
+    assert.equal(r.phaseCalls.length, 2, "Reaching prey opens native combat");
 });
 
 test("continuous remote hearing still guides investigation after personal sight has been absent for eight turns", () => {
@@ -1382,7 +1322,7 @@ test("last-known data expires at age four and native pursuit resumes after eight
     assert.equal(group.engagement.noSightTurns, 3);
     for (let turn = 0; turn < 4; turn++) r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
     assert.equal(group.engagement.noSightTurns, 7);
-    assert.equal(group.engagement.mode, "search");
+    assert.equal(group.engagement.mode, "pressure");
     r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
     assert.equal(group.engagement.noSightTurns, 8);
     assert.equal(group.engagement.mode, "pursuit");
@@ -3227,7 +3167,8 @@ test("enclosure gates follow fresh player reports through paid work and keep uns
             gates.every((g) => (x > plan.center.x ? g.x > plan.center.x : g.x < plan.center.x)),
             JSON.stringify(gates),
         );
-        assert.notEqual(group.engagement?.mode, "pressure");
+        assert.notEqual(group.engagement?.mode, "lure", "Changing field entrances must not restart waiting");
+        assert.equal(group.engagement?.progress, undefined);
         for (let tick = 0; tick < 120; tick++) {
             start(r, snapshot);
             c.KinkyDungeonEnemyLoop(worker, player, 1);

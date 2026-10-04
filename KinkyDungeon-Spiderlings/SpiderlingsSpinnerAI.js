@@ -6,7 +6,6 @@
         GROUP_RADIUS = 10,
         SHORTLIST_SIZE = 8,
         MAX_LINE_LENGTH = 5,
-        AMBUSH_WAIT_TURNS = 2,
         DIRECTIONS = [
             { x: 1, y: 0 },
             { x: -1, y: 0 },
@@ -1686,7 +1685,7 @@
 
     function resetLureApproach(group) {
         if (!group.engagement) return;
-        group.engagement.mode = "lure";
+        group.engagement.mode = "pressure";
         delete group.engagement.progress;
     }
 
@@ -2386,7 +2385,7 @@
                 group.engagement = {
                     target: targetReference(target),
                     sharedOnly: true,
-                    mode: "lure",
+                    mode: "pressure",
                     noSightTurns: 0,
                     lureNoContactTurns: 0,
                     compositeId: encounter.ai.plans[group.planId]?.compositeId || null,
@@ -2403,7 +2402,7 @@
             // personal sight or native awareness/detection accumulator.
             if (visual) observations.sight.add(`shared:${enemy.id}`);
             observedGroups.set(group.id, observations);
-            if (visual && group.engagement.mode !== "pressure") group.engagement.mode = "lure";
+            if (visual && group.engagement.mode !== "pressure") group.engagement.mode = "pressure";
         }
         return true;
     }
@@ -2554,6 +2553,9 @@
             clearEngagement(group);
             return;
         }
+        // Old saves may retain the removed wait timer and evasive lure mode.
+        if (engagement.mode === "lure") engagement.mode = "pressure";
+        delete engagement.progress;
         if (engagement.lastKnown?.age >= 4 || engagement.lastKnown?.source !== "native") delete engagement.lastKnown;
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
         if (needsSoleSharedBuilder(encounter, group)) delete engagement.lureId;
@@ -2585,7 +2587,7 @@
             group.engagement = {
                 target: reference,
                 lureId: enemy.id,
-                mode: "lure",
+                mode: "pressure",
                 noSightTurns: 0,
                 lureNoContactTurns: 0,
                 compositeId: encounter.ai?.plans?.[group.planId]?.compositeId || null,
@@ -2618,7 +2620,7 @@
             };
         if (actualSight) {
             engagement.noSightTurns = 0;
-            if (engagement.mode !== "pressure") engagement.mode = "lure";
+            if (engagement.mode !== "pressure") engagement.mode = "pressure";
             if (String(engagement.lureId) === String(enemy.id)) engagement.lureNoContactTurns = 0;
         }
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
@@ -2742,81 +2744,6 @@
         );
     }
 
-    function cellVisibleFrom(enemy, cell, target) {
-        if (!target || typeof KinkyDungeonCheckLOS !== "function") return true;
-        const observer = { ...enemy, x: cell.x, y: cell.y };
-        return KinkyDungeonCheckLOS(
-            observer,
-            target,
-            Math.hypot(cell.x - target.x, cell.y - target.y),
-            99,
-            false,
-            true,
-        );
-    }
-
-    function moveLure(enemy, group, target, actualSight) {
-        const encounter = api.SpinnerNativeField.state(),
-            waypoint = planWaypoint(encounter, group),
-            known = groupObservation(group),
-            required = new Set(requiredCells(encounter, group).map(cellKey)),
-            mustYield = required.has(cellKey(enemy)),
-            path = waypoint ? nativePath(enemy, waypoint) : [],
-            next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y),
-            candidates = [
-                { x: enemy.x, y: enemy.y },
-                ...DIRECTIONS.map((direction) => ({
-                    x: enemy.x + direction.x,
-                    y: enemy.y + direction.y,
-                })),
-            ]
-                .filter((cell) => {
-                    const snapshot = api.SpinnerNativeField.snapshot(cell);
-                    return (
-                        snapshot.inBounds &&
-                        snapshot.floor &&
-                        !snapshot.protected &&
-                        (!snapshot.actorOccupied || cellKey(cell) === cellKey(enemy))
-                    );
-                })
-                .map((cell) => ({
-                    cell,
-                    staying: cellKey(cell) === cellKey(enemy),
-                    required: required.has(cellKey(cell)),
-                    melee: known ? distance(cell, known) <= 1 : false,
-                    visible: !actualSight || cellVisibleFrom(enemy, cell, target),
-                    followsRoute: !!next && cellKey(cell) === cellKey(next),
-                    route: waypoint ? distance(cell, waypoint) : 0,
-                }))
-                .sort(
-                    (a, b) =>
-                        Number(a.required) - Number(b.required) ||
-                        Number(a.melee) - Number(b.melee) ||
-                        // A legal path can temporarily leave sight or increase
-                        // geometric distance while going around a real wall.
-                        Number(b.followsRoute) - Number(a.followsRoute) ||
-                        Number(b.visible) - Number(a.visible) ||
-                        a.route - b.route ||
-                        Number(b.staying) - Number(a.staying) ||
-                        cellKey(a.cell).localeCompare(cellKey(b.cell)),
-                );
-        const chosen = candidates[0];
-        if (!chosen || chosen.staying) {
-            record(group, "wait");
-            return "wait";
-        }
-        const moved = KinkyDungeonEnemyTryMove(
-            enemy,
-            { x: chosen.cell.x - enemy.x, y: chosen.cell.y - enemy.y },
-            enemy.SpiderlingsSpinnerRuntimeDelta || 1,
-            chosen.cell.x,
-            chosen.cell.y,
-            false,
-        );
-        record(group, mustYield ? "yield" : moved ? "travel" : "wait");
-        return mustYield ? "yield" : "lure-move";
-    }
-
     function pursueObservation(enemy, group, target, perceivedThreat, observation) {
         const known = observation || groupObservation(group),
             destination = perceivedThreat ? target : known;
@@ -2885,13 +2812,7 @@
         if (homeGuard) clearEngagement(group);
         else auditEngagement(encounter, group);
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
-        const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData),
-            actualSight = !!(
-                aiData.canSeePlayer ||
-                aiData.canSeePlayerChase ||
-                aiData.canSeePlayerMedium ||
-                aiData.canShootPlayer
-            );
+        const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData);
         const assignment = group.assignments?.[enemy.id];
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
         if (
@@ -2910,12 +2831,6 @@
             plan.compositeId
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        if (
-            group.engagement?.mode === "pressure" &&
-            String(group.engagement.lureId) === String(enemy.id) &&
-            !(observed && api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target))
-        )
-            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
         const known = groupObservation(group);
         if (
             assignment?.type === "rally" &&
@@ -2927,8 +2842,7 @@
             api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, known)
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        // Luring has finished when sensed prey reaches the core. Native melee must
-        // deliver the hit that admits capture; evading it here leaves a harmless cage.
+        // Native melee must deliver the hit that admits capture after closure.
         if (
             observed &&
             plan.compositeId &&
@@ -2940,18 +2854,10 @@
             return distance(enemy, target) > 1
                 ? pursueObservation(enemy, group, target, perceivedThreat)
                 : decide(enemy, group, "delegate-native", false);
-        if (group.engagement && String(group.engagement.lureId) === String(enemy.id)) {
-            if (group.engagement.mode === "pursuit")
-                return groupObservation(group)
-                    ? pursueObservation(enemy, group, target, perceivedThreat)
-                    : decide(enemy, group, "delegate-native", false);
-            return decide(
-                enemy,
-                group,
-                moveLure(enemy, group, observed ? target : undefined, observed && actualSight),
-                true,
-            );
-        }
+        // The saved lureId identifies the contact role. Field placement must
+        // not make that actor evade melee or wait for prey to enter the field.
+        if (group.engagement && String(group.engagement.lureId) === String(enemy.id))
+            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
         if (perceivedThreat && distance(enemy, target) <= 1)
             return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
         if (!group.engagement && perceivedThreat && group.source?.type !== "nest")
@@ -3012,27 +2918,6 @@
             const observations = observedGroups.get(group.id) || { sensed: new Set(), sight: new Set() },
                 sawTarget = observations.sight.size > 0,
                 lureSawTarget = observations.sight.has(String(engagement.lureId));
-            if (sawTarget && engagement.lastKnown) {
-                const waypoint = planWaypoint(encounter, group),
-                    approach = waypoint ? distance(engagement.lastKnown, waypoint) : Infinity,
-                    lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId)),
-                    path = waypoint && lure ? nativePath(lure, waypoint) : [],
-                    route = waypoint && lure && distance(lure, waypoint) === 0 ? 0 : path.length || Infinity,
-                    progress = engagement.progress;
-                // Only prey approach or this lure's useful travel extends the
-                // ambush. Remote construction must not hide an inert lure.
-                const sameLure = String(progress?.lureId) === String(engagement.lureId),
-                    advanced =
-                        progress &&
-                        (approach < progress.approach || (sameLure && route < (progress.route ?? Infinity)));
-                engagement.progress = {
-                    approach: Math.min(progress?.approach ?? Infinity, approach),
-                    lureId: engagement.lureId,
-                    route: sameLure ? Math.min(progress?.route ?? Infinity, route) : route,
-                    waits: advanced ? 0 : (progress?.waits || 0) + 1,
-                };
-                if (engagement.progress.waits >= AMBUSH_WAIT_TURNS) engagement.mode = "pressure";
-            }
             if (engagement.lastKnown) {
                 engagement.lastKnown.age++;
                 if (engagement.lastKnown.age >= 4) delete engagement.lastKnown;
@@ -3116,7 +3001,6 @@
     api.SpinnerAI = {
         GROUP_RADIUS,
         SHORTLIST_SIZE,
-        AMBUSH_WAIT_TURNS,
         seededRandom,
         eligibleSpinner,
         ensureAI,
