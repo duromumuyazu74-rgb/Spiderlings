@@ -25,12 +25,37 @@ function recoveryRuntime(options = {}) {
         fieldPresent = true,
         nativeLoops = 0,
         stamina = 10,
-        nativeLeash = { restraintID: 901, entity: 777, priority: 9 },
+        nativeLeash = undefined,
         contextRef;
     const player = { id: "player", x: 7, y: 5, player: true, leash: nativeLeash };
     if (options.item) gear.push(options.item);
     const runtime = loadLifecycleRuntime(
         {
+            KDLeashReason: {},
+            KinkyDungeonAttachTetherToEntity(length, owner, target, reason, color, priority, item) {
+                if (target.leash && target.leash.priority >= priority) return undefined;
+                return (target.leash = { length, entity: owner.id, reason, color, priority, restraintID: item.id });
+            },
+            KDBreakTether(target) {
+                delete target.leash;
+            },
+            KinkyDungeonUpdateTether(delta, message, target) {
+                (contextRef.tetherCalls ||= []).push({ delta, message, owner: target.leash?.entity });
+            },
+            KinkyDungeonMoveTo(x, y) {
+                if (options.blockMove) return 0;
+                contextRef.KDMovePlayer(x, y, true);
+                contextRef.KDGameData.MovePoints = 0;
+                return options.moveCost || 1;
+            },
+            KinkyDungeonEnemyTryMove(actor, direction, delta, x, y) {
+                actor.movePoints = (actor.movePoints || 0) + delta;
+                if (actor.movePoints < actor.Enemy.movePoints) return false;
+                actor.movePoints -= actor.Enemy.movePoints;
+                actor.x = x;
+                actor.y = y;
+                return true;
+            },
             KDGameData: {},
             KDMapData: { Entities: [] },
             KDPlayerEffects: {},
@@ -159,6 +184,12 @@ function recoveryRuntime(options = {}) {
         handleEnemyTurn: () => undefined,
     };
     c.Spiderlings.SpinnerAI = undefined;
+    c.Spiderlings.SpinnerTopology = {
+        isInsideCommonCore: (_graph, id, target) => {
+            const core = cores.get(id);
+            return core && target.x === core.x && target.y === core.y;
+        },
+    };
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerRecovery.js"), "utf8"), c, {
         filename: "SpiderlingsSpinnerRecovery.js",
     });
@@ -233,7 +264,10 @@ function recoveryRuntime(options = {}) {
             nativeLeash = value;
             player.leash = value;
         },
-        leave: () => c.KDMovePlayer(7, 5, true),
+        leave: () => {
+            player.x = 6;
+            return c.KDMovePlayer(7, 5, true);
+        },
         hit: (hitter = source) =>
             c.KDPlayerEffects.SpiderlingsWebbingEnemyBind(
                 player,
@@ -247,728 +281,219 @@ function recoveryRuntime(options = {}) {
     };
 }
 
-test("returning to the common core ends recovery duty and preserves the real carrier", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
+const plain = (value) => JSON.parse(JSON.stringify(value));
+const collar = (r) =>
+    r.gear.push({ id: "collar", name: "BasicCollar", restraint: { Group: "ItemNeck", shrine: ["Collars"] } });
+function attached(options) {
+    const r = recoveryRuntime(options);
     r.leave();
-    r.hit();
-    assert.ok(r.api.state());
-    const carrier = r.gear[0];
-    r.player.x = 5;
-    r.player.y = 5;
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-    assert.equal(r.api.state(), undefined);
-    assert.equal(r.api.departure(), undefined);
-    assert.equal(r.gear[0], carrier);
-    assert.equal(r.nativeLoops(), 1);
-});
-
-test("load migrates only the owned legacy collar event and preserves item state", () => {
-    const owned = {
-        id: 50,
-        name: "SpiderlingsSpinnerSilkLeash",
-        lock: "Blue",
-        cutProgress: 0.4,
-        events: [
-            { trigger: "postRemoval", type: "RequireCollar" },
-            { trigger: "tick", type: "Foreign" },
-        ],
-    };
-    const r = recoveryRuntime();
-    owned.name = r.api.LEASH;
-    const foreign = structuredClone(owned);
-    foreign.name = "BasicLeash";
-    r.gear.push(owned, foreign);
-    r.api.afterLoad();
-    assert.equal(owned.events[0].type, "SpiderlingsRecoveryAnchor");
-    assert.equal(owned.events[1].type, "Foreign");
-    assert.equal(owned.lock, "Blue");
-    assert.equal(owned.cutProgress, 0.4);
-    assert.equal(foreign.events[0].type, "RequireCollar");
-});
-
-test("rejected recovery admission leaves the hit available for ordinary Webbing", () => {
-    const r = recoveryRuntime({ canAdd: false });
-    r.player.x = 6;
-    r.leave();
-    assert.equal(r.api.hit(r.source), false);
-    assert.equal(r.api.state(), undefined);
-    assert.ok(r.api.departure());
-});
-
-function externalLeash(id = "external-1") {
-    return {
-        id,
-        name: "ForeignLeash",
-        group: "ItemNeckRestraints",
-        lock: "Blue",
-        tightness: 7,
-        cutProgress: 0.37,
-        struggleProgress: 0.42,
-        data: { owner: "foreign", nested: { value: 3 } },
-        dynamicLink: { id: "collar-1", name: "ForeignCollar" },
-        restraint: { name: "ForeignLeash", Group: "ItemNeckRestraints", leash: true, tether: 2.9 },
-    };
+    assert.equal(r.api.hit(r.source), true);
+    return r;
 }
 
-test("departure exposes pursuit eligibility without contact or an automatic recovery hit", () => {
-    const r = recoveryRuntime();
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
-    r.player.x = 6;
-    r.leave();
-    r.source.x = 14;
-    assert.equal(r.api.wantsPursuit(r.source, r.player), true, "pursuit can start beyond leash range");
-    assert.equal(r.api.wantsPursuit(r.source, { ...r.player }), false, "only the selected player qualifies");
-    assert.equal(r.api.wantsPursuit({ ...r.source, id: 999 }, r.player), false);
-    assert.equal(r.api.wantsPursuit({ ...r.source, stun: 1 }, r.player), false);
-    assert.equal(r.api.wantsPursuit({ ...r.source, friendly: true }, r.player), false);
-    assert.equal(r.api.hit(r.source), false);
-    assert.equal(r.api.state(), undefined, "eligibility does not bypass the fresh hit's contact check");
-    assert.equal(r.gear.length, 0);
-    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => true;
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
-    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => false;
-    r.c.Spiderlings.SpinnerNPCCapture = { usesSource: () => true };
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
-    r.c.Spiderlings.SpinnerNPCCapture = undefined;
-    r.player.x = 5;
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false, "returning home ends pursuit");
-    r.player.x = 7;
-    r.setFieldPresent(false);
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false, "a retired field cannot request pursuit");
+test("successful departure hit establishes a native tether bound to the real carrier", () => {
+    const r = attached();
+    const state = r.api.state();
+    assert.equal(r.player.leash.reason, r.api.TETHER_REASON);
+    assert.equal(r.player.leash.entity, r.source.id);
+    assert.equal(r.player.leash.restraintID, state.carrierId);
+    assert.equal(r.c.KDGameData.KinkyDungeonLeashingEnemy, r.source.id);
+    const before = JSON.stringify(r.gear);
+    r.api.hit(r.source);
+    assert.equal(JSON.stringify(r.gear), before);
+    assert.equal(r.api.strength(), 1);
 });
-
-test("a slack recovery preserves its original field and needs a fresh hit to rejoin", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    const carrier = r.gear[0];
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false, "an attached source keeps pull ownership");
-    r.source.x = 14;
-    r.api.audit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), []);
-    assert.equal(r.api.state().compositeId, "field-1");
-    const before = JSON.stringify({ state: r.api.state(), gear: r.gear });
-    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
-    assert.equal(JSON.stringify({ state: r.api.state(), gear: r.gear }), before, "query is read-only");
-    r.source.x = 8;
-    r.hit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), [r.source.id]);
-    assert.equal(r.gear[0], carrier);
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
-});
-
-test("only an actual departure through a breached outer field arms a fresh recovery hit", () => {
-    const r = recoveryRuntime();
-    r.setBreached(false);
-    r.leave();
-    assert.equal(r.api.departure(), undefined, "opening or standing outside does not arm recovery");
-    r.setBreached(true);
-    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => true;
-    r.player.x = 6;
-    r.leave();
-    assert.equal(r.api.departure(), undefined, "capture or wrapping blocks departure arming");
-    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => false;
-    r.player.x = 6;
-    r.leave();
-    assert.deepEqual(JSON.parse(JSON.stringify(r.api.departure())), {
-        version: 1,
-        compositeId: "field-1",
-        groupId: "group-1",
-        eligibleSourceIds: [41],
-    });
-    assert.equal(r.gear.length, 0, "departure itself never equips a leash");
-});
-
-test("an active capture consumes the Spinner hit before recovery fallback", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.c.Spiderlings.SpinnerCapture.hit = () => false;
-    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => true;
-    assert.equal(r.hit().effect, false);
-    assert.equal(r.api.state(), undefined);
-    assert.equal(r.gear.length, 0);
-    assert.ok(r.api.departure(), "capture cannot consume the saved departure for recovery");
-
-    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => false;
-    r.hit();
-    assert.ok(r.api.state(), "a later fresh hit may start recovery after capture ends");
-});
-
-test("an NPC Capture source cannot cross into player recovery", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.c.Spiderlings.SpinnerNPCCapture = { usesSource: (id) => id === r.source.id };
-    r.hit();
-    assert.equal(r.api.state(), undefined);
-    assert.equal(
-        r.gear.some((item) => item.name === r.api.LEASH),
-        false,
-    );
-    assert.ok(r.api.departure(), "the rejected source does not consume the saved departure");
-
-    r.c.Spiderlings.SpinnerNPCCapture.usesSource = () => false;
-    r.hit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), [r.source.id]);
-});
-
-test("the fresh native hit adds one owned leash and reload preserves its exact identity", () => {
-    const r = recoveryRuntime();
-    const leash = r.c.KinkyDungeonGetRestraintByName("SpiderlingsSilkLeash");
-    assert.deepEqual(JSON.parse(JSON.stringify(leash.enemyTags)), {}, "generic leashing cannot select the carrier");
-    r.player.x = 6;
-    r.leave();
-    assert.equal(r.api.state(), undefined, "a miss never reaches the successful hit entrance");
-    const outcome = r.hit();
-    assert.equal(outcome.effect, false);
-    assert.equal(r.gear.length, 1);
-    assert.equal(r.gear[0].name, "SpiderlingsSilkLeash");
-    assert.equal(r.api.state().carrierId, r.gear[0].id);
-    const carrier = r.gear[0];
-    r.send("afterLoadGame");
-    r.hit();
-    assert.equal(r.gear.length, 1);
-    assert.equal(r.gear[0], carrier);
-});
-
-test("a compatible external leash is reused byte-for-byte with native ownership unchanged", () => {
-    const carrier = externalLeash(),
-        r = recoveryRuntime({ item: carrier }),
-        before = JSON.stringify(carrier),
-        leashBefore = JSON.stringify(r.player.leash);
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    assert.equal(r.api.state().carrierId, carrier.id);
-    assert.equal(r.api.state().ownedCarrier, false);
-    assert.equal(JSON.stringify(carrier), before);
-    assert.equal(JSON.stringify(r.player.leash), leashBefore);
-    assert.equal(r.gear.length, 1);
-});
-
-test("an incompatible neck item blocks owned addition without any mutation", () => {
-    const collar = {
-            id: "plain-collar",
-            name: "PlainCollar",
-            group: "ItemNeckRestraints",
-            lock: "Gold",
-            data: { escape: 0.25 },
-            restraint: { name: "PlainCollar", Group: "ItemNeckRestraints", leash: false },
-        },
-        r = recoveryRuntime({ item: collar, blockers: [collar] }),
-        before = JSON.stringify(collar);
-    r.player.x = 6;
-    r.leave();
-    assert.equal(r.hit().effect, false, "the legal recovery hit is consumed");
-    assert.equal(r.api.state(), undefined);
-    assert.equal(r.gear.length, 1);
-    assert.equal(JSON.stringify(collar), before);
-});
-
-test("source loss leaves real equipment slack and requires another successful hit", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    const carrier = r.gear[0];
-    r.source.hp = 0;
-    r.api.audit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), []);
-    assert.equal(r.gear[0], carrier);
-    r.source.hp = 3;
-    r.api.audit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), [], "validity alone cannot reconnect a source");
-    r.hit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), [41]);
-});
-
-test("recovery uses an open breach before the spider's cheaper web-corner route", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    const actors = [];
-    r.c.KinkyDungeonFindPath = (
-        _x,
-        _y,
-        x,
-        y,
-        _blockEnemy,
-        _blockPlayer,
-        _ignoreLocks,
-        _tiles,
-        _light,
-        _doors,
-        _memory,
-        actor,
-    ) => {
-        actors.push(actor?.id);
-        return actor
-            ? [
-                  { x: 6, y: 4 },
-                  { x, y },
-              ]
-            : [
-                  { x: 6, y: 5 },
-                  { x, y },
-              ];
-    };
-    r.webCells.add("6,4");
-    r.c.KinkyDungeonCurrentTick = 20;
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-    assert.deepEqual({ x: r.player.x, y: r.player.y }, { x: 6, y: 5 });
-    assert.ok(actors.length > 0 && actors.every((actor) => actor === undefined));
-});
-
-test("the executor pays before pulling once toward the live core or surviving source", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    r.player.x = 7;
-    r.c.KinkyDungeonCurrentTick = 20;
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 0.5);
-    assert.equal(r.player.x, 7, "no complete native action means no pull");
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 0.5);
-    assert.equal(r.player.x, 6);
-    assert.equal(r.nativeLoops(), 0, "the executing source cannot also use native AI");
-    assert.equal(r.flags.get("pulled"), 1);
-
-    r.flags.clear();
-    r.c.KinkyDungeonCurrentTick = 21;
-    r.player.x = 7;
-    r.source.x = 9;
-    r.setFieldPresent(false);
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-    assert.equal(r.player.x, 8, "a missing field falls back toward the surviving source");
-});
-
-test("native-first and owned-first orders allow only one displacement in a world turn", () => {
-    const nativeFirst = recoveryRuntime();
-    nativeFirst.player.x = 6;
-    nativeFirst.leave();
-    nativeFirst.hit();
-    nativeFirst.flags.clear();
-    nativeFirst.c.KinkyDungeonCurrentTick = 30;
-    nativeFirst.c.KDMovePlayer(8, 5, false);
-    nativeFirst.c.KinkyDungeonEnemyLoop(nativeFirst.source, nativeFirst.player, 1);
-    assert.equal(nativeFirst.player.x, 8);
-
-    const ownedFirst = recoveryRuntime();
-    ownedFirst.player.x = 6;
-    ownedFirst.leave();
-    ownedFirst.hit();
-    ownedFirst.flags.clear();
-    ownedFirst.player.x = 7;
-    ownedFirst.c.KinkyDungeonCurrentTick = 31;
-    ownedFirst.c.KinkyDungeonEnemyLoop(ownedFirst.source, ownedFirst.player, 1);
-    assert.equal(ownedFirst.player.x, 6);
-    assert.equal(ownedFirst.flags.get("forceMoved"), 1);
-    assert.equal(ownedFirst.flags.get("pulled"), 1);
-    const afterOwned = ownedFirst.player.x;
-    if (!ownedFirst.flags.get("forceMoved")) ownedFirst.c.KDMovePlayer(7, 5, false);
-    assert.equal(ownedFirst.player.x, afterOwned);
-});
-
-test("carrier removal and lifecycle boundaries clear control without removing equipment", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    const carrier = r.gear.shift();
-    r.send("postRemoval", { item: carrier });
-    assert.equal(r.api.state(), undefined);
-    assert.ok(r.api.departure(), "a later fresh hit may establish another real carrier");
-    r.gear.unshift(carrier);
-    r.hit();
-    assert.ok(r.api.state());
-    for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterNewGame"]) {
-        r.send(trigger);
-        assert.equal(r.api.state(), undefined, trigger);
-        assert.equal(r.api.departure(), undefined, trigger);
-        assert.equal(r.gear[0], carrier, trigger);
-        r.player.x = 6;
+test("no actual departure and rejected carrier do not consume ordinary binding", () => {
+    for (const options of [{}, { canAdd: false }, { blockers: ["ItemNeck"] }]) {
+        const r = recoveryRuntime(options);
+        assert.equal(r.api.hit(r.source), false);
         r.leave();
-        r.hit();
-    }
-});
-
-test("distinct hits build one-to-eight source records while refresh, audit, and re-hit keep identity rules", () => {
-    const r = recoveryRuntime();
-    const extras = Array.from({ length: 8 }, (_, index) => r.addSource(42 + index));
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    for (const source of extras) r.hit(source);
-    assert.deepEqual(Array.from(r.api.sourceIds()), [41, 42, 43, 44, 45, 46, 47, 48]);
-    assert.equal(r.api.strength(), 8);
-    assert.equal(r.api.state().sources["49"], undefined, "the ninth distinct source is ignored");
-
-    const work = (r.api.state().sourceRemovalWork["42"] = { removeOrStruggle: 1 });
-    r.c.KinkyDungeonCurrentTick = 15;
-    r.hit(extras[0]);
-    assert.equal(r.api.state().sources["42"].lastHitTick, 15);
-    assert.equal(r.api.state().sourceRemovalWork["42"], work, "refresh does not reset removal work");
-
-    r.source.hp = 0;
-    r.api.audit();
-    assert.equal(r.api.state().sources["41"], undefined);
-    assert.equal(r.api.state().executorId, 42);
-    assert.equal(extras[0].SpinnerConstructionPoints, 0, "replacement receives no inherited action credit");
-    r.source.hp = 3;
-    r.api.audit();
-    assert.equal(r.api.state().sources["41"], undefined, "proximity cannot reconnect an audited source");
-    r.hit();
-    assert.ok(r.api.state().sources["41"], "a fresh hit reconnects the source");
-});
-
-test("owned escape penalty scales by source count while an external carrier stays immutable", () => {
-    const owned = recoveryRuntime();
-    const sources = Array.from({ length: 7 }, (_, index) => owned.addSource(42 + index));
-    owned.player.x = 6;
-    owned.leave();
-    owned.hit();
-    const carrier = owned.gear[0];
-    const before = owned.inventoryEvents["beforeStruggleCalc:SpiderlingsRecoveryEscape"];
-    const one = { restraint: carrier, struggleType: "Remove", escapePenalty: 0, query: true };
-    before({}, carrier, one);
-    assert.equal(one.escapePenalty, 0);
-    for (const source of sources) owned.hit(source);
-    const eight = { restraint: carrier, struggleType: "Remove", escapePenalty: 0, query: true };
-    before({}, carrier, eight);
-    assert.ok(Math.abs(eight.escapePenalty - 0.35) < 1e-9);
-    assert.equal(owned.api.strength(), 8);
-
-    const foreign = externalLeash();
-    const external = recoveryRuntime({ item: foreign });
-    external.player.x = 6;
-    external.leave();
-    external.hit();
-    const snapshot = JSON.stringify(foreign);
-    const attempt = { restraint: foreign, struggleType: "Remove", escapePenalty: 0, query: true };
-    external.inventoryEvents["beforeStruggleCalc:SpiderlingsRecoveryEscape"]({}, foreign, attempt);
-    assert.equal(attempt.escapePenalty, 0);
-    assert.equal(JSON.stringify(foreign), snapshot);
-});
-
-test("stand firm costs 5/7/19 displayed stamina and survives until a legal paid pull", () => {
-    for (const [count, displayed] of [
-        [1, 5],
-        [2, 7],
-        [8, 19],
-    ]) {
-        const r = recoveryRuntime();
-        const sources = Array.from({ length: count - 1 }, (_, index) => r.addSource(42 + index));
-        r.player.x = 6;
-        r.leave();
-        r.hit();
-        for (const source of sources) r.hit(source);
-        r.player.x = 7;
-        assert.equal(r.api.standFirmCost(), displayed);
-        assert.equal(r.api.standFirm(), "Stand");
-        assert.equal(r.staminaChanges.at(-1), -displayed / 10);
-        assert.equal(r.api.state().resisted, true);
-        r.c.KinkyDungeonCurrentTick += 1;
-        r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-        assert.equal(r.player.x, 7);
-        assert.equal(r.api.state().resisted, false);
-    }
-});
-
-test("one- and two-cell Spiderlings web runs cost two paid actions per cell", () => {
-    for (const [cells, actions] of [
-        [["6,5"], 2],
-        [["6,5", "5,5"], 4],
-    ]) {
-        const r = recoveryRuntime();
-        for (const cell of cells) r.webCells.add(cell);
-        if (cells.length === 2) r.cores.set("field-1", { x: 4, y: 5 });
-        r.player.x = 6;
-        r.leave();
-        r.hit();
-        r.player.x = 7;
-        r.flags.clear();
-        for (let action = 1; action <= actions; action++) {
-            r.c.KinkyDungeonCurrentTick += 1;
-            r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-            assert.equal(r.player.x, action === actions ? (cells.length === 1 ? 5 : 4) : 7);
+        if (options.canAdd === false || options.blockers) {
+            assert.equal(r.api.hit(r.source), false);
+            assert.equal(r.api.state(), undefined);
+            assert.equal(r.gear.length, 0);
         }
-        assert.equal(r.api.state().pendingCrossing, undefined);
     }
 });
-
-test("source removal uses one Cut or two shared Remove/Struggle results without changing carrier progress", () => {
+test("a pending departure without an anchor cannot steal construction for an impossible leash", () => {
     const r = recoveryRuntime();
-    const second = r.addSource(42);
-    r.player.x = 6;
     r.leave();
-    r.hit();
-    r.hit(second);
-    const carrier = r.gear[0];
-    carrier.cutProgress = 0.2;
-    carrier.struggleProgress = 0.3;
-    const before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsRecoveryEscape"],
-        after = r.inventoryEvents["struggle:SpiderlingsRecoveryEscape"];
-    r.c.KDInputTypes.struggle = ({ type }) => {
-        const attempt = {
-            restraint: carrier,
-            struggleType: type,
-            struggleGroup: "ItemNeckRestraints",
-            cost: -0.2,
-            canCut: true,
-            result: type === "Cut" ? "Impossible" : "Fail",
-        };
-        before({}, carrier, attempt);
-        const snapshot = JSON.stringify(r.api.state());
-        before({}, carrier, { ...attempt, query: true });
-        assert.equal(JSON.stringify(r.api.state()), snapshot, "A native UI query must not cancel committed removal");
-        carrier.cutProgress = 0.9;
-        carrier.struggleProgress = 0.9;
-        after({}, carrier, attempt);
-        return "NativeStruggle";
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    collar(r);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
+});
+test("foreign native tether ownership and external carrier contents are preserved", () => {
+    const item = {
+        id: 901,
+        name: "BasicLeash",
+        lock: "Red",
+        cutProgress: 0.37,
+        dynamicLink: { id: 902 },
+        restraint: { Group: "ItemNeckRestraints", leash: true, tether: 2.9 },
     };
-    assert.equal(r.api.sourceRemovalInput({ sourceId: 42, type: "Remove" }), "SourceLoosened");
-    assert.ok(r.api.state().sources["42"]);
-    assert.equal(r.api.sourceRemovalInput({ sourceId: 42, type: "Struggle" }), "SourceRemoved");
-    assert.equal(r.api.state().sources["42"], undefined);
-    assert.ok(r.messages.includes("SpiderlingsRecoveryStrandLoosened"));
-    assert.ok(r.messages.includes("SpiderlingsRecoveryStrandSevered"));
-    assert.equal(carrier.cutProgress, 0.2);
-    assert.equal(carrier.struggleProgress, 0.3);
-
-    assert.equal(
-        r.api.handleEnemyTurn(second, r.player, 2),
-        undefined,
-        "a severed source needs a new real hit instead of rejoining during removal's enemy turn",
-    );
-    r.c.KDGameData.SpiderlingsSpinnerRecovery = JSON.parse(JSON.stringify(r.api.state()));
-    r.api.audit();
-    assert.equal(r.api.handleEnemyTurn(second, r.player, 2), undefined, "reload must retain severed-source admission");
-
-    r.hit(second);
-    r.api.sourceRemovalInput({ sourceId: 42, type: "Cut" });
-    assert.equal(r.api.state().sources["42"], undefined);
-});
-
-test("recovery HUD exposes paid native actions, source selection and live costs without advancing time", () => {
-    const r = recoveryRuntime(),
-        buttons = new Map(),
-        inputs = [];
-    const second = r.addSource(42);
-    r.player.x = 6;
+    const r = recoveryRuntime({ item });
+    const foreign = { entity: 777, priority: 9, reason: "Default", restraintID: 901 };
+    r.setNativeLeash(foreign);
     r.leave();
-    r.hit();
-    r.hit(second);
-    Object.assign(r.c, {
-        KinkyDungeonDrawState: "Game",
-        KinkyDungeonShowInventory: false,
-        DrawButtonKDEx(name, callback, enabled, _x, _y, _width, _height, label) {
-            buttons.set(name, { callback, enabled, label });
-        },
-        KDSendInput(name, data) {
-            inputs.push({ name, data });
-            return r.c.KDInputTypes[name](data);
-        },
-        KinkyDungeonStruggle(group, type, index, query, data) {
-            assert.equal(group, "ItemNeckRestraints");
-            assert.equal(index, 0);
-            assert.equal(query, true);
-            data.cost = type === "Struggle" ? -3 : -0.2;
-            data.canCut = false;
-            r.gear[0].pickProgress = 0;
-            r.gear[0].unlockProgress = 0;
-            r.gear[0].attempts = (r.gear[0].attempts || 0) + 0.5;
-        },
-        TextGet: (key) =>
-            ({
-                SpiderlingsRecoveryStand: "Stand firm ({cost} stamina)",
-                SpiderlingsRecoverySelect: "Strand {number}/{count}",
-                SpiderlingsRecoveryRemove: "Remove ({cost})",
-                SpiderlingsRecoveryStruggle: "Struggle ({cost})",
-            })[key] || key,
-    });
-    const draw = () => r.c.KDEventMapGeneric.draw.SpiderlingsSpinnerRecovery({}, {}),
-        before = JSON.stringify(r.api.state()),
-        gearBefore = JSON.stringify(r.gear),
-        tick = r.c.KinkyDungeonCurrentTick;
-    draw();
-    assert.equal(r.c.KinkyDungeonCurrentTick, tick);
-    assert.equal(JSON.stringify(r.api.state()), before, "Rendering may not audit or spend recovery state");
-    assert.equal(
-        JSON.stringify(r.gear),
-        gearBefore,
-        "Native cost queries must preserve carrier fields and absent attempts",
-    );
-    r.gear[0].attempts = 0.75;
-    draw();
-    assert.equal(r.gear[0].attempts, 0.75, "Native query must preserve existing impossible-attempt allowance");
-    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryStand").label, "Stand firm (7 stamina)");
-    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryCut").enabled, false, "Missing cut access disables the button");
-    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryRemove").label, "Remove (2)");
-    assert.equal(buttons.get("SpiderlingsSpinnerRecoveryStruggle").label, "Struggle (30)");
-    buttons.get("SpiderlingsSpinnerRecoverySelect").callback();
-    draw();
-    assert.equal(buttons.get("SpiderlingsSpinnerRecoverySelect").label, "Strand 2/2");
-    buttons.get("SpiderlingsSpinnerRecoveryRemove").callback();
-    assert.deepEqual(JSON.parse(JSON.stringify(inputs[0])), {
-        name: "spiderlingsRecoveryRemoveSource",
-        data: { sourceId: 42, type: "Remove" },
-    });
-    buttons.get("SpiderlingsSpinnerRecoveryStand").callback();
-    assert.equal(r.c.KinkyDungeonCurrentTick, tick + 1);
-    assert.equal(r.staminaChanges.at(-1), -0.7);
-    for (const mode of ["Inventory", "Magic"]) {
-        buttons.clear();
-        r.c.KinkyDungeonDrawState = mode;
-        draw();
-        assert.equal(buttons.size, 0);
-    }
-    r.c.KinkyDungeonDrawState = "Game";
-    r.c.KinkyDungeonShowInventory = true;
-    draw();
-    assert.equal(buttons.size, 0, "Inventory overlay must retain its own clickable controls");
+    const before = JSON.stringify(r.gear);
+    assert.equal(r.api.hit(r.source), false);
+    assert.equal(r.player.leash, foreign);
+    assert.equal(JSON.stringify(r.gear), before);
+    r.setNativeLeash(undefined);
+    assert.equal(r.api.hit(r.source), true);
+    assert.equal(r.player.leash.restraintID, 901);
+    assert.equal(JSON.stringify(r.gear), before);
+    r.api.clearControl();
+    assert.equal(JSON.stringify(r.gear), before);
 });
-
-test("destination uses common core, unrelated majority, nearest tie, and executor fallback", () => {
-    const r = recoveryRuntime({
-        pathFinder: (startX, startY, endX, endY) =>
-            Array.from({ length: endX === 5 ? 2 : 1 }, () => ({ x: endX, y: endY })),
-    });
-    const sources = Array.from({ length: 6 }, (_, index) => r.addSource(42 + index));
-    r.cores.set("field-2", { x: 9, y: 5 });
-    r.fieldOwners.set("field-1", [41, 42, 43, 44]);
-    r.fieldOwners.set("field-2", [45, 46, 47]);
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    for (const source of sources) r.hit(source);
-    assert.equal(r.api.destination(r.api.state()).compositeId, "field-1", "4:3 majority controls");
-    r.source.hp = 0;
-    r.c.KDMapData.Entities.find((source) => source.id === 42).hp = 0;
-    r.api.audit();
-    assert.equal(r.api.destination(r.api.state()).compositeId, "field-2", "nearest live core wins a tie");
-    r.setFieldPresent(false);
-    const fallback = r.api.destination(r.api.state());
-    assert.match(fallback.key, /^source:/);
-    assert.equal(fallback.x, r.c.KDMapData.Entities.find((source) => source.id === r.api.state().executorId).x);
+test("a native owner taking over clears only Spiderlings' temporary duty", () => {
+    const r = attached();
+    const foreign = { entity: 777, reason: "Default", restraintID: 901, priority: 9 };
+    r.setNativeLeash(foreign);
+    assert.equal(r.api.audit(), false);
+    assert.equal(r.player.leash, foreign);
+    assert.equal(r.gear.length, 1);
 });
-
-test("death, hostility, range, LOS, helplessness, and incapacity each require a fresh source hit", () => {
-    for (const [label, mutate, repair] of [
-        ["death", (source) => (source.hp = 0), (source) => (source.hp = 3)],
-        ["hostility", (source) => (source.friendly = true), (source) => (source.friendly = false)],
-        ["range", (source) => (source.x = 20), (source) => (source.x = 9)],
-        ["LOS", (source) => (source.noLOS = true), (source) => (source.noLOS = false)],
-        ["helpless", (source) => (source.helpless = true), (source) => (source.helpless = false)],
-        ["disabled", (source) => (source.disabled = true), (source) => (source.disabled = false)],
+test("native movement debt grows linearly beyond eight sources and includes ordinary slow cost", () => {
+    for (const count of [1, 2, 4, 8, 12, 32])
+        for (const moveCost of [1, 3]) {
+            const r = attached({ moveCost });
+            for (let i = 1; i < count; i++) {
+                const a = r.addSource(41 + i);
+                r.api.state().eligibleSourceIds.push(a.id);
+                assert.equal(r.api.hit(a), true);
+            }
+            r.c.KinkyDungeonMoveTo(7, 6);
+            assert.equal(r.api.strength(), count);
+            assert.equal(r.c.KDGameData.MovePoints, count === 1 ? 0 : 1 - moveCost - (count - 1));
+        }
+});
+test("blocked native movement and forced displacement add no movement debt", () => {
+    const r = attached({ blockMove: true });
+    const other = r.addSource(42);
+    r.api.state().eligibleSourceIds.push(42);
+    r.api.hit(other);
+    r.c.KDGameData.MovePoints = 0;
+    r.c.KinkyDungeonMoveTo(8, 5);
+    assert.equal(r.c.KDGameData.MovePoints, 0);
+    r.c.KDMovePlayer(8, 5, false);
+    assert.equal(r.c.KDGameData.MovePoints, 0);
+});
+test("escort uses paid enemy movement and native tether updates, never a private player move", () => {
+    const r = attached();
+    r.source.x = 6;
+    r.source.y = 4;
+    const before = { x: r.player.x, y: r.player.y };
+    r.source.Enemy.movePoints = 2;
+    r.api.handleEnemyTurn(r.source, r.player, 0);
+    assert.equal(r.c.tetherCalls, undefined);
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.equal(r.source.movePoints, 1);
+    assert.deepEqual({ x: r.player.x, y: r.player.y }, before);
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.equal(r.c.tetherCalls.length, 2);
+    assert.equal(r.c.tetherCalls[0].owner, r.source.id);
+});
+test("death, hostility, lost contact, and incapacity clear the native tether without deleting equipment", () => {
+    for (const change of [
+        (r) => (r.source.hp = 0),
+        (r) => (r.source.friendly = true),
+        (r) => (r.source.x = 50),
+        (r) => (r.source.noLOS = true),
+        (r) => (r.source.helpless = true),
+        (r) => (r.source.disabled = true),
+        (r) => (r.source.stun = 2),
     ]) {
-        const r = recoveryRuntime();
-        r.player.x = 6;
-        r.leave();
-        r.hit();
-        mutate(r.source);
+        const r = attached();
+        change(r);
         r.api.audit();
-        assert.deepEqual(Array.from(r.api.sourceIds()), [], label);
-        repair(r.source);
-        r.api.audit();
-        assert.deepEqual(Array.from(r.api.sourceIds()), [], `${label}: audit cannot reconnect`);
-        r.hit();
-        assert.deepEqual(Array.from(r.api.sourceIds()), [41], `${label}: a new hit reconnects`);
+        assert.equal(r.api.strength(), 0);
+        assert.equal(r.player.leash, undefined);
+        assert.equal(r.gear.length, 1);
     }
 });
-
-test("pending crossing reload validates saved progress and cancels stale geometry without a free move", () => {
-    const r = recoveryRuntime();
-    r.webCells.add("6,5");
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    r.player.x = 7;
-    r.flags.clear();
-    r.c.KinkyDungeonCurrentTick = 20;
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-    assert.equal(r.api.state().pendingCrossing.paidActions, 1);
-    const saved = JSON.parse(JSON.stringify(r.api.state().pendingCrossing));
-    r.send("afterLoadGame");
-    assert.deepEqual(JSON.parse(JSON.stringify(r.api.state().pendingCrossing)), saved);
-    assert.equal(r.player.x, 7);
-
-    r.webCells.clear();
-    r.send("afterLoadGame");
+test("carrier removal clears control and another native owner is never erased", () => {
+    const r = attached();
+    r.gear.length = 0;
+    r.api.audit();
+    assert.equal(r.player.leash, undefined);
+    assert.equal(r.api.state(), undefined);
+    const other = attached();
+    const leash = { entity: 777, priority: 10, reason: "Default" };
+    other.setNativeLeash(leash);
+    other.api.clearControl();
+    assert.equal(other.player.leash, leash);
+});
+test("core arrival ends the escort while preserving the actual restraint", () => {
+    const r = attached();
+    r.player.x = 5;
+    r.player.y = 5;
+    r.source.x = 6;
+    assert.equal(r.api.handleEnemyTurn(r.source, r.player, 1), undefined);
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.player.leash, undefined);
+    assert.equal(r.gear.length, 1);
+});
+test("v2 saves migrate to native ownership without moving or losing carrier progress", () => {
+    const r = attached();
+    const item = r.gear[0];
+    item.cutProgress = 0.4;
+    item.lock = "Red";
+    item.events = [
+        { trigger: "postRemoval", type: "RequireCollar" },
+        { trigger: "tick", type: "other" },
+    ];
+    const saved = plain(r.api.state());
+    saved.version = 2;
+    saved.pendingCrossing = { completedActions: 3 };
+    saved.sourceRemovalWork = { 41: { removeOrStruggle: 1 } };
+    r.c.KDGameData[r.api.STATE] = saved;
+    r.setNativeLeash(undefined);
+    const pos = { x: r.player.x, y: r.player.y };
+    r.api.afterLoad();
+    assert.equal(r.api.state().version, 3);
     assert.equal(r.api.state().pendingCrossing, undefined);
-    assert.equal(r.player.x, 7);
-
-    r.webCells.add("6,5");
-    r.c.KinkyDungeonCurrentTick += 1;
-    r.c.KinkyDungeonEnemyLoop(r.source, r.player, 1);
-    assert.ok(r.api.state().pendingCrossing);
+    assert.equal(r.player.leash.restraintID, item.id);
+    assert.equal(item.cutProgress, 0.4);
+    assert.equal(item.lock, "Red");
+    assert.equal(item.events[0].type, "SpiderlingsRecoveryAnchor");
+    assert.equal(item.events[1].type, "other");
+    assert.deepEqual({ x: r.player.x, y: r.player.y }, pos);
+    assert.equal(r.c.tetherCalls, undefined);
+});
+test("native struggle calculation retains source pressure and never substitutes a counted action", () => {
+    const r = attached();
+    const other = r.addSource(42);
+    r.api.state().eligibleSourceIds.push(42);
+    r.api.hit(other);
+    const item = r.gear[0];
+    const data = { restraint: item, struggleType: "Cut", escapePenalty: 0.1, cutSpeed: 0.3 };
+    r.c.KDEventMapInventory.beforeStruggleCalc.SpiderlingsRecoveryEscape({}, item, data);
+    assert.ok(Math.abs(data.escapePenalty - 0.15) < 1e-9);
+    assert.equal(data.cutSpeed, 0.3);
+    assert.equal(data.escapeChance, undefined);
+    assert.equal(r.c.KDInputTypes.spiderlingsRecoveryStand, undefined);
+    assert.equal(r.c.KDInputTypes.spiderlingsRecoveryRemoveSource, undefined);
+});
+test("paid relay admits more than eight sources, while zero-time refresh cannot add them", () => {
+    const r = attached();
+    for (let i = 1; i < 12; i++) {
+        const a = r.addSource(41 + i, 9 + i * 2, 5);
+        r.api.state().eligibleSourceIds.push(a.id);
+        r.api.handleEnemyTurn(a, r.player, 0);
+        assert.equal(r.api.sourceIds().includes(a.id), false);
+        r.api.handleEnemyTurn(a, r.player, 1);
+        assert.equal(r.api.sourceIds().includes(a.id), true);
+    }
+    assert.equal(r.api.strength(), 12);
+    r.api.afterLoad();
+    assert.equal(r.api.strength(), 12);
     r.source.hp = 0;
     r.api.audit();
-    assert.equal(r.api.state().pendingCrossing, undefined);
-    r.source.hp = 3;
-    r.hit();
-    assert.equal(r.api.state().pendingCrossing, undefined, "re-hit starts with no saved crossing work");
+    assert.equal(r.api.strength(), 0);
 });
 
-test("load migrates the v1 source and keeps v2 removal work without granting an action", () => {
-    const r = recoveryRuntime();
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    const current = r.api.state();
-    r.c.KDGameData.SpiderlingsSpinnerRecovery = {
-        version: 1,
-        carrierId: current.carrierId,
-        ownedCarrier: true,
-        compositeId: "field-1",
-        groupId: "group-1",
-        eligibleSourceIds: [41],
-        sourceIds: [41],
-        executorId: 41,
-        lastPullTick: undefined,
-    };
-    r.source.SpinnerConstructionPoints = 0.5;
-    r.send("afterLoadGame");
-    assert.equal(r.api.state().version, 2);
-    assert.deepEqual(Array.from(r.api.sourceIds()), [41]);
-    assert.deepEqual(JSON.parse(JSON.stringify(r.api.state().sourceRemovalWork)), {});
-    assert.equal(r.player.x, 7, "migration performs no pull");
-});
-
-test("external carrier remains byte-for-byte unchanged through stand firm and source removal", () => {
-    const carrier = externalLeash();
-    const r = recoveryRuntime({ item: carrier });
-    const second = r.addSource(42);
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    r.hit(second);
-    const original = JSON.stringify(carrier);
-    r.api.standFirm();
-    const before = r.inventoryEvents["beforeStruggleCalc:SpiderlingsRecoveryEscape"],
-        after = r.inventoryEvents["struggle:SpiderlingsRecoveryEscape"];
-    r.c.KDInputTypes.struggle = ({ type }) => {
-        const attempt = {
-            restraint: carrier,
-            struggleType: type,
-            struggleGroup: "ItemNeckRestraints",
-            cost: -0.2,
-            canCut: true,
-            result: "Fail",
-        };
-        before({}, carrier, attempt);
-        after({}, carrier, attempt);
-        return "NativeStruggle";
-    };
-    r.api.sourceRemovalInput({ sourceId: 42, type: "Cut" });
-    assert.equal(JSON.stringify(carrier), original);
-    assert.equal(r.api.state().ownedCarrier, false);
-});
-
-test("recovery draws selected silk through visible-cell masks and clears it without mutating control", () => {
+test("recovery draws silk through visible-cell masks and clears it without mutating control", () => {
     const r = recoveryRuntime(),
         children = [],
         draws = [],
@@ -1040,87 +565,5 @@ test("recovery draws selected silk through visible-cell masks and clears it with
     assert.equal(strand.visible, false, "Dead source strands disappear before the next logic audit");
     r.api.clearControl();
     assert.ok(children.every((child) => child.destroyed));
-    assert.equal(r.player.leash.entity, 777, "Owned display never overwrites the original leash relationship");
-});
-
-test("native carrier rejection consumes the recovery hit with clear feedback; fresh success reports one source", () => {
-    for (const canAdd of [false, true]) {
-        const r = recoveryRuntime({ canAdd }),
-            messages = [];
-        r.c.KinkyDungeonSendTextMessage = (_priority, text) => messages.push(text);
-        r.c.TextGet = (key) => `[NotFound] ${key}`;
-        r.player.x = 6;
-        r.leave();
-        assert.equal(r.hit().effect, false);
-        assert.equal(r.api.strength(), canAdd ? 1 : 0);
-        assert.equal(messages.length, 1);
-        assert.ok(messages[0].includes(canAdd ? "1/8" : "cannot attach"));
-        if (canAdd) {
-            r.hit();
-            assert.equal(messages.length, 1, "Repeated source refresh does not spam attachment messages");
-        } else assert.equal(r.gear.length, 0, "Feedback must not bypass rejected native equipment");
-    }
-});
-
-test("paid Spinner relay keeps eight sources connected while only the first reaches the player", () => {
-    const r = recoveryRuntime({ item: externalLeash() });
-    const helpers = Array.from({ length: 8 }, (_, i) => r.addSource(42 + i, 12 + i * 3, 5));
-    r.player.x = 6;
-    r.leave();
-    assert.equal(r.api.hit(r.source), true);
-    const position = [r.player.x, r.player.y];
-    for (const helper of helpers.slice(0, 7)) {
-        r.api.handleEnemyTurn(helper, r.player, 0.5);
-        assert.equal(r.api.sourceIds().includes(helper.id), false);
-        r.api.handleEnemyTurn(helper, r.player, 0.5);
-        assert.equal(r.api.sourceIds().includes(helper.id), true);
-        assert.deepEqual([r.player.x, r.player.y], position, "joining cannot also pull");
-    }
-    assert.equal(r.api.strength(), 8);
-    r.api.handleEnemyTurn(helpers[7], r.player, 1);
-    assert.equal(r.api.strength(), 8);
-    r.api.audit();
-    assert.equal(r.api.strength(), 8);
-    assert.equal(r.api.state().sources["48"].relayParentId, 47);
-    assert.equal(r.gear.length, 1, "relay preserves one existing collar carrier");
-    r.source.stun = 1;
-    r.api.audit();
-    assert.equal(r.api.strength(), 0, "remote chains cannot anchor themselves");
-});
-
-test("relay rejects lost LOS and NPC duty and removes only the disconnected branch", () => {
-    const r = recoveryRuntime({ item: externalLeash() }),
-        bridge = r.addSource(42, 12, 5),
-        far = r.addSource(43, 15, 5);
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    bridge.noLOS = true;
-    assert.equal(r.api.handleEnemyTurn(bridge, r.player, 1), undefined);
-    bridge.noLOS = false;
-    r.c.Spiderlings.SpinnerNPCCapture = { usesSource: (id) => id === 42 };
-    assert.equal(r.api.handleEnemyTurn(bridge, r.player, 1), undefined);
-    r.c.Spiderlings.SpinnerNPCCapture = undefined;
-    r.api.handleEnemyTurn(bridge, r.player, 1);
-    r.api.handleEnemyTurn(far, r.player, 1);
-    assert.equal(r.api.strength(), 3);
-    bridge.noLOS = true;
-    r.api.audit();
-    assert.deepEqual(Array.from(r.api.sourceIds()), [41]);
-});
-
-test("relay survives JSON reload without free additions or pulling", () => {
-    const r = recoveryRuntime({ item: externalLeash() }),
-        bridge = r.addSource(42, 12, 5);
-    r.player.x = 6;
-    r.leave();
-    r.hit();
-    r.api.handleEnemyTurn(bridge, r.player, 1);
-    const saved = JSON.stringify(r.api.state()),
-        position = [r.player.x, r.player.y];
-    r.c.KDGameData.SpiderlingsSpinnerRecovery = JSON.parse(saved);
-    r.api.audit();
-    assert.equal(r.api.strength(), 2);
-    assert.deepEqual([r.player.x, r.player.y], position);
-    assert.equal(r.api.state().sources["42"].relayParentId, 41);
+    assert.equal(r.player.leash, undefined, "Clearing owned recovery releases its native tether");
 });

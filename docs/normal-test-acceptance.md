@@ -1,5 +1,7 @@
 # Normal test acceptance: test.60
 
+Player Recovery observations below describe the historical test.60 controller. Test.89 replaces its private actions and displacement with native tethers and uncapped movement debt; see the [current validation](spiderlings-test89-native-recovery.zh-CN.md).
+
 The maintainer requested completion of the remaining ordinary `test` work. PR [#105](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/105) contains the NPC legbag/text fixes, persistent weapon silk and native tome set, removal of the starting demo perk, and three defects found while completing native acceptance. `Spiderlings.SpinnerField.enter()` retains the reusable development room. Prison experiment #68–76 stays independent.
 
 ## Issue disposition

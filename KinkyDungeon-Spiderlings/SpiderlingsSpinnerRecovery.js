@@ -9,23 +9,13 @@
         LEASH = "SpiderlingsSilkLeash",
         GROUP = "ItemNeckRestraints",
         MAX_RANGE = 3,
-        VERSION = 2,
+        VERSION = 3,
+        TETHER_REASON = "SpiderlingsRecovery",
         ESCAPE_EVENT = "SpiderlingsRecoveryEscape";
-    const CONFIG = Object.freeze({
-            maxSources: core.MAX_SOURCES,
-            escapePenaltyPerExtraSource: 0.05,
-            standBase: 5,
-            standPerExtraSource: 2,
-            crossingActionsPerCell: 2,
-        }),
+    const CONFIG = Object.freeze({ maxSources: Infinity, escapePenaltyPerExtraSource: 0.05 }),
         MAX_SOURCES = CONFIG.maxSources,
         ESCAPE_PENALTY = CONFIG.escapePenaltyPerExtraSource;
-    let ownedMovement = false;
-    let nativeMoveTick;
-    let selectedSourceId;
-    let uiSourceId;
-    const armedRemoval = new WeakMap(),
-        strandVisuals = new Map();
+    const strandVisuals = new Map();
 
     const player = () => KinkyDungeonPlayerEntity;
     const entities = () => KDMapData?.Entities || [];
@@ -101,7 +91,6 @@
     function relayEligible(source, recovery) {
         return (
             allowedSource(recovery, source) &&
-            !(recovery.severedSourceIds || []).some((id) => sameId(id, source.id)) &&
             sourceActionable(source, false) &&
             !npcCaptureUsesSource(source.id) &&
             !api.SpinnerNPCRecovery?.usesEntity?.(source.id) &&
@@ -120,12 +109,55 @@
         return !!source && (record?.eligibleSourceIds || []).some((id) => sameId(id, source.id));
     }
 
+    function hasAnchor() {
+        return allItems().some(
+            (item) =>
+                usableLeash(item) ||
+                item.name === "SpiderlingsSpinnerLegbinder" ||
+                definition(item)?.shrine?.includes("Collars"),
+        );
+    }
+
+    function ownsNativeTether() {
+        return player().leash?.reason === TETHER_REASON;
+    }
+
+    function bindNativeTether(recovery) {
+        const owner = sourceById(recovery.executorId),
+            carrier = carrierById(recovery.carrierId);
+        if (!owner || !carrier || typeof KinkyDungeonAttachTetherToEntity !== "function") return false;
+        if (player().leash && !ownsNativeTether()) return false;
+        if (
+            ownsNativeTether() &&
+            sameId(player().leash.entity, owner.id) &&
+            sameId(player().leash.restraintID, carrier.id)
+        )
+            return true;
+        if (ownsNativeTether()) KDBreakTether(player());
+        const leash = KinkyDungeonAttachTetherToEntity(2.9, owner, player(), TETHER_REASON, "#C4A1EF", 5, carrier);
+        if (!leash) return false;
+        KDGameData.KinkyDungeonLeashingEnemy = owner.id;
+        KDGameData.KinkyDungeonLeashedPlayer = Math.max(5, KDGameData.KinkyDungeonLeashedPlayer || 0);
+        return true;
+    }
+
+    function releaseNativeTether() {
+        if (player().leash && !ownsNativeTether()) return;
+        const owner = player().leash?.entity ?? state()?.executorId;
+        if (ownsNativeTether()) KDBreakTether(player());
+        if (sameId(KDGameData.KinkyDungeonLeashingEnemy, owner)) {
+            KDGameData.KinkyDungeonLeashingEnemy = 0;
+            KDGameData.KinkyDungeonLeashedPlayer = 0;
+        }
+    }
+
     // Eligibility only: native perception must supply the target before AI pursues it.
     function wantsPursuit(source, target) {
         const eligibility = departure() || state();
         if (
             target !== player() ||
             !core.pendingSource(eligibility, source?.id) ||
+            (!state() && !hasAnchor()) ||
             !sourceActionable(source, false) ||
             api.SpinnerCapture?.isControllingPlayer?.() ||
             npcCaptureUsesSource(source.id) ||
@@ -302,7 +334,7 @@
                 );
             if (entry.sprite) {
                 entry.sprite.mask = entry.mask;
-                entry.sprite.alpha = sameId(id, uiSourceId) ? 1 : 0.65;
+                entry.sprite.alpha = 0.8;
             } else {
                 if (!entry.fallback || entry.fallback.destroyed) {
                     entry.fallback = new PIXI.Graphics();
@@ -321,20 +353,26 @@
 
     function clearControl() {
         clearStrandVisuals(true);
+        releaseNativeTether();
         delete KDGameData[STATE];
         delete KDGameData[DEPARTURE];
-        ownedMovement = false;
-        nativeMoveTick = undefined;
-        selectedSourceId = undefined;
-        uiSourceId = undefined;
     }
 
     function clearRecoveryForCarrierLoss(recovery) {
+        releaseNativeTether();
         rememberDeparture(departureFromRecovery(recovery));
         delete KDGameData[STATE];
     }
 
     function migrate(recovery) {
+        if (recovery?.version === 2) {
+            recovery.version = VERSION;
+            delete recovery.pendingCrossing;
+            delete recovery.sourceRemovalWork;
+            delete recovery.resisted;
+            delete recovery.severedSourceIds;
+            return recovery;
+        }
         if (recovery?.version !== 1) return recovery;
         const sources = {};
         for (const id of recovery.sourceIds || []) {
@@ -353,11 +391,7 @@
             ownedCarrier: recovery.ownedCarrier === true,
             eligibleSourceIds: [...new Set(recovery.eligibleSourceIds || [])],
             sources,
-            sourceRemovalWork: {},
             executorId: recovery.executorId,
-            resisted: false,
-            pendingCrossing: undefined,
-            lastPullTick: recovery.lastPullTick,
         };
         return KDGameData[STATE];
     }
@@ -369,23 +403,15 @@
         });
     }
 
-    function reconcilePendingCrossing(recovery) {
-        if (!recovery?.pendingCrossing) return;
-        const goal = destination(recovery);
-        core.reconcileCrossing(recovery, player(), goal?.key, recoveryAdapters());
-    }
-
     function audit() {
         let recovery = state();
         if (!recovery) return false;
+        if (player().leash && !ownsNativeTether()) {
+            clearControl();
+            return false;
+        }
         recovery = migrate(recovery);
-        if (
-            recovery.version !== VERSION ||
-            !recovery.sources ||
-            typeof recovery.sources !== "object" ||
-            !recovery.sourceRemovalWork ||
-            typeof recovery.sourceRemovalWork !== "object"
-        ) {
+        if (recovery.version !== VERSION || !recovery.sources || typeof recovery.sources !== "object") {
             delete KDGameData[STATE];
             return false;
         }
@@ -404,19 +430,16 @@
             (source) => sourceActionable(source),
             relayContact,
         );
-        for (const id of core.auditSources(recovery, sourceById, (source) => links.has(sourceKey(source.id))))
-            delete recovery.sourceRemovalWork[core.sourceKey(id)];
+        core.auditSources(recovery, sourceById, (source) => links.has(sourceKey(source.id)));
         for (const saved of Object.values(sourceRecords(recovery)))
             saved.relayParentId = links.get(sourceKey(saved.id));
         if (!sourceIds(recovery).length) {
+            releaseNativeTether();
             recovery.executorId = undefined;
-            recovery.resisted = false;
-            recovery.pendingCrossing = undefined;
-            recovery.sourceRemovalWork = {};
             return true;
         }
         chooseExecutor(recovery);
-        reconcilePendingCrossing(recovery);
+        bindNativeTether(recovery);
         return true;
     }
 
@@ -468,6 +491,7 @@
     }
 
     function attach(source, eligibility) {
+        if (player().leash && !ownsNativeTether()) return false;
         const carrier = acquireCarrier(source);
         if (!carrier?.item || carrier.item.id === undefined) return false;
         KDGameData[STATE] = {
@@ -480,12 +504,12 @@
             sources: {
                 [sourceKey(source.id)]: makeSourceRecord(source, eligibility),
             },
-            sourceRemovalWork: {},
             executorId: source.id,
-            resisted: false,
-            pendingCrossing: undefined,
-            lastPullTick: undefined,
         };
+        if (!bindNativeTether(state())) {
+            delete KDGameData[STATE];
+            return false;
+        }
         delete KDGameData[DEPARTURE];
         return true;
     }
@@ -493,26 +517,19 @@
     if (typeof addTextKey === "function") {
         addTextKey(
             "SpiderlingsRecoveryAttached",
-            "A Spinner attaches a silk leash ({count}/8). It can pull you back when it next acts.",
+            "A Spinner attaches a silk strand ({count}). The taut silk can pull you back.",
         );
         addTextKey(
             "SpiderlingsRecoveryAttachBlocked",
             "The silk leash cannot attach. It needs a compatible collar or silken leg bag, with no other equipment blocking it.",
         );
-        addTextKey("SpiderlingsRecoveryStand", "Stand firm ({cost} stamina)");
-        addTextKey("SpiderlingsRecoverySelect", "Strand {number}/{count}");
-        addTextKey("SpiderlingsRecoveryCut", "Cut ({cost})");
-        addTextKey("SpiderlingsRecoveryRemove", "Remove ({cost})");
-        addTextKey("SpiderlingsRecoveryStruggle", "Struggle ({cost})");
-        addTextKey("SpiderlingsRecoveryStrandLoosened", "You loosen the selected silk strand.");
-        addTextKey("SpiderlingsRecoveryStrandSevered", "You free yourself from the selected silk strand.");
     }
 
     function feedback(attached) {
         if (typeof KinkyDungeonSendTextMessage !== "function") return;
         const key = attached ? "SpiderlingsRecoveryAttached" : "SpiderlingsRecoveryAttachBlocked",
             fallback = attached
-                ? "A Spinner attaches a silk leash ({count}/8). It can pull you back when it next acts."
+                ? "A Spinner attaches a silk strand ({count}). The taut silk can pull you back."
                 : "The silk leash cannot attach. It needs a compatible collar or silken leg bag, with no other equipment blocking it.",
             localized = typeof TextGet === "function" ? TextGet(key) : key;
         KinkyDungeonSendTextMessage(
@@ -539,12 +556,10 @@
                 association = sourceAssociation(source, existing || departure() || departureFromRecovery(recovery)),
                 upserted = core.upsertSource(recovery, source, association, turn(), MAX_SOURCES);
             if (upserted.added) {
-                recovery.severedSourceIds = (recovery.severedSourceIds || []).filter((id) => !sameId(id, source.id));
-                delete recovery.sourceRemovalWork[key];
                 chooseExecutor(recovery);
                 feedback(true);
             }
-            reconcilePendingCrossing(recovery);
+            bindNativeTether(recovery);
             return true;
         }
         const eligibility = departure();
@@ -556,9 +571,7 @@
 
     function onPlayerMove(data) {
         if (!data || data.cancelmove) return false;
-        if (!data.willing && !ownedMovement) nativeMoveTick = turn();
-        if (data.willing && state()?.pendingCrossing) state().pendingCrossing = undefined;
-        if (ownedMovement || api.SpinnerCapture?.isControllingPlayer?.() || state()) return false;
+        if (api.SpinnerCapture?.isControllingPlayer?.() || state()) return false;
         const from = { x: data.lastX, y: data.lastY },
             to = { x: data.moveX, y: data.moveY },
             breached = api.SpinnerNativeField?.breachedDeparture(from, to);
@@ -612,71 +625,60 @@
         );
     }
 
-    function landingLegal(cell) {
-        if (!cell || (cell.x === player().x && cell.y === player().y)) return false;
-        if (!KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y))) return false;
-        if (KinkyDungeonTilesGet(`${cell.x},${cell.y}`)?.Lock) return false;
-        return !KinkyDungeonEntityAt(cell.x, cell.y);
-    }
-
-    function webCellLegal(cell) {
-        if (!api.SpinnerNativeField?.isSpiderlingsWebCell?.(cell)) return false;
-        if (!KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y))) return false;
-        if (KinkyDungeonTilesGet(`${cell.x},${cell.y}`)?.Lock) return false;
-        const occupant = KinkyDungeonEntityAt(cell.x, cell.y);
-        return !occupant || api.SpinnerNativeField?.isOwnedProxy?.(occupant);
-    }
-
-    function alreadyMovedThisTurn(recovery) {
-        if (recovery.lastPullTick === turn() || nativeMoveTick === turn()) return true;
-        if (typeof KinkyDungeonFlags !== "undefined" && KinkyDungeonFlags?.get) {
-            return !!(KinkyDungeonFlags.get("forceMoved") || KinkyDungeonFlags.get("pulled"));
+    // Only an enemy's paid native movement changes the tether endpoint. Native
+    // KinkyDungeonUpdateTether owns the player's displacement and leash feedback.
+    function escort(recovery, source, delta) {
+        const goal = destination(recovery);
+        if (!goal || !(delta > 0)) return false;
+        const leading = sameId(source.id, recovery.executorId);
+        if (!leading && Math.max(Math.abs(source.x - player().x), Math.abs(source.y - player().y)) <= 2) return false;
+        let endpoint = leading ? goal : player();
+        if (leading && source.x === goal.x && source.y === goal.y)
+            endpoint = { x: goal.x + Math.sign(goal.x - player().x), y: goal.y + Math.sign(goal.y - player().y) };
+        const path = KinkyDungeonFindPath(
+            source.x,
+            source.y,
+            endpoint.x,
+            endpoint.y,
+            true,
+            false,
+            false,
+            KinkyDungeonMovableTilesEnemy,
+            undefined,
+            undefined,
+            undefined,
+            source,
+        );
+        const next = path?.find((cell) => cell.x !== source.x || cell.y !== source.y);
+        let moved = false;
+        if (
+            next &&
+            !(next.x === player().x && next.y === player().y) &&
+            (!KinkyDungeonEntityAt(next.x, next.y) ||
+                api.SpinnerNativeField?.isOwnedProxy?.(KinkyDungeonEntityAt(next.x, next.y)))
+        )
+            moved = KinkyDungeonEnemyTryMove(
+                source,
+                { x: next.x - source.x, y: next.y - source.y },
+                delta,
+                next.x,
+                next.y,
+                false,
+            );
+        if (leading && bindNativeTether(recovery)) {
+            const ownerDistance = Math.max(Math.abs(source.x - goal.x), Math.abs(source.y - goal.y)),
+                playerDistance = Math.max(Math.abs(player().x - goal.x), Math.abs(player().y - goal.y));
+            if (ownerDistance < playerDistance && (moved || !next)) player().leash.length = 1.5;
+            KinkyDungeonUpdateTether(delta, true, player());
         }
-        return false;
-    }
-
-    function movePlayer(cell) {
-        const before = { x: player().x, y: player().y };
-        ownedMovement = true;
-        try {
-            globalThis.KDMovePlayer(cell.x, cell.y, false);
-        } finally {
-            ownedMovement = false;
-        }
-        const moved = player().x !== before.x || player().y !== before.y;
-        if (moved && typeof globalThis.KinkyDungeonSetFlag === "function") globalThis.KinkyDungeonSetFlag("pulled", 1);
         return moved;
     }
 
-    function recoveryAdapters() {
-        return {
-            position: (target) => ({ x: target.x, y: target.y }),
-            turn,
-            destination,
-            path: nativePath,
-            landingLegal,
-            isWebCell: (cell) => api.SpinnerNativeField?.isSpiderlingsWebCell?.(cell) === true,
-            webCellLegal,
-            alreadyMoved: alreadyMovedThisTurn,
-            resist: (recovery) => {
-                if (!recovery.resisted) return false;
-                recovery.resisted = false;
-                return true;
-            },
-            move: (_target, cell) => movePlayer(cell),
-        };
-    }
-
-    function pull(recovery, source) {
-        return core.advancePull(recovery, player(), source, recoveryAdapters()).moved;
-    }
-
     function finishReturn(recovery) {
-        const fallback = !sourceIds(recovery).length && api.SpinnerNativeField?.commonCore?.(recovery.compositeId);
-        const goal = destination(recovery) || (fallback && { ...fallback, compositeId: recovery.compositeId });
-        if (!goal?.compositeId || player().x !== goal.x || player().y !== goal.y) return false;
-        // The real carrier remains equipped. Returning to the field releases
-        // the temporary pulling duty so native hits can resume Webbing.
+        const goal = destination(recovery);
+        if (!goal?.compositeId) return false;
+        const graph = api.SpinnerNativeField?.state?.()?.topology;
+        if (!(graph && api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, player()))) return false;
         clearControl();
         return true;
     }
@@ -686,285 +688,88 @@
         const recovery = state();
         if (finishReturn(recovery)) return undefined;
         if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) {
-            if (!relayEligible(enemy, recovery) || strength(recovery) >= MAX_SOURCES) return undefined;
+            if (!relayEligible(enemy, recovery)) return undefined;
             const donor = Object.values(sourceRecords(recovery))
                 .map((saved) => sourceById(saved.id))
                 .find((source) => source && relayContact(source, enemy));
             if (!donor) return undefined;
             if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta)) {
-                const association = sourceAssociation(enemy, recovery);
-                const added = core.upsertSource(recovery, enemy, association, turn(), MAX_SOURCES);
+                const added = core.upsertSource(
+                    recovery,
+                    enemy,
+                    sourceAssociation(enemy, recovery),
+                    turn(),
+                    MAX_SOURCES,
+                );
                 if (added.added) {
                     added.source.relayParentId = donor.id;
-                    delete recovery.sourceRemovalWork[sourceKey(enemy.id)];
                     feedback(true);
                 }
             }
             return result(enemy);
         }
-        if (api.SpinnerCapture?.isControllingPlayer?.()) return result(enemy);
-        if (!sameId(recovery.executorId, enemy?.id)) return result(enemy);
-        if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta) && !alreadyMovedThisTurn(recovery)) {
-            pull(recovery, enemy);
-        }
+        if (!api.SpinnerCapture?.isControllingPlayer?.()) escort(recovery, enemy, delta);
         return result(enemy);
     }
 
     function strength(recovery = state()) {
-        return Math.max(0, Math.min(MAX_SOURCES, sourceIds(recovery).length));
-    }
-
-    function standFirmCost(recovery = state()) {
-        const count = strength(recovery);
-        return count > 0 ? CONFIG.standBase + CONFIG.standPerExtraSource * (count - 1) : 0;
-    }
-
-    function standFirm() {
-        if (!audit() || !strength()) return "Blocked";
-        const displayed = standFirmCost(),
-            cost = displayed / 10;
-        if (typeof KinkyDungeonHasStamina === "function" && !KinkyDungeonHasStamina(cost, true)) return "NoStamina";
-        if (typeof KDChangeStamina === "function")
-            KDChangeStamina("struggle", "binding", "spiderlingsRecoveryStand", -cost);
-        state().resisted = true;
-        if (typeof KinkyDungeonLastAction !== "undefined") KinkyDungeonLastAction = "Struggle";
-        if (typeof KinkyDungeonAdvanceTime === "function") KinkyDungeonAdvanceTime(1);
-        return "Stand";
-    }
-
-    function itemProgressSnapshot(item, query = false) {
-        const fields = ["cutProgress", "struggleProgress", "pickProgress", "unlockProgress"];
-        if (query) fields.push("attempts");
-        return Object.fromEntries(fields.map((field) => [field, { present: field in item, value: item[field] }]));
-    }
-
-    function restoreItemProgress(item, snapshot) {
-        for (const [field, saved] of Object.entries(snapshot || {})) {
-            if (saved.present) item[field] = saved.value;
-            else delete item[field];
-        }
-    }
-
-    function legalRemovalAttempt(data) {
-        if (
-            !data ||
-            data.query ||
-            data.blocked ||
-            !["Cut", "Remove", "Struggle"].includes(data.struggleType) ||
-            (data.struggleType === "Cut" && data.canCut === false && !data.hasAffinity) ||
-            (data.struggleGroup && typeof KDGroupBlocked === "function" && KDGroupBlocked(data.struggleGroup))
-        )
-            return false;
-        const cost = Number(data.cost || 0);
-        return typeof KinkyDungeonHasStamina !== "function" || KinkyDungeonHasStamina(-cost, true);
-    }
-
-    function removeSource(recovery, id) {
-        const key = sourceKey(id);
-        if (!recovery.sources[key]) return false;
-        const wasExecutor = sameId(recovery.executorId, id);
-        delete recovery.sources[key];
-        recovery.severedSourceIds ||= [];
-        if (!recovery.severedSourceIds.some((saved) => sameId(saved, id))) recovery.severedSourceIds.push(id);
-        delete recovery.sourceRemovalWork[key];
-        if (wasExecutor) recovery.executorId = undefined;
-        if (!sourceIds(recovery).length) {
-            recovery.resisted = false;
-            recovery.pendingCrossing = undefined;
-            recovery.sourceRemovalWork = {};
-        }
-        chooseExecutor(recovery);
-        reconcilePendingCrossing(recovery);
-        return true;
+        return sourceIds(recovery).length;
     }
 
     function beforeStruggle(_event, item, data) {
-        if (data?.query) {
-            const recovery = state();
-            if (
-                sameId(item?.id, recovery?.carrierId) &&
-                item === data.restraint &&
-                recovery.ownedCarrier &&
-                ["Cut", "Remove", "Struggle"].includes(data.struggleType)
-            )
-                data.escapePenalty =
-                    Number(data.escapePenalty || 0) + ESCAPE_PENALTY * Math.max(0, strength(recovery) - 1);
-            return;
-        }
-        armedRemoval.delete(item);
-        if (!audit()) return;
         const recovery = state();
-        if (!sameId(item?.id, recovery.carrierId) || item !== data?.restraint) return;
-        if (recovery.ownedCarrier && ["Cut", "Remove", "Struggle"].includes(data.struggleType))
-            data.escapePenalty = Number(data.escapePenalty || 0) + ESCAPE_PENALTY * Math.max(0, strength() - 1);
-        if (selectedSourceId === undefined || !sourceRecords(recovery)[sourceKey(selectedSourceId)]) return;
-        if (!legalRemovalAttempt(data)) return;
-        armedRemoval.set(item, {
-            sourceId: selectedSourceId,
-            method: data.struggleType,
-            progress: itemProgressSnapshot(item),
-        });
-        data.escapeSpeed = 0;
-        data.cutSpeed = 0;
-        data.minSpeed = 1e-6;
-        data.limitChance = 0;
-        data.escapeChance = 0;
-        data.escapePenalty = Math.max(100, Number(data.escapePenalty || 0));
-    }
-
-    function afterStruggle(_event, item, data) {
-        const armed = armedRemoval.get(item);
-        armedRemoval.delete(item);
-        if (!armed) return;
-        restoreItemProgress(item, armed.progress);
-        // The selected strand suppresses carrier escape. Native affinity can
-        // label that paid result Impossible instead of Fail; both committed
-        // outcomes still perform the independently admitted strand work.
-        if (!["Fail", "Impossible"].includes(data?.result) || data.struggleType !== armed.method || !audit()) return;
-        const recovery = state(),
-            key = sourceKey(armed.sourceId);
-        if (!recovery.sources[key]) return;
-        if (armed.method === "Cut") {
-            removeSource(recovery, armed.sourceId);
-            return;
-        }
-        const work = recovery.sourceRemovalWork[key] || { removeOrStruggle: 0 };
-        work.removeOrStruggle += 1;
-        if (work.removeOrStruggle >= 2) removeSource(recovery, armed.sourceId);
-        else recovery.sourceRemovalWork[key] = work;
-    }
-
-    function sourceRemovalInput(data = {}) {
-        if (!audit() || !sourceRecords()[sourceKey(data.sourceId)]) return "Blocked";
-        if (typeof KDInputTypes === "undefined" || typeof KDInputTypes.struggle !== "function") return "Blocked";
-        const recovery = state(),
-            carrier = carrierById(recovery.carrierId),
-            root = typeof KinkyDungeonGetRestraintItem === "function" ? KinkyDungeonGetRestraintItem(GROUP) : undefined,
-            carrierIndex =
-                data.index ??
-                (typeof KDDynamicLinkListSurface === "function"
-                    ? KDDynamicLinkListSurface(root).findIndex((item) => item === carrier)
-                    : undefined),
-            originalEvents = carrier?.events,
-            needsEvents =
-                !recovery.ownedCarrier && carrier && !carrier.events?.some((entry) => entry.type === ESCAPE_EVENT);
-        if (needsEvents) {
-            carrier.events = [
-                ...(carrier.events || []),
-                { inheritLinked: true, trigger: "beforeStruggleCalc", type: ESCAPE_EVENT },
-                { inheritLinked: true, trigger: "struggle", type: ESCAPE_EVENT },
-            ];
-            if (typeof KDUpdateItemEventCache !== "undefined") KDUpdateItemEventCache = true;
-        }
-        const previousWork = recovery.sourceRemovalWork[sourceKey(data.sourceId)]?.removeOrStruggle || 0;
-        selectedSourceId = data.sourceId;
-        try {
-            const outcome = KDInputTypes.struggle({
-                group: GROUP,
-                type: data.type || "Struggle",
-                index: carrierIndex >= 0 ? carrierIndex : undefined,
-            });
-            const severed = (recovery.severedSourceIds || []).some((id) => sameId(id, data.sourceId)),
-                loosened = (recovery.sourceRemovalWork[sourceKey(data.sourceId)]?.removeOrStruggle || 0) > previousWork;
-            if (severed || loosened) {
-                KinkyDungeonSendActionMessage(
-                    10,
-                    TextGet(severed ? "SpiderlingsRecoveryStrandSevered" : "SpiderlingsRecoveryStrandLoosened"),
-                    "#C4A1EF",
-                    2,
-                    true,
-                );
-                return severed ? "SourceRemoved" : "SourceLoosened";
-            }
-            return outcome;
-        } finally {
-            selectedSourceId = undefined;
-            if (needsEvents) {
-                if (originalEvents === undefined) delete carrier.events;
-                else carrier.events = originalEvents;
-                if (typeof KDUpdateItemEventCache !== "undefined") KDUpdateItemEventCache = true;
-            }
-        }
-    }
-
-    function drawControls() {
-        const recovery = state(),
-            ids = sourceIds(recovery),
-            carrier = carrierById(recovery?.carrierId);
         if (
-            !carrier ||
-            !ids.length ||
-            api.SpinnerCapture?.isControllingPlayer?.() ||
-            KinkyDungeonDrawState !== "Game" ||
-            KinkyDungeonShowInventory
+            sameId(item?.id, recovery?.carrierId) &&
+            item === data?.restraint &&
+            recovery.ownedCarrier &&
+            ["Cut", "Remove", "Struggle"].includes(data.struggleType)
         )
-            return;
-        if (!ids.some((id) => sameId(id, uiSourceId))) uiSourceId = recovery.executorId ?? ids[0];
-        const index = ids.findIndex((id) => sameId(id, uiSourceId)),
-            root = KinkyDungeonGetRestraintItem(GROUP),
-            carrierIndex = KDDynamicLinkListSurface(root).findIndex((item) => item === carrier),
-            standCost = standFirmCost(recovery);
-        const button = (name, callback, enabled, x, width, label) =>
-            DrawButtonKDEx(name, callback, enabled, x, 780, width, 45, label, enabled ? "#FFFFFF" : "#888888");
-        button(
-            STATE + "Stand",
-            () => {
-                KDSendInput("spiderlingsRecoveryStand", {});
-                return true;
-            },
-            KinkyDungeonHasStamina(standCost / 10, true),
-            700,
-            230,
-            TextGet("SpiderlingsRecoveryStand").replace("{cost}", standCost),
-        );
-        button(
-            STATE + "Select",
-            () => {
-                uiSourceId = ids[(index + 1) % ids.length];
-                return true;
-            },
-            ids.length > 1,
-            940,
-            170,
-            TextGet("SpiderlingsRecoverySelect")
-                .replace("{number}", index + 1)
-                .replace("{count}", ids.length),
-        );
-        for (const [method, x, width] of [
-            ["Cut", 1120, 140],
-            ["Remove", 1270, 140],
-            ["Struggle", 1420, 170],
-        ]) {
-            const attempt = {},
-                progress = itemProgressSnapshot(carrier, true);
-            KinkyDungeonStruggle(GROUP, method, carrierIndex >= 0 ? carrierIndex : undefined, true, attempt);
-            // Native cost queries initialize progress and consume impossible
-            // attempts even without a turn. A HUD preview
-            // must preserve an external carrier's existing item state.
-            restoreItemProgress(carrier, progress);
-            const cost = Math.round(-Number(attempt.cost || 0) * 100) / 10;
-            button(
-                STATE + method,
-                () => {
-                    KDSendInput("spiderlingsRecoveryRemoveSource", { sourceId: uiSourceId, type: method });
-                    return true;
-                },
-                legalRemovalAttempt({ ...attempt, query: false, struggleType: method }),
-                x,
-                width,
-                TextGet("SpiderlingsRecovery" + method).replace("{cost}", cost),
-            );
-        }
+            data.escapePenalty = Number(data.escapePenalty || 0) + ESCAPE_PENALTY * Math.max(0, strength(recovery) - 1);
     }
+
+    if (typeof KDLeashReason !== "undefined")
+        KDLeashReason[TETHER_REASON] = () => {
+            const recovery = state();
+            return (
+                !!recovery &&
+                !!carrierById(recovery.carrierId) &&
+                sourceActionable(sourceById(recovery.executorId), false)
+            );
+        };
+    if (typeof KinkyDungeonMoveTo === "function")
+        KinkyDungeonMoveTo = api.Hooks.wrap(
+            "Spinner.recoveryMoveCost",
+            KinkyDungeonMoveTo,
+            (native) =>
+                function () {
+                    const before = { x: player().x, y: player().y },
+                        count = ownsNativeTether() ? strength() : 0;
+                    const cost = native.apply(this, arguments);
+                    if (count > 1 && cost > 0 && (player().x !== before.x || player().y !== before.y)) {
+                        // Use native movement debt, not a second input/action system. Native
+                        // MoveTo's returned slow cost is capped by its caller at nine; the
+                        // accumulator itself has no such cap and is saved by KD.
+                        KDGameData.MovePoints = Math.min(
+                            KDGameData.MovePoints || 0,
+                            1 - Math.max(1, cost) - (count - 1),
+                        );
+                    }
+                    return cost;
+                },
+        );
 
     function afterLoad() {
         clearStrandVisuals(true);
-        ownedMovement = false;
-        nativeMoveTick = undefined;
-        selectedSourceId = undefined;
+
         // Native saves retain each item's event list, including the old collar-only guard.
         for (const item of allItems()) {
             if (item.name !== LEASH || !Array.isArray(item.events)) continue;
+            const priorEvents = item.events.length;
+            item.events = item.events.filter(
+                (savedEvent) => savedEvent.type !== ESCAPE_EVENT || savedEvent.trigger !== "struggle",
+            );
+            if (item.events.length !== priorEvents && typeof KDUpdateItemEventCache !== "undefined")
+                KDUpdateItemEventCache = true;
             for (const savedEvent of item.events) {
                 if (savedEvent.trigger !== "postRemoval" || savedEvent.type !== "RequireCollar") continue;
                 savedEvent.type = "SpiderlingsRecoveryAnchor";
@@ -974,13 +779,17 @@
         const pending = departure();
         if (pending?.version !== 1) delete KDGameData[DEPARTURE];
         if (!audit()) return;
-        reconcilePendingCrossing(state());
+        bindNativeTether(state());
     }
 
+    if (typeof KDEventMapGeneric !== "undefined") {
+        event(KDEventMapGeneric, "canSprint", STATE, (_event, data) => {
+            if (ownsNativeTether() && strength() > 1 && KDGameData.MovePoints < 1) data.canSprint = false;
+        });
+    }
     if (typeof KDEventMapGeneric !== "undefined")
         event(KDEventMapGeneric, "draw", STATE, (_event, data) => {
             drawStrands(data);
-            if (typeof DrawButtonKDEx === "function") drawControls();
         });
 
     if (typeof KDEventMapInventory !== "undefined") {
@@ -994,13 +803,7 @@
             if (!anchored) KinkyDungeonRemoveRestraintSpecific(item, false, false, false);
         });
         event(KDEventMapInventory, "beforeStruggleCalc", ESCAPE_EVENT, beforeStruggle);
-        event(KDEventMapInventory, "struggle", ESCAPE_EVENT, afterStruggle);
     }
-    if (typeof KDInputTypes !== "undefined") {
-        KDInputTypes.spiderlingsRecoveryStand = standFirm;
-        KDInputTypes.spiderlingsRecoveryRemoveSource = sourceRemovalInput;
-    }
-
     if (api.restraintCatalog?.register) {
         api.restraintCatalog.register({
             id: LEASH,
@@ -1032,7 +835,6 @@
                 events: [
                     { trigger: "postRemoval", type: "SpiderlingsRecoveryAnchor" },
                     { inheritLinked: true, trigger: "beforeStruggleCalc", type: ESCAPE_EVENT },
-                    { inheritLinked: true, trigger: "struggle", type: ESCAPE_EVENT },
                 ],
                 struggleMinSpeed: { Cut: 0.05 },
                 limitChance: { Struggle: 0.3 },
@@ -1059,6 +861,7 @@
         LEASH,
         GROUP,
         VERSION,
+        TETHER_REASON,
         MAX_SOURCES,
         ESCAPE_PENALTY,
         CONFIG,
@@ -1071,13 +874,8 @@
         clearControl,
         afterLoad,
         strength,
-        standFirmCost,
-        standFirm,
         sourceIds,
         destination,
-        pull,
-        sourceRemovalInput,
-        removeSource,
         sourceActionable,
         wantsPursuit,
         usableLeash,

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.88.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.89.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.89 native player recovery and field entrances (2026-10-04)
+
+Test.89 continues from Test.88 commit `58ee6e3`. Enclosures reorient openings using fresh player observations and paid construction, while damaged passages can still adjust their approach. Adopting an existing enclosure preserves its actual layer IDs and work. Missing leash anchors no longer divert builders into an impossible recovery duty. See the [investigation and native scenarios](spiderlings-test89-native-recovery.zh-CN.md).
+
+Player recovery now attaches one native tether executor and records its connected helpers without a fixed count limit. At normal speed, 1/2/4/8/12 sources produce 1/2/4/8/12-turn native movement intervals. Existing slow costs add to that interval, sprint cannot bypass unpaid turns, and native save/load retains movement debt. The executor uses native enemy movement and native tether pulling, including return through a breached boundary. Independent recovery buttons and counted strand-removal actions are removed; the native restraint panel owns escape. Foreign tether ownership and borrowed item data remain protected. Attached feedback is reviewed in English and seven locales.
+
+The final ZIP contains 170 entries and 24,835,773 bytes, SHA-256 `1830fd86470b7c878ea898c4df489c9a19cc8d457d42138eb158e776dd279928`. Artwork is unchanged. The desktop save copy is tick 436 with 52 entities; it contains ordinary leg/ankle webbing but no collar or leg bag. Its five pending sources stop requesting impossible recovery, and 24 waiting turns advance the field action log from 44 to 61. This is a copied-save observation, not a modification of the active desktop process.
+
+The same final ZIP passes all 45 stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `a0fd45f94de328232dd66b4b0250ea9afc5839eb`, reporting 5.5.3. The final upstream check completed at `2026-10-04T07:58:57.624Z`. Full evidence is `<cache>/runs/2026-10-04T07-58-57-640Z-0.92.36-test.89/acceptance.json`, including seven locale loads per game. The interval fixture withholds native enemy movement credit; separate moving-escort cases retain normal credit and native leash-holder acceleration. The first full run exposed that fixture distinction; the final run passes after correcting only the private test, with the same ZIP hash.
+
+Native screenshots confirm multiple visible strands and removal of the separate action bar. The baseline retains native audio play/pause interruptions and two missing `Locks/Red.png` requests; no Spiderlings asset is missing. The GitHub runtime has no page errors, unhandled rejections or missing resources. The source and ZIP checks retain those diagnostics without treating them as gameplay failures.
+
+Final delivery gates pass: repository checks, all 12 policy tests, 547 public tests and the complete 862-test local watcher. Package verification reports zero errors, warnings or notes. Evidence is this checkout's `.scratch/delivery/2026-10-04T08-07-09-057Z-ssLzCi/REPORT.md`; source and package remained unchanged throughout collection. Only this Markdown result is appended afterward, followed by repository checks and the focused local commit.
 
 ## Test.88 Spinner field, binding and recovery fixes (2026-10-04)
 

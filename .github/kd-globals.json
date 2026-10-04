@@ -327,5 +327,10 @@
   "KDPersistentNPCs",
   "KDDropStolenItems",
   "KinkyDungeonItemEvent",
-  "KinkyDungeonUpdateEnemies"
+  "KinkyDungeonUpdateEnemies",
+  "KDBreakTether",
+  "KinkyDungeonAttachTetherToEntity",
+  "KinkyDungeonUpdateTether",
+  "KDLeashReason",
+  "KinkyDungeonMoveTo"
 ]

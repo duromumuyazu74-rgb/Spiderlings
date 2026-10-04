@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,调试楼梯绕过已启用；标记巢穴保持原�
 RestraintSpiderlingsSilkLeash,蛛丝牵引绳
 RestraintSpiderlingsSilkLeashDesc,细软的蛛丝拢成一束丝绳，绳身轻巧，表面泛着柔和的丝光。
 RestraintSpiderlingsSilkLeashDesc2,丝绳拉直时，细缕一根根轻轻绷起；松开后便弯成柔软的弧线。
-SpiderlingsRecoveryAttached,织网幼蛛接上了牵引丝线（{count}/8），下一次能够行动时，可能会将你拉回。
+SpiderlingsRecoveryAttached,织网幼蛛接上了牵引丝线（{count}）。丝线绷紧时，可能会将你拉回。
 SpiderlingsRecoveryAttachBlocked,蛛丝命中了，却没能挂住。需要兼容的项圈或蛛丝腿袋，且没有装备挡住丝绳；这次没有接上牵引绳。
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"以你现在的状态，还无法割开TargetRestraint。"
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"以你现在的状态，还无法割开TargetRestraint。"
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"以你现在的状态，
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"以你现在的状态，还无法解开TargetRestraint。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"其他束缚妨碍着你的动作，让你无法解开TargetRestraint。"
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"其他束缚妨碍着你的动作，让你无法解开TargetRestraint。"
-SpiderlingsRecoveryStand,稳住（{cost} 体力）
-SpiderlingsRecoverySelect,丝线 {number}/{count}
-SpiderlingsRecoveryCut,割断（{cost}）
-SpiderlingsRecoveryRemove,拆开（{cost}）
-SpiderlingsRecoveryStruggle,挣脱（{cost}）
-SpiderlingsRecoveryStrandLoosened,你松动了选中的牵引丝线。
-SpiderlingsRecoveryStrandSevered,你摆脱了选中的牵引丝线。
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,续织每次基础消耗20法力。束缚倍率：1／1.5／4.5；冷却：从首次织丝起8／9／12回合。有效命中每圈返还6体力。猎物首次被完整丝茧包裹时返还法力，每圈总额不超过实际消耗的一半，最多20法力。
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,向6格内织起丝圈。再经过两次行动后，蛛丝向中心收束，越靠近中心，束缚越强。收束前可重复使用此技能续织，最高三档；每次花费法力和一次行动，并将收束推迟一回合。墙体会挡住蛛丝。
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,向6格内的首个敌对目标射出黏韧丝束，束缚并减速猎物。墙体会挡住蛛丝，冷却3回合。有效命中返还6体力；猎物首次被完整丝茧包裹时返还法力，不超过实际消耗的一半。

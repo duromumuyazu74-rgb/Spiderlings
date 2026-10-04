@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,Debugowe pominięcie blokady schodów aktywne; oznac
 RestraintSpiderlingsSilkLeash,Pajęcza jedwabna smycz
 RestraintSpiderlingsSilkLeashDesc,Drobne jedwabne nici tworzą lekki sznur o łagodnym połysku.
 RestraintSpiderlingsSilkLeashDesc2,"Gdy sznur się prostuje, jego drobne nici delikatnie się napinają; po rozluźnieniu układa się w miękki łuk."
-SpiderlingsRecoveryAttached,Prządka przypina jedwabną nić ({count}/8). Przy następnej możliwej akcji może przyciągnąć cię z powrotem.
+SpiderlingsRecoveryAttached,Prządka przypina jedwabną nić ({count}). Napięta nić może przyciągnąć cię z powrotem.
 SpiderlingsRecoveryAttachBlocked,Jedwabnej smyczy nie da się przypiąć. Potrzebuje pasującej obroży lub jedwabnego worka na nogi; inne wyposażenie nie może jej blokować.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"W obecnym stanie nie możesz przeciąć TargetRestraint."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz przeciąć TargetRestraint."
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"W obecnym stanie nie mo�
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"W obecnym stanie nie możesz poluzować TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Pozostałe więzy uniemożliwiają ci rozluźnienie TargetRestraint."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Pozostałe więzy uniemożliwiają ci rozluźnienie TargetRestraint."
-SpiderlingsRecoveryStand,Zaprzyj się ({cost} wytrzymałości)
-SpiderlingsRecoverySelect,Nić {number}/{count}
-SpiderlingsRecoveryCut,Przetnij ({cost})
-SpiderlingsRecoveryRemove,Rozwiąż ({cost})
-SpiderlingsRecoveryStruggle,Szarp się ({cost})
-SpiderlingsRecoveryStrandLoosened,Luzujesz wybraną jedwabną nić.
-SpiderlingsRecoveryStrandSevered,Uwalniasz się od wybranej jedwabnej nici.
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Każda dodatkowa warstwa kosztuje bazowo 20 many. Siła więzów: 1 / 1,5 / 4,5; odnowienie od pierwszego splotu: 8 / 9 / 12 tur. Skuteczne trafienia zwracają 6 wytrzymałości raz na krąg. Pierwszy pełny jedwabny kokon danej ofiary zwraca manę: do połowy zapłaconej many i najwyżej 20 łącznie na krąg."
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Utkaj krąg jedwabiu w odległości do 6 pól. Zamyka się po dwóch kolejnych działaniach, wiążąc mocniej bliżej środka. Użyj tej zdolności ponownie, by wzmocnić ten sam splot do trzech poziomów. Każda dodatkowa warstwa kosztuje manę i jedno działanie oraz opóźnia zamknięcie o turę. Ściany zatrzymują jedwab."
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Wyślij lepki jedwab do 6 pól w stronę pierwszego wrogiego celu. Nić wiąże i spowalnia ofiarę; ściany ją zatrzymują. Odnowienie: 3 tury. Skuteczne trafienie zwraca 6 wytrzymałości. Pierwszy pełny jedwabny kokon danej ofiary zwraca do połowy zapłaconej many.

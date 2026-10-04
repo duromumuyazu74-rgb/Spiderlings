@@ -1802,7 +1802,7 @@ test("a spacious enclosure retains its entire maintenance crew without changing 
     assert.equal(result.started, true);
     assert.equal(group.memberIds.length, 12);
     assert.deepEqual(
-        plain(r.context.Spiderlings.SpinnerNativeField.fieldOwners("large")),
+        plain(r.context.Spiderlings.SpinnerNativeField.fieldOwners("large")).sort((a, b) => a - b),
         actors.map((actor) => actor.id),
     );
     assert.ok(actors.every((actor) => actor.SpiderlingsNestParentID === 90 && actor.hp > 0));
@@ -3192,4 +3192,72 @@ test("unreachable passages do not hide reachable sites beyond either shortlist l
         assert.equal(plan.proof.kind, "mandatory");
         assert.ok(plan.gates.every((gate) => gate.cells.every((cell) => cell.x > blockerX)));
     }
+});
+
+test("enclosure gates follow fresh player reports through paid work and keep unseen positions private", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField;
+    for (let tick = 0; tick < 240; tick++) {
+        start(r, snapshot);
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const player = c.KinkyDungeonPlayerEntity,
+        reporter = remotePlayerReporter(c);
+    for (const x of [16, 1]) {
+        Object.assign(player, { x, y: plan.center.y });
+        Object.assign(reporter, { x, y: plan.center.y + 1 });
+        group.engagement = { ...group.engagement, mode: "pressure", progress: { distance: 0, turn: -100 } };
+        const physical = JSON.stringify(c.Spiderlings.SpinnerTopology.solidCells(native.state().topology));
+        start(r, snapshot);
+        assert.equal(
+            JSON.stringify(c.Spiderlings.SpinnerTopology.solidCells(native.state().topology)),
+            physical,
+            "Choosing a new opening cannot cut silk for free",
+        );
+        const gates = plan.fieldIds.map((id) => plain(native.state().topology.fields[id].gateCell));
+        assert.ok(
+            gates.every((g) => (x > plan.center.x ? g.x > plan.center.x : g.x < plan.center.x)),
+            JSON.stringify(gates),
+        );
+        assert.notEqual(group.engagement?.mode, "pressure");
+        for (let tick = 0; tick < 120; tick++) {
+            start(r, snapshot);
+            c.KinkyDungeonEnemyLoop(worker, player, 1);
+            c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            c.KinkyDungeonCurrentTick++;
+        }
+        const graph = native.state().topology,
+            solid = new Set(c.Spiderlings.SpinnerTopology.solidCells(graph).map(cellKeyForTest));
+        for (const id of plan.fieldIds) {
+            const field = graph.fields[id];
+            assert.deepEqual(
+                plain(field.boundaryCells.filter((cell) => !solid.has(cellKeyForTest(cell)))),
+                plain([field.gateCell]),
+                "Paid work must open the new entrance and rebuild the former entrance",
+            );
+        }
+    }
+    reporter.hp = 0;
+    for (let i = 0; i < 9; i++) {
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+        start(r, snapshot);
+    }
+    const gates = plan.fieldIds.map((id) => plain(native.state().topology.fields[id].gateCell));
+    player.x = 16;
+    start(r, snapshot);
+    assert.deepEqual(
+        plan.fieldIds.map((id) => plain(native.state().topology.fields[id].gateCell)),
+        gates,
+        "Unseen movement must not reorient the field",
+    );
 });

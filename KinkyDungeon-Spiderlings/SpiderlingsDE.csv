@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,Debug-Treppenfreigabe aktiv; markierte Nester bleibe
 RestraintSpiderlingsSilkLeash,Spinnen-Seidenleine
 RestraintSpiderlingsSilkLeashDesc,"Feine Seidenfäden bilden eine leichte Schnur mit sanftem Schimmer."
 RestraintSpiderlingsSilkLeashDesc2,"Wird die Schnur gestreckt, spannen sich ihre feinen Fäden sanft. Lässt die Spannung nach, sinkt sie in einen weichen Bogen."
-SpiderlingsRecoveryAttached,Ein Spinner befestigt einen Seidenstrang ({count}/8). Bei seiner nächsten möglichen Aktion kann er dich zurückziehen.
+SpiderlingsRecoveryAttached,Ein Spinner befestigt einen Seidenstrang ({count}). Der gespannte Seidenstrang kann dich zurückziehen.
 SpiderlingsRecoveryAttachBlocked,Die Seidenleine lässt sich nicht befestigen. Sie braucht ein passendes Halsband oder einen Seidenbeinsack; andere Ausrüstung darf sie nicht blockieren.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"In deinem jetzigen Zusta
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht lösen."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
-SpiderlingsRecoveryStand,Standhalten ({cost} Ausdauer)
-SpiderlingsRecoverySelect,Faden {number}/{count}
-SpiderlingsRecoveryCut,Schneiden ({cost})
-SpiderlingsRecoveryRemove,Lösen ({cost})
-SpiderlingsRecoveryStruggle,Kämpfen ({cost})
-SpiderlingsRecoveryStrandLoosened,Du lockerst den ausgewählten Seidenfaden.
-SpiderlingsRecoveryStrandSevered,Du befreist dich vom ausgewählten Seidenfaden.
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Zusätzliche Lagen kosten jeweils 20 Mana als Grundwert. Fesselstärke: 1 / 1,5 / 4,5; Abklingzeit ab der ersten Lage: 8 / 9 / 12 Runden. Wirksame Treffer geben einmal pro Kreis 6 Ausdauer zurück. Der erste vollständige Seidenkokon eines Ziels gibt Mana zurück: höchstens die Hälfte des bezahlten Manas und insgesamt maximal 20 pro Kreis."
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Webe einen Seidenkreis in bis zu 6 Feldern Entfernung. Nach zwei weiteren Aktionen zieht er sich zusammen; zur Mitte hin wird die Fesselung stärker. Nutze diese Fähigkeit erneut, um denselben Kreis bis auf drei Stufen zu verstärken. Jede zusätzliche Lage kostet Mana und eine Aktion und verzögert das Schließen um eine Runde. Wände halten die Seide auf."
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Schicke klebrige Seide bis zu 6 Felder weit auf das erste feindliche Ziel. Der Faden fesselt und verlangsamt es; Wände stoppen ihn. Abklingzeit: 3 Runden. Ein wirksamer Treffer gibt 6 Ausdauer zurück. Der erste vollständige Seidenkokon eines Ziels gibt höchstens die Hälfte des bezahlten Manas zurück.

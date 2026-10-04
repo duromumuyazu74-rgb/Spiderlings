@@ -231,7 +231,7 @@ SpiderlingsDebugStairBypass,디버그 계단 통과가 활성화되었습니다.
 RestraintSpiderlingsSilkLeash,거미 비단 리드
 RestraintSpiderlingsSilkLeashDesc,가늘고 부드러운 거미줄을 모아 만든 가벼운 끈으로, 표면에는 은은한 비단 광택이 돈다.
 RestraintSpiderlingsSilkLeashDesc2,끈을 펴면 가는 실들이 하나씩 가볍게 팽팽해지고, 느슨해지면 부드러운 곡선을 그린다.
-SpiderlingsRecoveryAttached,방적자가 거미줄 끈을 연결했다({count}/8). 다음에 행동할 수 있을 때 끌어당길 수 있다.
+SpiderlingsRecoveryAttached,방적자가 거미줄 끈을 연결했다({count}). 끈이 팽팽해지면 뒤로 끌려갈 수 있다.
 SpiderlingsRecoveryAttachBlocked,거미줄 끈을 연결할 수 없다. 맞는 목줄이나 거미줄 다리 자루가 필요하며 다른 장비가 가로막으면 연결되지 않는다.
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
 KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 잘라낼 수 없다."
@@ -245,13 +245,6 @@ KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"지금 상태로는 Targ
 KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"지금 상태로는 TargetRestraint을 풀 수 없다."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."
 KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"다른 구속이 움직임을 막아 TargetRestraint을 풀 수 없다."
-SpiderlingsRecoveryStand,버티기 (기력 {cost})
-SpiderlingsRecoverySelect,실 {number}/{count}
-SpiderlingsRecoveryCut,자르기 ({cost})
-SpiderlingsRecoveryRemove,풀기 ({cost})
-SpiderlingsRecoveryStruggle,몸부림 ({cost})
-SpiderlingsRecoveryStrandLoosened,선택한 견인 실을 느슨하게 했습니다.
-SpiderlingsRecoveryStrandSevered,선택한 견인 실에서 벗어났습니다.
 KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"추가로 짤 때마다 기본 마나 20을 소비한다. 속박 배율: 1 / 1.5 / 4.5. 최초로 짠 시점부터 재사용 대기: 8 / 9 / 12턴. 유효한 명중은 원마다 한 번만 체력 6을 돌려준다. 먹잇감의 첫 완전한 실 고치는 마나를 돌려주며, 원 전체에서 실제 소비 마나의 절반, 최대 20까지다."
 KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,6칸 이내에 실의 원을 짠다. 두 번 더 행동하면 오므라들며 중심에 가까울수록 강하게 속박한다. 닫히기 전에 같은 능력을 다시 사용하면 같은 원을 최대 3단계까지 더 짤 수 있다. 추가할 때마다 마나와 행동 한 번을 소비하고 닫히는 시점이 1턴 늦어진다. 벽은 실을 막는다.
 KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,6칸 이내의 첫 적대 대상에게 끈적한 실을 보내 속박하고 둔화시킨다. 벽은 실을 막는다. 재사용 대기: 3턴. 유효한 명중은 체력 6을 돌려준다. 먹잇감의 첫 완전한 실 고치는 실제 소비 마나의 절반까지 돌려준다.

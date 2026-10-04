@@ -653,6 +653,32 @@
         return { state: next, added: true };
     }
 
+    function setEnclosureGate(state, fieldId, cell) {
+        const field = state.fields?.[fieldId];
+        if (!field || field.kind !== "enclosure" || field.retired || state.composites[field.compositeId]?.closureArmed)
+            return { state, changed: false };
+        if (sameCell(field.gateCell, cell) || !field.boundaryCells.some((candidate) => sameCell(candidate, cell)))
+            return { state, changed: false };
+        if (state.anchors.some((anchor) => sameCell(anchor, cell))) return { state, changed: false };
+        const link = state.links.find(
+            (candidate) =>
+                candidate.owners.includes(fieldId) && candidate.plannedCells.some((point) => sameCell(point, cell)),
+        );
+        if (!link) return { state, changed: false };
+        const next = clone(state),
+            nextField = next.fields[fieldId];
+        nextField.gateCell = point(cell);
+        // Changing the plan does not remove silk. A worker must open the new
+        // entrance; the former entrance then becomes ordinary paid body work.
+        nextField.reopenPending = link.builtCells.some((built) => sameCell(built, cell));
+        nextField.phase = "preparing";
+        next.assignmentByMember = Object.fromEntries(
+            Object.entries(next.assignmentByMember || {}).filter(([, action]) => action.fieldId !== fieldId),
+        );
+        refresh(next);
+        return { state: next, changed: true };
+    }
+
     function setPassageOpenGates(state, fieldId, gateIds) {
         const next = clone(state),
             field = next.fields?.[fieldId],
@@ -1542,6 +1568,7 @@
         createPassage,
         addPassage,
         setPassageOpenGates,
+        setEnclosureGate,
         addEnclosureLayer,
         validatePolygon,
         legalAction,
