@@ -11,7 +11,7 @@ Restraint `Desc` and `Desc2` describe the item's own material, form, coverage, t
 ## Spiderlings encounters
 
 **Spiderling Hunting Grounds (幼蛛猎场)**:
-A post-first-boss, Maidforce-qualified floor occupied by Spiderlings, with three objective nests, two or three staffed capture fields and dispersed legal NPC prey. Fresh maps provide three six-member nest crews and a roaming crew, aiming for 80–90% Spiderlings among mobile combat enemies hostile to the player; protected neutral actors and structures are separate.
+A post-first-boss, Maidforce-qualified floor occupied by Spiderlings, with three objective nests, at least two large staffed capture fields and dispersed legal NPC prey. Fresh maps provide three six-member nest crews, additional patrol crews and mobile spiders up to the global map setting plus twenty. With the default setting of 25, the population target is 45 spiders, five elite Maids, one Dressmaker and one Nurse. Existing independent mobile guards count toward their faction quota before new residents are added; required scene births can exceed a prey quota. Mobile combat NPCs count toward the ecology even when neutral to the player; protected authored actors retain their rules and structures are excluded.
 _Avoid_: every NPC is a spider, one isolated arena, rewriting visited maps
 
 **Spiderling Infestation (幼蛛侵扰)**:
@@ -26,13 +26,13 @@ The theme-specific mix of necessary nest crews, optional roaming crews and eligi
 _Avoid_: whole-map rollback, global spider scheduler, treating optional patrol failure as required-crew failure
 
 **Special-floor prebuilt outer field**:
-A staffed open capture area present at the start of a fresh Spiderling theme, with smaller bodies still requiring paid construction. Hunting Grounds needs at least two legal sites, prefers large fields and permits a smaller usable field when space requires it; insufficient space cancels the theme before births, and existing crews are not scattered to staff empty arenas.
+A staffed open capture area present at the start of a fresh Spiderling theme, with smaller bodies still requiring paid construction. Hunting Grounds requires two legal 9-by-9 outer fields. Each starts with two Spinners from its owning nest crew in the inner core; these are existing crew slots, not extra births. Insufficient space cancels the theme before births. Smaller optional sites cannot replace the required pair, and saved maps are not rebuilt.
 
 **Persistent spider patrol**:
 Idle mobile spiders travelling to distinct reachable destinations and hunting through native perception while invested Spinners keep their fields. Combat, capture, construction and recovery take priority; quiet time or completion of the escape objective does not retire living crews.
 
 **Map Spiderling population cap**:
-The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25; zero disables this global cap, while themed floors retain their own mobile-spider budgets. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs six slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity.
+The configurable maximum of living Spinner, Jumper, WebCaster, Tunneler and Mage Spiderlings entities on the current map, including allies. Defaults to 25. Hunting Grounds always uses the numeric setting plus twenty, including zero becoming a cap of twenty; this applies to saved Hunting Grounds too. Outside Hunting Grounds, zero disables the global cap while other themed floors retain their own budgets. Nests and other species do not count. Native population, Mage map-start placement, wandering respawns, the fixed squad, nest reinforcements and death summons share available slots. A fixed squad needs six slots or is skipped permanently for that map. Existing over-cap populations are retained; new arrivals pause until death or departure frees capacity. Updating a saved map's cap does not reseed its initial population.
 _Avoid_: per-nest offspring cap, total spawns over a floor, nest count limit
 
 **Native Spiderlings population**:
@@ -66,6 +66,7 @@ A short report of a task nest being attacked by a native hostile NPC, including 
 
 During native enemy initialization at zero or negative time, added rivalry, targeting, awareness and projectile-faction adaptation yield to native behavior. Their synchronous scope restores after nested updates or exceptions; normal positive turns enable the hunting rules below.
 The same ordinary Spiderling species hunt independent mobile combat NPCs through native vision, perception, hostility and action payment, allowing prey to retaliate. Shopkeepers, prisoners, allies, party members, servants, ceasefire actors, scenery, immobile actors and dependent followers are excluded from added hunting, while already valid native combat and protected authored births retain their rules.
+Nest and patrol crews reinforce a shared observed prey instead of each selecting a different NPC. A member may acquire the live target only through its own native perception; otherwise it can investigate the last observed coordinates for fewer than four turns. Active nest defense and paid construction retain priority. Hunting favors coordinated silk binding and control but still allows native damage and death, including fourfold vulnerability from complete owned silk binding.
 _Avoid_: hunting statues, faction-wide NPC immunity, counting nests or web walls as enemies
 
 **Nest lifetime Tunneler budget**:

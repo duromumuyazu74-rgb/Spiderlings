@@ -64,6 +64,10 @@ test("fixed seeds create a connected whole-floor hunting layout with three nest 
         assert.equal(map.writes, map.shaped.opened);
         assert.equal(map.plan.nests.length, 3);
         assert.equal(map.plan.sites.length, 3);
+        assert.ok(
+            map.plan.sites.filter((site) => site.radius === 4).length >= 2,
+            `seed ${seed}: two large staffed arenas`,
+        );
         assert.ok(map.plan.metrics.open > 200 && map.plan.metrics.open < 600);
         assert.equal(map.plan.metrics.reachable, map.plan.metrics.passable - 3);
         assert.ok(
@@ -118,9 +122,40 @@ test("fixed seeds create a connected whole-floor hunting layout with three nest 
     }
 });
 
-test("small layouts require real nonoverlapping five-cell fields before retaining the floor", () => {
+test("large field bypasses keep both closed boundaries off the mandatory map route", () => {
+    for (const seed of [0, 0.5, 0.99]) {
+        const map = fixture(30, seed),
+            sites = map.plan.sites.filter((point) => point.radius === 4).slice(0, 2),
+            passable = new Set(
+                map.grid.flatMap((row, y) => row.flatMap((tile, x) => (tile === "0" ? [`${x},${y}`] : []))),
+            ),
+            blocked = new Set(
+                sites.flatMap((site) =>
+                    footprint(site, 4).filter((name) => {
+                        const [x, y] = name.split(",").map(Number);
+                        return Math.max(Math.abs(x - site.x), Math.abs(y - site.y)) === 4;
+                    }),
+                ),
+            ),
+            reached = layout.flood(map.start, passable, blocked);
+        assert.ok(reached.has(`${map.end.x},${map.end.y}`));
+        for (const site of sites) {
+            assert.ok(
+                [
+                    [5, 0],
+                    [-5, 0],
+                    [0, 5],
+                    [0, -5],
+                ].some(([dx, dy]) => reached.has(`${site.x + dx},${site.y + dy}`)),
+            );
+        }
+    }
+});
+
+test("small layouts reject insufficient space for two large fields before retaining the floor", () => {
     assert.equal(fixture(23).plan, null, "three nominal 3x3 points do not constitute two usable hunting fields");
-    const map = fixture(24);
+    assert.equal(fixture(24).plan, null);
+    const map = fixture(28);
     assert.ok(map.plan);
     assert.ok(map.plan.metrics.nestCandidates >= 3);
     assert.equal(map.plan.sites.length, 3);
@@ -141,7 +176,7 @@ test("small layouts require real nonoverlapping five-cell fields before retainin
 });
 
 test("the authored large field retains its complete footprint and identity through nest planning", () => {
-    for (const size of [24, 28, 30, 44]) {
+    for (const size of [28, 30, 44]) {
         const map = fixture(size),
             site = map.shaped.largeHuntingSite;
         assert.ok(site, `size ${size} retains a large site`);
@@ -157,7 +192,7 @@ test("the authored large field retains its complete footprint and identity throu
     }
 });
 
-test("an unavailable large footprint retries without partial terrain and keeps the final safe fallback", () => {
+test("an unavailable pair of large footprints retries without publishing partial terrain", () => {
     const size = 44,
         grid = Array.from({ length: size }, () => Array(size).fill("1")),
         planned = [];
@@ -187,12 +222,11 @@ test("an unavailable large footprint retries without partial terrain and keeps t
     assert.equal(diagnostics.failure, "large-field-site");
     assert.equal(writes, 0);
     const fallback = layout.shapeTerrain({ ...input, fallback: true });
-    assert.ok(fallback && fallback.anchors.length >= 3);
-    assert.equal(fallback.largeHuntingSite, undefined);
-    assert.ok(writes > 0);
+    assert.equal(fallback, null);
+    assert.equal(writes, 0);
 });
 
-test("an unavailable large preset preserves existing NPCs and the safe three-nest objective", () => {
+test("an unavailable required large preset rejects the theme while preserving existing NPCs", () => {
     const map = fixture(30),
         site = map.shaped.largeHuntingSite,
         blocker = { x: site.x + 3, y: site.y, hp: 10, Enemy: { name: "Maidforce" } };
@@ -214,11 +248,8 @@ test("an unavailable large preset preserves existing NPCs and the safe three-nes
             largeHuntingSite: site,
             diagnostics,
         });
-        assert.ok(plan, kind);
-        assert.equal(plan.presetSkipReason, "large-field-site");
-        assert.equal(plan.largeHuntingSite, undefined);
-        assert.equal(plan.nests.length, 3);
-        assert.equal(plan.metrics.reachable, plan.metrics.passable - 3);
+        assert.equal(plan, null, kind);
+        assert.equal(diagnostics.failure, "large-field-site");
         assert.equal(JSON.stringify(blocker), original);
     }
 });
@@ -243,7 +274,6 @@ test("optional large-site spacing cannot cancel an otherwise valid native nest p
         acceptNest: (point) => nativeNests.has(`${point.x},${point.y}`),
     });
     assert.ok(plan);
-    assert.equal(plan.presetSkipReason, "large-field-site");
     assert.deepEqual(plan.nests, map.plan.nests);
     assert.equal(plan.metrics.reachable, plan.metrics.passable - 3);
 });
@@ -284,7 +314,10 @@ test("protected native metadata remains untouched and an alternate region hosts 
         movable: "0",
         anchors: map.shaped.anchors,
     });
-    assert.equal(rejected, null);
+    if (rejected) {
+        assert.ok(rejected.nests.every((nest) => !occupied.some((actor) => actor.x === nest.x && actor.y === nest.y)));
+        assert.equal(rejected.metrics.reachable, rejected.metrics.passable - occupied.length - 3);
+    }
 });
 
 test("failed supported and undersized layouts publish no partial terrain", () => {
@@ -319,7 +352,9 @@ test("native TileMaze wrapper runs after terrain creation and only on new Infest
         },
         KinkyDungeonPlaceShrines() {},
         KinkyDungeonPlaceChargers() {},
-        KinkyDungeonPlaceSetPieces() {},
+        KinkyDungeonPlaceSetPieces() {
+            calls.push({ protectedAreas: JSON.parse(JSON.stringify(context.KDMapData.SpecialAreas)) });
+        },
         KinkyDungeonMapGet: () => "0",
         KinkyDungeonTilesGet(name) {
             return context.KDMapData.Tiles[name];
@@ -357,12 +392,81 @@ test("native TileMaze wrapper runs after terrain creation and only on new Infest
     assert.equal(calls[0], "native");
     assert.ok(context.Spiderlings.HuntingGroundsLayout.earlyPlan(context.KDMapData));
     assert.ok(Object.keys(context.KDMapData.Tiles).length > 0);
+    context.KinkyDungeonPlaceSetPieces();
+    const protectedAreas = calls.at(-1).protectedAreas,
+        requiredSites = context.Spiderlings.HuntingGroundsLayout.earlyPlan(context.KDMapData).huntingSites;
+    for (const site of requiredSites)
+        assert.ok(protectedAreas.some((area) => area.x === site.x && area.y === site.y && area.radius >= site.radius));
+    assert.equal(context.KDMapData.SpecialAreas.length, 0, "Only temporary construction reservations are removed");
     context.Spiderlings.HuntingGroundsLayout.release(context.KDMapData);
     assert.equal(Object.keys(context.KDMapData.Tiles).length, 0);
     assert.equal(calls.at(-1), "nav");
     context.KDMapData = { ...context.KDMapData, MapMod: "None" };
     context.KinkyDungeonCreateMapGenType.TileMaze();
     assert.equal(context.Spiderlings.HuntingGroundsLayout.earlyPlan(context.KDMapData), undefined);
+});
+
+test("TileMaze retries retain the native placement list references and discard failed-map births", () => {
+    const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8"),
+        spawnPoints = [],
+        chestList = [],
+        data = { spawnpoints: spawnPoints, chestlist: chestList };
+    let attempts = 0;
+    const context = {
+        Spiderlings: {},
+        KDMapData: {
+            MapMod: "SpiderlingsHuntingGrounds",
+            RoomType: "",
+            GridWidth: 30,
+            GridHeight: 30,
+            Tiles: {},
+            StartPosition: { x: 1, y: 1 },
+            EndPosition: { x: 28, y: 28 },
+        },
+        KinkyDungeonCreateMapGenType: {
+            TileMaze(_poi, _visited, _width, _height, _openness, _density, _halls, data) {
+                attempts++;
+                context.KDMapData.GridWidth = attempts === 1 ? 22 : 30;
+                data.spawnpoints.push({ x: 2, y: 2, attempt: attempts });
+                data.chestlist.push({ x: 2, y: 3, attempt: attempts });
+            },
+        },
+        KinkyDungeonMapGet: () => "0",
+        KinkyDungeonTilesGet: (name) => context.KDMapData.Tiles[name],
+        KinkyDungeonTilesSet: (name, value) => (context.KDMapData.Tiles[name] = value),
+        KinkyDungeonMapSet() {},
+        KDRandom: () => 0.5,
+    };
+    vm.createContext(context);
+    vm.runInContext(source, context);
+    context.KinkyDungeonCreateMapGenType.TileMaze([], [], 30, 30, 1, 1, 1, data);
+    assert.equal(attempts, 2);
+    assert.equal(data.spawnpoints, spawnPoints);
+    assert.equal(data.chestlist, chestList);
+    assert.deepEqual(spawnPoints, [{ x: 2, y: 2, attempt: 2 }]);
+    assert.deepEqual(chestList, [{ x: 2, y: 3, attempt: 2 }]);
+});
+
+test("native walkable slash flooring does not discard a legal large hunting site", () => {
+    const map = fixture(30),
+        site = map.shaped.huntingSites[1],
+        slash = { x: site.x + 3, y: site.y };
+    const plan = layout.planEncounter({
+        width: 30,
+        height: 30,
+        tile: (x, y) => (x === slash.x && y === slash.y ? "/" : map.get(x, y)),
+        meta: map.meta,
+        start: map.start,
+        exits: [map.end],
+        entities: [],
+        spawnPoints: [],
+        movable: "0/",
+        anchors: map.shaped.anchors,
+        huntingSites: map.shaped.huntingSites,
+        largeHuntingSite: map.shaped.largeHuntingSite,
+    });
+    assert.ok(plan);
+    assert.ok(plan.sites.some((point) => point.x === site.x && point.y === site.y && point.radius === 4));
 });
 
 test("only new Hunting random births reserve future rings, preserving authored actors and restoring metadata", () => {

@@ -278,7 +278,7 @@
         return null;
     }
 
-    function mobileCombatant(entity) {
+    function mobileCombatant(entity, includeShops = false) {
         const enemy = entity?.Enemy;
         return !!(
             entity.hp > 0 &&
@@ -288,7 +288,8 @@
             !enemy.tags?.scenery &&
             !api.SpinnerNativeField?.isOwnedProxy?.(entity) &&
             !["Natural", "Door", "Prisoner", "Furniture", "Player"].includes(KDGetFaction(entity)) &&
-            !(typeof KDEnemyHasFlag === "function" ? KDEnemyHasFlag(entity, "Shop") : entity.flags?.Shop) &&
+            (includeShops ||
+                !(typeof KDEnemyHasFlag === "function" ? KDEnemyHasFlag(entity, "Shop") : entity.flags?.Shop)) &&
             !(typeof KDIsInParty === "function" && KDIsInParty(entity)) &&
             !(typeof KDIsImprisoned === "function" && KDIsImprisoned(entity)) &&
             !(typeof KDAllied === "function" && KDAllied(entity))
@@ -300,7 +301,7 @@
     }
 
     function populationCounts() {
-        const actors = KDMapData.Entities.filter(independentCombatant);
+        const actors = KDMapData.Entities.filter((entity) => mobileCombatant(entity, true) && !entity.Enemy.master);
         const spiders = actors.filter((entity) => MOBILE.has(entity.Enemy.name)).length;
         return { spiders, rivals: actors.length - spiders, total: actors.length };
     }
@@ -308,7 +309,8 @@
     function combatantCounts(hostileOnly) {
         const actors = KDMapData.Entities.filter(
             (entity) =>
-                mobileCombatant(entity) && (!hostileOnly || typeof KDHostile !== "function" || KDHostile(entity)),
+                mobileCombatant(entity, !hostileOnly) &&
+                (!hostileOnly || typeof KDHostile !== "function" || KDHostile(entity)),
         );
         return { spiders: actors.filter((entity) => MOBILE.has(entity.Enemy.name)).length, total: actors.length };
     }
@@ -320,8 +322,10 @@
             point.noPlay ||
             point.prisoner ||
             point.quest ||
-            [...(point.required || []), ...(point.tags || [])].some((tag) =>
-                ["boss", "shop", "prisoner", "jail", "quest", "jailer"].includes(tag),
+            [...(point.required || []), ...(point.tags || [])].some(
+                (tag) =>
+                    ["shop", "prisoner", "jail", "quest", "jailer"].includes(tag) ||
+                    (tag === "boss" && KDMapData.MapMod !== MOD),
             )
         );
     }
@@ -331,41 +335,57 @@
             .filter(
                 (point) => protectedSpawn(point) || !api.HuntingGroundsLayout?.isPopulationReserved?.(KDMapData, point),
             )
-            .map((point) =>
-                protectedSpawn(point)
-                    ? { ...point, ftags: [...(point.ftags || []), PRESET_TAG] }
-                    : { ...point, faction: undefined },
-            );
+            .map((point) => {
+                if (!protectedSpawn(point)) return { ...point, faction: undefined };
+                const maidGuard =
+                    KDMapData.MapMod === MOD &&
+                    point.keys &&
+                    (point.faction === "Maidforce" ||
+                        [...(point.required || []), ...(point.tags || [])].includes("maid"));
+                return {
+                    ...point,
+                    required: maidGuard ? [...(point.required || []), MOD + "EliteMaid"] : point.required,
+                    ftags: [...(point.ftags || []).filter((tag) => !maidGuard || tag !== "elite"), PRESET_TAG],
+                };
+            });
     }
 
     function choosePopulation(original, receiver, args) {
         const plan = KDMapData.SpiderlingsPopulationPlan;
         if (!plan || args[7]?.includes(PRESET_TAG)) return original.apply(receiver, args);
-        if (
-            plan.kind === MOD &&
-            selectingPopulation === "initial" &&
-            !KDMapData.Entities.some((entity) => independentCombatant(entity) && KDGetFaction(entity) === "Maidforce")
-        ) {
+        if (plan.kind === MOD) {
             const request = [...args];
-            request[4] = [MOD + "Maid"];
-            request[5] = { ...(args[5] || {}), requireHostile: "" };
             request[7] = [
                 ...(args[7] || []).filter((tag) => !["minor", "elite"].includes(tag)),
-                MOBILE_TAG,
                 BATCH_TAG,
                 "peaceful",
                 "quest",
+                "boss",
+                "miniboss",
             ];
-            const chosen = original.apply(receiver, request);
-            if (chosen?.faction === "Maidforce") {
-                plan.extraMaidRequested = true;
-                return {
-                    ...chosen,
-                    clusterWith: undefined,
-                    cohesion: 0.01,
-                    cohesionRange: 1,
-                };
+            request[5] = { ...(args[5] || {}), requireHostile: "" };
+            const slots = api.availableSpiderlingSlots();
+            if (slots > 0) {
+                request[0] = [...(args[0] || []), "spiderlings"];
+                request[4] = [MOBILE_TAG];
+                return original.apply(receiver, request);
             }
+            // Initial prey are authored once in separated legal cells after native placement.
+            // Wandering arrivals can only replace missing members of that same finite ecology.
+            if (selectingPopulation === "initial") return undefined;
+            const counts = { Maid: 0, Dressmaker: 0, Nurse: 0 };
+            for (const entity of KDMapData.Entities.filter(
+                (entity) => mobileCombatant(entity, true) && !entity.Enemy.master,
+            )) {
+                const group = populationGroup(entity.Enemy);
+                if (Object.hasOwn(counts, group)) counts[group]++;
+            }
+            const group = Object.keys(counts).find((group) => counts[group] < (plan.preyQuota?.[group] || 0));
+            if (!group) return undefined;
+            request[4] = [MOD + (group === "Maid" ? "EliteMaid" : group === "Dressmaker" ? "NativeDressmaker" : group)];
+            request[0] = [...(args[0] || []), "maid", "dressmaker"];
+            const chosen = original.apply(receiver, request);
+            return chosen && { ...chosen, clusterWith: undefined, cohesion: 0.01, cohesionRange: 1 };
         }
         const counts = combatantCounts(plan.kind === MOD);
         if (counts.total >= plan.mobileBudget) return undefined;
@@ -405,6 +425,8 @@
             if (group) Object.assign(enemy.tags, { [POPULATION_TAG]: true, [MOD + group]: true });
             else enemy.tags[MOD + "Other"] = true;
             if (MOBILE.has(enemy.name)) enemy.tags[MOBILE_TAG] = true;
+            if (group === "Maid" && enemy.tags.elite) enemy.tags[MOD + "EliteMaid"] = true;
+            if (enemy.name === "Dressmaker") enemy.tags[MOD + "NativeDressmaker"] = true;
             if (enemy.master || enemy.summon?.some((entry) => entry.count > 0)) enemy.tags[BATCH_TAG] = true;
         }
         if (KinkyDungeonGetEnemy.SpiderlingsHuntingGroundsWrapped) return;
@@ -687,6 +709,7 @@
             garrisonVersion: 3,
             coreIds: population.coreIds,
             patrolIds: population.patrolIds,
+            fieldIds: population.fieldIds,
             fieldPreset: {
                 status: "pending",
                 maxFields: 3,
@@ -765,6 +788,93 @@
         } else if (nest.hp > 0) delete nest[MAID_FINISHER];
     }
 
+    let huntingTurn;
+
+    function crewContact(enemy) {
+        const state = activeState();
+        if (!state || !MOBILE.has(enemy?.Enemy?.name)) return undefined;
+        const tick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : 0;
+        if (
+            huntingTurn?.map !== KDMapData ||
+            huntingTurn.tick !== tick ||
+            huntingTurn.count !== KDMapData.Entities.length
+        ) {
+            const actors = KDMapData.Entities.filter(
+                (actor) =>
+                    actor.hp > 0 &&
+                    MOBILE.has(actor.Enemy?.name) &&
+                    KDGetFaction(actor) !== "Player" &&
+                    !(typeof KDAllied === "function" && KDAllied(actor)) &&
+                    !(typeof KDIsInParty === "function" && KDIsInParty(actor)) &&
+                    !(typeof KDIsImprisoned === "function" && KDIsImprisoned(actor)),
+            ).sort((a, b) => a.id - b.id);
+            const groups = new Map(),
+                byActor = new Map();
+            for (const actor of actors) {
+                const identity =
+                    actor[NEST_PARENT_ID] !== undefined ? `nest:${actor[NEST_PARENT_ID]}` : actor.SpiderlingsHuntCrewID;
+                if (!identity) continue;
+                if (!groups.has(identity)) groups.set(identity, []);
+                groups.get(identity).push(actor);
+                byActor.set(actor.id, identity);
+            }
+            for (const actor of actors.filter((member) => !byActor.has(member.id))) {
+                const neighbor = actors
+                    .filter((member) => byActor.has(member.id) && distance(actor, member) <= 8)
+                    .sort((a, b) => distance(actor, a) - distance(actor, b) || a.id - b.id)[0];
+                const identity = neighbor ? byActor.get(neighbor.id) : `roam:${actor.id}`;
+                if (!groups.has(identity)) groups.set(identity, []);
+                groups.get(identity).push(actor);
+                byActor.set(actor.id, identity);
+            }
+            const prey = KDMapData.Entities.filter(
+                (target) =>
+                    independentCombatant(target) &&
+                    !MOBILE.has(target.Enemy.name) &&
+                    !(typeof KDHelpless === "function" && KDHelpless(target)),
+            );
+            const contacts = (state.crewContacts ||= {}),
+                claims = new Map();
+            for (const identity of Object.keys(contacts))
+                if (
+                    !groups.has(identity) ||
+                    tick < contacts[identity].tick ||
+                    tick - contacts[identity].tick >= 4 ||
+                    !prey.some((target) => target.id === contacts[identity].targetId)
+                )
+                    delete contacts[identity];
+            for (const [identity, members] of groups) {
+                const seen = prey.filter((target) =>
+                    members.some(
+                        (member) =>
+                            !(typeof KinkyDungeonIsDisabled === "function" && KinkyDungeonIsDisabled(member)) &&
+                            !(typeof KDHelpless === "function" && KDHelpless(member)) &&
+                            KDHostile(member, target) &&
+                            perceives(member, target),
+                    ),
+                );
+                const prior = contacts[identity];
+                const chosen =
+                    seen.find((target) => target.id === prior?.targetId) ||
+                    seen.sort(
+                        (a, b) =>
+                            (claims.get(a.id) || 0) - (claims.get(b.id) || 0) ||
+                            members.reduce((sum, member) => sum + distance(member, a) - distance(member, b), 0) ||
+                            a.id - b.id,
+                    )[0];
+                if (chosen) contacts[identity] = { targetId: chosen.id, x: chosen.x, y: chosen.y, tick };
+                const current = contacts[identity];
+                if (current) claims.set(current.targetId, (claims.get(current.targetId) || 0) + 1);
+            }
+            huntingTurn = { map: KDMapData, tick, count: KDMapData.Entities.length, byActor };
+        }
+        const contact = state.crewContacts?.[huntingTurn.byActor.get(enemy.id)];
+        const target = contact && KDMapData.Entities.find((candidate) => candidate.id === contact.targetId);
+        return target?.hp > 0 && KDHostile(enemy, target) && !(typeof KDHelpless === "function" && KDHelpless(target))
+            ? contact
+            : undefined;
+    }
+
     function resolveNestDefenderTarget(enemy, nativeTarget, delta) {
         if (delta !== undefined && !(delta > 0)) return nativeTarget;
         delete enemy?.[DEFENDER_TARGET];
@@ -802,6 +912,13 @@
             nearest = range;
         }
         if (chosen) enemy[DEFENDER_TARGET] = chosen.id;
+        // A crew reinforces one actually observed NPC. Shared coordinates guide
+        // investigation only; acquiring the live target still needs this spider's LOS.
+        if (!chosen) {
+            const contact = crewContact(enemy);
+            const prey = contact && KDMapData.Entities.find((candidate) => candidate.id === contact.targetId);
+            if (prey && perceives(enemy, prey)) chosen = prey;
+        }
         // Retain a living natively perceptible NPC instead of oscillating between
         // simultaneous contacts. Unseen prey never yields a live-position target.
         if (
@@ -848,7 +965,7 @@
 
     function seekCrewDuty(enemy, target, aiData = {}) {
         if (
-            !enemy.SpiderlingsHuntRole ||
+            (!enemy.SpiderlingsHuntRole && !MOBILE.has(enemy.Enemy?.name)) ||
             enemy.hp <= 0 ||
             !target?.player ||
             aiData.canSensePlayer ||
@@ -864,6 +981,15 @@
         const alert = enemy[DEFENSE_SEARCH],
             searching =
                 alert && KinkyDungeonCurrentTick >= alert.tick && KinkyDungeonCurrentTick - alert.tick <= DEFENSE_TURNS;
+        const contact = !searching && enemy.SpiderlingsHuntRole !== "builder" && crewContact(enemy);
+        if (contact && distance(enemy, contact) > 1) {
+            if (enemy.gx !== contact.x || enemy.gy !== contact.y) {
+                enemy.gx = contact.x;
+                enemy.gy = contact.y;
+                enemy.path = undefined;
+            }
+            return true;
+        }
         if (!searching && enemy.SpiderlingsHuntRole !== "guard") return false;
         const nest = KDMapData.Entities.find(
             (entity) => entity.id === (searching ? alert.id : enemy[NEST_PARENT_ID]) && entity.hp > 0,
@@ -1115,6 +1241,38 @@
                     const result = original.apply(this, args);
                     if (spiderFloor && KDMapData.SpiderlingsPopulationPlan) {
                         const plan = KDMapData.SpiderlingsPopulationPlan;
+                        if (plan.kind === MOD && plan.preyQuota && !plan.residentsSeeded) {
+                            const existingPrey = KDMapData.Entities.filter(
+                                (entity) =>
+                                    mobileCombatant(entity, true) &&
+                                    !entity.Enemy.master &&
+                                    ["Maid", "Dressmaker", "Nurse"].includes(populationGroup(entity.Enemy)),
+                            );
+                            const quota = Object.fromEntries(
+                                Object.entries(plan.preyQuota).map(([group, count]) => [
+                                    group,
+                                    Math.max(
+                                        0,
+                                        count -
+                                            existingPrey.filter((entity) => populationGroup(entity.Enemy) === group)
+                                                .length,
+                                    ),
+                                ]),
+                            );
+                            const residents = api.Population.seedHuntingResidents({
+                                spawnPoints: args[0],
+                                existingPrey,
+                                prey: [
+                                    ...Array.from({ length: quota.Maid }, (_, index) =>
+                                        index % 2 ? "MaidforceMini" : "MaidforceMafia",
+                                    ),
+                                    ...Array(quota.Dressmaker).fill("Dressmaker"),
+                                    ...Array(quota.Nurse).fill("Nurse"),
+                                ],
+                            });
+                            plan.residentsSeeded = true;
+                            plan.residentIds = residents;
+                        }
                         plan.initial = {
                             ...populationCounts(),
                             strict: combatantCounts(true),

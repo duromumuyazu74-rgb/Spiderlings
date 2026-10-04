@@ -61,9 +61,13 @@
                             throw Error("Original objective nests overlap");
                 const fieldPreset = state?.fieldPreset,
                     initialWebCells = KDMapData.Entities.filter(Spiderlings.SpinnerNativeField.isOwnedProxy).length;
-                if (!cancelled && (fieldPreset?.status !== "placed" || fieldPreset.fields?.length < 2))
+                if (
+                    !cancelled &&
+                    (fieldPreset?.status !== "placed" ||
+                        fieldPreset.fields?.filter((field) => field.radius === 4).length < 2)
+                )
                     throw Error(
-                        `New Hunting Grounds did not initialize at least two staffed fields: ${JSON.stringify({
+                        `New Hunting Grounds did not initialize at least two large staffed fields: ${JSON.stringify({
                             zone,
                             floor,
                             seed,
@@ -83,11 +87,20 @@
                     );
                 if (fieldPreset?.status === "placed") {
                     const encounter = Spiderlings.SpinnerNativeField.state(),
+                        requiredSites = state.layout.sites.filter((site) => site.radius === 4).slice(0, 2),
                         seenCrews = new Set();
                     let expectedWebCells = 0;
                     if (
                         Object.keys(encounter.topology.composites).length !== fieldPreset.fields.length ||
-                        encounter.topology.actionLog.length !== 0
+                        encounter.topology.actionLog.length !== 0 ||
+                        requiredSites.length !== 2 ||
+                        requiredSites.some(
+                            (site) =>
+                                !fieldPreset.fields.some(
+                                    (field) =>
+                                        field.radius === 4 && field.center.x === site.x && field.center.y === site.y,
+                                ),
+                        )
                     )
                         throw Error("Preset field count or free initialization changed");
                     for (const field of fieldPreset.fields) {
@@ -111,37 +124,69 @@
                             )
                         )
                             throw Error("Preset fields lost live Spinner ownership, open gates or geometry downgrade");
+                        if (field.radius === 4) {
+                            const authored = state.layout.sites.find(
+                                    (site) =>
+                                        site.radius === 4 && site.x === field.center.x && site.y === field.center.y,
+                                ),
+                                assigned = KDMapData.Entities.filter((enemy) => crew.memberIds.includes(enemy.id));
+                            if (
+                                assigned.length !== 2 ||
+                                assigned.some(
+                                    (enemy) =>
+                                        enemy.SpiderlingsPresetFieldCenter?.x !== authored.x ||
+                                        enemy.SpiderlingsPresetFieldCenter?.y !== authored.y ||
+                                        Math.max(Math.abs(enemy.x - authored.x), Math.abs(enemy.y - authored.y)) > 1 ||
+                                        enemy.SpiderlingsNestParentID !== crew.source?.nestId,
+                                ) ||
+                                composite.layerIds
+                                    .slice(0, -1)
+                                    .some(
+                                        (id) =>
+                                            encounter.topology.fields[id].phase !== "preparing" ||
+                                            encounter.topology.anchors.some(
+                                                (anchor) => anchor.owners.includes(id) && anchor.built,
+                                            ) ||
+                                            encounter.topology.links.some(
+                                                (link) =>
+                                                    link.owners.includes(id) &&
+                                                    (link.connected || link.builtCells.length),
+                                            ),
+                                    )
+                            )
+                                throw Error(
+                                    "Large prefab lost its authored site, initial nest crew or paid inner construction",
+                                );
+                        }
                         seenCrews.add(crew.id);
                     }
                     if (initialWebCells !== expectedWebCells)
                         throw Error("Preset field proxy count differs from its outer geometry");
                 }
                 const mobileNames = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]),
-                    strictEnemies = KDMapData.Entities.filter(
+                    ecologyEnemies = KDMapData.Entities.filter(
                         (e) =>
                             e.hp > 0 &&
-                            KDHostile(e) &&
                             !e.Enemy.immobile &&
                             !e.Enemy.noAttack &&
                             !e.Enemy.tags?.scenery &&
                             !Spiderlings.SpinnerNativeField.isOwnedProxy(e) &&
-                            !KDEnemyHasFlag(e, "Shop") &&
                             !KDIsInParty(e) &&
                             !KDIsImprisoned(e) &&
                             !KDAllied(e),
                     ),
-                    hostileSpiders = strictEnemies.filter((e) => mobileNames.has(e.Enemy.name)).length,
-                    hostileRatio = hostileSpiders / strictEnemies.length;
-                if (!cancelled && !KDIsHellFloor(floor) && (hostileRatio < 0.8 || hostileRatio > 0.9))
+                    ecologySpiders = ecologyEnemies.filter((e) => mobileNames.has(e.Enemy.name)).length,
+                    ecologyRatio = ecologySpiders / ecologyEnemies.length;
+                if (!cancelled && !KDIsHellFloor(floor) && (ecologyRatio < 0.8 || ecologyRatio > 0.9))
                     throw Error(
-                        `Hunting Grounds native hostile population missed quota: ${JSON.stringify({
+                        `Hunting Grounds total mobile ecology missed quota: ${JSON.stringify({
                             zone,
                             floor,
                             seed,
-                            hostileSpiders,
-                            total: strictEnemies.length,
+                            ecologySpiders,
+                            total: ecologyEnemies.length,
                             plan: KDMapData.SpiderlingsPopulationPlan,
-                            enemies: strictEnemies.map((e) => ({
+                            enemies: ecologyEnemies.map((e) => ({
                                 id: e.id,
                                 name: e.Enemy.name,
                                 x: e.x,
@@ -151,6 +196,36 @@
                             })),
                         })}`,
                     );
+                if (!cancelled) {
+                    const authoredPrey = KDMapData.Entities.filter((e) => e.SpiderlingsHuntingPrey);
+                    const maids = ecologyEnemies.filter((e) => e.Enemy.faction === "Maidforce");
+                    const dressmakers = ecologyEnemies.filter((e) => e.Enemy.name === "Dressmaker");
+                    const nurses = ecologyEnemies.filter((e) => e.Enemy.name === "Nurse");
+                    const plan = KDMapData.SpiderlingsPopulationPlan;
+                    if (
+                        Spiderlings.getMapPopulationCap() !==
+                            Number(Spiderlings.getSetting("spiderlingsMapPopulationCap")) + 20 ||
+                        ecologySpiders !== plan.cap ||
+                        maids.length < plan.preyQuota.Maid ||
+                        !maids.every((e) => e.Enemy.tags.elite) ||
+                        dressmakers.length < 1 ||
+                        nurses.length < 1
+                    )
+                        throw Error(
+                            "Initial Hunting Grounds did not provide the full authored spider and elite prey ecology: " +
+                                JSON.stringify({
+                                    ecologySpiders,
+                                    maids: maids.length,
+                                    dressmakers: dressmakers.length,
+                                    nurses: nurses.length,
+                                    plan,
+                                }),
+                        );
+                    for (const a of authoredPrey)
+                        for (const b of [...maids, ...dressmakers, ...nurses])
+                            if (a !== b && Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) < 6)
+                                throw Error("Initial hunting prey did not occupy separated positions");
+                }
                 const initialEntities = KDMapData.Entities.length;
                 // Observe the complete ecology off the entrance stair; waiting on
                 // that stair can otherwise queue a native ShopStart transition.
@@ -220,11 +295,32 @@
                     finalEntities: KDMapData.Entities.length,
                     guards,
                     validNatural: !KDIsHellFloor(floor),
-                    strictEnemies: strictEnemies.length,
-                    hostileSpiders,
-                    hostileRatio,
+                    ecologyEnemies: ecologyEnemies.length,
+                    ecologySpiders,
+                    ecologyRatio,
+                    maidCount: ecologyEnemies.filter((e) => e.Enemy.faction === "Maidforce").length,
+                    maidShops: ecologyEnemies.filter(
+                        (e) => e.Enemy.faction === "Maidforce" && KDEnemyHasFlag(e, "Shop"),
+                    ).length,
+                    authoredPreyCounts: KDMapData.Entities.filter((e) => e.SpiderlingsHuntingPrey).reduce(
+                        (counts, e) => {
+                            counts[e.Enemy.name] = (counts[e.Enemy.name] || 0) + 1;
+                            return counts;
+                        },
+                        {},
+                    ),
                 });
             }
+        }
+        for (const zone of new Set(results.map((row) => row.zone))) {
+            const maps = results.filter((row) => row.zone === zone),
+                activeMaps = maps.filter((row) => !row.cancelled).length,
+                cancelledMaps = maps.length - activeMaps;
+            for (const row of maps) Object.assign(row, { activeMaps, cancelledMaps });
+            if (!activeMaps)
+                throw Error(
+                    `Hunting Grounds cancelled every tested map in ${zone}: ${JSON.stringify({ activeMaps, cancelledMaps })}`,
+                );
         }
         return results;
     } finally {

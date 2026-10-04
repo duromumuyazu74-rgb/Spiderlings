@@ -390,5 +390,70 @@
     } finally {
         setup("crew-native-duties-complete");
     }
+    preyArena("test94-crew-binding");
+    const hunters = [
+        spawn("Spinner", 6, 9, "Enemy"),
+        spawn("WebCaster", 6, 11, "Enemy"),
+        spawn("WebCaster", 7, 13, "Enemy"),
+    ];
+    const rivals = [spawn("MaidforceMafia", 10, 10, "Maidforce"), spawn("MaidforceMafia", 10, 14, "Maidforce")];
+    for (const actor of hunters) {
+        actor.SpiderlingsHuntRole = "hunter";
+        actor.SpiderlingsHuntCrewID = "native-cooperative-crew";
+    }
+    for (const rival of rivals) {
+        rival.stun = 999;
+        rival.shield = 0;
+        rival.items = [];
+    }
+    const binding = [],
+        packTrace = [];
+    KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", "SpiderlingsNativePackBinding", (_event, data) => {
+        const source =
+            data.attacker ||
+            data.incomingDamage?.spiderlingsSource ||
+            KDMapData.Entities.find((actor) => actor.id === data.bullet?.bullet?.source);
+        if (
+            hunters.includes(source) &&
+            rivals.includes(data.enemy) &&
+            data.incomingDamage?.flags?.includes("SpiderlingsNPCSilk") &&
+            (data.enemy.specialBoundLevel?.Slime || 0) > (data.spiderlingsSlimeBefore || 0)
+        )
+            binding.push({
+                source: source.id,
+                target: data.enemy.id,
+                slime: data.enemy.specialBoundLevel.Slime,
+                tick: KinkyDungeonCurrentTick,
+            });
+    });
+    try {
+        for (let turn = 0; turn < 32; turn++) {
+            KinkyDungeonLastAction = "Wait";
+            KinkyDungeonAdvanceTime(1, true);
+            await frame();
+            packTrace.push({
+                turn,
+                contacts: structuredClone(KDMapData.SpiderlingsHuntingGrounds.crewContacts || {}),
+                hunters: hunters.map((actor) => ({ id: actor.id, x: actor.x, y: actor.y, target: actor.target })),
+            });
+            if (
+                rivals.some(
+                    (rival) =>
+                        new Set(binding.filter((hit) => hit.target === rival.id).map((hit) => hit.source)).size >= 2,
+                )
+            )
+                break;
+        }
+        expect(
+            rivals.some(
+                (rival) => new Set(binding.filter((hit) => hit.target === rival.id).map((hit) => hit.source)).size >= 2,
+            ),
+            `A hunting crew did not bind the same NPC through two actual attackers: ${JSON.stringify({ binding, packTrace })}`,
+        );
+        rows.push({ mode: "native-crew-binding", binding, trace: packTrace });
+    } finally {
+        delete KDEventMapGeneric.afterDamageEnemy.SpiderlingsNativePackBinding;
+        setup("crew-native-duties-complete");
+    }
     return { rows, images: {} };
 })();

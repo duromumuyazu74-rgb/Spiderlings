@@ -39,6 +39,29 @@
         return copy;
     }
 
+    // Native map generation retains references to data's placement lists outside
+    // TileMaze. Retrying must clear those same lists, not detach replacement arrays.
+    function restoreValue(target, saved) {
+        if (Array.isArray(target) && Array.isArray(saved)) {
+            target.splice(0, target.length, ...cloneValue(saved));
+            return target;
+        }
+        if (
+            target &&
+            saved &&
+            typeof target === "object" &&
+            typeof saved === "object" &&
+            !Array.isArray(saved) &&
+            !(saved instanceof Map) &&
+            !(saved instanceof Set)
+        ) {
+            for (const name of Object.keys(target)) if (!Object.hasOwn(saved, name)) delete target[name];
+            for (const [name, value] of Object.entries(saved)) target[name] = restoreValue(target[name], value);
+            return target;
+        }
+        return cloneValue(saved);
+    }
+
     function flood(start, passable, occupied = new Set()) {
         const reached = new Set();
         if (!start || !passable.has(pointKey(start)) || occupied.has(pointKey(start))) return reached;
@@ -118,13 +141,13 @@
                     candidates.push(center);
             }
         diagnostics.candidates = candidates.length;
-        const selectAnchors = (large) => {
+        const selectAnchors = (large = []) => {
             const selected = [];
             for (const target of preferred) {
                 const candidate = candidates
                     .filter(
                         (center) =>
-                            (!large || chebyshev(large, center) >= 9) &&
+                            large.every((site) => chebyshev(site, center) >= 9) &&
                             selected.every((placed) => chebyshev(placed, center) >= 9),
                     )
                     .sort((left, right) => chebyshev(left, target) - chebyshev(right, target))[0];
@@ -143,22 +166,28 @@
                         footprint(center, 4, natural),
                 )
                 .sort((left, right) => chebyshev(left, largeTarget) - chebyshev(right, largeTarget));
+        diagnostics.largeCandidates = largeCandidates.length;
         let anchors = [],
-            largeSite;
-        for (const center of largeCandidates.slice(0, 8)) {
-            const selected = selectAnchors(center);
-            if (selected.length < 3) continue;
-            largeSite = center;
-            anchors = selected;
-            break;
-        }
-        if (!largeSite) {
-            if (!options.fallback) {
-                diagnostics.failure = "large-field-site";
-                return null;
+            largeSites = [];
+        const secondTarget = { x: Math.round(width * 0.75), y: Math.round(height * 0.55) };
+        for (const center of largeCandidates) {
+            const partners = largeCandidates
+                .filter((point) => chebyshev(point, center) > 8)
+                .sort((left, right) => chebyshev(left, secondTarget) - chebyshev(right, secondTarget));
+            for (const partner of partners) {
+                const selected = selectAnchors([center, partner]);
+                if (selected.length < 3) continue;
+                largeSites = [center, partner];
+                anchors = selected;
+                break;
             }
-            anchors = selectAnchors();
+            if (largeSites.length === 2) break;
         }
+        if (largeSites.length < 2) {
+            diagnostics.failure = "large-field-site";
+            return null;
+        }
+        const largeSite = largeSites[0];
         diagnostics.anchors = anchors;
         if (anchors.length < 3) {
             diagnostics.failure = "anchors";
@@ -175,7 +204,8 @@
                 for (let x = Math.max(2, midpoint.x - radius); x <= Math.min(width - 3, midpoint.x + radius); x += 1)
                     if (
                         Math.max(Math.abs(x - midpoint.x), Math.abs(y - midpoint.y)) === radius &&
-                        footprint({ x, y }, 1, natural)
+                        footprint({ x, y }, 1, natural) &&
+                        largeSites.every((site) => chebyshev(site, { x, y }) > 4)
                     ) {
                         crossroad = { x, y };
                         break;
@@ -184,7 +214,13 @@
             diagnostics.failure = "crossroad";
             return null;
         }
-        const proposed = new Set();
+        const proposed = new Set(),
+            bypassCells = new Set(),
+            closedRings = new Set();
+        for (const site of largeSites)
+            for (let y = site.y - 4; y <= site.y + 4; y++)
+                for (let x = site.x - 4; x <= site.x + 4; x++)
+                    if (chebyshev(site, { x, y }) === 4) closedRings.add(`${x},${y}`);
         const add = (x, y) => {
             if (
                 x > 0 &&
@@ -201,7 +237,7 @@
             for (let y = center.y - radius; y <= center.y + radius; y += 1)
                 for (let x = center.x - radius; x <= center.x + radius; x += 1) add(x, y);
         };
-        const corridor = (from, to) => {
+        const corridor = (from, to, outsideFields = false) => {
             const target = pointKey(to);
             const pending = [from];
             const parent = new Map([[pointKey(from), null]]);
@@ -212,6 +248,7 @@
                     const name = pointKey(next);
                     if (parent.has(name) || next.x <= 0 || next.y <= 0 || next.x >= width - 1 || next.y >= height - 1)
                         continue;
+                    if (outsideFields && closedRings.has(name)) continue;
                     if (!proposed.has(name) && !natural(next.x, next.y)) continue;
                     parent.set(name, pointKey(current));
                     pending.push(next);
@@ -221,13 +258,14 @@
             for (let name = target; name; name = parent.get(name)) {
                 const [x, y] = name.split(",").map(Number);
                 add(x, y);
+                if (outsideFields) bypassCells.add(name);
             }
             return true;
         };
         for (const anchor of anchors) square(anchor, Math.min(width, height) >= 28 ? 4 : 3);
         square(crossroad, 2);
         const links = [];
-        for (const anchor of anchors) links.push(corridor(anchor, crossroad));
+        for (const anchor of anchors) links.push(corridor(anchor, crossroad, true));
         const siteTargets = [
             { x: Math.round(width * 0.25), y: Math.round(height * 0.55) },
             { x: Math.round(width * 0.5), y: Math.round(height * 0.35) },
@@ -249,8 +287,7 @@
                 )
                     siteCandidates.push(center);
             }
-        const huntingSites = [];
-        if (largeSite) huntingSites.push({ ...largeSite, radius: 4 });
+        const huntingSites = largeSites.map((site) => ({ ...site, radius: 4 }));
         for (const target of siteTargets) {
             const candidate = siteCandidates
                 .map((center) => ({
@@ -269,10 +306,19 @@
         }
         for (const site of huntingSites) {
             square(site, site.radius);
-            links.push(corridor(site, crossroad));
+            if (site.radius === 4) {
+                // A closed field cannot be the only route between the map's
+                // endpoints. Connect one gate from outside both large rings.
+                const connected = directions.some((direction) => {
+                    const exterior = { x: site.x + direction.x * 5, y: site.y + direction.y * 5 };
+                    if (!natural(exterior.x, exterior.y) || closedRings.has(pointKey(exterior))) return false;
+                    return corridor(exterior, crossroad, true);
+                });
+                links.push(connected);
+            } else links.push(corridor(site, crossroad, true));
         }
         for (const endpoint of [options.start, options.end, ...(options.shortcuts || [])])
-            if (endpoint) links.push(corridor(endpoint, crossroad));
+            if (endpoint) links.push(corridor(endpoint, crossroad, true));
         diagnostics.links = links;
         diagnostics.huntingSites = huntingSites;
         if (links.includes(false)) {
@@ -301,6 +347,13 @@
                             options.reserve(x, y);
                             reserved.push(`${x},${y}`);
                         }
+            }
+        if (options.reserve)
+            for (const name of bypassCells) {
+                const [x, y] = name.split(",").map(Number);
+                if (tile(x, y) !== "0" || meta(x, y)) continue;
+                options.reserve(x, y);
+                reserved.push(name);
             }
         return {
             anchors: usableAnchors,
@@ -439,7 +492,8 @@
                 const value = tile(x, y);
                 const data = meta(x, y);
                 if (options.movable.includes(value)) passable.add(name);
-                if ("023".includes(value) && !data?.OL && !data?.Lock && !data?.Type) floor.add(name);
+                if (options.movable.includes(value) && !"Dd".includes(value) && !data?.OL && !data?.Lock && !data?.Type)
+                    floor.add(name);
                 if (data?.OL || data?.Lock || data?.Type) protectedCells.add(name);
             }
         const initiallyReachable = flood(start, passable, stationary);
@@ -447,24 +501,31 @@
         const allProtected = new Set([...protectedCells, ...stationary]);
         const legal = (x, y) => floor.has(`${x},${y}`) && !allProtected.has(`${x},${y}`);
         const requestedLargeSite = options.largeHuntingSite,
+            requestedLargeSites = (options.huntingSites || []).filter((site) => site.radius === 4).slice(0, 2),
+            requiredLargeSites = requestedLargeSites.length === 2,
             fieldProtected = new Set([...allProtected, ...spawnPointCells]),
-            largeLegal =
-                !requestedLargeSite ||
+            legalLargeSite = (site) =>
                 footprint(
-                    requestedLargeSite,
+                    site,
                     4,
                     (x, y) =>
                         legal(x, y) &&
                         !fieldProtected.has(`${x},${y}`) &&
-                        (chebyshev(requestedLargeSite, { x, y }) < 2 || !constructionOccupied.has(`${x},${y}`)),
-                );
+                        (chebyshev(site, { x, y }) < 2 || !constructionOccupied.has(`${x},${y}`)),
+                ),
+            largeLegal = !requestedLargeSite || legalLargeSite(requestedLargeSite);
+        if (requiredLargeSites && !requestedLargeSites.every(legalLargeSite)) {
+            diagnostics.failure = "large-field-site";
+            return null;
+        }
         const largeSite = largeLegal ? requestedLargeSite : undefined,
+            largeSites = requiredLargeSites ? requestedLargeSites : largeSite ? [largeSite] : [],
             presetSkipReason = largeLegal ? undefined : "large-field-site";
         // The optional prefab must not invalidate a legal native objective.
         // If its spacing prevents a safe three-nest plan, retry that plan once
         // without the prefab while preserving every native actor and tile.
         const withoutLargeSite = () => {
-            if (!largeSite) return null;
+            if (!largeSite || requiredLargeSites) return null;
             const fallback = planEncounter({ ...options, largeHuntingSite: undefined, diagnostics: {} });
             return fallback && { ...fallback, presetSkipReason: "large-field-site" };
         };
@@ -476,7 +537,7 @@
                     !initiallyReachable.has(pointKey(point)) ||
                     occupied.has(pointKey(point)) ||
                     spawnPointCells.has(pointKey(point)) ||
-                    (largeSite && chebyshev(point, largeSite) < 9) ||
+                    largeSites.some((site) => chebyshev(point, site) < 9) ||
                     !footprint(point, 3, legal)
                 )
                     continue;
@@ -524,10 +585,22 @@
             for (let x = 2; x < width - 2; x += 1) {
                 const point = { x, y };
                 if (nests.some((nest) => chebyshev(nest, point) <= 5)) continue;
-                if (!reached.has(pointKey(point)) || !footprint(point, 2, legal)) continue;
-                siteCandidates.push({ ...point, radius: 2 });
+                if (!reached.has(pointKey(point))) continue;
+                const radius = [4, 3, 2].find(
+                    (size) =>
+                        nests.every((nest) => chebyshev(nest, point) > size + 3) &&
+                        footprint(
+                            point,
+                            size,
+                            (x, y) =>
+                                legal(x, y) &&
+                                !spawnPointCells.has(`${x},${y}`) &&
+                                (chebyshev(point, { x, y }) < 2 || !constructionOccupied.has(`${x},${y}`)),
+                        ),
+                );
+                if (radius) siteCandidates.push({ ...point, radius });
             }
-        const sites = largeSite ? [{ ...largeSite, radius: 4 }] : [];
+        const sites = largeSites.map((site) => ({ ...site, radius: 4 }));
         for (const target of options.huntingSites || []) {
             const candidate = siteCandidates
                 .filter((point) => sites.every((site) => chebyshev(site, point) > site.radius + point.radius))
@@ -607,7 +680,10 @@
             const originalSetPieces = shield(KinkyDungeonPlaceSetPieces);
             KinkyDungeonPlaceSetPieces = function (...args) {
                 const plan = earlyPlans.get(KDMapData);
-                const temporary = (plan?.anchors || []).map((point) => ({ ...point, radius: 4 }));
+                const temporary = [...(plan?.anchors || []), ...(plan?.huntingSites || [])].map((point) => ({
+                    ...point,
+                    radius: point.radius || 4,
+                }));
                 if (temporary.length) (KDMapData.SpecialAreas = KDMapData.SpecialAreas || []).push(...temporary);
                 try {
                     return originalSetPieces.apply(this, args);
@@ -642,15 +718,9 @@
                     reservations.delete(KDMapData);
                     for (const name of Object.keys(KDMapData)) delete KDMapData[name];
                     Object.assign(KDMapData, cloneValue(originalMap));
-                    for (let index = 0; index < args.length; index += 1) {
-                        if (!args[index] || typeof args[index] !== "object") continue;
-                        if (Array.isArray(args[index]))
-                            args[index].splice(0, args[index].length, ...cloneValue(originalArgs[index]));
-                        else {
-                            for (const name of Object.keys(args[index])) delete args[index][name];
-                            Object.assign(args[index], cloneValue(originalArgs[index]));
-                        }
-                    }
+                    for (let index = 0; index < args.length; index += 1)
+                        if (args[index] && typeof args[index] === "object")
+                            restoreValue(args[index], originalArgs[index]);
                 }
                 result = original.apply(this, args);
                 if (!eligible) break;

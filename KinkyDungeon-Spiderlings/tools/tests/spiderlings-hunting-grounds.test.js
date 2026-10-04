@@ -11,6 +11,43 @@ const { stripTypeScriptTypes } = require("node:module");
 const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGrounds.js"), "utf8");
 const oldSource = fs.readFileSync(path.join(__dirname, "../../SpiderlingsInfestation.js"), "utf8");
 
+test("hunting crews share a stable visible NPC target and investigate only its last observed position", () => {
+    const r = runtime({ KinkyDungeonCurrentTick: 10, KDHostile: (_a, b) => b?.Enemy?.faction === "Maidforce" });
+    const c = r.context,
+        h = c.Spiderlings.HuntingGrounds,
+        player = { player: true, x: 1, y: 1 },
+        first = {
+            id: 1,
+            x: 5,
+            y: 5,
+            hp: 10,
+            SpiderlingsHuntCrewID: "patrol:1",
+            SpiderlingsHuntRole: "hunter",
+            Enemy: { name: "WebCaster", tags: { spiderlings: true } },
+        },
+        second = { ...first, id: 2, x: 8 },
+        maidA = { id: 10, x: 6, y: 5, hp: 20, Enemy: { name: "MaidforceHead", faction: "Maidforce", bound: true } },
+        maidB = { ...maidA, id: 11, x: 9 };
+    c.KDMapData.Entities = [first, second, maidA, maidB];
+    c.KDMapData.SpiderlingsHuntingGrounds = { status: "active", targetIds: [] };
+    assert.equal(h.resolveNestDefenderTarget(first, maidA, 1), maidA);
+    assert.equal(
+        h.resolveNestDefenderTarget(second, maidB, 1),
+        maidA,
+        "A nearby second member must reinforce the crew target",
+    );
+    c.KinkyDungeonCurrentTick++;
+    c.KinkyDungeonCheckLOS = () => false;
+    maidA.x = 25;
+    assert.equal(h.resolveNestDefenderTarget(second, player, 1), player, "A report cannot acquire unseen live prey");
+    assert.equal(h.seekCrewDuty(second, player), true);
+    assert.deepEqual([second.gx, second.gy], [6, 5]);
+    assert.notEqual(second.gx, maidA.x);
+    c.KinkyDungeonCurrentTick += 4;
+    h.resolveNestDefenderTarget(second, player, 1);
+    assert.equal(h.seekCrewDuty(second, player), false, "Expired sighting must return to ordinary patrol");
+});
+
 function runtime(overrides = {}, nativeSources = [], withOld = false) {
     let id = 0;
     const messages = [];
@@ -42,12 +79,27 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
         KDCanDetect: () => true,
         KinkyDungeonTilesGet: () => undefined,
         KDRandom: () => 0.5,
-        KinkyDungeonGetEnemyByName: (name) => ({ name }),
+        KinkyDungeonGetEnemyByName: (name) =>
+            context.KinkyDungeonEnemies?.find((enemy) => enemy.name === name) || {
+                name,
+                faction: name.startsWith("Maidforce")
+                    ? "Maidforce"
+                    : ["Dressmaker", "Nurse"].includes(name)
+                      ? "Dressmaker"
+                      : undefined,
+                tags: name.startsWith("Maidforce") ? { human: true, elite: true, maid: true } : {},
+            },
         KinkyDungeonSetEnemyFlag(entity, name, value) {
             (entity.flags ||= {})[name] = value;
         },
         KinkyDungeonSummonEnemy(x, y, name) {
-            const entity = { x, y, id: ++id, hp: 12, Enemy: { name, immobile: name === "NestEntrance" } };
+            const entity = {
+                x,
+                y,
+                id: ++id,
+                hp: 12,
+                Enemy: { ...context.KinkyDungeonGetEnemyByName(name), immobile: name === "NestEntrance" },
+            };
             context.KDMapData.Entities.push(entity);
             return [entity];
         },
@@ -57,7 +109,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
             if (index >= 0) map.Entities.splice(index, 1);
             if (kill)
                 for (const entry of [...(enemy.ondeath || []), ...(enemy.Enemy.ondeath || [])])
-                    context.KDOndeath[entry.type](enemy, entry, map);
+                    context.KDOndeath[entry.type]?.(enemy, entry, map);
             return true;
         },
         KinkyDungeonPlaceEnemies(...args) {
@@ -126,7 +178,7 @@ test("both themes preserve population-plan publication, objective timing and sel
             );
             assert.ok(
                 births
-                    .filter((birth) => birth.name !== "NestEntrance")
+                    .filter((birth) => birth.name !== "NestEntrance" && birth.state !== "active")
                     .every((birth) => birth.state === (kind === "SpiderlingsInfestation" ? "active" : undefined)),
             );
             assert.equal(c.KDMapData[kind].status, fail ? "cancelled" : "active");
@@ -414,7 +466,11 @@ test("new Hunting population retains its authored large construction boundary un
         assert.equal(c.KinkyDungeonTilesGet(`${site.x + 2},${site.y}`).OL, true);
         assert.equal(c.KinkyDungeonTilesGet(`${site.x},${site.y}`), undefined);
         assert.equal(c.KinkyDungeonMapGet(site.x + 4, site.y), "0", "birth reservation never invents wall terrain");
-        assert.equal(c.KDMapData.Entities.length, 27, "the same three native nest crews remain intact");
+        assert.equal(
+            c.KDMapData.Entities.length,
+            45,
+            "three nest crews and four roaming crews precede native population",
+        );
     };
     c.Spiderlings.SpinnerAI = {
         initializeMapgenField(options) {
@@ -432,7 +488,7 @@ test("new Hunting population retains its authored large construction boundary un
     r.event("postMapgen");
     assert.deepEqual(phases, ["population", "field"]);
     assert.deepEqual(JSON.parse(JSON.stringify(c.KDMapData.SpiderlingsHuntingGrounds.layout.largeHuntingSite)), site);
-    assert.equal(c.KDMapData.Entities.length, 27);
+    assert.equal(c.KDMapData.Entities.length, 55);
     const state = JSON.stringify(c.KDMapData),
         player = JSON.stringify(c.KinkyDungeonPlayerEntity);
     r.event("postMapgen");
@@ -440,50 +496,35 @@ test("new Hunting population retains its authored large construction boundary un
     assert.equal(JSON.stringify(c.KinkyDungeonPlayerEntity), player);
 });
 
-test("a mobile NPC occupying only the optional preset keeps the native objective and guards", () => {
-    for (const failure of ["none", "nest", "guard"]) {
-        const r = runtime(),
-            c = r.context;
-        c.KDMapData.Tiles = {};
-        c.KinkyDungeonTilesGet = (name) => c.KDMapData.Tiles[name];
-        c.KinkyDungeonTilesSet = (name, value) => (c.KDMapData.Tiles[name] = value);
-        c.KinkyDungeonMapSet = () => {};
-        c.KinkyDungeonGenNavMap = () => {};
-        c.KinkyDungeonCreateMapGenType = { TileMaze() {} };
-        vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8"), c);
-        c.KinkyDungeonCreateMapGenType.TileMaze();
-        const site = c.Spiderlings.HuntingGroundsLayout.earlyPlan(c.KDMapData).largeHuntingSite,
-            maid = { id: 500, x: site.x + 3, y: site.y, hp: 10, Enemy: { name: "Maidforce" } },
-            original = JSON.stringify(maid);
-        c.KDMapData.Entities.push(maid);
-        if (failure === "nest") c.KinkyDungeonMapGet = (x, y) => (x === 1 && y === 1 ? "0" : "1");
-        if (failure === "guard") {
-            const nativeSummon = c.KinkyDungeonSummonEnemy;
-            c.KinkyDungeonSummonEnemy = (...args) => (args[2] === "MageSpiderlings" ? [] : nativeSummon(...args));
-        }
-        let fields = 0;
-        c.Spiderlings.SpinnerAI = { initializeMapgenField: () => fields++ };
-        r.generate();
-        const state = c.KDMapData.SpiderlingsHuntingGrounds;
-        assert.equal(state.status, failure === "none" ? "active" : "cancelled", failure);
-        if (failure === "none") {
-            assert.equal(c.KDMapData.MapMod, "SpiderlingsHuntingGrounds");
-            assert.equal(state.targetIds.length, 3);
-            assert.equal(state.fieldPreset.status, "pending");
-            assert.equal(state.fieldPreset.maxFields, 3);
-            assert.equal(c.KDMapData.Entities.length, 28);
-        } else {
-            assert.equal(state.reason, failure === "nest" ? "insufficient-space" : "garrison-failed");
-            assert.deepEqual(c.KDMapData.Entities, [maid]);
-        }
-        r.event("postMapgen");
-        assert.equal(fields, failure === "none" ? 1 : 0);
-        assert.equal(JSON.stringify(maid), original);
-        assert.equal(
-            Object.values(c.KDMapData.Tiles).some((tile) => tile.SpiderlingsLayoutReserve || tile.OL),
-            false,
-        );
-    }
+test("a mobile NPC blocking a required large prefab cancels new hunting births without moving native actors", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.Tiles = {};
+    c.KinkyDungeonTilesGet = (name) => c.KDMapData.Tiles[name];
+    c.KinkyDungeonTilesSet = (name, value) => (c.KDMapData.Tiles[name] = value);
+    c.KinkyDungeonMapSet = () => {};
+    c.KinkyDungeonGenNavMap = () => {};
+    c.KinkyDungeonCreateMapGenType = { TileMaze() {} };
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8"), c);
+    c.KinkyDungeonCreateMapGenType.TileMaze();
+    const site = c.Spiderlings.HuntingGroundsLayout.earlyPlan(c.KDMapData).largeHuntingSite,
+        maid = { id: 500, x: site.x + 3, y: site.y, hp: 10, Enemy: { name: "Maidforce" } },
+        original = JSON.stringify(maid);
+    c.KDMapData.Entities.push(maid);
+    let fields = 0;
+    c.Spiderlings.SpinnerAI = { initializeMapgenField: () => fields++ };
+    r.generate();
+    const state = c.KDMapData.SpiderlingsHuntingGrounds;
+    assert.equal(state.status, "cancelled");
+    assert.equal(state.reason, "insufficient-space");
+    assert.deepEqual(c.KDMapData.Entities, [maid]);
+    r.event("postMapgen");
+    assert.equal(fields, 0);
+    assert.equal(JSON.stringify(maid), original);
+    assert.equal(
+        Object.values(c.KDMapData.Tiles).some((tile) => tile.SpiderlingsLayoutReserve || tile.OL),
+        false,
+    );
 });
 
 test("native modifier adds three independent nests and eighteen attributable core members and a six-member patrol", () => {
@@ -496,10 +537,10 @@ test("native modifier adds three independent nests and eighteen attributable cor
     assert.equal(mod.filter({ y: 5, Faction: "Maidforce" }), 1);
     assert.equal(mod.filter({ y: 5, RoomType: "PerkRoom" }), 0);
     assert.equal(r.generate(), "native-result");
-    assert.equal(r.context.KDMapData.Entities.length, 27);
+    assert.equal(r.context.KDMapData.Entities.length, 55);
     const nests = r.context.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance");
     assert.equal(nests.length, 3);
-    assert.equal(new Set(r.context.KDMapData.Entities.map((e) => `${e.x},${e.y}`)).size, 27);
+    assert.equal(new Set(r.context.KDMapData.Entities.map((e) => `${e.x},${e.y}`)).size, 55);
     assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.garrisonVersion, 3);
     for (const nest of nests) {
         assert.ok(
@@ -519,7 +560,7 @@ test("native modifier adds three independent nests and eighteen attributable cor
     assert.equal(r.population[0][7], undefined, "keep the native population budget");
     r.generate();
     r.event("postMapgen");
-    assert.equal(r.context.KDMapData.Entities.length, 27);
+    assert.equal(r.context.KDMapData.Entities.length, 55);
     assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.filterRandom(), 0);
 });
 
@@ -536,10 +577,13 @@ test("task nest damage makes nearby spiders target the maid attacker for a short
         original = c.KinkyDungeonPlayerEntity;
     c.KDMapData.Entities.push(maid);
     delete guard.SpiderlingsHuntRole;
+    c.KinkyDungeonCheckLOS = () => false;
     assert.equal(c.Spiderlings.HuntingGrounds.resolveNestDefenderTarget(guard, original), original);
+    c.KinkyDungeonCheckLOS = () => true;
     r.event("afterDamageEnemy", { enemy: nest, attacker: maid, dmgDealt: 1, aggro: true });
     assert.equal(c.Spiderlings.HuntingGrounds.resolveNestDefenderTarget(guard, original), maid);
     c.KinkyDungeonCurrentTick = 15;
+    c.KinkyDungeonCheckLOS = () => false;
     assert.equal(c.Spiderlings.HuntingGrounds.resolveNestDefenderTarget(guard, original), original);
 });
 
@@ -941,7 +985,7 @@ test("maid floors have no infestation objective; infestation floors place three 
     r.context.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
     r.context.KDMapData.MapFaction = "Bandit";
     r.generate();
-    assert.equal(r.context.KDMapData.Entities.length, 27);
+    assert.equal(r.context.KDMapData.Entities.length, 55);
     assert.equal(r.context.Spiderlings.HuntingGrounds.activeState().targetIds.length, 3);
 });
 
@@ -1090,7 +1134,7 @@ test("infestation selection preserves native restrictions, fallback, spider cap 
     );
     assert.equal(JSON.stringify({ tags, bonus, filter }), before);
     c.KDModSettings.Spiderlings.spiderlingsMapPopulationCap = "1";
-    c.KDMapData.Entities.push({ hp: 1, Enemy: { name: "Spinner" } });
+    for (let index = 0; index < 21; index++) c.KDMapData.Entities.push({ hp: 1, Enemy: { name: "Spinner" } });
     assert.equal(select(["Spinner"]), undefined);
     assert.equal(select(["maid"], undefined, filter).faction, "Maidforce");
     c.KDMapData.SpiderlingsHuntingGrounds.complete = true;
@@ -1168,11 +1212,8 @@ test("faction population and the three-nest objective vary independently across 
                 mod === "SpiderlingsHuntingGrounds" ? 3 : 0,
                 `${faction}/${mod} objective`,
             );
-            assert.equal(
-                picked?.name,
-                faction === "Maidforce" && mod !== "SpiderlingsHuntingGrounds" ? undefined : "Unrelated",
-                `${faction}/${mod} initial pool`,
-            );
+            if (mod === "SpiderlingsHuntingGrounds") assert.ok(picked?.tags.SpiderlingsFloorMobile);
+            else assert.equal(picked?.name, faction === "Maidforce" ? undefined : "Unrelated");
             assert.equal(
                 filters.includes("minor"),
                 faction !== "Maidforce" && mod !== "SpiderlingsHuntingGrounds",
@@ -1180,12 +1221,13 @@ test("faction population and the three-nest objective vary independently across 
             );
             assert.equal(
                 c.KinkyDungeonHandleWanderingSpawns(...pickArgs)?.name,
-                faction === "Maidforce" && mod !== "SpiderlingsHuntingGrounds" ? undefined : "Unrelated",
+                faction === "Maidforce" || mod === "SpiderlingsHuntingGrounds" ? undefined : "Unrelated",
                 `${faction}/${mod} wandering pool`,
             );
             if (state) {
                 assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), false);
-                for (const enemy of [...c.KDMapData.Entities]) c.KDRemoveEntity(enemy, true);
+                for (const enemy of c.KDMapData.Entities.filter((entity) => state.targetIds.includes(entity.id)))
+                    c.KDRemoveEntity(enemy, true);
                 assert.equal(state.destroyedIds.length, 3);
                 assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), true);
             }
@@ -1367,7 +1409,7 @@ test("map JSON preserves partial and completed progress, registration is idempot
     const snapshot = JSON.stringify(c.KDMapData);
     c.KDMapData = JSON.parse(snapshot);
     r.generate();
-    assert.equal(c.KDMapData.Entities.length, 26);
+    assert.equal(c.KDMapData.Entities.length, 54);
     assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.minimaptext(), /1\/3/);
     for (const entity of [...c.KDMapData.Entities]) c.KDRemoveEntity(entity, true);
     c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
@@ -1635,10 +1677,12 @@ function escapeRuntime() {
     const c = r.context,
         nest = c.KDMapData.Entities[0],
         born = [];
+    // Leave one living-spider slot to exercise the death-summon ordering.
+    c.KDMapData.Entities.find((entity) => entity.Enemy.name === "Spinner").hp = 0;
     nest.SpiderlingsNestTunnelerCount = 3;
     const native = c.KinkyDungeonSummonEnemy;
     c.KinkyDungeonSummonEnemy = function (...args) {
-        if (c.KDMapData.Entities.filter((e) => e.Enemy.name !== "NestEntrance" && e.hp > 0).length >= 25) return [];
+        if (c.Spiderlings.availableSpiderlingSlots() <= 0) return [];
         born.push(args[2]);
         return native.apply(this, args);
     };
@@ -1939,13 +1983,13 @@ test("birth quota selects native mobile definitions before spawning and preserve
     };
     c.KinkyDungeonPlaceEnemies([{ x: 25, y: 25, forceIndex: 0 }], false, [], {}, 5, 30, 30, {}, []);
     const counts = c.Spiderlings.HuntingGrounds.populationCounts();
-    assert.equal(counts.total, 29);
-    assert.equal(counts.spiders, 25);
+    assert.equal(counts.total, 53);
+    assert.equal(counts.spiders, 45);
     assert.equal(c.KDMapData.Entities.find((actor) => actor.x === 25 && actor.y === 25).Enemy.name, "QuestNPC");
     assert.equal(enemies[1].clusterWith, undefined);
 });
 
-test("ecology budget excludes scenery, owned field cells, shops and subordinate definitions", () => {
+test("ecology budget includes mobile shop guards but excludes scenery, owned field cells and subordinate definitions", () => {
     const r = runtime({
         Spiderlings: {
             EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules,
@@ -1968,8 +2012,8 @@ test("ecology budget excludes scenery, owned field cells, shops and subordinate 
     ];
     assert.deepEqual(JSON.parse(JSON.stringify(c.Spiderlings.HuntingGrounds.populationCounts())), {
         spiders: 1,
-        rivals: 1,
-        total: 2,
+        rivals: 2,
+        total: 3,
     });
 });
 
@@ -1997,17 +2041,54 @@ test("six-member roster assigns two guards from the same core and refills only m
     assert.equal(c.Spiderlings.Population.missingRoles(nest).length, 0);
 });
 
-test("a low saved map cap cancels a new floor before spawning or splitting its mandatory crews", () => {
+test("a low ordinary map cap still admits complete hunting crews through its twenty extra slots", () => {
     const r = runtime({
         Spiderlings: {
             EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules,
-            getSetting: () => 17,
+            getSetting: () => 0,
         },
     });
     r.generate();
-    assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.reason, "population-budget");
-    assert.equal(r.context.KDMapData.Entities.length, 0);
-    assert.equal(r.context.KDMapData.SpiderlingsPopulationPlan, undefined);
+    const c = r.context;
+    assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.status, "active");
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 20);
+    assert.equal(c.Spiderlings.HuntingGrounds.populationCounts().spiders, 20);
+    assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.coreIds.length, 18);
+});
+
+test("nest defense investigation takes priority over another crew member's prey sighting", () => {
+    const r = runtime({ KinkyDungeonCurrentTick: 10, KDHostile: (_a, b) => b?.Enemy?.faction === "Maidforce" });
+    const c = r.context,
+        h = c.Spiderlings.HuntingGrounds,
+        player = { player: true, x: 1, y: 1 },
+        nest = { id: 1, x: 4, y: 5, hp: 20, Enemy: { name: "NestEntrance", maxhp: 20 } },
+        hunter = {
+            id: 2,
+            x: 8,
+            y: 5,
+            hp: 10,
+            SpiderlingsNestParentID: 1,
+            SpiderlingsHuntRole: "hunter",
+            Enemy: { name: "WebCaster", tags: { spiderlings: true } },
+        },
+        scout = { ...hunter, id: 3, x: 12 },
+        attacker = { id: 10, x: 3, y: 5, hp: 20, Enemy: { name: "MaidforceHead", faction: "Maidforce", bound: true } },
+        prey = { ...attacker, id: 11, x: 14 };
+    c.KDMapData.Entities = [nest, hunter, scout, attacker, prey];
+    c.KDMapData.SpiderlingsHuntingGrounds = { status: "active", targetIds: [1], destroyedIds: [] };
+    c.KinkyDungeonCheckLOS = (actor, target) => actor === scout && target === prey;
+    r.event("afterDamageEnemy", { enemy: nest, attacker, dmgDealt: 1 });
+    assert.equal(h.resolveNestDefenderTarget(hunter, player, 1), player);
+    assert.equal(h.seekCrewDuty(hunter, player), true);
+    assert.deepEqual([hunter.gx, hunter.gy], [nest.x, nest.y]);
+    c.KinkyDungeonCurrentTick += 5;
+    h.resolveNestDefenderTarget(hunter, player, 1);
+    assert.equal(h.seekCrewDuty(hunter, player), true);
+    assert.deepEqual(
+        [hunter.gx, hunter.gy],
+        [prey.x, prey.y],
+        "The crew resumes hunting after the defense alert expires",
+    );
 });
 
 test("guards clear old prey routes and hunters investigate only an alerted nest after losing native perception", () => {
@@ -2164,43 +2245,25 @@ test("native slow movement retains exactly one turn of credit while a crew flank
     }
 });
 
-test("initial ecology reserves one dispersed neutral maid without turning it hostile or respawning it later", () => {
-    const enemies = [
-        { name: "Spinner", faction: "Spider", tags: { spiderlings: true } },
-        { name: "MaidforceMini", faction: "Maidforce", tags: { human: true, maid: true } },
-        { name: "Bandit", faction: "Bandit", tags: {} },
-    ];
-    const r = runtime({
-        KinkyDungeonEnemies: enemies,
-        KDHostile: (entity) => entity.Enemy.faction !== "Maidforce",
-        KinkyDungeonGetEnemy: (...args) =>
-            args[4]?.includes("SpiderlingsHuntingGroundsMaid")
-                ? enemies[1]
-                : args[4]?.includes("SpiderlingsFloorMobile")
-                  ? enemies[0]
-                  : enemies[2],
-        KinkyDungeonHandleWanderingSpawns: function () {
-            return this.KinkyDungeonGetEnemy([], 5, "grv", "0");
-        },
-    });
-    const c = r.context;
-    c.populationAction = () => {
-        for (let attempt = 0; attempt < 30; attempt++) {
-            const chosen = c.KinkyDungeonGetEnemy([], 5, "grv", "0");
-            if (!chosen) continue;
-            const actor = c.KinkyDungeonSummonEnemy(20, 20, chosen.name)[0];
-            actor.Enemy = chosen;
-        }
-    };
+test("initial hunting ecology fills its cap with separated elite maids and fewer dressmakers and nurses", () => {
+    const r = runtime({ KDHostile: (entity) => entity.Enemy.faction !== "Maidforce" });
     r.generate();
-    const maids = c.KDMapData.Entities.filter((e) => e.Enemy.faction === "Maidforce");
-    assert.equal(maids.length, 1);
-    assert.equal(c.KDHostile(maids[0]), false);
-    assert.equal(c.KDMapData.SpiderlingsPopulationPlan.extraMaid, true);
-    assert.equal(c.KDMapData.SpiderlingsPopulationPlan.ecologyBudget, 30);
-    assert.equal(c.Spiderlings.HuntingGrounds.populationCounts().total, 30);
-    maids[0].hp = 0;
-    assert.notEqual(c.KinkyDungeonHandleWanderingSpawns()?.faction, "Maidforce");
+    const c = r.context,
+        entities = c.KDMapData.Entities;
+    const maids = entities.filter((entity) => entity.Enemy.faction === "Maidforce");
+    const dressmakers = entities.filter((entity) => entity.Enemy.name === "Dressmaker");
+    const nurses = entities.filter((entity) => entity.Enemy.name === "Nurse");
+    assert.equal(c.Spiderlings.HuntingGrounds.populationCounts().spiders, 45);
+    assert.equal(maids.length, 5);
+    assert.ok(maids.every((entity) => entity.Enemy.tags.elite && !c.KDHostile(entity)));
+    assert.equal(dressmakers.length, 1);
+    assert.equal(nurses.length, 1);
+    const prey = [...maids, ...dressmakers, ...nurses];
+    for (const a of prey)
+        for (const b of prey) if (a !== b) assert.ok(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) >= 6);
+    const before = entities.length;
+    r.generate();
+    assert.equal(entities.length, before, "same-map reentry never repeats initial residents");
 });
 
 test("native kite, runAway and valid ranged firing duties take priority over a flank", () => {
@@ -2248,6 +2311,7 @@ test("native generic rank boxes cannot exceed the prey budget with a boss's depe
     for (let id = 1; id <= 24; id++) c.KDMapData.Entities.push({ id, hp: 1, Enemy: { name: "Spinner" } });
     c.KDMapData.Entities.push({ id: 25, hp: 1, Enemy: { name: "Maidforce", faction: "Maidforce" } });
     c.Spiderlings.Population.prepareFloor("SpiderlingsHuntingGrounds");
+    c.KDMapData.SpiderlingsPopulationPlan.residentsSeeded = true;
     for (let roll = 0; roll < 50; roll++) {
         const selected = r.select([], 10, "grv", "0", ["boss"]);
         assert.ok(selected);
@@ -2292,4 +2356,88 @@ test("generic template births respect field reservation while explicit authored 
         true,
     );
     assert.equal(points.length, 3, "caller-owned authored inputs are unchanged");
+});
+
+test("legacy hunting saves gain the larger cap without repeating the new initial ecology", () => {
+    const r = runtime(),
+        c = r.context;
+    const resident = { id: 800, x: 15, y: 15, hp: 4, Enemy: { name: "Spinner" } };
+    c.KDMapData.Entities.push(resident);
+    c.KDMapData.SpiderlingsHuntingGrounds = { status: "active", targetIds: [], garrisonVersion: 3 };
+    c.KDMapData.SpiderlingsPopulationPlan = { kind: "SpiderlingsHuntingGrounds", cap: 25, version: 1 };
+    r.generate();
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 45);
+    assert.deepEqual(c.KDMapData.Entities, [resident]);
+    assert.equal(resident.x, 15);
+    assert.equal(resident.hp, 4);
+});
+
+test("generic boss rank templates use hunting ecology while key-carrying maid guards keep their duties as elites", () => {
+    const r = runtime(),
+        c = r.context;
+    const points = [
+        { x: 25, y: 25, required: ["boss"], AI: "guard" },
+        { x: 22, y: 25, required: ["jail", "maid"], faction: "Maidforce", keys: true, noPlay: true, force: true },
+    ];
+    const before = JSON.stringify(points);
+    c.populationAction = (actual) => {
+        assert.equal(actual[0].ftags?.includes("SpiderlingsHuntingGroundsPreset") || false, false);
+        assert.ok(actual[1].ftags.includes("SpiderlingsHuntingGroundsPreset"));
+        assert.ok(actual[1].required.includes("SpiderlingsHuntingGroundsEliteMaid"));
+        assert.equal(actual[1].keys, true);
+        assert.equal(actual[1].noPlay, true);
+        assert.equal(actual[1].faction, "Maidforce");
+    };
+    c.KinkyDungeonPlaceEnemies(points, false, [], {}, 5, 30, 30, {}, []);
+    assert.equal(JSON.stringify(points), before);
+});
+
+test("initial prey fills shortages after counting existing mobile maid guards and shops", () => {
+    const r = runtime(),
+        c = r.context;
+    const existing = [];
+    c.populationAction = () => {
+        for (const [x, y] of [
+            [18, 5],
+            [24, 12],
+            [18, 20],
+        ]) {
+            const actor = c.KinkyDungeonSummonEnemy(x, y, "MaidforceMini")[0];
+            actor.keys = true;
+            existing.push(actor);
+        }
+        existing[0].flags = { Shop: -1 };
+        existing.push(c.KinkyDungeonSummonEnemy(24, 25, "Dressmaker")[0]);
+    };
+    r.generate();
+    const maids = c.KDMapData.Entities.filter((actor) => actor.Enemy.faction === "Maidforce");
+    const authored = c.KDMapData.Entities.filter((actor) => actor.SpiderlingsHuntingPrey);
+    assert.equal(maids.length, 5);
+    assert.equal(authored.filter((actor) => actor.Enemy.faction === "Maidforce").length, 2);
+    assert.equal(authored.filter((actor) => actor.Enemy.name === "Dressmaker").length, 0);
+    assert.equal(authored.filter((actor) => actor.Enemy.name === "Nurse").length, 1);
+    for (const a of authored)
+        for (const b of existing) assert.ok(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) >= 6);
+});
+
+test("wandering prey quota includes existing mobile shop maids without admitting them as hunting targets", () => {
+    let queries = 0;
+    const r = runtime({
+        KinkyDungeonEnemies: [{ name: "Spinner", faction: "Spider", tags: { spiderlings: true } }],
+        KinkyDungeonGetEnemy: () => {
+            queries++;
+            return undefined;
+        },
+        KinkyDungeonHandleWanderingSpawns: function () {
+            return this.KinkyDungeonGetEnemy([], 5, "grv", "0");
+        },
+    });
+    const c = r.context;
+    r.generate();
+    const maids = c.KDMapData.Entities.filter((actor) => actor.Enemy.faction === "Maidforce");
+    maids[0].flags = { Shop: -1 };
+    assert.equal(c.Spiderlings.HuntingGrounds.independentCombatant(maids[0]), false);
+    queries = 0;
+    assert.equal(c.KinkyDungeonHandleWanderingSpawns(), undefined);
+    assert.equal(queries, 0, "full ecology must not request another maid because a resident owns a shop");
 });

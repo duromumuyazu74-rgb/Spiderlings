@@ -218,7 +218,34 @@
                 ).map(key),
             ),
         };
-        const heuristic = (x, y) => Math.max(Math.abs(end.x - x), Math.abs(end.y - y)) * WEB_COST,
+        // A search is synchronous: read each cell's native restrictions and cost
+        // once, rather than once per incoming edge and diagonal corner check.
+        // Keep these results inside this call so later movement, doors and light
+        // changes still use the existing route invalidation and tick lifetime.
+        const passages = new Map(),
+            costs = new Map(),
+            canPass = (x, y, goal = false) => {
+                const cellKey = `${x},${y}:${+goal}`;
+                if (!passages.has(cellKey)) passages.set(cellKey, passable(actor, x, y, input, goal));
+                return passages.get(cellKey);
+            },
+            stepCost = (x, y) => {
+                const cellKey = `${x},${y}`;
+                if (!costs.has(cellKey))
+                    costs.set(
+                        cellKey,
+                        (web({ x, y }, input.webKeys) ? WEB_COST : 1) +
+                            trafficCost(
+                                x,
+                                y,
+                                KinkyDungeonMapGet(x, y),
+                                input.ignoreTrafficLaws,
+                                input.ignoreAllWeighting,
+                            ),
+                    );
+                return costs.get(cellKey);
+            },
+            heuristic = (x, y) => Math.max(Math.abs(end.x - x), Math.abs(end.y - y)) * WEB_COST,
             heap = [],
             best = new Map([[key(start), 0]]),
             parent = new Map(),
@@ -247,23 +274,10 @@
                     const x = current.x + dx,
                         y = current.y + dy,
                         goal = x === end.x && y === end.y;
-                    if (!passable(actor, x, y, input, goal)) continue;
-                    if (
-                        dx &&
-                        dy &&
-                        (!passable(actor, current.x + dx, current.y, input) ||
-                            !passable(actor, current.x, current.y + dy, input))
-                    )
+                    if (!canPass(x, y, goal)) continue;
+                    if (dx && dy && (!canPass(current.x + dx, current.y) || !canPass(current.x, current.y + dy)))
                         continue;
-                    const step =
-                            (web({ x, y }, input.webKeys) ? WEB_COST : 1) +
-                            trafficCost(
-                                x,
-                                y,
-                                KinkyDungeonMapGet(x, y),
-                                input.ignoreTrafficLaws,
-                                input.ignoreAllWeighting,
-                            ),
+                    const step = stepCost(x, y),
                         nextCost = current.g + step,
                         nextKey = `${x},${y}`;
                     if (nextCost >= (best.get(nextKey) ?? Infinity)) continue;

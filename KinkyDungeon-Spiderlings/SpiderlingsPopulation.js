@@ -27,6 +27,7 @@
         const numeric = Number(value);
         const settingCap = /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
         const map = typeof KDMapData !== "undefined" ? KDMapData : undefined;
+        if (map?.MapMod === HUNTING) return settingCap + 20;
         const plan = map?.SpiderlingsPopulationPlan;
         if (plan?.kind !== map?.MapMod || !Number.isSafeInteger(plan?.cap) || plan.cap <= 0) return settingCap;
         return settingCap === 0 ? plan.cap : Math.min(settingCap, plan.cap);
@@ -50,7 +51,7 @@
     function prepareFloor(kind) {
         if (kind !== HUNTING && kind !== INFESTATION) throw new Error("Unknown Spiderlings population theme");
         if (!KDMapData.SpiderlingsPopulationPlan) {
-            const cap = Math.min(effectiveCap() || 32, kind === HUNTING ? 32 : 25);
+            const cap = kind === HUNTING ? effectiveCap() : Math.min(effectiveCap() || 25, 25);
             const targetRatio = kind === HUNTING ? 0.85 : 0.58;
             KDMapData.SpiderlingsPopulationPlan = {
                 kind,
@@ -62,9 +63,13 @@
                         : Math.min(30, Math.floor(cap / targetRatio)),
                 version: 1,
             };
-            if (kind === HUNTING)
-                KDMapData.SpiderlingsPopulationPlan.ecologyBudget =
-                    KDMapData.SpiderlingsPopulationPlan.mobileBudget + 1;
+        }
+        if (kind === HUNTING) {
+            const plan = KDMapData.SpiderlingsPopulationPlan;
+            plan.cap = effectiveCap();
+            plan.preyQuota = { Maid: Math.max(2, Math.round(plan.cap / 9)), Dressmaker: 1, Nurse: 1 };
+            plan.mobileBudget = plan.cap + Object.values(plan.preyQuota).reduce((sum, count) => sum + count, 0);
+            plan.ecologyBudget = plan.mobileBudget;
         }
         return {
             cap: KDMapData.SpiderlingsPopulationPlan.cap,
@@ -200,11 +205,11 @@
         });
     }
 
-    function spawnGroup(positions, nest, owned) {
+    function spawnGroup(positions, nest, owned, names = CORE) {
         const created = [];
         let pending;
         try {
-            for (const [index, name] of CORE.entries()) {
+            for (const [index, name] of names.entries()) {
                 const point = positions[index];
                 pending = { name, point, before: new Set(KDMapData.Entities) };
                 const batch = KinkyDungeonSummonEnemy(
@@ -244,6 +249,8 @@
                     child.SpiderlingsPatrolCrew = true;
                 }
             }
+            if (!nest && created.length)
+                for (const child of created) child.SpiderlingsHuntCrewID = "patrol:" + created[0].id;
             return created;
         } catch (error) {
             // Only the pending exact-cell birth is attributable when native throws before returning.
@@ -330,6 +337,14 @@
         if (!positions) positions = planCrews({ nests, spawnPoints, passable });
         if (!positions || positions.length !== nests.length || positions.some((group) => group.length !== CORE.length))
             return { ok: false, reason: "placement" };
+        const fieldSites = kind === HUNTING ? sites.filter((site) => site.radius >= 4).slice(0, 2) : [];
+        positions = positions.map((group, index) =>
+            group.map((point, member) =>
+                fieldSites[index] && member < 2
+                    ? { x: fieldSites[index].x + (member === 0 ? -1 : 1), y: fieldSites[index].y }
+                    : point,
+            ),
+        );
         const occupied = new Set(KDMapData.Entities.map(key));
         const blocked = new Set([
             ...nests.map(key),
@@ -362,7 +377,8 @@
                     occupied.has(key(point)) ||
                     !reached.has(key(point)) ||
                     !movable.includes(KinkyDungeonMapGet(point.x, point.y)) ||
-                    Math.hypot(point.x - nests[index].x, point.y - nests[index].y) > 2.5 ||
+                    ((!fieldSites[index] || distance(point, fieldSites[index]) > 1) &&
+                        Math.hypot(point.x - nests[index].x, point.y - nests[index].y) > 2.5) ||
                     meta?.OL ||
                     meta?.Lock ||
                     meta?.Type ||
@@ -402,19 +418,34 @@
                     cleanup();
                     return { ok: false, reason: "creation" };
                 }
+                if (fieldSites[index])
+                    for (const child of members.slice(0, 2)) {
+                        child.SpiderlingsPresetFieldCenter = { x: fieldSites[index].x, y: fieldSites[index].y };
+                    }
                 core.push(...members);
             }
-            let patrol = [];
+            const patrol = [],
+                field = core.filter((child) => child.SpiderlingsPresetFieldCenter);
             if (kind === HUNTING) {
-                const patrolPositions = planPatrol(passable, new Set(KDMapData.Entities.map(key)), spawnPoints, sites);
-                if (patrolPositions?.length === CORE.length)
-                    patrol = spawnGroup(patrolPositions, undefined, owned) || [];
+                while (availableSlots() >= CORE.length) {
+                    const patrolPositions = planPatrol(
+                        passable,
+                        new Set(KDMapData.Entities.map(key)),
+                        spawnPoints,
+                        sites,
+                    );
+                    if (patrolPositions?.length !== CORE.length) break;
+                    const members = spawnGroup(patrolPositions, undefined, owned);
+                    if (!members) break;
+                    patrol.push(...members);
+                }
             }
             return {
                 ok: true,
                 coreNestIds: nests.map((nest) => nest.id),
                 coreIds: core.map((child) => child.id),
                 patrolIds: patrol.map((child) => child.id),
+                fieldIds: field.map((child) => child.id),
             };
         } catch (error) {
             try {
@@ -426,9 +457,83 @@
         }
     }
 
+    function seedHuntingResidents({ spawnPoints = [], prey = [], existingPrey = [] } = {}) {
+        const map = KDMapData,
+            passable = terrain(HUNTING);
+        const reached = reachableCells(map.StartPosition, passable);
+        const occupied = new Set(map.Entities.map(key));
+        const protectedPoints = [
+            map.StartPosition,
+            map.EndPosition,
+            KinkyDungeonPlayerEntity,
+            ...Object.values(map.ShortcutPositions || {}),
+            ...(map.JailPoints || []),
+            ...spawnPoints,
+        ].filter(Boolean);
+        const candidates = [...reached]
+            .map((name) => {
+                const [x, y] = name.split(",").map(Number);
+                return { x, y };
+            })
+            .filter((point) => {
+                const meta = KinkyDungeonTilesGet(key(point));
+                return (
+                    !occupied.has(key(point)) &&
+                    KinkyDungeonMapGet(point.x, point.y) === "0" &&
+                    !meta?.OL &&
+                    !meta?.Lock &&
+                    !meta?.Type &&
+                    distance(point, map.StartPosition) >= 8 &&
+                    protectedPoints.every((anchor) => distance(anchor, point) >= 2) &&
+                    !api.HuntingGroundsLayout?.isPopulationReserved?.(map, point)
+                );
+            });
+        const owned = new Set(),
+            preyIds = [],
+            spiderIds = [];
+        const preyPoints = existingPrey.map((entity) => ({ x: entity.x, y: entity.y }));
+        const takePoint = (separation = 0) => {
+            const index = candidates.findIndex(
+                (point) =>
+                    !occupied.has(key(point)) && preyPoints.every((other) => distance(point, other) >= separation),
+            );
+            if (index < 0) return null;
+            const point = candidates.splice(index, 1)[0];
+            occupied.add(key(point));
+            return point;
+        };
+        // Authored prey positions are spread across the accessible map before filling spiders.
+        for (const name of prey) {
+            if (map.Entities.length >= 300 || !KinkyDungeonGetEnemyByName(name)) break;
+            const point = takePoint(6);
+            if (!point) break;
+            const members = spawnGroup([point], undefined, owned, [name]);
+            if (!members) continue;
+            const child = members[0];
+            child.Enemy = { ...child.Enemy, clusterWith: undefined, cohesion: 0.01, cohesionRange: 1 };
+            delete child.SpiderlingsHuntRole;
+            delete child.SpiderlingsPatrolCrew;
+            delete child.SpiderlingsHuntCrewID;
+            child.SpiderlingsHuntingPrey = true;
+            preyPoints.push(point);
+            preyIds.push(child.id);
+        }
+        let index = 0;
+        while (availableSlots() > 0 && map.Entities.length < 300) {
+            const point = takePoint(2);
+            if (!point) break;
+            const members = spawnGroup([point], undefined, owned, [CORE[index++ % CORE.length]]);
+            if (!members) break;
+            // A singleton has no separate patrol crew; it can join nearby hunters.
+            delete members[0].SpiderlingsHuntCrewID;
+            spiderIds.push(members[0].id);
+        }
+        return { preyIds, spiderIds };
+    }
+
     // Existing consumers retain their entry names; only this module owns cap interpretation.
     api.getMapPopulationCap = effectiveCap;
     api.availableSpiderlingSlots = availableSlots;
-    Object.assign(population, { prepareFloor, planCrews, seedCrews, missingRoles });
+    Object.assign(population, { prepareFloor, planCrews, seedCrews, seedHuntingResidents, missingRoles });
     if (typeof module !== "undefined" && module.exports) module.exports = population;
 })();

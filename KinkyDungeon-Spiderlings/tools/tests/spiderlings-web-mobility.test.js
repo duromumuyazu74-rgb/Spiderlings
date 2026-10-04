@@ -225,3 +225,28 @@ test("actor movement refreshes occupancy without rebuilding unchanged silk geome
     route(context, spider, spider, { x: 7, y: 3 });
     assert.equal(reads, 3);
 });
+
+test("a crowded weighted search reads native cell restrictions once per role and refreshes them next turn", () => {
+    const { context, web } = fixture(),
+        spider = actor(1, { spiderlings: true }, 1, 3),
+        end = { x: 32, y: 3 },
+        reads = new Map();
+    context.KinkyDungeonCurrentTick = 1;
+    let closed = false;
+    context.KinkyDungeonTilesGet = (cell) => {
+        reads.set(cell, (reads.get(cell) || 0) + 1);
+        return closed && cell === "16,3" ? { Lock: "Red" } : undefined;
+    };
+    for (let x = 1; x <= end.x; x++) web.add(`${x},3`);
+    for (let x = 5; x < 28; x += 3) context.KDMapData.Entities.push(actor(x, {}, x, 2));
+    const initial = route(context, spider, spider, end);
+    assert.ok(initial.some((cell) => cell.x === 16 && cell.y === 3));
+    assert.ok(Math.max(...reads.values()) <= 3, "native restrictions/cost must not be reread for every graph edge");
+    closed = true;
+    context.KinkyDungeonCurrentTick++;
+    const locked = route(context, spider, spider, end);
+    assert.ok(!locked.some((cell) => cell.x === 16 && cell.y === 3));
+    closed = false;
+    context.Spiderlings.WebMobility.invalidateNavigation();
+    assert.ok(route(context, spider, spider, end).some((cell) => cell.x === 16 && cell.y === 3));
+});
