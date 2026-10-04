@@ -36,7 +36,8 @@
     "spiderlings-delivery-evidence.test.js",
     "spiderlings-weapons.test.js",
     "spiderlings-weapon-webbing.test.js",
-    "spiderlings-debug-stairs.test.js"
+    "spiderlings-debug-stairs.test.js",
+    "spiderlings-floor-upgrade.test.js"
   ],
   "local": [
     "spiderlings-encounters.test.js",

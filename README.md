@@ -2,6 +2,8 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
+Test.90 upgrades saved floor weights of 50/1000 to the intended 200/1500 once. Zero and other custom values remain. Legacy saves receive one additional weighted draw for untouched future ordinary floors; entered maps and existing Spiderlings objectives remain, and reload does not draw again. Hunting Grounds still requires a native Maidforce primary faction. Install the new ZIP and load the existing save; no new game is needed.
+
 Test.85 gives Infestation two mixed spider crews and Hunting Grounds three nest crews plus a patrol, with population quotas and several owned fields. Hunters use native perception, paid movement and nest support; NPC retaliation remains native. The Tome can deepen the same circle to three tiers, and both weapons restore limited resources on effective hits and a prey's first complete silk cocoon. Partial binding shows a brief web hit; complete silk cocoons use the existing artist's artwork. New defaults are Infestation/Hunting weights 200/1500 and nest weights 8/2/4/1/2; saved settings remain. Item descriptions retain their material and form, with ability rules in skill feedback. See the [senior KD player simulation report](docs/spiderlings-test85-hunting-weapons.zh-CN.md).
 
 Test.84 rewrites Cocoon, leg-bag and silk-leash descriptions around their own silk texture, shape and movement. Escape advice, collar requirements and encounter procedures are removed from these descriptions. Action-result feedback remains accurate. See the [description correction](docs/spiderlings-test84-item-descriptions.zh-CN.md).

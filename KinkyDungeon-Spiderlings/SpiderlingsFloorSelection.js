@@ -18,6 +18,62 @@
         return /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : setting.default;
     }
 
+    const UPGRADE = "spiderlingsFloorWeights90";
+    const JOURNEY_UPGRADE = "SpiderlingsFloorWeights90";
+    function upgradeSettings() {
+        if (typeof KDModSettings === "undefined" || !KDModSettings?.Spiderlings) return;
+        const config = KDModSettings.Spiderlings;
+        if (config[UPGRADE]) return;
+        const changed = [];
+        for (const [name, previous] of Object.entries({
+            SpiderlingsInfestation: 50,
+            SpiderlingsHuntingGrounds: 1000,
+        })) {
+            const setting = settings[name];
+            if (String(config[setting.refvar]).trim() !== String(previous)) continue;
+            config[setting.refvar] = String(setting.default);
+            changed.push(name);
+        }
+        // Persist the marker as well: a later deliberate return to 50/1000 must survive reload.
+        config[UPGRADE] = { changed };
+        if (typeof localStorage !== "undefined") localStorage.setItem("KDModSettings", JSON.stringify(KDModSettings));
+    }
+
+    function upgradeJourney() {
+        upgradeSettings();
+        if (typeof KDGameData === "undefined" || !KDGameData.JourneyMap || KDGameData[JOURNEY_UPGRADE]) return;
+        const changed = typeof KDModSettings !== "undefined" && KDModSettings?.Spiderlings?.[UPGRADE]?.changed;
+        if (!changed?.some((name) => weight(name) === settings[name].default)) return;
+        const entered = new Set(
+            typeof KDWorldMap === "undefined"
+                ? []
+                : Object.values(KDWorldMap).map((world) => `${world.jx},${world.jy}`),
+        );
+        for (const slot of Object.values(KDGameData.JourneyMap)) {
+            // KD 5.4.92 leaves visited=false even for entered maps. Protect the world cache and current depth too.
+            if (
+                slot.visited ||
+                slot.y <= KDGameData.JourneyY ||
+                entered.has(`${slot.x},${slot.y}`) ||
+                settings[slot.MapMod]
+            )
+                continue;
+            const previous = slot.MapMod;
+            select(slot);
+            if (slot.MapMod === previous) continue;
+            // Side-room filters depend on the newly selected escape method, just as on native creation.
+            slot.SideRooms = [];
+            slot.HiddenRooms = {};
+            for (const top of [true, false]) {
+                const side = KDGetSideRoom(slot, top, slot.SideRooms);
+                if (!side) continue;
+                slot.SideRooms.push(side.name);
+                if (side.hidden) slot.HiddenRooms[side.name] = true;
+            }
+        }
+        KDGameData[JOURNEY_UPGRADE] = true;
+    }
+
     function select(slot) {
         // Both supported native journeys place the first Boss on floor four.
         if (slot.type !== "basic" || slot.protected || slot.y < 5 || slot.RoomType || KDIsHellFloor(slot.y)) return;
@@ -119,6 +175,15 @@
         KDJourneySlotTypes.basic.SpiderlingsFloorSelectionWrapped
     )
         return;
+
+    // Native KD reads persisted settings only after executing every Mod script.
+    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
+        KDAddEvent(KDEventMapGeneric, "afterModSettingsLoad", JOURNEY_UPGRADE, upgradeSettings);
+        KDAddEvent(KDEventMapGeneric, "afterLoadGame", JOURNEY_UPGRADE, upgradeJourney);
+        KDAddEvent(KDEventMapGeneric, "afterNewGame", JOURNEY_UPGRADE, () => {
+            KDGameData[JOURNEY_UPGRADE] = true;
+        });
+    }
 
     let pending = false;
     const nativeBasic = KDJourneySlotTypes.basic;

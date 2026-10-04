@@ -68,6 +68,7 @@
   "KDInputTypes",
   "KDInteractableTiles",
   "KDLocks",
+  "KDInitJourneyMap",
   "KDIsHellFloor",
   "KDIsImmobile",
   "KDIsImprisoned",
