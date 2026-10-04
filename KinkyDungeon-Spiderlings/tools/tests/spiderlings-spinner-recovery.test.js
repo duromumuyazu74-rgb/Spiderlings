@@ -567,3 +567,48 @@ test("recovery draws silk through visible-cell masks and clears it without mutat
     assert.ok(children.every((child) => child.destroyed));
     assert.equal(r.player.leash, undefined, "Clearing owned recovery releases its native tether");
 });
+
+test("all attached helpers move coreward even within two cells of the player", () => {
+    const r = recoveryRuntime();
+    const helper = r.addSource(42, 7, 6);
+    r.leave();
+    r.api.hit(r.source);
+    r.api.hit(helper);
+    const before = { x: helper.x, y: helper.y };
+    r.api.handleEnemyTurn(helper, r.player, 1);
+    assert.ok(helper.x < before.x);
+    assert.equal(r.player.x, 7, "Only native tether updates may move the player");
+});
+
+test("occupied core selects a free interior endpoint without stepping onto player or blocker", () => {
+    const r = attached();
+    r.c.Spiderlings.SpinnerTopology.isInsideCommonCore = (_graph, _id, p) =>
+        p.x >= 4 && p.x <= 6 && p.y >= 4 && p.y <= 6;
+    r.source.x = 6;
+    r.source.y = 5;
+    const blocker = { id: 99, x: 5, y: 5, hp: 10, Enemy: { name: "WebCaster" } };
+    r.c.KDMapData.Entities.push(blocker);
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.notDeepEqual({ x: r.source.x, y: r.source.y }, { x: 6, y: 5 });
+    assert.notDeepEqual({ x: r.source.x, y: r.source.y }, { x: blocker.x, y: blocker.y });
+    assert.deepEqual({ x: r.player.x, y: r.player.y }, { x: 7, y: 5 });
+});
+
+test("blocked escorts outside the core do not tighten a stationary native tether", () => {
+    const r = attached({ pathFinder: (startX) => (startX === 7 ? [{ x: 5, y: 5 }] : undefined) });
+    r.source.x = 6;
+    r.source.y = 5;
+    const length = r.player.leash.length;
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.equal(r.player.leash.length, length);
+    assert.equal(r.source.x, 6);
+});
+test("a one-cell core lets its executor take a paid step beyond center", () => {
+    const r = attached();
+    r.source.x = 5;
+    r.source.y = 5;
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.equal(r.source.x, 4);
+    assert.equal(r.source.y, 5);
+    assert.equal(r.player.leash.length, 1.5);
+});

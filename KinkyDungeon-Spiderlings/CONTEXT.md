@@ -18,7 +18,7 @@ _Avoid_: every NPC is a spider, one isolated arena, rewriting visited maps
 The separate five-nest floor that preserves the native primary faction while two mixed six-member spider crews establish an expanding presence. Fresh maps target at least 50% Spiderlings among mobile combat enemies hostile to the player; existing objective groups and saved maps keep their history.
 
 **Special-floor selection**:
-The native journey's choice of an eligible Spiderling theme, with fresh default Infestation/Hunting Grounds weights of 200/1500 against keep-native 800. Zero disables that selection, saved custom values persist, and the weights apply to newly generated journeys rather than forcing a percentage of every biome or visited floor.
+The native journey's choice of an eligible Spiderling theme, with fresh default Infestation/Hunting Grounds weights of 180/1400 against keep-native 800. Zero disables that selection, saved custom values persist, and the weights apply to newly generated journeys rather than forcing a percentage of every biome or visited floor.
 
 **Special-floor population (特殊楼层人口)**:
 The theme-specific mix of necessary nest crews, optional roaming crews and eligible native arrivals within the shared population budget. A required crew is born complete or its newly created members are removed; this does not mean restoring terrain already opened for the theme. Objective nests, escape progress and later nest reinforcement retain their distinct roles.

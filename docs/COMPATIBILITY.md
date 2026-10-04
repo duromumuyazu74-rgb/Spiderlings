@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.90.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.91.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.91 crowded return and lower defaults (2026-10-04)
+
+Infestation/Hunting Grounds defaults are 180/1400. Saved previous defaults of 200/1500 migrate once after native settings load; zero and other custom values remain. Already migrated journeys receive no additional draw. Attached Spinners head toward the same core and select free interior endpoints when its center is occupied. Native enemy movement and tether updates still own payment and player displacement. Returning prey releases recovery and resumes field construction and sealing. See the [saved-game investigation and review](spiderlings-test91-crowded-recovery.zh-CN.md).
+
+Review against `37a2e30` covered runtime callers and native regression scenarios. It corrected premature tether tightening when the owner cannot move and retained the paid step beyond a one-cell core. No remaining actionable finding was found in this change. The final ZIP loaded the saved floor-five/tick-291 scene: weights became 180/1400, the player returned on turn two, and the field resealed on turn twelve while the central WebCaster remained in place. The original package left this scene stationary for sixteen turns; the desktop process and original save were not modified.
+
+The final ZIP contains 170 entries and 24,837,242 bytes, SHA-256 `a3c16109a2d62f2ff146d14faeb5d8e8f925ec4348e4ec60b484809725c0bc34`. Only `mod.json`, `SpiderlingsEncounters.js`, `SpiderlingsFloorSelection.js` and `SpiderlingsSpinnerRecovery.js` differ from Test.90.
+
+The same ZIP passes all 46 stages on KD 5.4.92 and freshly fetched official GitHub `5.5` commit `9dbf8c666ed4e158b4416f125d1d8d043b61ac74`, reporting 5.5.3. Upstream was checked at `2026-10-04T12:00:12.702Z`. Full evidence is `<cache>/runs/2026-10-04T12-00-12-718Z-0.92.36-test.91/acceptance.json`. The recovery stage covers 1/2/4/8/12-source movement intervals, small interiors, occupied-center return and resealing. Baseline diagnostics retain native audio interruptions and two missing native `Locks/Red.png` requests; the GitHub runtime has no errors, rejections or missing resources. No Spiderlings asset is missing.
+
+Final gates pass: repository checks, 12 policy tests, 556 public tests, the complete 871-test local watcher and final ZIP verification. The full report is this checkout's `.scratch/delivery/2026-10-04T12-09-42-904Z-9f1CW0/REPORT.md`; source and ZIP remained stable during collection. This Markdown result was appended afterward, followed by repository checks and the focused local commit.
 
 ## Test.90 saved floor weights (2026-10-04)
 

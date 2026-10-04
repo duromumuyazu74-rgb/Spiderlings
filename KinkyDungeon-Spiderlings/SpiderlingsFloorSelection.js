@@ -7,8 +7,8 @@
     // modifier after its primary faction is known; they never replace the faction.
     const KEEP_WEIGHT = 800;
     const settings = {
-        SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 200 },
-        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 1500 },
+        SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 180 },
+        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 1400 },
     };
 
     function weight(name) {
@@ -23,20 +23,37 @@
     function upgradeSettings() {
         if (typeof KDModSettings === "undefined" || !KDModSettings?.Spiderlings) return;
         const config = KDModSettings.Spiderlings;
-        if (config[UPGRADE]) return;
-        const changed = [];
-        for (const [name, previous] of Object.entries({
-            SpiderlingsInfestation: 50,
-            SpiderlingsHuntingGrounds: 1000,
-        })) {
-            const setting = settings[name];
-            if (String(config[setting.refvar]).trim() !== String(previous)) continue;
-            config[setting.refvar] = String(setting.default);
-            changed.push(name);
+        let dirty = false;
+        if (!config[UPGRADE]) {
+            const changed = [];
+            for (const [name, previous] of Object.entries({
+                SpiderlingsInfestation: 50,
+                SpiderlingsHuntingGrounds: 1000,
+            })) {
+                const setting = settings[name];
+                if (String(config[setting.refvar]).trim() !== String(previous)) continue;
+                config[setting.refvar] = String(setting.default);
+                changed.push(name);
+            }
+            config[UPGRADE] = { changed };
+            dirty = true;
         }
-        // Persist the marker as well: a later deliberate return to 50/1000 must survive reload.
-        config[UPGRADE] = { changed };
-        if (typeof localStorage !== "undefined") localStorage.setItem("KDModSettings", JSON.stringify(KDModSettings));
+        // Apply the requested lower defaults without rerolling test.90 journeys.
+        if (!config.spiderlingsFloorWeights91) {
+            for (const [name, previous] of Object.entries({
+                SpiderlingsInfestation: 200,
+                SpiderlingsHuntingGrounds: 1500,
+            })) {
+                const setting = settings[name];
+                if (String(config[setting.refvar]).trim() === String(previous))
+                    config[setting.refvar] = String(setting.default);
+            }
+            config.spiderlingsFloorWeights91 = true;
+            dirty = true;
+        }
+        // Persist markers too, so deliberate later changes survive reload.
+        if (dirty && typeof localStorage !== "undefined")
+            localStorage.setItem("KDModSettings", JSON.stringify(KDModSettings));
     }
 
     function upgradeJourney() {

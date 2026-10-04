@@ -12,11 +12,11 @@
         delete KDModSettings.Spiderlings.spiderlingsFloorWeights90;
         KinkyDungeonSendEvent("afterModSettingsLoad", {});
         expect(
-            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200,
+            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 180,
             "Saved infestation default was not upgraded",
         );
         expect(
-            Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 1500,
+            Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 1400,
             "Saved hunting default was not upgraded",
         );
         for (let seed = 0; seed < 12; seed++) {
@@ -94,6 +94,23 @@
         const before = JSON.stringify(KDGameData.JourneyMap);
         KinkyDungeonSendEvent("afterLoadGame", {});
         expect(JSON.stringify(KDGameData.JourneyMap) === before, "Reload rerolled upgraded journey");
+        KDModSettings.Spiderlings.spiderlingsInfestationWeight = "200";
+        KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight = "1500";
+        delete KDModSettings.Spiderlings.spiderlingsFloorWeights91;
+        KinkyDungeonSendEvent("afterModSettingsLoad", {});
+        KinkyDungeonSendEvent("afterLoadGame", {});
+        expect(
+            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 180 &&
+                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 1400,
+            "Test.90 defaults did not lower to test.91 defaults",
+        );
+        expect(JSON.stringify(KDGameData.JourneyMap) === before, "Lower defaults rerolled a migrated journey");
+        KDModSettings.Spiderlings.spiderlingsInfestationWeight = "200";
+        KinkyDungeonSendEvent("afterModSettingsLoad", {});
+        expect(
+            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200,
+            "Repeated settings load overwrote a deliberate later change",
+        );
         return { rows, migration: KDGameData.SpiderlingsFloorWeights90 };
     } finally {
         KDModSettings = settings;
