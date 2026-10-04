@@ -72,10 +72,6 @@
             refreshFragility(target);
             return;
         }
-        if (previous?.pendingUntil > now) {
-            refreshFragility(target);
-            return;
-        }
         const stacks = Math.min(MAX_STACKS, (previous?.expiresAt >= now ? previous.stacks : 0) + 1);
         state().marks[key] = {
             stacks,
@@ -84,6 +80,9 @@
             lastStackAt: now,
             expiresAt: now + 2 + stacks,
             fragileUntil: now + 3,
+            // Field contact replenishes consumed stacks independently of the
+            // delayed burst. Refreshing a mark must not reset its hit interval.
+            pendingUntil: previous?.pendingUntil,
         };
     }
 

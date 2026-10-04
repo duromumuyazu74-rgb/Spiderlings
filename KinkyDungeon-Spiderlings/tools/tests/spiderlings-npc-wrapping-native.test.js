@@ -81,72 +81,85 @@ test("native KD helpless entry never receives the player or an entity without En
         context,
     );
     assert.throws(() => context.KDHelpless(player), /name/, "pinned native entry rejects a player as enemy");
-    assert.doesNotThrow(() => context.Spiderlings.NPCWrapping.handleEnemyTurn(spider, player, 1));
-    assert.doesNotThrow(() => context.Spiderlings.NPCWrapping.tickAfter(1));
+    assert.doesNotThrow(() => context.Spiderlings.NPCWrapping.vulnerable(player));
+    assert.doesNotThrow(() => context.Spiderlings.NPCWrapping.preemptNativeCapture());
     assert.equal(map.Entities.includes(maid), true);
 });
 
-test("pinned KD nonlethal removal honors cancellation, returns stolen items, and keeps persistent NPC identity", () => {
-    const persistent = { id: 10, spawned: true };
-    const effects = { removal: 0, death: 0, post: 0 };
-    const target = {
-        id: 10,
-        x: 4,
-        y: 4,
-        hp: 10,
-        Enemy: { name: "Maidforce", maxhp: 10, bound: "Maidforce", tags: {}, ondeath: [{ type: "DeathBurst" }] },
-        items: ["RedKey", "Temporary"],
-        tempitems: ["Temporary"],
-        boundLevel: 3,
-    };
-    const map = { Entities: [target], GroundItems: [], mapY: 0 };
-    let cancel = true;
+test("native resistance, shields and knockdown retain ownership around the silk damage event", () => {
+    const native = fs.readFileSync(gamePath("Game/src/fight/KinkyDungeonFight.ts"), "utf8");
+    const start = native.indexOf('\t\tif (predata.type != "inert" && resistDamage < 2) {');
+    const end = native.indexOf("\t\t} else if (!NoMsg) {", start);
+    const knockdownStart = native.indexOf("\t\tif (!forceKill && (KDBoundEffects(Enemy) > 3");
+    const knockdownEnd = native.indexOf("\n\t\tif (!predata.blocked)", knockdownStart);
+    assert.ok(start >= 0 && end > start && knockdownStart > end && knockdownEnd > knockdownStart);
+    // Execute the pinned native resistance-to-HP and knockdown blocks unchanged.
+    // Browser acceptance separately exercises the complete damage entry point.
+    const payment = stripTypeScriptTypes(
+        native.slice(start, end) + "\n}\n" + native.slice(knockdownStart, knockdownEnd),
+    );
+    const target = { id: 2, hp: 100, Enemy: { name: "Maid", bound: "Maid", maxhp: 100, tags: {} } };
+    const source = { id: 1, hp: 10, faction: "Enemy", Enemy: { name: "WebCaster" } };
     const context = {
-        KDMapData: map,
-        KDGameData: { Collection: {} },
-        KDSelectLabel: () => {},
-        KDPlayer: () => ({ x: 100, y: 100 }),
-        KinkyDungeonSendEvent: (name, data) => {
-            if (name === "removeEnemy") {
-                effects.removal++;
-                data.cancel = cancel;
-            }
-        },
-        KDIsNPCPersistent: (id) => id === 10,
-        KDGetPersistentNPC: () => persistent,
-        KDUpdatePersistentNPC: () => {
-            effects.post++;
-        },
-        KDGetAltType: () => undefined,
-        KDEntityAtRiskOfCapture: () => true,
-        KDGetCapturingNPC: () => undefined,
-        KDGetFaction: () => "Maidforce",
-        KinkyDungeonRemoveBuffsWithTag: () => {},
-        KDEnemyHasFlag: () => false,
-        KDRemoveFromParty: () => {},
-        KDSpliceIndex: (index, count, owner) => owner.Entities.splice(index, count),
-        KDOndeath: {
-            DeathBurst: () => {
-                effects.death++;
-            },
-        },
+        Spiderlings: { NPCAdhesion: { status: () => "full", hasAttributedSilk: () => true } },
+        KDMapData: { Entities: [source, target] },
+        KDEventMapGeneric: {},
+        KDAddEvent: (map, name, key, handler) => ((map[name] ||= {})[key] = handler),
+        KDHostile: () => true,
+        Enemy: target,
+        Damage: { damage: 2 },
+        Spell: undefined,
+        bullet: undefined,
+        attacker: source,
+        armor: 0.5,
+        buffreduction: 0,
+        resistDamage: 0,
+        forceKill: false,
+        killed: true,
+        NoMsg: true,
+        Delay: 0,
+        KDBaseRed: "red",
+        KDStrictPersonalities: [],
+        KDLoosePersonalities: [],
+        KinkyDungeonIgnoreBlockTypes: [],
+        KDDamageQueue: [],
+        KDArmorFormula: () => 0.5,
+        KinkyDungeonVisionGet: () => 0,
+        KinkyDungeonSetEnemyFlag: () => {},
+        KDEnemyShieldRegenStopTime: () => 1,
+        KDApplyBindStun: () => {},
+        KDBoundEffects: () => 4,
+        KDIsInParty: () => false,
+        KDAddThought: () => {},
+        TextGet: (key) => key,
+    };
+    context.KinkyDungeonSendEvent = (name, data) => {
+        for (const handler of Object.values(context.KDEventMapGeneric[name] || {})) handler(null, data);
     };
     vm.createContext(context);
-    vm.runInContext(nativeFunction("KDDropStolenItems"), context);
-    vm.runInContext(nativeFunction("KDRemoveEntity"), context);
-    assert.equal(context.KDRemoveEntity(target, false, true), false);
-    assert.equal(map.Entities.includes(target), true);
-    assert.equal(map.GroundItems.length, 0);
-    cancel = false;
-    assert.equal(context.KDRemoveEntity(target, false, true), true);
-    assert.equal(map.Entities.includes(target), false);
-    assert.deepEqual(
-        Array.from(map.GroundItems, (item) => item.name),
-        ["RedKey"],
+    vm.runInContext(
+        fs.readFileSync(require("node:path").join(__dirname, "../..", "SpiderlingsNPCWrapping.js"), "utf8"),
+        context,
     );
-    assert.equal(persistent.captured, true);
-    assert.equal(persistent.spawned, undefined);
-    assert.equal(effects.death, 0);
-    assert.equal(effects.removal, 2);
-    assert.equal(effects.post, 1);
+    const hit = (shield, resistance = 0, amount = 2) => {
+        target.hp = 100;
+        target.shield = shield;
+        context.resistDamage = resistance;
+        context.predata = { enemy: target, dmg: amount, dmgDealt: 0, dmgShieldDealt: 0, armormult: 1, type: "arcane" };
+        vm.runInContext(payment, context);
+        return {
+            hp: target.hp,
+            shield: target.shield || 0,
+            damage: context.predata.dmgDealt,
+            absorbed: context.predata.dmgShieldDealt,
+        };
+    };
+    assert.deepEqual(hit(0), { hp: 96, shield: 0, damage: 4, absorbed: 0 });
+    assert.deepEqual(hit(0, 1), { hp: 98, shield: 0, damage: 2, absorbed: 0 });
+    assert.deepEqual(hit(10), { hp: 100, shield: 6, damage: 0, absorbed: 4 });
+    assert.deepEqual(hit(1), { hp: 97, shield: 0, damage: 3, absorbed: 1 });
+    assert.deepEqual(hit(10, 2), { hp: 100, shield: 10, damage: 0, absorbed: 0 });
+    assert.deepEqual(hit(0, 0, 0), { hp: 100, shield: 0, damage: 0, absorbed: 0 });
+    assert.equal(hit(0, 0, 1000).hp, 0.001, "Fully bound prey follows native knockdown instead of Mod removal");
+    assert.ok(context.KDMapData.Entities.includes(target));
 });

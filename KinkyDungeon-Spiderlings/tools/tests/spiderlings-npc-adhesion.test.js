@@ -293,3 +293,32 @@ test("visible status feedback distinguishes initial, full and native helpless st
     draw();
     assert.equal(r.calls.labels.at(-1), "SpiderlingsNPCAdhesionHelpless");
 });
+
+test("nested contact exposure queries do not subtract the binding that is being recorded", () => {
+    const r = fixture();
+    r.bind(r.sourceSpider, 6);
+    // Native struggle removes one old unit before the next hit.
+    r.target.specialBoundLevel.Slime -= 1;
+    r.target.boundLevel -= 1;
+    const data = {
+        enemy: r.target,
+        attacker: r.sourceSpider,
+        incomingDamage: {
+            flags: ["SpiderlingsNPCSilk"],
+            spiderlingsAttack: "direct",
+            spiderlingsSource: r.sourceSpider,
+            spiderlingsActionId: "nested-contact",
+        },
+    };
+    r.emit("beforeDamageEnemy", data);
+    r.target.specialBoundLevel.Slime += 3;
+    r.target.boundLevel += 3;
+    // Combat's earlier afterDamage handler emits nested damage; vulnerability
+    // queries reconcile the ledger before the outer afterDamage records silk.
+    r.adhesion.status(r.target);
+    r.adhesion.silkSource(r.target);
+    r.emit("afterDamageEnemy", data);
+    assert.equal(r.target.SpiderlingsNPCAdhesion.ownedSilk, 8);
+    assert.equal(r.adhesion.pressure(r.target), 8);
+    assert.equal(r.adhesion.status(r.target), "full");
+});

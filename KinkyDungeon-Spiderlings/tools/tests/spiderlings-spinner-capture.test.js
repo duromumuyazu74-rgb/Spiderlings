@@ -254,7 +254,7 @@ function contestRuntime(count = 2, overrides = {}) {
             x: 6 + (id % 2 ? 1 : -1),
             y: 6,
             hp: 2,
-            Enemy: { name: "Spinner", attack: "MeleeEffect", attackRange: 1 },
+            Enemy: { name: "Spinner", attack: "MeleeEffect", attackRange: 1, visionRadius: 8 },
         };
         c.KDMapData.Entities.push(e);
         return e;
@@ -969,7 +969,7 @@ test("capture holds hostile spider attacks on the player through wrapping and re
         hp: 1,
         attackPoints: 3,
         warningTiles: [{ x: 6, y: 6 }],
-        Enemy: { name: "WebCaster", tags: { spiderlings: true } },
+        Enemy: { name: "WebCaster", tags: { spiderlings: true }, visionRadius: 8 },
     };
     let audits = 0;
     r.c.Spiderlings.JumperDash = { runtimeController: { auditSources: () => audits++ } };
@@ -1048,4 +1048,104 @@ test("incomplete bags scale native resistance continuously without counting acti
             assert.equal(target.cutProgress, 0.2);
             assert.equal(target.lock, "Red");
         }
+});
+
+test("capture clears native warnings for participants, paid joins and zero-time refresh", () => {
+    const r = contestRuntime();
+    r.start();
+    for (const [index, elapsed] of [
+        [0, 0],
+        [1, 1],
+    ]) {
+        const enemy = r.c.KDMapData.Entities[index];
+        enemy.attackPoints = 3;
+        enemy.warningTiles = [{ x: 6, y: 6 }];
+        r.api.handleEnemyTurn(enemy, r.c.KinkyDungeonPlayerEntity, elapsed);
+        assert.equal(enemy.attackPoints, 0);
+        assert.equal(enemy.warningTiles.length, 0);
+    }
+    assert.equal(r.api.state().sourceIds.length, 2);
+});
+
+test("a waiting Spinner takes a paid detour around a wall to join an active contest", () => {
+    const r = contestRuntime(),
+        c = r.c,
+        helper = r.add();
+    helper.x = 10;
+    helper.y = 6;
+    helper.Enemy = { ...helper.Enemy, tags: { spiderlings: true }, movePoints: 2 };
+    c.KDMapData.GridWidth = c.KDMapData.GridHeight = 15;
+    c.KinkyDungeonMovableTilesEnemy = c.KinkyDungeonMovableTilesSmartEnemy = ".";
+    c.KinkyDungeonMapGet = (x, y) => (x === 9 && y >= 4 && y <= 8 ? "1" : ".");
+    c.KinkyDungeonTilesGet = () => undefined;
+    c.KinkyDungeonEnemyAt = (x, y) => c.KDMapData.Entities.find((e) => e.hp > 0 && e.x === x && e.y === y);
+    c.KinkyDungeonEnemyCanMove = (enemy, dir) => c.KinkyDungeonMapGet(enemy.x + dir.x, enemy.y + dir.y) === ".";
+    const moves = [];
+    c.KinkyDungeonEnemyTryMove = (enemy, dir, elapsed, x, y) => {
+        moves.push({ id: enemy.id, elapsed, x, y });
+        enemy.movePoints = (enemy.movePoints || 0) + elapsed;
+        if (enemy.movePoints < enemy.Enemy.movePoints) return false;
+        enemy.movePoints -= enemy.Enemy.movePoints;
+        enemy.x = x;
+        enemy.y = y;
+        return true;
+    };
+    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsSpinnerAI.js"), "utf8"), c);
+    r.start();
+    r.api.handleEnemyTurn(helper, c.KinkyDungeonPlayerEntity, 0);
+    assert.equal(moves.length, 0);
+    r.api.handleEnemyTurn(helper, c.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual({ x: helper.x, y: helper.y }, { x: 10, y: 6 });
+    assert.equal(helper.movePoints, 1);
+    r.api.handleEnemyTurn(helper, c.KinkyDungeonPlayerEntity, 1);
+    assert.notEqual(helper.y, 6, "The first detour step can increase player distance");
+    for (let i = 0; i < 25 && !r.api.state().sourceIds.includes(helper.id); i++)
+        r.api.handleEnemyTurn(helper, c.KinkyDungeonPlayerEntity, 1);
+    assert.ok(r.api.state().sourceIds.includes(helper.id));
+    assert.ok(moves.every((move) => c.KinkyDungeonMapGet(move.x, move.y) === "."));
+});
+
+test("capture approach traverses owned web proxies but never the actor sharing that cell", () => {
+    const r = contestRuntime(),
+        c = r.c,
+        helper = r.add(),
+        proxy = { id: 90, x: 9, y: 6, hp: 3, webProxy: true };
+    helper.x = 10;
+    helper.y = 6;
+    helper.Enemy.tags = { spiderlings: true };
+    c.KDMapData.Entities.push(proxy);
+    c.Spiderlings.SpinnerNativeField.isOwnedProxy = (entity) => entity?.webProxy === true;
+    c.KinkyDungeonEnemyAt = (x, y) => c.KDMapData.Entities.find((e) => e.x === x && e.y === y);
+    c.KinkyDungeonEnemyCanMove = () => true;
+    c.KinkyDungeonMovableTilesSmartEnemy = ".";
+    const attempts = [];
+    c.KinkyDungeonEnemyTryMove = (_actor, _dir, delta, x, y) => attempts.push({ delta, x, y });
+    c.Spiderlings.SpinnerAI = { occupancyRoute: () => [helper, { x: 9, y: 6 }] };
+    r.start();
+    r.api.handleEnemyTurn(helper, c.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(attempts, [{ delta: 1, x: 9, y: 6 }]);
+    c.KDMapData.Entities.push({ id: 91, x: 9, y: 6, hp: 3, Enemy: { name: "WebCaster" } });
+    r.api.handleEnemyTurn(helper, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(attempts.length, 1, "A proxy returned first by the native cache cannot hide its occupant");
+});
+
+test("capture keeps a distant nonparticipant on its existing construction operation", () => {
+    const r = contestRuntime(),
+        remote = r.add();
+    remote.x = 20;
+    remote.Enemy.tags = { spiderlings: true };
+    let paid = 0;
+    r.c.Spiderlings.SpinnerNativeField.handleEnemyTurn = (enemy, _target, delta) => {
+        if (enemy !== remote) return undefined;
+        paid += delta;
+        return { idle: false, defeat: false, defeatEnemy: enemy };
+    };
+    r.start();
+    assert.equal(r.api.holdsSpiderAttack(remote, r.c.KinkyDungeonPlayerEntity), false);
+    r.operate(remote);
+    assert.equal(paid, 1);
+    remote.x = 10;
+    assert.equal(r.api.holdsSpiderAttack(remote, r.c.KinkyDungeonPlayerEntity), true);
+    r.operate(remote);
+    assert.equal(paid, 1, "Nearby construction yields to the active contest");
 });

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.91.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.92.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.92 construction duties, recovery routes and mark refresh (2026-10-04)
+
+Test.92 continues from `aa961fe`. Blocked construction jobs yield to reachable jobs on the same unfinished layer, and idle luring switches to pressure after two turns. Recovery clears stale attack warnings and retries blocked native paths with the existing actor-aware route. Nearby Capture helpers route around obstacles; nonparticipants outside their native vision radius retain normal duties. NPC silk vulnerability replaces the three-step nonlethal exit with fourfold positive post-resistance damage before native defenses and defeat handling. Mage marks still consume on accepted hits, replenish each active turn with 3/4/5-turn refreshed lifetime, preserve the pending burst interval on refresh/reload, and brighten at three stacks. See the [implementation and save scope](spiderlings-test92-duties-marks.zh-CN.md).
+
+Native debugging exposed a nested-damage ordering defect: an exposure query could reconcile the new Slime before its outer hit was recorded and then mistake it for removed old silk. Adhesion now reconciles old losses and records its pre-hit ledger position before native damage. A failing public regression and native cooperation scenes cover the correction. The old wrapping scenes now check shield/HP payment, immunity, native knockdown and death, no timed removal, visibility and legacy reload. Independent review found the eight-language vulnerability labels consistent and no actionable issue in the Mage consumption/refresh/visual change.
+
+The copied live save is tick 796 in a reward room. Re-entering its cached floor-seven geometry and explicitly placing the player at `(33,8)` produces 12 paid actions over 60 native turns across both existing field groups. This tests continued construction in saved geometry, not an exact replay of every screenshot. The original desktop process and save are unchanged.
+
+The final ZIP contains 170 entries and 24,836,416 bytes, SHA-256 `d9b4d7404f3a45b035fe2ccc1b357e3b9d2cfd7eb0ebee894b8be413337f9c7b`. It passes all 47 native stages per game, including all seven locale loads, on KD 5.4.92 and freshly fetched official `5.5` commit `9dbf8c666ed4e158b4416f125d1d8d043b61ac74`, reporting 5.5.3. Upstream was checked at `2026-10-04T13:40:13.575Z`; full evidence is `<cache>/runs/2026-10-04T13-40-13-593Z-0.92.36-test.92/acceptance.json`. The baseline retains native audio interruptions and two `Locks/Red.png` requests, without a missing Mod asset. The GitHub runtime has no page errors, unhandled rejections or missing resources.
+
+Earlier full runs remain in the cache. Their failures led to three explicit fixture corrections, without changing the final ZIP: the lure scene now tests two idle turns and timely pressure; the paired outgoing-damage scene restores preparation HP and starts Head Maid with AmpuleGreen's native special cooldown so a real Hairpin hit can be compared; the twelve-worker crowd retains a legal center aisle instead of depending on random wandering to unblock a solid rectangle. Real movement, native spell selection/collision and the 0.65 outgoing-damage assertion remain. The separate crowded-control scene covers blocked-route detours, nearby capture interruption and distant paid work.
+
+Final delivery gates pass: repository checks, 12 policy tests, 551 public tests, the complete 866-test local watcher and final ZIP verification. The full report is this checkout's `.scratch/delivery/2026-10-04T13-50-08-807Z-TXQBJL/REPORT.md`; source and ZIP remained stable during collection. This Markdown result was appended afterward, followed by repository checks and the focused local commit.
 
 ## Test.91 crowded return and lower defaults (2026-10-04)
 

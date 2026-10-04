@@ -93,10 +93,7 @@
             allowedSource(recovery, source) &&
             sourceActionable(source, false) &&
             !npcCaptureUsesSource(source.id) &&
-            !api.SpinnerNPCRecovery?.usesEntity?.(source.id) &&
-            !Object.values(api.NPCWrapping?.records?.() || {}).some((record) =>
-                record.sourceIds?.some((id) => sameId(id, source.id)),
-            )
+            !api.SpinnerNPCRecovery?.usesEntity?.(source.id)
         );
     }
 
@@ -161,10 +158,7 @@
             !sourceActionable(source, false) ||
             api.SpinnerCapture?.isControllingPlayer?.() ||
             npcCaptureUsesSource(source.id) ||
-            api.SpinnerNPCRecovery?.usesEntity?.(source.id) ||
-            Object.values(api.NPCWrapping?.records?.() || {}).some((record) =>
-                record.sourceIds?.some((id) => sameId(id, source.id)),
-            )
+            api.SpinnerNPCRecovery?.usesEntity?.(source.id)
         )
             return false;
         const compositeId = eligibility.compositeId || sourceAssociation(source, eligibility)?.compositeId;
@@ -634,7 +628,15 @@
         const graph = api.SpinnerNativeField?.state?.()?.topology;
         const occupied = (cell) => {
             const entity = KinkyDungeonEntityAt(cell.x, cell.y);
-            return entity && entity !== source && !api.SpinnerNativeField?.isOwnedProxy?.(entity);
+            if (entity && entity !== source && !api.SpinnerNativeField?.isOwnedProxy?.(entity)) return true;
+            return entities().some(
+                (actor) =>
+                    actor !== source &&
+                    actor.hp > 0 &&
+                    actor.x === cell.x &&
+                    actor.y === cell.y &&
+                    !api.SpinnerNativeField?.isOwnedProxy?.(actor),
+            );
         };
         // All attached workers head into the same core. Native pathfinding accepts
         // occupied end cells, so choose a free endpoint before asking it for a route.
@@ -681,18 +683,19 @@
                 undefined,
                 source,
             );
-            const step = path?.find((cell) => cell.x !== source.x || cell.y !== source.y);
+            let step = path?.find((cell) => cell.x !== source.x || cell.y !== source.y);
+            // Native faction paths can route every free endpoint through the same
+            // coworker. Reuse the live occupancy route before giving up this turn.
+            if (step && (occupied(step) || (step.x === player().x && step.y === player().y)))
+                step = api.SpinnerAI?.occupancyRoute?.(source, endpoint)?.find(
+                    (cell) => cell.x !== source.x || cell.y !== source.y,
+                );
             if (!step || occupied(step) || (step.x === player().x && step.y === player().y)) continue;
             next = step;
             break;
         }
         let moved = false;
-        if (
-            next &&
-            !(next.x === player().x && next.y === player().y) &&
-            (!KinkyDungeonEntityAt(next.x, next.y) ||
-                api.SpinnerNativeField?.isOwnedProxy?.(KinkyDungeonEntityAt(next.x, next.y)))
-        )
+        if (next && !(next.x === player().x && next.y === player().y) && !occupied(next))
             moved = KinkyDungeonEnemyTryMove(
                 source,
                 { x: next.x - source.x, y: next.y - source.y },
@@ -734,6 +737,8 @@
                 .map((saved) => sourceById(saved.id))
                 .find((source) => source && relayContact(source, enemy));
             if (!donor) return undefined;
+            enemy.attackPoints = 0;
+            enemy.warningTiles = [];
             if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta)) {
                 const added = core.upsertSource(
                     recovery,
@@ -749,6 +754,9 @@
             }
             return result(enemy);
         }
+        // Recovery replaces the native attack loop, including its warning cleanup.
+        enemy.attackPoints = 0;
+        enemy.warningTiles = [];
         if (!api.SpinnerCapture?.isControllingPlayer?.()) escort(recovery, enemy, delta);
         return result(enemy);
     }

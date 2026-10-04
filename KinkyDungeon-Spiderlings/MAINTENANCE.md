@@ -182,7 +182,7 @@ powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-
 powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
-`SpiderlingsNPCAdhesion.js` 为敌对 NPC 记录独立的八回合蛛丝压力、自有 Slime 余额和初始／完全黏住状态。实际原生 Slime 增量按一次付费行动合并；普通蛛丝喷射开启序列，Spinner、Jumper 与 Mage 的有效蛛丝动作可续加压力。初始黏住阻止主动移动，完全黏住使可缩放的直接伤害乘 0.65，不设置原生昏迷或无力反抗。行动间的原生挣脱会扣减自有余额与压力；地图时钟和 NPC 记录随新存档保存。`SpiderlingsNPCWrapping.js` 保存三次付费缠裹进度，并交由 KD 原生非致命移除处理物品和持久 NPC 记录。
+`SpiderlingsNPCAdhesion.js` 为敌对 NPC 记录独立的八回合蛛丝压力、自有 Slime 余额和初始／完全黏住状态。实际原生 Slime 增量按一次付费行动合并；普通蛛丝喷射开启序列，Spinner、Jumper 与 Mage 的有效蛛丝动作可续加压力。初始黏住阻止主动移动，完全黏住使可缩放的直接伤害乘 0.65，不设置原生昏迷或无力反抗。行动间的原生挣脱会扣减自有余额与压力；地图时钟和 NPC 记录随新存档保存。`SpiderlingsNPCWrapping.js` 从 test.92 起不再保存三次缠裹退场进度。自有蛛丝完全黏住或足以造成原生无力反抗时，正数抗性后伤害乘 4，再由原生格挡、护盾、HP、击倒和死亡流程处理。解绑或恢复立即取消易伤；旧倒计时在读档时丢弃，不改猎物位置、HP 或丝缚，不占附近蜘蛛行动。
 
 `Repository checks` 在每个 PR 和维护分支推送上重建 atlas、构建 ZIP、逐项比对包内容，并保存以提交 SHA 命名的 14 天 workflow artifact。测试版本不创建 GitHub Release。正式发布只从 `main` 产生，并将通过验收的同一 ZIP 附加到 `v<modbuild>` Release。
 

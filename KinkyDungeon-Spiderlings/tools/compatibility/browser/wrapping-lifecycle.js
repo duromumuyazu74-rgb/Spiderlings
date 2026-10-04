@@ -1,167 +1,127 @@
 (async () => {
-    const { setup, spawn, turn, expect, pin, save, restore, enemy, frame } = globalThis.normalAcceptance;
+    const { setup, spawn, turn, expect, pin, save, restore, enemy } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []);
-    const originalRemove = KDRemoveEntity;
-    let target, row, tick;
+    const nativeRemove = KDRemoveEntity;
+    let target, row;
     KDRemoveEntity = function (entity, kill, capture) {
-        const result = originalRemove.apply(this, arguments);
-        if (row && entity.id === target?.id) row.exits.push({ tick, kill: !!kill, capture: !!capture, result });
+        const result = nativeRemove.apply(this, arguments);
+        if (row && entity === target) row.exits.push({ kill: !!kill, capture: !!capture, result });
         return result;
     };
+    const prepare = (mode) => {
+        row = undefined;
+        setup(`silk-vulnerability-${mode}`);
+        const source = spawn("WebCaster", 14, 10);
+        target = spawn("MaidKnightHeavy", 16, 10, "Maidforce");
+        pin(target, source);
+        source.stun = target.stun = 999;
+        target.blocks = 0;
+        target.shield = 0;
+        target.hp = target.Enemy.maxhp;
+        row = { mode, exits: [] };
+        rows.push(row);
+        expect(Spiderlings.NPCWrapping.vulnerable(target), "Full owned silk did not expose prey");
+        return source;
+    };
+    const damage = (source, amount = 0.5) => {
+        const before = { hp: target.hp, shield: target.shield || 0 };
+        KinkyDungeonDamageEnemy(
+            target,
+            { type: "arcane", damage: amount, nocrit: true },
+            true,
+            true,
+            undefined,
+            undefined,
+            source,
+        );
+        const after = { hp: target.hp, shield: target.shield || 0 };
+        return { before, after, dealt: before.hp - after.hp + before.shield - after.shield };
+    };
     try {
-        for (const mode of [
-            "single",
-            "three",
-            "stun",
-            "displace",
-            "free",
-            "reload",
-            "death-first",
-            "capture-first",
-            "helpless",
-            "helpless-recovery",
-            "foreign-helpless",
-            "nocapture",
-            "protected",
-            "hunting-shop",
-            "retaliation",
-        ]) {
-            row = undefined;
-            setup(`wrapping-${mode}`);
-            target = spawn(mode === "nocapture" ? "BlindZombie" : "MaidKnightHeavy", 16, 10, "Maidforce");
-            // Isolate lifecycle ordering; the separate retaliation row leaves native offense active.
-            if (mode !== "retaliation") target.stun = 99;
-            const source = spawn("WebCaster", 14, 10);
-            if (mode === "foreign-helpless") KDTieUpEnemy(target, 200, "Slime");
-            else {
-                if (mode === "nocapture") {
-                    for (let n = 0; n < 8; n++) Spiderlings.Combat.hitNPC(source, target, "direct");
-                } else {
-                    pin(target, source);
-                    while (target.boundLevel < 38) Spiderlings.Combat.hitNPC(source, target, "direct");
-                }
-                if (mode.startsWith("helpless"))
-                    Spiderlings.Combat.applySilkBinding(source, target, 100, { attack: "direct" });
+        for (const shield of [0, 20, 0.1]) {
+            const samples = [];
+            for (const exposed of [false, true]) {
+                const source = prepare(`damage-${shield}-${exposed}`);
+                if (!exposed) delete target.SpiderlingsNPCAdhesion;
+                target.shield = shield;
+                row.damage = damage(source);
+                samples.push(row.damage);
             }
-            const actors = [source];
-            KDMoveEntity(source, 15, 10, false);
-            if (mode === "three")
-                for (const [x, y] of [
-                    [16, 9],
-                    [16, 11],
-                ])
-                    actors.push(spawn("WebCaster", x, y));
-            if (mode === "three")
-                for (const actor of actors) actor.SpinnerConstructionPoints = actor.Enemy.movePoints - 1;
-            if (["helpless", "helpless-recovery", "foreign-helpless", "nocapture"].includes(mode))
-                for (const actor of actors) KDMoveEntity(actor, 5, 5, false);
-            if (mode === "protected" || mode === "hunting-shop") target.shop = true;
-            if (mode === "hunting-shop") {
-                KDMapData.MapMod = "SpiderlingsHuntingGrounds";
-                KDMapData.SpiderlingsHuntingGrounds = {
-                    garrisonVersion: 2,
-                    status: "active",
-                    targetIds: [],
-                    destroyedIds: [],
-                };
-                expect(Spiderlings.HuntingGrounds.active(), "Hunting Grounds role fixture is inactive");
-            }
-            row = { mode, exits: [], turns: [] };
-            rows.push(row);
-            await frame();
-            for (tick = 1; tick <= 12; tick++) {
-                if (mode === "death-first" && tick === 1) KDRemoveEntity(target, true, false);
-                await turn();
-                row.turns.push({
-                    tick,
-                    present: KDMapData.Entities.includes(target),
-                    hp: target.hp,
-                    status: Spiderlings.NPCAdhesion.status(target),
-                    progress: structuredClone(Spiderlings.NPCWrapping.record(target)),
-                    paid: KDMapData.SpiderlingsNPCWrapping?.paidSourceIds,
-                    actors: actors.map((actor) => ({
-                        hp: actor.hp,
-                        x: actor.x,
-                        y: actor.y,
-                        stun: actor.stun,
-                        disarm: actor.disarm,
-                        bind: actor.bind,
-                        credit: actor.SpinnerConstructionPoints,
-                    })),
-                });
-                if (!KDMapData.Entities.includes(target)) {
-                    if (mode === "capture-first") {
-                        KinkyDungeonDamageEnemy(
-                            target,
-                            { type: "slash", damage: 10000, nocrit: true },
-                            true,
-                            true,
-                            undefined,
-                            undefined,
-                            KinkyDungeonPlayerEntity,
-                        );
-                        await turn();
-                    }
-                    break;
-                }
-                const record = Spiderlings.NPCWrapping.record(target);
-                if (!row.interrupted && (record?.progress > 0 || mode === "helpless-recovery")) {
-                    row.interrupted = tick;
-                    if (mode === "stun") for (const actor of actors) actor.stun = 999;
-                    if (mode === "displace") KDMoveEntity(target, 22, 14, false);
-                    if (mode === "free" || mode === "helpless-recovery") KDUntieEnemy(target, 1000, true, true);
-                    if (mode === "reload") {
-                        const id = target.id,
-                            before = structuredClone(record);
-                        restore(save());
-                        target = enemy(id);
-                        row.reload = { before, after: structuredClone(Spiderlings.NPCWrapping.record(target)) };
-                    }
-                }
-                if (
-                    row.interrupted &&
-                    ["stun", "displace", "free", "helpless-recovery"].includes(mode) &&
-                    tick >= row.interrupted + 2
-                )
-                    break;
-            }
-            const successful = row.exits.filter((exit) => exit.result);
-            if (["single", "three", "reload", "capture-first", "helpless", "hunting-shop"].includes(mode))
+            expect(
+                samples[0].dealt > 0 && Math.abs(samples[1].dealt - samples[0].dealt * 4) < 1e-8,
+                `Effective native damage is not fourfold: ${JSON.stringify(samples)}`,
+            );
+            if (shield === 20)
                 expect(
-                    successful.filter((exit) => exit.capture && !exit.kill).length === 1,
-                    `Native wrap failed: ${JSON.stringify(row)}`,
+                    samples.every((sample) => sample.before.hp === sample.after.hp),
+                    "Silk vulnerability bypassed native shield",
                 );
-            if (
-                [
-                    "stun",
-                    "displace",
-                    "free",
-                    "helpless-recovery",
-                    "foreign-helpless",
-                    "nocapture",
-                    "protected",
-                ].includes(mode)
-            )
+            if (shield === 0.1)
                 expect(
-                    !successful.some((exit) => exit.capture),
-                    `Ineligible/interrupted prey was captured: ${JSON.stringify(row)}`,
+                    samples.every((sample) => sample.after.shield === 0 && sample.after.hp < sample.before.hp),
+                    "Broken shield did not pass native overflow into HP",
                 );
-            if (mode === "death-first")
-                expect(!successful.some((exit) => exit.capture), "Death was followed by capture");
-            if (mode === "capture-first")
-                expect(!successful.some((exit) => exit.kill), "Stale damage killed already-captured prey");
-            if (mode === "three")
-                expect(successful[0].tick <= 2, "Three adjacent capable spiders did not share paid progress");
-            if (row.reload)
-                expect(
-                    JSON.stringify(row.reload.before) === JSON.stringify(row.reload.after),
-                    "Pending native capture changed on reload",
-                );
-            if (["stun", "displace", "free", "helpless-recovery"].includes(mode))
-                expect(!row.turns.at(-1).progress?.progress, "Interrupted work retained progress");
         }
+        for (const mode of ["immune", "zero", "free", "protected", "foreign", "nocapture"]) {
+            const source = prepare(mode);
+            if (mode === "immune" || mode === "nocapture")
+                target.Enemy = {
+                    ...target.Enemy,
+                    tags: { ...target.Enemy.tags, [mode === "immune" ? "arcaneimmune" : "nocapture"]: true },
+                };
+            if (mode === "free") KDUntieEnemy(target, 1000, true, true);
+            if (mode === "protected") target.shop = true;
+            if (mode === "foreign") delete target.SpiderlingsNPCAdhesion;
+            if (["free", "protected", "foreign", "nocapture"].includes(mode))
+                expect(!Spiderlings.NPCWrapping.vulnerable(target), `${mode} prey retained exposure`);
+            row.damage = damage(source, mode === "zero" ? 0 : 0.5);
+            if (mode === "immune" || mode === "zero") expect(row.damage.dealt === 0, `${mode} produced damage`);
+        }
+        const source = prepare("legacy-reload-no-countdown");
+        Spiderlings.Combat.applySilkBinding(source, target, 1000, { attack: "direct" });
+        const id = target.id;
+        KDMapData.SpiderlingsNPCWrapping = {
+            version: 1,
+            records: {
+                [id]: { targetId: id, progress: 3, helplessTurns: 3, sourceIds: [source.id] },
+            },
+            paidSourceIds: [source.id],
+        };
+        const before = { hp: target.hp, bound: target.boundLevel, slime: target.specialBoundLevel.Slime };
+        restore(save());
+        target = enemy(id);
+        row.reload = {
+            before,
+            after: { hp: target.hp, bound: target.boundLevel, slime: target.specialBoundLevel.Slime },
+        };
+        expect(
+            JSON.stringify(row.reload.before) === JSON.stringify(row.reload.after),
+            "Legacy migration altered native prey",
+        );
+        expect(
+            !KDMapData.SpiderlingsNPCWrapping && Spiderlings.NPCWrapping.vulnerable(target),
+            "Reload retained countdown or lost real silk exposure",
+        );
+        for (let tick = 0; tick < 8; tick++) await turn();
+        expect(
+            KDMapData.Entities.includes(target) && !row.exits.length,
+            "Elapsed turns removed living silk-bound prey",
+        );
+        row.afterTurns = { hp: target.hp, vulnerable: Spiderlings.NPCWrapping.vulnerable(target) };
+        // Native lethal damage to a fully bound NPC becomes knockdown, not a Mod capture.
+        row.lethalDamage = damage(enemy(source.id), 10000);
+        expect(target.hp === 0.001 && KDMapData.Entities.includes(target), "Native bound knockdown was bypassed");
+        expect(!row.exits.length, "Damage added a non-native removal");
+        expect(KDRemoveEntity(target, true, false), "Native death removal failed");
+        expect(!Spiderlings.NPCWrapping.vulnerable(target), "Removed prey retained exposure");
+        expect(
+            row.exits.filter((exit) => exit.result && exit.kill && !exit.capture).length === 1,
+            "Native death did not remove exactly once",
+        );
+        Spiderlings.NPCWrapping.preemptNativeCapture();
+        expect(!row.exits.some((exit) => exit.capture), "Death was followed by Mod capture");
     } finally {
-        KDRemoveEntity = originalRemove;
+        KDRemoveEntity = nativeRemove;
     }
     return { rows };
 })();

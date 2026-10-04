@@ -33,6 +33,7 @@ const scenarios = [
         "adhesion-recovery",
         "spinner-work",
         "spinner-regressions",
+        "spinner-crowded-control",
         "spinner-perception",
         "web-breach",
         "wrapping-lifecycle",

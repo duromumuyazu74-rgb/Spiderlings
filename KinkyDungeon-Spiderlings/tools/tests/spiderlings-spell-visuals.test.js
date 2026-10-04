@@ -143,6 +143,7 @@ function fixture({ mageSpells = false } = {}) {
         KinkyDungeonPlayerEntity: { x: 3, y: 3, player: true },
         CommonTime: () => clock,
         PIXI: {
+            BLEND_MODES: { ADD: 1 },
             Graphics,
             Container,
             Sprite,
@@ -557,6 +558,28 @@ test("marks follow only visible marked targets, expire in game turns, and show t
     enemy.hidden = false;
     state.clock = 5;
     assert.equal(r.draw().length, 0);
+});
+
+test("only a full mark adds glow and consuming, expiry or hiding removes it", () => {
+    const r = fixture();
+    const enemy = { id: 2, hp: 5, x: 3, y: 4, Enemy: { name: "Maid" } };
+    r.c.KDMapData.Entities.push(enemy);
+    const state = r.state({ marks: { "npc:2": { stacks: 2, expiresAt: 4 } } });
+    const glow = () => r.draw().filter((d) => d[2].includes("mark_glow_"));
+    assert.equal(glow().length, 0);
+    assert.equal(r.draws[0][9].alpha, 0.7);
+    state.marks["npc:2"].stacks = 3;
+    assert.equal(glow().length, 1);
+    assert.equal(r.draws[0][9].alpha, 1);
+    assert.equal(r.c.kdpixisprites.get("SpiderlingsSpellVisuals_mark_glow_npc:2").blendMode, 1);
+    enemy.hidden = true;
+    assert.equal(glow().length, 0);
+    enemy.hidden = false;
+    state.marks["npc:2"].stacks = 0;
+    assert.equal(glow().length, 0);
+    state.marks["npc:2"].stacks = 3;
+    state.clock = 5;
+    assert.equal(glow().length, 0);
 });
 
 test("hit feedback coalesces per target, fades in real time and disappears on map replacement", () => {

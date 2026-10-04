@@ -49,6 +49,16 @@
             // hits so native struggle does not erase full adhesion before the impact comparison.
             const bindingFloor = target.Enemy.maxhp * (name === "MaidforceHead" ? 1.5 : 0.75);
             while (target.boundLevel < bindingFloor) Spiderlings.Combat.hitNPC(caster, target, "direct");
+            const setupHP = target.hp;
+            // Isolate outgoing adhesion scaling from HP lost while preparing real silk.
+            target.hp = target.Enemy.maxhp;
+            if (name === "MaidforceHead") {
+                // Hairpin is noFirstChoice. A ready AmpuleGreen normally wins selection
+                // and consumes this six-turn window without direct player HP damage.
+                // Model its native 15-turn special cooldown after a prior bottle cast;
+                // Hairpin still needs native selection, accuracy and projectile impact.
+                target.castCooldownSpecial = KinkyDungeonFindSpell("AmpuleGreen", true).specialCD;
+            }
             expect(!KDHelpless(target), "Offense fixture became natively helpless while adding silk");
             KDMapData.Entities = [target];
             KDMapData.Bullets = [];
@@ -84,6 +94,10 @@
                         control,
                         trial,
                         initialBinding: target.boundLevel,
+                        setupHP,
+                        initialHP: target.hp,
+                        initialBoundEffects: KDBoundEffects(target),
+                        initialSpecialCooldown: target.castCooldownSpecial || 0,
                         casts: [],
                         hits: [],
                         turns: [],
@@ -101,6 +115,7 @@
                             status: Spiderlings.NPCAdhesion.status(target),
                             boundLevel: target.boundLevel,
                             castCooldown: target.castCooldown,
+                            castCooldownSpecial: target.castCooldownSpecial || 0,
                             attackPoints: target.attackPoints,
                         });
                     }

@@ -630,8 +630,16 @@
         });
     }
     function handleEnemyTurn(enemy, target, delta) {
-        if (enemy[REWARD] > 0) return { idle: true, defeat: false, defeatEnemy: enemy };
+        if (enemy[REWARD] > 0) {
+            enemy.attackPoints = 0;
+            enemy.warningTiles = [];
+            return { idle: true, defeat: false, defeatEnemy: enemy };
+        }
         const active = auditSources();
+        if (active && (state().sourceIds.includes(enemy.id) || holdsSpiderAttack(enemy, target))) {
+            enemy.attackPoints = 0;
+            enemy.warningTiles = [];
+        }
         // Native load and UI refreshes run the enemy loop without paying a world turn.
         if (!(delta > 0))
             return active && (state().sourceIds.includes(enemy.id) || holdsSpiderAttack(enemy, target))
@@ -657,7 +665,7 @@
                     y = player().y + next[1];
                 const dir = { x: x - enemy.x, y: y - enemy.y, delta: 1 };
                 if (
-                    !KinkyDungeonEnemyAt(x, y) &&
+                    !actorAt(x, y) &&
                     KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
                 )
                     KinkyDungeonEnemyTryMove(enemy, dir, delta, x, y, false);
@@ -665,8 +673,11 @@
             recordSourceAction(enemy);
             return { idle: false, defeat: false, defeatEnemy: enemy };
         }
-        if (state()?.phase === "contest" && joinSource(enemy))
+        if (state()?.phase === "contest" && joinSource(enemy)) {
+            enemy.attackPoints = 0;
+            enemy.warningTiles = [];
             return { idle: false, defeat: false, defeatEnemy: enemy };
+        }
         if (holdsSpiderAttack(enemy, target)) {
             waitAround(enemy, delta);
             return { idle: false, defeat: false, defeatEnemy: enemy };
@@ -678,7 +689,16 @@
             !!state() &&
             !!enemy?.Enemy?.tags?.spiderlings &&
             KDHostile(enemy) &&
+            Math.hypot(enemy.x - player().x, enemy.y - player().y) <= Math.max(1.5, enemy.Enemy.visionRadius || 0) &&
             (!target?.Enemy || target.player === true)
+        );
+    }
+    function actorAt(x, y) {
+        const occupant = KinkyDungeonEnemyAt(x, y);
+        if (occupant && !api.SpinnerNativeField?.isOwnedProxy?.(occupant)) return occupant;
+        return entities().find(
+            (entity) =>
+                entity.hp > 0 && entity.x === x && entity.y === y && !api.SpinnerNativeField?.isOwnedProxy?.(entity),
         );
     }
     function waitAround(enemy, delta) {
@@ -701,17 +721,41 @@
                 if (
                     d === 0 ||
                     (!spinner && d < 2) ||
-                    KinkyDungeonEnemyAt(x, y) ||
+                    actorAt(x, y) ||
                     !KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
                 )
                     continue;
                 steps.push({ x, y, dir, score: Math.abs(d - goal) });
             }
         steps.sort((a, b) => a.score - b.score);
-        if (steps[0] && steps[0].score < before) {
+        const atRing = spinner ? distance(enemy.x, enemy.y) <= 1.5 : before <= 0.5;
+        if ((!api.SpinnerAI?.occupancyRoute || atRing) && steps[0] && steps[0].score < before) {
             const n = steps[0];
             KinkyDungeonEnemyTryMove(enemy, n.dir, delta, n.x, n.y, false);
+            return;
         }
+        if (!api.SpinnerAI?.occupancyRoute || atRing) return;
+        // A coworker or wall can require a step away before reaching the ring.
+        // Use the existing terrain/occupancy route and retain native movement payment.
+        const endpoints = [],
+            radius = spinner ? 1 : 3;
+        for (let dy = -radius; dy <= radius; dy++)
+            for (let dx = -radius; dx <= radius; dx++) {
+                const endpoint = { x: p.x + dx, y: p.y + dy },
+                    d = distance(endpoint.x, endpoint.y);
+                if (spinner ? d === 0 : d < 2 || d > 3) continue;
+                endpoints.push(endpoint);
+            }
+        const next = api.SpinnerAI.occupancyRoute(enemy, endpoints).find(
+            (cell) => cell.x !== enemy.x || cell.y !== enemy.y,
+        );
+        if (!next) return;
+        const dir = { x: next.x - enemy.x, y: next.y - enemy.y, delta: 1 };
+        if (
+            !actorAt(next.x, next.y) &&
+            KinkyDungeonEnemyCanMove(enemy, dir, KinkyDungeonMovableTilesSmartEnemy, "", false, 0)
+        )
+            KinkyDungeonEnemyTryMove(enemy, dir, delta, next.x, next.y, false);
     }
     if (typeof KDInputTypes !== "undefined") {
         KDInputTypes.spiderlingsSpinnerPull = pull;

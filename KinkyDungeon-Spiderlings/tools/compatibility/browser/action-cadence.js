@@ -1,11 +1,10 @@
 (async () => {
-    const { setup, spawn, turn, expect, pin } = globalThis.normalAcceptance;
+    const { setup, spawn, turn, expect } = globalThis.normalAcceptance;
     const rows = (globalThis.normalTrace = []);
     const nativeAttack = KinkyDungeonEnemyTryAttack;
     const nativeConstruction = Spiderlings.SpinnerNativeField.applyPaidAction;
     const nativeAccrue = Spiderlings.SpinnerNativeField.accrueConstructionAction;
-    const nativeRemove = KDRemoveEntity;
-    let row, source, target, tick;
+    let row, source, tick;
     KinkyDungeonEnemyTryAttack = function (actor) {
         const result = nativeAttack.apply(this, arguments);
         if (row?.action === "melee" && actor === source)
@@ -30,12 +29,6 @@
                 paid: result,
                 web: Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(actor),
             });
-        return result;
-    };
-    KDRemoveEntity = function (actor, kill, capture) {
-        const result = nativeRemove.apply(this, arguments);
-        if (row?.action === "wrapping" && actor === target)
-            row.exits.push({ tick, kill: !!kill, capture: !!capture, removed: result });
         return result;
     };
     // Both rows have the same planned line. Only its physical completion differs.
@@ -72,24 +65,16 @@
         return state;
     };
     try {
-        for (const action of ["melee", "construction", "wrapping"]) {
+        for (const action of ["melee", "construction"]) {
             for (const web of [false, true]) {
                 row = undefined;
                 setup(`action-cadence-${action}`);
                 KDMovePlayer(action === "melee" ? 13 : 28, action === "melee" ? 10 : 18, false);
-                source = spawn(action === "wrapping" ? "WebCaster" : "Spinner", 12, 10);
+                source = spawn("Spinner", 12, 10);
                 source.hostile = 999;
                 source.attackPoints = 0;
                 source.movePoints = 0;
                 source.SpinnerConstructionPoints = 0;
-                target = undefined;
-                if (action === "wrapping") {
-                    target = spawn("MaidKnightHeavy", 13, 10, "Maidforce");
-                    // Isolate work cadence from retaliation; binding and removal still use native state.
-                    target.stun = 99;
-                    pin(target, source);
-                    while (target.boundLevel < 38) Spiderlings.Combat.hitNPC(source, target, "direct");
-                }
                 prepareLine(source, web, { x: 12, y: 8 }, { x: 12, y: 12 });
                 if (action === "construction") {
                     source.aware = false;
@@ -109,7 +94,7 @@
                     turns: [],
                 };
                 rows.push(row);
-                for (tick = 1; tick <= (action === "wrapping" ? 10 : action === "construction" ? 180 : 18); tick++) {
+                for (tick = 1; tick <= (action === "construction" ? 180 : 18); tick++) {
                     await turn();
                     row.turns.push({
                         tick,
@@ -120,10 +105,7 @@
                         constructionPoints: source.SpinnerConstructionPoints,
                         webCredit: source.SpiderlingsWebMoveCredit || 0,
                         standingOnWeb: Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(source),
-                        wrapping: structuredClone(Spiderlings.NPCWrapping.record(target)),
-                        targetPresent: target ? KDMapData.Entities.includes(target) : undefined,
                     });
-                    if (action === "wrapping" && !KDMapData.Entities.includes(target)) break;
                     if (
                         action === "construction" &&
                         row.construction.filter((entry) => entry.applied).length >= 30 &&
@@ -167,20 +149,6 @@
                         ),
                         "Autonomous construction used movement acceleration in its work budget",
                     );
-                } else {
-                    row.cadenceIndices = row.turns
-                        .filter(
-                            (entry, index) =>
-                                (entry.wrapping?.progress || 0) > (row.turns[index - 1]?.wrapping?.progress || 0),
-                        )
-                        .map((entry) => entry.tick);
-                    const captures = row.exits.filter((entry) => entry.removed && entry.capture && !entry.kill);
-                    expect(
-                        captures.length === 1,
-                        `Native wrapping did not capture exactly once: ${JSON.stringify(row)}`,
-                    );
-                    row.cadenceIndices.push(captures[0].tick);
-                    expect(row.cadenceIndices.length === 3, "Native wrapping did not require three paid contributions");
                 }
             }
             const [plain, web] = rows.slice(-2);
@@ -193,7 +161,6 @@
         KinkyDungeonEnemyTryAttack = nativeAttack;
         Spiderlings.SpinnerNativeField.applyPaidAction = nativeConstruction;
         Spiderlings.SpinnerNativeField.accrueConstructionAction = nativeAccrue;
-        KDRemoveEntity = nativeRemove;
     }
     return { rows };
 })();

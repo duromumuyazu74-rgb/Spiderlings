@@ -19,7 +19,7 @@
     target.specialBoundLevel = { Slime: 6 };
     target.boundLevel = 6;
     Spiderlings.NPCAdhesion.recordNativeSilk(source, target, 6, "direct", "visibility-check");
-    expect(Spiderlings.NPCWrapping.handleEnemyTurn(source, target, 1), "Wrapping fixture failed");
+    expect(Spiderlings.NPCWrapping.vulnerable(target), "Silk vulnerability fixture failed");
     source.stun = 999;
     target.stun = 999;
     await frame();
@@ -30,21 +30,10 @@
         return originalDraw.apply(this, args);
     };
     try {
-        // Identify the private Graphics through the actual draw call, then inspect its native geometry.
-        const originalLineTo = PIXI.Graphics.prototype.lineTo;
-        let strands;
-        PIXI.Graphics.prototype.lineTo = function (...args) {
-            strands = this;
-            return originalLineTo.apply(this, args);
-        };
-        try {
-            KinkyDungeonVisionSet(source.x, source.y, 5);
-            KinkyDungeonVisionSet(target.x, target.y, 5);
-            Spiderlings.NPCWrapping.draw({ CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
-        } finally {
-            PIXI.Graphics.prototype.lineTo = originalLineTo;
-        }
-        expect(labels.length > 0 && strands?.visible, "Visible wrapping control missing");
+        KinkyDungeonVisionSet(source.x, source.y, 5);
+        KinkyDungeonVisionSet(target.x, target.y, 5);
+        Spiderlings.NPCWrapping.draw({ CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+        expect(labels.length > 0, "Visible silk vulnerability label missing");
         const records = [];
         for (const state of ["hidden", "wall"]) {
             labels.length = 0;
@@ -59,11 +48,10 @@
             const sample = {
                 state,
                 labels: [...labels],
-                strandsVisible: strands.visible,
-                progress: Spiderlings.NPCWrapping.record(target)?.progress,
+                vulnerable: Spiderlings.NPCWrapping.vulnerable(target),
             };
-            expect(!labels.length && !strands.visible, `${state}: wrapping leaked through visibility`);
-            expect(sample.progress === 1, "Hiding wrapping changed gameplay progress");
+            expect(!labels.length, `${state}: wrapping leaked through visibility`);
+            expect(sample.vulnerable, "Hiding the label changed damage vulnerability");
             records.push(sample);
         }
         return records;
