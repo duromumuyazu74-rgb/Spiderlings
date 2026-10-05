@@ -26,14 +26,22 @@
     const labels = [];
     const originalDraw = DrawTextFitKDTo;
     DrawTextFitKDTo = function (...args) {
-        if (String(args[1]).includes(TextGet("SpiderlingsNPCWrapping"))) labels.push(args[1]);
+        if (
+            [
+                "SpiderlingsNPCWrapping",
+                "SpiderlingsNPCAdhesionInitial",
+                "SpiderlingsNPCAdhesionFull",
+                "SpiderlingsNPCAdhesionHelpless",
+            ].some((key) => args[1] === TextGet(key))
+        )
+            labels.push(args[1]);
         return originalDraw.apply(this, args);
     };
     try {
         KinkyDungeonVisionSet(source.x, source.y, 5);
         KinkyDungeonVisionSet(target.x, target.y, 5);
         Spiderlings.NPCWrapping.draw({ CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
-        expect(labels.length > 0, "Visible silk vulnerability label missing");
+        expect(!labels.length, "Visible NPC leaked a design-policy label");
         const records = [];
         for (const state of ["hidden", "wall"]) {
             labels.length = 0;
@@ -51,7 +59,7 @@
                 vulnerable: Spiderlings.NPCWrapping.vulnerable(target),
             };
             expect(!labels.length, `${state}: wrapping leaked through visibility`);
-            expect(sample.vulnerable, "Hiding the label changed damage vulnerability");
+            expect(sample.vulnerable, "Visibility changed silk departure eligibility");
             records.push(sample);
         }
         return records;

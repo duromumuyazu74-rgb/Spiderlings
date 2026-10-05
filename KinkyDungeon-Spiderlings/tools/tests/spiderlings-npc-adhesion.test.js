@@ -280,18 +280,14 @@ test("saved entity ledger and map clock restore without refreshing contribution 
     assert.equal(r.adhesion.status(r.target), "free");
 });
 
-test("visible status feedback distinguishes initial, full and native helpless states", () => {
+test("silk pin states have physical binding without floating design labels", () => {
     const r = fixture();
-    const draw = () => r.emit("draw", { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
-    r.bind(r.sourceSpider, 3);
-    draw();
-    assert.equal(r.calls.labels.at(-1), "SpiderlingsNPCAdhesionInitial");
-    r.bind(r.spinner, 3, "melee");
-    draw();
-    assert.equal(r.calls.labels.at(-1), "SpiderlingsNPCAdhesionFull");
-    r.target.boundLevel = 21;
-    draw();
-    assert.equal(r.calls.labels.at(-1), "SpiderlingsNPCAdhesionHelpless");
+    for (const amount of [3, 3, 30]) {
+        r.bind(r.sourceSpider, amount);
+        r.emit("draw", { CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    }
+    assert.deepEqual(r.calls.labels, []);
+    assert.equal(r.adhesion.status(r.target), "native-helpless");
 });
 
 test("nested contact exposure queries do not subtract the binding that is being recorded", () => {

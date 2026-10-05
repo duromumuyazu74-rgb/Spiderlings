@@ -1,11 +1,12 @@
 "use strict";
 
-// Native damage owns HP, shields and defeat. Silk exposure never consumes an
-// attacker operation or removes a living NPC after a fixed number of turns.
+// Native damage owns HP, shields and defeat. Sustained owned silk permits a
+// nonlethal departure, with time for native struggle or another actor to untie it.
 (() => {
     const api = globalThis.Spiderlings;
     const KEY = "SpiderlingsNPCWrapping";
-    const DAMAGE_MULTIPLIER = 4;
+    const DAMAGE_MULTIPLIER = 1;
+    const DEPARTURE_TURNS = 6;
     const SPIDERS = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]);
     const entities = () => (typeof KDMapData === "undefined" ? [] : KDMapData.Entities || []);
     function protectedTarget(target) {
@@ -84,50 +85,57 @@
         if (typeof KDMapData !== "undefined") delete KDMapData[KEY];
     }
 
+    function auditDeparture(target) {
+        if (!vulnerable(target)) {
+            delete target[KEY];
+            return undefined;
+        }
+        return target[KEY]?.version === 2 ? target[KEY] : undefined;
+    }
+
     function afterLoad() {
-        // Old progress was a nonlethal exit countdown, not physical binding.
-        // Discard it while retaining the NPC's native silk and HP.
+        // Retire the old three-contribution map ledger without affecting native
+        // binding or HP. The current entity timer survives native zero-time load.
         clearTemporary();
+        for (const target of entities()) auditDeparture(target);
         preemptNativeCapture();
     }
 
-    function draw(data) {
-        if (!data || typeof DrawTextFitKDTo !== "function" || typeof kdenemystatusboard === "undefined") return;
-        const size = KinkyDungeonGridSizeDisplay;
-        const pans = typeof StandalonePatched !== "undefined" && StandalonePatched;
-        for (const target of entities()) {
-            if (
-                !vulnerable(target) ||
-                (typeof KDCanSeeEnemy === "function" && !KDCanSeeEnemy(target)) ||
-                (typeof KinkyDungeonVisionGet === "function" && !(KinkyDungeonVisionGet(target.x, target.y) > 0))
-            )
-                continue;
-            DrawTextFitKDTo(
-                kdenemystatusboard,
-                TextGet("SpiderlingsNPCWrapping"),
-                (target.x - data.CamX - (pans ? 0 : data.CamX_offset) + 0.5) * size,
-                (target.y - data.CamY - (pans ? 0 : data.CamY_offset) + 0.15) * size,
-                size * 1.5,
-                "#ffd7ed",
-                "#231527",
-                13,
-            );
+    function tick(delta) {
+        if (!(delta > 0)) return;
+        const nativeTick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : undefined;
+        for (const target of [...entities()]) {
+            let progress = auditDeparture(target);
+            if (!vulnerable(target)) continue;
+            if (!progress) target[KEY] = progress = { version: 2, remaining: DEPARTURE_TURNS };
+            if (nativeTick !== undefined && progress.lastNativeTick === nativeTick) continue;
+            progress.lastNativeTick = nativeTick;
+            progress.remaining = Math.max(0, progress.remaining - delta);
+            if (progress.remaining > 0) continue;
+            // No death bursts, kill credit or permanent collection. Native hooks
+            // can veto removal; a veto leaves HP, binding and stolen items intact.
+            if (KDRemoveEntity(target, false) && !entities().includes(target)) {
+                if (typeof KDDropStolenItems === "function") KDDropStolenItems(target, KDMapData);
+                delete target[KEY];
+            }
         }
     }
 
+    // Retain the runtime facade for old callers. Physical silk artwork supplies
+    // the visible feedback; no design-policy labels are drawn over NPCs.
+    function draw() {}
+
     if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined")
-        KDAddEvent(KDEventMapGeneric, "duringDamageEnemy", KEY, (_event, data) => {
-            // KD has resolved resistance and the contact cap, but not shield/HP
-            // payment. Zero-damage binding and immunities remain zero.
-            if (data.dmgDealt > 0 && vulnerable(data.enemy)) data.dmgDealt *= DAMAGE_MULTIPLIER;
-        });
+        KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => tick(data?.delta));
 
     api.NPCWrapping = Object.freeze({
         DAMAGE_MULTIPLIER,
+        DEPARTURE_TURNS,
         targetEligible,
         vulnerable,
         preemptNativeCapture,
         afterLoad,
+        tick,
         draw,
         clearTemporary,
     });

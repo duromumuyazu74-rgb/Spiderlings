@@ -2369,8 +2369,9 @@
         return result.filter(Boolean);
     }
 
-    function needsSoleSharedBuilder(encounter, group) {
-        if (group.engagement?.sharedOnly !== true) return false;
+    function needsSoleBuilder(encounter, group) {
+        // Personal player contact retains its established melee/recovery priority.
+        if (group.engagement?.target?.kind === "player" && group.engagement.sharedOnly !== true) return false;
         const plan = encounter.ai.plans[group.planId],
             composite = encounter.topology?.composites?.[plan?.compositeId];
         if (
@@ -2378,8 +2379,8 @@
             !composite?.layerIds.some((id) => encounter.topology.fields[id]?.phase === "preparing")
         )
             return false;
-        // Remote knowledge alone must not take the last available builder away
-        // from an unfinished body. Personal contact and recovery keep priority.
+        // Keep one paid body worker until the enclosure is prepared, even with
+        // personal prey contact. Recovery and adjacent defense remain separate duties.
         return (
             group.memberIds.filter((id) => {
                 const member = KDMapData.Entities.find((entity) => String(entity.id) === String(id));
@@ -2389,7 +2390,7 @@
     }
 
     function selectLure(encounter, group, preferredIds = []) {
-        if (needsSoleSharedBuilder(encounter, group)) return undefined;
+        if (needsSoleBuilder(encounter, group)) return undefined;
         const waypoint = planWaypoint(encounter, group),
             required = new Set(requiredCells(encounter, group).map(cellKey)),
             preferred = new Set(preferredIds.map(String));
@@ -2632,7 +2633,7 @@
         delete engagement.progress;
         if (engagement.lastKnown?.age >= 4 || engagement.lastKnown?.source !== "native") delete engagement.lastKnown;
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
-        if (needsSoleSharedBuilder(encounter, group)) delete engagement.lureId;
+        if (needsSoleBuilder(encounter, group)) delete engagement.lureId;
         else if (
             !eligibleSpinner(lure) ||
             sourceBusy(lure) ||
@@ -2674,6 +2675,7 @@
             };
             const selected = selectLure(encounter, group, [enemy.id]);
             if (selected) group.engagement.lureId = selected.id;
+            else delete group.engagement.lureId;
         } else if (!sameTarget(group.engagement.target, target)) return false;
         const engagement = group.engagement,
             previous = engagement.lastKnown,
@@ -2703,6 +2705,7 @@
             if (engagement.mode !== "pressure") engagement.mode = "pressure";
             if (String(engagement.lureId) === String(enemy.id)) engagement.lureNoContactTurns = 0;
         }
+        if (needsSoleBuilder(encounter, group)) delete engagement.lureId;
         const lure = KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId));
         if (
             !eligibleSpinner(lure) ||
@@ -2900,6 +2903,13 @@
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
         const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData);
         const assignment = group.assignments?.[enemy.id];
+        if (
+            perceivedThreat &&
+            distance(enemy, target) <= 1 &&
+            needsSoleBuilder(encounter, group) &&
+            (target.player || (!KinkyDungeonIsDisabled(target) && !KDHelpless(target)))
+        )
+            return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
         if (hasMaintenanceAssignment(enemy))
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.

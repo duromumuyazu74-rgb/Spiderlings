@@ -90,15 +90,15 @@
         KinkyDungeonFloaters.length = 0;
         await new Promise((resolve) => setTimeout(resolve, 400));
         await snap(`${colorName(pink)}-npc-states`);
-        rows.push({ kind: "adhesion-labels", pink, states });
+        rows.push({ kind: "physical-silk-states", pink, states });
         KDMapData.Entities = KDMapData.Entities.filter((target) => ![initial, helpless].includes(target));
-        expect(Spiderlings.NPCWrapping.vulnerable(full), "No silk vulnerability label to inspect");
+        expect(Spiderlings.NPCWrapping.vulnerable(full), "No full silk-bound NPC to inspect");
         KDDamageQueue.length = 0;
         KinkyDungeonFloaters.length = 0;
         await new Promise((resolve) => setTimeout(resolve, 500));
         await snap(`${colorName(pink)}-npc-wrapping`);
         rows.push({
-            kind: "silk-vulnerability-label",
+            kind: "silk-without-policy-label",
             pink,
             vulnerable: Spiderlings.NPCWrapping.vulnerable(full),
             multiplier: Spiderlings.NPCWrapping.DAMAGE_MULTIPLIER,

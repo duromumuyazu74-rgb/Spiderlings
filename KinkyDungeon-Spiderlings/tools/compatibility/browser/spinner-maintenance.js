@@ -135,5 +135,55 @@
         );
         capture.cancel();
     }
+    setup("sole-builder-personal-contact");
+    KDMovePlayer(20, 16, false);
+    const worker = spawn("Spinner", 10, 10),
+        prey = spawn("MaidKnightHeavy", 16, 10, "Maidforce"),
+        construction = { mode: "sole-builder-contact", actions: [], turns: [] };
+    rows.push(construction);
+    prey.stun = 999;
+    ai.beginTurn({ activate: true });
+    const apply = native.applyPaidAction;
+    native.applyPaidAction = function (actor, action) {
+        const result = apply.apply(this, arguments);
+        if (actor.id === worker.id && result.applied)
+            construction.actions.push({ type: action.type, cell: action.cell });
+        return result;
+    };
+    try {
+        for (let tick = 0; tick < 24; tick++) {
+            await turn();
+            const group = Object.values(native.state().ai.groups).find((entry) => entry.memberIds.includes(worker.id));
+            construction.turns.push({
+                tick,
+                x: worker.x,
+                y: worker.y,
+                lure: group.engagement?.lureId,
+                actions: construction.actions.length,
+            });
+            if (tick === 8) {
+                const before = JSON.stringify({
+                    x: worker.x,
+                    y: worker.y,
+                    points: worker.SpinnerConstructionPoints,
+                    topology: native.state().topology,
+                });
+                restore(save());
+                const restored = KDMapData.Entities.find((entry) => entry.id === worker.id);
+                expect(
+                    JSON.stringify({
+                        x: restored.x,
+                        y: restored.y,
+                        points: restored.SpinnerConstructionPoints,
+                        topology: native.state().topology,
+                    }) === before,
+                    "Zero-time load changed sole-builder paid work",
+                );
+            }
+        }
+        expect(construction.actions.length > 0, "Personal NPC contact consumed every construction turn");
+    } finally {
+        native.applyPaidAction = apply;
+    }
     return { rows };
 })();

@@ -133,7 +133,7 @@
                 throw Error(`${name}: native binding did not independently incapacitate the target`);
             if (name === "BlindZombie" && !samples.at(-1).present) throw Error("Native nocapture target was removed");
             if (KDMapData.SpiderlingsNPCWrapping || removals.some((entry) => entry.capture))
-                throw Error(`${name}: obsolete wrapping countdown captured prey`);
+                throw Error(`${name}: departure incorrectly entered permanent capture`);
             const stolen = KDMapData.GroundItems.filter((item) => ["RedKey", "PotionMana"].includes(item.name))
                 .map((item) => item.name)
                 .sort();

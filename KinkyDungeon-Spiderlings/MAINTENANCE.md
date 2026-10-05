@@ -1,4 +1,6 @@
-# Spiderlings 0.92.36-test.98 维护说明
+# Spiderlings 0.92.36-test.99 维护说明
+
+test.99 保留未完成围场的最后一名施工者，个人看见 NPC 猎物也不再清空其施工职责；亲自接触玩家保留原有追击优先级。贴身活跃威胁、既有拉回与巢穴防御可打断；已经失能或原生无力行动的猎物不阻断施工。撤除 NPC 浮动黏住／易伤标签，保留实际丝缚美术。取消四倍受伤倍率，连续六个正时间回合保持完全黏住或足够自有蛛丝造成的原生无力行动后，允许非致命退场；挣脱与救援重置窗口。具体规则和验收见[本轮记录](../docs/spiderlings-test99-construction-departure.zh-CN.md)。
 
 test.98 按回合保持 Mage 身体符文发光：成功施法的本回合结束后仍亮，下一正时间回合结束清除瞬时施法状态；延迟咒印、坠牢、符文布置及触发预警从实际玩法状态保持，等待结算期间持续发光。发光状态随实体入档，零时间刷新和重复通知不消耗。地面符文完成布置后的静置不属于等待结算。使用原始弱／强光、粒子和镜像规则，不更改法术时序与数值。见[修复记录](../docs/spiderlings-test98-mage-glow.zh-CN.md)。
 
@@ -194,7 +196,7 @@ powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-
 powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\watch-spiderlings-mod.ps1 -Once
 ```
 
-`SpiderlingsNPCAdhesion.js` 为敌对 NPC 记录独立的八回合蛛丝压力、自有 Slime 余额和初始／完全黏住状态。实际原生 Slime 增量按一次付费行动合并；普通蛛丝喷射开启序列，Spinner、Jumper 与 Mage 的有效蛛丝动作可续加压力。初始黏住阻止主动移动，完全黏住使可缩放的直接伤害乘 0.65，不设置原生昏迷或无力反抗。行动间的原生挣脱会扣减自有余额与压力；地图时钟和 NPC 记录随新存档保存。`SpiderlingsNPCWrapping.js` 从 test.92 起不再保存三次缠裹退场进度。自有蛛丝完全黏住或足以造成原生无力反抗时，正数抗性后伤害乘 4，再由原生格挡、护盾、HP、击倒和死亡流程处理。解绑或恢复立即取消易伤；旧倒计时在读档时丢弃，不改猎物位置、HP 或丝缚，不占附近蜘蛛行动。
+`SpiderlingsNPCAdhesion.js` 为敌对 NPC 记录独立的八回合蛛丝压力、自有 Slime 余额和初始／完全黏住状态。实际原生 Slime 增量按一次付费行动合并；普通蛛丝喷射开启序列，Spinner、Jumper 与 Mage 的有效蛛丝动作可续加压力。初始黏住阻止主动移动，完全黏住使可缩放的直接伤害乘 0.65，不设置原生昏迷或无力反抗。行动间的原生挣脱会扣减自有余额与压力；地图时钟和 NPC 记录随新存档保存。`SpiderlingsNPCWrapping.js` 从 test.99 起取消 test.92 的四倍伤害。完全黏住或足够自有蛛丝造成原生无力行动时，实体记录连续六回合退场窗口；资格解除就重置。只在正时间 `tickAfter` 更新，同一原生 tick 不重复支付；读档保留版本 2 进度并丢弃旧地图三次缠裹账本。到期调用 `KDRemoveEntity(target, false)`，尊重原生取消；成功后通过 `KDDropStolenItems(target, KDMapData)` 归还携带物品，无死亡掉落、击杀计数或永久收编。HP、护盾、伤害与原生击倒保持原生处理。黏住与易伤文字不再覆盖 NPC；丝缚模型仍按原有条件显示。
 
 `Repository checks` 在每个 PR 和维护分支推送上重建 atlas、构建 ZIP、逐项比对包内容，并保存以提交 SHA 命名的 14 天 workflow artifact。测试版本不创建 GitHub Release。正式发布只从 `main` 产生，并将通过验收的同一 ZIP 附加到 `v<modbuild>` Release。
 

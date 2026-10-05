@@ -237,9 +237,9 @@
                 target.stun = 99;
                 batch = { targetId: target.id, sourceIds: sources.map((source) => source.id) };
             }
-            if ([16, 76, 136, 196, 256].includes(tick)) {
+            if ([4, 64, 124, 184, 244].includes(tick)) {
                 const prey = KDMapData.Entities.find((enemy) => enemy.id === batch.targetId);
-                expect(prey, "Silk-bound prey exited through an obsolete countdown");
+                expect(prey, "Native defeat fixture lost prey before its six-turn departure window");
                 KinkyDungeonDamageEnemy(
                     prey,
                     { type: "arcane", damage: 10000, nocrit: true },

@@ -228,26 +228,6 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             for (const target of KDMapData.Entities || []) reconcile(target);
         });
-        KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
-            if (!data || typeof DrawTextFitKDTo !== "function" || typeof kdenemystatusboard === "undefined") return;
-            const size = KinkyDungeonGridSizeDisplay;
-            const boardPans = typeof StandalonePatched !== "undefined" && StandalonePatched;
-            for (const target of KDMapData.Entities || []) {
-                if (!record(target) || !(target.hp > 0)) continue;
-                if (typeof KinkyDungeonVisionGet === "function" && !(KinkyDungeonVisionGet(target.x, target.y) > 0))
-                    continue;
-                const state = status(target);
-                if (state === "free") continue;
-                const key = {
-                    initial: "SpiderlingsNPCAdhesionInitial",
-                    full: "SpiderlingsNPCAdhesionFull",
-                    "native-helpless": "SpiderlingsNPCAdhesionHelpless",
-                }[state];
-                const x = (target.x - data.CamX - (boardPans ? 0 : data.CamX_offset) + 0.5) * size;
-                const y = (target.y - data.CamY - (boardPans ? 0 : data.CamY_offset) - 0.2) * size;
-                DrawTextFitKDTo(kdenemystatusboard, TextGet(key), x, y, size * 1.5, "#f2d5fc", "#231527", 13);
-            }
-        });
     }
 
     if (typeof KinkyDungeonEnemyLoop === "function") {

@@ -48,8 +48,8 @@
                 samples.push(row.damage);
             }
             expect(
-                samples[0].dealt > 0 && Math.abs(samples[1].dealt - samples[0].dealt * 4) < 1e-8,
-                `Effective native damage is not fourfold: ${JSON.stringify(samples)}`,
+                samples[0].dealt > 0 && Math.abs(samples[1].dealt - samples[0].dealt) < 1e-8,
+                `Owned pin unexpectedly amplified native damage: ${JSON.stringify(samples)}`,
             );
             if (shield === 20)
                 expect(
@@ -77,49 +77,84 @@
             row.damage = damage(source, mode === "zero" ? 0 : 0.5);
             if (mode === "immune" || mode === "zero") expect(row.damage.dealt === 0, `${mode} produced damage`);
         }
-        const source = prepare("legacy-reload-no-countdown");
+        const source = prepare("sustained-nonlethal-departure");
         Spiderlings.Combat.applySilkBinding(source, target, 1000, { attack: "direct" });
-        const id = target.id;
-        KDMapData.SpiderlingsNPCWrapping = {
-            version: 1,
-            records: {
-                [id]: { targetId: id, progress: 3, helplessTurns: 3, sourceIds: [source.id] },
-            },
-            paidSourceIds: [source.id],
-        };
-        const before = { hp: target.hp, bound: target.boundLevel, slime: target.specialBoundLevel.Slime };
+        target.items = ["RedKey", "PotionMana"];
+        const id = target.id,
+            hp = target.hp;
+        KDMapData.SpiderlingsNPCWrapping = { version: 1, records: { [id]: { progress: 3 } } };
         restore(save());
         target = enemy(id);
-        row.reload = {
-            before,
-            after: { hp: target.hp, bound: target.boundLevel, slime: target.specialBoundLevel.Slime },
-        };
+        expect(!KDMapData.SpiderlingsNPCWrapping && target.hp === hp, "Legacy migration altered native prey");
+        for (let tick = 0; tick < 3; tick++) await turn();
+        expect(target.SpiderlingsNPCWrapping.remaining === 3, "Departure did not count three world turns");
+        const before = JSON.stringify(target.SpiderlingsNPCWrapping);
+        restore(save());
+        target = enemy(id);
+        expect(JSON.stringify(target.SpiderlingsNPCWrapping) === before, "Zero-time load consumed departure time");
+        for (let tick = 0; tick < 2; tick++) await turn();
+        expect(enemy(id) && target.hp === hp, "NPC left or lost HP before the six-turn rescue window");
+        await turn();
+        expect(!enemy(id) && target.hp === hp, "Sustained silk did not permit nonlethal departure");
         expect(
-            JSON.stringify(row.reload.before) === JSON.stringify(row.reload.after),
-            "Legacy migration altered native prey",
+            row.exits.length === 1 && row.exits[0].result && !row.exits[0].kill && !row.exits[0].capture,
+            "Departure produced death or collection",
         );
-        expect(
-            !KDMapData.SpiderlingsNPCWrapping && Spiderlings.NPCWrapping.vulnerable(target),
-            "Reload retained countdown or lost real silk exposure",
-        );
-        for (let tick = 0; tick < 8; tick++) await turn();
-        expect(
-            KDMapData.Entities.includes(target) && !row.exits.length,
-            "Elapsed turns removed living silk-bound prey",
-        );
-        row.afterTurns = { hp: target.hp, vulnerable: Spiderlings.NPCWrapping.vulnerable(target) };
-        // Native lethal damage to a fully bound NPC becomes knockdown, not a Mod capture.
-        row.lethalDamage = damage(enemy(source.id), 10000);
+        const stolen = KDMapData.GroundItems.filter((item) => ["RedKey", "PotionMana"].includes(item.name));
+        expect(stolen.length === 2, "Departure lost or duplicated stolen items");
+        row.departure = { hp, preservedHP: target.hp, rescuedItems: stolen.map((item) => item.name) };
+
+        const rescuerSource = prepare("rescue-resets-window");
+        Spiderlings.Combat.applySilkBinding(rescuerSource, target, 1000, { attack: "direct" });
+        const rescueId = target.id;
+        for (let tick = 0; tick < 3; tick++) await turn();
+        KDUntieEnemy(target, 10000, true, true);
+        await turn();
+        expect(!target.SpiderlingsNPCWrapping && enemy(rescueId), "Native untying did not cancel departure");
+        Spiderlings.Combat.applySilkBinding(rescuerSource, target, 1000, { attack: "direct" });
+        for (let tick = 0; tick < 5; tick++) await turn();
+        expect(enemy(rescueId), "Rebinding reused old departure time");
+        await turn();
+        expect(!enemy(rescueId), "Rebinding did not start a fresh six-turn window");
+        row.rescuedAndRebound = true;
+
+        const vetoSource = prepare("native-removal-veto");
+        Spiderlings.Combat.applySilkBinding(vetoSource, target, 1000, { attack: "direct" });
+        const vetoId = target.id,
+            vetoHP = target.hp;
+        target.items = ["RedKey"];
+        KDAddEvent(KDEventMapGeneric, "removeEnemy", "SpiderlingsAcceptanceVeto", (_event, data) => {
+            if (data.enemy.id === vetoId && target.acceptanceVeto) data.cancel = true;
+        });
+        target.acceptanceVeto = true;
+        try {
+            for (let tick = 0; tick < 6; tick++) await turn();
+            row.vetoState = {
+                present: !!enemy(vetoId),
+                hp: target.hp,
+                expectedHP: vetoHP,
+                held: target.items?.filter((name) => name === "RedKey").length || 0,
+                dropped: KDMapData.GroundItems.filter((item) => item.name === "RedKey").length,
+            };
+            expect(
+                row.vetoState.present && target.hp === vetoHP && row.vetoState.held + row.vetoState.dropped === 1,
+                `Native veto did not preserve live prey and stolen items: ${JSON.stringify(row.vetoState)}`,
+            );
+            delete target.acceptanceVeto;
+            await turn();
+            expect(!enemy(vetoId), "Departure did not retry after native veto cleared");
+        } finally {
+            delete KDEventMapGeneric.removeEnemy.SpiderlingsAcceptanceVeto;
+        }
+        row.vetoHonored = true;
+
+        const knockdownSource = prepare("native-knockdown-remains-native");
+        Spiderlings.Combat.applySilkBinding(knockdownSource, target, 1000, { attack: "direct" });
+        row.lethalDamage = damage(knockdownSource, 10000);
         expect(target.hp === 0.001 && KDMapData.Entities.includes(target), "Native bound knockdown was bypassed");
-        expect(!row.exits.length, "Damage added a non-native removal");
+        expect(!row.exits.length, "Damage added immediate removal");
         expect(KDRemoveEntity(target, true, false), "Native death removal failed");
-        expect(!Spiderlings.NPCWrapping.vulnerable(target), "Removed prey retained exposure");
-        expect(
-            row.exits.filter((exit) => exit.result && exit.kill && !exit.capture).length === 1,
-            "Native death did not remove exactly once",
-        );
-        Spiderlings.NPCWrapping.preemptNativeCapture();
-        expect(!row.exits.some((exit) => exit.capture), "Death was followed by Mod capture");
+        expect(row.exits.length === 1 && row.exits[0].kill && !row.exits[0].capture, "Native death changed");
     } finally {
         KDRemoveEntity = nativeRemove;
     }

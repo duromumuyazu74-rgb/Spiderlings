@@ -154,10 +154,10 @@ test("native resistance, shields and knockdown retain ownership around the silk 
             absorbed: context.predata.dmgShieldDealt,
         };
     };
-    assert.deepEqual(hit(0), { hp: 96, shield: 0, damage: 4, absorbed: 0 });
-    assert.deepEqual(hit(0, 1), { hp: 98, shield: 0, damage: 2, absorbed: 0 });
-    assert.deepEqual(hit(10), { hp: 100, shield: 6, damage: 0, absorbed: 4 });
-    assert.deepEqual(hit(1), { hp: 97, shield: 0, damage: 3, absorbed: 1 });
+    assert.deepEqual(hit(0), { hp: 99, shield: 0, damage: 1, absorbed: 0 });
+    assert.deepEqual(hit(0, 1), { hp: 99.5, shield: 0, damage: 0.5, absorbed: 0 });
+    assert.deepEqual(hit(10), { hp: 100, shield: 9, damage: 0, absorbed: 1 });
+    assert.deepEqual(hit(1), { hp: 100, shield: 0, damage: -0, absorbed: 1 });
     assert.deepEqual(hit(10, 2), { hp: 100, shield: 10, damage: 0, absorbed: 0 });
     assert.deepEqual(hit(0, 0, 0), { hp: 100, shield: 0, damage: 0, absorbed: 0 });
     assert.equal(hit(0, 0, 1000).hp, 0.001, "Fully bound prey follows native knockdown instead of Mod removal");

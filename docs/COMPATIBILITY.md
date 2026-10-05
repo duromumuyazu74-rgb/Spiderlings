@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.98.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.99.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.99 construction and nonlethal NPC departure (2026-10-05)
+
+The last available enclosure builder retains paid work under personal NPC contact. Personal player pursuit, active adjacent defense, existing recovery and nest defense remain available; disabled prey does not interrupt construction. NPC silk no longer multiplies damage or renders floating policy labels. Six consecutive full owned-pin or sufficiently attributed native-helpless turns permit native nonlethal departure, with rescue resetting the window. Saved progress, duplicate ticks, stolen-item return and removal cancellation are covered by focused tests and native scenes. See the [fix record](spiderlings-test99-construction-departure.zh-CN.md).
+
+| Runtime               | Status                                                    | Evidence                                                                                 |
+| --------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| KD 5.4.92             | Passed all 49 stages, including seven native locale loads | `../kd-compatibility/runs/2026-10-05T06-21-44-268Z-0.92.36-test.99/baseline/result.json` |
+| Official GitHub 5.5.3 | Passed the same 49 stages and seven locale loads          | `../kd-compatibility/runs/2026-10-05T06-21-44-268Z-0.92.36-test.99/github/result.json`   |
+
+Official `5.5` commit `917d59b9f2ecad6b604498c8096bac5e441cb5ac` was fetched at `2026-10-05T06:21:44.252Z`. Final ZIP: 170 allowlisted entries, 24,841,781 bytes; SHA-256 `f91ace3b3a86405a2b465c4f6be7b388b1f5edaf8a760b44d2053bd089041b7d`.
+
+The 24-turn sole-builder scene records nine paid construction actions on 5.4.92 and eight on 5.5.3. Nonlethal departure retains the fixture's 50 HP and returns one key and one mana potion. Native rescue resets the window, native removal cancellation keeps the prey, and zero-time save/load preserves both construction and departure progress. Physical normal/pink silk visuals remain without Spiderlings policy labels. The original player-contact, repeated bag recovery, maintenance, Mage and Hunting Grounds scenes also pass.
+
+The final delivery collector passes repository checks, 12 policy tests, 578 public tests, the complete 900-test local watcher and ZIP byte verification, with stable source and ZIP during the run. Report: `.scratch/delivery/2026-10-05T06-31-19-550Z-maDMfh/REPORT.md`. Only outcome documentation was appended afterward, followed by repository and diff checks.
 
 ## Test.98 Mage body glow and hunting population fallback (2026-10-05)
 

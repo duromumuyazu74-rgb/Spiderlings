@@ -263,7 +263,11 @@ test("a remote player report leaves the sole enclosure builder doing paid constr
     worker.vp = 1;
     worker.testSense = true;
     c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
-    assert.equal(group.engagement.lureId, worker.id, "Personal recognized contact retains native combat priority");
+    assert.equal(
+        group.engagement.lureId,
+        worker.id,
+        "Personal recognized player contact retains native combat priority",
+    );
 });
 
 test("a remote player report still lets unpaid separated groups staff one passage", () => {
@@ -3462,4 +3466,30 @@ test("a retained leg bag with no field makes the real dispatcher build around a 
         c.KinkyDungeonCurrentTick++;
     }
     assert.ok(native.state().topology.actionLog.length > 0, "Replacement needs actual paid construction");
+});
+
+test("personal NPC contact preserves the sole paid enclosure builder until adjacent defense is needed", () => {
+    const worker = spinner(1, 8, 6, { aware: true, vp: 1, testSense: true }),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const prey = { id: 99, x: 14, y: 6, hp: 30, Enemy: { name: "MaidKnightHeavy" } };
+    c.KDMapData.Entities.push(prey);
+    for (let turn = 0; turn < 15; turn++) {
+        start(r, snapshot);
+        c.KinkyDungeonEnemyLoop(worker, prey, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const encounter = c.Spiderlings.SpinnerNativeField.state(),
+        group = Object.values(encounter.ai.groups)[0];
+    assert.ok(encounter.topology.actionLog.length > 0, "Seen NPC prey must not starve all paid construction");
+    assert.equal(group.engagement.lureId, undefined);
+    Object.assign(prey, { x: worker.x + 1, y: worker.y });
+    const before = encounter.topology.actionLog.length;
+    const result = c.KinkyDungeonEnemyLoop(worker, prey, 1);
+    assert.equal(result.attacked, true);
+    assert.equal(encounter.topology.actionLog.length, before);
+    assert.equal(c.Spiderlings.SpinnerAI.gateNativePhase(worker), true);
 });
