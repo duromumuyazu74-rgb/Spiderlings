@@ -326,3 +326,21 @@ test("prepared open gates draw visible colored hints without creating entities o
     draw(null, frame);
     assert.equal(draws.length, 0, "Retired field hints disappear");
 });
+
+test("Topology rejects retained gate closure when a passage changes its opening", () => {
+    const r = fixture({ tee: true });
+    r.drain();
+    r.enter();
+    const action = { ...r.action(), ownerId: r.owners[0].id },
+        before = JSON.stringify(r.graph()),
+        status = r.topology.inspectWorkAction(r.graph(), action);
+    assert.equal(status.pending, true);
+    assert.equal(status.gateWork, true);
+    assert.equal(status.allowsOccupiedTarget, false);
+    assert.equal(JSON.stringify(r.graph()), before);
+    r.graph().composites.passage.closureArmed = false;
+    const gate = r.field().gates.find((entry) => entry.linkId === action.linkId);
+    r.field().openGateIds = [gate.id];
+    assert.equal(r.topology.inspectWorkAction(r.graph(), action).pending, false);
+    assert.equal(r.topology.applyAction(r.graph(), action, r.api.snapshot(action.cell)).outcome.legal, false);
+});

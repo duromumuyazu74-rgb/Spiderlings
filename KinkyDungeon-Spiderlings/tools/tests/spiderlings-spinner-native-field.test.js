@@ -810,3 +810,41 @@ test("native enclosure reload deduplicates partial, sealed, and breached project
         assert.equal(JSON.stringify(encounter.topology), JSON.stringify(saved));
     }
 });
+
+test("Topology work inspection preserves repair occupancy and rebuilding cooldown through restore", () => {
+    const topology = runtime().context.Spiderlings.SpinnerTopology;
+    let state = topology.createLine({
+        fieldId: "work-status",
+        owners: [1, 2],
+        anchors: [
+            { x: 3, y: 3 },
+            { x: 3, y: 6 },
+        ],
+    });
+    const anchor = state.anchors[0];
+    anchor.built = true;
+    anchor.hp = anchor.maxHp / 2;
+    const repair = { type: "repairAnchor", fieldId: "work-status", anchorId: anchor.id, ownerId: 1 },
+        occupied = { inBounds: true, floor: true, protected: false, occupied: true, cell: { x: 3, y: 3 } },
+        before = JSON.stringify(state),
+        status = topology.inspectWorkAction(state, repair);
+    assert.equal(status.pending, true);
+    assert.equal(status.maintenance, true);
+    assert.equal(status.allowsOccupiedTarget, true);
+    assert.equal(status.metric, "repair");
+    assert.equal(JSON.stringify(state), before, "Inspection cannot advance work or counters");
+    assert.equal(topology.applyAction(state, repair, occupied).outcome.legal, true);
+    assert.equal(topology.inspectWorkAction(state, { ...repair, ownerId: 99 }).pending, false);
+    anchor.hp = 0;
+    anchor.cooldown = topology.REBUILD_TURNS - 1;
+    const rebuild = { ...repair, type: "rebuildAnchor" };
+    assert.equal(topology.inspectWorkAction(state, rebuild).pending, false);
+    anchor.cooldown++;
+    state = topology.restore(JSON.parse(JSON.stringify(state)));
+    assert.equal(topology.inspectWorkAction(state, rebuild).pending, true);
+    assert.equal(topology.inspectWorkAction(state, rebuild).allowsOccupiedTarget, false);
+    assert.equal(topology.applyAction(state, rebuild, occupied).outcome.legal, false);
+    assert.equal(state.anchors[0].hp, 0);
+    state.lineFields["work-status"].retired = true;
+    assert.equal(topology.inspectWorkAction(state, rebuild).pending, false);
+});

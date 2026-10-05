@@ -1243,50 +1243,6 @@
         mapCache = undefined;
         return clone(ai.mapgenField);
     }
-    function taskCell(field, task) {
-        if (task.type === "placeAnchor" || task.type === "repairAnchor") {
-            const anchor = field.anchors.find((candidate) => candidate.id === task.anchorId);
-            return anchor && { x: anchor.x, y: anchor.y };
-        }
-        const link = field.links.find((candidate) => candidate.id === task.linkId);
-        if (task.type === "repairLink") return link?.builtCells[0] || field.anchors.find((a) => a.id === link?.a);
-        return link?.plannedCells[link.builtCells.length] || field.anchors.find((anchor) => anchor.id === link?.b);
-    }
-
-    function pendingTasks(field, canConstruct) {
-        const tasks = [];
-        for (const anchor of field.anchors)
-            if (anchor.built && anchor.hp > 0 && anchor.hp < anchor.maxHp)
-                tasks.push({ key: `repair-anchor:${anchor.id}`, type: "repairAnchor", anchorId: anchor.id });
-        for (const link of field.links)
-            if (link.hp > 0 && link.hp < link.maxHp && (link.builtCells.length || link.connected))
-                tasks.push({
-                    key: `repair-link:${link.id}`,
-                    type: "repairLink",
-                    linkId: link.id,
-                    cell: clone(link.builtCells[0] || field.anchors.find((anchor) => anchor.id === link.a)),
-                });
-        if (!canConstruct) return tasks;
-        for (const anchor of field.anchors)
-            if (!anchor.built && anchor.hp > 0)
-                tasks.push({ key: `anchor:${anchor.id}`, type: "placeAnchor", anchorId: anchor.id });
-        for (const link of field.links) {
-            const endpointsBuilt = [link.a, link.b].every(
-                (id) => field.anchors.find((anchor) => anchor.id === id)?.built,
-            );
-            if (!link.connected && link.hp > 0 && endpointsBuilt)
-                tasks.push({
-                    key: `link:${link.id}:${link.builtCells.length}`,
-                    type: "extendLink",
-                    linkId: link.id,
-                    ...(link.plannedCells[link.builtCells.length]
-                        ? { cell: clone(link.plannedCells[link.builtCells.length]) }
-                        : {}),
-                });
-        }
-        return tasks;
-    }
-
     function workCells(target, snapshot, member) {
         const byKey = snapshotCellsByKey(snapshot);
         return DIRECTIONS.map((direction) => ({ x: target.x + direction.x, y: target.y + direction.y }))
@@ -1317,50 +1273,12 @@
     }
 
     function assignmentPending(encounter, assignment, ownerId) {
-        const field = assignmentField(encounter, assignment);
-        if (!field || !assignment?.target || !assignment?.workCell) return false;
-        const graph = encounter?.topology;
-        if (
-            graph?.fields?.[assignment.fieldId] &&
-            !(graph.fieldOwners?.[assignment.fieldId] || graph.owners).includes(ownerId)
-        )
-            return false;
-        if (assignment.anchorId) {
-            const anchor = field.anchors.find((candidate) => candidate.id === assignment.anchorId);
-            if (!anchor) return false;
-            if (assignment.type === "placeAnchor") return !anchor.built && anchor.hp > 0;
-            if (assignment.type === "rebuildAnchor") return anchor.built && anchor.hp <= 0;
-            if (assignment.type === "repairAnchor") return anchor.built && anchor.hp > 0 && anchor.hp < anchor.maxHp;
-        }
-        if (assignment.type === "rally") return false;
-        if (assignment.linkId) {
-            const link = field.links.find((candidate) => candidate.id === assignment.linkId);
-            if (!link) return false;
-            const passage = graph?.fields?.[assignment.fieldId];
-            if (passage?.kind === "passage") {
-                const gate = passage.gates.find((candidate) => candidate.linkId === assignment.linkId),
-                    armed = graph.composites[passage.compositeId]?.closureArmed,
-                    shouldClose = gate && (armed || !passage.openGateIds.includes(gate.id));
-                if (["closeGate", "connectGate"].includes(assignment.type) && !shouldClose) return false;
-                if (["closeGate", "connectGate"].includes(assignment.type) && (!link.prepared || link.hp <= 0))
-                    return false;
-                if (
-                    assignment.type === "connectGate" &&
-                    !gate.cells.every((cell) => link.builtCells.some((built) => cellKey(built) === cellKey(cell)))
-                )
-                    return false;
-                if (assignment.type === "reopenGate" && shouldClose) return false;
-                if (assignment.type === "reopenGate" && link.hp <= 0) return false;
-            }
-            if (assignment.type === "prepareGate") return !link.prepared || link.hp <= 0;
-            if (["extendLink", "rebuildLink", "closeGate"].includes(assignment.type))
-                return !link.builtCells.some((cell) => cellKey(cell) === cellKey(assignment.target));
-            if (assignment.type === "connectGate") return !link.connected;
-            if (assignment.type === "reopenGate")
-                return link.builtCells.some((cell) => cellKey(cell) === cellKey(assignment.target));
-            if (["repair", "repairLink"].includes(assignment.type)) return link.hp > 0 && link.hp < link.maxHp;
-        }
-        return true;
+        if (!assignment?.target || !assignment?.workCell) return false;
+        return api.SpinnerTopology.inspectWorkAction(encounter?.topology, {
+            ...assignment,
+            ownerId,
+            cell: assignment.target,
+        }).pending;
     }
 
     function assignmentFromAction(action, workCell) {
@@ -1420,10 +1338,11 @@
                 group.maintenance.fieldId === assignment.fieldId &&
                 assignment.type !== "rally" &&
                 maintenanceFieldPending(encounter, group)) ||
-            /^(repair|rebuild)/.test(assignment.type) ||
+            api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).maintenance ||
             (api.SpinnerCapture?.state?.() &&
                 hasGateWork(encounter, group) &&
-                ["prepareGate", "closeGate", "connectGate"].includes(assignment.type))
+                api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).gateWork &&
+                !api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).opensGate)
         );
     }
 
@@ -1442,7 +1361,9 @@
                     KDMapData.Entities.find((entity) => entity.id === group.maintenance?.memberId),
                 ) ||
                 Object.values(group.assignments).some(
-                    (assignment) => assignment.maintenance || /^(repair|rebuild)/.test(assignment.type),
+                    (assignment) =>
+                        assignment.maintenance ||
+                        api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).maintenance,
                 )
             )
                 continue;
@@ -1462,13 +1383,16 @@
                     const key = assignmentKey(action);
                     if (skipped.has(key)) break;
                     skipped.add(key);
-                    const link = encounter.topology.links.find((entry) => entry.id === action.linkId),
-                        maintenance =
-                            /^(repair|rebuild)/.test(action.type) || (action.type === "prepareGate" && link?.hp <= 0);
+                    const workStatus = api.SpinnerTopology.inspectWorkAction(encounter.topology, {
+                            ...action,
+                            ownerId: member.id,
+                        }),
+                        maintenance = workStatus.maintenance;
                     if (
                         maintenance &&
+                        workStatus.pending &&
                         (!api.SpinnerNativeField.snapshot(action.cell).actorOccupied ||
-                            action.type.startsWith("repair") ||
+                            workStatus.allowsOccupiedTarget ||
                             cellKey(member) === cellKey(action.cell))
                     ) {
                         const work = workCells(action.cell, snapshot, member)
@@ -1513,9 +1437,10 @@
                                 previousAssignments[entity.id]?.maintenance ||
                                 (group.maintenance?.memberId === entity.id &&
                                     maintenanceFieldPending(encounter, group)) ||
-                                /^(repair|rebuild)/.test(previousAssignments[entity.id]?.type)),
+                                api.SpinnerTopology.inspectWorkAction(graph, previousAssignments[entity.id])
+                                    .maintenance),
                     ),
-                tasks = field ? pendingTasks(field, members.length >= 2) : [],
+                tasks = field ? api.SpinnerTopology.lineWorkActions(field, members.length >= 2) : [],
                 reservedTasks = new Set(),
                 reservedWork = new Set();
             const known = groupObservation(group),
@@ -1555,7 +1480,7 @@
                         retainedTask &&
                         (!api.SpinnerNativeField.snapshot(previous.target).actorOccupied ||
                             cellKey(previous.target) === cellKey(member) ||
-                            previous.type.startsWith("repair")) &&
+                            api.SpinnerTopology.inspectWorkAction(graph, previous).allowsOccupiedTarget) &&
                         !(
                             lureKeepsPressure &&
                             previous.role === "body" &&
@@ -1568,15 +1493,17 @@
                         retainedWork &&
                         !reservedTasks.has(assignmentKey(field ? retainedTask : previous)) &&
                         !reservedWork.has(cellKey(retainedWork)) &&
-                        workCells(field ? taskCell(field, retainedTask) : previous.target, snapshot, member).some(
-                            (cell) => cellKey(cell) === cellKey(retainedWork),
-                        ) &&
+                        workCells(
+                            field ? api.SpinnerTopology.inspectWorkAction(field, retainedTask).cell : previous.target,
+                            snapshot,
+                            member,
+                        ).some((cell) => cellKey(cell) === cellKey(retainedWork)) &&
                         Number.isFinite(distances(member, retainedWork));
                 if (canRetain) {
                     group.assignments[member.id] = field
                         ? {
                               ...clone(retainedTask),
-                              target: clone(taskCell(field, retainedTask)),
+                              target: clone(api.SpinnerTopology.inspectWorkAction(field, retainedTask).cell),
                               workCell: clone(retainedWork),
                               fieldId: plan.fieldId,
                           }
@@ -1599,7 +1526,7 @@
                         const blockedTarget =
                             api.SpinnerNativeField.snapshot(action.cell).actorOccupied &&
                             cellKey(action.cell) !== cellKey(member) &&
-                            !action.type.startsWith("repair");
+                            !api.SpinnerTopology.inspectWorkAction(encounter.topology, action).allowsOccupiedTarget;
                         const keepsPressure =
                             lureKeepsPressure &&
                             action.role === "body" &&
@@ -1628,7 +1555,7 @@
                 const options = tasks
                     .filter((task) => !reservedTasks.has(task.key))
                     .map((task) => {
-                        const target = taskCell(field, task),
+                        const target = api.SpinnerTopology.inspectWorkAction(field, task).cell,
                             work = workCells(target, snapshot, member)
                                 .filter((cell) => !reservedWork.has(cellKey(cell)))
                                 .sort(
@@ -2346,7 +2273,7 @@
             if (
                 field &&
                 members.length >= 1 &&
-                pendingTasks(field, true).length > 0 &&
+                api.SpinnerTopology.lineWorkActions(field, true).length > 0 &&
                 Object.keys(group.assignments).length === 0 &&
                 !group.engagement
             ) {
@@ -2814,7 +2741,7 @@
         }
         if (
             targetSnapshot.occupied &&
-            !assignment.type.startsWith("repair") &&
+            !api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).allowsOccupiedTarget &&
             !(enemy.x === assignment.target.x && enemy.y === assignment.target.y)
         ) {
             record(group, "wait");
@@ -2863,7 +2790,7 @@
             fieldId: assignment.fieldId,
         });
         if (outcome.applied) {
-            record(group, assignment.type.startsWith("repair") ? "repair" : "construction");
+            record(group, api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).metric);
             delete group.assignments[enemy.id];
         } else record(group, outcome.reason === "occupied" ? "wait" : "wait");
         return "field-work";
@@ -2962,7 +2889,7 @@
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
         if (
             hasGateWork(encounter, group) &&
-            ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(assignment?.type)
+            api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).gateWork
         )
             return decide(enemy, group, performAssignment(enemy, group, assignment), true);
         // Nearby prey must not pull every builder off an unfinished enclosure.

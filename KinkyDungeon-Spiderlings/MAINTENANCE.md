@@ -1,4 +1,6 @@
-# Spiderlings 0.92.36-test.95 维护说明
+# Spiderlings 0.92.36-test.96 维护说明
+
+Topology 统一动作目标、有效条件、维修与门动作语义和施工统计分类。AI 保留成员职责与可达工位分配，NativeField 保留原生移动、支付和投影。`inspectWorkAction` 的待执行判断复用 `legalAction`，忽略瞬时占格；实际执行仍用当前原生快照复核。线状任务生成也由 Topology 承担。存档字段、工作键和原生加载顺序保持兼容。见[架构改进记录](../docs/spiderlings-test96-spinner-architecture.zh-CN.md)。
 
 test.95 修复猎物仍在场内时 Spinner 不分工维修的问题。已有维修工人保留付费行动，不再被 Capture 招募或绕场待命压住；线状场地维修也优先于相邻近战。若全队都是玩家 Capture 来源，存在可达维修工位时会调出一名，并保留至少一名有效来源、已有编织与挣脱进度。Recovery 和巢穴防御仍优先。安装新包后可继续原存档。见[修复记录](../docs/spiderlings-test95-field-maintenance.zh-CN.md)。 AI 只保留仍待执行的合法维修 assignment，Capture 负责移出实际来源并保留原计数。付费施工、原生移动、失能和重建冷却仍由现有执行规则判定。多格重建后的补线与连接沿用同一场地维护成员；恢复完成或 Capture 结束后清理该身份。
 

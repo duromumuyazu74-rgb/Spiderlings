@@ -392,34 +392,18 @@
         };
     }
 
-    function actionCell(field, action) {
-        if (["placeAnchor", "rebuildAnchor"].includes(action.type)) {
-            const anchor = field.anchors.find((candidate) => candidate.id === action.anchorId);
-            return anchor && { x: anchor.x, y: anchor.y };
-        }
-        if (action.type === "repairAnchor") {
-            const anchor = field.anchors.find((candidate) => candidate.id === action.anchorId);
-            return anchor && { x: anchor.x, y: anchor.y };
-        }
-        const link = field.links.find((candidate) => candidate.id === action.linkId);
-        if (action.type === "repairLink") return action.cell || link?.builtCells[0] || { x: -1, y: -1 };
-        return (
-            action.cell ||
-            link?.plannedCells.find((cell) => !link.builtCells.some((built) => cellKey(built) === cellKey(cell))) ||
-            link?.cells?.[0] || { x: -1, y: -1 }
-        );
-    }
-
     function applyPaidAction(actor, action) {
         auditPassageTerrain();
         const encounter = state(),
             graph = encounter?.topology,
             field = fieldById(encounter, action.fieldId) || graph;
         if (!graph || !field) return { paid: false, applied: false, reason: "inactive" };
-        const cell = actionCell(field, action);
+        const work = topology().inspectWorkAction(graph, action),
+            cell = work.cell;
+        if (!cell) return { paid: false, applied: false, reason: "action" };
         if (
             Math.hypot(cell.x - actor.x, cell.y - actor.y) > 5 ||
-            (!action.type.startsWith("repair") &&
+            (!work.allowsOccupiedTarget &&
                 Math.max(Math.abs(cell.x - actor.x), Math.abs(cell.y - actor.y)) > 1 &&
                 !KinkyDungeonCheckPath(actor.x, actor.y, cell.x, cell.y, false, true, 1, false))
         )
@@ -515,7 +499,7 @@
                     : builder.actions.shift();
             if (action) {
                 encounter.topology.assignmentByMember[enemy.id] = action;
-                const cell = actionCell(encounter.topology, action);
+                const cell = topology().inspectWorkAction(encounter.topology, action).cell;
                 if (
                     Math.hypot(cell.x - enemy.x, cell.y - enemy.y) > 5 ||
                     !KinkyDungeonCheckPath(enemy.x, enemy.y, cell.x, cell.y, false, true, 1, false)

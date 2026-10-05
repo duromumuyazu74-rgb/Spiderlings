@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.95.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.96.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.96 Spinner work semantics and Runtime regressions (2026-10-05)
+
+Topology owns action targets, pending validity, repair occupancy, maintenance/gate semantics, metric classification and line work generation. AI retains reachable workstation and member reservation; NativeField retains native movement, construction payment and projection. Pending validity uses the execution validator without transient map occupancy. Actual paid work still validates the current native snapshot. Existing work keys, save fields, priorities and progress are retained. See the [architecture record](spiderlings-test96-spinner-architecture.zh-CN.md).
+
+Two new real Runtime regressions load actual Capture, AI, Topology and NativeField implementations. They require paid healing and continued extension after destruction while preserving at least one Capture source and existing counters. Additional regressions cover occupancy, rebuilding cooldown, restore, retired fields and changed passage openings. The four focused test files pass all 144 tests.
+
+The final ZIP contains 170 entries and 24,840,314 bytes, SHA-256 `1e32c275cc7c911f20b733babebc308daaf1355022799cc363bb070157bd6cf9`. The same ZIP passed all 48 native stages on both KD 5.4.92 and latest official 5.5.3, including seven native language groups per game. Official commit `960d36d214c36c882a15735bda3c5da3e8b4fcdf` was freshly fetched at `2026-10-05T02:44:06.412Z`. Full acceptance is `<cache>/runs/2026-10-05T02-44-06-428Z-0.92.36-test.96/acceptance.json`. Existing desktop processes and user saves were not used.
+
+The native maintenance fixture healed partial damage in seven turns and rebuilt the destroyed multi-cell link and closed its field in 57 turns on both games. Two paid operations occurred during Capture, including continued extension; mid-rebuild reload preserved the maintenance member and progress. These are fixture results, not guaranteed repair timings in every encounter.
+
+Repository checks, 12 policy tests, 566 public tests, the complete 887-test local watcher and final ZIP verification passed. Source and ZIP remained unchanged during the collector run. Delivery report: `.scratch/delivery/2026-10-05T02-52-07-568Z-eyq7fZ/REPORT.md`. Only documentation of these results was appended afterward, followed by repository and diff checks.
 
 ## Test.95 field maintenance during Capture (2026-10-05)
 
