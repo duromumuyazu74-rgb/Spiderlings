@@ -81,6 +81,38 @@ _Avoid_: every Spiderling near a nest
 
 ## Spiderlings Webbing
 
+**Global field AI (全局场地 AI)**:
+The proposed highest field-command authority for continuing field-creation assessment and allocation of all eligible hostile Spiderling species, with only Spinner command delegated to field sub AIs. It continuously knows current character positions for field planning; allied, party and imprisoned actors are excluded from command, and this hierarchy is not the current runtime.
+_Avoid_: one-time map generator, field-local controller, population spawning policy
+
+**Field sub AI (场地 sub AI)**:
+The proposed logical command authority exclusively for one field's assigned Spinners and its support requests to the global field AI. Boundary damage or loss of all assigned Spinners does not end it while legal restoration remains possible; permanent field invalidity or cancellation by the global field AI ends its command relationship.
+_Avoid_: individual web tile AI, individual Spinner AI, commanding other Spiderling species
+
+**Field-commanded Spinner (受场地指挥的 Spinner)**:
+A proposed Spinner role whose tactical choices are owned by its assigned field sub AI while that command relationship exists. This role is distinct from an autonomous Spinner; it does not imply additional or free actions.
+_Avoid_: simultaneously commanded by multiple fields, replacing native action resolution
+
+**Field support request (场地支援请求)**:
+A proposed field sub AI's demand for help, addressed to the global field AI, which queries other fields for available Spinners before authorizing their deployment. Support can be partial, with unmet needs or unavailable deployment receiving a reason; it is not a direct member transfer between field sub AIs.
+_Avoid_: forced donor requisition, silent failed request, field-to-field command transfer
+
+**Field loan (场地借调)**:
+A proposed temporary support assignment authorized by the global field AI after the donor field agrees to release eligible members, retaining the Spinner's original field ownership. The receiving field alone commands the borrowed Spinner during support, with return arranged by the global field AI after completion or reassignment if the original field is no longer valid.
+_Avoid_: permanent transfer by default, simultaneous commands from donor and receiver
+
+**Global region dispatch (总控区域调配)**:
+The proposed global field AI's assignment for a non-Spinner mobile Spiderling to travel to a designated region. It conveys a destination rather than an attack, spell or other tactical instruction, and does not place the recipient under a field sub AI.
+_Avoid_: field-local command of other species, new tactical commands in the initial phase
+
+**Capture-field project (捕获场地工程)**:
+A proposed persistent field-building undertaking that retains its chosen site, construction commitment and actual paid progress while demand is reassessed. It is distinct from a candidate location and from the physical web structures already built there.
+_Avoid_: every character movement creates a new project, freely moving invested construction
+
+**Spinner duty (Spinner 职责)**:
+A proposed field sub AI's authoritative assignment for a commanded Spinner, shared by the native movement, attack and spell phases of the same operation. It names the permitted work while actual capture, recovery, topology and action payment retain their own state.
+_Avoid_: native phases independently reassigning a commanded Spinner, additional free actions
+
 **Spinner capture field (捕获场地)**:
 An owned area that admits capture only after its boundary is closed. Autonomous Spinners compare legal passage and enclosure sites near their recent recognized prey observation and prefer more usable interior space. A doorway, junction or narrow-passage candidate must have an actual capture interior that intercepts a map entrance-to-exit route; an unavoidable route ranks above a meaningful detour. A passage reuses real native walls and has two to four web gates. Native doors and protected objects are never replaced by web or counted as walls. If no suitable passage is available, a legal enclosure remains an option.
 Nearby idle groups can join an existing field using their actual reachable distance, with arriving helpers tracked separately. A fresh recognized approach can redirect a plan before paid construction begins. The crew retains its invested or completed field and distributes waiting members among distinct legal peripheral stations; space does not detach its owners. Active player capture, recovery and nest-defense duties remain assigned. Each transition into a prepared, ready field assigns waiting gates from current member positions and remaining gate coverage. Membership changes or an unreachable partition blocked by a stationed coworker trigger repartition; ordinary waiting keeps the allocation stable. Incoming helpers may advance along an unoccupied path prefix when a coworker blocks the full route, but never move through that actor. Capture, recovery and nest-defense duties retain their priority. Workers prepare each passage gate while it remains open, then spend separate actions to fill its cells and connect it after prey enters the interior. While waiting for prey outside, at least two designated gates remain open for through traffic; prepared openings have a faint visual cue without collision. A recently perceived approach may change which gates are designated open, subject to the adjustment cooldown: workers open the new route before closing the old one. Prey departure triggers paid reopening. Changing openings or loading a save preserves web damage and rebuild cooldowns.
