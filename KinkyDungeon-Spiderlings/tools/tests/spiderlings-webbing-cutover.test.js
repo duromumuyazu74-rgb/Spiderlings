@@ -11,10 +11,12 @@ const scripts = [
     "SpiderlingsCore.js",
     "SpiderlingsPopulation.js",
     "SpiderlingsEncounters.js",
+    "SpiderlingsSettings.js",
     "SpiderlingsFloorSelection.js",
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
+    "SpiderlingsBestiary.js",
     "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsHuntingGrounds.js",
@@ -387,7 +389,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
         const entries = csvMap(csv);
         assert.equal(
             entries.size,
-            253,
+            279,
             `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping and weapons`,
         );
         for (const key of [

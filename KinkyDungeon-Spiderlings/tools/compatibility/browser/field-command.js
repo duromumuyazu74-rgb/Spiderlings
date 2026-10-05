@@ -58,6 +58,16 @@
     );
     const actor = enemy(member.id),
         position = { x: actor.x, y: actor.y };
+    const updated = { x: destination.x - 3, y: destination.y };
+    command.request(current, receiver.id, "build", 1, updated);
+    command.allocate(current, distances);
+    const refreshed = command.inspect().members[member.id];
+    expect(
+        refreshed.destination.x === updated.x &&
+            refreshed.destination.y === updated.y &&
+            refreshed.loan === member.loan,
+        "Replanning left a stale movement order or duplicated a loan",
+    );
     command.handleMove(actor, 0);
     expect(actor.x === position.x && actor.y === position.y, "A zero-time loan moved");
     request.closed = true;

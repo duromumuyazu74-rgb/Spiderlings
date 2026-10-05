@@ -570,6 +570,7 @@
                 gateCell: layer.gate,
                 spacing: layer.layer ? 1 : 0,
                 phase: input.built ? "sealed" : "preparing",
+                silkActivated: !!input.built,
                 retired: false,
                 reopenPending: false,
             };
@@ -629,6 +630,7 @@
             openGateIds: gates.map((gate) => gate.id),
             gateCell: clone(gates[0].cells[0]),
             phase: "preparing",
+            silkActivated: false,
             retired: false,
             reopenPending: false,
         };
@@ -1112,6 +1114,13 @@
             effects.push({ type: "placeProxy", cell });
         } else if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
             const link = next.links.find((candidate) => candidate.id === action.linkId);
+            if (
+                ["closeGate", "connectGate"].includes(action.type) &&
+                next.fields[action.fieldId] &&
+                (next.composites[next.fields[action.fieldId].compositeId]?.closureArmed ||
+                    next.composites[next.fields[action.fieldId].compositeId]?.autoSeal)
+            )
+                next.fields[action.fieldId].silkActivated = true;
             if (action.type === "rebuildLink") {
                 link.hp = Math.max(link.maxHp * 0.1, 0.1);
                 link.cooldown = 0;
@@ -1155,6 +1164,8 @@
             ...(cell ? { cell } : {}),
         });
         refresh(next);
+        if (action.type === "reopenGate" && next.fields[action.fieldId]?.phase === "ready")
+            next.fields[action.fieldId].silkActivated = false;
         effects.push({ type: "invalidateNavigation" });
         return { state: next, effects, outcome: { legal: true, reason: "" } };
     }

@@ -15,3 +15,5 @@
 其他移动 Spiderlings 本阶段仅受总控区域调配，到达后继续物种原有行为。已经开始的法术、冲刺和建巢不因调配清空。固定 Nest 接收需求并汇报原生增援状态，不移动，不改变出生资格、间隔、概率、权重、人口、守军或 Tunneler 终身额度。零时间与加载不推进任何行动。
 
 详细约定见[目标设计](../spinner-field-command-design.zh-CN.md)、[三项深化](../spinner-field-command-strengthening.zh-CN.md)，交付证据见[实现记录](../spiderlings-test110-field-command.zh-CN.md)。
+
+test.113 补充并发需求约定：捕获与维修分别提出请求，NPC 捕获来源保持保护，由总控借调额外工人。持续请求保留身份和等待年龄；工程目标修订后，刷新在途 Spinner 借调和非 Spinner 区域命令的目的地，不重复借调。

@@ -152,8 +152,15 @@
                 }
             }
             const [plain, web] = rows.slice(-2);
+            // Geometry can require extra work opportunities to sample both kinds of floor.
+            // Compare equal observation windows; each full trace still checks every native credit/debit above.
+            const opportunities = Math.min(plain.workOpportunities.length, web.workOpportunities.length),
+                comparable = (entry) =>
+                    action === "construction"
+                        ? entry.cadenceIndices.filter((index) => index <= opportunities)
+                        : entry.cadenceIndices;
             expect(
-                JSON.stringify(plain.cadenceIndices) === JSON.stringify(web.cadenceIndices),
+                JSON.stringify(comparable(plain)) === JSON.stringify(comparable(web)),
                 `Web movement changed native ${action} cadence: ${JSON.stringify({ plain: plain.cadenceIndices, web: web.cadenceIndices })}`,
             );
         }

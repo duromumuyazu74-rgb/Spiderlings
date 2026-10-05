@@ -844,7 +844,7 @@ test("the ten Lv1 models use delivered pose coverage without hiding existing clo
         false,
     );
     assert.equal("Poses" in Object.values(blindfoldModel.Layers)[0], false);
-    assert.equal(Object.values(blindfoldModel.Layers)[0].Layer, "Blindfold");
+    assert.equal(Object.values(blindfoldModel.Layers)[0].Layer, "Brows");
 });
 
 test("Lv1 Stuffing and Gag form an independently removable inner/outer mouth chain totaling 0.25 gag", () => {

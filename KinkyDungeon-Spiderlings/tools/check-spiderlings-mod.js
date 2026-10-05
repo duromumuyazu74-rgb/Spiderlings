@@ -20,10 +20,12 @@ const runtimeScripts = [
     "SpiderlingsCore.js",
     "SpiderlingsPopulation.js",
     "SpiderlingsEncounters.js",
+    "SpiderlingsSettings.js",
     "SpiderlingsFloorSelection.js",
     "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
+    "SpiderlingsBestiary.js",
     "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
     "SpiderlingsHuntingGrounds.js",
@@ -234,7 +236,7 @@ const lv3Families = [
     { family: "Legs", group: "ItemLegs", asset: "Legs.png", layer: "OverSkirtDeco", priority: 52 },
     { family: "Ankles", group: "ItemFeet", asset: "Ankles.png", layer: "OverSkirtDeco", priority: 52 },
     { family: "Foot", group: "ItemBoots", asset: "Foot.png", layer: "WrappingLegs", priority: 52 },
-    { family: "Blindfold", group: "ItemHead", asset: "Blindfold.png", layer: "Blindfold", priority: 52 },
+    { family: "Blindfold", group: "ItemHead", asset: "Blindfold.png", layer: "Brows", priority: 52 },
     { family: "Gag", group: "ItemMouth", asset: "Gag.png", layer: "GagMuzzle", priority: 52 },
     { family: "Hood", group: "ItemHead", asset: "Hood.png", layer: "Hood", priority: 52 },
 ].map((entry) => ({
@@ -1301,7 +1303,7 @@ function checkRuntime(state) {
                     layer.Invariant !== true ||
                     layer.NoColorize !== true ||
                     layer.HideWhenOverridden !== true ||
-                    !!layer.NoOverride !== ["Legs", "Ankles"].includes(family.family) ||
+                    !!layer.NoOverride !== ["Legs", "Ankles", "Blindfold"].includes(family.family) ||
                     layer.Layer !== family.layer ||
                     layer.Pri !== family.priority,
             )

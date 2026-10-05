@@ -3719,6 +3719,77 @@ test("global loans prevent double promises and preserve original physical owners
     assert.deepEqual(plain(c.Spiderlings.SpinnerNativeField.fieldOwners(plan.fieldId)).sort(), [1, 2, 3]);
 });
 
+test("ongoing loans and region orders follow a replanned request without a second promise", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan);
+    const jumper = spinner(77, 2, 8);
+    jumper.Enemy.name = "Jumper";
+    c.KDMapData.Entities.push(jumper);
+    command.dispatchRegions(encounter, distances);
+    command.request(encounter, receiver.id, "capture", 1, { x: 15, y: 9 });
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    command.allocate(encounter, distances);
+    const current = command.inspect();
+    assert.equal(current.members[member.id].loan, member.loan);
+    assert.deepEqual(plain(current.members[member.id].destination), { x: 15, y: 9 });
+    assert.deepEqual(plain(current.regions[77].destination), { x: 15, y: 9 });
+    assert.equal(current.requests[request.id].deployed, 1);
+    assert.equal(Object.values(current.members).filter((entry) => entry.loan).length, 1);
+});
+
+test("protected NPC capture sources request a separate paid repair worker", () => {
+    const { c, native, actors } = adoptedFieldScene();
+    const api = c.Spiderlings,
+        encounter = native.state(),
+        command = api.FieldCommand;
+    const home = Object.values(encounter.ai.groups)[0];
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 16, y: 10 });
+    encounter.topology.links[0].hp -= 0.5;
+    api.SpinnerTopology.refresh(encounter.topology);
+    c.KDMapData.Entities.push({ id: 99, x: 8, y: 6, hp: 30, Enemy: { name: "MaidKnightHeavy" } });
+    const sourceIds = actors.map((actor) => actor.id).filter((id) => id === 1 || id === 2);
+    api.SpinnerNPCCapture = { usesSource: (id) => sourceIds.includes(id) };
+    const donor = command.newGroup(encounter.ai);
+    for (const [id, x] of [
+        [101, 14],
+        [102, 15],
+    ]) {
+        c.KDMapData.Entities.push(spinner(id, x, 3));
+        encounter.command.members[id] = { id, home: donor.id, commander: donor.id, phase: "home" };
+        donor.memberIds.push(id);
+    }
+    const distances = (a, b) => {
+        const route = api.SpinnerAI.routeOnSnapshot(mapSnapshot(), a, b);
+        return route.length ? route.length - 1 : Infinity;
+    };
+    const paid = encounter.topology.actionLog.length;
+    api.FieldProjects.update(encounter, {
+        distances,
+        members: (group) => group.memberIds.map((id) => c.KDMapData.Entities.find((actor) => actor.id === id)),
+        legal: () => true,
+        paid: () => true,
+        prepareApproach: () => {},
+        intercepts: () => false,
+        start: () => {},
+        lineFixture: true,
+    });
+    const state = command.inspect(),
+        request = state.requests[`${home.id}:repair`];
+    assert.equal(request.count, 1);
+    assert.equal(request.status, "satisfied");
+    assert.equal(encounter.topology.actionLog.length, paid, "requesting workers cannot grant free repairs");
+    assert.ok(sourceIds.every((id) => state.members[id].commander === home.id && !state.members[id].loan));
+    assert.equal(Object.values(state.members).filter((member) => member.requestId === request.id).length, 1);
+    const loan = Object.values(encounter.command.members).find((member) => member.requestId === request.id);
+    loan.phase = "support";
+    home.engagement = { lureId: loan.id };
+    api.SpinnerAI.reserveActions(encounter, mapSnapshot(), distances);
+    assert.ok(home.assignments[loan.id], "A repair loan must retain work even when selected as the lure");
+    assert.ok(api.SpinnerAI.hasMaintenanceAssignment(c.KDMapData.Entities.find((actor) => actor.id === loan.id)));
+});
+
 test("donor approval is rechecked if a candidate enters actual capture before dispatch", () => {
     const { c, command, encounter, receiver, distances } = loanScene();
     const supply = command.offers(encounter, { x: 13, y: 6 }, distances, receiver.id);

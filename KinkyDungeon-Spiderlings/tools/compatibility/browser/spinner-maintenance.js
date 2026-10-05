@@ -135,6 +135,117 @@
         );
         capture.cancel();
     }
+    setup("npc-capture-maintenance-loan");
+    for (let y = 1; y < KDMapData.GridHeight - 1; y++)
+        for (let x = 1; x < KDMapData.GridWidth - 1; x++) {
+            KinkyDungeonMapSet(x, y, "0");
+            KinkyDungeonTilesDelete(`${x},${y}`);
+        }
+    KDMovePlayer(22, 16, false);
+    const sources = [spawn("Spinner", 13, 10), spawn("Spinner", 15, 10)],
+        target = spawn("MaidKnightHeavy", 14, 10, "Maidforce"),
+        command = Spiderlings.FieldCommand,
+        npcCapture = Spiderlings.SpinnerNPCCapture,
+        support = { mode: "npc-capture-maintenance-loan", actions: [], turns: [] };
+    rows.push(support);
+    for (const source of sources) {
+        source.hostile = 999;
+        source.Enemy = { ...source.Enemy, maxhp: 20 };
+        source.hp = 20;
+    }
+    target.movePoints = -100;
+    target.castCooldown = 999;
+    target.disarm = 999;
+    native.initializeEnclosure({
+        compositeId: "npc-maintenance-home",
+        owners: sources.map((source) => source.id),
+        built: true,
+        autoSeal: true,
+        layers: [
+            {
+                id: "npc-maintenance-ring",
+                vertices: [
+                    { x: 10, y: 6 },
+                    { x: 18, y: 6 },
+                    { x: 18, y: 14 },
+                    { x: 10, y: 14 },
+                ],
+                gate: { x: 18, y: 10 },
+            },
+        ],
+    });
+    native.state().builders = {};
+    ai.beginTurn({ activate: true, adoptExisting: true });
+    for (let attempt = 0; attempt < 20 && !npcCapture.usesSource(sources[0].id); attempt++) {
+        await turn();
+    }
+    expect(
+        npcCapture.usesSource(sources[0].id),
+        `An actual silk hit did not begin NPC Capture: ${JSON.stringify({ target: { x: target.x, y: target.y, bound: target.boundLevel }, source: sources[0], records: npcCapture.records() })}`,
+    );
+    target.stun = 999;
+    KinkyDungeonEnemyLoop(sources[1], target, 1, 1, []);
+    expect(
+        sources.every((source) => npcCapture.usesSource(source.id)),
+        "Both local workers must hold actual NPC Capture",
+    );
+    const donors = [spawn("Spinner", 19, 9), spawn("Spinner", 19, 11)],
+        encounter = native.state(),
+        donorGroup = command.newGroup(encounter.ai, donors);
+    for (const donor of donors) {
+        donor.hostile = 999;
+        encounter.command.members[donor.id] = {
+            id: donor.id,
+            home: donorGroup.id,
+            commander: donorGroup.id,
+            phase: "home",
+        };
+    }
+    command.projectOwners(encounter);
+    const damagedProxy = KDMapData.Entities.find(
+        (actor) => native.isOwnedProxy(actor) && actor.x === 18 && actor.y === 9,
+    );
+    expect(damagedProxy, "NPC maintenance needs a real paid wall proxy");
+    native.onNativeDamage({ enemy: damagedProxy, dmgDealt: 0.5 });
+    const damagedId = encounter.topology.links.find((link) => link.hp < link.maxHp).id,
+        paid = native.applyPaidAction;
+    native.applyPaidAction = function (actor, action) {
+        const result = paid.apply(this, arguments);
+        support.actions.push({
+            source: actor.id,
+            type: action.type,
+            applied: result.applied,
+            protectedSources: sources.filter((source) => npcCapture.usesSource(source.id)).length,
+            loan: command.inspect().members[actor.id]?.loan,
+        });
+        return result;
+    };
+    try {
+        for (let tick = 0; tick < 30; tick++) {
+            await turn();
+            const link = native.state().topology.links.find((entry) => entry.id === damagedId);
+            support.turns.push({
+                tick,
+                hp: link.hp,
+                requests: structuredClone(command.inspect().requests),
+                members: structuredClone(command.inspect().members),
+                donors: donors.map((donor) => ({ id: donor.id, x: donor.x, y: donor.y, points: donor.movePoints })),
+                assignments: structuredClone(Object.values(native.state().ai.groups).map((group) => group.assignments)),
+            });
+            if (link.hp === link.maxHp) break;
+        }
+        expect(
+            support.actions.some((action) => action.applied && action.loan && action.protectedSources === 2),
+            `NPC Capture did not receive paid borrowed maintenance: ${JSON.stringify(support)}`,
+        );
+        expect(
+            native.state().topology.links.find((entry) => entry.id === damagedId).hp ===
+                native.state().topology.links.find((entry) => entry.id === damagedId).maxHp,
+            "Borrowed maintenance did not finish the damaged NPC Capture wall",
+        );
+    } finally {
+        native.applyPaidAction = paid;
+    }
     setup("sole-builder-personal-contact");
     KDMovePlayer(20, 16, false);
     const worker = spawn("Spinner", 10, 10),

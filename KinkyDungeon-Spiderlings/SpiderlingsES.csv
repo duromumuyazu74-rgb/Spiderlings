@@ -40,7 +40,7 @@ KinkyDungeonSpellSpiderWebBind,Pisas la telaraña y las hebras junto a tus pies 
 KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,Escuadrón de crías de araña
 KinkyDungeonStatDescSpiderlingsSquad,"En cada mapa normal nuevo y apto aparece un escuadrón hostil: dos hiladoras y una excavadora, escupidora, saltadora y maga. Necesita espacio y plazas libres dentro del límite de arañas."
-KDModButtonspiderlingsSpinnerEncounters,Encuentros autónomos de hiladoras
+KDModButtonspiderlingsSpinnerEncounters,Campos de captura de hiladoras
 KDModButtonspiderlingsNestSummonWeights,Pesos de refuerzo del nido (0: desactivado)
 KDModButtonspiderlingsNestSpinnerWeight,Peso de hiladora
 KDModButtonspiderlingsNestJumperWeight,Peso de saltadora
@@ -131,8 +131,8 @@ KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Destruye los nidos objetivo origina
 SpiderlingsHuntingGroundsProgress,Nidos marcados destruidos: CURRENT/TARGET
 SpiderlingsHuntingGroundsBlocked,Destruye los nidos objetivo originales para bajar: marcas rojas de misión en el minimapa. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (TARGET/TARGET)
-KDModButtonspiderlingsPinkWebbing,Telaraña rosa (no: original)
-KDModButtonspiderlingsEnableHood,Capucha de seda arácnida (no: nunca equipar)
+KDModButtonspiderlingsPinkWebbing,Seda rosa
+KDModButtonspiderlingsEnableHood,Permitir capuchas de seda
 KinkyDungeonSpiderlingsWebbingInterwoven,Los hilos entrecruzados se tensan y atan otra parte de tu cuerpo.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Deslizas el filo por una unión de TargetRestraint.
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Deslizas el filo por una unión de TargetRestraint.
@@ -152,7 +152,7 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Abres a la fuerza la envolt
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Tanteas el borde de TargetRestraint, intentando separar las capas adheridas."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Desprendes la envoltura exterior de TargetRestraint y recoges el capullo aflojado.
-KDModButtonspiderlingsMapPopulationCap,Límite global de arañitas móviles (0 desactiva este límite; los pisos temáticos mantienen su cupo)
+KDModButtonspiderlingsMapPopulationCap,Arañas móviles (0: sin límite)
 KinkyDungeonStatSpiderlingsCocoonStart,Despertar de seda
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Despiertas en un capullo suave, envuelta en capas tupidas de seda de araña. Cada pequeño movimiento tira de los hilos ceñidos a tu cuerpo."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,La cría de araña saltadora mira el suelo bajo su rival y se agacha para saltar.
@@ -209,8 +209,8 @@ KDEscapeMethodDesc_SpiderlingsInfestation,Destruye los nidos objetivo originales
 SpiderlingsInfestationProgress,Nidos marcados destruidos: CURRENT/5
 SpiderlingsInfestationBlocked,Destruye los nidos objetivo originales para bajar: marcas rojas de misión en el minimapa. (CURRENT/5)
 SpiderlingsInfestationComplete,Los nidos que primero ocuparon este lugar se han derrumbado. La escalera hacia las profundidades está ante ti. (5/5)
-KDModButtonspiderlingsInfestationWeight,Peso de infestación (0: desactivado)
-KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza - solo Maidforce (0: desactivado)
+KDModButtonspiderlingsInfestationWeight,Peso de infestación
+KDModButtonspiderlingsHuntingGroundsWeight,Peso del coto de caza
 KinkyDungeonInventoryItemSpiderlingTome,Tomo de ataduras de seda
 KinkyDungeonInventoryItemSpiderlingStaff,Bastón del tejedor de seda
 KinkyDungeonSpecialSpiderlingTome,Convergencia del capullo
@@ -251,3 +251,29 @@ KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,"Lanza seda pegajosa hasta 6 
 KDSpiderlingsWeaponSustainSpiderlingTome,"+20% de fuerza de atadura en la mano principal o secundaria. Los impactos cuerpo a cuerpo efectivos devuelven el 20% de la resistencia pagada, hasta un valor base de 3. El primer capullo de seda creado cuerpo a cuerpo para cada presa devuelve un valor base de 7,5 de maná una sola vez."
 KDSpiderlingsWeaponSustainSpiderlingStaff,"Los impactos cuerpo a cuerpo efectivos devuelven el 20% de la resistencia pagada, hasta un valor base de 6. El primer capullo de seda creado cuerpo a cuerpo para cada presa devuelve un valor base de 7,5 de maná una sola vez."
 KDSpiderlingsWeaponWeaveStatus,Tejido STAGE/3. Próximo coste de maná: COST. Nuevo círculo en COOLDOWN turnos.
+KDModButtonspiderlingsSettingsFloors,Ajustes de pisos
+KDModButtonspiderlingsSettingsNests,Ajustes de nidos
+KDModButtonspiderlingsSettingsBack,Volver a general
+KDModButtonspiderlingsSettingsFloorsHelp,Pesos para pisos nuevos. 0 desactiva el tema.
+KDModButtonspiderlingsSettingsNestsHelp,Un peso de especie de 0 impide ese refuerzo.
+KDModButtonspiderlingsSettingsGeneralHelp,Los pisos temáticos conservan sus cupos.
+KDModButtonspiderlingsSettingsHuntingHelp,Coto: pisos de Maidforce desde el piso 5.
+KinkyDungeonCheckpointLoreSpiderlings,Bestiario de arañitas
+KDLoreTextspiderlings.Spinner,"Hilos finos tiemblan entre sus patas mientras comprueba los bordes de la red. Cuando entra una visita, la malla floja se tensa. Remienda un hilo roto con la misma paciencia con que envuelve a una visita inquieta."
+KDLoreTitlespiderlings.Spinner,Cría de araña hiladora
+KDLoreLabelspiderlings.Spinner,Cría de araña hiladora
+KDLoreTextspiderlings.Jumper,Recoge las patas bajo su pequeño cuerpo inquieto y cruza el hueco de un salto. Un roce suave va seguido de un lazo pegajoso. Al saltar de nuevo deja atrás un hilo tembloroso.
+KDLoreTitlespiderlings.Jumper,Cría de araña saltadora
+KDLoreLabelspiderlings.Jumper,Cría de araña saltadora
+KDLoreTextspiderlings.WebCaster,"La seda se reúne en su boca y se abre como un abanico pálido. Cae sobre botas y dobladillos, uniendo los hilos sueltos en una malla adherente. Observa desde lejos cómo se acortan los pasos de su visita."
+KDLoreTitlespiderlings.WebCaster,Cría de araña escupidora
+KDLoreLabelspiderlings.WebCaster,Cría de araña escupidora
+KDLoreTextspiderlings.Tunneler,Un leve roce bajo el suelo anuncia su llegada. Se abre paso entre la piedra y forra la nueva abertura con seda. El túnel conserva el calor del movimiento después de que vuelva a ocultarse.
+KDLoreTitlespiderlings.Tunneler,Cría de araña excavadora
+KDLoreLabelspiderlings.Tunneler,Cría de araña excavadora
+KDLoreTextspiderlings.MageSpiderlings,Las marcas de su espalda brillan al reunir un hechizo. Un resplandor persiste mientras zumba el círculo pendiente y se apaga al liberarse la magia. La seda flota en la luz antes de posarse sobre su visita.
+KDLoreTitlespiderlings.MageSpiderlings,Cría de araña maga
+KDLoreLabelspiderlings.MageSpiderlings,Cría de araña maga
+KDLoreTextspiderlings.NestEntrance,Capas de seda suavizan el borde de una abertura oscura. Detrás se agitan patas pequeñas y nuevos hilos reparan el revestimiento gastado. El nido parece tranquilo hasta que otro par de ojos brilla dentro.
+KDLoreTitlespiderlings.NestEntrance,Entrada del nido
+KDLoreLabelspiderlings.NestEntrance,Entrada del nido
