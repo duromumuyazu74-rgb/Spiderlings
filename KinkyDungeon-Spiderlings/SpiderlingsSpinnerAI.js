@@ -1388,6 +1388,111 @@
         );
     }
 
+    function maintenanceFieldPending(encounter, group) {
+        const job = group.maintenance,
+            graph = encounter.topology,
+            field = graph?.fields?.[job?.fieldId],
+            capture = api.SpinnerCapture?.state?.();
+        return !!(
+            field &&
+            !field.retired &&
+            capture?.admittedCompositeId === field.compositeId &&
+            (!api.SpinnerTopology.isLayerClosed(graph, field.id) ||
+                graph.links.some((link) => link.owners.includes(field.id) && link.hp < link.maxHp) ||
+                graph.anchors.some((anchor) => anchor.owners.includes(field.id) && anchor.hp < anchor.maxHp))
+        );
+    }
+
+    function hasMaintenanceAssignment(enemy) {
+        const encounter = api.SpinnerNativeField.state(),
+            group = Object.values(encounter?.ai?.groups || {}).find((entry) => entry.memberIds.includes(enemy?.id)),
+            assignment = group?.assignments?.[enemy?.id];
+        if (
+            !assignment ||
+            !eligibleSpinner(enemy) ||
+            sourceBusy(enemy) ||
+            !assignmentPending(encounter, assignment, enemy.id)
+        )
+            return false;
+        return !!(
+            assignment.maintenance ||
+            (group.maintenance?.memberId === enemy.id &&
+                group.maintenance.fieldId === assignment.fieldId &&
+                assignment.type !== "rally" &&
+                maintenanceFieldPending(encounter, group)) ||
+            /^(repair|rebuild)/.test(assignment.type) ||
+            (api.SpinnerCapture?.state?.() &&
+                hasGateWork(encounter, group) &&
+                ["prepareGate", "closeGate", "connectGate"].includes(assignment.type))
+        );
+    }
+
+    function reserveCaptureMaintenance(encounter, snapshot, distances) {
+        const capture = api.SpinnerCapture?.state?.();
+        if (!capture || !api.SpinnerCapture.releaseMaintenanceSource) return;
+        const sources = (capture.sourceIds || [])
+            .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
+            .filter((entity) => eligibleSpinner(entity));
+        if (sources.length < 2) return;
+        for (const group of Object.values(encounter.ai.groups)) {
+            const plan = encounter.ai.plans[group.planId];
+            if (plan?.compositeId !== capture.admittedCompositeId) continue;
+            if (
+                hasMaintenanceAssignment(
+                    KDMapData.Entities.find((entity) => entity.id === group.maintenance?.memberId),
+                ) ||
+                Object.values(group.assignments).some(
+                    (assignment) => assignment.maintenance || /^(repair|rebuild)/.test(assignment.type),
+                )
+            )
+                continue;
+            const reserved = new Set(Object.values(group.assignments).map(assignmentKey)),
+                occupied = new Set(Object.values(group.assignments).map((assignment) => cellKey(assignment.workCell))),
+                options = [];
+            for (const member of sources.filter((entity) => group.memberIds.includes(entity.id))) {
+                if (
+                    api.SpinnerRecovery?.sourceIds?.().includes(member.id) ||
+                    api.SpinnerNPCRecovery?.usesEntity?.(member.id) ||
+                    member.SpiderlingsTaskNestDefenderTarget !== undefined
+                )
+                    continue;
+                const skipped = new Set(reserved);
+                let action = api.SpinnerTopology.nextWorkAction(encounter.topology, member.id, member, [...skipped]);
+                while (action?.cell) {
+                    const key = assignmentKey(action);
+                    if (skipped.has(key)) break;
+                    skipped.add(key);
+                    const link = encounter.topology.links.find((entry) => entry.id === action.linkId),
+                        maintenance =
+                            /^(repair|rebuild)/.test(action.type) || (action.type === "prepareGate" && link?.hp <= 0);
+                    if (
+                        maintenance &&
+                        (!api.SpinnerNativeField.snapshot(action.cell).actorOccupied ||
+                            action.type.startsWith("repair") ||
+                            cellKey(member) === cellKey(action.cell))
+                    ) {
+                        const work = workCells(action.cell, snapshot, member)
+                                .filter((cell) => !occupied.has(cellKey(cell)))
+                                .sort((a, b) => distances(member, a) - distances(member, b))[0],
+                            steps = work ? distances(member, work) : Infinity;
+                        if (Number.isFinite(steps)) options.push({ member, action, work, steps });
+                    }
+                    action = api.SpinnerTopology.nextWorkAction(encounter.topology, member.id, member, [...skipped]);
+                }
+            }
+            options.sort((a, b) => a.steps - b.steps || String(a.member.id).localeCompare(String(b.member.id)));
+            for (const chosen of options) {
+                if (!api.SpinnerCapture.releaseMaintenanceSource(chosen.member)) continue;
+                group.assignments[chosen.member.id] = {
+                    ...assignmentFromAction(chosen.action, chosen.work),
+                    maintenance: true,
+                };
+                group.maintenance = { memberId: chosen.member.id, fieldId: chosen.action.fieldId };
+                break;
+            }
+        }
+    }
+
     function reserveActions(encounter, snapshot, distances = routeDistances(snapshot)) {
         const ai = ensureAI(encounter),
             entities = new Map(KDMapData.Entities.map((entity) => [entity.id, entity]));
@@ -1403,7 +1508,12 @@
                         (entity) =>
                             eligibleSpinner(entity) &&
                             !sourceBusy(entity) &&
-                            (hasGateWork(encounter, group) || String(entity.id) !== String(group.engagement?.lureId)),
+                            (hasGateWork(encounter, group) ||
+                                String(entity.id) !== String(group.engagement?.lureId) ||
+                                previousAssignments[entity.id]?.maintenance ||
+                                (group.maintenance?.memberId === entity.id &&
+                                    maintenanceFieldPending(encounter, group)) ||
+                                /^(repair|rebuild)/.test(previousAssignments[entity.id]?.type)),
                     ),
                 tasks = field ? pendingTasks(field, members.length >= 2) : [],
                 reservedTasks = new Set(),
@@ -2212,11 +2322,19 @@
             if (plan)
                 for (const fieldId of plan.fieldIds || [plan.fieldId])
                     api.SpinnerNativeField.setOwners(fieldId, group.memberIds);
+            if (
+                group.maintenance &&
+                (!maintenanceFieldPending(encounter, group) ||
+                    !group.memberIds.includes(group.maintenance.memberId) ||
+                    !baseEligibility(entities.find((entity) => entity.id === group.maintenance.memberId)))
+            )
+                delete group.maintenance;
             auditEngagement(encounter, group);
             adjustPassageApproach(encounter, group, snapshot, distances);
             adjustEnclosureApproach(encounter, group, snapshot, distances);
         }
         reserveActions(encounter, snapshot, distances);
+        reserveCaptureMaintenance(encounter, snapshot, distances);
         reserveRallyPositions(encounter, snapshot, distances);
         let replacedApproach = false;
         for (const group of Object.values(ai.groups)) {
@@ -2581,7 +2699,13 @@
             if (replacement) engagement.lureId = replacement.id;
             else delete engagement.lureId;
         }
-        if (engagement.lureId !== undefined && !hasGateWork(encounter, group))
+        if (
+            engagement.lureId !== undefined &&
+            !hasGateWork(encounter, group) &&
+            !hasMaintenanceAssignment(
+                KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId)),
+            )
+        )
             delete group.assignments?.[engagement.lureId];
     }
 
@@ -2644,7 +2768,13 @@
             const replacement = selectLure(encounter, group, [enemy.id]);
             if (replacement) engagement.lureId = replacement.id;
         }
-        if (!hasGateWork(encounter, group)) delete group.assignments?.[engagement.lureId];
+        if (
+            !hasGateWork(encounter, group) &&
+            !hasMaintenanceAssignment(
+                KDMapData.Entities.find((entity) => String(entity.id) === String(engagement.lureId)),
+            )
+        )
+            delete group.assignments?.[engagement.lureId];
         return true;
     }
 
@@ -2827,6 +2957,8 @@
         if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
         const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData);
         const assignment = group.assignments?.[enemy.id];
+        if (hasMaintenanceAssignment(enemy))
+            return decide(enemy, group, performAssignment(enemy, group, assignment), true);
         // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
         if (
             hasGateWork(encounter, group) &&
@@ -2965,7 +3097,9 @@
                 workKeyValue = assignment?.workCell && cellKey(assignment.workCell);
             if (
                 !eligibleSpinner(member) ||
-                (!hasGateWork(encounter, group) && String(group.engagement?.lureId) === String(memberId)) ||
+                (!hasGateWork(encounter, group) &&
+                    String(group.engagement?.lureId) === String(memberId) &&
+                    !hasMaintenanceAssignment(member)) ||
                 !assignmentPending(encounter, assignment, member?.id) ||
                 tasks.has(task) ||
                 work.has(workKeyValue)
@@ -3026,6 +3160,7 @@
         analyzeLineCandidates,
         selectSavedPlan,
         reserveActions,
+        hasMaintenanceAssignment,
         beginTurn,
         initializeMapgenField,
         preparePositiveTurn,

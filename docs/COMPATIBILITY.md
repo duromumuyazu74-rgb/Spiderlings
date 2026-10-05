@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.94.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.95.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.95 field maintenance during Capture (2026-10-05)
+
+Reserved maintenance survives player and NPC Capture recruitment, adjacent line combat and contact-member replacement. An admitted player Capture crew may release one effective source for reachable field maintenance while retaining at least one source and both counters. The field maintenance identity spans later extension and connection after the first rebuilt cell. Completed work or Capture ending clears that identity. Existing NPC Capture participants remain sources; only their nonparticipants retain maintenance. Recovery, nest defense, occupancy, native movement payment and rebuilding cooldowns remain.
+
+The final ZIP has 170 entries and 24,840,596 bytes, SHA-256 `8362dd41a12e65904286df6bec8bfa3db92690f6f73eadec21e0fc5ef0e3a409`. Both KD 5.4.92 and latest fetched official 5.5.3 passed all 48 stages, including seven native locale loads per game. Official commit `960d36d214c36c882a15735bda3c5da3e8b4fcdf` was fetched at `2026-10-05T01:36:55.107Z`. Full evidence is `<cache>/runs/2026-10-05T01-36-55-132Z-0.92.36-test.95/acceptance.json`.
+
+The real Runtime maintenance fixture begins with both workers participating in Capture. Partial damage healed in seven turns. A destroyed multi-cell link and the containing field recovered in 57 turns; two paid operations, including extension after the first rebuilt cell, occurred while Capture remained active. Rebuilding also crossed a native reload without changing progress, position, damage or maintenance identity. These are controlled fixture results, not an instantaneous repair guarantee. The initial and mid-rebuild loads add no free work. Two unpublished diagnostic candidates remain separate. The existing desktop process and user save were not changed. See the [fix record](spiderlings-test95-field-maintenance.zh-CN.md).
+
+Repository checks, 12 policy tests, 562 public tests, the complete 883-test local watcher and exact ZIP content verification passed. Source and ZIP stayed unchanged during the collector run. Delivery evidence is `.scratch/delivery/2026-10-05T01-45-40-897Z-n4esmZ/REPORT.md`. Only this result paragraph was appended afterward, followed by repository and diff checks.
 
 ## Test.94 Hunting Grounds population and staffed fields (2026-10-05)
 

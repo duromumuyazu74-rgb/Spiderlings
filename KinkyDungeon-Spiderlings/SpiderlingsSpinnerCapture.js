@@ -351,6 +351,15 @@
         s.sourceIds.push(enemy.id);
         return true;
     }
+    function releaseMaintenanceSource(enemy) {
+        const s = state(),
+            sources = effectiveSources(s);
+        if (!s || !["contest", "wrap"].includes(s.phase) || sources.length < 2 || !sources.includes(enemy))
+            return false;
+        s.sourceIds = s.sourceIds.filter((id) => id !== enemy.id);
+        acted.delete(enemy.id);
+        return true;
+    }
     function recordSourceAction(enemy) {
         const s = state();
         if (!s || !s.sourceIds.includes(enemy?.id) || !eligible(enemy)) return false;
@@ -645,6 +654,10 @@
             return active && (state().sourceIds.includes(enemy.id) || holdsSpiderAttack(enemy, target))
                 ? { idle: false, defeat: false, defeatEnemy: enemy }
                 : undefined;
+        // A reserved maintenance worker does not join or circle the contest.
+        // Existing effective sources retain Capture until AI explicitly releases one.
+        if (active && !state().sourceIds.includes(enemy.id) && api.SpinnerAI?.hasMaintenanceAssignment?.(enemy))
+            return undefined;
         if (active && state().sourceIds.includes(enemy.id)) {
             if (state().phase === "wrap" || state().phase === "contest") {
                 // A legal adjacent weaving action is sufficient in a narrow corridor.
@@ -861,6 +874,7 @@
         settleTurn: finishTurn,
         pullFree: pull,
         handleEnemyTurn,
+        releaseMaintenanceSource,
         holdsSpiderAttack,
         phase: () => state()?.phase,
         isControllingPlayer: () => ["contest", "wrap"].includes(state()?.phase),

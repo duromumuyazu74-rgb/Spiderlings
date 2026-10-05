@@ -234,6 +234,7 @@ function contestRuntime(count = 2, overrides = {}) {
         handleEnemyTurn: () => undefined,
     };
     c.Spiderlings.SpinnerNativeField = {
+        state: () => undefined,
         isOwnedProxy: () => false,
         handleEnemyTurn: () => undefined,
         onNativeDamage() {},
@@ -1148,4 +1149,36 @@ test("capture keeps a distant nonparticipant on its existing construction operat
     assert.equal(r.api.holdsSpiderAttack(remote, r.c.KinkyDungeonPlayerEntity), true);
     r.operate(remote);
     assert.equal(paid, 1, "Nearby construction yields to the active contest");
+});
+
+test("capture preserves a nearby nonparticipant's reserved maintenance operation", () => {
+    const r = contestRuntime(),
+        helper = r.add();
+    helper.Enemy.tags = { spiderlings: true };
+    let paid = 0;
+    r.c.Spiderlings.SpinnerAI = { hasMaintenanceAssignment: (enemy) => enemy === helper };
+    r.c.Spiderlings.SpinnerNativeField.handleEnemyTurn = (enemy, _target, delta) => {
+        if (enemy !== helper) return undefined;
+        paid += delta;
+        return { idle: false, defeat: false, defeatEnemy: enemy };
+    };
+    r.start();
+    r.operate(helper);
+    assert.equal(paid, 1, "A legal maintenance operation must survive Capture recruitment");
+    assert.deepEqual(Array.from(r.api.state().sourceIds), [1]);
+});
+
+test("maintenance release preserves one effective Capture source and both counters", () => {
+    const r = contestRuntime(),
+        helper = r.add();
+    r.start();
+    r.operate(helper);
+    const capture = r.api.state();
+    capture.weaveProgress = 37;
+    capture.escapeProgress = 21;
+    assert.equal(r.api.releaseMaintenanceSource(helper), true);
+    assert.deepEqual(Array.from(capture.sourceIds), [1]);
+    assert.equal(capture.weaveProgress, 37);
+    assert.equal(capture.escapeProgress, 21);
+    assert.equal(r.api.releaseMaintenanceSource(r.c.KDMapData.Entities[0]), false);
 });
