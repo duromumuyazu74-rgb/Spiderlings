@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.97.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.98.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.98 Mage body glow and hunting population fallback (2026-10-05)
+
+Successful Mage casts retain the authored body glow through their completed native turn. The following positive turn clears that cast record. Pending Hex activation, Collapse, mark bursts and Rune placement/trigger warnings keep their owner lit until the actual effect resolves. Dormant armed ground runes do not keep their caster lit. Real time, frames, zero-time updates, repeated native-tick notifications and native save/reload do not consume the glow. See the [fix record](spiderlings-test98-mage-glow.zh-CN.md).
+
+Insufficient layout space now cancels only the Nest objective while preserving the bounded Hunting Grounds population plan. The native hunting scene checks spiders remain at their cap on those cancelled maps, in addition to staffed Nests and finite elite prey on successful layouts. Other cancellation and birth rollback rules remain. Existing maps are not reseeded.
+
+The final ZIP contains 170 allowlisted entries and 24,841,879 bytes, SHA-256 `259e45365aefd81f57adf5e736187aad9a5e5b9ab4ea70720903d5567a8802df`. It passes all 49 native stages on KD 5.4.92 and latest official 5.5.3 at commit `917d59b9f2ecad6b604498c8096bac5e441cb5ac`, freshly fetched at `2026-10-05T05:05:37.303Z`. Each game includes seven native language loads and 28 Mage body visual observations. Full acceptance is `<cache>/runs/2026-10-05T05-05-37-319Z-0.92.36-test.98/acceptance.json`.
+
+Repository checks, 12 policy tests, 576 public tests, the complete 898-test local watcher and ZIP verification passed. The collector recorded unchanged source and ZIP during verification: `.scratch/delivery/2026-10-05T05-13-16-622Z-Y8XEd4/REPORT.md`. Only result documentation was appended afterward, followed by repository and diff checks. The native Hunting Grounds scene checks 30 maps per game, including insufficient-space fallback maps with 45 initial spiders; protected preset actors can exceed the ordinary prey quota. Earlier Mage-only candidate acceptance does not establish final population coverage.
 
 ## Test.97 persistent player recovery and Mage body glow (2026-10-05)
 

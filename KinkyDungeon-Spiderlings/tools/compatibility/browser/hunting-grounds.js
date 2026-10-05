@@ -177,6 +177,27 @@
                     ),
                     ecologySpiders = ecologyEnemies.filter((e) => mobileNames.has(e.Enemy.name)).length,
                     ecologyRatio = ecologySpiders / ecologyEnemies.length;
+                if (cancelled && state.reason === "insufficient-space") {
+                    const plan = KDMapData.SpiderlingsPopulationPlan;
+                    const authoredMaids = KDMapData.Entities.filter(
+                        (e) => e.SpiderlingsHuntingPrey && e.Enemy.faction === "Maidforce",
+                    ).length;
+                    // Preset shops and their protected guards may exceed the
+                    // ordinary prey quota; their authored actors remain native.
+                    if (!plan?.layoutFallback || ecologySpiders !== plan.cap || authoredMaids > plan.preyQuota.Maid)
+                        throw Error(
+                            "Cancelled hunting layout fell back to Maidforce population: " +
+                                JSON.stringify({
+                                    zone,
+                                    floor,
+                                    seed,
+                                    ecologySpiders,
+                                    ecologyRatio,
+                                    authoredMaids,
+                                    plan,
+                                }),
+                        );
+                }
                 if (!cancelled && !KDIsHellFloor(floor) && (ecologyRatio < 0.8 || ecologyRatio > 0.9))
                     throw Error(
                         `Hunting Grounds total mobile ecology missed quota: ${JSON.stringify({

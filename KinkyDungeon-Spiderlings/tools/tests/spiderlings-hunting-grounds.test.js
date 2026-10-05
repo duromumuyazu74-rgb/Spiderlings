@@ -496,7 +496,7 @@ test("new Hunting population retains its authored large construction boundary un
     assert.equal(JSON.stringify(c.KinkyDungeonPlayerEntity), player);
 });
 
-test("a mobile NPC blocking a required large prefab cancels new hunting births without moving native actors", () => {
+test("a mobile NPC blocking a required large prefab cancels the objective but retains spider residents", () => {
     const r = runtime(),
         c = r.context;
     c.KDMapData.Tiles = {};
@@ -517,7 +517,15 @@ test("a mobile NPC blocking a required large prefab cancels new hunting births w
     const state = c.KDMapData.SpiderlingsHuntingGrounds;
     assert.equal(state.status, "cancelled");
     assert.equal(state.reason, "insufficient-space");
-    assert.deepEqual(c.KDMapData.Entities, [maid]);
+    assert.ok(c.KDMapData.Entities.includes(maid));
+    assert.equal(
+        c.KDMapData.Entities.filter((e) =>
+            ["Spinner", "Jumper", "WebCaster", "MageSpiderlings", "Tunneler"].includes(e.Enemy.name),
+        ).length,
+        45,
+    );
+    assert.equal(c.Spiderlings.availableSpiderlingSlots(), 0);
+    assert.ok(c.KDMapData.Entities.every((e) => e.Enemy.name !== "NestEntrance"));
     r.event("postMapgen");
     assert.equal(fields, 0);
     assert.equal(JSON.stringify(maid), original);
@@ -1235,15 +1243,34 @@ test("faction population and the three-nest objective vary independently across 
     }
 });
 
-test("a cancelled infestation does not disable maid population and a maid side room keeps its native pool", () => {
+test("a hunting layout cancellation retains its bounded spider ecology and native escape", () => {
+    const r = runtime();
+    const c = r.context;
+    c.KDMapData.GridWidth = 3;
+    r.generate();
+    const plan = c.KDMapData.SpiderlingsPopulationPlan;
+    assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.reason, "insufficient-space");
+    assert.equal(c.KDMapData.MapMod, "None");
+    assert.equal(c.Spiderlings.HuntingGrounds.activeState(), null);
+    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), true);
+    assert.equal(plan.kind, "SpiderlingsHuntingGrounds");
+    assert.equal(plan.layoutFallback, true);
+    assert.equal(plan.cap, 45);
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 45);
+    assert.equal(plan.preyQuota.Maid, 5);
+    assert.equal(plan.residentsSeeded, true);
+    assert.ok(c.KDMapData.Entities.every((e) => e.Enemy.name !== "NestEntrance"));
+});
+
+test("a cancelled hunting floor keeps bounded wandering and a maid side room keeps its native pool", () => {
     const r = nativePopulationRuntime();
     const c = r.context;
     delete c.KDMapData.SpiderlingsHuntingGrounds;
     c.KDMapData.GridWidth = 3;
     const args = [[], 3, "grv", "0", ["human"], undefined, undefined, ["maid", "dressmaker"]];
-    assert.equal(r.select(...args), undefined);
+    assert.equal(r.select(...args).tags.spiderlings, true);
     assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.status, "cancelled");
-    assert.equal(c.KinkyDungeonHandleWanderingSpawns(...args), undefined);
+    assert.equal(c.KinkyDungeonHandleWanderingSpawns(...args).tags.spiderlings, true);
     c.KDMapData.RoomType = "GuardOutpost";
     assert.equal(r.select(...args).name, "Unrelated");
     assert.equal(c.KinkyDungeonHandleWanderingSpawns(...args).name, "Unrelated");
@@ -1340,7 +1367,7 @@ test("twenty-one-place core capacity is atomic and a failed final Mage preserves
         c.KDMapData.Entities.push(...original);
         r.generate();
         assert.equal(c.Spiderlings.HuntingGrounds.activeState() !== null, existing === 279);
-        assert.equal(c.KDMapData.Entities.length, existing + (existing === 279 ? 21 : 0));
+        assert.equal(c.KDMapData.Entities.length, 300);
         assert.ok(original.every((entity) => c.KDMapData.Entities.includes(entity)));
     }
     const r = runtime();

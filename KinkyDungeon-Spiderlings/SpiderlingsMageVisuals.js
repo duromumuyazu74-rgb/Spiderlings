@@ -3,7 +3,7 @@
 (() => {
     const MAGE = "MageSpiderlings";
     const RUNE = "SpiderlingsMageRune";
-    const DISPLAY_MS = 240;
+    const CAST = "SpiderlingsMageCastGlow";
     const BODY = "Enemies/MageSpiderlings.png";
     const REGULAR = "Enemies/MageSpiderlingsRegular.png";
     const PARTICLES = "Enemies/MageSpiderlingsSpellParticles.png";
@@ -11,8 +11,40 @@
         rune: "Enemies/MageSpiderlingsSubtleGlow.png",
         attack: "Enemies/MageSpiderlingsReallyGlowy.png",
     });
-    const active = new WeakMap();
-    const now = () => (typeof CommonTime === "function" ? CommonTime() : Date.now());
+    function glowKind(enemy) {
+        if (!(enemy.hp > 0)) return undefined;
+        const spells = KDMapData.SpiderlingsMageSpells;
+        const waiting = (list, deadline) =>
+            spells?.[list]?.some((effect) => effect.ownerId === enemy.id && effect[deadline] > spells.clock);
+        if (waiting("fields", "activateAt") || waiting("collapses", "explodeAt") || waiting("blasts", "detonateAt"))
+            return "attack";
+        if (
+            KDMapData.Bullets.some(
+                (bullet) =>
+                    bullet.time > 0 &&
+                    bullet.bullet?.spell?.name === RUNE &&
+                    bullet.bullet.source === enemy.id &&
+                    ["placing", "triggered"].includes(bullet.SpiderlingsRunePhase),
+            )
+        )
+            return "rune";
+        return enemy[CAST]?.kind;
+    }
+
+    KDAddEvent(KDEventMapGeneric, "tickAfter", CAST, (_event, data) => {
+        if (!(data?.delta > 0)) return;
+        const tick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : undefined;
+        for (const enemy of KDMapData.Entities) {
+            const cast = enemy[CAST];
+            if (!cast || (tick !== undefined && cast.lastNativeTick === tick)) continue;
+            cast.lastNativeTick = tick;
+            // Enemy casts precede tickAfter. Keep the cast's completed turn lit,
+            // then clear on the next positive turn; loading and frames consume nothing.
+            if (cast.fresh) cast.fresh = false;
+            else delete enemy[CAST];
+        }
+    });
+
     const magePaths = new Set(
         [BODY, REGULAR, PARTICLES, ...Object.values(GLOWS)].map((path) => KinkyDungeonRootDirectory + path),
     );
@@ -33,7 +65,7 @@
         KinkyDungeonCastSpell = function (x, y, spell, caster) {
             const outcome = nativeCast.apply(this, arguments);
             if (outcome?.result === "Cast" && caster?.Enemy?.name === MAGE && caster.hp > 0)
-                active.set(caster, { kind: spell?.name === RUNE ? "rune" : "attack" });
+                caster[CAST] = { kind: spell?.name === RUNE ? "rune" : "attack", fresh: true };
             return outcome;
         };
     }
@@ -45,12 +77,8 @@
             if (enemy?.Enemy?.name !== MAGE || spriteName !== MAGE || enemy.CustomSprite) return spriteName;
             const base = kdpixisprites.get(`spr_${enemy.id}${id}`);
             if (!base?.texture || base.parent !== board) return spriteName;
-            const visual = active.get(enemy);
-            // Long native turns can exceed the entire glow before rendering resumes.
-            // Start its display lifetime on the first visible body frame.
-            if (visual && visual.started === undefined) visual.started = now();
-            const fade = visual ? Math.max(0, 1 - (now() - visual.started) / DISPLAY_MS) : 0;
-            const layers = fade > 0 ? [REGULAR, PARTICLES, GLOWS[visual.kind]] : [REGULAR];
+            const kind = glowKind(enemy);
+            const layers = kind ? [REGULAR, PARTICLES, GLOWS[kind]] : [REGULAR];
 
             for (const [index, path] of layers.entries()) {
                 const layer = KDDraw(
@@ -65,8 +93,8 @@
                     undefined,
                     {
                         zIndex: (base.zIndex ?? zIndex) + 0.001 * (index + 1),
-                        blendMode: path === GLOWS[visual?.kind] ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL,
-                        alpha: path === REGULAR ? 1 : fade,
+                        blendMode: path === GLOWS[kind] ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL,
+                        alpha: 1,
                     },
                     undefined,
                     undefined,

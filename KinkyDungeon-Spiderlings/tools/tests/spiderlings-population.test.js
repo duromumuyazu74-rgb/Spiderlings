@@ -177,7 +177,7 @@ test("completed crew initialization cannot duplicate a saved roster even with un
     assert.equal(JSON.stringify(c.KDMapData), before);
 });
 
-test("Hunting Grounds adds twenty slots to the setting and ignores obsolete saved ceilings", () => {
+test("Hunting Grounds and saved layout fallback add twenty slots and ignore obsolete ceilings", () => {
     const { c, api, settings } = runtime("SpiderlingsHuntingGrounds");
     assert.equal(c.Spiderlings.getMapPopulationCap(), 45);
     assert.equal(c.KDMapData.SpiderlingsPopulationPlan.cap, 45);
@@ -195,6 +195,14 @@ test("Hunting Grounds adds twenty slots to the setting and ignores obsolete save
     c.KDMapData.MapMod = "";
     assert.equal(c.Spiderlings.getMapPopulationCap(), 0);
     assert.equal(c.Spiderlings.availableSpiderlingSlots(), Infinity);
+    settings.cap = 20;
+    c.KDMapData.MapMod = "None";
+    c.KDMapData.SpiderlingsPopulationPlan.layoutFallback = true;
+    c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 40);
+    assert.equal(c.Spiderlings.availableSpiderlingSlots(), 40);
+    delete c.KDMapData.SpiderlingsPopulationPlan.layoutFallback;
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 20);
 });
 
 test("two large fields receive their original nest Spinner pairs even at the minimum hunting cap", () => {
