@@ -690,7 +690,7 @@
         // A supplied line catalogue is an explicit line-only scenario (used by authored fixtures).
         if (Object.hasOwn(snapshot, "candidateLines")) return [];
         const origin = (group.members || group.memberPositions || [])[0],
-            observation = api.SpinnerAI.groupObservation?.(group),
+            observation = group.recoveryAround || api.SpinnerAI.groupObservation?.(group),
             focus = observation || origin,
             byKey = geometry?.byKey || new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
             stationary = new Set(
@@ -728,6 +728,7 @@
         for (const nearby of geometry?.candidateCenters ? [null] : [true, false]) {
             if (candidates.length) break;
             for (const center of geometry?.candidateCenters || snapshot.cells || []) {
+                if (group.recoveryAround && distance(group.recoveryAround, center) > 1) continue;
                 if (nearby !== null && distance(focus, center) <= 6 !== nearby) continue;
                 if (observation && !nearby && !approach.some((cell) => distance(cell, center) <= 2)) continue;
                 if (work) {
@@ -1077,7 +1078,9 @@
             .filter(
                 (candidate) =>
                     candidate.gates.every((gate) => gate.cells.every((cell) => !occupied.has(cellKey(cell)))) &&
-                    !candidate.interiorCells.some((cell) => cellKey(cell) === cellKey(KinkyDungeonPlayerEntity)),
+                    (group.recoveryAround
+                        ? candidate.interiorCells.some((cell) => cellKey(cell) === cellKey(group.recoveryAround))
+                        : !candidate.interiorCells.some((cell) => cellKey(cell) === cellKey(KinkyDungeonPlayerEntity))),
             )
             .map((candidate) => {
                 const travelDistance = Math.max(
@@ -2148,6 +2151,19 @@
         mergeNearbyGroups(encounter, entities, distances, snapshot);
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
+            const known = api.SpinnerAI.groupObservation?.(group);
+            if (api.SpinnerRecovery?.needsField?.() && known?.target?.kind === "player" && known.age < 4) {
+                group.recoveryAround = { x: known.x, y: known.y };
+                const previous = ai.plans[group.planId];
+                if (previous) {
+                    previous.status = "abandoned";
+                    for (const id of previous.fieldIds || [previous.fieldId]) api.SpinnerNativeField.retireField(id);
+                    group.planId = null;
+                    group.assignments = {};
+                    group.selectionOrdinal++;
+                    delete group.noPlanSignature;
+                }
+            } else delete group.recoveryAround;
             const current = ai.plans[group.planId];
             if (
                 current &&

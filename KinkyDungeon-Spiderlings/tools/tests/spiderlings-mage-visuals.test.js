@@ -120,6 +120,7 @@ test("failed casts do not light Mage and cast layers fade without advancing game
 
     context.castResult = "Cast";
     context.KinkyDungeonCastSpell(5, 5, { name: "AnotherMageSpell" }, mage);
+    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
     draws.length = 0;
     context.time = 120;
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
@@ -161,4 +162,13 @@ test("cached abdomen layers follow both facing changes and stay on the body's tr
         assert.ok(draws.every(({ sprite }) => sprite.scale.x === draws[0].sprite.scale.x));
         assert.ok(draws.every(({ sprite }) => sprite.position.x === draws[0].sprite.position.x));
     }
+});
+
+test("Mage cast glow remains visible when the paid turn delays its first frame", () => {
+    const { context, board, draws, mage } = runtime();
+    context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageBolt" }, mage);
+    context.time = 600;
+    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+    assert.equal(draws.at(-1).image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
+    assert.equal(draws.at(-1).sprite.alpha, 1);
 });

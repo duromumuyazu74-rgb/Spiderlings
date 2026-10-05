@@ -645,3 +645,64 @@ test("recovery detours a native faction route blocked by a coworker with paid mo
     assert.deepEqual({ x: r.player.x, y: r.player.y }, { x: 7, y: 5 });
     assert.ok(r.c.tetherCalls.length > 0, "The native tether still owns dragging");
 });
+
+const legBag = (r) => r.gear.push({ id: "leg-bag", name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } });
+test("retained leg bag reacquires recovery after returning and leaving an intact field", () => {
+    const r = attached();
+    legBag(r);
+    r.player.x = 5;
+    r.source.x = 6;
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.equal(r.api.state(), undefined);
+    r.setBreached(false);
+    r.leave();
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
+    assert.equal(r.api.hit(r.source), true);
+    r.gear.splice(
+        r.gear.findIndex((item) => item.name === "SpiderlingsSpinnerLegbinder"),
+        1,
+    );
+    r.api.audit();
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+});
+test("leg bag recovery selects the nearest reachable field instead of the source's former field", () => {
+    const r = attached();
+    legBag(r);
+    r.cores.set("nearby", { x: 8, y: 5 });
+    r.fieldOwners.set("nearby", [99]);
+    assert.equal(r.api.destination(r.api.state()).compositeId, "nearby");
+});
+
+test("removing a leg bag cancels pending repeat recovery even when a compatible collar remains", () => {
+    const r = attached();
+    legBag(r);
+    r.player.x = 5;
+    r.source.x = 6;
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    r.setBreached(false);
+    r.leave();
+    r.gear.splice(
+        r.gear.findIndex((item) => item.name === "SpiderlingsSpinnerLegbinder"),
+        1,
+    );
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    assert.equal(r.api.hit(r.source), false);
+});
+
+test("carrier-loss retry keeps its leg bag identity until the bag is removed", () => {
+    const r = attached();
+    legBag(r);
+    r.api.audit();
+    r.gear.splice(
+        r.gear.findIndex((item) => item.id === r.api.state().carrierId),
+        1,
+    );
+    r.api.audit();
+    assert.ok(r.api.departure());
+    r.gear.splice(
+        r.gear.findIndex((item) => item.name === "SpiderlingsSpinnerLegbinder"),
+        1,
+    );
+    assert.equal(r.api.departure(), undefined);
+});

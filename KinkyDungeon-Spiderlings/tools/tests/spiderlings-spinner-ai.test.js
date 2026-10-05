@@ -3414,3 +3414,52 @@ for (const damage of [0.5, 100]) {
         capture.cancel();
     });
 }
+
+test("a retained leg bag with no field makes the real dispatcher build around a fresh player observation", () => {
+    const actors = [spinner(1, 7, 6), spinner(2, 9, 6)],
+        r = runtime(actors),
+        c = r.context,
+        snapshot = mapSnapshot(),
+        bag = { id: 1001, name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } };
+    delete snapshot.candidateLines;
+    c.KinkyDungeonAllRestraintDynamic = () => [{ item: bag }];
+    c.KinkyDungeonRestraints = [];
+    load(c, "SpiderlingsSpinnerRecoveryCore.js");
+    load(c, "SpiderlingsSpinnerRecovery.js");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 8, y: 6 });
+    const native = c.Spiderlings.SpinnerNativeField;
+    native.ensureMap({ scenario: "recovery-around" });
+    c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+    const initial = native.state().ai,
+        group = Object.values(initial.groups)[0];
+    // Remove its old field, then deliver a fresh native observation of the bag wearer.
+    for (const id of initial.plans[group.planId].fieldIds) native.retireField(id);
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: actors[0].id,
+        lastKnown: { x: 8, y: 6, age: 0, source: "native" },
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    assert.equal(c.Spiderlings.SpinnerRecovery.needsField(), true);
+    c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+    const plan = native.state().ai.plans[group.planId];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(
+        c.Spiderlings.SpinnerTopology.isInsideCommonCore(
+            native.state().topology,
+            plan.compositeId,
+            c.KinkyDungeonPlayerEntity,
+        ),
+        true,
+    );
+    assert.equal(native.state().topology.actionLog.length, 0, "Planning must not grant free construction");
+    for (let turn = 0; turn < 15; turn++) {
+        c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+        for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.KDEventMapGeneric.tickAfter.SpiderlingsSpinnerRuntime({}, { delta: 1 });
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(native.state().topology.actionLog.length > 0, "Replacement needs actual paid construction");
+});

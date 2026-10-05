@@ -41,6 +41,7 @@ const scenarios = [
         "cocoon-vigil",
         "mage-timing",
         "player-recovery",
+        "persistent-recovery",
         "action-cadence",
         "population-failure",
         "floor-objective-hints",

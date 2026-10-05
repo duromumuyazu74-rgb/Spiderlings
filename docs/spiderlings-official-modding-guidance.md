@@ -619,3 +619,7 @@ KD 5.4.92 and the pinned 5.5 source preselect ordinary journey modifiers before 
 ## Occupied native path endpoints (test.91)
 
 Both KD 5.4.92 and fetched 5.5.3 can return a `KinkyDungeonFindPath` route whose end cell is occupied; the adjacent-goal shortcut runs before ordinary collision expansion. `blockEnemy=true` therefore does not establish that the endpoint is usable. Spinner player recovery selects a free interior endpoint and validates its first step against actual entities and the player, then delegates payment to `KinkyDungeonEnemyTryMove` and pulling to `KinkyDungeonUpdateTether`. A blocked route is not arrival and must not tighten the native leash before paid movement or arrival inside the destination. A one-cell interior still needs the executor's paid step beyond the center to pull the player into the vacated cell. The public recovery regressions and dual-version `player-recovery` scenario cover occupied centers, stationary crowded sources, small interiors and resealing after return.
+
+## Mage casting body flash (test.97)
+
+Native turn processing can exceed the 240 ms body-flash duration before the first frame. Record a successful cast immediately, but start the visual clock on the first visible body draw. The delayed-first-frame public regression and `mage-body` native scene enforce this without changing spell timing.

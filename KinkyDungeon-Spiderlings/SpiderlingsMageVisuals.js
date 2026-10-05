@@ -33,7 +33,7 @@
         KinkyDungeonCastSpell = function (x, y, spell, caster) {
             const outcome = nativeCast.apply(this, arguments);
             if (outcome?.result === "Cast" && caster?.Enemy?.name === MAGE && caster.hp > 0)
-                active.set(caster, { kind: spell?.name === RUNE ? "rune" : "attack", started: now() });
+                active.set(caster, { kind: spell?.name === RUNE ? "rune" : "attack" });
             return outcome;
         };
     }
@@ -46,6 +46,9 @@
             const base = kdpixisprites.get(`spr_${enemy.id}${id}`);
             if (!base?.texture || base.parent !== board) return spriteName;
             const visual = active.get(enemy);
+            // Long native turns can exceed the entire glow before rendering resumes.
+            // Start its display lifetime on the first visible body frame.
+            if (visual && visual.started === undefined) visual.started = now();
             const fade = visual ? Math.max(0, 1 - (now() - visual.started) / DISPLAY_MS) : 0;
             const layers = fade > 0 ? [REGULAR, PARTICLES, GLOWS[visual.kind]] : [REGULAR];
 

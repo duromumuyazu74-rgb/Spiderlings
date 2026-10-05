@@ -63,8 +63,8 @@ const slot = (y, extra = {}) => ({
 });
 test("test90 upgrades the two old floor defaults once and persists deliberate later settings", () => {
     const r = fixture();
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "180");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "1400");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
     assert.equal(r.writes.length, 1);
     assert.equal(JSON.parse(r.writes[0].value).OtherMod.chance, 0.7);
     const persisted = JSON.parse(r.writes[0].value).Spiderlings;
@@ -82,8 +82,8 @@ test("test90 retains disabled and custom values and handles native settings load
     assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "750");
     r.c.KDModSettings.Spiderlings = { spiderlingsInfestationWeight: 50, spiderlingsHuntingGroundsWeight: 1000 };
     r.event("afterModSettingsLoad");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "180");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "1400");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
 });
 test("test90 supplements only untouched future ordinary previews once, protecting cached maps even with visited false", () => {
     const r = fixture(),
@@ -140,8 +140,8 @@ test("test91 lowers saved test90 defaults once without redrawing its journey", (
         spiderlingsHuntingGroundsWeight: "1500",
         spiderlingsFloorWeights90: { changed: ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"] },
     });
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "180");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "1400");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
     r.c.KDGameData.SpiderlingsFloorWeights90 = true;
     r.c.KDGameData.JourneyMap.future = slot(13);
     r.event("afterLoadGame");
@@ -152,5 +152,23 @@ test("test91 lowers saved test90 defaults once without redrawing its journey", (
     const reload = fixture(saved);
     assert.equal(reload.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
     assert.equal(reload.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "1500");
+    assert.equal(reload.writes.length, 0);
+});
+
+test("test97 restores saved lower defaults once and preserves zero and custom weights", () => {
+    const r = fixture({
+        spiderlingsInfestationWeight: "180",
+        spiderlingsHuntingGroundsWeight: "1400",
+        spiderlingsFloorWeights90: {},
+        spiderlingsFloorWeights91: true,
+    });
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
+    const saved = JSON.parse(r.writes[0].value).Spiderlings;
+    saved.spiderlingsInfestationWeight = "180";
+    saved.spiderlingsHuntingGroundsWeight = "0";
+    const reload = fixture(saved);
+    assert.equal(reload.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "180");
+    assert.equal(reload.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "0");
     assert.equal(reload.writes.length, 0);
 });

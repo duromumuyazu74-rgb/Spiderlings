@@ -24,6 +24,8 @@
             if (spellName) {
                 const spell = KinkyDungeonSpellListEnemies.find((s) => s.name === spellName);
                 expect(KinkyDungeonCastSpell(10, 10, spell, mage).result === "Cast", "Mage cast failed");
+                // Model a native turn that finishes after the old 240 ms lifetime.
+                clock += 600;
             }
             for (const flip of [false, true, false, true, false]) {
                 mage.flip = flip;
@@ -46,6 +48,7 @@
                 );
                 expect(aligned, `Detached abdomen pattern: ${spellName || "idle"}, flip=${flip}`);
                 expect(layers[0].alpha === 1, "Abdomen pattern faded during casting");
+                if (spellName) expect(layers[2].alpha === 1, "Glow expired before its first visible frame");
                 rows.push({ spell: spellName || "idle", flip, aligned, layers: layers.length });
             }
             clock += 300;
