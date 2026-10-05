@@ -297,6 +297,21 @@
         };
         for (const actor of actors) expect(recovery.hit(actor), "Crowded return could not attach native sources");
         const trace = [];
+        const row = { mode: "crowded-core-return", trace, work: [] };
+        rows.push(row);
+        const executeDuty = Spiderlings.SpinnerAI.executeDuty;
+        Spiderlings.SpinnerAI.executeDuty = function (actor, groupId, assignment) {
+            const result = executeDuty.apply(this, arguments);
+            row.work.push({
+                tick: KinkyDungeonCurrentTick,
+                id: actor.id,
+                result,
+                x: actor.x,
+                y: actor.y,
+                assignment: structuredClone(assignment),
+            });
+            return result;
+        };
         for (let i = 0; i < 35; i++) {
             await turn();
             trace.push({
@@ -307,6 +322,12 @@
             });
             if (encounter.topology.fields["crowded-inner"].phase === "sealed") break;
         }
+        Spiderlings.SpinnerAI.executeDuty = executeDuty;
+        row.state = structuredClone(field.state());
+        row.actors = actors.map((actor) => ({
+            ...structuredClone(actor),
+            duty: structuredClone(Spiderlings.SpinnerDuties.current(actor)),
+        }));
         expect(
             trace.slice(0, 3).some((step) => step.actors[1].x !== 11 || step.actors[1].y !== 14),
             "Nearby helper stayed behind the player",
@@ -320,7 +341,6 @@
             `Returned prey was not sealed in again: ${JSON.stringify(trace)}`,
         );
         expect(blocker.x === 10 && blocker.y === 10, "Fixture blocker unexpectedly vacated the core");
-        rows.push({ mode: "crowded-core-return", trace });
         images["crowded-core-return"] = await photo();
     }
 

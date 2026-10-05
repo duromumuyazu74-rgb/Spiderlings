@@ -848,3 +848,38 @@ test("Topology work inspection preserves repair occupancy and rebuilding cooldow
     state.lineFields["work-status"].retired = true;
     assert.equal(topology.inspectWorkAction(state, rebuild).pending, false);
 });
+
+test("partial paid link reconstruction remains maintenance through save and completion", () => {
+    const topology = runtime().context.Spiderlings.SpinnerTopology;
+    let state = topology.createLine({
+        fieldId: "repair-continuation",
+        owners: [1],
+        anchors: [
+            { x: 3, y: 3 },
+            { x: 3, y: 7 },
+        ],
+    });
+    for (const anchor of state.anchors) anchor.built = true;
+    const link = state.links[0];
+    link.hp = 0;
+    link.cooldown = topology.REBUILD_TURNS;
+    const snapshot = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    const rebuild = {
+        type: "rebuildLink",
+        fieldId: "repair-continuation",
+        linkId: link.id,
+        ownerId: 1,
+        cell: link.plannedCells[0],
+    };
+    state = topology.applyAction(state, rebuild, snapshot(rebuild.cell)).state;
+    state = topology.restore(JSON.parse(JSON.stringify(state)));
+    for (const cell of link.plannedCells.slice(1)) {
+        const action = { ...rebuild, type: "extendLink", cell };
+        assert.equal(topology.inspectWorkAction(state, action).maintenance, true);
+        const result = topology.applyAction(state, action, snapshot(cell));
+        assert.equal(result.outcome.legal, true);
+        state = result.state;
+    }
+    assert.equal(state.links[0].connected, true);
+    assert.equal(state.links[0].rebuilding, undefined);
+});

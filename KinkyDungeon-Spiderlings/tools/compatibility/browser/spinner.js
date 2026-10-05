@@ -114,7 +114,7 @@
         return result;
     };
     try {
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < (outside ? 300 : 40); i++) {
             KinkyDungeonAdvanceTime(1);
             turns.push({
                 x: actors[0].x,
@@ -134,14 +134,11 @@
     if (outside) {
         if (turns[0].mode !== "pressure")
             throw new Error(`Contact started with an ambush wait: ${JSON.stringify(turns)}`);
-        // This scene first pays to reopen the field after prey leaves. The
-        // contact role must start pursuit on its first turn without gate work.
-        const contactTurn = decisions.find(
-            (decision) => !["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(decision.assignment),
-        )?.turn;
-        if (moves[0]?.turn !== contactTurn || moves[0]?.x <= 10 || !moves.some((move) => move.moved))
+        // Field command retains the sole builder before ordinary pursuit. Native defense and
+        // the eventual real melee hit still apply; construction does not create a capture hit.
+        if (!moves.some((move) => move.moved) || encounter.topology.actionLog.length === 0)
             throw new Error(
-                `The contact Spinner did not start paid pursuit immediately: ${JSON.stringify({ moves, decisions })}`,
+                `The commanded Spinner did not perform paid field work: ${JSON.stringify({ moves, decisions })}`,
             );
         if (hits === 0)
             throw new Error(`The outside player never received a native Spinner hit: ${JSON.stringify(turns)}`);

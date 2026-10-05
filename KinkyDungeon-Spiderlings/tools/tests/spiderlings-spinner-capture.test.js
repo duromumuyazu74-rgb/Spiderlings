@@ -1156,7 +1156,11 @@ test("capture preserves a nearby nonparticipant's reserved maintenance operation
         helper = r.add();
     helper.Enemy.tags = { spiderlings: true };
     let paid = 0;
-    r.c.Spiderlings.SpinnerAI = { hasMaintenanceAssignment: (enemy) => enemy === helper };
+    r.c.Spiderlings.SpinnerDuties = {
+        prepare: () => undefined,
+        current: () => undefined,
+        allows: (enemy, role) => enemy !== helper || role === "work",
+    };
     r.c.Spiderlings.SpinnerNativeField.handleEnemyTurn = (enemy, _target, delta) => {
         if (enemy !== helper) return undefined;
         paid += delta;

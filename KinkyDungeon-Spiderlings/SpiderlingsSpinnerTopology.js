@@ -918,7 +918,10 @@
             cell,
             pending: pending && !field?.retired,
             maintenance:
-                repair || ["rebuildAnchor", "rebuildLink"].includes(type) || (type === "prepareGate" && link?.hp <= 0),
+                repair ||
+                ["rebuildAnchor", "rebuildLink"].includes(type) ||
+                (type === "prepareGate" && link?.hp <= 0) ||
+                (!!link?.rebuilding && ["extendLink", "closeGate", "connectGate"].includes(type)),
             allowsOccupiedTarget: repair,
             gateWork: ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(type),
             opensGate: type === "reopenGate",
@@ -1113,6 +1116,7 @@
                 link.hp = Math.max(link.maxHp * 0.1, 0.1);
                 link.cooldown = 0;
                 link.builtCells = [];
+                link.rebuilding = true;
             }
             if (cell && action.type !== "connectGate") {
                 link.builtCells.push(cell);
@@ -1125,6 +1129,7 @@
                 link.builtCells.length === link.plannedCells.length
             )
                 link.connected = true;
+            if (link.connected) delete link.rebuilding;
         } else if (action.type === "reopenGate") {
             const link = next.links.find((candidate) => candidate.id === action.linkId);
             link.builtCells = link.builtCells.filter((candidate) => !sameCell(candidate, cell));
@@ -1255,11 +1260,27 @@
         return undefined;
     }
 
-    function nextWorkAction(state, ownerId, actorCell, reservedKeys = []) {
+    function fieldWorkNeeds(state, fieldIds) {
+        const ids = new Set(fieldIds),
+            fields = Object.values(state.fields || {}).filter((field) => ids.has(field.id) && !field.retired),
+            active = new Set(fields.map((field) => field.id));
+        return {
+            construction: fields.some((field) => field.reopenPending || ["preparing", "sealing"].includes(field.phase)),
+            repair:
+                fields.some((field) => field.phase === "breached") ||
+                [...state.anchors, ...state.links].some(
+                    (structure) => structure.hp < structure.maxHp && structure.owners.some((id) => active.has(id)),
+                ),
+        };
+    }
+
+    function nextWorkAction(state, ownerId, actorCell, reservedKeys = [], fieldIds) {
         if (!state.owners.includes(ownerId)) return undefined;
         const allFields = Object.values(state.fields || {}),
-            ownedFields = allFields.filter((field) =>
-                (state.fieldOwners?.[field.id] || state.owners).includes(ownerId),
+            ownedFields = allFields.filter(
+                (field) =>
+                    (!fieldIds || fieldIds.includes(field.id)) &&
+                    (state.fieldOwners?.[field.id] || state.owners).includes(ownerId),
             ),
             fields = ownedFields.filter((field) => field.kind !== "passage").sort((a, b) => a.layer - b.layer),
             constructionFields = [...fields].sort(
@@ -1646,6 +1667,7 @@
         legalAction,
         applyAction,
         nextWorkAction,
+        fieldWorkNeeds,
         workKey,
         updateTarget,
         refresh,

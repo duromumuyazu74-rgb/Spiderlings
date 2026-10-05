@@ -39,6 +39,10 @@
             for (const source of actors) {
                 source.aware = false;
                 source.vp = 0;
+                // Global planning now places work near the player. Isolate paid
+                // construction here; actual contact/defense is exercised below.
+                source.Enemy = { ...source.Enemy, visionRadius: 0 };
+                source.modified = true;
             }
             Spiderlings.SpinnerAI.beginTurn({ activate: true });
             row = { count, actions: [], turns: [], reload: undefined };
@@ -129,7 +133,15 @@
                     return KDMapData.Entities.filter(
                         (entity) =>
                             Spiderlings.SpinnerNativeField.isOwnedProxy(entity) &&
-                            field.boundaryCells.some((cell) => cell.x === entity.x && cell.y === entity.y),
+                            field.boundaryCells.some((cell) => cell.x === entity.x && cell.y === entity.y) &&
+                            !state.topology.anchors.some((anchor) => anchor.x === entity.x && anchor.y === entity.y) &&
+                            !KDMapData.Entities.some(
+                                (actor) =>
+                                    actor.hp > 0 &&
+                                    !Spiderlings.SpinnerNativeField.isOwnedProxy(actor) &&
+                                    actor.x === entity.x &&
+                                    actor.y === entity.y,
+                            ),
                     ).map((proxy) => ({
                         proxy,
                         fieldId,
@@ -141,31 +153,45 @@
             expect(repairSite, "No staffed ready outer layer remained for paid repair acceptance");
             const { proxy } = repairSite;
             const cell = { x: proxy.x, y: proxy.y };
-            KinkyDungeonDamageEnemy(
+            row.repair = {
+                cell,
+                fieldId: repairSite.fieldId,
+                ownerIds: repairSite.ownerIds,
+                actionsBefore: row.actions.length,
+                proxyBefore: structuredClone(proxy),
+            };
+            row.repair.damageDealt = KinkyDungeonDamageEnemy(
                 proxy,
-                { damage: 20, type: "slash", nocrit: true },
+                // Long spans attenuate hits away from anchors down to 25%.
+                { damage: 100, type: "slash", nocrit: true, evadeable: false, noblock: true },
                 true,
                 true,
                 undefined,
                 undefined,
                 KinkyDungeonPlayerEntity,
             );
+            row.repair.proxyAfter = structuredClone(proxy);
+            row.repair.damageState = structuredClone(Spiderlings.SpinnerNativeField.state().topology);
             expect(
                 !Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(cell),
                 "Native damage did not breach the constructed field",
             );
-            row.repair = {
-                cell,
-                fieldId: repairSite.fieldId,
-                ownerIds: repairSite.ownerIds,
-                actionsBefore: row.actions.length,
-            };
             for (let step = 0; step < 90 && !Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(cell); step++) {
                 tick++;
                 await turn();
             }
             row.repair.actionsAfter = row.actions.length;
             row.repair.restored = Spiderlings.SpinnerNativeField.isSpiderlingsWebCell(cell);
+            row.repair.state = structuredClone(Spiderlings.SpinnerNativeField.state());
+            row.repair.actors = actors.map(({ id }) => {
+                const actor = KDMapData.Entities.find((entity) => entity.id === id);
+                return {
+                    id,
+                    hp: actor?.hp,
+                    stun: actor?.stun,
+                    duty: structuredClone(Spiderlings.SpinnerDuties.current(actor)),
+                };
+            });
             row.repair.paidRepair = row.actions
                 .slice(row.repair.actionsBefore)
                 .some(
@@ -282,6 +308,9 @@
         expect(KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(lure.x, lure.y)), "Lure crossed a wall");
     }
     corner.firstMove = corner.turns.find((entry) => entry.x !== 11 || entry.y !== 10)?.turn;
+    corner.command = Spiderlings.FieldCommand.inspect();
+    corner.groups = structuredClone(encounter.ai.groups);
+    corner.actors = structuredClone(actors);
     expect(corner.firstMove <= 4, "Legal detour remained stuck at a local minimum while builders worked");
     expect(group.metrics.construction > 0, "The corner regression did not retain real paid builders");
     expect(group.planId === plan.id, "Lure repair diverted the crew from its retained field");
@@ -313,8 +342,12 @@
     for (let step = 0; step < 25; step++) await turn();
     expect(reloaded.topology.actionLog.length > 0, "Existing Spinner crew did not pay to complete inner circles");
     expect(
-        memberIds.every((id) => reloaded.ai.groups[preset.groupId].memberIds.includes(id)),
-        "Prefab diverted existing crew members",
+        memberIds.every(
+            (id) =>
+                Spiderlings.FieldCommand.inspect().members[id]?.home === preset.groupId &&
+                composite.layerIds.every((fieldId) => Spiderlings.SpinnerNativeField.fieldOwners(fieldId).includes(id)),
+        ),
+        "Temporary dispatch lost prefab members' original physical ownership",
     );
     expect(
         KDMapData.Entities.filter((source) => source.Enemy?.name === "Spinner").length === presetActors.length,
@@ -444,8 +477,15 @@
                                 beforePaid: current.topology.actionLog.length,
                                 damage:
                                     strategy === "stun"
-                                        ? { damage: 0.1, type: "stun", time: 12, nocrit: true }
-                                        : { damage: 100, type: "slash", nocrit: true },
+                                        ? {
+                                              damage: 0.1,
+                                              type: "stun",
+                                              time: 12,
+                                              nocrit: true,
+                                              evadeable: false,
+                                              noblock: true,
+                                          }
+                                        : { damage: 100, type: "slash", nocrit: true, evadeable: false, noblock: true },
                                 before: workers.map((actor) => ({
                                     id: actor.id,
                                     hp: actor.hp,

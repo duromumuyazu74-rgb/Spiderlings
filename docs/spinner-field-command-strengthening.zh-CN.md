@@ -1,7 +1,7 @@
 # 场地指挥的三项架构深化
 
 - 日期：2026-10-05。
-- 状态：三个深化方向均已选择；本文将既有玩法约定落实为详细架构设计，尚未修改运行时。
+- 状态：三个深化方向均已接入 test.110 运行时；验证记录见[实现记录](spiderlings-test110-field-command.zh-CN.md)。
 - 前置目标：[分层场地指挥设计](spinner-field-command-design.zh-CN.md)。
 - 术语：[CONTEXT.md](../KinkyDungeon-Spiderlings/CONTEXT.md)。
 - 基线：Spiderlings 0.92.36-test.99，`008cebc`。

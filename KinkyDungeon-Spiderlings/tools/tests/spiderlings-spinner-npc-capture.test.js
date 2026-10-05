@@ -236,7 +236,7 @@ test("NPC Capture leaves a nonparticipant's maintenance duty available while its
         capture = c.Spiderlings.SpinnerNPCCapture;
     c.KDMapData.Entities.push(source, worker, target);
     c.KinkyDungeonEnemyLoop(source, target, 1);
-    c.Spiderlings.SpinnerAI = { hasMaintenanceAssignment: (actor) => actor === worker };
+    c.Spiderlings.SpinnerDuties = { allows: (actor, role) => actor !== worker || role === "work" };
     assert.equal(capture.handleEnemyTurn(worker, target, 1), undefined);
     assert.equal(capture.usesSource(worker.id), false);
     assert.ok(capture.handleEnemyTurn(source, target, 1));

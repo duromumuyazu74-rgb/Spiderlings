@@ -66,6 +66,9 @@ function fixture(reverse = false) {
     vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsSpinnerAI.js"), "utf8"), context, {
         filename: "SpiderlingsSpinnerAI.js",
     });
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsFieldCommand.js"), "utf8"), context, {
+        filename: "SpiderlingsFieldCommand.js",
+    });
     return { context, api: context.Spiderlings.SpinnerAI, scout, helper, player, group, encounter, calls };
 }
 
