@@ -67,3 +67,43 @@ npm run report:delivery -- --evidence .\.scratch\playtest\acceptance.json
 Allowed record statuses are `passed`, `failed` and `not-run`. A passed or failed record requires an existing evidence file. The collector validates the ZIP hash, copies those files into the report directory, records their hashes, and preserves the stated scope and limitations. Their status is labelled as **reported**; the collector does not perform gameplay or visual tests. An explicit failed game record makes the command fail. With no supplied JSON, game acceptance remains `not-run`, even when the watcher passes.
 
 Reports may contain local paths and supplied evidence. Inspect them before sharing. The command does not publish, tag, merge, close Issues or promote a test version. Follow the [verification matrix](../CONTRIBUTING.md#verification) and [publishing procedure](DEVELOPMENT.md#releases) for the applicable delivery.
+
+## Issue closeout
+
+For a delivered branch, prepare a scoped JSON record listing every associated Issue, including older work carried by the branch. Each entry records its own completion condition, evidence, disposition, reason and remaining action. Use the Issue body and subsequent decisions to determine the condition; do not silently replace it with a general requirement to merge or publish.
+
+```json
+{
+  "schemaVersion": 1,
+  "repository": "duromumuyazu74-rgb/Spiderlings",
+  "pr": 114,
+  "head": "<full reviewed PR head SHA>",
+  "targetBranch": "test",
+  "issues": [
+    {
+      "number": 118,
+      "condition": "Implement and deliver a tested ZIP with full dual-version acceptance",
+      "acceptanceSatisfied": true,
+      "requiresIntegration": false,
+      "disposition": "completed",
+      "evidence": ["<implementation commit>", "<acceptance report>", "<package hash>"],
+      "reason": "The listed implementation and delivery conditions are satisfied",
+      "nextAction": "None"
+    }
+  ]
+}
+```
+
+Allowed dispositions are `completed`, `superseded`, `pending-integration`, `pending-acceptance` and `pending-implementation`. Integration-dependent entries additionally supply a full `implementationCommit`; the audit compares it against the live target branch. `acceptanceSatisfied` is an explicitly reviewed claim, not a value inferred from Release existence.
+
+```powershell
+# Inspect live GitHub state without rerunning package checks.
+npm run audit:closeout -- .scratch/closeout.json
+
+# Attach live Issue/PR snapshots and per-Issue results to final verification.
+npm run report:delivery -- --base origin/test --closeout .scratch/closeout.json --evidence '<cache>/runs/<run>/acceptance.json'
+```
+
+The read-only audit derives the repository from configured `origin`, reads the PR and Issue bodies/comments/labels, and verifies the pinned head and target. It rejects omitted `Refs`/`Fixes`/`Closes`/`Resolves` references, duplicate dispositions, missing evidence/reasons/actions, open tickets claimed completed, pending-work labels on closed tickets, and `ready-for-agent` on accepted work. Required integration uses the remote target commit and GitHub's commit comparison rather than stale local tracking refs. Rebased or squash-integrated commits can require a separately verified content-equivalence decision; a failed ancestry check is not proof of missing behavior.
+
+Failures retain the collector report and make its exit code nonzero. Network or authentication failures remain unverified. Normal CI and local package checks omit `--closeout` and require no GitHub credentials. This audit never closes Issues or changes labels. Complete authorized writes through the existing Issue workflow, then rerun the audit to confirm the resulting state. A passed audit establishes recorded consistency, not the truth of every acceptance claim or the completeness of unreferenced work.

@@ -11,7 +11,9 @@
     "test:local": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js all",
     "test:compatibility": "node KinkyDungeon-Spiderlings/tools/verify-kd-compatibility.js",
     "audit:text": "node KinkyDungeon-Spiderlings/tools/audit-spiderlings-text.js",
-    "report:delivery": "node KinkyDungeon-Spiderlings/tools/report-spiderlings-delivery.js"
+    "report:delivery": "node KinkyDungeon-Spiderlings/tools/report-spiderlings-delivery.js",
+    "audit:closeout": "node KinkyDungeon-Spiderlings/tools/audit-delivery-closeout.js",
+    "verify:publication": "node KinkyDungeon-Spiderlings/tools/verify-spiderlings-publication.js"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

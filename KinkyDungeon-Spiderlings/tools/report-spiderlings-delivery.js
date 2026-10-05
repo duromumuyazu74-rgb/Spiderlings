@@ -5,6 +5,8 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { spawnSync, execFileSync } = require("node:child_process");
 const { parseReleaseVersion } = require("./release-version.js");
+const { packageVerificationCommand } = require("./delivery-commands.js");
+const { collectCloseout, closeoutMarkdown } = require("./audit-delivery-closeout.js");
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
@@ -92,7 +94,7 @@ function checkPlan(root, options, base, packagePath) {
         },
         {
             id: "package",
-            command: ps("build-spiderlings-release.ps1", "-VerifyOnly", "-PackagePath", packagePath),
+            command: packageVerificationCommand(root, packagePath),
             run: true,
         },
         {
@@ -243,6 +245,7 @@ function markdown(report) {
             for (const limitation of record.limitations) lines.push(`  Limitation: ${text(limitation)}`);
         }
     }
+    if (report.issueCloseout) lines.push("", closeoutMarkdown(report.issueCloseout));
     if (report.errors.length) lines.push("", "## Errors", "", ...report.errors.map((error) => `- ${text(error)}`));
     return lines.join("\n") + "\n";
 }
@@ -337,6 +340,12 @@ function collectDelivery(options = {}) {
                 report.errors.push("Supplied game acceptance reports a failure.");
             }
         }
+        if (options.closeoutPath) {
+            const inputPath = path.resolve(root, options.closeoutPath);
+            report.issueCloseout = collectCloseout(root, readJson(inputPath));
+            fs.copyFileSync(inputPath, path.join(output, "closeout-input.json"));
+            report.errors.push(...report.issueCloseout.errors);
+        }
     } catch (error) {
         report.errors.push(error.message);
     }
@@ -351,7 +360,13 @@ function collectDelivery(options = {}) {
 
 function parseArguments(args) {
     const options = {};
-    const values = { "--base": "base", "--mode": "mode", "--package": "packagePath", "--evidence": "evidencePath" };
+    const values = {
+        "--base": "base",
+        "--mode": "mode",
+        "--package": "packagePath",
+        "--evidence": "evidencePath",
+        "--closeout": "closeoutPath",
+    };
     for (let index = 0; index < args.length; index += 1) {
         const argument = args[index];
         if (argument === "--build") options.build = true;
@@ -365,7 +380,7 @@ function parseArguments(args) {
 if (require.main === module) {
     if (process.argv.includes("--help")) {
         console.log(
-            "npm run report:delivery -- [--mode full|public] [--base origin/test] [--build] [--package ZIP] [--evidence JSON]",
+            "npm run report:delivery -- [--mode full|public] [--base origin/test] [--build] [--package ZIP] [--evidence JSON] [--closeout JSON]",
         );
     } else {
         try {

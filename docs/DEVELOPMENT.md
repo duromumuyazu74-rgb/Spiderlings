@@ -125,11 +125,25 @@ Keep commits focused and link the applicable Issue. Publishing only these initia
 
 ## Releases
 
-Only formal versions receive a `v<modbuild>` tag and GitHub Release. After the accepted formal change merges, identify the successful `Repository checks` run for that exact `main` commit and download its `spiderlings-<commit SHA>` artifact. Verify the contained ZIP against the same checkout, run the required package and in-game acceptance on that file, and record its SHA-256.
+This section owns the publication policy. Formal releases use `main` after accepted changes merge. Test deliveries normally use a versioned local ZIP or CI artifact. An explicit request for a test Release authorizes a `v<modbuild>` tag and GitHub Pre-release, with `--prerelease --latest=false`; preserve the current formal Latest and existing assets. Both channels require the exact accepted package and successful CI for the reviewed source commit.
 
-Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Read the Release and download its attachment again to confirm the filename, size and SHA-256. Test versions remain workflow artifacts from `test`; do not create a test Release.
+Record the release source and integration endpoint before writing: an integrated `test` commit or an explicitly retained development-branch candidate. Publishing a development candidate does not merge its PR or complete Issues that require integration. A formal release must be integrated into `main`. A request to publish a test version does not promote it to formal.
 
-Prepare the notes file in UTF-8 with `## 简体中文` and `## English` sections, following the [bilingual Release requirements](../CONTRIBUTING.md#formal-promotion-and-releases). Compare the two sections against the delivered changes and verified compatibility evidence. Pass that reviewed file to `--notes-file`, then confirm both language sections are present in the published Release.
+For a formal release, identify the successful `Repository checks` run for that exact `main` commit and download its `spiderlings-<commit SHA>` artifact. Verify the contained ZIP against the same checkout, run the required package and in-game acceptance on that file, and record its SHA-256. For an unchanged accepted test package, reuse matching verification and native evidence rather than rebuilding it under the same version.
+
+Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Add `--prerelease --latest=false` for explicitly authorized test publication. Verify the configured GitHub account before each remote write, and confirm each write by readback before continuing.
+
+Prepare the notes file in UTF-8 with complete `## English` then `## 简体中文` sections, following the [bilingual Release requirements](../CONTRIBUTING.md#formal-promotion-and-releases). Compare the two sections against the delivered changes and verified compatibility evidence. Pass that reviewed file to `--notes-file`.
+
+Use the existing collector for source/package verification and the publication verifier after upload. The latter reads the configured `origin`, verifies the remote tag, channel, notes and Latest, and waits for a successful download before comparing size and SHA-256. Each download uses a new `.scratch/publication/` directory and preserves previous files. It does not publish or modify GitHub state.
+
+```powershell
+npm run verify:publication -- --tag v0.92.36-test.113 --commit fdeed648ab0f918fc9a0b537eaed1a58451975a4 --notes .scratch/release-test113-notes.md --latest v0.92.38
+```
+
+Supply the actual tag, full reviewed commit, notes file and expected formal Latest. Formal verification omits `--latest` and requires the formal tag to be Latest. `--package` selects an existing accepted ZIP; no build or overwrite occurs. Commands use structured argument arrays and the established `-VerifyOnly -PackagePath` package verifier. For official-game checks, use `npm run test:compatibility` and its configured cache; read the cache's `origin` for diagnostics rather than guessing a repository URL.
+
+Finish with the [per-Issue closeout audit](DELIVERY-EVIDENCE.md#issue-closeout), record the publication/download evidence, and resolve each Issue against its own condition. Report any retained draft PR and remaining integration or acceptance work alongside the Release result.
 
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
 
