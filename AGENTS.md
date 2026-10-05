@@ -14,7 +14,7 @@ Before creating or removing a worktree, read the worktree section of `docs/DEVEL
 
 For issues, specs, implementation tickets, triage and wayfinding, read `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`. GitHub Issues is authoritative. Existing local records remain historical evidence. For domain changes, read `docs/agents/domain.md` and `CONTEXT-MAP.md`.
 
-`main` holds formal releases; `test` holds test development. Only formal versions receive GitHub Releases. Read `docs/DEVELOPMENT.md` for setup, validation, version promotion and publishing. Use project-local skills in `.agents/skills/` before same-name global skills.
+`main` holds formal releases; `test` holds test development. Read `docs/DEVELOPMENT.md#releases` for publication channels, explicitly authorized test Pre-releases and integration boundaries. Use project-local skills in `.agents/skills/` before same-name global skills.
 
 GitHub operations for this repository use **`duromumuyazu74-rgb` only**. Before remote writes to Issues, PRs, branches, workflow settings or Releases, verify the authenticated identity with `gh api user --jq .login`; it must equal `duromumuyazu74-rgb`. If another already logged-in account is active, switch to the named account and verify again before continuing. Commit author configuration does not establish the authenticated GitHub identity. Do not use `Korlne` for this repository's remote operations.
 

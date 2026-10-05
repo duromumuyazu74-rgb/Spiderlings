@@ -73,6 +73,6 @@ Formal versions use `major.minor.patch`, normally incrementing the latest formal
 
 Promote accepted gameplay through a PR to `main` with the next version after the latest formal release and complete local delivery evidence. The test baseline can be older than current `main`; removing the test suffix is not a promotion rule. Shared maintenance or hotfix changes can be carried between branches through focused PRs without promoting unrelated test gameplay.
 
-Only formal versions receive a `v<modbuild>` tag and a Release. Publication remains an explicit maintainer action after verification; a PR merge alone does not publish a Release or authorize an agent to publish one. Preserve existing tags and ZIPs. See [development and publishing](docs/DEVELOPMENT.md) for build details and [Issue operations](docs/agents/issue-tracker.md) for repository work tracking.
+Publication channels, authorization, tags and Latest behavior are defined in [Releases](docs/DEVELOPMENT.md#releases). A PR merge alone does not publish a Release or authorize publication. See [Issue operations](docs/agents/issue-tracker.md) for repository work tracking.
 
 Every GitHub Release must include complete Simplified Chinese and English release notes. Both sections must describe the same player-facing changes, supported game versions, installation or update instructions, and known limitations relevant to that release. Keep version numbers, asset filenames and links consistent between languages. Check both sections before publication and read back the published text afterward.
