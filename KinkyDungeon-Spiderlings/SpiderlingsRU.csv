@@ -40,7 +40,7 @@ KinkyDungeonSpellSpiderWebBind,Ты ступаешь в паутину, и ли�
 KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,Отряд паучат
 KinkyDungeonStatDescSpiderlingsSquad,"На каждой новой подходящей обычной карте появляется враждебный отряд: два прядильщика и по одному землекопу, плевателю, прыгуну и магу. Нужны свободное место и места в лимите паучат."
-KDModButtonspiderlingsSpinnerEncounters,Самостоятельные встречи с прядильщиками
+KDModButtonspiderlingsSpinnerEncounters,Ловчие поля прядильщиков
 KDModButtonspiderlingsNestSummonWeights,Веса подкреплений гнезда (0: отключено)
 KDModButtonspiderlingsNestSpinnerWeight,Вес прядильщика
 KDModButtonspiderlingsNestJumperWeight,Вес прыгуна
@@ -131,8 +131,8 @@ KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Уничтожь исходные �
 SpiderlingsHuntingGroundsProgress,Уничтожено отмеченных гнёзд: CURRENT/TARGET
 SpiderlingsHuntingGroundsBlocked,Уничтожь исходные целевые гнёзда для спуска: красные метки задания на мини-карте. (CURRENT/TARGET)
 SpiderlingsHuntingGroundsComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (TARGET/TARGET)
-KDModButtonspiderlingsPinkWebbing,Розовая паутина (выкл.: исходная)
-KDModButtonspiderlingsEnableHood,Шёлковый капюшон пауков (выкл.: не надевать)
+KDModButtonspiderlingsPinkWebbing,Розовый шёлк
+KDModButtonspiderlingsEnableHood,Разрешить шёлковые капюшоны
 KinkyDungeonSpiderlingsWebbingInterwoven,Переплетённые нити стягиваются и опутывают ещё одну часть твоего тела.
 KinkyDungeonStruggleCutFailSpiderlingsWebbing,Ты ведёшь лезвие вдоль шва TargetRestraint.
 KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Ты ведёшь лезвие вдоль шва TargetRestraint.
@@ -152,11 +152,11 @@ KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Ты раздвигаешь
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Ты поддеваешь край TargetRestraint, пытаясь разделить слипшиеся слои шёлка."
 KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Ты поддеваешь край TargetRestraint, пытаясь разделить слипшиеся слои шёлка."
 KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Ты снимаешь наружную оболочку TargetRestraint и собираешь ослабленный кокон.
-KDModButtonspiderlingsMapPopulationCap,Общий предел подвижных паучков (0 снимает этот предел; тематические этажи сохраняют свой бюджет)
+KDModButtonspiderlingsMapPopulationCap,Подвижные пауки (0: без лимита)
 KinkyDungeonStatSpiderlingsCocoonStart,Пробуждение в коконе
 KinkyDungeonStatDescSpiderlingsCocoonStart,"Ты просыпаешься в мягком коконе, укрытая плотными слоями паучьего шёлка. При каждом движении натягиваются нити, прилегающие к телу."
 KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Паучонок-прыгун смотрит под ноги противнику и припадает к земле перед прыжком.
-KDModButtonspiderlingsNestTunnelerCap,Всего землекопов на гнездо (0: не призывать)
+KDModButtonspiderlingsNestTunnelerCap,Всего землекопов на гнездо (0: нет)
 RestraintSpiderlingsSpinnerLegbinder,Шёлковый мешок для ног
 RestraintSpiderlingsSpinnerLegbinderDesc,Шёлк охватывает ноги от места над щиколотками до верхней части бёдер.
 RestraintSpiderlingsSpinnerLegbinderDesc2,Плотное плетение повторяет очертания ног, а мягкий край мешка прилегает к бёдрам.
@@ -209,8 +209,8 @@ KDEscapeMethodDesc_SpiderlingsInfestation,Уничтожь исходные це
 SpiderlingsInfestationProgress,Уничтожено отмеченных гнёзд: CURRENT/5
 SpiderlingsInfestationBlocked,Уничтожь исходные целевые гнёзда для спуска: красные метки задания на мини-карте. (CURRENT/5)
 SpiderlingsInfestationComplete,Все гнёзда первых обитателей обрушились. Перед тобой лестница, ведущая в глубину. (5/5)
-KDModButtonspiderlingsInfestationWeight,Вес нашествия (0: выкл.)
-KDModButtonspiderlingsHuntingGroundsWeight,Вес охотничьих угодий - только Maidforce (0: выкл.)
+KDModButtonspiderlingsInfestationWeight,Вес заражения
+KDModButtonspiderlingsHuntingGroundsWeight,Вес охотничьих угодий
 KinkyDungeonInventoryItemSpiderlingTome,Книга шёлковых уз
 KinkyDungeonInventoryItemSpiderlingStaff,Посох ткача шёлка
 KinkyDungeonSpecialSpiderlingTome,Схождение кокона
@@ -251,3 +251,29 @@ KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Пошли липкий шё�
 KDSpiderlingsWeaponSustainSpiderlingTome,"+20% к силе связывания в основной или второй руке. Эффективные удары в ближнем бою возвращают 20% уплаченной выносливости, с базовым пределом 3. Первый шёлковый кокон каждой жертвы, созданный в ближнем бою, один раз возвращает базовые 7,5 маны."
 KDSpiderlingsWeaponSustainSpiderlingStaff,"Эффективные удары в ближнем бою возвращают 20% уплаченной выносливости, с базовым пределом 6. Первый шёлковый кокон каждой жертвы, созданный в ближнем бою, один раз возвращает базовые 7,5 маны."
 KDSpiderlingsWeaponWeaveStatus,Плетение STAGE/3. Следующая стоимость маны: COST. Новый круг через COOLDOWN ходов.
+KDModButtonspiderlingsSettingsFloors,Настройки этажей
+KDModButtonspiderlingsSettingsNests,Настройки гнёзд
+KDModButtonspiderlingsSettingsBack,К общим настройкам
+KDModButtonspiderlingsSettingsFloorsHelp,Веса для новых этажей. 0 отключает тему.
+KDModButtonspiderlingsSettingsNestsHelp,Вес вида 0 исключает его из подкреплений.
+KDModButtonspiderlingsSettingsGeneralHelp,Тематические этажи сохраняют свои лимиты.
+KDModButtonspiderlingsSettingsHuntingHelp,Угодья: этажи Maidforce начиная с 5-го.
+KinkyDungeonCheckpointLoreSpiderlings,Бестиарий паучат
+KDLoreTextspiderlings.Spinner,"Тонкие нити дрожат между лапками, пока он проверяет края сети. Когда гость входит, рыхлая сетка натягивается. Порванную нить он чинит с тем же терпением, с которым обматывает извивающегося гостя."
+KDLoreTitlespiderlings.Spinner,Паучонок-прядильщик
+KDLoreLabelspiderlings.Spinner,Паучонок-прядильщик
+KDLoreTextspiderlings.Jumper,Он складывает лапки под маленьким беспокойным телом и одним прыжком пересекает промежуток. За мягким касанием следует липкая петля. После нового прыжка позади остаётся дрожащая нить.
+KDLoreTitlespiderlings.Jumper,Паучонок-прыгун
+KDLoreLabelspiderlings.Jumper,Паучонок-прыгун
+KDLoreTextspiderlings.WebCaster,"Шёлк собирается у рта и раскрывается бледным веером. Он оседает на сапогах и подолах, соединяя разрозненные нити в липкую сетку. Издали паучонок наблюдает, как шаги гостя становятся короче."
+KDLoreTitlespiderlings.WebCaster,Паучонок-плеватель
+KDLoreLabelspiderlings.WebCaster,Паучонок-плеватель
+KDLoreTextspiderlings.Tunneler,О его прибытии предупреждает тихое скребение под полом. Он протискивается через камень и выстилает новый лаз шёлком. После его возвращения под землю проход ещё хранит тепло движения.
+KDLoreTitlespiderlings.Tunneler,Паучонок-землекоп
+KDLoreLabelspiderlings.Tunneler,Паучонок-землекоп
+KDLoreTextspiderlings.MageSpiderlings,"Знаки на спине светлеют, когда он собирает заклинание. Сияние остаётся, пока ожидающий круг гудит, и гаснет с высвобождением магии. Тонкий шёлк плывёт в свете, затем ложится на гостя."
+KDLoreTitlespiderlings.MageSpiderlings,Паучонок-маг
+KDLoreLabelspiderlings.MageSpiderlings,Паучонок-маг
+KDLoreTextspiderlings.NestEntrance,"Слои шёлка смягчают край тёмного отверстия. В глубине шевелятся маленькие лапки, а истёртая подкладка получает новые нити. Гнездо кажется тихим, пока внутри не блеснёт ещё одна пара глаз."
+KDLoreTitlespiderlings.NestEntrance,Вход в гнездо
+KDLoreLabelspiderlings.NestEntrance,Вход в гнездо

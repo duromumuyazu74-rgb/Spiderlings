@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.110.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.113.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.113 field support and player feedback (2026-10-06)
+
+The same final ZIP passes all 53 native stages on KD 5.4.92 and latest official 5.5.3, including seven native language loads per game. Official `5.5` commit `a29940969fd19b6eda6021f7fe786f9a02c19e54` was freshly fetched at `2026-10-05T16:18:58.348Z`. Full acceptance is `<cache>/runs/2026-10-05T16-18-58-365Z-0.92.36-test.113/acceptance.json`. Final ZIP: 175 allowlisted entries, 24,860,254 bytes; SHA-256 `9525257134ec542a43523cd73d35753186704233a4b3f024a29e44306618df7f`.
+
+Native additions demonstrate prepared-silk crossing and movement debt, paid wall activation/blocking/cutting, opposite passage border rotations, three settings pages with saved HTML inputs, random native discovery and the six-entry Journal directory, and both ordinary/thick blindfold colors over foreground hair/brows. Chinese and English UI screenshots were inspected. The actual NPC melee-capture scene receives a temporary maintenance loan and pays to repair while both local capture sources remain protected. Continuing command requests update travelling destinations without duplicating a loan.
+
+The cadence fixture now compares equal work-opportunity windows because the two selected paths need different sample lengths. It still checks every native construction credit/debit across both full traces; melee still compares equal complete world-turn windows. Existing native scenarios also pass construction crews, crowded paths, Capture/Recovery, load/zero time, Mage timing, special-floor generation and sustained play. See the [implementation and verification scope](spiderlings-test113-feedback.zh-CN.md).
+
+Repository checks, 12 policy tests, 606 public tests, the complete 929-test local watcher and exact ZIP verification pass. The full collector imports the above native evidence and records stable source/ZIP bytes: `.scratch/delivery/2026-10-05T16-27-31-508Z-KTcfPn/REPORT.md`. Only outcome documentation was appended afterward, followed by repository and diff checks.
 
 ## Test.110 layered field command and continuous projects (2026-10-05)
 

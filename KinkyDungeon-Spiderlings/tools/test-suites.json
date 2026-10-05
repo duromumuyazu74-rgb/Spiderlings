@@ -1,5 +1,6 @@
 {
   "public": [
+    "spiderlings-feedback.test.js",
     "spiderlings-kd-compatibility.test.js",
     "spiderlings-translation-contract.test.js",
     "spiderlings-text-audit.test.js",

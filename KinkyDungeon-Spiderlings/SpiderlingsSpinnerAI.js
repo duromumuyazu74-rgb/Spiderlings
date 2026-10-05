@@ -1278,6 +1278,8 @@
                             !sourceBusy(entity) &&
                             (hasGateWork(encounter, group) ||
                                 String(entity.id) !== String(group.engagement?.lureId) ||
+                                encounter.command?.requests[encounter.command.members[entity.id]?.requestId]?.kind ===
+                                    "repair" ||
                                 occupiesMaintenanceWork(entity) ||
                                 previousAssignments[entity.id]?.maintenance ||
                                 (group.maintenance?.memberId === entity.id &&

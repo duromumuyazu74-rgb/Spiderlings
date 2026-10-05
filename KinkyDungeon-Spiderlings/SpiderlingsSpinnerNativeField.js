@@ -13,6 +13,7 @@
     const result = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
     let activeMove;
     const artworkByGraph = new WeakMap();
+    const preparedByGraph = new WeakMap();
 
     function fieldById(encounter, fieldId) {
         const graph = encounter?.topology;
@@ -303,6 +304,7 @@
                 }
                 composite.closureArmed = false;
                 composite.autoSeal = false;
+                outer.silkActivated = false;
                 composite.provenance = "mapgen";
                 topology().refresh(graph);
             }
@@ -644,6 +646,72 @@
         return isSpiderling(mover) && isOwnedProxy(proxy) && proxyMarker(proxy).fieldId === state()?.topology?.fieldId;
     }
 
+    function preparedCells(graph = state()?.topology) {
+        if (!graph || graph.collapsed) return [];
+        const stamp = Object.values(graph.fields || {})
+            .map(
+                (field) =>
+                    `${field.id}:${field.phase}:${field.silkActivated}:${field.retired}:${field.nativeTerrainValid}`,
+            )
+            .join("|");
+        const cached = preparedByGraph.get(graph);
+        if (cached?.stamp === stamp) return cached.cells;
+        const cells = new Map(),
+            active = new Set(),
+            passive = new Set();
+        const physical = topology().solidCells(graph);
+        for (const field of Object.values(graph.fields || {})) {
+            if (field.retired || field.nativeTerrainValid === false) continue;
+            // Arming is a plan. Admission changes only after paid gate work, or for an already sealed/breached wall.
+            ((field.silkActivated ?? ["sealed", "breached"].includes(field.phase)) ? active : passive).add(field.id);
+            if (field.kind === "passage")
+                for (const gate of field.gates) {
+                    const link = graph.links.find((candidate) => candidate.id === gate.linkId);
+                    if (passive.has(field.id) && link?.prepared && link.hp > 0 && !link.collapsed)
+                        for (const cell of gate.cells) cells.set(cellKey(cell), cell);
+                }
+        }
+        for (const cell of physical) {
+            const owners = new Set([
+                ...cell.anchorIds.flatMap((id) => graph.anchors.find((anchor) => anchor.id === id)?.owners || []),
+                ...cell.linkIds.flatMap((id) => graph.links.find((link) => link.id === id)?.owners || []),
+            ]);
+            // A shared segment stays solid if any owning field has activated it. Legacy lines keep their behavior.
+            if ([...owners].some((id) => active.has(id) || graph.lineFields?.[id])) continue;
+            if ([...owners].some((id) => passive.has(id))) cells.set(cellKey(cell), cell);
+        }
+        const result = [...cells.values()];
+        preparedByGraph.set(graph, { stamp, cells: result });
+        return result;
+    }
+
+    function isPreparedSilk(cell) {
+        return !!cell && preparedCells().some((candidate) => cellKey(candidate) === cellKey(cell));
+    }
+
+    // Native slow level 1 affects stamina only; level 2 adds one paid movement turn to a normal crossing.
+    if (typeof KDCanPassEnemy === "function")
+        KDCanPassEnemy = api.Hooks.wrap(
+            "Spinner.preparedSilk",
+            KDCanPassEnemy,
+            (native) =>
+                function (mover, enemy) {
+                    if (mover?.player && isOwnedProxy(enemy) && isPreparedSilk(enemy)) return true;
+                    return native.apply(this, arguments);
+                },
+        );
+    KDAddEvent(KDEventMapGeneric, "beforeMove", "SpiderlingsSpinnerPreparedSilk", (_event, cell) => {
+        if (!isPreparedSilk(cell)) return;
+        KinkyDungeonApplyBuffToEntity(KinkyDungeonPlayerEntity, {
+            id: "SpiderlingsSpinnerPreparedSilk",
+            type: "SlowLevel",
+            power: 2,
+            duration: 1,
+            player: true,
+        });
+        KinkyDungeonCalculateSlowLevel(0);
+    });
+
     function passThrough(mover, proxy, map) {
         if (!canTraverse(mover, proxy) || !map) return 0;
         if (
@@ -772,7 +840,11 @@
                             : field.interiorCells.some(
                                   (position) => position.x === cell.x && Math.abs(position.y - cell.y) === 1,
                               );
-                    add(horizontal ? "Top" : "Side", 0);
+                    const interior = field.interiorCells;
+                    const inward = horizontal
+                        ? interior.reduce((sum, position) => sum + position.y, 0) / interior.length - cell.y
+                        : interior.reduce((sum, position) => sum + position.x, 0) / interior.length - cell.x;
+                    add(horizontal ? "Top" : "Side", inward < 0 ? Math.PI : 0);
                 }
                 continue;
             }
@@ -884,7 +956,7 @@
                     size,
                     size,
                     art.rotation,
-                    { zIndex },
+                    { zIndex, alpha: owned && isPreparedSilk(enemy) ? 0.45 : 1 },
                     true,
                 );
                 const flash = api.SpellVisuals?.constructionFlash(enemy) || 0;
@@ -994,6 +1066,8 @@
         reconcile,
         invalidateNavigation,
         canTraverse,
+        preparedCells,
+        isPreparedSilk,
         passThrough,
         isOwnedProxy,
         mapSnapshot,

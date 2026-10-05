@@ -240,7 +240,10 @@
             id: "SpiderlingsWebbingLv1BlindfoldModel",
             asset: "Models/SpiderlingsWebbingLv1/Blindfold.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Blindfold", "Blindfold", [], [], [], -1);
+                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Blindfold", "Brows", [], [], [], LV1_PRIORITY, {
+                    NoOverride: true,
+                    HideOverrideLayer: "Blindfold",
+                });
             },
         }),
         Object.freeze({
@@ -483,7 +486,14 @@
                 poses: ["Closed"],
                 addPose: ["FeetLinked", "EncaseFeet"],
             },
-            { family: "Blindfold", sprite: "Blindfold", layer: "Blindfold", poses: [], addPose: ["EncaseEyes"] },
+            {
+                family: "Blindfold",
+                sprite: "Blindfold",
+                layer: "Brows",
+                poses: [],
+                addPose: ["EncaseEyes"],
+                extra: { NoOverride: true, HideOverrideLayer: "Blindfold" },
+            },
             { family: "Gag", sprite: "Gag", layer: "GagMuzzle", poses: [], addPose: ["FaceCoverGag", "EncaseMouth"] },
             {
                 family: "Hood",

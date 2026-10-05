@@ -119,11 +119,28 @@
                       : 0;
             const own = members.filter((member) => !state.members[member.id]?.loan).length;
             plan.projectState = !workable ? "waiting" : repair ? "repair" : construction ? "building" : "usable";
-            const key = `${group.id}:${kind}`;
+            const demands = new Map([[kind, Math.max(0, required - own)]]);
+            // Capture sources cannot also repair their field. Keep their commitment and ask for a separate worker.
+            if (repair || construction) {
+                const workKind = repair ? "repair" : "build";
+                const available = members.filter(
+                    (member) => !state.members[member.id]?.loan && !command.protectedMember(member),
+                ).length;
+                const retained = ["capture", "recovery", "defense"].includes(kind)
+                    ? Math.max(0, required - (own - available))
+                    : 0;
+                const workers =
+                    construction && !repair
+                        ? Math.max(1, ...fields.map((field) => (field.kind === "passage" ? field.gates.length * 2 : 1)))
+                        : 1;
+                demands.set(workKind, Math.max(0, workers - Math.max(0, available - retained)));
+            }
             for (const request of Object.values(state.requests))
-                if (request.fieldId === group.id && request.id !== key) request.closed = true;
-            if (required > own) command.request(encounter, group.id, kind, required - own, origin);
-            else if (state.requests[key]) state.requests[key].closed = true;
+                if (request.fieldId === group.id && !demands.has(request.kind)) request.closed = true;
+            for (const [duty, count] of demands) {
+                if (count > 0) command.request(encounter, group.id, duty, count, origin);
+                else if (state.requests[`${group.id}:${duty}`]) state.requests[`${group.id}:${duty}`].closed = true;
+            }
             plan.coverageAvailable = workable;
         }
         const active = Object.values(ai.groups).filter((group) => {

@@ -348,6 +348,20 @@
 
     function allocate(encounter, distances) {
         const state = ensure(encounter);
+        // Replanning retains request identity, but every order must follow its current destination.
+        for (const order of [...Object.values(state.members), ...Object.values(state.regions)]) {
+            const requestState = state.requests[order.requestId];
+            if (!requestState || requestState.closed || order.phase === "returning") continue;
+            if (!validGroup(encounter.ai, requestState.fieldId)) continue;
+            if (
+                order.destination?.x === requestState.destination.x &&
+                order.destination?.y === requestState.destination.y
+            )
+                continue;
+            order.destination = clone(requestState.destination);
+            order.blocked = false;
+            if (order.phase === "support") order.phase = "travelling";
+        }
         const priority = { defense: 0, capture: 0, recovery: 0, repair: 1, build: 2 };
         const waiting = Object.values(state.requests)
             .filter((entry) => !entry.closed)

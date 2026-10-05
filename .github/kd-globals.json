@@ -333,5 +333,21 @@
   "KinkyDungeonAttachTetherToEntity",
   "KinkyDungeonUpdateTether",
   "KDLeashReason",
-  "KinkyDungeonMoveTo"
+  "KinkyDungeonMoveTo",
+  "KDCanPassEnemy",
+  "KDModPage",
+  "KDNewLore",
+  "KDLore",
+  "localStorage",
+  "KDModToggleTab",
+  "KDDrawModConfigs",
+  "KinkyDungeonNewLoreList",
+  "KinkyDungeonCurrentLoreTabs",
+  "KinkyDungeonCurrentLoreTab",
+  "KinkyDungeonCurrentLore",
+  "KinkyDungeonCurrentLoreTabOffset",
+  "KinkyDungeonCurrentLoreItemOffset",
+  "KinkyDungeonDrawLore",
+  "KinkyDungeonUpdateLore",
+  "KinkyDungeonCurrentLoreItems"
 ]
