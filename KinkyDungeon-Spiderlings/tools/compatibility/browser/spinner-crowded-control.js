@@ -221,8 +221,12 @@
             const paid = row.paid.length;
             // Check the remote builder before its old lure joins Capture and
             // legitimately hands over the pressure duty to this worker.
-            for (let operation = 0; operation < 6 && row.paid.length === paid; operation++)
+            for (let operation = 0; operation < 6 && row.paid.length === paid; operation++) {
+                // These isolated positive enemy operations need distinct ticks;
+                // repeated native phases in one tick cannot grant more work.
+                KinkyDungeonCurrentTick++;
                 KinkyDungeonEnemyLoop(remoteWork.actor, KDPlayer(), 1, 1, []);
+            }
             expect(row.paid.length > paid, "Formal capture froze a distant builder outside its vision radius");
             row.remoteConstruction = row.paid.slice(paid);
             const afterRemote = row.paid.length;

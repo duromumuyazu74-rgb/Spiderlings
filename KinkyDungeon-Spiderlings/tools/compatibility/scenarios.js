@@ -32,6 +32,7 @@ const scenarios = [
         "adhesion-offense",
         "adhesion-recovery",
         "spinner-work",
+        "field-command",
         "spinner-regressions",
         "spinner-crowded-control",
         "spinner-maintenance",

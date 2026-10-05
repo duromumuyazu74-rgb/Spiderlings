@@ -86,6 +86,7 @@
             player: { x: KinkyDungeonPlayerEntity.x, y: KinkyDungeonPlayerEntity.y },
             capture: copy(Spiderlings.SpinnerCapture.state()),
             groups: copy(encounter?.ai?.groups),
+            command: copy(encounter?.command),
             plans: copy(encounter?.ai?.plans),
             fields: copy(encounter?.topology?.fields),
             metrics: copy(encounter?.ai?.passageMetrics),
@@ -184,6 +185,9 @@
         }
         row.initialActors = actors.map((actor) => ({ id: actor.id, x: actor.x, y: actor.y }));
         ai.beginTurn({ activate: true });
+        row.originalHomes = Object.fromEntries(
+            row.initialActors.map(({ id }) => [id, Spiderlings.FieldCommand.inspect().members[id]?.home]),
+        );
         if (mode === "recruitment")
             expect(
                 ai.playerObservation()?.reporterId === row.sharedReporterId,
@@ -197,6 +201,7 @@
         const savedState = () =>
             copy({
                 topology: state().topology,
+                command: state().command,
                 plans: state().ai.plans,
                 groups: Object.fromEntries(
                     Object.entries(state().ai.groups).map(([id, group]) => [
@@ -625,8 +630,14 @@
                     });
                 expect(active.length > 0, "Crowding fixture has no naturally planned field");
                 expect(
-                    active.some((group) => ids.every((id) => group.memberIds.includes(id))),
-                    "A crowded field dispersed its original team",
+                    active.some((group) =>
+                        ids.every(
+                            (id) =>
+                                state().command.members[id]?.home === group.id &&
+                                nativeField.fieldOwners(state().ai.plans[group.planId].fieldId).includes(id),
+                        ),
+                    ),
+                    "Temporary command removed a crowded field's original physical owners",
                 );
                 expect(
                     ids.every((id) => KDMapData.Entities.some((actor) => actor.id === id && actor.hp > 0)),
@@ -678,38 +689,53 @@
             projectionAudit();
             if (mode === "recruitment") {
                 const distantIds = row.initialActors.filter((actor) => actor.x > 14).map((actor) => actor.id);
-                const converged = () => {
-                    const group = state().ai.groups[plan.groupId];
-                    return (
-                        distantIds.every((id) => group.memberIds.includes(id)) &&
-                        group.memberIds.every((id) => {
-                            const assignment = group.assignments[id],
-                                actor = KDMapData.Entities.find((entry) => entry.id === id);
-                            return assignment?.type === "rally" && actor && key(actor) === key(assignment.workCell);
-                        })
-                    );
-                };
-                for (let step = 0; step < 60 && !converged(); step++) await advance();
-                expect(converged(), "Recruited colleagues did not finish walking to their assigned waiting mouths");
+                const returned = () =>
+                    row.initialActors.every(({ id }) => {
+                        const member = state().command.members[id];
+                        return (
+                            member?.phase === "home" &&
+                            member.commander === row.originalHomes[id] &&
+                            member.home === row.originalHomes[id]
+                        );
+                    });
+                for (let step = 0; step < 90 && !returned(); step++) await advance();
                 expect(
-                    row.initialActors.every((actor) => state().ai.groups[plan.groupId].memberIds.includes(actor.id)),
-                    "Recruitment abandoned an existing field worker",
+                    returned(),
+                    "Completed preparation did not restore temporary helpers to their original commanders",
                 );
-                row.recruited = { ids: distantIds, group: copy(state().ai.groups[plan.groupId]) };
+                expect(
+                    row.initialActors.every(({ id }) =>
+                        KDMapData.Entities.some((actor) => actor.id === id && actor.hp > 0),
+                    ),
+                    "Support discarded an existing field worker",
+                );
+                row.support = { ids: distantIds, afterPreparation: copy(state().command) };
             }
             await cacheCheck();
             await preview(`${mode}-prepared`, plan.center);
             if (mode === "corridor" || mode === "recruitment") await enterAndCapture(plan);
             if (mode === "recruitment") {
-                // Only six paid actions are needed at a two-mouth site; nearby
-                // members may finish them before recruited workers arrive.
-                const participants = new Set(
-                    row.actions
-                        .filter((entry) => entry.result.applied && entry.action.fieldId === plan.fieldId)
-                        .map((entry) => entry.source),
+                const delivered = () =>
+                    Object.values(state().command.members).find(
+                        (member) =>
+                            member.home !== plan.groupId &&
+                            member.commander === plan.groupId &&
+                            member.phase === "support",
+                    );
+                for (let step = 0; step < 60 && !delivered(); step++) await advance();
+                const helper = delivered();
+                expect(helper, "Prey entry did not receive a real temporary helper through global dispatch");
+                const homePlan = state().ai.plans[state().ai.groups[helper.home]?.planId];
+                expect(
+                    !homePlan || nativeField.fieldOwners(homePlan.fieldId).includes(helper.id),
+                    "Support removed the helper's original physical ownership",
                 );
-                expect(participants.size >= 2, "Shared passage was not prepared and closed by multiple native workers");
-                row.recruited.participants = [...participants];
+                expect(
+                    nativeField.fieldOwners(plan.fieldId).includes(helper.id),
+                    "Arrived support lacks temporary physical ownership",
+                );
+                row.support.delivered = copy(helper);
+                await snapshotReload("temporary passage support");
             }
             if (mode === "junction") {
                 const before = state().ai.passageMetrics.analysisBuilds;

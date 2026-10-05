@@ -973,6 +973,7 @@
             }
             const totalWeight = Object.values(eligibleWeights).reduce((sum, weight) => sum + weight, 0);
             const livingOffspring = index.livingOffspringByParent.get(nest.id) || 0;
+            const eligible = nestCanReinforce(nest, index.hostileNests);
             const decision = advanceNestTimer({
                 timer: nest[NEST_TIMER_FIELD],
                 delta,
@@ -984,9 +985,24 @@
                         ? Math.min(cap, nest.SpiderlingsNestRosterTarget === 6 ? 6 : 4)
                         : cap,
                 livingOffspring,
-                eligible: nestCanReinforce(nest, index.hostileNests),
+                eligible,
             });
             nest[NEST_TIMER_FIELD] = decision.timer;
+            // Facilities report native availability; global demand grants no extra eligibility or spawn budget.
+            api.FieldCommand?.reportNest?.(nest, {
+                eligible,
+                timer: decision.timer,
+                livingOffspring,
+                status: !eligible
+                    ? "native-ineligible"
+                    : !decision.attempt
+                      ? "native-wait"
+                      : totalWeight <= 0
+                        ? "no-eligible-weight"
+                        : api.availableSpiderlingSlots() === 0
+                          ? "population-cap"
+                          : "eligible",
+            });
             if (
                 !decision.attempt ||
                 totalWeight <= 0 ||
@@ -1004,6 +1020,7 @@
             );
             if (normalizedRandom(random) >= summonChance) {
                 nest[NEST_TIMER_FIELD] = 0;
+                api.FieldCommand?.reportNest?.(nest, { status: "chance-wait" });
                 continue;
             }
 
@@ -1031,7 +1048,11 @@
                 );
                 if (Array.isArray(created) && created.length > 0) break;
             }
-            if (!Array.isArray(created) || created.length === 0) continue;
+            if (!Array.isArray(created) || created.length === 0) {
+                api.FieldCommand?.reportNest?.(nest, { status: "no-legal-spawn" });
+                continue;
+            }
+            api.FieldCommand?.reportNest?.(nest, { status: "spawned", createdId: created[0].id, species: enemyName });
 
             created[0][NEST_PARENT_ID_FIELD] = nest.id;
             if (missingRoles)

@@ -1,7 +1,7 @@
 # Spinner 分层场地指挥设计访谈
 
 - 日期：2026-10-05。
-- 状态：本阶段目标设计已确认，尚未实现运行时架构。
+- 状态：目标设计已确认，test.110 已接入运行时；验证记录见[实现记录](spiderlings-test110-field-command.zh-CN.md)。
 - 源码基线：Spiderlings 0.92.36-test.99，`008cebc`。
 - 术语：[CONTEXT.md](../KinkyDungeon-Spiderlings/CONTEXT.md)。
 - 已有约定：[ADR-0023](adr/0023-paid-construction-under-core-intrusion.md)、[ADR-0022](adr/0022-native-escape-calibration-and-spinner-relay.md)。

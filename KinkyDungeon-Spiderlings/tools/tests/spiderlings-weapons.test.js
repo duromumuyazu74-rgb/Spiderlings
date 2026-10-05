@@ -505,26 +505,27 @@ test("failed, out-of-range and wrong-hand upgrades preserve the circle; a late c
 });
 
 test("melee refunds follow actual native payment, survive a weapon switch and need positive world time", () => {
-    for (const [weapon, cost, refund] of [
-        [TOME, 1.5, 0.3],
-        [STAFF, 3, 0.6],
-    ]) {
-        const r = fixture();
-        r.c.KDSetWeapon(weapon);
-        r.c.KinkyDungeonGetPlayerWeaponDamage();
-        r.events.beforePlayerLaunchAttack();
-        r.c.Spiderlings.Weapons.rewardHit({ enemy: { id: 1 } }, true, false);
-        assert.equal(r.stamina(), 10);
-        r.c.KDChangeStamina("attack", "weapon", "attack", -cost);
-        assert.equal(r.stamina(), 10 - cost);
-        r.c.KDSetWeapon("Knife");
-        r.events.tickAfter(null, { delta: 0 });
-        assert.equal(r.stamina(), 10 - cost);
-        r.tick();
-        assert.ok(Math.abs(r.stamina() - (10 - cost + refund)) < 1e-9);
-        r.tick();
-        assert.ok(Math.abs(r.stamina() - (10 - cost + refund)) < 1e-9);
-    }
+    for (const source of ["attack", "player"])
+        for (const [weapon, cost, refund] of [
+            [TOME, 1.5, 0.3],
+            [STAFF, 3, 0.6],
+        ]) {
+            const r = fixture();
+            r.c.KDSetWeapon(weapon);
+            r.c.KinkyDungeonGetPlayerWeaponDamage();
+            r.events.beforePlayerLaunchAttack();
+            r.c.Spiderlings.Weapons.rewardHit({ enemy: { id: 1 } }, true, false);
+            assert.equal(r.stamina(), 10);
+            r.c.KDChangeStamina(source, "weapon", "attack", -cost);
+            assert.equal(r.stamina(), 10 - cost);
+            r.c.KDSetWeapon("Knife");
+            r.events.tickAfter(null, { delta: 0 });
+            assert.equal(r.stamina(), 10 - cost);
+            r.tick();
+            assert.ok(Math.abs(r.stamina() - (10 - cost + refund)) < 1e-9);
+            r.tick();
+            assert.ok(Math.abs(r.stamina() - (10 - cost + refund)) < 1e-9);
+        }
 });
 
 test("spell multi-hit stamina is once per cast; mana credit after StatGain stays within the paid budget", () => {

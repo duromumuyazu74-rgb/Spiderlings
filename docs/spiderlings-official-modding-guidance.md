@@ -566,6 +566,8 @@ Both versions display perk cost using `KDPERKCOSTMULT = 2`. An Enemies perk with
 
 ## Player Mage weapons (test.56)
 
+- The native melee payment source is `"attack"` in KD 5.4.92 and `"player"` in official `5.5` commit `a29940969fd19b6eda6021f7fe786f9a02c19e54`, still reporting 5.5.3. Both call `KDChangeStamina(source, "weapon", "attack", cost)` from `KDDoAttack`. Accept these two sources only during the active player weapon operation, measure the actual native stamina loss and retain the existing refund caps. The public weapon regression exercises both source names; full native acceptance checks the same final ZIP on both runtimes.
+
 - Native player melee copies the weapon definition’s explicit `bind` and `bindType` into `KDDoAttack`; use these for fixed base binding instead of approximating through `bindEff`.
 - A `KinkyDungeonSpellSpecials` handler returning `"Cast"` exits before native mana debit. Successful delayed player casts return undefined to reach native payment and player-cast events. `tryCastSpell` advances the casting action itself; a two-subsequent-action effect therefore resolves at saved clock + 3.
 - `KDDropItems` marks `droppedItems` only after its native eligibility gate. Append the 15% Mage weapon roll only on that transition; wrapping a death event would miss captures and could repeat loot.

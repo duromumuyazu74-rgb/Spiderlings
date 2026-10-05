@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.99.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.110.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.110 layered field command and continuous projects (2026-10-05)
+
+Global field command continually compares current character positions, existing coverage, unpaid approaches, paid projects and real available workers. A field sub AI commands only its Spinners. Support requests go through donor release judgment and global revalidation; partial fulfillment and rejection reasons retain their request identity. Temporary support preserves original physical ownership and uses one current commander. The global controller owns return movement and saved return responsibility. A shared Spinner duty gates native movement, attacks and spells without extra actions. Other mobile Spiderlings receive regional movement only, while fixed Nests report their existing legal reinforcement availability. See the [implementation record](spiderlings-test110-field-command.zh-CN.md) and [ADR-0024](adr/0024-layered-field-command.md).
+
+The same final ZIP passes all 50 native stages on KD 5.4.92 and latest official 5.5.3, including seven native language loads per game. Official `5.5` commit `a29940969fd19b6eda6021f7fe786f9a02c19e54` was freshly fetched at `2026-10-05T14:52:29.148Z`. Full acceptance is `<cache>/runs/2026-10-05T14-52-29-163Z-0.92.36-test.110/acceptance.json`. Final ZIP: 173 allowlisted entries, 24,850,488 bytes; SHA-256 `155fb3b1f43efa1ed7640b801f225fb8b6af0fc8c2b3ae5d23b0683310d02834`.
+
+The new field-command scene covers planning before native contact, paid work, donor reservations, temporary dispatch, cancellation, physical ownership and native save/load. Existing scenes cover 1/2/4/8-worker construction, active Capture maintenance, repeated leg-bag Recovery and legal passage closure. Passage support checks now assert temporary loans, preserved homes and return instead of the superseded permanent crew merge. Isolated positive enemy operations advance the native tick, preventing same-tick duplicate payment. Pure construction fixtures suppress local vision to isolate planning; separate real contact and core-defense scenes retain native perception, melee and damage. Native layout generation covers unbuilt crews without a topology.
+
+Repository checks, 12 policy tests, 600 public tests, the complete 923-test local watcher and final ZIP verification all pass. The full collector recorded stable source and ZIP bytes: `.scratch/delivery/2026-10-05T15-01-43-969Z-j43Hby/REPORT.md`. Only outcome documentation was appended afterward, followed by repository and diff checks. These controlled Chrome scenes do not establish desktop-shell, personal-save or other-Mod compatibility.
 
 ## Test.99 construction and nonlethal NPC departure (2026-10-05)
 

@@ -85,7 +85,8 @@
     KDChangeStamina = function (src, type, trig, _amount) {
         const before = KinkyDungeonStatStamina;
         const result = nativeStamina.apply(this, arguments);
-        if (attacking && src === "attack" && type === "weapon" && trig === "attack") {
+        // KD 5.4.92 uses "attack"; current official 5.5 uses "player" for the same paid weapon action.
+        if (attacking && ["attack", "player"].includes(src) && type === "weapon" && trig === "attack") {
             const paid = Math.max(0, before - KinkyDungeonStatStamina);
             if (attacking.effective)
                 pending().rewards.push({

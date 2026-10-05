@@ -46,16 +46,20 @@
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
-                    const recovery = api.SpinnerRecovery?.handleEnemyTurn(enemy, target, delta);
+                    const duty = api.SpinnerDuties?.prepare(enemy, target, delta);
+                    const allowed = (handler) => !duty || api.SpinnerDuties.allows(enemy, handler);
+                    const recovery = allowed("recovery") && api.SpinnerRecovery?.handleEnemyTurn(enemy, target, delta);
                     if (recovery) return recovery;
-                    const capture = api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
+                    const capture = allowed("capture") && api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
                     if (capture) return capture;
                     if (delta > 0) api.NPCWrapping?.preemptNativeCapture?.();
-                    const npcCapture = api.SpinnerNPCCapture?.handleEnemyTurn(enemy, target, delta);
+                    const npcCapture =
+                        allowed("npcCapture") && api.SpinnerNPCCapture?.handleEnemyTurn(enemy, target, delta);
                     if (npcCapture) return npcCapture;
-                    const npcRecovery = api.SpinnerNPCRecovery?.handleEnemyTurn(enemy, target, delta);
+                    const npcRecovery =
+                        allowed("npcRecovery") && api.SpinnerNPCRecovery?.handleEnemyTurn(enemy, target, delta);
                     if (npcRecovery) return npcRecovery;
-                    const nativeField = api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
+                    const nativeField = !duty && api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
                     if (nativeField) return nativeField;
                     const legacyField = api.SpinnerField.handleEnemyTurn(enemy, target, delta);
                     if (legacyField) return legacyField;
@@ -77,6 +81,13 @@
             KDAIType.hunt.beforemove,
             (native) =>
                 function (enemy, target, aiData) {
+                    api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
+                    if (api.SpinnerDuties?.current(enemy) && api.SpinnerDuties.beforeMove(enemy, target, aiData))
+                        return true;
+                    if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
+                        aiData.idle = false;
+                        return true;
+                    }
                     const nativeResult = native.apply(this, arguments);
                     api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                     if (nativeResult) return nativeResult;
@@ -98,6 +109,10 @@
             KDAIType.wander.beforemove,
             (native) =>
                 function (enemy, target, aiData) {
+                    if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
+                        aiData.idle = false;
+                        return true;
+                    }
                     const result = native.apply(this, arguments);
                     api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                     return result;
@@ -111,7 +126,12 @@
                 KDAIType.hunt[phase],
                 (native) =>
                     function (enemy) {
-                        if (api.SpinnerAI && !api.SpinnerAI.gateNativePhase(enemy, phase)) return false;
+                        if (
+                            api.SpinnerDuties?.current(enemy)
+                                ? !api.SpinnerDuties.gate(enemy)
+                                : api.SpinnerAI && !api.SpinnerAI.gateNativePhase(enemy, phase)
+                        )
+                            return false;
                         return native.apply(this, arguments);
                     },
             );
@@ -155,6 +175,7 @@
         KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
             api.WebMobility?.invalidateNavigation(true);
             api.SpinnerAI?.restoreAfterLoad();
+            api.SpinnerDuties?.restore();
             api.SpinnerNativeField.afterLoad?.();
             api.SpinnerNativeField.reconcile();
             api.SpinnerRecovery?.afterLoad();

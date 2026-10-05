@@ -193,7 +193,7 @@
             acted.add(source.id);
             return { idle: false, defeat: false, defeatEnemy: source };
         }
-        if (api.SpinnerAI?.hasMaintenanceAssignment?.(source)) return undefined;
+        if (api.SpinnerDuties?.allows(source, "npcCapture") === false) return undefined;
         if (belongsToCapture(source.id) || playerCaptureUses(source.id)) return undefined;
         const targeted = active.find(({ target }) => target === nativeTarget);
         if (!targeted) return undefined;

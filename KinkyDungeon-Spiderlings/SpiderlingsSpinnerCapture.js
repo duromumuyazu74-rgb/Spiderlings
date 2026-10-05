@@ -656,8 +656,7 @@
                 : undefined;
         // A reserved maintenance worker does not join or circle the contest.
         // Existing effective sources retain Capture until AI explicitly releases one.
-        if (active && !state().sourceIds.includes(enemy.id) && api.SpinnerAI?.hasMaintenanceAssignment?.(enemy))
-            return undefined;
+        if (active && api.SpinnerDuties?.allows(enemy, "capture") === false) return undefined;
         if (active && state().sourceIds.includes(enemy.id)) {
             if (state().phase === "wrap" || state().phase === "contest") {
                 // A legal adjacent weaving action is sufficient in a narrow corridor.

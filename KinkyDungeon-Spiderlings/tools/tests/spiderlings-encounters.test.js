@@ -83,6 +83,37 @@ test("fresh nest settings reach the runtime selector while saved zero and custom
     }
 });
 
+test("global field demand receives Nest reports without granting perception or an extra spawn", () => {
+    const nest = { id: 11, x: 2, y: 2, hp: 12, aware: false, Enemy: { name: "NestEntrance", visionRadius: 30 } };
+    const reports = [],
+        births = [];
+    const kd = loadCoreRuntime({
+        KDMapData: { Entities: [nest] },
+        KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
+        KDHostile: () => true,
+        KinkyDungeonCheckLOS: () => true,
+        KDGetFaction: () => "Enemy",
+        KDRandom: () => 0,
+        KinkyDungeonSummonEnemy(x, y, name) {
+            births.push(name);
+            return [{ id: 100, x, y, hp: 1, Enemy: { name } }];
+        },
+    });
+    kd.Spiderlings.ensureModSettings();
+    kd.Spiderlings.FieldCommand = { reportNest: (source, result) => reports.push({ id: source.id, ...result }) };
+    assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 0 }), 0);
+    assert.equal(reports.length, 0);
+    assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 0);
+    assert.equal(reports.at(-1).status, "native-ineligible");
+    assert.equal(nest.aware, false);
+    nest.aware = true;
+    assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 1);
+    assert.equal(reports.at(-1).status, "spawned");
+    assert.deepEqual(births, ["Spinner"]);
+    assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 0 }), 0);
+    assert.equal(births.length, 1);
+});
+
 const native553Subbier = `function KDIsSubbier(player, enemy) {
   if (!enemy || KinkyDungeonGoddessRep.Ghost < -25 || KDCanDom(enemy)) return false;
   return KinkyDungeonGoddessRep.Ghost > -25 && !KDCanDom(enemy, false, -0.3);
