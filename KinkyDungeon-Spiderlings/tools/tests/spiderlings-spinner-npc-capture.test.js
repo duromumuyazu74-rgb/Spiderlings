@@ -227,6 +227,22 @@ test("only a successful native Spinner hit in ready geometry admits the hitter",
     }
 });
 
+test("NPC Capture leaves a nonparticipant's maintenance duty available while its source keeps binding", () => {
+    const r = fixture(),
+        c = r.context,
+        source = r.spinner(1, 1, 0),
+        worker = r.spinner(2, 0, 1),
+        target = r.target(),
+        capture = c.Spiderlings.SpinnerNPCCapture;
+    c.KDMapData.Entities.push(source, worker, target);
+    c.KinkyDungeonEnemyLoop(source, target, 1);
+    c.Spiderlings.SpinnerAI = { hasMaintenanceAssignment: (actor) => actor === worker };
+    assert.equal(capture.handleEnemyTurn(worker, target, 1), undefined);
+    assert.equal(capture.usesSource(worker.id), false);
+    assert.ok(capture.handleEnemyTurn(source, target, 1));
+    assert.equal(capture.usesSource(source.id), true);
+});
+
 test("a player Recovery source cannot cross into NPC Capture", () => {
     const runtime = fixture();
     const first = runtime.spinner(1, 0, 1);

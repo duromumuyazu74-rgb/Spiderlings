@@ -34,6 +34,7 @@ const scenarios = [
         "spinner-work",
         "spinner-regressions",
         "spinner-crowded-control",
+        "spinner-maintenance",
         "spinner-perception",
         "web-breach",
         "wrapping-lifecycle",

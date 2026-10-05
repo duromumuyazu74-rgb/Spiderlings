@@ -1,6 +1,6 @@
 # Runtime ownership
 
-The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.88` development package.
+The manifest owns script loading order. Runtime scripts remain plain JavaScript in KD's native global environment, sharing the `Spiderlings` namespace. This structure applies to the `0.92.36-test.95` development package.
 
 | Module                                                      | Responsibility and interface                                                                                                                                                                                                                             |
 | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -221,3 +221,7 @@ A fresh eligible successful hit reports attached source count or rejected native
 Active Hex still lasts three turns over its unchanged 4-by-4 cells. A mark gains at most one layer per actual world turn across overlapping fields, caps at three, and retains the existing `2 + stacks` expiry refresh (3/4/5 turns). Leaving or field expiry stops refresh. A consumed mark now accepts the next actual turn inside the active area; a queued older burst still resolves independently, and no same-turn rearm is granted.
 
 The saved spell state records `lastNativeTick` alongside its local clock. Repeated positive `tickAfter` events in the same native turn, including after load, do not advance spell timing or restack. Legacy states without this field admit their first genuine tick. Rendering never advances this state.
+
+## Test.95 field maintenance
+
+`SpinnerAI.hasMaintenanceAssignment` validates a current maintenance reservation before player or NPC Capture recruits a nonparticipant. The positive-turn planner can release one effective player Capture source for reachable work in its admitted composite, through `SpinnerCapture.releaseMaintenanceSource`; at least one source and existing counters remain. Real Capture sources, Recovery and nest defense retain their duties. AI keeps that reservation through contact and load audits; its admitted field maintenance member also retains subsequent extension and connection after the first rebuilt cell. Completion or Capture ending clears the maintenance identity. NativeField still owns paid work and movement; no free repair or zero-time dispatch is added. The shared native `spinner-maintenance` scenario exercises real Runtime with partial and destroyed web damage while prey stays inside.

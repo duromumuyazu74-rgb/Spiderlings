@@ -1820,6 +1820,44 @@ test("one survivor keeps repair work but receives no new construction or replace
     assert.equal(group.planId, null, "a lone survivor cannot select a replacement plan");
 });
 
+test("an adjacent recognized player does not divert a line maintenance worker into melee", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        c = r.context,
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = native.fieldById(native.state(), ai.plans[group.planId].fieldId);
+    field.anchors[0].built = true;
+    field.anchors[0].hp = 1;
+    start(r, snapshot);
+    const [id, assignment] = Object.entries(group.assignments).find(([, action]) => action.type === "repairAnchor"),
+        worker = actors.find((actor) => String(actor.id) === id);
+    Object.assign(worker, assignment.workCell, { aware: true, testSense: true });
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: worker.x - 1, y: worker.y });
+    const colleague = actors.find((actor) => actor !== worker);
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: [colleague.id] });
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: colleague.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    const hp = field.anchors[0].hp;
+    for (let operation = 0; operation < 3; operation++) {
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+        if (native.fieldById(native.state(), ai.plans[group.planId].fieldId).anchors[0].hp > hp) break;
+    }
+    assert.ok(
+        native.fieldById(native.state(), ai.plans[group.planId].fieldId).anchors[0].hp > hp,
+        "The reserved line repair must actually pay and restore durability",
+    );
+    assert.ok(!r.phaseCalls.some((entry) => entry.id === worker.id), "Repair cannot double as native attack or spell");
+});
+
 test("save/load and revisit retain groups, choices, progress, and unique proxies", () => {
     const actors = [spinner(1, 7, 3), spinner(2, 9, 9)],
         r = runtime(actors),
