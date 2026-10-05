@@ -20,7 +20,10 @@
     const player = () => KinkyDungeonPlayerEntity;
     const entities = () => KDMapData?.Entities || [];
     const state = () => KDGameData?.[STATE];
-    const departure = () => KDGameData?.[DEPARTURE];
+    const departure = () => {
+        const pending = KDGameData?.[DEPARTURE];
+        return pending?.legBagId !== undefined && !sameId(legBag()?.id, pending.legBagId) ? undefined : pending;
+    };
     const turn = () => (typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : 0);
     const sameId = (left, right) => left !== undefined && right !== undefined && String(left) === String(right);
     const result = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
@@ -115,6 +118,77 @@
         );
     }
 
+    function legBag() {
+        return allItems().find((item) => item.name === "SpiderlingsSpinnerLegbinder");
+    }
+
+    function nearestField(source = entities().find((actor) => sourceActionable(actor, false))) {
+        const field = api.SpinnerNativeField,
+            graph = field?.state?.()?.topology;
+        if (!graph || graph.collapsed) return undefined;
+        const candidates = Object.values(graph.composites || {})
+            .filter(
+                (composite) =>
+                    !composite.layerIds ||
+                    composite.layerIds.some((id) => {
+                        const layer = graph.fields?.[id];
+                        return layer && !layer.retired && layer.nativeTerrainValid !== false;
+                    }),
+            )
+            .filter((composite) => field.compositeById?.(composite.id))
+            .map((composite) => {
+                const core = field.commonCore(composite.id);
+                if (!core) return undefined;
+                const path = nativePath(core, source);
+                return Array.isArray(path)
+                    ? {
+                          key: `field:${composite.id}`,
+                          compositeId: composite.id,
+                          groupId: composite.groupId,
+                          x: core.x,
+                          y: core.y,
+                          distance: path.length,
+                          count: 0,
+                      }
+                    : undefined;
+            })
+            .filter(Boolean)
+            .sort(
+                (a, b) =>
+                    a.distance - b.distance ||
+                    Math.hypot(a.x - player().x, a.y - player().y) - Math.hypot(b.x - player().x, b.y - player().y) ||
+                    String(a.compositeId).localeCompare(String(b.compositeId)),
+            );
+        return candidates[0];
+    }
+
+    function bagSourceIds() {
+        return entities()
+            .filter(
+                (actor) =>
+                    sourceActionable(actor, false) &&
+                    !npcCaptureUsesSource(actor.id) &&
+                    !api.SpinnerNPCRecovery?.usesEntity?.(actor.id) &&
+                    actor.SpiderlingsTaskNestDefenderTarget === undefined,
+            )
+            .map((actor) => actor.id);
+    }
+
+    function bagEligibility(source) {
+        if (!legBag()) return undefined;
+        const goal = nearestField(source);
+        return {
+            legBagId: legBag().id,
+            compositeId: goal?.compositeId,
+            groupId: goal?.groupId,
+            eligibleSourceIds: bagSourceIds(),
+        };
+    }
+
+    function needsField() {
+        return !!legBag() && !api.SpinnerCapture?.isControllingPlayer?.() && !nearestField();
+    }
+
     function ownsNativeTether() {
         return player().leash?.reason === TETHER_REASON;
     }
@@ -150,7 +224,7 @@
 
     // Eligibility only: native perception must supply the target before AI pursues it.
     function wantsPursuit(source, target) {
-        const eligibility = departure() || state();
+        const eligibility = state() || bagEligibility(source) || departure();
         if (
             target !== player() ||
             !core.pendingSource(eligibility, source?.id) ||
@@ -162,11 +236,10 @@
         )
             return false;
         const compositeId = eligibility.compositeId || sourceAssociation(source, eligibility)?.compositeId;
-        return !!(
-            compositeId &&
-            api.SpinnerNativeField?.compositeById?.(compositeId) &&
-            !api.SpinnerNativeField?.containsComposite?.(compositeId, target)
-        );
+        if (!compositeId || !api.SpinnerNativeField?.compositeById?.(compositeId)) return false;
+        return legBag()
+            ? !api.SpinnerTopology.isInsideCommonCore(api.SpinnerNativeField.state()?.topology, compositeId, target)
+            : !api.SpinnerNativeField?.containsComposite?.(compositeId, target);
     }
 
     function sourceRecords(recovery = state()) {
@@ -220,6 +293,7 @@
         if (!record) return false;
         KDGameData[DEPARTURE] = {
             version: 1,
+            ...(record.legBagId !== undefined ? { legBagId: record.legBagId } : {}),
             compositeId: record.compositeId,
             groupId: record.groupId,
             eligibleSourceIds: [...new Set(record.eligibleSourceIds || [])],
@@ -230,6 +304,7 @@
     function departureFromRecovery(recovery) {
         const first = Object.values(sourceRecords(recovery))[0];
         return {
+            ...(recovery.legBagId !== undefined ? { legBagId: recovery.legBagId } : {}),
             compositeId: first?.compositeId || recovery.compositeId,
             groupId: first?.groupId || recovery.groupId,
             eligibleSourceIds: recovery.eligibleSourceIds,
@@ -398,6 +473,7 @@
     }
 
     function audit() {
+        if (KDGameData?.[DEPARTURE] && !departure()) delete KDGameData[DEPARTURE];
         let recovery = state();
         if (!recovery) return false;
         if (player().leash && !ownsNativeTether()) {
@@ -405,6 +481,10 @@
             return false;
         }
         recovery = migrate(recovery);
+        if (recovery.legBagId !== undefined && !sameId(legBag()?.id, recovery.legBagId)) {
+            clearControl();
+            return false;
+        }
         if (recovery.version !== VERSION || !recovery.sources || typeof recovery.sources !== "object") {
             delete KDGameData[STATE];
             return false;
@@ -413,6 +493,10 @@
         if (!carrier || !usableLeash(carrier) || (recovery.ownedCarrier && carrier.name !== LEASH)) {
             clearRecoveryForCarrierLoss(recovery);
             return false;
+        }
+        if (legBag()) {
+            recovery.legBagId ??= legBag().id;
+            recovery.eligibleSourceIds = bagSourceIds();
         }
         const originalSource = Object.values(sourceRecords(recovery))[0];
         recovery.compositeId ||= originalSource?.compositeId;
@@ -493,6 +577,7 @@
             compositeId: eligibility.compositeId,
             groupId: eligibility.groupId,
             carrierId: carrier.item.id,
+            ...(legBag() ? { legBagId: legBag().id } : {}),
             ownedCarrier: carrier.owned,
             eligibleSourceIds: [...eligibility.eligibleSourceIds],
             sources: {
@@ -556,7 +641,17 @@
             bindNativeTether(recovery);
             return true;
         }
-        const eligibility = departure();
+        const eligibility = bagEligibility(source) || departure();
+        if (
+            legBag() &&
+            (!eligibility?.compositeId ||
+                api.SpinnerTopology.isInsideCommonCore(
+                    api.SpinnerNativeField.state()?.topology,
+                    eligibility.compositeId,
+                    player(),
+                ))
+        )
+            return false;
         if (!eligibility || !allowedSource(eligibility, source) || !sourceActionable(source)) return false;
         const attached = attach(source, eligibility);
         feedback(attached);
@@ -569,7 +664,7 @@
         const from = { x: data.lastX, y: data.lastY },
             to = { x: data.moveX, y: data.moveY },
             breached = api.SpinnerNativeField?.breachedDeparture(from, to);
-        return rememberDeparture(breached);
+        return rememberDeparture(bagEligibility() || breached);
     }
 
     function nativePath(goal, source) {
@@ -601,6 +696,7 @@
 
     function destination(recovery) {
         const executor = sourceById(recovery.executorId);
+        if (legBag()) return nearestField(executor);
         return core.destination(
             recovery,
             (compositeId) => {
@@ -723,13 +819,21 @@
         if (!goal?.compositeId) return false;
         const graph = api.SpinnerNativeField?.state?.()?.topology;
         if (!(graph && api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, player()))) return false;
+        const eligibility = bagEligibility();
         clearControl();
+        if (eligibility) rememberDeparture(eligibility);
         return true;
     }
 
     function handleEnemyTurn(enemy, _target, delta) {
         if (!audit()) return undefined;
         const recovery = state();
+        if (legBag() && !destination(recovery)) {
+            const eligibility = bagEligibility();
+            clearControl();
+            rememberDeparture(eligibility);
+            return undefined;
+        }
         if (finishReturn(recovery)) return undefined;
         if (!sourceRecords(recovery)[sourceKey(enemy?.id)]) {
             if (!relayEligible(enemy, recovery)) return undefined;
@@ -928,5 +1032,6 @@
         sourceActionable,
         wantsPursuit,
         usableLeash,
+        needsField,
     });
 })();

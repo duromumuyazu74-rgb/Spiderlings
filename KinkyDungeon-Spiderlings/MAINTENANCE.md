@@ -1,4 +1,6 @@
-# Spiderlings 0.92.36-test.96 维护说明
+# Spiderlings 0.92.36-test.97 维护说明
+
+test.97 将 Mage 身体施法发光改为从首次实际绘制开始计时，避免长原生回合耗尽显示时间。腿套未解除时持续允许原生命中重新接入 Recovery；每次按原生可达路径选择最近场地核心，无可达场地时围绕新鲜观察位置重新规划并付费建设。默认侵扰／猎场权重恢复 200／2000，保存的 180／1400 一次性升级，0 与自定义值保留，不额外重抽旅程。见[修复与验证](../docs/spiderlings-test97-recovery-glow.zh-CN.md)。
 
 Topology 统一动作目标、有效条件、维修与门动作语义和施工统计分类。AI 保留成员职责与可达工位分配，NativeField 保留原生移动、支付和投影。`inspectWorkAction` 的待执行判断复用 `legalAction`，忽略瞬时占格；实际执行仍用当前原生快照复核。线状任务生成也由 Topology 承担。存档字段、工作键和原生加载顺序保持兼容。见[架构改进记录](../docs/spiderlings-test96-spinner-architecture.zh-CN.md)。
 

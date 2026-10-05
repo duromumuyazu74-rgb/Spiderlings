@@ -12,11 +12,11 @@
         delete KDModSettings.Spiderlings.spiderlingsFloorWeights90;
         KinkyDungeonSendEvent("afterModSettingsLoad", {});
         expect(
-            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 180,
+            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200,
             "Saved infestation default was not upgraded",
         );
         expect(
-            Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 1400,
+            Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 2000,
             "Saved hunting default was not upgraded",
         );
         for (let seed = 0; seed < 12; seed++) {
@@ -100,17 +100,27 @@
         KinkyDungeonSendEvent("afterModSettingsLoad", {});
         KinkyDungeonSendEvent("afterLoadGame", {});
         expect(
-            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 180 &&
-                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 1400,
-            "Test.90 defaults did not lower to test.91 defaults",
+            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200 &&
+                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 2000,
+            "Older defaults did not reach current defaults",
         );
-        expect(JSON.stringify(KDGameData.JourneyMap) === before, "Lower defaults rerolled a migrated journey");
+        expect(JSON.stringify(KDGameData.JourneyMap) === before, "Changed defaults rerolled a migrated journey");
         KDModSettings.Spiderlings.spiderlingsInfestationWeight = "200";
         KinkyDungeonSendEvent("afterModSettingsLoad", {});
         expect(
             Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200,
             "Repeated settings load overwrote a deliberate later change",
         );
+        KDModSettings.Spiderlings.spiderlingsInfestationWeight = "180";
+        KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight = "1400";
+        delete KDModSettings.Spiderlings.spiderlingsFloorWeights97;
+        KinkyDungeonSendEvent("afterModSettingsLoad", {});
+        expect(
+            Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200 &&
+                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 2000,
+            "Test.97 did not restore 200/2000",
+        );
+        expect(JSON.stringify(KDGameData.JourneyMap) === before, "Test.97 rerolled an existing journey");
         return { rows, migration: KDGameData.SpiderlingsFloorWeights90 };
     } finally {
         KDModSettings = settings;

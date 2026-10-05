@@ -313,8 +313,8 @@ test("objective cleanup attempts every nest and cancels the floor without maskin
 
 test("old Infestation and Hunting Grounds register independently in one Mod", () => {
     const r = runtime({}, [], true);
-    assert.equal(r.context.KDMapMods.SpiderlingsInfestation.weight, 180);
-    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 1400);
+    assert.equal(r.context.KDMapMods.SpiderlingsInfestation.weight, 200);
+    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 2000);
     r.generate();
     assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.targetIds.length, 3);
     assert.equal(r.context.KDMapData.SpiderlingsInfestation, undefined);
@@ -530,7 +530,7 @@ test("a mobile NPC blocking a required large prefab cancels new hunting births w
 test("native modifier adds three independent nests and eighteen attributable core members and a six-member patrol", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;
-    assert.equal(mod.weight, 1400);
+    assert.equal(mod.weight, 2000);
     assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
     assert.equal(mod.filter({ y: 5 }), 0);
@@ -872,8 +872,8 @@ test("floor weights take effect on the next draw, zero disables, and invalid inp
     assert.equal(preview.MapMod, "Mold", "already generated nodes are not rerolled");
     for (const bad of ["", "-1", "1.5", "Infinity", "garbage", "9007199254740992"]) {
         settings.spiderlingsInfestationWeight = settings.spiderlingsHuntingGroundsWeight = bad;
-        assert.equal(c.KDMapMods.SpiderlingsInfestation.weight, 180, bad);
-        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 1400, bad);
+        assert.equal(c.KDMapMods.SpiderlingsInfestation.weight, 200, bad);
+        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 2000, bad);
     }
 });
 

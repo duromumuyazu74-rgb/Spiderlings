@@ -7,8 +7,8 @@
     // modifier after its primary faction is known; they never replace the faction.
     const KEEP_WEIGHT = 800;
     const settings = {
-        SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 180 },
-        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 1400 },
+        SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 200 },
+        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 2000 },
     };
 
     function weight(name) {
@@ -49,6 +49,18 @@
                     config[setting.refvar] = String(setting.default);
             }
             config.spiderlingsFloorWeights91 = true;
+            dirty = true;
+        }
+        if (!config.spiderlingsFloorWeights97) {
+            for (const [name, previous] of Object.entries({
+                SpiderlingsInfestation: 180,
+                SpiderlingsHuntingGrounds: 1400,
+            })) {
+                const setting = settings[name];
+                if (String(config[setting.refvar]).trim() === String(previous))
+                    config[setting.refvar] = String(setting.default);
+            }
+            config.spiderlingsFloorWeights97 = true;
             dirty = true;
         }
         // Persist markers too, so deliberate later changes survive reload.

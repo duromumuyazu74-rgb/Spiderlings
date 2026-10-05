@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.96.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.97.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.97 persistent player recovery and Mage body glow (2026-10-05)
+
+A successful Mage cast starts its 240 ms body glow on its first visible draw. The regression and native `mage-body` scene delay that first frame by 600 ms. Leg-bag recovery admits repeated native successful hits after return, selects the nearest reachable core by native path length, and ends its pending duty when the bag is removed. When no reachable field remains, fresh recognized contact lets a crew plan around the wearer and perform normal paid construction. Native movement, tethering, equipment restrictions and player item progress remain. Infestation/Hunting Grounds defaults return to 200/2000; saved 180/1400 defaults migrate once without an additional journey draw. See the [fix record](spiderlings-test97-recovery-glow.zh-CN.md).
+
+The final ZIP contains 170 entries and 24,841,382 bytes, SHA-256 `ad16c2e5ec97feda8bf7f44fca47c91b9f5b052a6315aba48e2a916f64ad1125`. The same ZIP passed all 49 native stages on both KD 5.4.92 and latest official 5.5.3, including seven native language groups per game. Official commit `917d59b9f2ecad6b604498c8096bac5e441cb5ac` was freshly fetched at `2026-10-05T04:20:33.060Z`. Full acceptance is `<cache>/runs/2026-10-05T04-20-33-075Z-0.92.36-test.97/acceptance.json`.
+
+The persistent-recovery native fixture returns the retained-bag wearer twice to the nearer of two fields, with a real save reload between returns. KD 5.4.92 takes 7 and 10 turns; 5.5.3 takes 5 and 10. With no field, each version plans a core around the observed wearer and performs three paid construction actions within 10 and 9 turns respectively. Bag identity and wrap progress remain. These timings describe controlled fixtures rather than all encounters.
+
+Repository checks, 12 policy tests, 573 public tests, the complete 894-test local watcher and final ZIP verification passed. Source and ZIP stayed unchanged during the collector run. Delivery report: `.scratch/delivery/2026-10-05T04-28-06-281Z-lvtCpu/REPORT.md`. Only result documentation was appended afterward, followed by repository and diff checks. The initial TLS fetch failure, failing removal regressions and superseded candidate logs are retained in `.scratch/`; the interrupted candidate acceptance is not final evidence.
 
 ## Test.96 Spinner work semantics and Runtime regressions (2026-10-05)
 
