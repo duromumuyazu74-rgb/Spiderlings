@@ -882,12 +882,82 @@
 
     function actionCell(state, action) {
         if (action.cell) return point(action.cell);
-        if (["placeAnchor", "rebuildAnchor"].includes(action.type)) {
+        if (["placeAnchor", "rebuildAnchor", "repairAnchor"].includes(action.type)) {
             const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
             return anchor && point(anchor);
         }
         const link = state.links.find((candidate) => candidate.id === action.linkId);
+        if (["repair", "repairLink"].includes(action.type))
+            return link?.builtCells[0] || state.anchors.find((candidate) => candidate.id === link?.a);
         return link?.plannedCells.find((cell) => !(link.builtCells || []).some((built) => sameCell(built, cell)));
+    }
+
+    // Reservation checks ignore transient map occupancy. Execution still passes
+    // the native snapshot through legalAction when applying paid work.
+    function inspectWorkAction(state, action) {
+        const type = action?.type,
+            repair = ["repair", "repairAnchor", "repairLink"].includes(type),
+            link = state?.links.find((candidate) => candidate.id === action?.linkId),
+            cell =
+                state &&
+                action &&
+                (actionCell(state, action) ||
+                    state.anchors.find((candidate) => candidate.id === link?.b) ||
+                    link?.cells?.[0]),
+            field = state?.fields?.[action?.fieldId] || state?.lineFields?.[action?.fieldId],
+            pending =
+                !!action &&
+                legalAction(state, action, {
+                    cell,
+                    inBounds: true,
+                    floor: true,
+                    protected: false,
+                    occupied: false,
+                }).legal;
+        return {
+            cell,
+            pending: pending && !field?.retired,
+            maintenance:
+                repair || ["rebuildAnchor", "rebuildLink"].includes(type) || (type === "prepareGate" && link?.hp <= 0),
+            allowsOccupiedTarget: repair,
+            gateWork: ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(type),
+            opensGate: type === "reopenGate",
+            metric: repair ? "repair" : "construction",
+        };
+    }
+
+    function lineWorkActions(field, canConstruct) {
+        const tasks = [];
+        for (const anchor of field.anchors)
+            if (anchor.built && anchor.hp > 0 && anchor.hp < anchor.maxHp)
+                tasks.push({ key: `repair-anchor:${anchor.id}`, type: "repairAnchor", anchorId: anchor.id });
+        for (const link of field.links)
+            if (link.hp > 0 && link.hp < link.maxHp && (link.builtCells.length || link.connected))
+                tasks.push({
+                    key: `repair-link:${link.id}`,
+                    type: "repairLink",
+                    linkId: link.id,
+                    cell: clone(link.builtCells[0] || field.anchors.find((anchor) => anchor.id === link.a)),
+                });
+        if (!canConstruct) return tasks;
+        for (const anchor of field.anchors)
+            if (!anchor.built && anchor.hp > 0)
+                tasks.push({ key: `anchor:${anchor.id}`, type: "placeAnchor", anchorId: anchor.id });
+        for (const link of field.links) {
+            const endpointsBuilt = [link.a, link.b].every(
+                (id) => field.anchors.find((anchor) => anchor.id === id)?.built,
+            );
+            if (!link.connected && link.hp > 0 && endpointsBuilt)
+                tasks.push({
+                    key: `link:${link.id}:${link.builtCells.length}`,
+                    type: "extendLink",
+                    linkId: link.id,
+                    ...(link.plannedCells[link.builtCells.length]
+                        ? { cell: clone(link.plannedCells[link.builtCells.length]) }
+                        : {}),
+                });
+        }
+        return tasks;
     }
 
     function legalAction(state, action, snapshot) {
@@ -1571,6 +1641,8 @@
         setEnclosureGate,
         addEnclosureLayer,
         validatePolygon,
+        inspectWorkAction,
+        lineWorkActions,
         legalAction,
         applyAction,
         nextWorkAction,

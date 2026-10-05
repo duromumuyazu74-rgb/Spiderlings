@@ -3333,3 +3333,84 @@ for (const obstruction of ["target", "workstations"])
         assert.ok(encounter.topology.actionLog.length > before.length);
         assert.equal(encounter.ai.plans[group.planId].compositeId, placed.compositeId);
     });
+
+for (const damage of [0.5, 100]) {
+    test(`real Runtime preserves Capture while paid maintenance heals ${damage} damage`, () => {
+        const actors = [spinner(1, 7, 6), spinner(2, 9, 6)],
+            r = runtime(actors),
+            c = r.context,
+            native = c.Spiderlings.SpinnerNativeField;
+        load(c, "SpiderlingsWebbingData.js");
+        c.Spiderlings.Webbing = { COCOON_ID: "SpiderlingsWebbingCocoon", FINAL_ESCAPE_EVENT: "finalEscape" };
+        c.KinkyDungeonAllRestraintDynamic = () => [];
+        c.KinkyDungeonRestraints = [];
+        c.KinkyDungeonEnemyAt = (x, y) =>
+            c.KDMapData.Entities.findLast((actor) => actor.hp > 0 && actor.x === x && actor.y === y);
+        c.KinkyDungeonEnemyCanMove = (actor, direction) =>
+            !c.KinkyDungeonEntityAt(actor.x + direction.x, actor.y + direction.y);
+        for (const actor of actors) {
+            actor.Enemy = { ...actor.Enemy, attack: "Melee", attackRange: 1 };
+        }
+        // The fixture supplies native equipment queries, never a Capture handler.
+        load(c, "SpiderlingsSpinnerCapture.js");
+        const capture = c.Spiderlings.SpinnerCapture;
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: 8, y: 6 });
+        native.initializeEnclosure({
+            compositeId: "maintenance-runtime",
+            owners: actors.map((actor) => actor.id),
+            built: true,
+            autoSeal: true,
+            layers: [
+                {
+                    id: "runtime-ring",
+                    vertices: [
+                        { x: 4, y: 2 },
+                        { x: 12, y: 2 },
+                        { x: 12, y: 10 },
+                        { x: 4, y: 10 },
+                    ],
+                    gate: { x: 12, y: 6 },
+                },
+            ],
+        });
+        native.state().builders = {};
+        c.Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
+        assert.equal(capture.hit(actors[0]), true);
+        c.KinkyDungeonEnemyLoop(actors[1], c.KinkyDungeonPlayerEntity, 1);
+        assert.deepEqual(plain(capture.state().sourceIds), [1, 2]);
+        capture.state().weaveProgress = 10;
+        capture.state().escapeProgress = 7;
+        const proxy = c.KDMapData.Entities.find(
+            (actor) => native.isOwnedProxy(actor) && actor.x === 12 && actor.y === 5,
+        );
+        assert.ok(proxy);
+        native.onNativeDamage({ enemy: proxy, dmgDealt: damage });
+        const damagedId = native.state().topology.links.find((link) => link.hp < link.maxHp).id,
+            apply = native.applyPaidAction,
+            operations = [];
+        native.applyPaidAction = function (actor, action) {
+            const result = apply.apply(this, arguments);
+            if (result.applied)
+                operations.push({ type: action.type, sources: plain(capture.state()?.sourceIds || []) });
+            return result;
+        };
+        for (let tick = 0; tick < 100; tick++) {
+            c.Spiderlings.SpinnerAI.beginTurn({ activate: true });
+            for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+            c.KDEventMapGeneric.tickAfter.SpiderlingsSpinnerRuntime({}, { delta: 1 });
+            c.KinkyDungeonCurrentTick++;
+            const link = native.state().topology.links.find((entry) => entry.id === damagedId);
+            if (link.hp === link.maxHp && native.captureGeometryReady(c.KinkyDungeonPlayerEntity)) break;
+        }
+        const link = native.state().topology.links.find((entry) => entry.id === damagedId);
+        assert.equal(link.hp, link.maxHp, JSON.stringify(operations));
+        assert.equal(native.captureGeometryReady(c.KinkyDungeonPlayerEntity), true);
+        assert.ok(operations.length > 0);
+        assert.ok(operations.every((operation) => operation.sources.length >= 1));
+        if (damage === 100) assert.ok(operations.some((operation) => operation.type === "extendLink"));
+        assert.equal(capture.state().weaveProgress, 10);
+        assert.equal(capture.state().escapeProgress, 7);
+        native.applyPaidAction = apply;
+        capture.cancel();
+    });
+}
