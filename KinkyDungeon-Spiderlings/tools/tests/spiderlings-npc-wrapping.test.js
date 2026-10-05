@@ -111,111 +111,137 @@ function fixture() {
     const wrap = context.Spiderlings.NPCWrapping;
     const damage = (amount, prey = target) => {
         const data = { enemy: prey, dmgDealt: amount };
-        context.KDEventMapGeneric.duringDamageEnemy.SpiderlingsNPCWrapping(null, data);
+        context.KDEventMapGeneric.duringDamageEnemy?.SpiderlingsNPCWrapping?.(null, data);
         return data.dmgDealt;
     };
     return { calls, context, map, target, spiders, wrap, damage, blockedTiles };
 }
 
-test("full owned silk multiplies effective native damage without creating a countdown", () => {
+test("owned silk never amplifies native damage or immediately removes its prey", () => {
     const r = fixture();
-    assert.equal(r.damage(2), 8);
+    assert.equal(r.damage(2), 2);
     assert.equal(r.damage(0), 0);
     assert.equal(r.damage(-1), -1);
-    assert.equal(r.wrap.DAMAGE_MULTIPLIER, 4);
-    for (let i = 0; i < 8; i++) r.wrap.preemptNativeCapture();
-    assert.equal(r.calls.removed.length, 0);
-    assert.ok(r.map.Entities.includes(r.target));
-    assert.equal(r.wrap.handleEnemyTurn, undefined);
-    assert.equal(r.map.SpiderlingsNPCWrapping, undefined);
-});
-test("partial or foreign silk does not create exposure; sufficient owned helplessness does", () => {
-    const r = fixture();
-    r.target.full = false;
-    assert.equal(r.damage(2), 2);
-    r.target.helpless = true;
-    assert.equal(r.damage(2), 8);
-    r.target.silkSufficient = false;
-    assert.equal(r.damage(2), 2);
-    r.target.full = true;
-    r.target.silk = false;
-    assert.equal(r.damage(2), 2);
-});
-test("removal, old-map aliases, players and protected prey do not receive owned vulnerability", () => {
-    const r = fixture();
-    assert.equal(r.damage(2, { ...r.target }), 2);
-    for (const property of ["player", "shop", "party"]) {
-        r.target[property] = true;
-        assert.equal(r.damage(2), 2);
-        delete r.target[property];
-    }
-    r.target.Enemy.tags.nocapture = true;
-    assert.equal(r.damage(2), 2);
-    delete r.target.Enemy.tags.nocapture;
-    r.map.Entities = r.spiders;
-    assert.equal(r.damage(2), 2);
-});
-test("removing or recovering from silk immediately removes exposure", () => {
-    const r = fixture();
-    assert.equal(r.damage(1), 4);
-    r.target.full = false;
-    assert.equal(r.damage(1), 1);
-    r.target.full = true;
-    assert.equal(r.damage(1), 4);
-    r.target.hp = 0;
-    assert.equal(r.damage(1), 1);
-});
-test("legacy wrapping progress is discarded on reload without moving, killing or untying prey", () => {
-    const r = fixture();
-    r.map.SpiderlingsNPCWrapping = {
-        version: 1,
-        records: { 10: { targetId: 10, progress: 3, helplessTurns: 3, sourceIds: [1] } },
-        paidSourceIds: [1],
-    };
-    const before = JSON.stringify(r.target);
-    r.wrap.afterLoad();
-    assert.equal(r.map.SpiderlingsNPCWrapping, undefined);
-    assert.equal(JSON.stringify(r.target), before);
-    assert.equal(r.calls.removed.length, 0);
-    assert.equal(r.damage(1), 4);
-});
-test("exposure label follows real visibility without a three-step progress or strands", () => {
-    const r = fixture();
-    const draw = () => {
-        r.calls.labels.length = 0;
-        r.wrap.draw({ CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
-        return [...r.calls.labels];
-    };
-    assert.deepEqual(draw(), ["SpiderlingsNPCWrapping"]);
-    assert.equal(r.calls.lines, 0);
-    r.target.hidden = true;
-    assert.deepEqual(draw(), []);
-    r.target.hidden = false;
-    r.context.KinkyDungeonVisionGet = () => 0;
-    assert.deepEqual(draw(), []);
-    assert.equal(r.damage(1), 4);
-});
-test("native capture strands yield to exposure without removing their living target", () => {
-    const r = fixture(),
-        released = [];
-    r.context.Spiderlings.SpinnerNPCCapture = {
-        records: () => ({ 10: { targetId: 10 } }),
-        releaseForWrapping: (t) => released.push(t.id),
-    };
+    assert.equal(r.wrap.DAMAGE_MULTIPLIER, 1);
+    r.wrap.tick(0);
     r.wrap.preemptNativeCapture();
-    assert.deepEqual(released, [10]);
     assert.equal(r.calls.removed.length, 0);
+    assert.equal(r.target.hp, 10);
+    assert.equal(r.target.SpiderlingsNPCWrapping, undefined);
 });
 
-test("exposure checks consume no spider attack, movement or construction operation", () => {
+test("six consecutive owned full-pin turns release space without killing or collecting prey", () => {
+    const r = fixture(),
+        before = r.target.hp;
+    for (let i = 0; i < 5; i++) r.wrap.tick(1);
+    assert.ok(r.map.Entities.includes(r.target));
+    assert.equal(r.target.hp, before);
+    r.wrap.tick(1);
+    assert.ok(!r.map.Entities.includes(r.target));
+    assert.equal(r.target.hp, before);
+    assert.equal(r.calls.removed.length, 1);
+    assert.equal(r.calls.removed[0].kill, false);
+    assert.equal(r.calls.removed[0].capture, undefined);
+    r.wrap.tick(1);
+    assert.equal(r.calls.removed.length, 1);
+});
+
+test("native zero-time load and duplicate ticks preserve saved departure progress", () => {
+    const r = fixture();
+    for (let tick = 1; tick <= 3; tick++) {
+        r.context.KinkyDungeonCurrentTick = tick;
+        r.wrap.tick(1);
+        r.wrap.tick(1);
+    }
+    assert.equal(r.target.SpiderlingsNPCWrapping.remaining, 3);
+    const before = JSON.stringify(r.target);
+    r.wrap.tick(0);
+    r.wrap.draw({});
+    r.map.SpiderlingsNPCWrapping = { version: 1, records: { 10: { progress: 3 } } };
+    r.wrap.afterLoad();
+    assert.equal(JSON.stringify(r.target), before);
+    assert.equal(r.map.SpiderlingsNPCWrapping, undefined);
+    for (let tick = 4; tick <= 5; tick++) {
+        r.context.KinkyDungeonCurrentTick = tick;
+        r.wrap.tick(1);
+    }
+    assert.ok(r.map.Entities.includes(r.target));
+    r.context.KinkyDungeonCurrentTick = 6;
+    r.wrap.tick(1);
+    assert.ok(!r.map.Entities.includes(r.target));
+});
+
+test("native struggle or rescue resets the departure window", () => {
+    const r = fixture();
+    for (let i = 0; i < 5; i++) r.wrap.tick(1);
+    r.target.full = false;
+    r.wrap.tick(1);
+    assert.equal(r.target.SpiderlingsNPCWrapping, undefined);
+    r.target.full = true;
+    for (let i = 0; i < 5; i++) r.wrap.tick(1);
+    assert.ok(r.map.Entities.includes(r.target));
+    r.wrap.tick(1);
+    assert.ok(!r.map.Entities.includes(r.target));
+});
+
+test("foreign silk, protected roles and stale map objects never acquire a departure timer", () => {
+    for (const property of ["player", "shop", "party", "foreign", "nocapture", "stale"]) {
+        const r = fixture();
+        if (property === "foreign") r.target.silk = false;
+        else if (property === "nocapture") r.target.Enemy.tags.nocapture = true;
+        else if (property === "stale") r.map.Entities = r.spiders;
+        else r.target[property] = true;
+        for (let i = 0; i < 10; i++) r.wrap.tick(1);
+        assert.equal(r.calls.removed.length, 0, property);
+        assert.equal(r.target.SpiderlingsNPCWrapping, undefined, property);
+    }
+});
+
+test("sufficient owned native helplessness qualifies after recent pin pressure expires", () => {
+    const r = fixture();
+    r.target.full = false;
+    r.target.helpless = true;
+    r.target.silkSufficient = false;
+    r.wrap.tick(1);
+    assert.equal(r.target.SpiderlingsNPCWrapping, undefined);
+    r.target.silkSufficient = true;
+    r.wrap.tick(1);
+    assert.equal(r.target.SpiderlingsNPCWrapping.remaining, 5);
+});
+
+test("native removal cancellation retains the living prey and retries only on another positive tick", () => {
+    const r = fixture();
+    r.target.cancelRemoval = true;
+    for (let i = 0; i < 6; i++) r.wrap.tick(1);
+    assert.ok(r.map.Entities.includes(r.target));
+    assert.equal(r.target.hp, 10);
+    assert.equal(r.calls.removed.length, 1);
+    r.wrap.tick(0);
+    assert.equal(r.calls.removed.length, 1);
+    delete r.target.cancelRemoval;
+    r.wrap.tick(1);
+    assert.ok(!r.map.Entities.includes(r.target));
+});
+
+test("silk mechanics draw no design-policy labels and reserve no spider actions", () => {
     const r = fixture();
     for (const spider of r.spiders)
         Object.assign(spider, { attackPoints: 2, movePoints: 3, SpinnerConstructionPoints: 4 });
     const before = JSON.stringify(r.spiders);
-    for (let turn = 0; turn < 10; turn++) {
-        assert.equal(r.damage(1), 4);
-        r.wrap.preemptNativeCapture();
-    }
+    r.wrap.draw({ CamX: 0, CamY: 0, CamX_offset: 0, CamY_offset: 0 });
+    r.wrap.tick(1);
+    assert.deepEqual(r.calls.labels, []);
     assert.equal(JSON.stringify(r.spiders), before);
+});
+
+test("native capture strands release when sustained owned pin starts", () => {
+    const r = fixture(),
+        released = [];
+    r.context.Spiderlings.SpinnerNPCCapture = {
+        records: () => ({ 10: { targetId: 10 } }),
+        releaseForWrapping: (target) => released.push(target.id),
+    };
+    r.wrap.preemptNativeCapture();
+    assert.deepEqual(released, [10]);
     assert.equal(r.calls.removed.length, 0);
 });
