@@ -16,7 +16,8 @@ function runtime() {
         context = {
             CommonTime: () => context.time || 0,
             KinkyDungeonRootDirectory: "Game/",
-            KDMapData: { Entities: [mage, webCaster] },
+            KDMapData: { Entities: [mage, webCaster], Bullets: [] },
+            KinkyDungeonCurrentTick: 0,
             KDEventMapGeneric: {},
             kdpixisprites: sprites,
             PIXI: {
@@ -110,32 +111,33 @@ test("Mage uses the regular rune at rest and transparent cast layers without chr
     assert.deepEqual(draw().at(-1), "Game/Enemies/MageSpiderlingsReallyGlowy.png");
 });
 
-test("failed casts do not light Mage and cast layers fade without advancing game turns", () => {
+test("failed casts stay dark and successful casts glow for one complete world turn", () => {
     const { context, board, draws, mage } = runtime();
+    const draw = () => {
+        draws.length = 0;
+        context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+        return draws;
+    };
+    const tick = (delta = 1) => {
+        context.KinkyDungeonCurrentTick += delta;
+        for (const handler of Object.values(context.KDEventMapGeneric.tickAfter || {})) handler({}, { delta });
+    };
     context.castResult = "Fail";
     context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageRune" }, mage);
-    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
-    assert.equal(draws.length, 2);
-    assert.equal(draws[1].image, "Game/Enemies/MageSpiderlingsRegular.png");
-
+    assert.equal(draw().length, 2);
     context.castResult = "Cast";
-    context.KinkyDungeonCastSpell(5, 5, { name: "AnotherMageSpell" }, mage);
-    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
-    draws.length = 0;
-    context.time = 120;
-    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
-    assert.equal(draws.length, 4);
-    assert.equal(draws[3].image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
-    assert.equal(draws[1].sprite.alpha, 1, "abdomen pattern stays fully visible during casting");
-    assert.equal(draws[3].sprite.alpha, 0.5);
-
-    draws.length = 0;
-    context.time = 240;
-    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
-    assert.deepEqual(
-        draws.map((entry) => entry.image),
-        ["Game/Enemies/MageSpiderlings.png", "Game/Enemies/MageSpiderlingsRegular.png"],
-    );
+    context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageBolt" }, mage);
+    tick(); // The cast's own native turn ends before its first frame.
+    context.time = 10000;
+    assert.equal(draw().at(-1).image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
+    assert.equal(draws.at(-1).sprite.alpha, 1);
+    tick(0);
+    assert.equal(draw().length, 4);
+    // A repeated notification of the same native turn cannot consume it twice.
+    for (const handler of Object.values(context.KDEventMapGeneric.tickAfter || {})) handler({}, { delta: 1 });
+    assert.equal(draw().length, 4);
+    tick();
+    assert.equal(draw().length, 2);
 });
 
 test("the supplied Mage artwork and each cast layer retain 72-pixel native enemy dimensions", () => {
@@ -171,4 +173,72 @@ test("Mage cast glow remains visible when the paid turn delays its first frame",
     context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
     assert.equal(draws.at(-1).image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
     assert.equal(draws.at(-1).sprite.alpha, 1);
+});
+
+test("pending owned Hex, Collapse and mark bursts keep the body glowing until resolution", () => {
+    for (const [list, deadline] of [
+        ["fields", "activateAt"],
+        ["collapses", "explodeAt"],
+        ["blasts", "detonateAt"],
+    ]) {
+        const { context, board, draws, mage } = runtime();
+        const state = (context.KDMapData.SpiderlingsMageSpells = { clock: 3, fields: [], collapses: [], blasts: [] });
+        state[list].push({ ownerId: mage.id, [deadline]: 5 });
+        context.time = 30000;
+        context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+        assert.equal(draws.at(-1).image, "Game/Enemies/MageSpiderlingsReallyGlowy.png", list);
+        state.clock = 5;
+        draws.length = 0;
+        context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+        assert.equal(draws.length, 2, list);
+        state.clock = 3;
+        state[list][0].ownerId = 99;
+        draws.length = 0;
+        context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+        assert.equal(draws.length, 2, "Another Mage's pending effect cannot light this body");
+    }
+});
+
+test("Rune placement and triggered warnings glow, while a dormant trap does not", () => {
+    const { context, board, draws, mage } = runtime();
+    const rune = {
+        time: 100,
+        SpiderlingsRunePhase: "placing",
+        bullet: { source: mage.id, spell: { name: "SpiderlingsMageRune" } },
+    };
+    context.KDMapData.Bullets.push(rune);
+    for (const phase of ["placing", "triggered", "armed"]) {
+        rune.SpiderlingsRunePhase = phase;
+        draws.length = 0;
+        context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+        assert.equal(draws.length, phase === "armed" ? 2 : 4);
+    }
+    rune.SpiderlingsRunePhase = "triggered";
+    rune.time = 0;
+    draws.length = 0;
+    context.KDDrawEnemySprite(board, mage, 2, 3, 0, 0);
+    assert.equal(draws.length, 2);
+});
+
+test("native save cloning preserves the one-turn glow and a later cast renews it", () => {
+    const { context, board, draws, mage } = runtime();
+    const tick = () => {
+        context.KinkyDungeonCurrentTick++;
+        for (const handler of Object.values(context.KDEventMapGeneric.tickAfter || {})) handler({}, { delta: 1 });
+    };
+    context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageBolt" }, mage);
+    tick();
+    const restored = JSON.parse(JSON.stringify(mage));
+    context.KDMapData.Entities[0] = restored;
+    context.KDDrawEnemySprite(board, restored, 2, 3, 0, 0);
+    assert.equal(draws.at(-1).image, "Game/Enemies/MageSpiderlingsReallyGlowy.png");
+    context.KinkyDungeonCastSpell(5, 5, { name: "SpiderlingsMageRune" }, restored);
+    tick();
+    draws.length = 0;
+    context.KDDrawEnemySprite(board, restored, 2, 3, 0, 0);
+    assert.equal(draws.at(-1).image, "Game/Enemies/MageSpiderlingsSubtleGlow.png");
+    tick();
+    draws.length = 0;
+    context.KDDrawEnemySprite(board, restored, 2, 3, 0, 0);
+    assert.equal(draws.length, 2);
 });

@@ -497,7 +497,11 @@
     }
 
     function cancelInfestation(reason) {
-        delete KDMapData.SpiderlingsPopulationPlan;
+        // A failed nest layout removes the escape objective, not the chosen
+        // spider ecology. Otherwise the native Maidforce pool fills the floor.
+        const plan = KDMapData.SpiderlingsPopulationPlan;
+        if (reason === "insufficient-space" && plan?.kind === MOD) plan.layoutFallback = true;
+        else delete KDMapData.SpiderlingsPopulationPlan;
         KDMapData[FIELD] = { status: "cancelled", reason };
         KDMapData.MapMod = "None";
         KDGameData.MapMod = "None";
@@ -1221,7 +1225,8 @@
                 // The nest objective belongs to the modifier; population belongs
                 // to the map's main faction, even when the objective is absent.
                 const spiderFloor =
-                    [MOD, "SpiderlingsInfestation"].includes(KDMapData.MapMod) &&
+                    ([MOD, "SpiderlingsInfestation"].includes(KDMapData.MapMod) ||
+                        KDMapData.SpiderlingsPopulationPlan?.layoutFallback) &&
                     api.EncounterRules.isEligibleOrdinaryMap(room) &&
                     !KDMapData.RoomType;
                 const themed = spiderFloor || usesMaidPopulation(room);
@@ -1304,7 +1309,12 @@
                 const previous = selectingPopulation;
                 const room = typeof KDGetAltType === "function" ? KDGetAltType(MiniGameKinkyDungeonLevel) : {};
                 selectingPopulation =
-                    KDMapData.SpiderlingsPopulationPlan || usesMaidPopulation(room || {}) ? "wandering" : false;
+                    (KDMapData.SpiderlingsPopulationPlan &&
+                        (!KDMapData.SpiderlingsPopulationPlan.layoutFallback ||
+                            (!KDMapData.RoomType && api.EncounterRules.isEligibleOrdinaryMap(room || {})))) ||
+                    usesMaidPopulation(room || {})
+                        ? "wandering"
+                        : false;
                 try {
                     const result = original.apply(this, arguments);
                     return result;

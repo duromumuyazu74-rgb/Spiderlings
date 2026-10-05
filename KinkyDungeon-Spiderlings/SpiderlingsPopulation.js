@@ -27,8 +27,8 @@
         const numeric = Number(value);
         const settingCap = /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
         const map = typeof KDMapData !== "undefined" ? KDMapData : undefined;
-        if (map?.MapMod === HUNTING) return settingCap + 20;
         const plan = map?.SpiderlingsPopulationPlan;
+        if (map?.MapMod === HUNTING || (plan?.kind === HUNTING && plan.layoutFallback)) return settingCap + 20;
         if (plan?.kind !== map?.MapMod || !Number.isSafeInteger(plan?.cap) || plan.cap <= 0) return settingCap;
         return settingCap === 0 ? plan.cap : Math.min(settingCap, plan.cap);
     }

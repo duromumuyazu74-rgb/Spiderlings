@@ -623,3 +623,7 @@ Both KD 5.4.92 and fetched 5.5.3 can return a `KinkyDungeonFindPath` route whose
 ## Mage casting body flash (test.97)
 
 Native turn processing can exceed the 240 ms body-flash duration before the first frame. Record a successful cast immediately, but start the visual clock on the first visible body draw. The delayed-first-frame public regression and `mage-body` native scene enforce this without changing spell timing.
+
+## Mage body glow in game turns (test.98)
+
+On KD 5.4.92 and fetched 5.5, enemy casts occur before `KinkyDungeonCurrentTick` advances and `tickAfter` fires. Preserve a fresh cast through its own positive `tickAfter`, then clear it on the next positive turn. Save the owned body-glow record on the entity rather than in a WeakMap. Read actual owned Hex, Collapse, pending burst and Rune phases when drawing; do not duplicate their deadlines. Zero-time native reload and duplicate notifications do not consume the record. This supersedes test.97's millisecond body flash; spell timing remains unchanged.
