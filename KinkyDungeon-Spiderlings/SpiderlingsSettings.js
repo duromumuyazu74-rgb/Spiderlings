@@ -75,7 +75,7 @@
         spiderlingsSettingsNestsHelp: "Species weights: 0 prevents that reinforcement.",
         spiderlingsNestSummonWeights: "Reinforcement species weights",
         spiderlingsSettingsGeneralHelp: "Themed floors retain their population budgets.",
-        spiderlingsSettingsHuntingHelp: "Hunting Grounds: Maidforce floors from floor 5.",
+        spiderlingsSettingsHuntingHelp: "Both spider themes can appear on ordinary floors from floor 5.",
         spiderlingsPinkWebbing: "Pink silk",
         spiderlingsEnableHood: "Allow silk hoods",
         spiderlingsSpinnerEncounters: "Spinner capture fields",

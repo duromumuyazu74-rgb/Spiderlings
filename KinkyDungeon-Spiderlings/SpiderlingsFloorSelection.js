@@ -8,7 +8,7 @@
     const KEEP_WEIGHT = 800;
     const settings = {
         SpiderlingsInfestation: { refvar: "spiderlingsInfestationWeight", default: 200 },
-        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 2000 },
+        SpiderlingsHuntingGrounds: { refvar: "spiderlingsHuntingGroundsWeight", default: 200 },
     };
 
     function weight(name) {
@@ -61,6 +61,14 @@
                     config[setting.refvar] = String(setting.default);
             }
             config.spiderlingsFloorWeights97 = true;
+            dirty = true;
+        }
+        // Both themes now share the ordinary-floor pool. Migrate the old default
+        // once; custom and disabled weights, and existing journey previews, stay intact.
+        if (!config.spiderlingsFloorWeights122) {
+            if (String(config.spiderlingsHuntingGroundsWeight).trim() === "2000")
+                config.spiderlingsHuntingGroundsWeight = "200";
+            config.spiderlingsFloorWeights122 = true;
             dirty = true;
         }
         // Persist markers too, so deliberate later changes survive reload.

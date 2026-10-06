@@ -2049,7 +2049,7 @@ test("floor weight defaults preserve saved zero, previous defaults and custom va
     const kd = nativePopulationRuntime();
     for (const [refvar, fallback] of [
         ["spiderlingsInfestationWeight", "200"],
-        ["spiderlingsHuntingGroundsWeight", "2000"],
+        ["spiderlingsHuntingGroundsWeight", "200"],
     ]) {
         const config = kd.KDModConfigs.Spiderlings.find((entry) => entry.type === "string" && entry.refvar === refvar);
         assert.equal(config.default, fallback);

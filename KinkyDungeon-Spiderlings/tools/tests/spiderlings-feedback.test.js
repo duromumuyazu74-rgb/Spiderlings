@@ -80,7 +80,11 @@ test("blindfold artwork covers foreground hair and brows without removing the ha
     for (const definition of definitions) {
         const model = definition.create(),
             layer = model.Layers.Blindfold;
-        assert.equal(layer.Layer, "Brows");
+        assert.equal(layer.Layer, "Blindfold");
+        assert.equal(layer.SwapLayerPose.XrayFace, "Blindfold");
+        assert.equal(Object.keys(layer.SwapLayerPose)[0], "XrayFace");
+        const category = model.Categories.find((name) => /^SpiderlingsWebbingLv[13]$/.test(name));
+        assert.equal(layer.SwapLayerPose[category], "Brows");
         assert.ok(layer.Pri > 0);
         assert.equal(layer.NoOverride, true);
         assert.equal(layer.HideOverrideLayer, "Blindfold");

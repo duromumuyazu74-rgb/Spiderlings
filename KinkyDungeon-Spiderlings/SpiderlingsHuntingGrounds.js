@@ -1170,7 +1170,7 @@
             get weight() {
                 return api.FloorSelection.weight(MOD);
             },
-            filter: (slot) => (slot?.y >= MIN_FLOOR && !slot.RoomType && slot.Faction === "Maidforce" ? 1 : 0),
+            filter: (slot) => (slot?.y >= MIN_FLOOR && !slot.RoomType && slot.Faction ? 1 : 0),
             tags: [],
             bonusTags: {},
             escapeMethod: MOD,

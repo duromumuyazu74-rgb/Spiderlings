@@ -257,7 +257,7 @@ KDModButtonspiderlingsSettingsBack,일반 설정으로
 KDModButtonspiderlingsSettingsFloorsHelp,새 층에 적용되는 가중치. 0이면 비활성화.
 KDModButtonspiderlingsSettingsNestsHelp,종류 가중치가 0이면 해당 지원군이 나오지 않습니다.
 KDModButtonspiderlingsSettingsGeneralHelp,특수 층은 고유 개체 수 예산을 유지합니다.
-KDModButtonspiderlingsSettingsHuntingHelp,사냥터: 5층부터 Maidforce 층에서만.
+KDModButtonspiderlingsSettingsHuntingHelp,두 거미 테마 모두 5층부터 일반 층에서 등장할 수 있습니다.
 KinkyDungeonCheckpointLoreSpiderlings,어린 거미 도감
 KDLoreTextspiderlings.Spinner,그물 가장자리를 살피는 발 사이로 가는 실이 떨린다. 방문자가 들어오면 느슨한 그물이 팽팽해진다. 몸부림치는 손님을 감쌀 때처럼 끈기 있게 끊어진 실을 수선한다.
 KDLoreTitlespiderlings.Spinner,새끼 거미 방적자

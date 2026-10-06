@@ -76,7 +76,7 @@ test("crew failure preserves unrelated hook births and restores previous nest ro
         c.KinkyDungeonSummonEnemy = (...args) => {
             calls++;
             if (calls === 1) c.KDMapData.Entities.push(unrelated);
-            if (calls === 7) {
+            if (calls === 4) {
                 if (failure === "empty") return [];
                 summon(...args);
                 throw error;
@@ -111,7 +111,7 @@ test("refused crew cleanup preserves the native error cause and reports the clea
 
 test("every required crew member fails atomically on empty, misplaced or extra native results", () => {
     for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
-        const required = kind === "SpiderlingsInfestation" ? 12 : 18;
+        const required = kind === "SpiderlingsInfestation" ? 6 : 18;
         for (const mode of ["empty", "misplaced", "extra"])
             for (let failed = 1; failed <= required; failed++) {
                 const r = runtime(kind),
@@ -159,7 +159,7 @@ test("a placement query reserves nothing and the birth request rechecks occupanc
         const point = positions[0][0];
         if (change === "occupancy") c.KDMapData.Entities.push({ ...point, id: 990, hp: 1, Enemy: { name: "Bandit" } });
         if (change === "wall") c.KinkyDungeonMapGet = (x, y) => (x === point.x && y === point.y ? "1" : "0");
-        if (change === "budget") settings.cap = 11;
+        if (change === "budget") settings.cap = 5;
         const actual = JSON.stringify(c.KDMapData.Entities);
         assert.equal(r.seed({ positions }).ok, false);
         assert.equal(JSON.stringify(c.KDMapData.Entities), actual);
@@ -247,4 +247,19 @@ test("separate patrol births retain separate shared crew identities", () => {
     }
     assert.equal(crews.size, 4);
     assert.ok([...crews.values()].every((crew) => crew.length === 6));
+});
+
+test("new Infestation nests have three guards while Hunting core nests retain six", () => {
+    for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
+        const r = runtime(kind),
+            result = r.seed(),
+            expected = kind === "SpiderlingsInfestation" ? 3 : 6;
+        assert.equal(result.ok, true);
+        assert.equal(result.coreIds.length, r.nests.length * expected);
+        for (const nest of r.nests) {
+            assert.equal(nest.SpiderlingsNestRosterTarget, expected);
+            assert.equal(r.c.KDMapData.Entities.filter((e) => e.SpiderlingsNestParentID === nest.id).length, expected);
+            assert.equal(r.api.missingRoles(nest).length, 0);
+        }
+    }
 });

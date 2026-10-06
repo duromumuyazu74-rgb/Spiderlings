@@ -844,7 +844,43 @@ test("the ten Lv1 models use delivered pose coverage without hiding existing clo
         false,
     );
     assert.equal("Poses" in Object.values(blindfoldModel.Layers)[0], false);
-    assert.equal(Object.values(blindfoldModel.Layers)[0].Layer, "Brows");
+    assert.equal(Object.values(blindfoldModel.Layers)[0].Layer, "Blindfold");
+});
+
+test("native layer selection preserves foreground blindfold coverage but joins face X-ray", () => {
+    const { context, models } = loadWebbingRuntime(),
+        { stripTypeScriptTypes } = require("node:module"),
+        source = fs.readFileSync(path.join(referenceRoot, "Data/Models.ts"), "utf8"),
+        original = source.match(/function LayerLayer\([^]*?\n\}/)?.[0];
+    assert.ok(original, "pinned native layer selector");
+    vm.runInContext(stripTypeScriptTypes(original), context);
+    for (const level of [1, 3]) {
+        const model = models.find((entry) => entry.Name === `SpiderlingsWebbingLv${level}BlindfoldModel`),
+            layer = Object.values(model.Layers)[0],
+            poses = Object.fromEntries(model.Categories.map((category) => [category, true]));
+        assert.equal(layer.Layer, "Blindfold", "Native dressing must detect the face covering from its physical layer");
+        assert.equal(context.LayerLayer({ Poses: poses }, layer, model), "Brows");
+        poses.Xray = true;
+        assert.equal(
+            context.LayerLayer({ Poses: poses }, layer, model),
+            "Brows",
+            "Body X-ray must retain the covering",
+        );
+        poses.XrayFace = true;
+        assert.equal(
+            context.LayerLayer({ Poses: poses }, layer, model),
+            "Blindfold",
+            "Face X-ray must use the native masked layer",
+        );
+        delete poses.Xray;
+        delete poses.XrayFace;
+        assert.equal(
+            context.LayerLayer({ Poses: poses }, layer, model),
+            "Brows",
+            "Switching off restores foreground coverage",
+        );
+        assert.notEqual(layer.NoErase, true, "Do not bypass the native face mask");
+    }
 });
 
 test("Lv1 Stuffing and Gag form an independently removable inner/outer mouth chain totaling 0.25 gag", () => {

@@ -93,13 +93,19 @@
         const cells =
                 passable || new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             start = cellKey(from),
-            goal = cellKey(to),
+            goals = new Set(
+                (Array.isArray(to) ? to : [to]).map(cellKey).filter((key) => cells.has(key) && !blocked.has(key)),
+            ),
             queue = [start],
             parent = new Map([[start, null]]);
-        if (!cells.has(start) || !cells.has(goal) || blocked.has(start) || blocked.has(goal)) return [];
+        if (!cells.has(start) || !goals.size || blocked.has(start)) return [];
+        let goal;
         for (let index = 0; index < queue.length; index++) {
             const current = queue[index];
-            if (current === goal) break;
+            if (goals.has(current)) {
+                goal = current;
+                break;
+            }
             if (neighbors) {
                 for (const neighbor of neighbors.get(current) || []) {
                     if (neighbor.corners?.some((corner) => blocked.has(corner))) continue;
@@ -125,7 +131,7 @@
                 }
             }
         }
-        if (!parent.has(goal)) return [];
+        if (!goal) return [];
         const path = [];
         for (let current = goal; current; current = parent.get(current)) {
             const [x, y] = current.split(",").map(Number);
@@ -1975,6 +1981,7 @@
                 : routeDistances(snapshot, work),
             entities = input.entities || KDMapData.Entities;
         let lines, enclosureGeometry;
+        const interceptionRoutes = new Map();
         // Share static geometry only within this turn; construction may change the next map snapshot.
         const signature = geometrySignature(snapshot),
             currentLines = () => {
@@ -2030,7 +2037,10 @@
                     !candidate.cells.some((cell) => occupied.has(cellKey(cell))),
             );
             const legalPassages = available.filter((candidate) => candidate.type === "passage");
-            return legalPassages.length ? legalPassages : available;
+            const largeEnclosures = available.filter(
+                (candidate) => candidate.type === "enclosure" && candidate.radius >= 3,
+            );
+            return largeEnclosures.length ? largeEnclosures : legalPassages.length ? legalPassages : available;
         };
         api.FieldProjects.update(encounter, {
             distances,
@@ -2054,10 +2064,12 @@
                         (!api.SpinnerNativeField.snapshot(action.cell).actorOccupied ||
                             status.allowsOccupiedTarget ||
                             cellKey(member) === cellKey(action.cell)) &&
-                        workCells(action.cell, snapshot, member).some(
-                            (cell) =>
-                                Number.isFinite(distances(member, cell)) && occupancyRoute(member, cell).length > 0,
-                        )
+                        occupancyRoute(
+                            member,
+                            workCells(action.cell, snapshot, member).filter((cell) =>
+                                Number.isFinite(distances(member, cell)),
+                            ),
+                        ).length > 0
                     )
                         return true;
                     action = nextGroupWork(encounter, group, member, [...skipped]);
@@ -2077,11 +2089,14 @@
             },
             intercepts: (plan, target) =>
                 plan.kind === "passage" &&
-                (snapshot.exits || []).some((exit) =>
-                    routeOnSnapshot(snapshot, target, exit).some((cell) =>
-                        plan.interiorCells.some((inside) => cellKey(inside) === cellKey(cell)),
-                    ),
-                ),
+                (snapshot.exits || []).some((exit) => {
+                    const key = `${cellKey(target)}:${cellKey(exit)}`;
+                    if (!interceptionRoutes.has(key)) {
+                        work.routeChecks++;
+                        interceptionRoutes.set(key, new Set(routeOnSnapshot(snapshot, target, exit).map(cellKey)));
+                    }
+                    return plan.interiorCells.some((cell) => interceptionRoutes.get(key).has(cellKey(cell)));
+                }),
             lineFixture: Object.hasOwn(snapshot, "candidateLines"),
             members: (group) =>
                 group.memberIds
@@ -2676,12 +2691,7 @@
             ]),
             passable = new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey));
         const destinations = Array.isArray(destination) ? destination : [destination];
-        return (
-            destinations
-                .map((point) => routeOnSnapshot(snapshot, enemy, point, blocked, passable))
-                .filter((path) => path.length)
-                .sort((a, b) => a.length - b.length)[0] || []
-        );
+        return routeOnSnapshot(snapshot, enemy, destinations, blocked, passable);
     }
 
     // Facts and paid executors are native adapters; final priority and phase permission live in Duties.

@@ -15,12 +15,14 @@
         ).join("\n") + "\n";
     KDMapData.Tiles = {};
     KDMapData.StartPosition = { x: 1, y: 7 };
-    KDMapData.EndPosition = { x: 5, y: 7 };
+    KDMapData.EndPosition = { x: 31, y: 7 };
     KDMovePlayer(4, 7, false);
     spawn("Spinner", 3, 7).hostile = 999;
     const largeFirst = Spiderlings.SpinnerAI.beginTurn({ activate: true });
     expect(
-        Object.values(largeFirst.plans).some((plan) => plan.radius === 4),
+        Object.values(largeFirst.plans).some(
+            (plan) => plan.kind === "enclosure" && plan.radius === 4 && plan.fieldIds.length === 3,
+        ),
         `Nearby small pocket hid a reachable large field: ${JSON.stringify(largeFirst.plans)}`,
     );
     expect(
@@ -75,6 +77,23 @@
         for (let step = 0; step < 30; step++) await turn();
         const live = Spiderlings.SpinnerNativeField.state();
         expect(live.ai.plans[planId], "Expansion discarded the original invested project");
+        expect(
+            Object.values(live.ai.plans).filter((plan) => !["invalid", "abandoned"].includes(plan.status)).length <= 3,
+            "Independent field projects exceeded the map limit",
+        );
+        if (count === 4) {
+            for (let step = 0; step < 160; step++) {
+                const fields = live.ai.plans[planId].fieldIds.map((id) => live.topology.fields[id]);
+                if (fields.every((field) => ["ready", "sealed"].includes(field.phase))) break;
+                await turn();
+            }
+            expect(
+                live.ai.plans[planId].fieldIds.every((id) =>
+                    ["ready", "sealed"].includes(live.topology.fields[id].phase),
+                ),
+                "The supplied crew stalled before completing all three rings",
+            );
+        }
         expect(
             live.topology.actionLog.some((entry) => ai.plans[planId].fieldIds.includes(entry.fieldId)),
             "The retained main crew never paid to advance its large field",

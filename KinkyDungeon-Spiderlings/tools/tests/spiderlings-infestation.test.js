@@ -124,7 +124,7 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
     assert.equal(mod.filter({ y: 5, Faction: "Maidforce" }), 1);
     assert.equal(mod.filter({ y: 5, RoomType: "PerkRoom" }), 0);
     assert.equal(r.generate(), "native-result");
-    assert.equal(r.context.KDMapData.Entities.length, 17);
+    assert.equal(r.context.KDMapData.Entities.length, 11);
     const nests = r.context.KDMapData.Entities.filter((entity) => entity.Enemy.name === "NestEntrance");
     assert.deepEqual(
         nests
@@ -140,7 +140,7 @@ test("native modifier selects eligible floors and adds five grouped nests alongs
     assert.equal(r.population[0][7], undefined, "keep the native population budget");
     r.generate();
     r.event("postMapgen");
-    assert.equal(r.context.KDMapData.Entities.length, 17);
+    assert.equal(r.context.KDMapData.Entities.length, 11);
     assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsInfestation.filterRandom(), 0);
 });
 
@@ -348,7 +348,7 @@ test("maid floors have no infestation objective; infestation floors place five n
     r.context.KDMapData.MapMod = "SpiderlingsInfestation";
     r.context.KDMapData.MapFaction = "Bandit";
     r.generate();
-    assert.equal(r.context.KDMapData.Entities.length, 17);
+    assert.equal(r.context.KDMapData.Entities.length, 11);
     assert.equal(r.context.Spiderlings.Infestation.activeState().targetIds.length, 5);
 });
 
@@ -470,7 +470,7 @@ test("map JSON preserves partial and completed progress, registration is idempot
     const snapshot = JSON.stringify(c.KDMapData);
     c.KDMapData = JSON.parse(snapshot);
     r.generate();
-    assert.equal(c.KDMapData.Entities.length, 16);
+    assert.equal(c.KDMapData.Entities.length, 10);
     assert.match(c.KinkyDungeonEscapeTypes.SpiderlingsInfestation.minimaptext(), /1\/5/);
     for (const entity of [...c.KDMapData.Entities]) c.KDRemoveEntity(entity, true);
     c.KDMapData = JSON.parse(JSON.stringify(c.KDMapData));

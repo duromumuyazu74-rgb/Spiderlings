@@ -7,9 +7,10 @@
         if (data.enemy.id === cancelledId) data.cancel = true;
     });
     try {
-        for (const [modifier, count] of [
-            ["SpiderlingsHuntingGrounds", 3],
-            ["SpiderlingsInfestation", 5],
+        for (const [modifier, count, faction] of [
+            ["SpiderlingsHuntingGrounds", 3, "Maidforce"],
+            ["SpiderlingsHuntingGrounds", 3, "Bandit"],
+            ["SpiderlingsInfestation", 5, "Maidforce"],
         ]) {
             const seed =
                 modifier === "SpiderlingsHuntingGrounds"
@@ -27,14 +28,26 @@
                 5,
                 false,
                 false,
-                "Maidforce",
+                faction,
                 { x: 6, y: 5 },
                 false,
             );
             const map = KDMapData,
                 state = map[modifier];
-            const row = { modifier, target: state?.target, initialIds: [...(state?.targetIds || [])] };
+            const row = { modifier, faction, target: state?.target, initialIds: [...(state?.targetIds || [])] };
             report.objectives.push(row);
+            expect(map.MapFaction === faction, "The selected theme replaced its native primary faction");
+            if (modifier === "SpiderlingsHuntingGrounds") {
+                const spiders = map.Entities.filter(
+                    (entity) =>
+                        entity.hp > 0 &&
+                        ["Spinner", "Jumper", "WebCaster", "MageSpiderlings", "Tunneler"].includes(entity.Enemy.name),
+                );
+                expect(
+                    spiders.length === Spiderlings.getMapPopulationCap(),
+                    "An occupied Hunting Grounds floor missed its spider budget",
+                );
+            }
             expect(
                 state?.status === "active" && state.targetIds.length === count,
                 `${modifier} did not generate ${count} objectives`,
@@ -54,6 +67,17 @@
                     !state.targetIds.includes(actor.SpiderlingsNestParentID)
                 )
                     KDRemoveEntity(actor, false, false);
+            }
+            if (modifier === "SpiderlingsInfestation") {
+                expect(state.coreIds.length === 6, "Infestation kept the old twelve-member core garrison");
+                expect(
+                    state.coreNestIds.every(
+                        (id) =>
+                            map.Entities.filter((entity) => entity.hp > 0 && entity.SpiderlingsNestParentID === id)
+                                .length === 3,
+                    ),
+                    "New Infestation core Nests did not start with three guards each",
+                );
             }
             const nest = map.Entities.find((enemy) => enemy.id === state.targetIds[0]);
             cancelledId = nest.id;

@@ -8,7 +8,8 @@
             const modes =
                 theme === "SpiderlingsHuntingGrounds" ? ["budget", "required", "patrol"] : ["budget", "required"];
             for (const mode of modes) {
-                KDModSettings.Spiderlings.spiderlingsMapPopulationCap = mode === "budget" ? 11 : 25;
+                KDModSettings.Spiderlings.spiderlingsMapPopulationCap =
+                    mode === "budget" ? (theme === "SpiderlingsInfestation" ? 5 : 11) : 25;
                 // This native seed supplies both large Hunting Grounds sites in both supported runtimes.
                 const seed = "normal-acceptance-grv-5-6";
                 globalThis.compatibilitySetSeed(seed);
@@ -18,7 +19,14 @@
                 globalThis.compatibilitySetSeed(seed);
                 const original = KinkyDungeonSummonEnemy;
                 let attempts = 0;
-                const rejectedAt = mode === "required" ? 7 : mode === "patrol" ? 20 : Infinity;
+                const rejectedAt =
+                    mode === "required"
+                        ? theme === "SpiderlingsInfestation"
+                            ? 4
+                            : 7
+                        : mode === "patrol"
+                          ? 20
+                          : Infinity;
                 const born = [],
                     existing = [];
                 const originalSeedCrews = Spiderlings.Population.seedCrews;
@@ -150,7 +158,7 @@
                         "Required crew failure retained a member of its partial batch",
                     );
                     expect(
-                        !KDMapData.Entities.some((enemy) => enemy.SpiderlingsNestRosterTarget === 6),
+                        !KDMapData.Entities.some((enemy) => [3, 6].includes(enemy.SpiderlingsNestRosterTarget)),
                         "Cancelled theme retained a required roster nest",
                     );
                 }

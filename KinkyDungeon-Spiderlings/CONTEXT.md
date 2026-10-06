@@ -11,18 +11,18 @@ Restraint `Desc` and `Desc2` describe the item's own material, form, coverage, t
 ## Spiderlings encounters
 
 **Spiderling Hunting Grounds (幼蛛猎场)**:
-A post-first-boss, Maidforce-qualified floor occupied by Spiderlings, with three objective nests, at least two large staffed capture fields and dispersed legal NPC prey. Fresh maps provide three six-member nest crews, additional patrol crews and mobile spiders up to the global map setting plus twenty. With the default setting of 25, the population target is 45 spiders, five elite Maids, one Dressmaker and one Nurse. Existing independent mobile guards count toward their faction quota before new residents are added; required scene births can exceed a prey quota. Mobile combat NPCs count toward the ecology even when neutral to the player; protected authored actors retain their rules and structures are excluded.
+A post-first-boss ordinary floor occupied by Spiderlings, retaining its native primary faction, with three objective nests, at least two large staffed capture fields and dispersed legal NPC prey. Fresh maps provide three six-member nest crews, additional patrol crews and mobile spiders up to the global map setting plus twenty. With the default setting of 25, the population target is 45 spiders, five elite Maids, one Dressmaker and one Nurse. Existing independent mobile guards count toward their faction quota before new residents are added; required scene births can exceed a prey quota. Mobile combat NPCs count toward the ecology even when neutral to the player; protected authored actors retain their rules and structures are excluded.
 _Avoid_: every NPC is a spider, one isolated arena, rewriting visited maps
 
 **Spiderling Infestation (幼蛛侵扰)**:
-The separate five-nest floor that preserves the native primary faction while two mixed six-member spider crews establish an expanding presence. Fresh maps target at least 50% Spiderlings among mobile combat enemies hostile to the player; existing objective groups and saved maps keep their history.
+The separate five-nest floor that preserves the native primary faction while two three-member spider crews (Spinner, Jumper and WebCaster) establish an expanding presence. Fresh maps target at least 50% Spiderlings among mobile combat enemies hostile to the player; existing objective groups and saved maps keep their history.
 
 **Special-floor selection**:
-The native journey's choice of an eligible Spiderling theme, with fresh default Infestation/Hunting Grounds weights of 200/2000 against keep-native 800. Zero disables that selection, saved custom values persist, and the weights apply to newly generated journeys rather than forcing a percentage of every biome or visited floor.
+The native journey's choice of an eligible Spiderling theme, with fresh default Infestation/Hunting Grounds weights of 200/200 against keep-native 800 in the same ordinary-floor pool. Zero disables that selection, saved custom values persist, and the weights apply to newly generated journeys rather than forcing a percentage of every biome or visited floor.
 
 **Special-floor population (特殊楼层人口)**:
 The theme-specific mix of necessary nest crews, optional roaming crews and eligible native arrivals within the shared population budget. A required crew is born complete or its newly created members are removed; this does not mean restoring terrain already opened for the theme. Objective nests, escape progress and later nest reinforcement retain their distinct roles.
-`Spiderlings.Population` owns budget interpretation, initial crews and failed-birth cleanup. Floor modules own objective IDs and theme state. Each initial nest crew has two Spinners, one Jumper, two WebCasters and one Mage; the optional starting perk squad has a different composition. Original objective nests carry native red minimap quest markers. Later ordinary nests do not increase the descent quota.
+`Spiderlings.Population` owns budget interpretation, initial crews and failed-birth cleanup. Floor modules own objective IDs and theme state. Each initial Hunting Grounds nest crew has two Spinners, one Jumper, two WebCasters and one Mage; an Infestation core Nest has one Spinner, one Jumper and one WebCaster; the optional starting perk squad has a different composition. Original objective nests carry native red minimap quest markers. Later ordinary nests do not increase the descent quota.
 _Avoid_: whole-map rollback, global spider scheduler, treating optional patrol failure as required-crew failure
 
 **Special-floor prebuilt outer field**:
@@ -267,3 +267,5 @@ Further weaving of the same fixed spell circle through its native weapon button 
 **Weapon sustain**:
 Limited resource recovery from an effective paid hit and each independent prey's first lifetime complete owned-silk cocoon. Empty or unchanged hits, repeated recapture and player-created summons provide no renewable reward; spell mana recovery stays within half the actual paid cost and the convergence circle's final cap.
 _Avoid_: repeatable mana extraction, invented free-spell mana cost, reward from unrelated binding
+
+Independent active field projects are limited to three per map; concentric rings belong to one project. Existing invested saved projects above the limit retain their work, and new independent sites wait. Large reachable enclosures (radius at least three) precede passage fallback. Regional movement searches all legal destination cells in one breadth-first search, rechecking current actor occupancy.

@@ -163,7 +163,9 @@ test("both themes preserve population-plan publication, objective timing and sel
                     plan: c.KDMapData.SpiderlingsPopulationPlan?.kind,
                     state: c.KDMapData[kind]?.status,
                 });
-                return fail && args[2] === "MageSpiderlings" ? [] : summon(...args);
+                return fail && args[2] === (kind === "SpiderlingsInfestation" ? "WebCaster" : "MageSpiderlings")
+                    ? []
+                    : summon(...args);
             };
             let nativeFilters;
             c.populationAction = () => {
@@ -210,7 +212,7 @@ test("required crew failure keeps the theme's existing terrain result", () => {
             summon = c.KinkyDungeonSummonEnemy;
         c.KDMapData.MapMod = c.KDGameData.MapMod = kind;
         c.KinkyDungeonSummonEnemy = (...args) => {
-            if (args[2] === "MageSpiderlings") return [];
+            if (args[2] === (kind === "SpiderlingsInfestation" ? "WebCaster" : "MageSpiderlings")) return [];
             const born = summon(...args);
             if (
                 args[2] === "NestEntrance" &&
@@ -239,7 +241,7 @@ test("native crew exceptions remove only the failed theme's births and still pro
         c.KDMapData.Entities.push(resident);
         c.KinkyDungeonSummonEnemy = (...args) => {
             const born = summon(...args);
-            if (args[2] === "MageSpiderlings") throw failure;
+            if (args[2] === (kind === "SpiderlingsInfestation" ? "WebCaster" : "MageSpiderlings")) throw failure;
             return born;
         };
         assert.throws(
@@ -271,7 +273,7 @@ test("objective cleanup attempts every nest and cancels the floor without maskin
                 c.KDMapData.EscapeMethod = kind;
                 c.KDMapData.Entities.push(resident);
                 c.KinkyDungeonSummonEnemy = (...args) => {
-                    if (args[2] === "MageSpiderlings") {
+                    if (args[2] === (kind === "SpiderlingsInfestation" ? "WebCaster" : "MageSpiderlings")) {
                         if (throwBirth) throw birthFailure;
                         return [];
                     }
@@ -314,7 +316,7 @@ test("objective cleanup attempts every nest and cancels the floor without maskin
 test("old Infestation and Hunting Grounds register independently in one Mod", () => {
     const r = runtime({}, [], true);
     assert.equal(r.context.KDMapMods.SpiderlingsInfestation.weight, 200);
-    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 2000);
+    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.weight, 200);
     r.generate();
     assert.equal(r.context.KDMapData.SpiderlingsHuntingGrounds.targetIds.length, 3);
     assert.equal(r.context.KDMapData.SpiderlingsInfestation, undefined);
@@ -538,7 +540,7 @@ test("a mobile NPC blocking a required large prefab cancels the objective but re
 test("native modifier adds three independent nests and eighteen attributable core members and a six-member patrol", () => {
     const r = runtime();
     const mod = r.context.KDMapMods.SpiderlingsHuntingGrounds;
-    assert.equal(mod.weight, 2000);
+    assert.equal(mod.weight, 200);
     assert.equal(mod.faction, undefined);
     assert.equal(mod.filter({ y: 2 }), 0);
     assert.equal(mod.filter({ y: 5 }), 0);
@@ -683,7 +685,7 @@ function nativeJourneyRuntime(overrides = {}, withOld = false) {
     );
 }
 
-test("higher defaults increase both spider floors across complete native journeys", (t) => {
+test("equal defaults produce equal spider themes across complete native journeys", (t) => {
     const game = require("../reference-inputs.js").gamePath();
     const read = (name) => fs.readFileSync(path.join(game, name), "utf8").replaceAll("\r", "");
     const declaration = (text, name) => {
@@ -735,12 +737,12 @@ test("higher defaults increase both spider floors across complete native journey
             KDMapModRefreshList = [];
             KDInitJourneyMap(0);
             for (const slot of Object.values(KDGameData.JourneyMap)) {
-                if (slot.type !== "basic" || slot.y < 3 || slot.RoomType || KDIsHellFloor(slot.y)) continue;
+                if (slot.type !== "basic" || slot.y < 5 || slot.RoomType || KDIsHellFloor(slot.y)) continue;
                 counts.nodes++;
                 counts.biomes[slot.Checkpoint] = (counts.biomes[slot.Checkpoint] || 0) + 1;
                 if (slot.MapMod === "SpiderlingsInfestation") counts.infestation++;
                 if (slot.MapMod === "SpiderlingsHuntingGrounds") {
-                    if (slot.Faction !== "Maidforce") throw new Error("Hunting Grounds changed faction");
+                    if (!slot.Faction) throw new Error("Hunting Grounds lost its native faction");
                     counts.hunting++;
                 }
             }
@@ -749,11 +751,11 @@ test("higher defaults increase both spider floors across complete native journey
     })()`,
         r.context,
     );
-    assert.equal(counts.nodes, 260000);
+    assert.ok(counts.nodes > 200000);
     assert.ok(Object.keys(counts.biomes).length > 4, "retain the native biome distribution");
     assert.ok(counts.infestation / counts.nodes > 0.15 && counts.infestation / counts.nodes < 0.22);
     const ratio = counts.hunting / counts.infestation;
-    assert.ok(ratio > 0.2 && ratio < 0.4, JSON.stringify(counts));
+    assert.ok(ratio > 0.97 && ratio < 1.03, JSON.stringify(counts));
     t.diagnostic(JSON.stringify(counts));
 });
 
@@ -777,7 +779,7 @@ test("both floor labels obey native journey selection together", (t) => {
             const slot = KDJourneySlotTypes.basic(null, 0, 5, "grv");
             counts[slot.MapMod] = (counts[slot.MapMod] || 0) + 1;
             if (slot.MapMod.startsWith("Spiderlings") &&
-                ((slot.MapMod === "SpiderlingsHuntingGrounds" && slot.Faction !== "Maidforce") || slot.EscapeMethod !== slot.MapMod))
+                (!slot.Faction || slot.EscapeMethod !== slot.MapMod))
                 throw new Error("Spider modifier lost its faction or objective");
         }
         return counts;
@@ -805,7 +807,7 @@ test("native journey rejects a cached infestation through the first boss floor a
     assert.ok(!remaining.includes("SpiderlingsHuntingGrounds"));
     const eligible = vm.runInContext(
         `
-        KDRandom = () => 0.25;
+        KDRandom = () => 0.1;
         KDMapModRefreshList = [KDMapMods.Mold];
         KDJourneySlotTypes.basic(null, 0, 5, "grv");
     `,
@@ -849,7 +851,7 @@ test("spider selection preserves every native primary faction and sets the objec
     }
 });
 
-test("Hunting Grounds only replaces a Maidforce primary faction even with an overwhelming weight", () => {
+test("Hunting Grounds retains every native primary faction when its theme is selected", () => {
     const r = nativeJourneyRuntime({ CommonRandomItemFromList: () => "Bandit", KDRandom: () => 0.25 }, true);
     const c = r.context;
     c.Spiderlings.getSetting = (name) => (name === "spiderlingsInfestationWeight" ? "0" : "1000000");
@@ -858,7 +860,7 @@ test("Hunting Grounds only replaces a Maidforce primary faction even with an ove
             `KDMapModRefreshList = [KDMapMods.${base}]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
             c,
         );
-        assert.equal(slot.MapMod, base === "Mold" ? "SpiderlingsHuntingGrounds" : base);
+        assert.equal(slot.MapMod, "SpiderlingsHuntingGrounds");
         assert.equal(slot.Faction, c.KDMapMods[base].faction || "Bandit");
     }
 });
@@ -881,7 +883,7 @@ test("floor weights take effect on the next draw, zero disables, and invalid inp
     for (const bad of ["", "-1", "1.5", "Infinity", "garbage", "9007199254740992"]) {
         settings.spiderlingsInfestationWeight = settings.spiderlingsHuntingGroundsWeight = bad;
         assert.equal(c.KDMapMods.SpiderlingsInfestation.weight, 200, bad);
-        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 2000, bad);
+        assert.equal(c.KDMapMods.SpiderlingsHuntingGrounds.weight, 200, bad);
     }
 });
 
