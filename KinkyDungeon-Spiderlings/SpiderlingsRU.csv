@@ -257,7 +257,7 @@ KDModButtonspiderlingsSettingsBack,К общим настройкам
 KDModButtonspiderlingsSettingsFloorsHelp,Веса для новых этажей. 0 отключает тему.
 KDModButtonspiderlingsSettingsNestsHelp,Вес вида 0 исключает его из подкреплений.
 KDModButtonspiderlingsSettingsGeneralHelp,Тематические этажи сохраняют свои лимиты.
-KDModButtonspiderlingsSettingsHuntingHelp,Угодья: этажи Maidforce начиная с 5-го.
+KDModButtonspiderlingsSettingsHuntingHelp,Обе паучьи темы появляются на обычных этажах начиная с 5-го.
 KinkyDungeonCheckpointLoreSpiderlings,Бестиарий паучат
 KDLoreTextspiderlings.Spinner,"Тонкие нити дрожат между лапками, пока он проверяет края сети. Когда гость входит, рыхлая сетка натягивается. Порванную нить он чинит с тем же терпением, с которым обматывает извивающегося гостя."
 KDLoreTitlespiderlings.Spinner,Паучонок-прядильщик

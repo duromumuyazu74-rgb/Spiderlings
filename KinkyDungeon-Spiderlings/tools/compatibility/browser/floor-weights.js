@@ -16,7 +16,7 @@
             "Saved infestation default was not upgraded",
         );
         expect(
-            Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 2000,
+            Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 200,
             "Saved hunting default was not upgraded",
         );
         for (let seed = 0; seed < 12; seed++) {
@@ -33,8 +33,8 @@
                 "Invalid special journey slot",
             );
             expect(
-                special.filter((s) => s.MapMod === "SpiderlingsHuntingGrounds").every((s) => s.Faction === "Maidforce"),
-                "Hunting selection replaced primary faction",
+                special.every((s) => !!s.Faction),
+                "Spider theme lost its native faction",
             );
             rows.push({
                 seed,
@@ -42,6 +42,20 @@
                 hunting: special.filter((s) => s.MapMod === "SpiderlingsHuntingGrounds").length,
             });
         }
+        const totals = rows.reduce(
+            (sum, row) => ({ infestation: sum.infestation + row.infestation, hunting: sum.hunting + row.hunting }),
+            { infestation: 0, hunting: 0 },
+        );
+        expect(
+            Math.abs(totals.infestation - totals.hunting) < Math.max(15, totals.infestation * 0.25),
+            "Native journey themes missed frequency parity",
+        );
+        for (const faction of ["Maidforce", "Bandit", "Nevermere"])
+            expect(
+                KDMapMods.SpiderlingsInfestation.filter({ y: 5, Faction: faction }) ===
+                    KDMapMods.SpiderlingsHuntingGrounds.filter({ y: 5, Faction: faction }),
+                "The themes still use different ordinary-floor pools",
+            );
         KDGameData.JourneyY = 12;
         delete KDGameData.SpiderlingsFloorWeights90;
         const oldRandom = KDRandom;
@@ -101,7 +115,7 @@
         KinkyDungeonSendEvent("afterLoadGame", {});
         expect(
             Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200 &&
-                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 2000,
+                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 200,
             "Older defaults did not reach current defaults",
         );
         expect(JSON.stringify(KDGameData.JourneyMap) === before, "Changed defaults rerolled a migrated journey");
@@ -117,8 +131,8 @@
         KinkyDungeonSendEvent("afterModSettingsLoad", {});
         expect(
             Spiderlings.FloorSelection.weight("SpiderlingsInfestation") === 200 &&
-                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 2000,
-            "Test.97 did not restore 200/2000",
+                Spiderlings.FloorSelection.weight("SpiderlingsHuntingGrounds") === 200,
+            "Defaults did not reach equal current weights",
         );
         expect(JSON.stringify(KDGameData.JourneyMap) === before, "Test.97 rerolled an existing journey");
         return { rows, migration: KDGameData.SpiderlingsFloorWeights90 };

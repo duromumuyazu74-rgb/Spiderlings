@@ -35,7 +35,7 @@ function fixture(config = { spiderlingsInfestationWeight: "50", spiderlingsHunti
             get weight() {
                 return c.Spiderlings.FloorSelection.weight(name);
             },
-            filter: (s) => (s.Faction && (name === "SpiderlingsInfestation" || s.Faction === "Maidforce") ? 1 : 0),
+            filter: (s) => (s.Faction ? 1 : 0),
         };
     vm.createContext(c);
     vm.runInContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8"), c);
@@ -64,7 +64,7 @@ const slot = (y, extra = {}) => ({
 test("test90 upgrades the two old floor defaults once and persists deliberate later settings", () => {
     const r = fixture();
     assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "200");
     assert.equal(r.writes.length, 1);
     assert.equal(JSON.parse(r.writes[0].value).OtherMod.chance, 0.7);
     const persisted = JSON.parse(r.writes[0].value).Spiderlings;
@@ -83,7 +83,7 @@ test("test90 retains disabled and custom values and handles native settings load
     r.c.KDModSettings.Spiderlings = { spiderlingsInfestationWeight: 50, spiderlingsHuntingGroundsWeight: 1000 };
     r.event("afterModSettingsLoad");
     assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "200");
 });
 test("test90 supplements only untouched future ordinary previews once, protecting cached maps even with visited false", () => {
     const r = fixture(),
@@ -141,7 +141,7 @@ test("test91 lowers saved test90 defaults once without redrawing its journey", (
         spiderlingsFloorWeights90: { changed: ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"] },
     });
     assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "200");
     r.c.KDGameData.SpiderlingsFloorWeights90 = true;
     r.c.KDGameData.JourneyMap.future = slot(13);
     r.event("afterLoadGame");
@@ -163,7 +163,7 @@ test("test97 restores saved lower defaults once and preserves zero and custom we
         spiderlingsFloorWeights91: true,
     });
     assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "200");
-    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "200");
     const saved = JSON.parse(r.writes[0].value).Spiderlings;
     saved.spiderlingsInfestationWeight = "180";
     saved.spiderlingsHuntingGroundsWeight = "0";
@@ -171,4 +171,24 @@ test("test97 restores saved lower defaults once and preserves zero and custom we
     assert.equal(reload.c.KDModSettings.Spiderlings.spiderlingsInfestationWeight, "180");
     assert.equal(reload.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "0");
     assert.equal(reload.writes.length, 0);
+});
+
+test("equal pool defaults migrate once and preserve later explicit hunting weights", () => {
+    const r = fixture({
+        spiderlingsInfestationWeight: "200",
+        spiderlingsHuntingGroundsWeight: "2000",
+        spiderlingsFloorWeights90: {},
+        spiderlingsFloorWeights91: true,
+        spiderlingsFloorWeights97: true,
+    });
+    assert.equal(r.c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "200");
+    const saved = JSON.parse(r.writes[0].value).Spiderlings;
+    saved.spiderlingsHuntingGroundsWeight = "2000";
+    assert.equal(fixture(saved).c.KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight, "2000");
+    for (const value of ["0", "73", "750"])
+        assert.equal(
+            fixture({ spiderlingsInfestationWeight: "200", spiderlingsHuntingGroundsWeight: value }).c.KDModSettings
+                .Spiderlings.spiderlingsHuntingGroundsWeight,
+            value,
+        );
 });

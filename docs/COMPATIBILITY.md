@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.120.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.123.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.123 field consolidation, floor ecology and native face X-ray (2026-10-06)
+
+The same final ZIP passes all 53 native stages on KD 5.4.92 and latest official 5.5.3, including seven language loads per game. Official `5.5` commit `6d5973adb1eee27f681181afa52119abccb343a2` was freshly fetched at `2026-10-06T08:00:06.958Z`. Full acceptance is `<cache>/runs/2026-10-06T08-00-06-973Z-0.92.36-test.123/acceptance.json`. Final ZIP: 175 allowlisted entries, 24,864,221 bytes; SHA-256 `24e3831a4e04231ee4d1d4bd686daedc5445049ced737d945248773687d70cef`.
+
+Large reachable enclosures precede passage fallback, and new independent projects stop at three per map. Rings share a project slot; invested saved projects remain. Regional movement searches legal destinations together, while character-to-exit planning paths are shared only within the current turn. The field-command scene verifies paid completion of all three rings by four real Spinners, legitimate two-project staffing with eight workers, action costs and protected slow-travel credit waits. Existing capture, repair, recovery and save/load scenes remain passing.
+
+New Infestation core Nests start with three guards each, six total; Hunting Grounds retains six each and its default 45-spider budget. Native objective generation verifies both Maidforce and Bandit Hunting maps retain their primary faction and spider budget. Both themes share the ordinary-floor pool from floor five with defaults 200/200. Twelve native journeys per game produce Infestation/Hunting counts of 105/111 on 5.4.92 and 137/115 on 5.5.3. These samples support the equal selection rule; they are not a guarantee for one journey. Old six-member saved crews and entered maps remain intact; the new weight migration does not reroll existing previews.
+
+Ordinary and dense silk blindfolds retain foreground hair/brow coverage in modes 0/1 and use native face X-ray masking in mode 2. Both colors and linked inner coverings are checked through the real 0/1/2/0 toggle and native dressing, with 28 observations per game and unchanged gameplay blindness. The production regression uses the pinned native layer selector. See the [blindfold rule](spiderlings-test121-blindfold-xray.zh-CN.md).
+
+Two sequential 35-turn native performance comparisons show lower measured mean turn time after the routing changes; exact scene counts and sampling limits are recorded in the [construction and floor report](spiderlings-test123-field-ecology.zh-CN.md). The latest copied desktop save contains no Spinner or field and does not match the reported screenshot. The specific stalled encounter is not reproduced, so #127 retains that acceptance gap. Native three-ring completion does not establish its cause. Original desktop saves were preserved.
+
+Repository checks, 12 policy tests, 642 public tests, the complete 966-test local watcher and exact ZIP verification pass. The full collector imports both complete native records and reports stable source/ZIP bytes: `.scratch/delivery/2026-10-06T08-09-04-699Z-lFy2vO/REPORT.md`. Only outcome documentation and the native sample counts were corrected afterward, followed by repository and whitespace checks. The settings catalogue also resets Hunting weight to 200.
 
 ## Test.120 field progress, loan reassessment and final duties (2026-10-06)
 

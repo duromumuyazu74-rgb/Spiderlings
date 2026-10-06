@@ -3,6 +3,7 @@
 // Continuous demand, investment and real workforce are assessed together, not by independent site callers.
 (() => {
     const api = globalThis.Spiderlings;
+    const MAX_PROJECTS = 3;
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
     function workforce(plan, needs, fields = []) {
@@ -21,6 +22,11 @@
             command = api.FieldCommand,
             state = command.ensure(encounter);
         const positions = command.positions(encounter);
+        const activeProjects = () =>
+            Object.values(ai.groups).filter((group) => {
+                const plan = ai.plans[group.planId];
+                return plan && !["invalid", "abandoned"].includes(plan.status) && !group.cancelled;
+            });
         ai.projects ||= { version: 1, coverage: [], unmet: [] };
         // Global position knowledge is planning-only. It never creates a native engagement or attack awareness.
         ai.projects.positions = positions;
@@ -86,7 +92,12 @@
                     members.some((member) => Number.isFinite(planner.distances(member, point)))
                 );
             });
-            if (!plan && members.length && !existing) {
+            if (
+                !plan &&
+                members.length &&
+                !existing &&
+                (planner.lineFixture || activeProjects().length < MAX_PROJECTS)
+            ) {
                 if (api.SpinnerRecovery?.needsField?.())
                     group.recoveryAround = positions.find((target) => target.target.kind === "player");
                 planner.start(group);
@@ -189,6 +200,7 @@
         // Supplied line fixtures describe legacy diagnostic fields, not a normal-map area planner.
         if (!planner.lineFixture && active.length)
             for (const target of unmet) {
+                if (active.length >= MAX_PROJECTS) break;
                 if (covered(target)) continue;
                 const supply = command.offers(encounter, target, planner.distances);
                 if (!supply.members.length) continue;
@@ -232,5 +244,5 @@
         return ai.projects;
     }
 
-    api.FieldProjects = { update };
+    api.FieldProjects = { update, MAX_PROJECTS };
 })();

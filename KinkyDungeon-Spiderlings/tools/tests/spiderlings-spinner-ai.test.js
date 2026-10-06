@@ -4385,3 +4385,83 @@ test("large project crews finish staffing before independent expansion borrows s
         assert.equal(encounter.topology.actionLog.length, 0, "Staffing cannot build for free");
     }
 });
+
+test("a large layered enclosure outranks a small legal passage on the same route", () => {
+    const r = runtime([spinner(1, 3, 7)]),
+        c = r.context;
+    c.KDMapData.GridWidth = 36;
+    c.KDMapData.GridHeight = 20;
+    c.KinkyDungeonMapGet = (x, y) =>
+        (x >= 1 && x <= 7 && y >= 4 && y <= 10) ||
+        (x >= 18 && x <= 33 && y >= 2 && y <= 16) ||
+        (y === 7 && x >= 1 && x <= 33)
+            ? "0"
+            : "1";
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 4, y: 7 });
+    const snapshot = {
+        width: 36,
+        height: 20,
+        cells: [],
+        entrances: [{ x: 1, y: 7 }],
+        exits: [{ x: 33, y: 7 }],
+        nests: [],
+    };
+    for (let y = 1; y < 19; y++)
+        for (let x = 1; x < 35; x++)
+            snapshot.cells.push({
+                x,
+                y,
+                floor: c.KinkyDungeonMapGet(x, y) === "0",
+                walkable: c.KinkyDungeonMapGet(x, y) === "0",
+                wall: c.KinkyDungeonMapGet(x, y) === "1",
+                protected: false,
+                locked: false,
+            });
+    const ai = start(r, snapshot),
+        plan = Object.values(ai.plans)[0];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 4);
+    assert.equal(plan.fieldIds.length, 3);
+});
+
+test("independent fields are limited without counting their individual rings", () => {
+    const actors = Array.from({ length: 5 }, (_, i) =>
+        spinner(i + 1, 10 + i * 24, 10, { SpiderlingsNestParentID: 100 + i }),
+    );
+    const r = runtime(actors),
+        c = r.context;
+    c.KDMapData.GridWidth = 136;
+    c.KDMapData.GridHeight = 24;
+    c.KinkyDungeonMapGet = (x, y) => (x > 0 && x < 135 && y > 0 && y < 23 ? "0" : "1");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 10, y: 17 });
+    for (let i = 1; i < 5; i++)
+        c.KDMapData.Entities.push({ id: 200 + i, x: 10 + i * 24, y: 17, hp: 20, Enemy: { name: "Bandit" } });
+    const snapshot = { width: 136, height: 24, cells: [], entrances: [], exits: [], nests: [] };
+    for (let y = 1; y < 23; y++)
+        for (let x = 1; x < 135; x++)
+            snapshot.cells.push({ x, y, floor: true, walkable: true, protected: false, locked: false });
+    const ai = start(r, snapshot),
+        active = Object.values(ai.plans).filter((p) => !["abandoned", "invalid"].includes(p.status));
+    assert.equal(active.length, 3);
+    assert.ok(active.every((p) => p.fieldIds.length === 3));
+    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length, 0);
+});
+
+test("region dispatch uses the shortest legal approach around occupied destinations", () => {
+    const actor = spinner(1, 3, 6),
+        r = runtime([actor]),
+        c = r.context,
+        api = c.Spiderlings.SpinnerAI;
+    c.KDMapData.Entities.push({ id: 50, x: 10, y: 6, hp: 20, Enemy: { name: "Bandit" } });
+    const route = api.dispatchPath(actor, { x: 10, y: 6 });
+    assert.ok(route.length);
+    assert.equal(route.length, 7);
+    assert.notDeepEqual(route.at(-1), { x: 10, y: 6 });
+    for (const point of route) assert.notEqual(cellKeyForTest(point), "10,6");
+    const goals = [
+        { x: 13, y: 6 },
+        { x: 6, y: 6 },
+        { x: 12, y: 6 },
+    ];
+    assert.equal(api.routeOnSnapshot(mapSnapshot(), actor, goals).length, 4);
+});

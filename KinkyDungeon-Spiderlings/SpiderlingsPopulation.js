@@ -6,6 +6,9 @@
     const HUNTING = "SpiderlingsHuntingGrounds";
     const INFESTATION = "SpiderlingsInfestation";
     const CORE = ["Spinner", "Spinner", "Jumper", "WebCaster", "WebCaster", "MageSpiderlings"];
+    const INFESTATION_CORE = ["Spinner", "Jumper", "WebCaster"];
+    const INFESTATION_ROLES = ["builder", "hunter", "guard"];
+    const crew = (kind) => (kind === INFESTATION ? INFESTATION_CORE : CORE);
     const ROLES = ["builder", "builder", "hunter", "hunter", "guard", "guard"];
     const MOBILE = new Set([...CORE, "Tunneler"]);
     const PARENT = "SpiderlingsNestParentID";
@@ -74,7 +77,7 @@
         return {
             cap: KDMapData.SpiderlingsPopulationPlan.cap,
             available: availableSlots(),
-            requiredMembers: kind === HUNTING ? 18 : 12,
+            requiredMembers: kind === HUNTING ? 18 : 6,
         };
     }
 
@@ -95,7 +98,7 @@
         return reached;
     }
 
-    function reserveInitialGuards(plan, passable, occupied, spawnPoints, accessibleOverride) {
+    function reserveInitialGuards(plan, passable, occupied, spawnPoints, accessibleOverride, names = CORE) {
         const blocked = new Set([...occupied, ...plan.map(key)]);
         const accessible =
             accessibleOverride || reachableCells(KDMapData.StartPosition, passable, new Set(plan.map(key)));
@@ -135,8 +138,8 @@
                     cells.push(point);
                 }
             cells.sort((a, b) => Math.hypot(a.x - nest.x, a.y - nest.y) - Math.hypot(b.x - nest.x, b.y - nest.y));
-            if (cells.length < CORE.length) return null;
-            const guards = cells.slice(0, CORE.length);
+            if (cells.length < names.length) return null;
+            const guards = cells.slice(0, names.length);
             for (const point of guards) blocked.add(key(point));
             placements.push(guards);
         }
@@ -165,14 +168,19 @@
         passable = terrain(),
         occupied = new Set(KDMapData.Entities.map(key)),
         reached,
+        kind = KDMapData.MapMod,
     }) {
-        if (!CORE.every((name) => KinkyDungeonGetEnemyByName(name))) return null;
-        return reserveInitialGuards(nests, passable, occupied, spawnPoints, reached);
+        const names = crew(kind);
+        if (!names.every((name) => KinkyDungeonGetEnemyByName(name))) return null;
+        return reserveInitialGuards(nests, passable, occupied, spawnPoints, reached, names);
     }
 
     function missingRoles(nest) {
-        if (nest.SpiderlingsNestRosterTarget !== CORE.length) return null;
-        const roles = CORE.map((name, index) => ({ name, role: ROLES[index] }));
+        const roster = nest.SpiderlingsNestRoster;
+        if (![3, 6].includes(nest.SpiderlingsNestRosterTarget)) return null;
+        const names = roster?.length === nest.SpiderlingsNestRosterTarget ? roster : CORE;
+        const assignedRoles = names.length === 3 ? INFESTATION_ROLES : ROLES;
+        const roles = names.map((name, index) => ({ name, role: assignedRoles[index] }));
         for (const child of KDMapData.Entities) {
             if (!(child.hp > 0) || child[PARENT] !== nest.id) continue;
             let index = roles.findIndex(
@@ -205,7 +213,7 @@
         });
     }
 
-    function spawnGroup(positions, nest, owned, names = CORE) {
+    function spawnGroup(positions, nest, owned, names = CORE, roles = ROLES) {
         const created = [];
         let pending;
         try {
@@ -243,7 +251,7 @@
                 }
                 if (nest) {
                     child[PARENT] = nest.id;
-                    child.SpiderlingsHuntRole = ROLES[index];
+                    child.SpiderlingsHuntRole = roles[index];
                 } else {
                     child.SpiderlingsHuntRole = "hunter";
                     child.SpiderlingsPatrolCrew = true;
@@ -317,6 +325,8 @@
 
     function seedCrews({ kind, nests, spawnPoints, sites = [], positions, passable }) {
         const expectedNests = kind === HUNTING ? 3 : kind === INFESTATION ? 2 : 0;
+        const names = crew(kind),
+            roles = kind === INFESTATION ? INFESTATION_ROLES : ROLES;
         if (
             !expectedNests ||
             nests.length !== expectedNests ||
@@ -327,15 +337,15 @@
             )
         )
             throw new Error("Invalid Spiderlings crew initialization");
-        if (nests.some((nest) => nest.SpiderlingsNestRosterTarget === CORE.length))
+        if (nests.some((nest) => [3, 6].includes(nest.SpiderlingsNestRosterTarget)))
             return { ok: false, reason: "already-initialized" };
-        const required = nests.length * CORE.length;
+        const required = nests.length * names.length;
         if (availableSlots() < required || KDMapData.Entities.length + required > 300)
             return { ok: false, reason: "population-budget" };
-        if (!CORE.every((name) => KinkyDungeonGetEnemyByName(name))) return { ok: false, reason: "definition" };
+        if (!names.every((name) => KinkyDungeonGetEnemyByName(name))) return { ok: false, reason: "definition" };
         passable ||= terrain(kind);
-        if (!positions) positions = planCrews({ nests, spawnPoints, passable });
-        if (!positions || positions.length !== nests.length || positions.some((group) => group.length !== CORE.length))
+        if (!positions) positions = planCrews({ kind, nests, spawnPoints, passable });
+        if (!positions || positions.length !== nests.length || positions.some((group) => group.length !== names.length))
             return { ok: false, reason: "placement" };
         const fieldSites = kind === HUNTING ? sites.filter((site) => site.radius >= 4).slice(0, 2) : [];
         positions = positions.map((group, index) =>
@@ -411,9 +421,9 @@
         const core = [];
         try {
             for (const [index, nest] of nests.entries()) {
-                nest.SpiderlingsNestRosterTarget = CORE.length;
-                nest.SpiderlingsNestRoster = [...CORE];
-                const members = spawnGroup(positions[index], nest, owned);
+                nest.SpiderlingsNestRosterTarget = names.length;
+                nest.SpiderlingsNestRoster = [...names];
+                const members = spawnGroup(positions[index], nest, owned, names, roles);
                 if (!members) {
                     cleanup();
                     return { ok: false, reason: "creation" };

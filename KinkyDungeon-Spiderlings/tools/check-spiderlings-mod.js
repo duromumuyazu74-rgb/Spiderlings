@@ -236,7 +236,7 @@ const lv3Families = [
     { family: "Legs", group: "ItemLegs", asset: "Legs.png", layer: "OverSkirtDeco", priority: 52 },
     { family: "Ankles", group: "ItemFeet", asset: "Ankles.png", layer: "OverSkirtDeco", priority: 52 },
     { family: "Foot", group: "ItemBoots", asset: "Foot.png", layer: "WrappingLegs", priority: 52 },
-    { family: "Blindfold", group: "ItemHead", asset: "Blindfold.png", layer: "Brows", priority: 52 },
+    { family: "Blindfold", group: "ItemHead", asset: "Blindfold.png", layer: "Blindfold", priority: 52 },
     { family: "Gag", group: "ItemMouth", asset: "Gag.png", layer: "GagMuzzle", priority: 52 },
     { family: "Hood", group: "ItemHead", asset: "Hood.png", layer: "Hood", priority: 52 },
 ].map((entry) => ({
@@ -1174,6 +1174,20 @@ function checkRuntime(state) {
     }
     if (!blindfold || blindfold.Group !== "ItemHead" || blindfold.blindfold !== 1) {
         fail("Lv1 Blindfold must retain its light ItemHead blindfold effect.");
+    }
+    for (const level of [1, 3]) {
+        const model = byModel.get(`SpiderlingsWebbingLv${level}BlindfoldModel`),
+            layer = layers(model)[0];
+        if (
+            layer?.Layer !== "Blindfold" ||
+            layer?.SwapLayerPose?.XrayFace !== "Blindfold" ||
+            Object.keys(layer?.SwapLayerPose || {})[0] !== "XrayFace" ||
+            layer?.SwapLayerPose?.[`SpiderlingsWebbingLv${level}`] !== "Brows" ||
+            layer?.NoErase === true
+        )
+            fail(
+                `Lv${level} Blindfold must retain native face X-ray eligibility and masking with ordinary foreground coverage.`,
+            );
     }
     for (const [id, fields] of [
         ["SpiderlingsWebbingLv3Blindfold", { blindfold: 2 }],

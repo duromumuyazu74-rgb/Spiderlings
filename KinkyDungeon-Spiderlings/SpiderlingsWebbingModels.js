@@ -240,10 +240,23 @@
             id: "SpiderlingsWebbingLv1BlindfoldModel",
             asset: "Models/SpiderlingsWebbingLv1/Blindfold.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Blindfold", "Brows", [], [], [], LV1_PRIORITY, {
-                    NoOverride: true,
-                    HideOverrideLayer: "Blindfold",
-                });
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Blindfold",
+                    "Blindfold",
+                    [],
+                    [],
+                    [],
+                    LV1_PRIORITY,
+                    {
+                        NoOverride: true,
+                        HideOverrideLayer: "Blindfold",
+                        // Dressing detects the physical layer; rendering selects the native face mask only in face X-ray.
+                        SwapLayerPose: { XrayFace: "Blindfold", SpiderlingsWebbingLv1: "Brows" },
+                    },
+                );
             },
         }),
         Object.freeze({
@@ -489,10 +502,14 @@
             {
                 family: "Blindfold",
                 sprite: "Blindfold",
-                layer: "Brows",
+                layer: "Blindfold",
                 poses: [],
                 addPose: ["EncaseEyes"],
-                extra: { NoOverride: true, HideOverrideLayer: "Blindfold" },
+                extra: {
+                    NoOverride: true,
+                    HideOverrideLayer: "Blindfold",
+                    SwapLayerPose: { XrayFace: "Blindfold", SpiderlingsWebbingLv3: "Brows" },
+                },
             },
             { family: "Gag", sprite: "Gag", layer: "GagMuzzle", poses: [], addPose: ["FaceCoverGag", "EncaseMouth"] },
             {
