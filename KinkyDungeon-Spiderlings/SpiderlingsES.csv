@@ -41,7 +41,7 @@ KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,Escuadrón de crías de araña
 KinkyDungeonStatDescSpiderlingsSquad,"En cada mapa normal nuevo y apto aparece un escuadrón hostil: dos hiladoras y una excavadora, escupidora, saltadora y maga. Necesita espacio y plazas libres dentro del límite de arañas."
 KDModButtonspiderlingsSpinnerEncounters,Campos de captura de hiladoras
-KDModButtonspiderlingsNestSummonWeights,Pesos de refuerzo del nido (0: desactivado)
+KDModButtonspiderlingsNestSummonWeights,Pesos de especies de refuerzo
 KDModButtonspiderlingsNestSpinnerWeight,Peso de hiladora
 KDModButtonspiderlingsNestJumperWeight,Peso de saltadora
 KDModButtonspiderlingsNestWebCasterWeight,Peso de escupidora
@@ -277,3 +277,5 @@ KDLoreLabelspiderlings.MageSpiderlings,Cría de araña maga
 KDLoreTextspiderlings.NestEntrance,Capas de seda suavizan el borde de una abertura oscura. Detrás se agitan patas pequeñas y nuevos hilos reparan el revestimiento gastado. El nido parece tranquilo hasta que otro par de ojos brilla dentro.
 KDLoreTitlespiderlings.NestEntrance,Entrada del nido
 KDLoreLabelspiderlings.NestEntrance,Entrada del nido
+SpiderlingsRecoveryPlayerPull,Tensas la seda y acercas a la Hiladora.
+SpiderlingsRecoveryPull,La seda tensa te acerca a la Hiladora.

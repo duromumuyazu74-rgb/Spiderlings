@@ -46,7 +46,11 @@
             encounter = Spiderlings.SpinnerNativeField.state(),
             group = Object.values(ai.groups).find((entry) => entry.memberIds.includes(scout.id)),
             observation = Spiderlings.SpinnerAI.groupObservation(group);
-        expect(group.memberIds.includes(helper.id), "Nearby helper did not retain the scout's team");
+        const members = Spiderlings.FieldCommand.inspect().members;
+        expect(
+            members[scout.id]?.home && members[scout.id].home === members[helper.id]?.home,
+            "Nearby helper lost the scout's original team ownership",
+        );
         expect(observation?.x === 14 && observation.y === 10, "Planning did not receive recognized contact");
         expect(group.planId, "The recognized team's first planning batch did not select a site");
         expect(JSON.stringify([scout, helper]) === before, "Planning observation mutated native entity state");
@@ -134,7 +138,7 @@
         remote = spawn("Spinner", 3, 10);
     KDMapData.Entities = [remote, tunneler];
     KDUpdateEnemyCache = true;
-    KDMovePlayer(28, 10, false);
+    KDMovePlayer(26, 10, false);
     KinkyDungeonPlayerEntity.sound = 0;
     for (const actor of [tunneler, remote]) {
         actor.aware = false;
@@ -147,7 +151,10 @@
     expect(!Spiderlings.SpinnerAI.playerObservation(), "Partial recognition published too early");
     KinkyDungeonAdvanceTime(1, true);
     const firstReport = Spiderlings.SpinnerAI.playerObservation();
-    expect(firstReport?.reporterId === tunneler.id, "Native wander first recognition did not publish this turn");
+    expect(
+        firstReport?.reporterId === tunneler.id,
+        `Native wander first recognition did not publish this turn: ${JSON.stringify({ firstReport, vp: tunneler.vp, aware: tunneler.aware, x: tunneler.x, y: tunneler.y, disabled: KinkyDungeonIsDisabled(tunneler), player: { x: KinkyDungeonPlayerEntity.x, y: KinkyDungeonPlayerEntity.y }, command: Spiderlings.FieldCommand.inspect().regions })}`,
+    );
     expect(!remote.aware, "Native first recognition granted remote Spinner awareness");
     rows.push({ firstNativeRecognition: true, report: firstReport, nativeVP: tunneler.vp });
 
@@ -208,8 +215,29 @@
 
     setup("spinner-npc-awareness-pressure");
     room();
+    // One legal enclosure keeps this contact crew staffed. Spare crews and
+    // parallel construction are exercised in the command/work scenarios.
+    for (let y = 1; y < 23; y++)
+        for (let x = 1; x < 35; x++) if (x < 5 || x > 15 || y < 6 || y > 14) KinkyDungeonMapSet(x, y, "1");
+    KDMapData.StartPosition = { x: 5, y: 6 };
+    KDMapData.EndPosition = { x: 15, y: 14 };
+    KDPathCache = new Map();
+    KDPathCacheIgnoreLocks = new Map();
     const pressure = actors(false);
+    pressure.helper.x = 6;
+    KDUpdateEnemyCache = true;
     Spiderlings.SpinnerAI.beginTurn({ activate: true });
+    // Planning can reassign a crew while comparing distant enclosure sites.
+    // Establish recognized contact after that batch before testing NPC-only awareness.
+    expect(
+        Spiderlings.SpinnerAI.reportPlayerContact(
+            pressure.scout,
+            KinkyDungeonPlayerEntity,
+            { canSensePlayer: true, canSeePlayer: true, hostile: true },
+            1,
+        ),
+        "The pressure fixture did not publish native recognized contact",
+    );
     const pressureState = Spiderlings.SpinnerNativeField.state(),
         pressureGroup = Object.values(pressureState.ai.groups).find((entry) =>
             entry.memberIds.includes(pressure.scout.id),
@@ -220,6 +248,7 @@
     pressure.scout.aware = true;
     pressure.scout.vp = 0;
     pressure.scout.movePoints = 1.5;
+    expect(pressureGroup.engagement, "The pressure fixture has no recognized engagement");
     pressureGroup.engagement.mode = "pressure";
     pressureGroup.engagement.lureId = pressure.scout.id;
     KDMovePlayer(7, 13, false);

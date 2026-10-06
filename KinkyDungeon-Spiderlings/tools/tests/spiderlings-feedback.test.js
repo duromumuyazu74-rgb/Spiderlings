@@ -33,6 +33,20 @@ test("settings pages preserve custom values, defaults and native field pairing a
     assert.equal(panel.catalogue().filter((entry) => entry.default !== undefined).length, 14);
 });
 
+test("nest settings keep weights in the first column and paired limits in the second", () => {
+    const { context: c } = loadLifecycleRuntime({ KDModPage: 0, addTextKey: () => {} });
+    load(c, "SpiderlingsSettings.js");
+    c.Spiderlings.SettingsPanel.select("nests");
+    const controls = c.KDModConfigs.Spiderlings;
+    assert.ok(controls.slice(0, 8).filter((entry) => entry.type === "range").length === 5);
+    for (const key of ["spiderlingsNestReinforcementCap", "spiderlingsNestTunnelerCap"]) {
+        const index = controls.findIndex((entry) => entry.type === "string" && entry.refvar === key);
+        assert.ok(index > 8, `${key} belongs with the other reinforcement limits`);
+        assert.equal(controls[index - 1].refvar, key);
+    }
+    assert.ok(controls.findIndex((entry) => entry.refvar === "spiderlingsNestReinforcementInterval") >= 8);
+});
+
 test("native note pools offer undiscovered Spiderlings while their journal uses a single category", () => {
     const { context: c } = loadLifecycleRuntime({ addTextKey: () => {} });
     const discovered = { Cover: 1 },

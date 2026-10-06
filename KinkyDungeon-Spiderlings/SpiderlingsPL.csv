@@ -41,7 +41,7 @@ KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,Oddział młodych pająków
 KinkyDungeonStatDescSpiderlingsSquad,"Na każdej nowej odpowiedniej zwykłej mapie pojawia się wrogi oddział: dwie prządki oraz po jednym kopaczu, miotaczu sieci, skoczku i magu. Potrzebne jest miejsce oraz wolne miejsca w limicie pająków."
 KDModButtonspiderlingsSpinnerEncounters,Pola chwytne prządek
-KDModButtonspiderlingsNestSummonWeights,Wagi posiłków gniazda (0: wyłączone)
+KDModButtonspiderlingsNestSummonWeights,Wagi gatunków posiłków
 KDModButtonspiderlingsNestSpinnerWeight,Waga prządki
 KDModButtonspiderlingsNestJumperWeight,Waga skoczka
 KDModButtonspiderlingsNestWebCasterWeight,Waga miotacza sieci
@@ -277,3 +277,5 @@ KDLoreLabelspiderlings.MageSpiderlings,Młody pająk mag
 KDLoreTextspiderlings.NestEntrance,"Warstwy jedwabiu zmiękczają krawędź ciemnego otworu. W środku poruszają się małe nogi, a postrzępione miejsca pokrywają nowe nici. Gniazdo wygląda spokojnie, aż błyszczy w nim kolejna para oczu."
 KDLoreTitlespiderlings.NestEntrance,Wejście do gniazda
 KDLoreLabelspiderlings.NestEntrance,Wejście do gniazda
+SpiderlingsRecoveryPlayerPull,Napinasz jedwab i przyciągasz młodego pająka prządkę bliżej.
+SpiderlingsRecoveryPull,Napięty jedwab przyciąga cię do młodego pająka prządki.

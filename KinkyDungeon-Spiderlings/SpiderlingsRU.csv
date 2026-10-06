@@ -41,7 +41,7 @@ KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,Отряд паучат
 KinkyDungeonStatDescSpiderlingsSquad,"На каждой новой подходящей обычной карте появляется враждебный отряд: два прядильщика и по одному землекопу, плевателю, прыгуну и магу. Нужны свободное место и места в лимите паучат."
 KDModButtonspiderlingsSpinnerEncounters,Ловчие поля прядильщиков
-KDModButtonspiderlingsNestSummonWeights,Веса подкреплений гнезда (0: отключено)
+KDModButtonspiderlingsNestSummonWeights,Веса видов подкреплений
 KDModButtonspiderlingsNestSpinnerWeight,Вес прядильщика
 KDModButtonspiderlingsNestJumperWeight,Вес прыгуна
 KDModButtonspiderlingsNestWebCasterWeight,Вес плевателя
@@ -277,3 +277,5 @@ KDLoreLabelspiderlings.MageSpiderlings,Паучонок-маг
 KDLoreTextspiderlings.NestEntrance,"Слои шёлка смягчают край тёмного отверстия. В глубине шевелятся маленькие лапки, а истёртая подкладка получает новые нити. Гнездо кажется тихим, пока внутри не блеснёт ещё одна пара глаз."
 KDLoreTitlespiderlings.NestEntrance,Вход в гнездо
 KDLoreLabelspiderlings.NestEntrance,Вход в гнездо
+SpiderlingsRecoveryPlayerPull,Ты натягиваешь шёлк и подтягиваешь паучонка-прядильщика ближе.
+SpiderlingsRecoveryPull,Натянутый шёлк тянет тебя к паучонку-прядильщику.

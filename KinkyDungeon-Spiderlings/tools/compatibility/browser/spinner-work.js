@@ -74,7 +74,16 @@
                         after: structuredClone(Spiderlings.SpinnerNativeField.state()?.topology),
                     };
                 }
-                if (fields.filter((field) => ["ready", "sealed"].includes(field.phase)).length >= 3) break;
+                if (
+                    Object.values(state.topology.composites).some(
+                        (composite) =>
+                            composite.layerIds.length === 3 &&
+                            composite.layerIds.every((id) =>
+                                ["ready", "sealed"].includes(state.topology.fields[id].phase),
+                            ),
+                    )
+                )
+                    break;
             }
             row.final = structuredClone(Spiderlings.SpinnerNativeField.state());
             expect(
@@ -85,11 +94,18 @@
                 Object.values(row.final.topology.fields).filter((field) => field.phase === "ready").length >= 3,
                 `${count} workers did not finish the three retained layers`,
             );
-            const staffed = Object.values(row.final.ai.groups).find((group) =>
-                actors.every((actor) => group.memberIds.includes(actor.id)),
+            const homes = actors.map((actor) => row.final.command.members[actor.id]?.home);
+            expect(
+                homes.every((home) => home && home === homes[0]),
+                `${count} workers lost their original team ownership`,
             );
-            expect(staffed, `${count} workers dispersed instead of retaining their field team`);
-            const plan = row.final.ai.plans[staffed.planId],
+            const plan = Object.values(row.final.ai.plans).find((plan) => {
+                    const composite = row.final.topology.composites[plan.compositeId];
+                    return (
+                        composite?.layerIds.length === 3 &&
+                        composite.layerIds.every((id) => row.final.topology.fields[id].phase === "ready")
+                    );
+                }),
                 composite = row.final.topology.composites[plan?.compositeId];
             expect(
                 composite?.constructionOrder === "outer-first" && composite.layerIds.length === 3,
@@ -100,7 +116,10 @@
                 "The spacious enclosure did not keep its larger capture core",
             );
             const bodyWork = row.actions.filter(
-                (action) => action.result.applied && !/Gate|repair/.test(action.action),
+                (action) =>
+                    action.result.applied &&
+                    composite.layerIds.includes(action.fieldId) &&
+                    !/Gate|repair|rebuild/.test(action.action),
             );
             const layers = bodyWork.map((action) => row.final.topology.fields[action.fieldId]?.layer);
             expect(
@@ -111,7 +130,26 @@
                 layers.every((layer, index) => index === 0 || layer <= layers[index - 1]),
                 "Paid construction started an inner ring before finishing its outer ring",
             );
-            row.retainedTeam = { memberIds: staffed.memberIds, compositeId: composite.id, constructionLayers: layers };
+            for (const project of Object.values(row.final.topology.composites)) {
+                const order = row.actions
+                    .filter(
+                        (action) =>
+                            action.result.applied &&
+                            project.layerIds.includes(action.fieldId) &&
+                            !/Gate|repair|rebuild/.test(action.action),
+                    )
+                    .map((action) => row.final.topology.fields[action.fieldId].layer);
+                expect(
+                    order.every((layer, index) => index === 0 || layer <= order[index - 1]),
+                    `Parallel project ${project.id} started an inner ring before finishing its outer ring`,
+                );
+            }
+            row.retainedTeam = {
+                memberIds: actors.map((actor) => actor.id),
+                home: homes[0],
+                compositeId: composite.id,
+                constructionLayers: layers,
+            };
             expect(
                 JSON.stringify(row.reload.before) === JSON.stringify(row.reload.after),
                 "Partial construction changed on reload",

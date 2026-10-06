@@ -23,6 +23,20 @@
             if (id === "spiderlingsHuntingGroundsWeight")
                 expect(input.value === "73", "Native floor input did not render the saved value");
         }
+        if (page === "nests") {
+            const entries = KDModConfigs.Spiderlings;
+            for (const id of inputs) {
+                const index = entries.findIndex((entry) => entry.type === "string" && entry.refvar === id);
+                expect(
+                    index >= 8 && entries[index - 1].refvar === id && entries[index - 1].type === "text",
+                    `Nest limit ${id} lacks its heading in the limits column`,
+                );
+            }
+            expect(
+                entries.filter((entry, index) => entry.type === "range" && index < 8).length === 5,
+                "Nest species weights are split across columns",
+            );
+        }
         images[`settings-${page}`] = await photo();
         pages.push({ page, rows: KDModConfigs.Spiderlings.length, inputs });
     }
