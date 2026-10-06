@@ -4425,26 +4425,29 @@ test("a large layered enclosure outranks a small legal passage on the same route
 });
 
 test("independent fields are limited without counting their individual rings", () => {
-    const actors = Array.from({ length: 5 }, (_, i) =>
-        spinner(i + 1, 10 + i * 24, 10, { SpiderlingsNestParentID: 100 + i }),
-    );
-    const r = runtime(actors),
-        c = r.context;
-    c.KDMapData.GridWidth = 136;
-    c.KDMapData.GridHeight = 24;
-    c.KinkyDungeonMapGet = (x, y) => (x > 0 && x < 135 && y > 0 && y < 23 ? "0" : "1");
-    Object.assign(c.KinkyDungeonPlayerEntity, { x: 10, y: 17 });
-    for (let i = 1; i < 5; i++)
-        c.KDMapData.Entities.push({ id: 200 + i, x: 10 + i * 24, y: 17, hp: 20, Enemy: { name: "Bandit" } });
-    const snapshot = { width: 136, height: 24, cells: [], entrances: [], exits: [], nests: [] };
-    for (let y = 1; y < 23; y++)
-        for (let x = 1; x < 135; x++)
-            snapshot.cells.push({ x, y, floor: true, walkable: true, protected: false, locked: false });
-    const ai = start(r, snapshot),
-        active = Object.values(ai.plans).filter((p) => !["abandoned", "invalid"].includes(p.status));
-    assert.equal(active.length, 3);
-    assert.ok(active.every((p) => p.fieldIds.length === 3));
-    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length, 0);
+    for (const maximum of [0, 1, 3, 4]) {
+        const actors = Array.from({ length: 5 }, (_, i) =>
+            spinner(i + 1, 10 + i * 24, 10, { SpiderlingsNestParentID: 100 + i }),
+        );
+        const r = runtime(actors),
+            c = r.context;
+        c.Spiderlings.getSetting = () => String(maximum);
+        c.KDMapData.GridWidth = 136;
+        c.KDMapData.GridHeight = 24;
+        c.KinkyDungeonMapGet = (x, y) => (x > 0 && x < 135 && y > 0 && y < 23 ? "0" : "1");
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: 10, y: 17 });
+        for (let i = 1; i < 5; i++)
+            c.KDMapData.Entities.push({ id: 200 + i, x: 10 + i * 24, y: 17, hp: 20, Enemy: { name: "Bandit" } });
+        const snapshot = { width: 136, height: 24, cells: [], entrances: [], exits: [], nests: [] };
+        for (let y = 1; y < 23; y++)
+            for (let x = 1; x < 135; x++)
+                snapshot.cells.push({ x, y, floor: true, walkable: true, protected: false, locked: false });
+        const ai = start(r, snapshot),
+            active = Object.values(ai.plans).filter((p) => !["abandoned", "invalid"].includes(p.status));
+        assert.equal(active.length, maximum);
+        assert.ok(active.every((p) => p.fieldIds.length === 3));
+        assert.equal(c.Spiderlings.SpinnerNativeField.state().topology?.actionLog.length || 0, 0);
+    }
 });
 
 test("region dispatch uses the shortest legal approach around occupied destinations", () => {
@@ -4464,4 +4467,24 @@ test("region dispatch uses the shortest legal approach around occupied destinati
         { x: 12, y: 6 },
     ];
     assert.equal(api.routeOnSnapshot(mapSnapshot(), actor, goals).length, 4);
+});
+
+test("capture field limit accepts zero and custom counts, retaining invested fields", () => {
+    for (const value of ["0", "1", "4", "-1", "bad"]) {
+        const r = runtime([spinner(1, 5, 5), spinner(2, 6, 5)]),
+            c = r.context;
+        c.Spiderlings.getSetting = () => value;
+        const ai = start(r, { ...mapSnapshot(), candidateLines: undefined });
+        const expected = ["-1", "bad"].includes(value) ? 3 : Number(value);
+        assert.equal(c.Spiderlings.FieldProjects.limit(), expected);
+        if (expected === 0) {
+            assert.equal(Object.keys(ai.plans).length, 0);
+            assert.equal(c.Spiderlings.SpinnerAI.initializeMapgenField().reason, "deployment-disabled");
+        } else {
+            assert.ok(Object.keys(ai.plans).length);
+            c.Spiderlings.getSetting = () => "0";
+            c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: mapSnapshot() });
+            assert.ok(Object.keys(ai.plans).length, "Setting zero must preserve existing field investments");
+        }
+    }
 });

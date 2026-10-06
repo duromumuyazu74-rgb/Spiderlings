@@ -59,6 +59,33 @@
                     for (const b of nests)
                         if (a !== b && Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) < 9)
                             throw Error("Original objective nests overlap");
+                const liveNests = KDMapData.Entities.filter(
+                    (entity) => entity.hp > 0 && entity.Enemy.name === "NestEntrance",
+                );
+                const outsiders = KDMapData.Entities.filter(
+                    (entity) =>
+                        entity.hp > 0 &&
+                        !entity.Enemy.tags?.spiderlings &&
+                        entity.Enemy.name !== "NestEntrance" &&
+                        !entity.Enemy.tags?.scenery &&
+                        !(
+                            entity.Enemy.immobile &&
+                            !entity.Enemy.attack &&
+                            !entity.Enemy.tags?.prisoner &&
+                            !entity.Enemy.tags?.human &&
+                            !entity.Enemy.specialdialogue
+                        ) &&
+                        !Spiderlings.SpinnerNativeField.isOwnedProxy(entity),
+                );
+                const clearance = Spiderlings.Population.NPC_NEST_CLEARANCE;
+                if (
+                    outsiders.some((entity) =>
+                        liveNests.some(
+                            (nest) => Math.max(Math.abs(entity.x - nest.x), Math.abs(entity.y - nest.y)) < clearance,
+                        ),
+                    )
+                )
+                    throw Error("A newly generated non-Spiderlings NPC spawned too close to a Nest");
                 const fieldPreset = state?.fieldPreset,
                     initialWebCells = KDMapData.Entities.filter(Spiderlings.SpinnerNativeField.isOwnedProxy).length;
                 if (

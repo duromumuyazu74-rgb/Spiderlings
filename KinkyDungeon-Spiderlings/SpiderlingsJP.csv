@@ -279,3 +279,4 @@ KDLoreTitlespiderlings.NestEntrance,巣穴の入口
 KDLoreLabelspiderlings.NestEntrance,巣穴の入口
 SpiderlingsRecoveryPlayerPull,糸を張り、幼蛛の糸紡ぎを近くへ引き寄せた。
 SpiderlingsRecoveryPull,張った糸に引かれ、幼蛛の糸紡ぎへ近づく。
+KDModButtonspiderlingsCaptureFieldLimit,捕獲エリア上限（0：新規設置なし）

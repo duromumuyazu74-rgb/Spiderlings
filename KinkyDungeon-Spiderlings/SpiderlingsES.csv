@@ -279,3 +279,4 @@ KDLoreTitlespiderlings.NestEntrance,Entrada del nido
 KDLoreLabelspiderlings.NestEntrance,Entrada del nido
 SpiderlingsRecoveryPlayerPull,Tensas la seda y acercas a la Hiladora.
 SpiderlingsRecoveryPull,La seda tensa te acerca a la Hiladora.
+KDModButtonspiderlingsCaptureFieldLimit,Límite de zonas de captura (0: ninguna zona nueva)

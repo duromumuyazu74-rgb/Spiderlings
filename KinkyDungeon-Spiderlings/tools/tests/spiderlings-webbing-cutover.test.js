@@ -389,7 +389,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
         const entries = csvMap(csv);
         assert.equal(
             entries.size,
-            281,
+            282,
             `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping and weapons`,
         );
         for (const key of [

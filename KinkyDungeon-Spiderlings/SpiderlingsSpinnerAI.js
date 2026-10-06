@@ -968,6 +968,8 @@
     }
 
     function initializeMapgenField(options = {}) {
+        const deploymentLimit = api.FieldProjects.limit();
+        if (deploymentLimit === 0) return { status: "skipped", reason: "deployment-disabled" };
         const previous = api.SpinnerNativeField.state();
         // Both legacy single-field and new multi-field saves are one-time investments.
         if (previous?.ai?.mapgenField || Object.keys(previous?.topology?.composites || {}).length)
@@ -983,7 +985,7 @@
             authoredSites = options.maxFields > 1 ? options.preferredSites || [] : [],
             fields = [],
             attempted = new Set(),
-            maximum = Math.max(1, Math.min(3, options.maxFields || 1));
+            maximum = Math.max(1, Math.min(deploymentLimit, options.maxFields || 1));
         encounter.autonomous = true;
         auditGroups(ai, KDMapData.Entities, { mapSnapshot: snapshot, routeDistances: distances });
         const assignedSites = new Set(
@@ -1813,7 +1815,7 @@
         const members = group.memberIds
             .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
             .filter((entity) => eligibleSpinner(entity));
-        if (!members.length) return;
+        if (!members.length || api.FieldProjects.limit() === 0) return;
         const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
             enclosures = [
                 ...passages,

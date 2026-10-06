@@ -35,6 +35,14 @@
             default: true,
             block: undefined,
         },
+        { type: "text", refvar: "spiderlingsCaptureFieldLimit" },
+        {
+            type: "string",
+            name: "spiderlingsCaptureFieldLimit",
+            refvar: "spiderlingsCaptureFieldLimit",
+            default: "3",
+            block: undefined,
+        },
         { type: "text", refvar: "spiderlingsMapPopulationCap" },
         {
             type: "string",

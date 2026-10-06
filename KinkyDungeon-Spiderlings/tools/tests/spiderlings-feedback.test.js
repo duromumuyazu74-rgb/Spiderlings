@@ -30,7 +30,7 @@ test("settings pages preserve custom values, defaults and native field pairing a
         assert.equal(c.Spiderlings.getSetting("spiderlingsHuntingGroundsWeight"), "73");
         assert.equal(c.Spiderlings.getSetting("spiderlingsInfestationWeight"), "200");
     }
-    assert.equal(panel.catalogue().filter((entry) => entry.default !== undefined).length, 14);
+    assert.equal(panel.catalogue().filter((entry) => entry.default !== undefined).length, 15);
 });
 
 test("nest settings keep weights in the first column and paired limits in the second", () => {
@@ -146,4 +146,24 @@ test("arming alone does not activate prepared silk, but paid gate work changes n
     apply("closeGate");
     assert.equal(c.KDCanPassEnemy(c.KinkyDungeonPlayerEntity, proxy), false);
     assert.equal(c.KDCanPassEnemy(c.KinkyDungeonPlayerEntity, { Enemy: { name: "Bandit" } }), false);
+});
+
+test("owned journal portraits stay on the Journal and survive throwing Titles draws", () => {
+    let seen;
+    const { context: c } = loadLifecycleRuntime({ addTextKey: () => {} });
+    c.KDLore = { Default: {} };
+    c.KDNewLore = () => {};
+    c.KDLoreImg = { "spiderlings.Jumper": "Enemies/Jumper.png", Cover: "Cover.png" };
+    c.KinkyDungeonCurrentLore = "spiderlings.Jumper";
+    c.KinkyDungeonDrawTitles = () => {
+        seen = c.KDLoreImg[c.KinkyDungeonCurrentLore];
+        throw Error("draw");
+    };
+    load(c, "SpiderlingsBestiary.js");
+    assert.throws(() => c.KinkyDungeonDrawTitles(), /draw/);
+    assert.equal(seen, undefined);
+    assert.equal(c.KDLoreImg["spiderlings.Jumper"], "Enemies/Jumper.png");
+    c.KinkyDungeonCurrentLore = "Cover";
+    assert.throws(() => c.KinkyDungeonDrawTitles(), /draw/);
+    assert.equal(seen, "Cover.png");
 });

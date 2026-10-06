@@ -279,3 +279,4 @@ KDLoreTitlespiderlings.NestEntrance,Nesteingang
 KDLoreLabelspiderlings.NestEntrance,Nesteingang
 SpiderlingsRecoveryPlayerPull,Du spannst die Seide und ziehst das Spinnenjunge Spinner näher heran.
 SpiderlingsRecoveryPull,Die gespannte Seide zieht dich zum Spinnenjungen Spinner.
+KDModButtonspiderlingsCaptureFieldLimit,Fangfeldlimit (0: keine neuen Felder)

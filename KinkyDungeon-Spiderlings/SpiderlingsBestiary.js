@@ -53,4 +53,24 @@
         );
     }
     api.Bestiary = { ids: entries.map(([enemy]) => `spiderlings.${enemy}`) };
+    // Both supported native Titles draws also read the selected Journal image.
+    // Mask only our image during that draw; discovery and the Journal selection stay intact.
+    if (typeof KinkyDungeonDrawTitles === "function" && typeof KDLoreImg !== "undefined") {
+        KinkyDungeonDrawTitles = api.Hooks.wrap(
+            "SpiderlingsBestiaryTitles",
+            KinkyDungeonDrawTitles,
+            (native) =>
+                function (...args) {
+                    const id = KinkyDungeonCurrentLore;
+                    if (!api.Bestiary.ids.includes(id)) return native.apply(this, args);
+                    const image = KDLoreImg[id];
+                    delete KDLoreImg[id];
+                    try {
+                        return native.apply(this, args);
+                    } finally {
+                        KDLoreImg[id] = image;
+                    }
+                },
+        );
+    }
 })();

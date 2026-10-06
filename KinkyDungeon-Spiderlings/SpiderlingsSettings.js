@@ -12,6 +12,7 @@
             "spiderlingsEnableHood",
             "spiderlingsSpinnerEncounters",
             "spiderlingsMapPopulationCap",
+            "spiderlingsCaptureFieldLimit",
         ],
         floors: ["spiderlingsInfestationWeight", "spiderlingsHuntingGroundsWeight"],
         nests: [
@@ -42,6 +43,8 @@
                 ? [button("floors", "spiderlingsSettingsFloors"), button("nests", "spiderlingsSettingsNests")]
                 : [button("general", "spiderlingsSettingsBack")];
         const controls = pages[page].flatMap((key) => catalogue.filter((entry) => entry.refvar === key));
+        // Keep the second input pair together in the native eight-row column layout.
+        if (page === "general") controls.splice(5, 0, { type: "text", refvar: "spiderlingsSettingsGeneralHelp" });
         // The old living-cap heading was not paired with its field's refvar.
         if (page === "nests") {
             const index = controls.findIndex((entry) => entry.refvar === "spiderlingsNestReinforcementCap");
@@ -54,7 +57,7 @@
         KDModConfigs.Spiderlings = [
             ...navigation,
             ...controls,
-            ...(page === "nests"
+            ...(page === "nests" || page === "general"
                 ? []
                 : [{ type: "text", refvar: `spiderlingsSettings${page[0].toUpperCase() + page.slice(1)}Help` }]),
             ...(page === "floors" ? [{ type: "text", refvar: "spiderlingsSettingsHuntingHelp" }] : []),
@@ -79,6 +82,7 @@
         spiderlingsPinkWebbing: "Pink silk",
         spiderlingsEnableHood: "Allow silk hoods",
         spiderlingsSpinnerEncounters: "Spinner capture fields",
+        spiderlingsCaptureFieldLimit: "Capture field limit (0: no new fields)",
         spiderlingsMapPopulationCap: "Mobile spider limit (0: unlimited)",
         spiderlingsInfestationWeight: "Infestation weight",
         spiderlingsHuntingGroundsWeight: "Hunting Grounds weight",

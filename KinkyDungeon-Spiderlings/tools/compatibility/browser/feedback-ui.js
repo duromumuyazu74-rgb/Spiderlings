@@ -6,6 +6,11 @@
         images = {},
         pages = [];
     const previousState = KinkyDungeonState;
+    KDModSettings.Spiderlings.spiderlingsCaptureFieldLimit = "0";
+    const disabled = Spiderlings.SpinnerAI.initializeMapgenField({ maxFields: 3 });
+    expect(disabled.reason === "deployment-disabled", "Zero limit still deployed a preset field");
+    expect(!Spiderlings.SpinnerNativeField.state(), "Disabled deployment mutated the map");
+    KDModSettings.Spiderlings.spiderlingsCaptureFieldLimit = "3";
     KDModSettings.Spiderlings.spiderlingsHuntingGroundsWeight = "73";
     KDModToggleTab = "Spiderlings";
     KinkyDungeonState = "ModConfig";
@@ -75,6 +80,15 @@
     KinkyDungeonDrawLore();
     images.bestiary = await photo();
     expect(kdpixisprites.get("kdlorimage0")?.visible, "Native Journal did not render the owned enemy portrait");
+    KinkyDungeonDrawState = "Titles";
+    KinkyDungeonDrawTitles();
+    images.titles = await photo();
+    expect(!kdpixisprites.get("kdlorimage0")?.visible, "Owned Journal portrait leaked into Titles");
+    expect(KinkyDungeonCurrentLore === ids[0] && KDLoreImg[ids[0]], "Titles damaged Journal selection or image");
+    KinkyDungeonDrawState = "Logbook";
+    KinkyDungeonDrawLore();
+    await photo();
+    expect(kdpixisprites.get("kdlorimage0")?.visible, "Returning from Titles lost the Journal portrait");
     KinkyDungeonDrawState = "Game";
     const packageName = Object.keys(KDMods).find((name) => name.startsWith("Spiderlings_")),
         entries = await model.getEntries(KDMods[packageName], {}),
@@ -102,6 +116,10 @@
         KinkyDungeonDrawState = "Logbook";
         KinkyDungeonDrawLore();
         images["bestiary-CN"] = await photo();
+        KinkyDungeonDrawState = "Titles";
+        KinkyDungeonDrawTitles();
+        images["titles-CN"] = await photo();
+        expect(!kdpixisprites.get("kdlorimage0")?.visible, "Chinese Titles retained the owned portrait");
     } finally {
         TranslationLanguage = language;
         for (const [key, value] of original) addTextKey(key, value);

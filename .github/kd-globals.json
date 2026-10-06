@@ -349,5 +349,8 @@
   "KinkyDungeonCurrentLoreItemOffset",
   "KinkyDungeonDrawLore",
   "KinkyDungeonUpdateLore",
-  "KinkyDungeonCurrentLoreItems"
+  "KinkyDungeonCurrentLoreItems",
+  "KDAddNewEntity",
+  "KDLoreImg",
+  "KinkyDungeonDrawTitles"
 ]

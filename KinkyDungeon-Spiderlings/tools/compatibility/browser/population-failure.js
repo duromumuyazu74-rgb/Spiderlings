@@ -10,8 +10,11 @@
             for (const mode of modes) {
                 KDModSettings.Spiderlings.spiderlingsMapPopulationCap =
                     mode === "budget" ? (theme === "SpiderlingsInfestation" ? 5 : 11) : 25;
-                // This native seed supplies both large Hunting Grounds sites in both supported runtimes.
-                const seed = "normal-acceptance-grv-5-6";
+                // Pinned fixtures provide both large sites and NPC clearance. The two
+                // native generators produce different geometry for the same seed.
+                const seed = TextGet("KDVersionStr").startsWith("5.4.")
+                    ? "normal-acceptance-grv-5-2"
+                    : "normal-acceptance-grv-5-0";
                 globalThis.compatibilitySetSeed(seed);
                 KinkyDungeonStartNewGame(false);
                 KDToggles.Sound = false;

@@ -14,7 +14,9 @@
         ]) {
             const seed =
                 modifier === "SpiderlingsHuntingGrounds"
-                    ? "normal-acceptance-grv-5-6"
+                    ? TextGet("KDVersionStr").startsWith("5.4.")
+                        ? "normal-acceptance-grv-5-2"
+                        : "normal-acceptance-grv-5-0"
                     : `integration-objective-${modifier}`;
             globalThis.compatibilitySetSeed(seed);
             KinkyDungeonStartNewGame(false);

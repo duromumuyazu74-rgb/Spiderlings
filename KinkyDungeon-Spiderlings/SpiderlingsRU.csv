@@ -279,3 +279,4 @@ KDLoreTitlespiderlings.NestEntrance,Вход в гнездо
 KDLoreLabelspiderlings.NestEntrance,Вход в гнездо
 SpiderlingsRecoveryPlayerPull,Ты натягиваешь шёлк и подтягиваешь паучонка-прядильщика ближе.
 SpiderlingsRecoveryPull,Натянутый шёлк тянет тебя к паучонку-прядильщику.
+KDModButtonspiderlingsCaptureFieldLimit,Лимит зон захвата (0: не создавать новые)
