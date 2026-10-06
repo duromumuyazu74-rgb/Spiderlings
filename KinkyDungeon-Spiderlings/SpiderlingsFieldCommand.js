@@ -6,6 +6,7 @@
     const clone = (value) => JSON.parse(JSON.stringify(value));
     const same = (a, b) => String(a) === String(b);
     const species = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"]);
+    const priority = { defense: 0, capture: 0, recovery: 0, repair: 1, build: 2 };
 
     function eligible(entity) {
         return !!(
@@ -110,6 +111,12 @@
                 api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target),
             )
         );
+    }
+
+    function reserve(encounter, group, minimum = false) {
+        if (projectThreat(encounter, group)) return 2;
+        if (!pending(encounter, group)) return 0;
+        return minimum ? 1 : Math.max(1, encounter.ai.plans[group?.planId]?.workforceTarget || 1);
     }
 
     function sync(encounter) {
@@ -261,7 +268,7 @@
             }));
     }
 
-    function offers(encounter, target, distances, excludeGroup) {
+    function offers(encounter, target, distances, excludeGroup, kind = "build") {
         const state = ensure(encounter),
             byId = new Map(KDMapData.Entities.map((entity) => [String(entity.id), entity]));
         const result = [],
@@ -271,14 +278,25 @@
         )) {
             // This is the donor's release judgment. The global controller may not bypass its reserve.
             const members = group.memberIds.map((id) => byId.get(String(id))).filter(actionable);
-            const reserve = projectThreat(encounter, group) ? 2 : pending(encounter, group) ? 1 : 0;
+            const plan = encounter.ai.plans[group.planId];
+            const needs = api.SpinnerTopology.fieldWorkNeeds(encounter.topology, plan?.fieldIds || [plan?.fieldId]);
+            const homePriority = Math.min(
+                priority[needs.repair ? "repair" : "build"],
+                ...Object.values(state.requests)
+                    .filter((entry) => !entry.closed && entry.fieldId === group.id && entry.count > 0)
+                    .map((entry) => priority[entry.kind]),
+            );
+            const retained = reserve(encounter, group, priority[kind] < homePriority);
             const candidates = members.filter(
                 (entity) =>
                     !protectedMember(entity) &&
                     !state.members[entity.id]?.loan &&
                     state.members[entity.id]?.phase === "home",
             );
-            if (members.some(protectedMember) || (reserve > 0 && candidates.length > 0 && candidates.length <= reserve))
+            if (
+                members.some(protectedMember) ||
+                (retained > 0 && candidates.length > 0 && candidates.length <= retained)
+            )
                 reasons.add("necessary-duty");
             if (members.some((entity) => state.members[entity.id]?.loan || state.members[entity.id]?.phase !== "home"))
                 reasons.add("committed");
@@ -286,7 +304,7 @@
                 .map((entity) => ({ id: entity.id, donor: group.id, steps: distances(entity, target) }))
                 .filter((offer) => Number.isFinite(offer.steps))
                 .sort((a, b) => a.steps - b.steps || String(a.id).localeCompare(String(b.id)))
-                .slice(0, Math.max(0, candidates.length - reserve));
+                .slice(0, Math.max(0, candidates.length - retained));
             if (candidates.length && !offered.length) reasons.add("unreachable");
             result.push(...offered);
         }
@@ -323,7 +341,7 @@
         const state = ensure(encounter),
             member = state.members[offer.id];
         const entity = KDMapData.Entities.find((candidate) => same(candidate.id, offer.id));
-        const fresh = offers(encounter, requestState.destination, distances, requestState.fieldId);
+        const fresh = offers(encounter, requestState.destination, distances, requestState.fieldId, requestState.kind);
         if (
             !member ||
             !actionable(entity) ||
@@ -338,6 +356,8 @@
             requestId: requestState.id,
             destination: clone(requestState.destination),
             origin: { x: entity.x, y: entity.y },
+            blocked: false,
+            blockedTurns: 0,
         });
         encounter.ai.groups[requestState.fieldId].incomingIds = [
             ...new Set([...(encounter.ai.groups[requestState.fieldId].incomingIds || []), offer.id]),
@@ -346,8 +366,64 @@
         return true;
     }
 
+    function reassess(encounter, distances) {
+        const state = ensure(encounter),
+            now = encounter.ai.coordinationTurn || 0,
+            entityFor = (member) => KDMapData.Entities.find((entity) => same(entity.id, member.id)),
+            loans = () => Object.values(state.members).filter((member) => member.loan && member.phase !== "returning");
+        for (const requestState of Object.values(state.requests).filter((entry) => !entry.closed)) {
+            const deployed = loans().filter((member) => member.requestId === requestState.id);
+            let extra = Math.max(0, deployed.length - requestState.count);
+            for (const member of deployed.sort((a, b) => String(b.id).localeCompare(String(a.id))))
+                if (extra && !protectedMember(entityFor(member))) {
+                    returnMember(encounter, member, "demand-reduced");
+                    extra--;
+                }
+        }
+        sync(encounter);
+        for (const member of loans()) {
+            const entity = entityFor(member),
+                requestState = state.requests[member.requestId],
+                home = encounter.ai.groups[member.home],
+                homeTarget = home && (location(encounter, home) || member.origin),
+                receiver = encounter.ai.groups[member.commander];
+            if (!entity || protectedMember(entity) || !requestState || requestState.closed) continue;
+            const homeUrgent = Object.values(state.requests).some(
+                (entry) =>
+                    !entry.closed &&
+                    entry.count >
+                        Object.values(state.members).filter(
+                            (candidate) =>
+                                (candidate.requestId === entry.id && candidate.phase !== "returning") ||
+                                (candidate.home === member.home && candidate.phase === "returning"),
+                        ).length &&
+                    entry.fieldId === member.home &&
+                    priority[entry.kind] < priority[requestState.kind],
+            );
+            const retained = receiver.memberIds
+                .filter((id) => !same(id, member.id))
+                .map((id) => KDMapData.Entities.find((candidate) => same(candidate.id, id)))
+                .filter(actionable).length;
+            if (homeUrgent && retained >= reserve(encounter, receiver, true)) {
+                returnMember(encounter, member, "home-emergency");
+                requestState.retryAfter = now + 1;
+                sync(encounter);
+            } else if (
+                member.phase === "travelling" &&
+                member.blockedTurns >= 8 &&
+                homeTarget &&
+                Number.isFinite(distances(entity, homeTarget))
+            ) {
+                returnMember(encounter, member, "route-blocked");
+                requestState.retryAfter = now + 8;
+                sync(encounter);
+            }
+        }
+    }
+
     function allocate(encounter, distances) {
         const state = ensure(encounter);
+        reassess(encounter, distances);
         // Replanning retains request identity, but every order must follow its current destination.
         for (const order of [...Object.values(state.members), ...Object.values(state.regions)]) {
             const requestState = state.requests[order.requestId];
@@ -360,14 +436,16 @@
                 continue;
             order.destination = clone(requestState.destination);
             order.blocked = false;
+            order.blockedTurns = 0;
             if (order.phase === "support") order.phase = "travelling";
         }
-        const priority = { defense: 0, capture: 0, recovery: 0, repair: 1, build: 2 };
         const waiting = Object.values(state.requests)
             .filter((entry) => !entry.closed)
             .map((entry) => ({
                 entry,
-                steps: offers(encounter, entry.destination, distances, entry.fieldId).members[0]?.steps ?? Infinity,
+                steps:
+                    offers(encounter, entry.destination, distances, entry.fieldId, entry.kind).members[0]?.steps ??
+                    Infinity,
             }))
             .sort(
                 (a, b) =>
@@ -386,15 +464,22 @@
                 (member) =>
                     member.requestId === entry.id && member.commander === entry.fieldId && member.phase !== "returning",
             ).length;
-            const supply = offers(encounter, entry.destination, distances, entry.fieldId);
+            const supply = offers(encounter, entry.destination, distances, entry.fieldId, entry.kind);
             for (const offer of supply.members) {
                 if (deployed >= entry.count) break;
+                if (entry.retryAfter > (encounter.ai.coordinationTurn || 0)) break;
                 if (dispatch(encounter, entry, offer, distances)) deployed++;
             }
             entry.deployed = deployed;
             entry.missing = Math.max(0, entry.count - deployed);
             entry.status = entry.missing ? (deployed ? "partial" : "rejected") : "satisfied";
-            entry.reason = entry.missing ? offers(encounter, entry.destination, distances, entry.fieldId).reason : null;
+            entry.reason = entry.missing
+                ? offers(encounter, entry.destination, distances, entry.fieldId, entry.kind).reason
+                : null;
+            if (entry.retryAfter > (encounter.ai.coordinationTurn || 0)) {
+                entry.status = "waiting";
+                entry.reason = "reassessment";
+            }
         }
         projectOwners(encounter);
     }
@@ -419,6 +504,8 @@
         if (!order?.destination) return false;
         const encounter = api.SpinnerNativeField.state();
         if (Math.max(Math.abs(entity.x - order.destination.x), Math.abs(entity.y - order.destination.y)) <= 2) {
+            order.blocked = false;
+            order.blockedTurns = 0;
             if (order.phase === "travelling") order.phase = "support";
             else if (order.phase === "returning") {
                 order.commander = order.home;
@@ -433,6 +520,7 @@
         }
         const path = api.SpinnerAI.dispatchPath(entity, order.destination);
         const next = path.find((cell) => cell.x !== entity.x || cell.y !== entity.y);
+        const credit = entity.movePoints || 0;
         const moved =
             !!next &&
             KinkyDungeonEnemyTryMove(
@@ -443,7 +531,11 @@
                 next.y,
                 false,
             );
-        order.blocked = !moved;
+        // Native movement can return false while accumulating credit (binding, slow or buffs).
+        // A legal step waiting for that credit is not a failed route.
+        const awaitingCredit = next && !moved && (entity.movePoints || 0) > credit;
+        order.blocked = !moved && !awaitingCredit;
+        order.blockedTurns = order.blocked ? (order.blockedTurns || 0) + 1 : 0;
         return true;
     }
 

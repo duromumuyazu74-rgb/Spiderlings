@@ -1276,6 +1276,18 @@
             fields = Object.values(state.fields || {}).filter((field) => ids.has(field.id) && !field.retired),
             active = new Set(fields.map((field) => field.id));
         return {
+            remainingActions:
+                state.anchors.filter((anchor) => anchor.owners.some((id) => active.has(id)) && !anchor.built).length +
+                state.links
+                    .filter((link) => link.owners.some((id) => active.has(id)))
+                    .reduce(
+                        (total, link) =>
+                            total +
+                            Math.max(0, link.plannedCells.length - link.builtCells.length) +
+                            Number(!link.connected) +
+                            Number(link.hp < link.maxHp),
+                        0,
+                    ),
             construction: fields.some((field) => field.reopenPending || ["preparing", "sealing"].includes(field.phase)),
             repair:
                 fields.some((field) => field.phase === "breached") ||

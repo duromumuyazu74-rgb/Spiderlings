@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.114.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.120.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.120 field progress, loan reassessment and final duties (2026-10-06)
+
+The same final ZIP passes all 53 native stages on KD 5.4.92 and latest official 5.5.3, including seven native language loads per game. Official `5.5` commit `6d5973adb1eee27f681181afa52119abccb343a2` was freshly fetched at `2026-10-06T06:34:44.463Z`. Full acceptance is `<cache>/runs/2026-10-06T06-34-44-478Z-0.92.36-test.120/acceptance.json`. Final ZIP: 175 allowlisted entries, 24,863,615 bytes; SHA-256 `5f0b620e9c53f0e8ce20d6af8145dc2b86bf51f8847d75bea160139470028df8`.
+
+Projects reserve a workforce based on remaining paid work before lending to independent expansion, distinguish usable geometry from recoverable projects, and request repair workers when protected sources cannot build. Higher-priority support may borrow construction surplus while preserving minimum donor duties. Command reassesses reduced demand, urgent home shortfalls and persistently blocked journeys; legal movement-credit waits remain travelling rather than returning. Duties owns the final action decision and native-phase permission, invalidates stale duties and rechecks capture-maintenance release protection.
+
+The native field-command scene verifies four workers retain one large project, eight workers can serve two independent projects, planning itself does not build, and nine binding-slowed native credit waits do not trigger blocked returns. Both 310-turn normal-integration runs record paid construction and repairs after repeated native wall damage, with save/load reconciliation retained. A sole free lure can travel to pending maintenance, resolving the previous mismatch between available workforce and actual repair assignments. Existing Capture, Recovery, NPC, passage, crowding, Mage, settings and locale scenes pass. See the [implementation and verification scope](spiderlings-test120-field-progress.zh-CN.md).
+
+Independent Spec and Standards reviews found no remaining blocking defect. These controlled native scenes do not establish complete-playthrough balance or other-Mod compatibility. No new desktop-save or visual acceptance is claimed for this scheduling change; test.114's separate recorded acceptance remains historical evidence.
+
+Repository checks, 12 policy tests, 637 public tests, the complete 960-test local watcher and exact ZIP verification pass. The full collector imports both complete native records and reports stable source/ZIP bytes: `.scratch/delivery/2026-10-06T06-45-43-118Z-iUNVGc/REPORT.md`. Only this outcome documentation was appended afterward, followed by repository and whitespace checks.
 
 ## Test.114 large enclosure choice and bidirectional recovery (2026-10-06)
 
