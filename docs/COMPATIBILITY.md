@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.123.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.127.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.127 capture-field settings, NPC birth spacing and Journal pages (2026-10-06)
+
+The same final ZIP passes all 53 native stages on KD 5.4.92 and latest official 5.5.3, including seven language loads per game. Official `5.5` commit `9e6f80442c9387e93ae7657487ea7fe96deaae05` was freshly fetched at `2026-10-06T10:10:37.097Z`. Full acceptance is `<cache>/runs/2026-10-06T10-10-37-112Z-0.92.36-test.127/acceptance.json`. Final ZIP: 175 allowlisted entries, 24,866,118 bytes; SHA-256 `319b2c798ef3864ffb02b927cc2554038dcfef9b3f1079bfe33e27f8ceed0f19`.
+
+The independent capture-field limit defaults to three and accepts custom counts. Zero prevents new projects, mapgen presets and replacement deployments; invested fields continue operating. Concentric rings share a slot. Seven translated settings labels and the native HTML input layout are checked. New non-Spiderlings NPCs on spider-themed floors clear all live Nests by six tiles. Nest placement avoids NPCs generated earlier, and both native entity birth entries preserve saved actors and creation metadata. Stationary prisoners remain NPCs; scenery and passive fixed barriers keep their original positions.
+
+Native English and Chinese Journal-to-Titles transitions no longer retain a Spiderlings portrait. Returning to Journal restores the portrait and selection. The paid field-command scene builds three rings with four real Spinners, then verifies closure and Capture admission through a native hit after entering the common core. A private copy of desktop slot seven, currently on floor seven, closes all three rings and starts Capture within 26 paid turns with this final ZIP. Original saves remain unchanged. The reported floor-six missing response remains unreproduced, so Issues #127 and #129 retain that acceptance gap. See the [implementation and remaining scope](spiderlings-test127-field-feedback.zh-CN.md).
+
+Earlier failed packages and runs are retained. The updated native generators need different fixed geometry seeds for population fault injection, objective hints, sustained objective play and debug stair transitions; all original budget, rollback, objective, save/load and transition assertions remain. The full run above passes with the final fixtures.
+
+Repository checks, 12 policy tests, 647 public tests, the complete 971-test local watcher and exact ZIP verification pass. The full collector imports both complete native records and reports stable source/ZIP bytes: `.scratch/delivery/2026-10-06T10-19-54-865Z-q7RkAe/REPORT.md`. Only this outcome documentation was appended afterward, followed by repository and whitespace checks.
 
 ## Test.123 field consolidation, floor ecology and native face X-ray (2026-10-06)
 

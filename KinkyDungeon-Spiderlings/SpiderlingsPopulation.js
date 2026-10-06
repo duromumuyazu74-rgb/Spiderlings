@@ -11,6 +11,7 @@
     const crew = (kind) => (kind === INFESTATION ? INFESTATION_CORE : CORE);
     const ROLES = ["builder", "builder", "hunter", "hunter", "guard", "guard"];
     const MOBILE = new Set([...CORE, "Tunneler"]);
+    const NPC_NEST_CLEARANCE = 6;
     const PARENT = "SpiderlingsNestParentID";
     const key = (point) => `${point.x},${point.y}`;
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
@@ -20,6 +21,98 @@
         { x: point.x, y: point.y - 1 },
         { x: point.x, y: point.y + 1 },
     ];
+
+    function nestsOn(map) {
+        return map.Entities.filter(
+            (entity) =>
+                entity.hp > 0 &&
+                (typeof entity.Enemy === "string" ? entity.Enemy : entity.Enemy?.name) === "NestEntrance",
+        );
+    }
+    function isNonSpiderNPC(entity) {
+        const name = typeof entity?.Enemy === "string" ? entity.Enemy : entity?.Enemy?.name;
+        return (
+            !!entity &&
+            !MOBILE.has(name) &&
+            name !== "NestEntrance" &&
+            !entity.Enemy?.tags?.spiderlings &&
+            !entity.Enemy?.tags?.scenery &&
+            !(
+                entity.Enemy?.immobile &&
+                !entity.Enemy?.attack &&
+                !entity.Enemy?.tags?.prisoner &&
+                !entity.Enemy?.tags?.human &&
+                !entity.Enemy?.specialdialogue
+            ) &&
+            !api.SpinnerNativeField?.isOwnedProxy?.(entity)
+        );
+    }
+    function isNestSiteClear(point) {
+        return KDMapData.Entities.filter((entity) => entity.hp > 0 && isNonSpiderNPC(entity)).every(
+            (entity) => distance(point, entity) >= NPC_NEST_CLEARANCE,
+        );
+    }
+    const clearsNests = (point, nests) => nests.every((nest) => distance(point, nest) >= NPC_NEST_CLEARANCE);
+
+    // Native initial population, wandering arrivals and dialogue births all enter here.
+    // Correct the new actor's birth coordinates before native loadout/spawn scripts run.
+    if (typeof KDAddNewEntity === "function" || typeof KDAddEntity === "function") {
+        const install = (native) =>
+            function (entity, ...args) {
+                const mapData = args[3];
+                const map = mapData || KDMapData;
+                const themed =
+                    [HUNTING, INFESTATION].includes(map.MapMod) || map.SpiderlingsPopulationPlan?.layoutFallback;
+                if (
+                    map === KDMapData &&
+                    themed &&
+                    entity &&
+                    !map.Entities.some((saved) => saved.id === entity.id) &&
+                    isNonSpiderNPC(entity)
+                ) {
+                    const nests = nestsOn(map);
+                    if (!clearsNests(entity, nests)) {
+                        const occupied = new Set([KinkyDungeonPlayerEntity, ...map.Entities].filter(Boolean).map(key));
+                        const accessible = reachableCells(map.StartPosition, terrain(map.MapMod));
+                        const point = [...accessible]
+                            .map((cell) => {
+                                const [x, y] = cell.split(",").map(Number);
+                                return { x, y };
+                            })
+                            .filter((cell) => {
+                                const meta = KinkyDungeonTilesGet(key(cell));
+                                return (
+                                    clearsNests(cell, nests) &&
+                                    !occupied.has(key(cell)) &&
+                                    KinkyDungeonMapGet(cell.x, cell.y) === "0" &&
+                                    !meta?.Lock &&
+                                    !meta?.OL &&
+                                    !meta?.Type &&
+                                    !api.HuntingGroundsLayout?.isPopulationReserved?.(map, cell)
+                                );
+                            })
+                            .sort((a, b) => distance(a, entity) - distance(b, entity) || a.y - b.y || a.x - b.x)[0];
+                        // Native summon callers dereference the returned actor. Refuse the
+                        // insertion without a null return when this map has no legal birth cell.
+                        if (!point) return entity;
+                        entity.x = point.x;
+                        entity.y = point.y;
+                    }
+                }
+                return native.apply(this, arguments);
+            };
+        // 5.5's ordinary births use the new entry, but persistent arrivals still
+        // use KDAddEntity directly. Both must check a new insertion; saved members
+        // already present in the target map retain their coordinates.
+        if (typeof KDAddEntity === "function")
+            KDAddEntity = api.Hooks
+                ? api.Hooks.wrap("SpiderlingsNPCNestClearance.Entity", KDAddEntity, install)
+                : install(KDAddEntity);
+        if (typeof KDAddNewEntity === "function")
+            KDAddNewEntity = api.Hooks
+                ? api.Hooks.wrap("SpiderlingsNPCNestClearance.New", KDAddNewEntity, install)
+                : install(KDAddNewEntity);
+    }
 
     // prepareFloor publishes the existing save plan at the theme's original hook point.
     // planCrews is a read-only layout query: no quota or cells are reserved by its result.
@@ -502,10 +595,13 @@
             preyIds = [],
             spiderIds = [];
         const preyPoints = existingPrey.map((entity) => ({ x: entity.x, y: entity.y }));
-        const takePoint = (separation = 0) => {
+        const nests = nestsOn(map);
+        const takePoint = (separation = 0, prey = false) => {
             const index = candidates.findIndex(
                 (point) =>
-                    !occupied.has(key(point)) && preyPoints.every((other) => distance(point, other) >= separation),
+                    !occupied.has(key(point)) &&
+                    (!prey || clearsNests(point, nests)) &&
+                    preyPoints.every((other) => distance(point, other) >= separation),
             );
             if (index < 0) return null;
             const point = candidates.splice(index, 1)[0];
@@ -515,7 +611,7 @@
         // Authored prey positions are spread across the accessible map before filling spiders.
         for (const name of prey) {
             if (map.Entities.length >= 300 || !KinkyDungeonGetEnemyByName(name)) break;
-            const point = takePoint(6);
+            const point = takePoint(6, true);
             if (!point) break;
             const members = spawnGroup([point], undefined, owned, [name]);
             if (!members) continue;
@@ -544,6 +640,14 @@
     // Existing consumers retain their entry names; only this module owns cap interpretation.
     api.getMapPopulationCap = effectiveCap;
     api.availableSpiderlingSlots = availableSlots;
-    Object.assign(population, { prepareFloor, planCrews, seedCrews, seedHuntingResidents, missingRoles });
+    Object.assign(population, {
+        prepareFloor,
+        planCrews,
+        seedCrews,
+        seedHuntingResidents,
+        missingRoles,
+        NPC_NEST_CLEARANCE,
+        isNestSiteClear,
+    });
     if (typeof module !== "undefined" && module.exports) module.exports = population;
 })();

@@ -4,7 +4,12 @@
         images = {};
     KDToggles.Sound = false;
     for (const mod of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
-        const seed = mod === "SpiderlingsHuntingGrounds" ? "normal-acceptance-grv-5-6" : `test70-debug-stairs-${mod}`;
+        const seed =
+            mod === "SpiderlingsHuntingGrounds"
+                ? TextGet("KDVersionStr").startsWith("5.4.")
+                    ? "normal-acceptance-grv-5-2"
+                    : "normal-acceptance-grv-5-1"
+                : `test70-debug-stairs-${mod}`;
         globalThis.compatibilitySetSeed(seed);
         KinkyDungeonStartNewGame(false);
         MiniGameKinkyDungeonLevel = 5;

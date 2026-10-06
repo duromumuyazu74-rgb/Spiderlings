@@ -98,6 +98,30 @@
             live.topology.actionLog.some((entry) => ai.plans[planId].fieldIds.includes(entry.fieldId)),
             "The retained main crew never paid to advance its large field",
         );
+        if (count === 4) {
+            // Enter a completed paid field with its real crew, not a fixture-built wall.
+            const livePlan = live.ai.plans[planId];
+            for (const actor of crew) {
+                actor.Enemy = { ...actor.Enemy, visionRadius: 12 };
+                actor.aware = true;
+                actor.vp = 3;
+            }
+            KDMovePlayer(livePlan.center.x, livePlan.center.y, false);
+            Spiderlings.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity);
+            let captured = false;
+            for (let step = 0; step < 60; step++) {
+                await turn();
+                if (Spiderlings.SpinnerCapture.state()) {
+                    captured = true;
+                    break;
+                }
+            }
+            expect(
+                livePlan.fieldIds.every((id) => live.topology.fields[id].phase === "sealed"),
+                "Entering a completed staffed field failed to pay for closure",
+            );
+            expect(captured, "Sealed field crew failed to start Capture through a native hit");
+        }
         staffing.push({
             count,
             initialProjects: groups.length,

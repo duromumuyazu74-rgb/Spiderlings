@@ -263,3 +263,85 @@ test("new Infestation nests have three guards while Hunting core nests retain si
         }
     }
 });
+
+test("hunting residents and new native NPCs clear all live nests without moving saved actors", () => {
+    const { c, api, nests } = runtime("SpiderlingsHuntingGrounds");
+    c.KDAddNewEntity = (actor) => {
+        c.KDMapData.Entities.push(actor);
+        return actor;
+    };
+    vm.runInContext(source, c);
+    const old = { id: 700, x: 10, y: 11, hp: 10, Enemy: { name: "MaidforceMafia" } };
+    c.KDMapData.Entities.push(old);
+    assert.equal(api.isNestSiteClear({ x: 10, y: 10 }), false);
+    assert.equal(api.isNestSiteClear({ x: 20, y: 20 }), true);
+    const result = api.seedHuntingResidents({ prey: Array(5).fill("MaidforceMafia") });
+    assert.equal(result.preyIds.length, 5);
+    const clearance = (actor) => nests.every((n) => Math.max(Math.abs(n.x - actor.x), Math.abs(n.y - actor.y)) >= 6);
+    assert.ok(c.KDMapData.Entities.filter((e) => result.preyIds.includes(e.id)).every(clearance));
+    const born = c.KDAddNewEntity({ id: 701, x: 10, y: 11, hp: 10, Enemy: { name: "MaidforceMafia" } });
+    assert.ok(clearance(born));
+    assert.deepEqual({ x: old.x, y: old.y }, { x: 10, y: 11 });
+    const spider = c.KDAddNewEntity({ id: 702, x: 10, y: 11, hp: 10, Enemy: { name: "Spinner" } });
+    assert.equal(spider.x, 10);
+    assert.equal(spider.y, 11);
+});
+
+test("legacy native birth entry preserves scenery and declines an impossible NPC insertion", () => {
+    const { c } = runtime("SpiderlingsInfestation");
+    c.KDAddEntity = (actor) => {
+        c.KDMapData.Entities.push(actor);
+        return actor;
+    };
+    vm.runInContext(source, c);
+    const npc = { id: 901, x: 10, y: 11, hp: 10, Enemy: { name: "Nurse" } };
+    c.KDAddEntity(npc);
+    assert.ok(Math.max(Math.abs(npc.x - 10), Math.abs(npc.y - 10)) >= 6);
+    const wall = { id: 902, x: 10, y: 11, hp: 10, Enemy: { name: "IceWall", immobile: true, attack: "" } };
+    c.KDAddEntity(wall);
+    assert.equal(wall.x, 10);
+    assert.equal(wall.y, 11);
+    const prisoner = {
+        id: 904,
+        x: 10,
+        y: 11,
+        hp: 10,
+        Enemy: {
+            name: "PrisonerBandit",
+            immobile: true,
+            attack: "",
+            tags: { prisoner: true, human: true },
+            specialdialogue: "PrisonerBandit",
+        },
+    };
+    c.KDAddEntity(prisoner);
+    assert.ok(
+        Math.max(Math.abs(prisoner.x - 10), Math.abs(prisoner.y - 10)) >= 6,
+        "A stationary prisoner is still an NPC, not scenery",
+    );
+    c.KinkyDungeonMapGet = () => "1";
+    const denied = { id: 903, x: 10, y: 11, hp: 10, Enemy: { name: "Nurse" } };
+    assert.equal(c.KDAddEntity(denied), denied, "Native summon callers require an actor return");
+    assert.ok(!c.KDMapData.Entities.includes(denied), "No legal cell must not create an unsafe NPC");
+});
+
+test("5.5 new and persistent arrivals share clearance while forwarding creation metadata", () => {
+    const { c } = runtime("SpiderlingsHuntingGrounds");
+    let creation;
+    c.KDAddEntity = (actor, _persist, _teleport, _loadout, _map, flag) => {
+        creation = flag;
+        c.KDMapData.Entities.push(actor);
+        return actor;
+    };
+    c.KDAddNewEntity = (...args) => c.KDAddEntity(...args, true);
+    vm.runInContext(source, c);
+    const actor = (id) => ({ id, x: 10, y: 11, hp: 10, Enemy: { name: "Nurse" } });
+    const born = c.KDAddNewEntity(actor(910), false, false, true, c.KDMapData);
+    assert.equal(creation, true);
+    const arrival = c.KDAddEntity(actor(911), true, false, true, c.KDMapData);
+    for (const npc of [born, arrival]) assert.ok(Math.max(Math.abs(npc.x - 10), Math.abs(npc.y - 10)) >= 6);
+    const saved = actor(912);
+    c.KDMapData.Entities.push(saved);
+    c.KDAddEntity(saved, true, false, true, c.KDMapData);
+    assert.deepEqual({ x: saved.x, y: saved.y }, { x: 10, y: 11 });
+});

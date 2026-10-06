@@ -279,3 +279,4 @@ KDLoreTitlespiderlings.NestEntrance,둥지 입구
 KDLoreLabelspiderlings.NestEntrance,둥지 입구
 SpiderlingsRecoveryPlayerPull,거미줄을 팽팽히 당겨 새끼 거미 방적자를 가까이 끌어당깁니다.
 SpiderlingsRecoveryPull,팽팽한 거미줄에 끌려 새끼 거미 방적자 쪽으로 다가갑니다.
+KDModButtonspiderlingsCaptureFieldLimit,포획 구역 제한 (0: 신규 설치 안 함)

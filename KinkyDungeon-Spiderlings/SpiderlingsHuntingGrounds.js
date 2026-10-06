@@ -622,6 +622,7 @@
                     distance(start, point) < 5 ||
                     distance(KinkyDungeonPlayerEntity, point) < 2 ||
                     exits.some((exit) => distance(exit, point) < 2) ||
+                    !api.Population.isNestSiteClear(point) ||
                     spawnPoints.some((spawn) => distance(spawn, point) < 2)
                 )
                     continue;
@@ -645,6 +646,7 @@
                       huntingSites: earlyLayout.huntingSites,
                       largeHuntingSite: earlyLayout.largeHuntingSite,
                       acceptNest: (point, reached) =>
+                          api.Population.isNestSiteClear(point) &&
                           !!api.Population.planCrews({ nests: [point], passable, occupied, spawnPoints, reached }),
                       random: KDRandom,
                   })

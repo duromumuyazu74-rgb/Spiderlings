@@ -4,6 +4,11 @@
 (() => {
     const api = globalThis.Spiderlings;
     const MAX_PROJECTS = 3;
+    function limit() {
+        const value = String(api.getSetting?.("spiderlingsCaptureFieldLimit") ?? MAX_PROJECTS).trim();
+        const number = Number(value);
+        return /^\d+$/.test(value) && Number.isSafeInteger(number) ? number : MAX_PROJECTS;
+    }
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
     function workforce(plan, needs, fields = []) {
@@ -21,7 +26,8 @@
         const ai = encounter.ai,
             command = api.FieldCommand,
             state = command.ensure(encounter);
-        const positions = command.positions(encounter);
+        const positions = command.positions(encounter),
+            maximum = limit();
         const activeProjects = () =>
             Object.values(ai.groups).filter((group) => {
                 const plan = ai.plans[group.planId];
@@ -96,7 +102,8 @@
                 !plan &&
                 members.length &&
                 !existing &&
-                (planner.lineFixture || activeProjects().length < MAX_PROJECTS)
+                maximum > 0 &&
+                (planner.lineFixture || activeProjects().length < maximum)
             ) {
                 if (api.SpinnerRecovery?.needsField?.())
                     group.recoveryAround = positions.find((target) => target.target.kind === "player");
@@ -200,7 +207,7 @@
         // Supplied line fixtures describe legacy diagnostic fields, not a normal-map area planner.
         if (!planner.lineFixture && active.length)
             for (const target of unmet) {
-                if (active.length >= MAX_PROJECTS) break;
+                if (active.length >= maximum) break;
                 if (covered(target)) continue;
                 const supply = command.offers(encounter, target, planner.distances);
                 if (!supply.members.length) continue;
@@ -244,5 +251,5 @@
         return ai.projects;
     }
 
-    api.FieldProjects = { update, MAX_PROJECTS };
+    api.FieldProjects = { update, limit, MAX_PROJECTS };
 })();

@@ -279,3 +279,4 @@ KDLoreTitlespiderlings.NestEntrance,蛛巢入口
 KDLoreLabelspiderlings.NestEntrance,蛛巢入口
 SpiderlingsRecoveryPlayerPull,你拉紧丝线，将织网幼蛛牵近了些。
 SpiderlingsRecoveryPull,绷紧的丝线牵着你，向织网幼蛛靠近。
+KDModButtonspiderlingsCaptureFieldLimit,捕获场地上限（0：不部署新场地）
