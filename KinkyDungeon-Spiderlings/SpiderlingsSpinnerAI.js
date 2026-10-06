@@ -533,7 +533,6 @@
                 geometry?.passable ||
                 new Set((snapshot.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             nests = snapshot.nests || [],
-            approach = observation ? routeOnSnapshot(snapshot, origin, observation) : [],
             reserved = new Set(
                 Object.values(api.SpinnerNativeField.state()?.ai?.plans || {})
                     .filter((plan) => plan.groupId !== group.id && !["invalid", "abandoned"].includes(plan.status))
@@ -541,13 +540,12 @@
             ),
             candidates = [];
         if (!origin) return candidates;
-        // Prefer nearby work, then search the connected map before abandoning enclosure construction.
+        // Distance scores choose between equal sizes. Nearby fallback sites must
+        // not hide a larger reachable enclosure from the global planner.
         for (const nearby of geometry?.candidateCenters ? [null] : [true, false]) {
-            if (candidates.length) break;
             for (const center of geometry?.candidateCenters || snapshot.cells || []) {
                 if (group.recoveryAround && distance(group.recoveryAround, center) > 1) continue;
                 if (nearby !== null && distance(focus, center) <= 6 !== nearby) continue;
-                if (observation && !nearby && !approach.some((cell) => distance(cell, center) <= 2)) continue;
                 if (work) {
                     work.candidateCells++;
                     work.candidatesExamined++;

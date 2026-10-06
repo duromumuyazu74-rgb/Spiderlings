@@ -46,11 +46,17 @@
         if (page === "nests") {
             const index = controls.findIndex((entry) => entry.refvar === "spiderlingsNestReinforcementCap");
             controls.splice(index, 0, { type: "text", refvar: "spiderlingsNestReinforcementCap" });
+            // Native configuration uses eight entries per column. Keep the five
+            // species together and begin both input pairs in the limits column.
+            controls.splice(0, 0, { type: "text", refvar: "spiderlingsNestSummonWeights" });
+            controls.splice(6, 0, { type: "text", refvar: "spiderlingsSettingsNestsHelp" });
         }
         KDModConfigs.Spiderlings = [
             ...navigation,
             ...controls,
-            { type: "text", refvar: `spiderlingsSettings${page[0].toUpperCase() + page.slice(1)}Help` },
+            ...(page === "nests"
+                ? []
+                : [{ type: "text", refvar: `spiderlingsSettings${page[0].toUpperCase() + page.slice(1)}Help` }]),
             ...(page === "floors" ? [{ type: "text", refvar: "spiderlingsSettingsHuntingHelp" }] : []),
         ];
         if (typeof KDModPage !== "undefined") KDModPage = 0;
@@ -67,6 +73,7 @@
         spiderlingsSettingsBack: "Back to general",
         spiderlingsSettingsFloorsHelp: "Weights select new floors. 0 disables a theme.",
         spiderlingsSettingsNestsHelp: "Species weights: 0 prevents that reinforcement.",
+        spiderlingsNestSummonWeights: "Reinforcement species weights",
         spiderlingsSettingsGeneralHelp: "Themed floors retain their population budgets.",
         spiderlingsSettingsHuntingHelp: "Hunting Grounds: Maidforce floors from floor 5.",
         spiderlingsPinkWebbing: "Pink silk",

@@ -16,6 +16,7 @@
         MAX_SOURCES = CONFIG.maxSources,
         ESCAPE_PENALTY = CONFIG.escapePenaltyPerExtraSource;
     const strandVisuals = new Map();
+    let movementAttempt;
 
     const player = () => KinkyDungeonPlayerEntity;
     const entities = () => KDMapData?.Entities || [];
@@ -594,6 +595,8 @@
     }
 
     if (typeof addTextKey === "function") {
+        addTextKey("SpiderlingsRecoveryPlayerPull", "You draw the silk taut and pull the Spinner closer.");
+        addTextKey("SpiderlingsRecoveryPull", "The taut silk draws you toward the Spinner.");
         addTextKey(
             "SpiderlingsRecoveryAttached",
             "A Spinner attaches a silk strand ({count}). The taut silk can pull you back.",
@@ -734,33 +737,57 @@
                     !api.SpinnerNativeField?.isOwnedProxy?.(actor),
             );
         };
-        // All attached workers head into the same core. Native pathfinding accepts
-        // occupied end cells, so choose a free endpoint before asking it for a route.
-        // A one-cell interior needs one paid step beyond its center to pull the
-        // player into the vacated cell through the native 1.5-cell tether.
-        const beyondCore =
-            leading && source.x === goal.x && source.y === goal.y
-                ? { x: goal.x + Math.sign(goal.x - player().x), y: goal.y + Math.sign(goal.y - player().y) }
-                : undefined;
+        // Helpers leave the holder's approach clear. A crowded core needs parking
+        // outside its innermost ring rather than stacking every helper in the way.
+        // At the exact center, tighten the native tether so its collision resolver
+        // brings prey into that cell and moves the holder aside.
+        const atCenter = source.x === goal.x && source.y === goal.y;
+        const holder = sourceById(recovery.executorId);
+        const approach =
+            !leading && holder
+                ? KinkyDungeonFindPath(
+                      holder.x,
+                      holder.y,
+                      goal.x,
+                      goal.y,
+                      false,
+                      true,
+                      false,
+                      KinkyDungeonMovableTilesEnemy,
+                      undefined,
+                      undefined,
+                      undefined,
+                      holder,
+                  )
+                : [];
+        const reserved = new Set((approach || []).map((cell) => `${cell.x},${cell.y}`));
+        const forward = (cell) => (cell.x - goal.x) * (goal.x - player().x) + (cell.y - goal.y) * (goal.y - player().y);
         const endpoints = [];
-        for (let dy = -1; dy <= 1; dy++)
-            for (let dx = -1; dx <= 1; dx++) {
+        const radius = leading ? 1 : 2;
+        for (let dy = -radius; dy <= radius; dy++)
+            for (let dx = -radius; dx <= radius; dx++) {
                 const cell = { x: goal.x + dx, y: goal.y + dy };
                 if (
                     (cell.x === player().x && cell.y === player().y) ||
+                    (leading && atCenter) ||
                     occupied(cell) ||
                     (leading && cell.x === source.x && cell.y === source.y) ||
-                    (goal.compositeId &&
-                        !api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, cell) &&
-                        !(beyondCore && cell.x === beyondCore.x && cell.y === beyondCore.y))
+                    (!leading && cell.x === goal.x && cell.y === goal.y) ||
+                    (!leading && reserved.has(`${cell.x},${cell.y}`)) ||
+                    (leading &&
+                        goal.compositeId &&
+                        !api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, cell))
                 )
                     continue;
                 endpoints.push(cell);
             }
         const coreDistance = (cell) => (cell.x - goal.x) ** 2 + (cell.y - goal.y) ** 2;
-        const forward = (cell) => (cell.x - goal.x) * (goal.x - player().x) + (cell.y - goal.y) * (goal.y - player().y);
         endpoints.sort(
-            (a, b) => coreDistance(a) - coreDistance(b) || forward(b) - forward(a) || a.y - b.y || a.x - b.x,
+            (a, b) =>
+                coreDistance(a) - coreDistance(b) ||
+                (leading ? forward(b) - forward(a) : forward(a) - forward(b)) ||
+                a.y - b.y ||
+                a.x - b.x,
         );
         let next;
         for (const endpoint of endpoints) {
@@ -808,7 +835,8 @@
                 : source.x === goal.x && source.y === goal.y;
             // An obstructed route is not arrival: tighten only after paid progress
             // or when the executor already stands inside the destination.
-            if (ownerDistance < playerDistance && (moved || atCore)) player().leash.length = 1.5;
+            if (ownerDistance < playerDistance && (moved || atCore))
+                player().leash.length = source.x === goal.x && source.y === goal.y ? 0.5 : 1.5;
             KinkyDungeonUpdateTether(delta, true, player());
         }
         return moved;
@@ -861,7 +889,10 @@
         // Recovery replaces the native attack loop, including its warning cleanup.
         enemy.attackPoints = 0;
         enemy.warningTiles = [];
-        if (!api.SpinnerCapture?.isControllingPlayer?.()) escort(recovery, enemy, delta);
+        if (!api.SpinnerCapture?.isControllingPlayer?.()) {
+            escort(recovery, enemy, delta);
+            if (delta > 0) finishReturn(recovery);
+        }
         return result(enemy);
     }
 
@@ -889,6 +920,74 @@
                 sourceActionable(sourceById(recovery.executorId), false)
             );
         };
+    const fartherFrom = (before, after, owner) =>
+        (after.x - owner.x) ** 2 + (after.y - owner.y) ** 2 > (before.x - owner.x) ** 2 + (before.y - owner.y) ** 2;
+    function movementFeedback(key) {
+        if (typeof KinkyDungeonSendActionMessage === "function")
+            KinkyDungeonSendActionMessage(9, TextGet(key), "#C4A1EF", 2, true);
+    }
+    if (typeof KinkyDungeonUpdateTether === "function")
+        KinkyDungeonUpdateTether = api.Hooks.wrap(
+            "Spinner.recoveryTetherMovement",
+            KinkyDungeonUpdateTether,
+            (native) =>
+                function (delta, message, target, xTo, yTo) {
+                    if (target !== player() || !ownsNativeTether()) return native.apply(this, arguments);
+                    const owner = sourceById(state()?.executorId);
+                    if (
+                        movementAttempt &&
+                        owner &&
+                        Number.isFinite(xTo) &&
+                        Number.isFinite(yTo) &&
+                        fartherFrom(player(), { x: xTo, y: yTo }, owner)
+                    )
+                        return false;
+                    const before = { x: target.x, y: target.y };
+                    const result = native.call(this, delta, false, target, xTo, yTo);
+                    if (message && (before.x !== target.x || before.y !== target.y))
+                        movementFeedback("SpiderlingsRecoveryPull");
+                    return result;
+                },
+        );
+
+    function dragSources(recovery) {
+        let moved = false;
+        const records = Object.values(sourceRecords(recovery));
+        // Roots move first, then their relays. Each displacement uses the native
+        // tether consumer after an actual paid player step, never an extra turn.
+        const pending = [...records],
+            processed = new Set();
+        while (pending.length) {
+            const index = pending.findIndex(
+                (saved) => saved.relayParentId === undefined || processed.has(sourceKey(saved.relayParentId)),
+            );
+            if (index < 0) break;
+            const saved = pending.splice(index, 1)[0],
+                source = sourceById(saved.id);
+            processed.add(sourceKey(saved.id));
+            const owner = saved.relayParentId === undefined ? player() : sourceById(saved.relayParentId);
+            if (!source || !owner || source.leash) continue;
+            const length = saved.relayParentId === undefined ? player().leash.length : MAX_RANGE;
+            if (Math.max(Math.abs(source.x - owner.x), Math.abs(source.y - owner.y)) <= length) continue;
+            const before = { x: source.x, y: source.y };
+            source.leash = {
+                entity: owner.id,
+                reason: TETHER_REASON,
+                length,
+                priority: 5,
+            };
+            try {
+                KinkyDungeonUpdateTether(0, false, source);
+            } finally {
+                delete source.leash;
+            }
+            moved ||= source.x !== before.x || source.y !== before.y;
+        }
+        if (moved) movementFeedback("SpiderlingsRecoveryPlayerPull");
+        // An owner blocked by terrain can still pull the player back. The native
+        // resolver owns that outcome and retains existing collision behavior.
+        KinkyDungeonUpdateTether(0, true, player());
+    }
     if (typeof KinkyDungeonMoveTo === "function")
         KinkyDungeonMoveTo = api.Hooks.wrap(
             "Spinner.recoveryMoveCost",
@@ -896,8 +995,27 @@
             (native) =>
                 function () {
                     const before = { x: player().x, y: player().y },
-                        count = ownsNativeTether() ? strength() : 0;
-                    const cost = native.apply(this, arguments);
+                        recovery = ownsNativeTether() ? state() : undefined,
+                        owner = sourceById(recovery?.executorId),
+                        ownerPosition = owner && { x: owner.x, y: owner.y },
+                        count = recovery ? strength(recovery) : 0,
+                        previousAttempt = movementAttempt;
+                    let cost;
+                    movementAttempt = recovery ? { x: arguments[0], y: arguments[1] } : undefined;
+                    try {
+                        cost = native.apply(this, arguments);
+                    } finally {
+                        movementAttempt = previousAttempt;
+                    }
+                    if (
+                        cost > 0 &&
+                        ownerPosition &&
+                        ownsNativeTether() &&
+                        fartherFrom(before, player(), ownerPosition) &&
+                        Math.max(Math.abs(player().x - ownerPosition.x), Math.abs(player().y - ownerPosition.y)) >
+                            player().leash.length
+                    )
+                        dragSources(recovery);
                     if (count > 1 && cost > 0 && (player().x !== before.x || player().y !== before.y)) {
                         // Use native movement debt, not a second input/action system. Native
                         // MoveTo's returned slow cost is capped by its caller at nine; the

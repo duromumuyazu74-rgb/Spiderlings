@@ -41,7 +41,7 @@ KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,幼蛛小隊
 KinkyDungeonStatDescSpiderlingsSquad,条件を満たす新しい通常マップごとに敵対する小隊が現れる。糸紡ぎ2体と、穴掘り・糸吐き・跳躍者・魔術師が各1体。配置場所と幼蛛の出現枠が必要。
 KDModButtonspiderlingsSpinnerEncounters,糸紡ぎの捕獲場
-KDModButtonspiderlingsNestSummonWeights,巣の増援の重み（0で無効）
+KDModButtonspiderlingsNestSummonWeights,増援の種類別ウェイト
 KDModButtonspiderlingsNestSpinnerWeight,糸紡ぎの重み
 KDModButtonspiderlingsNestJumperWeight,跳躍者の重み
 KDModButtonspiderlingsNestWebCasterWeight,糸吐きの重み
@@ -277,3 +277,5 @@ KDLoreLabelspiderlings.MageSpiderlings,幼蛛の魔術師
 KDLoreTextspiderlings.NestEntrance,幾重もの糸が暗い穴の縁を柔らかく覆う。奥で小さな足が動き、擦り切れた内張りには新しい糸が足される。静かに見える巣の中で、もう一対の目が光る。
 KDLoreTitlespiderlings.NestEntrance,巣穴の入口
 KDLoreLabelspiderlings.NestEntrance,巣穴の入口
+SpiderlingsRecoveryPlayerPull,糸を張り、幼蛛の糸紡ぎを近くへ引き寄せた。
+SpiderlingsRecoveryPull,張った糸に引かれ、幼蛛の糸紡ぎへ近づく。

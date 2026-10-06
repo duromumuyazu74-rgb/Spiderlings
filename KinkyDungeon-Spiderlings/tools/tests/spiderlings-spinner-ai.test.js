@@ -336,7 +336,10 @@ test("a lone Spinner builds one-entry rings and pays to seal them after prey ent
     }
     const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
     assert.equal(ai.plannerWorkLast.candidateCells, 0);
-    assert.ok(ai.plannerWorkPeak.expansionCells <= 24);
+    assert.ok(
+        ai.plannerWorkPeak.expansionCells <= 24 * Object.keys(ai.plans).length,
+        "Each continuing field project checks at most one next ring per planning turn",
+    );
     assert.equal(graph.fields[plan.fieldId].phase, "ready", JSON.stringify(group.metrics));
     assert.equal(graph.composites[plan.compositeId].layerIds.length, 3, JSON.stringify(group.metrics));
     assert.ok(graph.composites[plan.compositeId].layerIds.every((id) => graph.fields[id].phase === "ready"));
@@ -1594,6 +1597,37 @@ test("cooperative enclosure reuses the saved group and topology work scheduler",
         setup.encounter.topology.actionLog.length >= before,
         "the production paid-action path owns enclosure work",
     );
+});
+
+test("a small nearby enclosure does not hide a larger connected field on the dungeon route", () => {
+    const worker = spinner(1, 3, 7),
+        r = runtime([worker]);
+    const snapshot = {
+        width: 36,
+        height: 20,
+        cells: [],
+        entrances: [{ x: 1, y: 7 }],
+        exits: [{ x: 33, y: 7 }],
+        nests: [],
+    };
+    for (let y = 1; y < 19; y++)
+        for (let x = 1; x < 35; x++) {
+            if ((x <= 7 && y >= 4 && y <= 10) || (x >= 18 && x <= 33 && y >= 2 && y <= 16) || y === 7)
+                snapshot.cells.push({ x, y, floor: true, protected: false, locked: false });
+        }
+    Object.assign(r.context.KDMapData, {
+        GridWidth: 36,
+        GridHeight: 20,
+        StartPosition: snapshot.entrances[0],
+        EndPosition: snapshot.exits[0],
+    });
+    Object.assign(r.context.KinkyDungeonPlayerEntity, { x: 4, y: 7 });
+    const cells = new Set(snapshot.cells.map(cellKeyForTest));
+    r.context.KinkyDungeonMapGet = (x, y) => (cells.has(`${x},${y}`) ? "." : "1");
+    const ai = start(r, snapshot),
+        plan = ai.plans[Object.values(ai.groups)[0].planId];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 4, "Consider larger reachable sites before committing to a nearby fallback");
 });
 
 test("a cramped map selects its largest reachable legal ring without inventing space", () => {

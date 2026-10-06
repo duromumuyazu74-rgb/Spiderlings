@@ -41,7 +41,7 @@ KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,새끼 거미 분대
 KinkyDungeonStatDescSpiderlingsSquad,"조건을 충족하는 새 일반 지도마다 적대 분대가 나타난다. 방적자 2마리와 굴착자, 거미줄 투사자, 도약자, 마법사 각 1마리다. 자리와 새끼 거미 개체 수 여유가 필요하다."
 KDModButtonspiderlingsSpinnerEncounters,방적자 포획장
-KDModButtonspiderlingsNestSummonWeights,둥지 증원 가중치 (0: 비활성화)
+KDModButtonspiderlingsNestSummonWeights,증원 종류별 가중치
 KDModButtonspiderlingsNestSpinnerWeight,방적자 가중치
 KDModButtonspiderlingsNestJumperWeight,도약자 가중치
 KDModButtonspiderlingsNestWebCasterWeight,거미줄 투사자 가중치
@@ -277,3 +277,5 @@ KDLoreLabelspiderlings.MageSpiderlings,새끼 거미 마법사
 KDLoreTextspiderlings.NestEntrance,겹겹의 거미줄이 어두운 구멍 가장자리를 부드럽게 감싼다. 안쪽에서 작은 발이 움직이고 해진 안감에 새 실이 더해진다. 조용해 보이는 둥지에서 또 한 쌍의 눈이 반짝인다.
 KDLoreTitlespiderlings.NestEntrance,둥지 입구
 KDLoreLabelspiderlings.NestEntrance,둥지 입구
+SpiderlingsRecoveryPlayerPull,거미줄을 팽팽히 당겨 새끼 거미 방적자를 가까이 끌어당깁니다.
+SpiderlingsRecoveryPull,팽팽한 거미줄에 끌려 새끼 거미 방적자 쪽으로 다가갑니다.

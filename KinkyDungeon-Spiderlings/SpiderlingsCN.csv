@@ -41,7 +41,7 @@ KDModButtonSpiderlings,Spiderlings
 KinkyDungeonStatSpiderlingsSquad,幼蛛小队
 KinkyDungeonStatDescSpiderlingsSquad,每张符合条件的新普通地图增加一支敌对幼蛛小队：织网幼蛛两只，掘穴幼蛛、喷网幼蛛、跃击幼蛛和法师幼蛛各一只。地图须有足够空间，且未超过幼蛛数量上限。
 KDModButtonspiderlingsSpinnerEncounters,织网幼蛛捕获场地
-KDModButtonspiderlingsNestSummonWeights,巢穴增援种类权重（0 为禁用）
+KDModButtonspiderlingsNestSummonWeights,增援种类权重
 KDModButtonspiderlingsNestSpinnerWeight,织网幼蛛权重
 KDModButtonspiderlingsNestJumperWeight,跃击幼蛛权重
 KDModButtonspiderlingsNestWebCasterWeight,喷网幼蛛权重
@@ -277,3 +277,5 @@ KDLoreLabelspiderlings.MageSpiderlings,法师幼蛛
 KDLoreTextspiderlings.NestEntrance,层层蛛丝柔化了幽暗洞口的边缘。深处响起细足的轻动，磨损的丝衬也不断添上新丝。巢穴看似安静，直到另一双眼睛在暗处闪亮。
 KDLoreTitlespiderlings.NestEntrance,蛛巢入口
 KDLoreLabelspiderlings.NestEntrance,蛛巢入口
+SpiderlingsRecoveryPlayerPull,你拉紧丝线，将织网幼蛛牵近了些。
+SpiderlingsRecoveryPull,绷紧的丝线牵着你，向织网幼蛛靠近。

@@ -189,7 +189,9 @@
         sources.every((source) => npcCapture.usesSource(source.id)),
         "Both local workers must hold actual NPC Capture",
     );
-    const donors = [spawn("Spinner", 19, 9), spawn("Spinner", 19, 11)],
+    // A threatened donor keeps two local workers. Provide a real third worker
+    // so larger new projects cannot turn this loan fixture into a valid refusal.
+    const donors = [spawn("Spinner", 19, 9), spawn("Spinner", 19, 11), spawn("Spinner", 19, 12)],
         encounter = native.state(),
         donorGroup = command.newGroup(encounter.ai, donors);
     for (const donor of donors) {

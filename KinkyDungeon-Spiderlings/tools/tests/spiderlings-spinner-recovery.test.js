@@ -41,9 +41,34 @@ function recoveryRuntime(options = {}) {
             },
             KinkyDungeonUpdateTether(delta, message, target) {
                 (contextRef.tetherCalls ||= []).push({ delta, message, owner: target.leash?.entity });
+                if (!options.nativeTether || !target.leash) return false;
+                const owner =
+                    target.leash.entity === player.id
+                        ? player
+                        : contextRef.KDMapData.Entities.find((e) => e.id === target.leash.entity);
+                if (!owner) return false;
+                const xTo = arguments[3],
+                    yTo = arguments[4];
+                if (
+                    xTo !== undefined &&
+                    yTo !== undefined &&
+                    Math.max(Math.abs(xTo - owner.x), Math.abs(yTo - owner.y)) > target.leash.length &&
+                    (xTo - owner.x) ** 2 + (yTo - owner.y) ** 2 > (target.x - owner.x) ** 2 + (target.y - owner.y) ** 2
+                ) {
+                    messages.push("native-tether-too-short");
+                    return true;
+                }
+                while (Math.max(Math.abs(target.x - owner.x), Math.abs(target.y - owner.y)) > target.leash.length) {
+                    const x = target.x + Math.sign(owner.x - target.x),
+                        y = target.y + Math.sign(owner.y - target.y);
+                    if (target.player) contextRef.KDMovePlayer(x, y, false);
+                    else Object.assign(target, { x, y });
+                }
+                return false;
             },
             KinkyDungeonMoveTo(x, y) {
                 if (options.blockMove) return 0;
+                if (options.nativeTether && contextRef.KinkyDungeonUpdateTether(0, true, player, x, y)) return 0;
                 contextRef.KDMovePlayer(x, y, true);
                 contextRef.KDGameData.MovePoints = 0;
                 return options.moveCost || 1;
@@ -379,6 +404,27 @@ test("blocked native movement and forced displacement add no movement debt", () 
     r.c.KDMovePlayer(8, 5, false);
     assert.equal(r.c.KDGameData.MovePoints, 0);
 });
+
+test("paid movement away drags the native tether owner instead of rejecting the input", () => {
+    const r = attached({ nativeTether: true });
+    assert.ok(r.c.KinkyDungeonMoveTo(6, 5) > 0);
+    assert.equal(r.player.x, 6);
+    assert.equal(r.source.x, 8);
+    assert.equal(r.source.leash, undefined, "Reverse displacement must not save a second leash");
+    assert.ok(!r.messages.includes("native-tether-too-short"));
+    const before = r.source.x;
+    r.c.KDMovePlayer(5, 5, false);
+    assert.equal(r.source.x, before, "Forced displacement must not pay for dragging a Spinner");
+});
+
+test("blocked player movement never drags a source and preserves its unrelated tether", () => {
+    const r = attached({ nativeTether: true, blockMove: true });
+    const foreign = { entity: 999, reason: "Default", priority: 10, length: 2 };
+    r.source.leash = foreign;
+    assert.equal(r.c.KinkyDungeonMoveTo(6, 5), 0);
+    assert.equal(r.source.x, 9);
+    assert.equal(r.source.leash, foreign);
+});
 test("escort uses paid enemy movement and native tether updates, never a private player move", () => {
     const r = attached();
     r.source.x = 6;
@@ -393,6 +439,29 @@ test("escort uses paid enemy movement and native tether updates, never a private
     r.api.handleEnemyTurn(r.source, r.player, 1);
     assert.equal(r.c.tetherCalls.length, 2);
     assert.equal(r.c.tetherCalls[0].owner, r.source.id);
+});
+
+test("an attached helper vacates a one-cell core so the executor can lead prey home", () => {
+    const r = attached();
+    Object.assign(r.source, { x: 6, y: 5 });
+    const helper = r.addSource(42, 5, 5);
+    r.api.state().eligibleSourceIds.push(helper.id);
+    assert.equal(r.api.hit(helper), true);
+    r.api.handleEnemyTurn(helper, r.player, 0);
+    assert.deepEqual({ x: helper.x, y: helper.y }, { x: 5, y: 5 });
+    r.api.handleEnemyTurn(helper, r.player, 1);
+    assert.notDeepEqual({ x: helper.x, y: helper.y }, { x: 5, y: 5 });
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.deepEqual({ x: r.source.x, y: r.source.y }, { x: 5, y: 5 });
+});
+
+test("a blocked corner does not prevent the centered holder from using native return", () => {
+    const r = attached({ nativeTether: true });
+    Object.assign(r.source, { x: 5, y: 5 });
+    Object.assign(r.player, { x: 7, y: 7 });
+    r.c.KDMapData.Entities.push({ id: 80, x: 4, y: 4, hp: 4, Enemy: { name: "WebCaster" } });
+    r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.deepEqual({ x: r.player.x, y: r.player.y }, { x: 5, y: 5 });
 });
 test("death, hostility, lost contact, and incapacity clear the native tether without deleting equipment", () => {
     for (const change of [
@@ -603,14 +672,14 @@ test("blocked escorts outside the core do not tighten a stationary native tether
     assert.equal(r.player.leash.length, length);
     assert.equal(r.source.x, 6);
 });
-test("a one-cell core lets its executor take a paid step beyond center", () => {
+test("a centered executor tightens its native tether on a paid turn", () => {
     const r = attached();
     r.source.x = 5;
     r.source.y = 5;
     r.api.handleEnemyTurn(r.source, r.player, 1);
-    assert.equal(r.source.x, 4);
+    assert.equal(r.source.x, 5);
     assert.equal(r.source.y, 5);
-    assert.equal(r.player.leash.length, 1.5);
+    assert.equal(r.player.leash.length, 0.5);
 });
 
 test("recovery clears native attack warnings for attached and joining sources on refresh", () => {

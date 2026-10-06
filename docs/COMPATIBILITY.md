@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current package is `Spiderlings_0.92.36-test.113.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current package is `Spiderlings_0.92.36-test.114.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.114 large enclosure choice and bidirectional recovery (2026-10-06)
+
+The same final ZIP passes all 53 native stages on KD 5.4.92 and latest official 5.5.3, including seven native language loads per game. Official `5.5` commit `05f03ab411a78a6aec5240752860354c31a78a34` was freshly fetched at `2026-10-06T03:09:51.126Z`. Full acceptance is `<cache>/runs/2026-10-06T03-09-51-142Z-0.92.36-test.114/acceptance.json`. Final ZIP: 175 allowlisted entries, 24,861,792 bytes; SHA-256 `15c75e9d67d08c1e9617185d52a607029cdcb8579a5e497f2bf1c186ea389b0f`.
+
+The native planner chooses a radius-four enclosure in a connected large room despite a nearer small pocket, without granting construction. Paid construction still completes one three-ring enclosure from its outer ring inward. Invested saved projects and legal route interception remain. Helper parking and a tightened native tether resolve a blocked one-cell center; a paid player step away moves its attached Spinner rather than rejecting input. Existing multi-source movement debt, repeated recovery, save/load and foreign-carrier checks pass. Native settings checks and inspected English/Chinese rendering cover the grouped nest controls and saved values.
+
+A private copy of the reported desktop save reaches its original field center with the final ZIP. The later save retains all four invested projects over twelve positive turns. An additional full-page Chinese screenshot includes the real HTML input fields, which canvas-only native captures omit. Original desktop files and saves were preserved. Seven-locale action messages passed independent semantic review. See the [implementation and verification scope](spiderlings-test114-recovery.zh-CN.md).
+
+The command/work/perception fixtures now distinguish original ownership from temporary command, whole composite completion from pooled ready rings, and initial construction from paid rebuilding. The NPC maintenance loan provides a third donor while allowing its threatened home to reserve two workers. The final full run above uses these corrected premises; earlier failed candidates and focused runs remain debugging evidence.
+
+Repository checks, 12 policy tests, 625 public tests, the complete 948-test local watcher and exact ZIP verification pass. The full collector imports the above native evidence and records stable source/ZIP bytes: `.scratch/delivery/2026-10-06T03-20-23-452Z-mRUYgy/REPORT.md`. Only outcome documentation was appended afterward, followed by repository and whitespace checks that preserve existing CRLF files.
 
 ## Test.113 field support and player feedback (2026-10-06)
 
