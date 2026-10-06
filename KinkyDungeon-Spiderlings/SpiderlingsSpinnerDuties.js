@@ -27,10 +27,16 @@
                 invalidTask ||
                 duty.commander !== member?.commander ||
                 duty.loan !== member?.loan ||
-                duty.phase !== member?.phase
+                duty.phase !== member?.phase ||
+                duty.planId !== encounter?.ai?.groups[duty.groupId]?.planId ||
+                (!duty.executed &&
+                    duty.role === "work" &&
+                    duty.task !== JSON.stringify(encounter?.ai?.groups[duty.groupId]?.assignments?.[enemy.id]))
             ) {
                 duty.role = "wait";
                 duty.executed = true;
+                duty.handled = true;
+                duty.nativeAllowed = false;
             }
         }
         return duty;
@@ -50,6 +56,25 @@
             order = api.FieldCommand.movingOrder(enemy);
         if (!group && !order) return undefined;
         let role = "native";
+        const offer = group?.maintenanceOffer;
+        if (
+            offer?.memberId === enemy.id &&
+            !(enemy.SpiderlingsTaskNestDefenderTarget !== undefined) &&
+            !api.SpinnerRecovery?.sourceIds?.().includes(enemy.id) &&
+            !api.SpinnerNPCCapture?.usesSource?.(enemy.id) &&
+            !api.SpinnerNPCRecovery?.usesEntity?.(enemy.id) &&
+            api.SpinnerCapture?.state?.()?.admittedCompositeId ===
+                api.SpinnerNativeField.state()?.ai?.plans[group.planId]?.compositeId &&
+            api.SpinnerTopology.inspectWorkAction(api.SpinnerNativeField.state()?.topology, {
+                ...offer.assignment,
+                ownerId: enemy.id,
+            }).pending &&
+            api.SpinnerCapture?.releaseMaintenanceSource?.(enemy)
+        ) {
+            group.assignments[enemy.id] = offer.assignment;
+            group.maintenance = { memberId: enemy.id, fieldId: offer.assignment.fieldId };
+            delete group.maintenanceOffer;
+        }
         if (api.SpinnerRecovery?.sourceIds?.().includes(enemy.id)) role = "recovery";
         else if (api.SpinnerCapture?.state?.()?.sourceIds?.includes(enemy.id)) role = "capture";
         else if (api.SpinnerNPCCapture?.usesSource?.(enemy.id)) role = "npcCapture";
@@ -79,7 +104,11 @@
             phase: member?.phase,
             role,
             groupId: group?.id,
+            planId: group?.planId,
+            task: role === "work" ? JSON.stringify(group.assignments[enemy.id]) : undefined,
             assignment: role === "work" ? JSON.parse(JSON.stringify(group.assignments[enemy.id])) : undefined,
+            resolved: !["native", "work"].includes(role),
+            nativeAllowed: role === "native",
             executed: false,
         };
         decisions.set(String(enemy.id), decision);
@@ -91,32 +120,89 @@
         return !duty || duty.role === "native" || duty.role === handler;
     }
 
+    function resolve(duty, enemy, target, aiData) {
+        const facts = api.SpinnerAI.dutyFacts(enemy, target, aiData);
+        duty.resolved = true;
+        duty.role = "native";
+        duty.nativeAllowed = true;
+        duty.category = "delegate-native";
+        duty.handled = false;
+        if (!facts) return;
+        const adjacent = (destination) =>
+            destination && Math.max(Math.abs(enemy.x - destination.x), Math.abs(enemy.y - destination.y)) <= 1;
+        const pursue = (destination, perceived) => {
+            if (!destination) return;
+            if (adjacent(destination)) {
+                duty.category = perceived ? "native-defense" : "delegate-native";
+                duty.handled = !!perceived;
+                return;
+            }
+            duty.category = "pursuit";
+            duty.destination = { x: destination.x, y: destination.y };
+            duty.nativeAllowed = false;
+            duty.handled = true;
+        };
+        const work = () => {
+            duty.role = "work";
+            duty.assignment = JSON.parse(JSON.stringify(facts.assignment));
+            duty.task = JSON.stringify(facts.assignment);
+            duty.nativeAllowed = false;
+            duty.handled = true;
+        };
+        if (facts.recoveryPursuit) {
+            if (facts.perceivedRecovery || facts.recentRecovery)
+                pursue(facts.perceivedRecovery ? facts.recoveryTarget : facts.recoveryKnown, facts.perceivedRecovery);
+        } else if (!facts.validPlan || facts.nestAttacker) {
+            duty.category = facts.nestAttacker ? "crew" : "delegate-native";
+        } else if (
+            facts.perceivedThreat &&
+            adjacent(target) &&
+            facts.soleBuilder &&
+            (target.player || (!KinkyDungeonIsDisabled(target) && !KDHelpless(target)))
+        ) {
+            duty.category = "native-defense";
+            duty.handled = true;
+        } else if (facts.maintenance || facts.gateWork || facts.bodyWorker || facts.coreRally) work();
+        else if (facts.observed && facts.targetInCore) {
+            if (!adjacent(target)) pursue(target, facts.perceivedThreat);
+        } else if (facts.lure) pursue(facts.perceivedThreat ? target : facts.known, facts.perceivedThreat);
+        else if (facts.perceivedThreat && adjacent(target)) {
+            duty.category = "native-defense";
+            duty.handled = true;
+        } else if (!facts.engaged && facts.perceivedThreat && facts.ordinary) {
+            duty.category = "delegate-native";
+        } else if (facts.assignment) work();
+        else if (facts.yieldCell) {
+            duty.category = "yield";
+            duty.destination = facts.yieldCell;
+            duty.nativeAllowed = false;
+            duty.handled = true;
+        }
+    }
+
     function beforeMove(enemy, target, aiData) {
         if (!(enemy.SpiderlingsSpinnerRuntimeDelta > 0)) return false;
         const duty = current(enemy);
         if (!duty) return false;
-        api.SpinnerAI.observeDuty(enemy, target, aiData);
-        if (duty.role === "native") {
-            const handled =
-                api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData) ||
-                api.SpinnerAI.handleBeforeMove(enemy, target, aiData);
-            if (handled) aiData.idle = false;
-            return handled;
-        }
         if (duty.executed) {
-            aiData.idle = false;
-            return true;
+            if (duty.handled !== false) aiData.idle = false;
+            return duty.handled !== false;
         }
+        if (!duty.resolved) resolve(duty, enemy, target, aiData);
+        else api.SpinnerAI.observeDuty(enemy, target, aiData);
         duty.executed = true;
         if (duty.role === "dispatch") api.FieldCommand.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta);
         else if (duty.role === "work") duty.result = api.SpinnerAI.executeDuty(enemy, duty.groupId, duty.assignment);
-        aiData.idle = false;
-        return true;
+        else if (["pursuit", "yield"].includes(duty.category))
+            duty.result = api.SpinnerAI.executeTacticalDuty(enemy, duty);
+        else if (duty.category === "crew") duty.handled = !!api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData);
+        if (duty.handled !== false) aiData.idle = false;
+        return duty.handled !== false;
     }
 
     function gate(enemy) {
         const duty = current(enemy);
-        return !duty || (duty.role === "native" && api.SpinnerAI.gateNativePhase(enemy));
+        return !duty || (duty.role === "native" && duty.nativeAllowed);
     }
 
     function restore() {

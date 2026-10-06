@@ -634,9 +634,12 @@ test("construction wait preserves native movement credit and unassigned guards u
         group = Object.values(ai.groups)[0],
         worker = actors.find((actor) => group.assignments[actor.id]),
         aiData = { idle: true, hostile: true, canSensePlayer: false };
-    assert.equal(r.context.KDAIType.hunt.beforemove(worker, r.context.KinkyDungeonPlayerEntity, aiData), true);
-    assert.equal(aiData.idle, false, "a paid movement attempt must keep accrued native move points");
+    assert.equal(r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1).idle, false);
+    assert.equal(r.context.Spiderlings.SpinnerDuties.gate(worker), false);
     group.assignments = {};
+    r.context.KinkyDungeonCurrentTick++;
+    worker.SpiderlingsSpinnerRuntimeDelta = 1;
+    r.context.Spiderlings.SpinnerDuties.prepare(worker, r.context.KinkyDungeonPlayerEntity, 1);
     assert.equal(
         r.context.KDAIType.hunt.beforemove(worker, r.context.KinkyDungeonPlayerEntity, aiData),
         false,
@@ -3419,6 +3422,59 @@ test("an unprotected lure occupying the remaining repair cell takes a maintenanc
     assert.ok(encounter.topology.actionLog.length > 1, "The occupying lure must pay for the resumed repair");
 });
 
+test("a sole unprotected lure travels to repair a damaged field instead of starving maintenance", () => {
+    const { actors, r, c, native, snapshot } = adoptedFieldScene({ x: 8, y: 8 }),
+        encounter = native.state(),
+        group = Object.values(encounter.ai.groups)[0],
+        actor = actors[1];
+    for (let turn = 0; turn < 60; turn++) {
+        native.tick(1);
+        start(r, snapshot);
+        for (const member of actors) c.KinkyDungeonEnemyLoop(member, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    actors[0].hp = 0;
+    Object.assign(actor, { x: 14, y: 8, aware: true, testSense: false });
+    encounter.topology.composites.adopted.closureArmed = false;
+    const link = encounter.topology.links.find(
+        (entry) => !entry.plannedCells.some((cell) => cell.x === 8 && cell.y === 8),
+    );
+    link.hp -= 0.5;
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    group.assignments = {};
+    group.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: actor.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 14, y: 6, age: 0 },
+    };
+    const before = plain(encounter.topology.actionLog || []);
+    start(r, snapshot);
+    assert.ok(
+        c.Spiderlings.SpinnerAI.hasMaintenanceAssignment(actor),
+        "A distant available lure must be assigned real maintenance",
+    );
+    assert.deepEqual(plain(encounter.topology.actionLog || []), before, "Planning cannot repair for free");
+    for (
+        let turn = 0;
+        turn < 40 && encounter.topology.links.find((entry) => entry.id === link.id).hp < link.maxHp;
+        turn++
+    ) {
+        c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+        start(r, snapshot);
+    }
+    assert.ok(
+        encounter.topology.actionLog.some((entry) => entry.type.startsWith("repair")),
+        "The lure must reach and pay for a repair",
+    );
+    assert.equal(encounter.topology.links.find((entry) => entry.id === link.id).hp, link.maxHp);
+});
+
 test("enclosure gates follow global planning positions through paid work without native recognition", () => {
     const worker = spinner(1, 8, 6),
         r = runtime([worker]),
@@ -4079,4 +4135,253 @@ test("delegated native pursuit retains movement credit instead of being finalize
     assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, aiData), true);
     assert.ok(r.movement.some((entry) => entry.id === actor.id));
     assert.equal(aiData.idle, false, "Native idle finalization would erase the paid pursuit credit");
+});
+
+test("final lure duty can replace a provisional construction task using only historical recognition", () => {
+    const actor = spinner(1, 5, 5, { aware: true, testSense: false }),
+        r = runtime([actor, spinner(2, 5, 9)]),
+        c = r.context;
+    const ai = start(r),
+        group = Object.values(ai.groups)[0],
+        native = c.Spiderlings.SpinnerNativeField;
+    assert.ok(group.assignments[actor.id] && group.assignments[actor.id].type !== "rally");
+    group.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: actor.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 14, y: 9, age: 0, source: "native" },
+    };
+    const destinations = [],
+        findPath = c.KinkyDungeonFindPath,
+        before = plain(native.state().topology.actionLog);
+    c.KinkyDungeonFindPath = (...args) => {
+        destinations.push({ x: args[2], y: args[3] });
+        return findPath(...args);
+    };
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    const duty = c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(duty.role, "work");
+    assert.equal(duty.resolved, false);
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, { hostile: true }), true);
+    assert.equal(duty.category, "pursuit");
+    assert.deepEqual(destinations, [{ x: 14, y: 9 }]);
+    assert.deepEqual(plain(native.state().topology.actionLog), before);
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+});
+
+test("reduced support returns only surplus members and keeps protected sources", () => {
+    const { c, command, encounter, receiver, home, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "repair", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const deployed = Object.values(encounter.command.members).filter((member) => member.loan);
+    const sourceId = deployed[0].id;
+    c.Spiderlings.SpinnerNPCCapture = { usesSource: (id) => id === sourceId };
+    const log = plain(encounter.topology.actionLog);
+    command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(encounter.command.requests[request.id].deployed, 1);
+    assert.equal(encounter.command.members[sourceId].commander, receiver.id);
+    assert.equal(Object.values(encounter.command.members).filter((member) => member.phase === "returning").length, 1);
+    assert.deepEqual(plain(encounter.topology.actionLog), log);
+    assert.ok(deployed.every((member) => command.owners(encounter, home.id).includes(member.id)));
+});
+
+test("home emergency recalls a construction surplus under paid global return control", () => {
+    const { c, command, encounter, receiver, home, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    command.request(encounter, home.id, "defense", 1, { x: 3, y: 3 });
+    command.allocate(encounter, distances);
+    const returning = Object.values(encounter.command.members).filter((member) => member.phase === "returning");
+    assert.equal(returning.length, 1, "Only the actual unmet emergency needs one recalled member");
+    assert.equal(returning[0].reason, "home-emergency");
+    assert.equal(returning[0].commander, null);
+    assert.ok(receiver.memberIds.length >= 1);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === returning[0].id);
+    const before = { x: actor.x, y: actor.y };
+    command.handleMove(actor, 0);
+    assert.deepEqual({ x: actor.x, y: actor.y }, before);
+});
+
+test("a new loan clears the previous blocked journey after paid return", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    Object.assign(member, { blocked: true, blockedTurns: 8 });
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "returning");
+    assert.equal(member.reason, "route-blocked");
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    for (let step = 0; step < 30 && member.phase === "returning"; step++) command.handleMove(actor, 1);
+    assert.equal(member.phase, "home");
+    encounter.ai.coordinationTurn = (encounter.ai.coordinationTurn || 0) + 9;
+    command.request(encounter, receiver.id, "build", 1, { x: actor.x, y: actor.y });
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "travelling");
+    assert.equal(member.blocked, false);
+    assert.equal(member.blockedTurns, 0);
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "travelling", "New legal travel cannot inherit the old rejection");
+});
+
+test("blocked support can return to its saved origin when its donor has no active members", () => {
+    const { command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    encounter.ai.groups[member.home].planId = null;
+    for (const other of Object.values(encounter.command.members))
+        if (other !== member) Object.assign(other, { home: null, commander: null, phase: "free" });
+    Object.assign(member, { blocked: true, blockedTurns: 8 });
+    command.allocate(encounter, (source, target) => {
+        assert.ok(target, "A return route must have an actual destination");
+        return distances(source, target);
+    });
+    assert.equal(member.phase, "returning");
+    assert.deepEqual(plain(member.destination), plain(member.origin));
+    assert.equal(member.reason, "route-blocked");
+});
+
+test("urgent repair may borrow construction workers while independent expansion retains the crew", () => {
+    const { command, encounter, receiver, home, distances } = loanScene();
+    encounter.ai.plans[home.planId].workforceTarget = 4;
+    const build = command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(build.deployed, 0, "Independent expansion must retain the construction workforce");
+    build.closed = true;
+    const repair = command.request(encounter, receiver.id, "repair", 3, { x: 13, y: 6 });
+    const before = plain(encounter.topology.actionLog);
+    command.allocate(encounter, distances);
+    assert.equal(repair.deployed, 2, "Higher-priority repair can borrow only the construction surplus");
+    assert.equal(home.memberIds.length, 1, "The donor keeps its minimum construction worker");
+    assert.ok([1, 2, 3].every((id) => command.owners(encounter, home.id).includes(id)));
+    assert.deepEqual(plain(encounter.topology.actionLog), before);
+});
+
+test("support waiting for native movement credit does not become a blocked loan", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    actor.movePoints = 0;
+    c.KinkyDungeonEnemyTryMove = (entity) => {
+        entity.movePoints += 0.1;
+        return false;
+    };
+    const before = { x: actor.x, y: actor.y };
+    for (let turn = 0; turn < 9; turn++) {
+        assert.equal(command.handleMove(actor, 1), true);
+        command.allocate(encounter, distances);
+    }
+    assert.equal(member.phase, "travelling");
+    assert.equal(member.blocked, false);
+    assert.equal(member.blockedTurns, 0);
+    assert.deepEqual({ x: actor.x, y: actor.y }, before);
+    assert.ok(actor.movePoints > 0, "Native credit accumulates without extra movement");
+});
+
+test("a resolved native delegation becomes paid wait when its field is cancelled", () => {
+    const { c, encounter, actors, home } = loanScene();
+    const actor = actors[0];
+    home.assignments = {};
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, {}), false);
+    home.cancelled = true;
+    const before = plain(encounter.topology.actionLog),
+        aiData = { idle: true };
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, aiData), true);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "wait");
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+    assert.deepEqual(plain(encounter.topology.actionLog), before);
+});
+
+test("a breached field with only protected sources cannot claim recoverable coverage", () => {
+    const { c, native, actors } = adoptedFieldScene();
+    const encounter = native.state(),
+        api = c.Spiderlings;
+    const home = Object.values(encounter.ai.groups)[0];
+    const link = encounter.topology.links.find((entry) => entry.owners.includes("adopted-inner"));
+    link.hp = 0;
+    link.builtCells = [];
+    link.connected = false;
+    api.SpinnerTopology.refresh(encounter.topology);
+    api.SpinnerNPCCapture = { usesSource: (id) => actors.some((actor) => actor.id === id) };
+    api.FieldProjects.update(encounter, {
+        members: (group) => group.memberIds.map((id) => c.KDMapData.Entities.find((actor) => actor.id === id)),
+        distances: (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)),
+        legal: () => true,
+        paid: () => true,
+        prepareApproach: () => {},
+        intercepts: () => false,
+        start: () => {},
+        lineFixture: true,
+    });
+    const plan = encounter.ai.plans[home.planId];
+    assert.equal(plan.projectState, "waiting");
+    assert.equal(plan.availableWorkers, 0);
+    assert.equal(plan.coverageAvailable, false);
+    assert.ok(encounter.ai.projects.unmet.length > 0);
+    assert.equal(encounter.command.requests[`${home.id}:repair`].status, "rejected");
+    assert.ok(
+        actors
+            .filter((actor) => actor.Enemy.name === "Spinner")
+            .every((actor) => encounter.command.members[actor.id].commander === home.id),
+    );
+});
+
+test("maintenance source release rechecks recovery protection at the final duty entrance", () => {
+    const { c, native, actors } = adoptedFieldScene();
+    const api = c.Spiderlings,
+        encounter = native.state(),
+        group = Object.values(encounter.ai.groups)[0];
+    const actor = actors[0];
+    let releases = 0;
+    api.SpinnerCapture.state = () => ({
+        sourceIds: actors.filter((member) => member.Enemy.name === "Spinner").map((member) => member.id),
+        admittedCompositeId: "adopted",
+    });
+    api.SpinnerCapture.releaseMaintenanceSource = () => {
+        releases++;
+        return true;
+    };
+    api.SpinnerRecovery = { sourceIds: () => [actor.id] };
+    group.maintenanceOffer = { memberId: actor.id, assignment: { fieldId: "adopted-inner", type: "repair" } };
+    const duty = api.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(duty.role, "recovery");
+    assert.equal(releases, 0);
+    assert.equal(group.maintenance, undefined);
+    assert.equal(api.SpinnerCapture.state().sourceIds.length, 2);
+});
+
+test("large project crews finish staffing before independent expansion borrows surplus", () => {
+    for (const count of [4, 8]) {
+        const actors = Array.from({ length: count }, (_, index) =>
+            spinner(index + 1, 7 + (index % 3), 7 + Math.floor(index / 3)),
+        );
+        const r = runtime(actors),
+            c = r.context;
+        c.KDMapData.GridWidth = 36;
+        c.KDMapData.GridHeight = 25;
+        c.KinkyDungeonMapGet = (x, y) => (x > 0 && y > 0 && x < 35 && y < 24 ? "0" : "1");
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: 33, y: 22 });
+        c.KDMapData.Entities.push({ id: 99, x: 2, y: 2, hp: 20, Enemy: { name: "MaidKnightHeavy" } });
+        const snapshot = { width: 36, height: 25, cells: [], entrances: [], exits: [], nests: [] };
+        for (let y = 1; y < 24; y++)
+            for (let x = 1; x < 35; x++)
+                snapshot.cells.push({ x, y, floor: true, walkable: true, protected: false, locked: false });
+        const ai = start(r, snapshot),
+            encounter = c.Spiderlings.SpinnerNativeField.state();
+        const projects = Object.values(ai.groups).filter((group) => group.planId);
+        assert.equal(projects.length, count === 4 ? 1 : 2);
+        assert.ok(projects.every((group) => group.memberIds.length === 4));
+        assert.ok(projects.every((group) => ai.plans[group.planId].radius === 4));
+        assert.equal(encounter.topology.actionLog.length, 0, "Staffing cannot build for free");
+    }
 });

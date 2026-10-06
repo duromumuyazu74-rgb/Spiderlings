@@ -308,7 +308,23 @@
         );
         expect(
             sustained.actions.some((action) => action.type.startsWith("repair")),
-            "Damaged webs received no paid native repair",
+            `Damaged webs received no paid native repair: ${JSON.stringify({
+                damage: sustained.damage,
+                recentActions: sustained.actions.slice(-20),
+                workers: workers.map((worker) => ({
+                    id: worker.id,
+                    x: worker.x,
+                    y: worker.y,
+                    hp: worker.hp,
+                    aware: worker.aware,
+                    disabled: KinkyDungeonIsDisabled(worker),
+                    helpless: KDHelpless(worker),
+                })),
+                groups: Spiderlings.SpinnerNativeField.state().ai.groups,
+                plans: Spiderlings.SpinnerNativeField.state().ai.plans,
+                requests: Spiderlings.FieldCommand.inspect().requests,
+                damaged: Spiderlings.SpinnerNativeField.state().topology.links.filter((link) => link.hp < link.maxHp),
+            })}`,
         );
         expect(sustained.final.pending === 0, "Sustained scene retained a completed capture");
     } finally {

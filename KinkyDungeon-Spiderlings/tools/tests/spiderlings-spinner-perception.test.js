@@ -69,6 +69,9 @@ function fixture(reverse = false) {
     vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsFieldCommand.js"), "utf8"), context, {
         filename: "SpiderlingsFieldCommand.js",
     });
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsSpinnerDuties.js"), "utf8"), context, {
+        filename: "SpiderlingsSpinnerDuties.js",
+    });
     return { context, api: context.Spiderlings.SpinnerAI, scout, helper, player, group, encounter, calls };
 }
 
@@ -93,6 +96,7 @@ test("NPC awareness cannot redirect pressure toward an unrecognized live player 
     assert.deepEqual(r.api.playerObservation(), known);
     r.scout.vp = 0.7;
     destinations.length = 0;
+    r.context.KinkyDungeonCurrentTick++;
     r.api.handleBeforeMove(r.scout, r.player, { canSensePlayer: true, canSeePlayer: true, hostile: true });
     assert.deepEqual(destinations, [{ x: r.player.x, y: r.player.y }], "New native recognition admits live pursuit");
 });

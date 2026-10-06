@@ -27,6 +27,65 @@
         Spiderlings.SpinnerNativeField.state().topology.actionLog.length === 0,
         "Large-field planning granted free construction",
     );
+    const staffing = [];
+    for (const count of [4, 8]) {
+        setup(`large-project-workforce-${count}`);
+        KDMapData.GridWidth = 36;
+        KDMapData.GridHeight = 25;
+        KDMapData.Grid =
+            Array.from({ length: 25 }, (_, y) =>
+                Array.from({ length: 36 }, (_, x) => (x > 0 && y > 0 && x < 35 && y < 24 ? "0" : "1")).join(""),
+            ).join("\n") + "\n";
+        KDMapData.Tiles = {};
+        KDMapData.StartPosition = { x: 1, y: 1 };
+        KDMapData.EndPosition = { x: 1, y: 2 };
+        KDMovePlayer(2, 2, false);
+        const crew = Array.from({ length: count }, (_, index) =>
+            spawn("Spinner", 7 + (index % 3), 7 + Math.floor(index / 3)),
+        );
+        for (const actor of crew) {
+            actor.aware = false;
+            actor.vp = 0;
+            actor.hostile = 999;
+            actor.Enemy = { ...actor.Enemy, visionRadius: 0 };
+            actor.modified = true;
+        }
+        const initial = Spiderlings.SpinnerAI.beginTurn({ activate: true });
+        const main = Object.values(initial.groups).find((group) => group.planId);
+        const planId = main.planId;
+        KDMovePlayer(33, 22, false);
+        const ai = Spiderlings.SpinnerAI.beginTurn({ activate: true });
+        const groups = Object.values(ai.groups).filter((group) => group.planId);
+        expect(
+            groups.length === (count === 4 ? 1 : 2),
+            `Crew spread across premature projects: ${JSON.stringify(ai.projects)}`,
+        );
+        expect(
+            groups.every((group) => group.memberIds.length === 4),
+            "An existing large field lost its construction workforce",
+        );
+        expect(
+            groups.every((group) => ai.plans[group.planId].radius === 4),
+            "Crew policy changed largest-field selection",
+        );
+        expect(
+            Spiderlings.SpinnerNativeField.state().topology.actionLog.length === 0,
+            "Staffing performed unpaid work",
+        );
+        for (let step = 0; step < 30; step++) await turn();
+        const live = Spiderlings.SpinnerNativeField.state();
+        expect(live.ai.plans[planId], "Expansion discarded the original invested project");
+        expect(
+            live.topology.actionLog.some((entry) => ai.plans[planId].fieldIds.includes(entry.fieldId)),
+            "The retained main crew never paid to advance its large field",
+        );
+        staffing.push({
+            count,
+            initialProjects: groups.length,
+            retained: main.memberIds.length,
+            paid: live.topology.actionLog.length,
+        });
+    }
     setup("layered-field-command");
     const actors = [
         [7, 8],
@@ -122,6 +181,20 @@
     );
     command.handleMove(actor, 0);
     expect(actor.x === position.x && actor.y === position.y, "A zero-time loan moved");
+    actor.bind = 100;
+    actor.movePoints = 0;
+    expect(Spiderlings.SpinnerAI.dispatchPath(actor, updated).length > 1, "Credit fixture has no legal route");
+    for (let step = 0; step < 9; step++) {
+        command.handleMove(actor, 1);
+        command.allocate(current, distances);
+    }
+    const creditWait = command.inspect().members[member.id];
+    expect(
+        creditWait.phase === "travelling" && !creditWait.blocked && creditWait.blockedTurns === 0,
+        "Native movement credit was mistaken for a blocked journey",
+    );
+    expect(actor.movePoints > 0 && actor.x === position.x && actor.y === position.y, "Credit wait bypassed payment");
+    actor.bind = 0;
     request.closed = true;
     receiver.cancelled = true;
     command.reconcile(current, KDMapData.Entities, {}, false);
@@ -139,6 +212,8 @@
     restore(save());
     expect(JSON.stringify(command.inspect()) === JSON.stringify(persisted), "Load lost the return responsibility");
     return {
+        staffing,
+        creditWait,
         firstPlan: planId,
         paidActions: native.state().topology.actionLog.length,
         loan: member,

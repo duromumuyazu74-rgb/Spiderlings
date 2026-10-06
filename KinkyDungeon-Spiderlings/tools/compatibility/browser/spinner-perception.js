@@ -258,6 +258,8 @@
         return nativePath.apply(this, arguments);
     };
     try {
+        KinkyDungeonCurrentTick += 1;
+        pressure.scout.SpiderlingsSpinnerRuntimeDelta = 1;
         Spiderlings.SpinnerAI.handleBeforeMove(pressure.scout, KinkyDungeonPlayerEntity, {
             canSensePlayer: true,
             canSeePlayer: true,

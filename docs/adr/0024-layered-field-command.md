@@ -17,3 +17,5 @@
 详细约定见[目标设计](../spinner-field-command-design.zh-CN.md)、[三项深化](../spinner-field-command-strengthening.zh-CN.md)，交付证据见[实现记录](../spiderlings-test110-field-command.zh-CN.md)。
 
 test.113 补充并发需求约定：捕获与维修分别提出请求，NPC 捕获来源保持保护，由总控借调额外工人。持续请求保留身份和等待年龄；工程目标修订后，刷新在途 Spinner 借调和非 Spinner 区域命令的目的地，不重复借调。
+
+test.120 补充工程推进约定：Projects 汇总实际剩余工作和可执行成员，供给方保留工程目标人手；无施工者的受损等待工程不冒充可恢复覆盖。Command 主动重评需求缩减、原场地告急及持续受阻的借调，保留来源保护与付费返回。Duties 独占最终职责缓存和原生阶段许可；AI 只提供事实、维护建议和执行，维护释放在最终入口重新验证。实现与验收范围见[推进改进记录](../spiderlings-test120-field-progress.zh-CN.md)。

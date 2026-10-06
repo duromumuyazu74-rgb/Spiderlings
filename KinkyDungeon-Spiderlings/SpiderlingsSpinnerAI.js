@@ -22,7 +22,6 @@
     let preparedMap;
     let preparedTick = -1;
     let observedGroups = new Map();
-    let turnDecisions = new Map();
     let mapCache;
     let passageCache;
 
@@ -1167,7 +1166,8 @@
         );
     }
 
-    function reserveCaptureMaintenance(encounter, snapshot, distances) {
+    function proposeCaptureMaintenance(encounter, snapshot, distances) {
+        for (const group of Object.values(encounter.ai.groups)) delete group.maintenanceOffer;
         const capture = api.SpinnerCapture?.state?.();
         if (!capture || !api.SpinnerCapture.releaseMaintenanceSource) return;
         const sources = (capture.sourceIds || [])
@@ -1194,6 +1194,7 @@
             for (const member of sources.filter((entity) => group.memberIds.includes(entity.id))) {
                 if (
                     api.SpinnerRecovery?.sourceIds?.().includes(member.id) ||
+                    api.SpinnerNPCCapture?.usesSource?.(member.id) ||
                     api.SpinnerNPCRecovery?.usesEntity?.(member.id) ||
                     member.SpiderlingsTaskNestDefenderTarget !== undefined
                 )
@@ -1226,15 +1227,12 @@
                 }
             }
             options.sort((a, b) => a.steps - b.steps || String(a.member.id).localeCompare(String(b.member.id)));
-            for (const chosen of options) {
-                if (!api.SpinnerCapture.releaseMaintenanceSource(chosen.member)) continue;
-                group.assignments[chosen.member.id] = {
-                    ...assignmentFromAction(chosen.action, chosen.work),
-                    maintenance: true,
+            const chosen = options[0];
+            if (chosen)
+                group.maintenanceOffer = {
+                    memberId: chosen.member.id,
+                    assignment: { ...assignmentFromAction(chosen.action, chosen.work), maintenance: true },
                 };
-                group.maintenance = { memberId: chosen.member.id, fieldId: chosen.action.fieldId };
-                break;
-            }
         }
     }
 
@@ -1255,15 +1253,14 @@
         for (const group of Object.values(ai.groups)) {
             const previousAssignments = group.assignments || {};
             group.assignments = {};
-            const occupiesMaintenanceWork = (member) => {
+            const hasPendingMaintenanceWork = (member) => {
                 // Legacy lines use their own task list and may not have an area graph yet.
                 if (!plan?.compositeId) return false;
                 const action = nextGroupWork(encounter, group, member, []);
-                return (
-                    action?.cell &&
-                    cellKey(action.cell) === cellKey(member) &&
-                    api.SpinnerTopology.inspectWorkAction(encounter.topology, action).maintenance
-                );
+                // A free lure is still a repair worker, including the paid journey
+                // to the wall. Counting it as available but excluding that journey
+                // prevents both maintenance and the request for another worker.
+                return api.SpinnerTopology.inspectWorkAction(encounter.topology, action).maintenance;
             };
             const plan = ai.plans[group.planId],
                 field = plan?.kind === "line" ? api.SpinnerNativeField.fieldById(encounter, plan.fieldId) : undefined,
@@ -1278,7 +1275,7 @@
                                 String(entity.id) !== String(group.engagement?.lureId) ||
                                 encounter.command?.requests[encounter.command.members[entity.id]?.requestId]?.kind ===
                                     "repair" ||
-                                occupiesMaintenanceWork(entity) ||
+                                hasPendingMaintenanceWork(entity) ||
                                 previousAssignments[entity.id]?.maintenance ||
                                 (group.maintenance?.memberId === entity.id &&
                                     maintenanceFieldPending(encounter, group)) ||
@@ -2037,6 +2034,36 @@
         };
         api.FieldProjects.update(encounter, {
             distances,
+            canWork: (group, member) => {
+                if ([member.stun, member.freeze, member.channel, member.teleporting].some((value) => value > 0))
+                    return false;
+                const plan = ai.plans[group.planId];
+                if (plan?.kind === "line") return true;
+                const skipped = new Set();
+                let action = nextGroupWork(encounter, group, member, []);
+                while (action?.cell) {
+                    const key = assignmentKey(action);
+                    if (skipped.has(key)) break;
+                    skipped.add(key);
+                    const status = api.SpinnerTopology.inspectWorkAction(encounter.topology, {
+                        ...action,
+                        ownerId: member.id,
+                    });
+                    if (
+                        status.pending &&
+                        (!api.SpinnerNativeField.snapshot(action.cell).actorOccupied ||
+                            status.allowsOccupiedTarget ||
+                            cellKey(member) === cellKey(action.cell)) &&
+                        workCells(action.cell, snapshot, member).some(
+                            (cell) =>
+                                Number.isFinite(distances(member, cell)) && occupancyRoute(member, cell).length > 0,
+                        )
+                    )
+                        return true;
+                    action = nextGroupWork(encounter, group, member, [...skipped]);
+                }
+                return false;
+            },
             paid: (plan) => planHasPaidWork(encounter, plan),
             relocate: (group) => {
                 const plan = ai.plans[group.planId];
@@ -2113,7 +2140,7 @@
             adjustEnclosureApproach(encounter, group, snapshot, distances);
         }
         reserveActions(encounter, snapshot, distances);
-        reserveCaptureMaintenance(encounter, snapshot, distances);
+        proposeCaptureMaintenance(encounter, snapshot, distances);
         reserveRallyPositions(encounter, snapshot, distances);
         let replacedApproach = false;
         for (const group of Object.values(ai.groups)) {
@@ -2162,21 +2189,6 @@
         group.metrics ||= { travel: 0, construction: 0, wait: 0, yield: 0, repair: 0 };
         group.metrics[category] = (group.metrics[category] || 0) + 1;
         group.lastAction = category;
-    }
-
-    function decisionKey(enemy) {
-        const tick = typeof KinkyDungeonCurrentTick === "number" ? KinkyDungeonCurrentTick : 0;
-        return `${tick}:${enemy.id}`;
-    }
-
-    function decide(enemy, group, category, handled, extra = {}) {
-        turnDecisions.set(decisionKey(enemy), { category, groupId: group.id, ...extra });
-        return handled;
-    }
-
-    function gateNativePhase(enemy) {
-        const decision = turnDecisions.get(decisionKey(enemy));
-        return !decision || ["native-defense", "delegate-native"].includes(decision.category);
     }
 
     function planWaypoint(encounter, group) {
@@ -2672,163 +2684,128 @@
         );
     }
 
-    function pursueObservation(enemy, group, target, perceivedThreat, observation) {
-        const known = observation || groupObservation(group),
-            destination = perceivedThreat ? target : known;
-        if (!destination) return decide(enemy, group, "delegate-native", false);
-        if (distance(enemy, destination) <= 1)
-            return decide(enemy, group, perceivedThreat ? "native-defense" : "delegate-native", perceivedThreat);
-        const path = nativePath(enemy, destination),
-            next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
+    // Facts and paid executors are native adapters; final priority and phase permission live in Duties.
+    function dutyFacts(enemy, target, aiData = {}) {
+        const encounter = api.SpinnerNativeField.state(),
+            state = encounter?.ai;
+        const group = Object.values(state?.groups || {}).find((entry) => entry.memberIds.includes(enemy.id));
+        if (!group || !eligibleSpinner(enemy)) return undefined;
+        const playerDuty = api.SpinnerRecovery?.wantsPursuit?.(enemy, KinkyDungeonPlayerEntity);
+        const recoveryTarget = playerDuty ? KinkyDungeonPlayerEntity : target;
+        const recoveryKnown = playerDuty
+            ? playerObservation(encounter) || groupObservation(group)
+            : groupObservation(group);
+        const perceivedThreat = !!(
+            enemy.aware &&
+            aiData.canSensePlayer &&
+            aiData.hostile === true &&
+            targetIsLiving(target) &&
+            recognizedContact(enemy, target)
+        );
+        const recoveryPursuit = playerDuty || api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
+        if (recoveryPursuit && perceivedThreat) {
+            if (group.engagement && !sameTarget(group.engagement.target, target)) clearEngagement(group);
+            observeTarget(encounter, group, enemy, target, aiData);
+        }
+        const plan = state.plans[group.planId];
+        const validPlan = !!plan && !["invalid", "abandoned"].includes(plan.status) && !!planWaypoint(encounter, group);
+        const homeGuard = group.source?.type === "nest" && plan?.kind !== "passage" && !enemy.SpiderlingsHuntRole;
+        if (!validPlan || homeGuard) clearEngagement(group);
+        else auditEngagement(encounter, group);
+        const nestAttacker = !!api.HuntingGrounds?.isNestAttacker?.(enemy, target);
+        const observed =
+            validPlan && !homeGuard && !nestAttacker && !recoveryPursuit
+                ? observeTarget(encounter, group, enemy, target, aiData)
+                : false;
+        const assignment = group.assignments?.[enemy.id],
+            known = groupObservation(group);
+        const blocking = Object.entries(group.assignments || {}).some(
+            ([id, other]) =>
+                String(id) !== String(enemy.id) &&
+                [other.target, other.workCell].some((cell) => cell?.x === enemy.x && cell?.y === enemy.y),
+        );
+        const yieldCell =
+            !assignment && blocking
+                ? DIRECTIONS.map((direction) => ({ x: enemy.x + direction.x, y: enemy.y + direction.y })).find(
+                      (cell) => {
+                          const tile = api.SpinnerNativeField.snapshot(cell);
+                          return tile.inBounds && tile.floor && !tile.protected && !tile.actorOccupied;
+                      },
+                  )
+                : undefined;
+        return {
+            groupId: group.id,
+            assignment,
+            validPlan,
+            perceivedThreat,
+            recoveryPursuit,
+            recoveryTarget,
+            recoveryKnown,
+            perceivedRecovery: recoveryTarget === target && perceivedThreat,
+            recentRecovery: !!recoveryKnown && sameTarget(recoveryKnown.target, recoveryTarget),
+            nestAttacker,
+            observed,
+            known,
+            yieldCell,
+            soleBuilder: needsSoleBuilder(encounter, group),
+            maintenance: hasMaintenanceAssignment(enemy),
+            gateWork:
+                hasGateWork(encounter, group) &&
+                api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).gateWork,
+            bodyWorker:
+                !!group.engagement &&
+                assignment &&
+                assignment.type !== "rally" &&
+                String(group.engagement.lureId) !== String(enemy.id) &&
+                !!plan?.compositeId,
+            coreRally:
+                assignment?.type === "rally" &&
+                plan?.kind === "passage" &&
+                encounter.topology.fields[plan.fieldId]?.phase === "sealed" &&
+                known &&
+                known.age < 4 &&
+                distance(enemy, known) > 1 &&
+                api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, known),
+            targetInCore:
+                !!plan?.compositeId &&
+                targetIsLiving(target) &&
+                api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target),
+            lure: !!group.engagement && String(group.engagement.lureId) === String(enemy.id),
+            engaged: !!group.engagement,
+            ordinary: group.source?.type !== "nest",
+        };
+    }
+
+    function executeTacticalDuty(enemy, duty) {
+        const group = api.SpinnerNativeField.state()?.ai?.groups[duty.groupId];
+        if (!group) return "invalid";
+        const path = duty.category === "pursuit" ? nativePath(enemy, duty.destination) : [duty.destination];
+        const next = path.find((cell) => cell && (cell.x !== enemy.x || cell.y !== enemy.y));
         if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
             record(group, "wait");
-            return decide(enemy, group, "pursuit-wait", true);
+            return "wait";
         }
         const moved = KinkyDungeonEnemyTryMove(
             enemy,
             { x: next.x - enemy.x, y: next.y - enemy.y },
-            enemy.SpiderlingsSpinnerRuntimeDelta || 1,
+            enemy.SpiderlingsSpinnerRuntimeDelta,
             next.x,
             next.y,
             false,
         );
-        record(group, moved ? "travel" : "wait");
-        return decide(enemy, group, "pursuit-move", true);
+        record(group, moved ? (duty.category === "yield" ? "yield" : "travel") : "wait");
+        return moved ? duty.category : "wait";
     }
 
+    // Historical diagnostics cross the same final-duty seam as the runtime.
     function handleBeforeMove(enemy, target, aiData = {}) {
-        // Native load refreshes run the enemy loop with delta 0. They must not
-        // spend saved credit, move builders or commit another work decision.
-        if (enemy?.SpiderlingsSpinnerRuntimeDelta <= 0) return false;
-        const encounter = api.SpinnerNativeField.state(),
-            state = encounter?.ai;
-        if (!state || enemy?.Enemy?.name !== "Spinner") return false;
-        const group = Object.values(state.groups).find((candidate) => candidate.memberIds.includes(enemy.id));
-        if (!group || !eligibleSpinner(enemy)) return false;
-        const playerDuty = api.SpinnerRecovery?.wantsPursuit?.(enemy, KinkyDungeonPlayerEntity),
-            recoveryTarget = playerDuty ? KinkyDungeonPlayerEntity : target,
-            recoveryKnown = playerDuty
-                ? playerObservation(encounter) || groupObservation(group)
-                : groupObservation(group);
-        const perceivedThreat =
-                enemy.aware &&
-                aiData.canSensePlayer &&
-                aiData.hostile === true &&
-                targetIsLiving(target) &&
-                recognizedContact(enemy, target),
-            recentObservation = recoveryKnown && sameTarget(recoveryKnown.target, recoveryTarget),
-            recoveryPursuit = playerDuty || api.SpinnerNPCRecovery?.wantsPursuit?.(enemy, target);
-        // Departure creates a duty before a new melee hit can attach a recovery
-        // strand. Construction and lure work must not suppress that first hit.
-        if (recoveryPursuit) {
-            if (perceivedThreat) {
-                if (group.engagement && !sameTarget(group.engagement.target, target)) clearEngagement(group);
-                observeTarget(encounter, group, enemy, target, aiData);
-            }
-            const perceivedRecovery = recoveryTarget === target && perceivedThreat;
-            if (perceivedRecovery || recentObservation)
-                return pursueObservation(enemy, group, recoveryTarget, perceivedRecovery, recoveryKnown);
-            auditEngagement(encounter, group);
-            return decide(enemy, group, "delegate-native", false);
-        }
-        const plan = state.plans[group.planId];
-        if (!plan || ["invalid", "abandoned"].includes(plan.status) || !planWaypoint(encounter, group)) {
-            clearEngagement(group);
-            return decide(enemy, group, "delegate-native", false);
-        }
-        const homeGuard = group.source?.type === "nest" && plan.kind !== "passage" && !enemy.SpiderlingsHuntRole;
-        if (homeGuard) clearEngagement(group);
-        else auditEngagement(encounter, group);
-        if (api.HuntingGrounds?.isNestAttacker?.(enemy, target)) return decide(enemy, group, "delegate-native", false);
-        const observed = homeGuard ? false : observeTarget(encounter, group, enemy, target, aiData);
-        const assignment = group.assignments?.[enemy.id];
-        if (
-            perceivedThreat &&
-            distance(enemy, target) <= 1 &&
-            needsSoleBuilder(encounter, group) &&
-            (target.player || (!KinkyDungeonIsDisabled(target) && !KDHelpless(target)))
-        )
-            return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
-        if (hasMaintenanceAssignment(enemy))
-            return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        // Finish paid gate work on core entry or withdrawal before resuming lure or melee duties.
-        if (
-            hasGateWork(encounter, group) &&
-            api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).gateWork
-        )
-            return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        // Nearby prey must not pull every builder off an unfinished enclosure.
-        // The lure keeps melee pressure while assigned body workers finish
-        // through the same paid movement, occupancy and construction checks.
-        if (
-            group.engagement &&
-            assignment &&
-            assignment.type !== "rally" &&
-            String(group.engagement?.lureId) !== String(enemy.id) &&
-            plan.compositeId
-        )
-            return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        const known = groupObservation(group);
-        if (
-            assignment?.type === "rally" &&
-            plan.kind === "passage" &&
-            encounter.topology.fields[plan.fieldId]?.phase === "sealed" &&
-            known &&
-            known.age < 4 &&
-            distance(enemy, known) > 1 &&
-            api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, known)
-        )
-            return decide(enemy, group, performAssignment(enemy, group, assignment), true);
-        // Native melee must deliver the hit that admits capture after closure.
-        if (
-            observed &&
-            plan.compositeId &&
-            api.SpinnerTopology.isInsideCommonCore(encounter.topology, plan.compositeId, target)
-        )
-            // Native stationed/investigate commands can pull the lure back to
-            // its old mouth. Reach physical melee range through the legal path
-            // before returning the attack phase to the native AI.
-            return distance(enemy, target) > 1
-                ? pursueObservation(enemy, group, target, perceivedThreat)
-                : decide(enemy, group, "delegate-native", false);
-        // The saved lureId identifies the contact role. Field placement must
-        // not make that actor evade melee or wait for prey to enter the field.
-        if (group.engagement && String(group.engagement.lureId) === String(enemy.id))
-            return pursueObservation(enemy, group, target, observed || recentObservation ? perceivedThreat : false);
-        if (perceivedThreat && distance(enemy, target) <= 1)
-            return decide(enemy, group, "native-defense", true, { target: targetReference(target) });
-        if (!group.engagement && perceivedThreat && group.source?.type !== "nest")
-            return decide(enemy, group, "delegate-native", false);
-        if (!assignment) {
-            const blocking = Object.entries(group.assignments || {}).some(
-                ([memberId, other]) =>
-                    String(memberId) !== String(enemy.id) &&
-                    [other.target, other.workCell].some((cell) => cell?.x === enemy.x && cell?.y === enemy.y),
-            );
-            if (blocking) {
-                const destination = DIRECTIONS.map((direction) => ({
-                    x: enemy.x + direction.x,
-                    y: enemy.y + direction.y,
-                })).find((cell) => {
-                    const snapshot = api.SpinnerNativeField.snapshot(cell);
-                    return snapshot.inBounds && snapshot.floor && !snapshot.protected && !snapshot.actorOccupied;
-                });
-                if (destination) {
-                    KinkyDungeonEnemyTryMove(
-                        enemy,
-                        { x: destination.x - enemy.x, y: destination.y - enemy.y },
-                        enemy.SpiderlingsSpinnerRuntimeDelta || 1,
-                        destination.x,
-                        destination.y,
-                        false,
-                    );
-                    record(group, "yield");
-                    return decide(enemy, group, "yield", true);
-                }
-            }
-            return decide(enemy, group, "delegate-native", false);
-        }
-        return decide(enemy, group, performAssignment(enemy, group, assignment), true);
+        if (!(enemy?.SpiderlingsSpinnerRuntimeDelta > 0)) return false;
+        api.SpinnerDuties.prepare(enemy, target, enemy.SpiderlingsSpinnerRuntimeDelta);
+        return api.SpinnerDuties.beforeMove(enemy, target, aiData);
+    }
+
+    function gateNativePhase(enemy) {
+        return api.SpinnerDuties.gate(enemy);
     }
 
     function preparePositiveTurn(delta, input = {}) {
@@ -2839,7 +2816,6 @@
         preparedMap = KDMapData;
         preparedTick = tick;
         observedGroups = new Map();
-        turnDecisions = new Map();
         return beginTurn(input);
     }
 
@@ -2916,7 +2892,6 @@
             auditEngagement(encounter, group);
             auditAssignments(encounter, group);
         }
-        turnDecisions = new Map();
         observedGroups = new Map();
         return ai;
     }
@@ -2962,7 +2937,7 @@
             !(encounter.ai.plans[group.planId]?.fieldIds || [encounter.ai.plans[group.planId]?.fieldId]).includes(
                 assignment?.fieldId,
             ) ||
-            !assignmentPending(encounter, assignment, enemy.id)
+            (assignment?.type !== "rally" && !assignmentPending(encounter, assignment, enemy.id))
         )
             return "invalid";
         return performAssignment(enemy, group, assignment);
@@ -2975,6 +2950,8 @@
 
     api.SpinnerAI = {
         observeDuty,
+        dutyFacts,
+        executeTacticalDuty,
         executeDuty,
         dispatchPath,
         GROUP_RADIUS,

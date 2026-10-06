@@ -82,8 +82,10 @@
             (native) =>
                 function (enemy, target, aiData) {
                     api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
-                    if (api.SpinnerDuties?.current(enemy) && api.SpinnerDuties.beforeMove(enemy, target, aiData))
-                        return true;
+                    if (api.SpinnerDuties?.current(enemy)) {
+                        if (api.SpinnerDuties.beforeMove(enemy, target, aiData)) return true;
+                        return native.apply(this, arguments);
+                    }
                     if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
                         aiData.idle = false;
                         return true;
@@ -91,10 +93,7 @@
                     const nativeResult = native.apply(this, arguments);
                     api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                     if (nativeResult) return nativeResult;
-                    const handled =
-                        api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData) ||
-                        api.SpinnerAI?.handleBeforeMove(enemy, target, aiData) ||
-                        false;
+                    const handled = api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData) || false;
                     // KD clears movement credit for idle enemies after the loop.
                     // Construction and lure turns must retain credit across ticks.
                     if (handled) aiData.idle = false;
@@ -109,6 +108,10 @@
             KDAIType.wander.beforemove,
             (native) =>
                 function (enemy, target, aiData) {
+                    if (api.SpinnerDuties?.current(enemy)) {
+                        if (api.SpinnerDuties.beforeMove(enemy, target, aiData)) return true;
+                        return native.apply(this, arguments);
+                    }
                     if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
                         aiData.idle = false;
                         return true;
@@ -126,12 +129,7 @@
                 KDAIType.hunt[phase],
                 (native) =>
                     function (enemy) {
-                        if (
-                            api.SpinnerDuties?.current(enemy)
-                                ? !api.SpinnerDuties.gate(enemy)
-                                : api.SpinnerAI && !api.SpinnerAI.gateNativePhase(enemy, phase)
-                        )
-                            return false;
+                        if (api.SpinnerDuties?.gate(enemy) === false) return false;
                         return native.apply(this, arguments);
                     },
             );

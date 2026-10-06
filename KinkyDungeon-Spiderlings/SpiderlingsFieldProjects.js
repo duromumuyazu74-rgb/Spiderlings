@@ -5,6 +5,17 @@
     const api = globalThis.Spiderlings;
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 
+    function workforce(plan, needs, fields = []) {
+        if (!needs.construction) return needs.repair ? 1 : 0;
+        // Twelve pending paid steps per worker, capped at four, keeps an enclosure crew
+        // together without reserving every Spinner on the map for one project.
+        return Math.max(
+            1,
+            Math.min(4, Math.ceil((needs.remainingActions || plan.cells?.length || 1) / 12)),
+            ...fields.map((field) => (field.kind === "passage" ? field.gates.length * 2 : 1)),
+        );
+    }
+
     function update(encounter, planner) {
         const ai = encounter.ai,
             command = api.FieldCommand,
@@ -67,6 +78,7 @@
                 return (
                     saved &&
                     !["invalid", "abandoned"].includes(saved.status) &&
+                    saved.coverageAvailable &&
                     point &&
                     group.planningFocus &&
                     (distance(point, group.planningFocus) <= Math.max(6, (saved.radius || 0) + 2) ||
@@ -87,12 +99,21 @@
             // Opening changes create real work before donors judge their minimum retained workforce.
             planner.prepareApproach(group);
             const origin = command.location(encounter, group);
-            const workable = members.some((member) => Number.isFinite(planner.distances(member, origin)));
             const fields = (plan.fieldIds || [plan.fieldId]).map((id) => encounter.topology.fields[id]).filter(Boolean);
-            const { repair, construction } = api.SpinnerTopology.fieldWorkNeeds(
-                encounter.topology,
-                plan.fieldIds || [plan.fieldId],
+            const needs = api.SpinnerTopology.fieldWorkNeeds(encounter.topology, plan.fieldIds || [plan.fieldId]);
+            const { repair, construction } = needs;
+            const workers = workforce(plan, needs, fields);
+            const capable = members.filter(
+                (member) =>
+                    !command.protectedMember(member) &&
+                    Number.isFinite(planner.distances(member, origin)) &&
+                    !state.members[member.id]?.blocked &&
+                    (planner.canWork ? planner.canWork(group, member) : true),
             );
+            const geometryReady =
+                (fields.length > 0 && fields.every((field) => ["ready", "sealed"].includes(field.phase))) ||
+                (plan.compositeId &&
+                    api.SpinnerTopology.captureGeometryReady(encounter.topology, plan.compositeId, origin));
             const targets = positions.filter(
                 (target) =>
                     plan.compositeId &&
@@ -108,32 +129,28 @@
                   : repair
                     ? "repair"
                     : "build";
-            const required = defense
-                ? 2
-                : targets.length
-                  ? 2
-                  : construction
-                    ? Math.max(1, ...fields.map((field) => (field.kind === "passage" ? field.gates.length * 2 : 1)))
-                    : repair
-                      ? 1
-                      : 0;
+            const required = defense ? 2 : targets.length ? 2 : construction ? workers : repair ? 1 : 0;
             const own = members.filter((member) => !state.members[member.id]?.loan).length;
-            plan.projectState = !workable ? "waiting" : repair ? "repair" : construction ? "building" : "usable";
+            plan.workforceTarget = workers;
+            plan.availableWorkers = capable.length;
+            plan.usableCoverage = !!geometryReady;
+            plan.projectState =
+                (repair || construction) && !capable.length
+                    ? "waiting"
+                    : repair
+                      ? "repair"
+                      : construction
+                        ? "building"
+                        : "usable";
             const demands = new Map([[kind, Math.max(0, required - own)]]);
             // Capture sources cannot also repair their field. Keep their commitment and ask for a separate worker.
             if (repair || construction) {
                 const workKind = repair ? "repair" : "build";
-                const available = members.filter(
-                    (member) => !state.members[member.id]?.loan && !command.protectedMember(member),
-                ).length;
+                const available = capable.filter((member) => !state.members[member.id]?.loan).length;
                 const retained = ["capture", "recovery", "defense"].includes(kind)
                     ? Math.max(0, required - (own - available))
                     : 0;
-                const workers =
-                    construction && !repair
-                        ? Math.max(1, ...fields.map((field) => (field.kind === "passage" ? field.gates.length * 2 : 1)))
-                        : 1;
-                demands.set(workKind, Math.max(0, workers - Math.max(0, available - retained)));
+                demands.set(workKind, Math.max(0, (repair ? 1 : workers) - Math.max(0, available - retained)));
             }
             for (const request of Object.values(state.requests))
                 if (request.fieldId === group.id && !demands.has(request.kind)) request.closed = true;
@@ -141,7 +158,7 @@
                 if (count > 0) command.request(encounter, group.id, duty, count, origin);
                 else if (state.requests[`${group.id}:${duty}`]) state.requests[`${group.id}:${duty}`].closed = true;
             }
-            plan.coverageAvailable = workable;
+            plan.coverageAvailable = !!geometryReady || capable.length > 0;
         }
         const active = Object.values(ai.groups).filter((group) => {
             const plan = ai.plans[group.planId];
@@ -164,6 +181,9 @@
             groupId: group.id,
             planId: group.planId,
             available: !!ai.plans[group.planId].coverageAvailable,
+            usable: !!ai.plans[group.planId].usableCoverage,
+            workers: ai.plans[group.planId].availableWorkers,
+            targetWorkers: ai.plans[group.planId].workforceTarget,
         }));
         ai.projects.unmet = unmet;
         // Supplied line fixtures describe legacy diagnostic fields, not a normal-map area planner.
@@ -184,7 +204,8 @@
                     continue;
                 }
                 const destination = candidate.center || candidate.anchors?.[0];
-                const request = command.request(encounter, group.id, "build", 1, destination);
+                const crew = workforce(candidate, { construction: true });
+                const request = command.request(encounter, group.id, "build", crew, destination);
                 command.allocate(encounter, planner.distances);
                 if (!group.memberIds.length) {
                     request.closed = true;
@@ -199,6 +220,9 @@
                     continue;
                 }
                 plan.coverageAvailable = true;
+                plan.workforceTarget = crew;
+                plan.availableWorkers = group.memberIds.length;
+                plan.usableCoverage = false;
                 plan.projectState = "approaching";
                 active.push(group);
             }
