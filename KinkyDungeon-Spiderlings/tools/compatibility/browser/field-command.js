@@ -45,6 +45,9 @@
         const crew = Array.from({ length: count }, (_, index) =>
             spawn("Spinner", 7 + (index % 3), 7 + Math.floor(index / 3)),
         );
+        // Native population can assign per-entity guard AI even to a Spinner.
+        crew[2].AI = "guard";
+        crew[3].AI = "guard";
         for (const actor of crew) {
             actor.aware = false;
             actor.vp = 0;

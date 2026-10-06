@@ -75,64 +75,49 @@
                 },
         );
 
-    if (typeof KDAIType !== "undefined" && KDAIType.hunt?.beforemove) {
-        KDAIType.hunt.beforemove = api.Hooks.wrap(
-            "Spinner.beforemove",
-            KDAIType.hunt.beforemove,
-            (native) =>
-                function (enemy, target, aiData) {
-                    api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
-                    if (api.SpinnerDuties?.current(enemy)) {
-                        if (api.SpinnerDuties.beforeMove(enemy, target, aiData)) return true;
-                        return native.apply(this, arguments);
-                    }
-                    if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
-                        aiData.idle = false;
-                        return true;
-                    }
-                    const nativeResult = native.apply(this, arguments);
-                    api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
-                    if (nativeResult) return nativeResult;
-                    const handled = api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData) || false;
-                    // KD clears movement credit for idle enemies after the loop.
-                    // Construction and lure turns must retain credit across ticks.
-                    if (handled) aiData.idle = false;
-                    return handled;
-                },
-        );
-    }
-
-    if (typeof KDAIType !== "undefined" && KDAIType.wander?.beforemove)
-        KDAIType.wander.beforemove = api.Hooks.wrap(
-            "Spinner.wanderContact",
-            KDAIType.wander.beforemove,
-            (native) =>
-                function (enemy, target, aiData) {
-                    if (api.SpinnerDuties?.current(enemy)) {
-                        if (api.SpinnerDuties.beforeMove(enemy, target, aiData)) return true;
-                        return native.apply(this, arguments);
-                    }
-                    if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
-                        aiData.idle = false;
-                        return true;
-                    }
-                    const result = native.apply(this, arguments);
-                    api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
-                    return result;
-                },
-        );
-
-    for (const phase of ["attack", "spell"])
-        if (typeof KDAIType !== "undefined" && KDAIType.hunt?.[phase])
-            KDAIType.hunt[phase] = api.Hooks.wrap(
-                `Spinner.${phase}`,
-                KDAIType.hunt[phase],
+    // Native spawns may give a Spinner guard or another per-entity AI.
+    // Commanded duties must intercept that selected AI, including absent native phases.
+    if (typeof KDAIType !== "undefined")
+        for (const [name, ai] of Object.entries(KDAIType)) {
+            const moveOwner =
+                name === "hunt"
+                    ? "Spinner.beforemove"
+                    : name === "wander"
+                      ? "Spinner.wanderContact"
+                      : `Spinner.beforemove.${name}`;
+            ai.beforemove = api.Hooks.wrap(
+                moveOwner,
+                ai.beforemove || (() => false),
                 (native) =>
-                    function (enemy) {
-                        if (api.SpinnerDuties?.gate(enemy) === false) return false;
-                        return native.apply(this, arguments);
+                    function (enemy, target, aiData) {
+                        api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
+                        if (api.SpinnerDuties?.current(enemy)) {
+                            if (api.SpinnerDuties.beforeMove(enemy, target, aiData)) return true;
+                            return native.apply(this, arguments);
+                        }
+                        if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {
+                            aiData.idle = false;
+                            return true;
+                        }
+                        const result = native.apply(this, arguments);
+                        api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
+                        if (result || name !== "hunt") return result;
+                        const handled = api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData) || false;
+                        if (handled) aiData.idle = false;
+                        return handled;
                     },
             );
+            for (const phase of ["attack", "spell"])
+                ai[phase] = api.Hooks.wrap(
+                    name === "hunt" ? `Spinner.${phase}` : `Spinner.${phase}.${name}`,
+                    ai[phase] || (() => true),
+                    (native) =>
+                        function (enemy) {
+                            if (api.SpinnerDuties?.gate(enemy) === false) return false;
+                            return native.apply(this, arguments);
+                        },
+                );
+        }
 
     if (typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => {

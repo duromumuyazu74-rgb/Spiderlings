@@ -85,6 +85,7 @@ function runtime(entities = []) {
             KDPathCacheIgnoreLocks: new Map(),
             KDUpdateEnemyCache: false,
             KDAIType: {
+                guard: {},
                 hunt: {
                     beforemove: () => false,
                     attack(enemy) {
@@ -183,9 +184,10 @@ function runtime(entities = []) {
                         aggressive: true,
                         ...(enemy.testAIData || {}),
                     },
-                    handled = context.KDAIType.hunt.beforemove(enemy, target, aiData),
-                    attacked = context.KDAIType.hunt.attack(enemy, target, aiData),
-                    cast = context.KDAIType.hunt.spell(enemy, target, aiData);
+                    aiType = context.KDAIType[enemy.AI || enemy.Enemy.AI || "hunt"],
+                    handled = aiType.beforemove?.(enemy, target, aiData) || false,
+                    attacked = aiType.attack ? aiType.attack(enemy, target, aiData) : true,
+                    cast = aiType.spell ? aiType.spell(enemy, target, aiData) : true;
                 return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
             },
             KinkyDungeonSetEnemyFlag(enemy, flag, duration) {
@@ -4487,4 +4489,57 @@ test("capture field limit accepts zero and custom counts, retaining invested fie
             assert.ok(Object.keys(ai.plans).length, "Setting zero must preserve existing field investments");
         }
     }
+});
+
+test("guard AI Spinners execute paid construction and obey final phase gates", () => {
+    const worker = spinner(1, 5, 3, { AI: "guard" }),
+        helper = spinner(2, 5, 9, { AI: "guard" }),
+        r = runtime([worker, helper]),
+        c = r.context;
+    start(r);
+    const before = c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length;
+    c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 0);
+    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length, before);
+    let blocked = false;
+    for (let turn = 0; turn < 20; turn++) {
+        start(r);
+        const result = c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        blocked ||= !result.attacked && !result.cast;
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(blocked, "Commanded work must gate guard's default attack/spell permission");
+    assert.ok(
+        c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length > before,
+        "A native guard AI must not reserve construction indefinitely without executing it",
+    );
+    const outsider = spinner(999, 1, 1, { AI: "guard" });
+    outsider.Enemy.name = "Bandit";
+    const native = c.KinkyDungeonEnemyLoop(outsider, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(native.attacked, true);
+    assert.equal(native.cast, true);
+});
+
+test("a borrowed nest guard cannot erase its commander's shared field engagement", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan);
+    member.phase = "support";
+    command.projectOwners(encounter);
+    receiver.source = { type: "nest", nestId: 909 };
+    const worker = c.KDMapData.Entities.find((e) => e.id === member.id);
+    delete worker.SpiderlingsHuntRole;
+    receiver.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: worker.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 16, y: 10, age: 0, source: "native" },
+    };
+    const facts = c.Spiderlings.SpinnerAI.dutyFacts(worker, c.KinkyDungeonPlayerEntity, {});
+    assert.equal(facts.validPlan, true);
+    assert.ok(receiver.engagement, "An individual guard decision must not clear group-owned contact");
+    assert.equal(receiver.engagement.lastKnown.source, "native");
 });
