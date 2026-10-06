@@ -2722,7 +2722,8 @@
         const plan = state.plans[group.planId];
         const validPlan = !!plan && !["invalid", "abandoned"].includes(plan.status) && !!planWaypoint(encounter, group);
         const homeGuard = group.source?.type === "nest" && plan?.kind !== "passage" && !enemy.SpiderlingsHuntRole;
-        if (!validPlan || homeGuard) clearEngagement(group);
+        // A member's nest role cannot erase contact owned by its field commander.
+        if (!validPlan) clearEngagement(group);
         else auditEngagement(encounter, group);
         const nestAttacker = !!api.HuntingGrounds?.isNestAttacker?.(enemy, target);
         const observed =
