@@ -3945,6 +3945,66 @@ test("a stable better site replaces a paid small field at the cap and leaves pas
     );
 });
 
+test("a replacement cannot retire paid work while its only worker channels or teleports", () => {
+    for (const status of ["channel", "teleporting"]) {
+        const scene = replacementScene();
+        scene.worker[status] = 100;
+        for (let n = 0; n < 24; n++) {
+            start(scene.r, scene.snapshot);
+            scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            scene.c.KinkyDungeonCurrentTick++;
+        }
+        assert.equal(scene.group.planId, scene.original.id, status);
+        assert.notEqual(scene.original.status, "retired", status);
+    }
+});
+
+test("returning to the old site between candidate scans resets replacement stability", () => {
+    const scene = replacementScene();
+    for (let n = 0; n < 24; n++) {
+        const clock = scene.encounter.ai.worldTime;
+        Object.assign(scene.c.KinkyDungeonPlayerEntity, clock % 4 === 0 ? { x: 29, y: 9 } : { x: 5, y: 9 });
+        start(scene.r, scene.snapshot);
+        scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        scene.c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(scene.group.planId, scene.original.id);
+    assert.notEqual(scene.original.status, "retired");
+});
+
+test("replacement observation restarts after its only worker recovers eligibility", () => {
+    for (const status of ["disabled", "channel"]) {
+        const scene = replacementScene();
+        const evaluate = () => {
+            start(scene.r, scene.snapshot);
+            scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            scene.c.KinkyDungeonCurrentTick++;
+        };
+        evaluate();
+        assert.ok(scene.original.lifecycle.replacement);
+        scene.worker[status] = status === "disabled" ? true : 100;
+        for (let n = 0; n < 20; n++) evaluate();
+        assert.equal(scene.original.lifecycle.replacement, undefined);
+        scene.worker[status] = status === "disabled" ? false : 0;
+        for (let n = 0; n < 8; n++) evaluate();
+        assert.equal(scene.group.planId, scene.original.id, "Recovery must not inherit a stale stable window");
+    }
+});
+
+test("a geometrically legal candidate with occupied work targets cannot retire the old field", () => {
+    const scene = replacementScene();
+    let id = 20000;
+    for (let y = 3; y <= 15; y++)
+        for (let x = 23; x <= 35; x++) scene.c.KDMapData.Entities.push(spinner(id++, x, y, { allied: true }));
+    for (let n = 0; n < 28; n++) {
+        start(scene.r, scene.snapshot);
+        scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        scene.c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(scene.group.planId, scene.original.id);
+    assert.notEqual(scene.original.status, "retired");
+});
+
 test("replacement activation failure preserves the old paid field and its command", () => {
     const scene = replacementScene(),
         nativeAdd = scene.c.Spiderlings.SpinnerNativeField.addEnclosure;

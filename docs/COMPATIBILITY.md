@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.132.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.133.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.133 field replacement review fixes (2026-10-08)
+
+The same final ZIP passes all 57 native stages and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `dbfd74e08679b3a3935f1883f3e8cf2961d94f13` was freshly fetched at `2026-10-07T16:46:51.188Z`. Full acceptance: `<cache>/runs/2026-10-07T16-46-51-204Z-0.92.36-test.133/acceptance.json`. Final ZIP: 175 entries, 24,873,925 bytes; SHA-256 `792edc1b246896e3f42e50d613258fc34da73b34a7c507fb3c2c1df751bf92e9`.
+
+Expired residual corners can complete paid rebuilds and subsequent enclosure work. Loading a test.132 corner with positive HP corrects its obsolete collapse flag only when matching paid rebuilding and active ownership are recorded; HP and action history remain unchanged. Replacements require a capable member with an actual reachable candidate workstation. Channeling, teleporting and occupied work targets cannot authorize retirement. Current candidate coverage and advantage are rechecked between site scans, so a return to the old site or loss of worker eligibility resets the observation window.
+
+The native project lifecycle checks channeling and inter-scan returns. Its additional packaged topology contract covers rebuilding fully expired residual corners, while native worker payment remains covered by the existing construction scenes. The Mage impact check captures the first matching rendered frame within its original three-frame window instead of sampling only the last frame. A previous full run stopped at that transient visual assertion; both the independent scene and this final full run pass. Failed reports remain preserved. See [fixes and acceptance](spiderlings-test133-review-fixes.zh-CN.md). Repository checks, 12 policy tests, 688 public tests, the complete 1015-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-07T16-57-57-614Z-W6qlTX/REPORT.md` records unchanged source and package bytes; only outcome documentation was added afterward.
 
 ## Test.132 field duties, stalled projects and residual retirement (2026-10-07)
 

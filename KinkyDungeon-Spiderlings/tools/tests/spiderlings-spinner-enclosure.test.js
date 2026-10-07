@@ -143,6 +143,60 @@ test("a new legal enclosure reuses a residual corner without duplicate identitie
     assert.ok(state.actionLog.length > paidBefore);
 });
 
+test("expired residual corners rebuild through paid work and allow a fresh enclosure to finish", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "expired",
+        owners: [1],
+        map: floorMap(),
+        layers: [{ id: "expired-ring", vertices: rectangle(10, 6, 14, 10), gate: { x: 10, y: 8 } }],
+    });
+    for (let n = 0; n < 100; n++) {
+        const action = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    state = topology.retireField(state, "expired-ring", { residual: true });
+    state = topology.tickOwnerless(state, { delta: 20, activeOwnerIds: [1] }).state;
+    const paidBefore = state.actionLog.length;
+    state = topology.addEnclosure(state, {
+        compositeId: "fresh",
+        owners: [2],
+        map: floorMap(),
+        layers: [{ id: "fresh-ring", vertices: rectangle(14, 6, 18, 10), gate: { x: 18, y: 8 } }],
+    }).state;
+    assert.equal(state.actionLog.length, paidBefore, "Adding a plan cannot rebuild its expired corner for free");
+    state = topology.tickOwnerless(state, { delta: 4, activeOwnerIds: [2] }).state;
+    state = topology.applyAction(
+        state,
+        { type: "rebuildAnchor", fieldId: "fresh-ring", ownerId: 2, anchorId: "14,6", cell: { x: 14, y: 6 } },
+        clear({ x: 14, y: 6 }),
+    ).state;
+    // Reproduce the obsolete flag in an already-paid test.132 save.
+    state.anchors.find((anchor) => anchor.id === "14,6").collapsed = true;
+    const paidReload = state.actionLog.length,
+        rebuiltHP = state.anchors.find((anchor) => anchor.id === "14,6").hp;
+    state = topology.restore(JSON.parse(JSON.stringify(state)));
+    assert.equal(state.actionLog.length, paidReload);
+    assert.equal(state.anchors.find((anchor) => anchor.id === "14,6").hp, rebuiltHP);
+    assert.equal(state.anchors.find((anchor) => anchor.id === "14,6").collapsed, false);
+    for (let n = 0; n < 120; n++) {
+        const action = topology.nextWorkAction(state, 2, { x: 16, y: 8 }, [], ["fresh-ring"]);
+        if (action) {
+            const applied = topology.applyAction(state, { ...action, ownerId: 2 }, clear(action.cell));
+            assert.equal(applied.outcome.legal, true);
+            state = applied.state;
+        }
+        state = topology.tickOwnerless(state, { delta: 1, activeOwnerIds: [2] }).state;
+    }
+    assert.equal(state.fields["fresh-ring"].phase, "ready");
+    assert.ok(state.actionLog.length > paidBefore);
+    assert.ok(
+        state.anchors.filter((anchor) => anchor.owners.includes("fresh-ring")).every((anchor) => !anchor.collapsed),
+    );
+});
+
 test("moving an enclosure entrance preserves silk until paid opening and closes the former gate", () => {
     const topology = rules(),
         clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });

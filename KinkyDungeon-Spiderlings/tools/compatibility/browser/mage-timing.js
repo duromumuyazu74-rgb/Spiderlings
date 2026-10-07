@@ -42,11 +42,18 @@
                 const equipped = gear();
                 bolt.steps.push({ step, will: KinkyDungeonStatWill, gear: equipped });
                 if (equipped.length && !bolt.impact) {
-                    bolt.impact = { step, gear: equipped };
-                    await frame();
-                    await frame();
-                    images[`${color}-bolt-impact`] = document.querySelector("canvas").toDataURL("image/png");
-                    bolt.impact.sprites = rendered("hit_player:web");
+                    bolt.impact = { step, gear: equipped, sprites: [] };
+                    // Capture the first matching rendered frame within the same three-frame window.
+                    // The 240 ms effect can expire before the last frame on a busy native run.
+                    for (let sample = 0; sample < 3; sample++) {
+                        if (sample) await frame();
+                        const sprites = rendered("hit_player:web");
+                        if (hasArt(sprites, `SpiderWebHit${pink ? "Pink" : ""}`)) {
+                            bolt.impact.sprites = sprites;
+                            images[`${color}-bolt-impact`] = document.querySelector("canvas").toDataURL("image/png");
+                            break;
+                        }
+                    }
                 }
             }
             bolt.after = { will: KinkyDungeonStatWill, gear: gear() };

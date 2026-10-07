@@ -731,6 +731,7 @@
         Object.assign(next.fields, addition.fields);
         Object.assign(next.fieldOwners, addition.fieldOwners);
         Object.assign(next.composites, addition.composites);
+        next.collapsed = false;
         refresh(next);
         return { state: next, added: true };
     }
@@ -1131,6 +1132,7 @@
             const anchor = next.anchors.find((candidate) => candidate.id === action.anchorId);
             anchor.hp = Math.max(anchor.maxHp * 0.1, 0.1);
             anchor.cooldown = 0;
+            anchor.collapsed = false;
             effects.push({ type: "placeProxy", cell });
         } else if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
             const link = next.links.find((candidate) => candidate.id === action.linkId);
@@ -1715,7 +1717,25 @@
 
     function restore(saved) {
         const restored = clone(saved);
-        for (const anchor of restored.anchors) delete anchor.snaredTargetIds;
+        for (const anchor of restored.anchors) {
+            delete anchor.snaredTargetIds;
+            // Test.132 could save a paid rebuilt corner with its obsolete collapse flag.
+            if (
+                anchor.collapsed &&
+                anchor.built &&
+                anchor.hp > 0 &&
+                !anchor.residual &&
+                anchor.owners.some((id) => !fieldRetired(restored, id)) &&
+                restored.actionLog?.some(
+                    (action) =>
+                        action.type === "rebuildAnchor" &&
+                        anchor.owners.includes(action.fieldId) &&
+                        action.cell &&
+                        sameCell(anchor, action.cell),
+                )
+            )
+                anchor.collapsed = false;
+        }
         return restored;
     }
 

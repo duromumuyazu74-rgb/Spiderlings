@@ -1965,6 +1965,29 @@
             candidates(group, members, replacing = false) {
                 return candidatesFor(group, members, replacing ? group.planId : undefined);
             },
+            workersFor(candidate, members) {
+                const targets =
+                    candidate.type === "enclosure"
+                        ? candidate.layers.at(-1).vertices
+                        : (candidate.gates || []).flatMap((gate) => gate.cells);
+                return members.filter((member) =>
+                    targets.some((cell) => {
+                        const tile = api.SpinnerNativeField.snapshot(cell);
+                        return (
+                            tile.inBounds &&
+                            tile.floor &&
+                            !tile.protected &&
+                            (!tile.actorOccupied || cellKey(member) === cellKey(cell)) &&
+                            occupancyRoute(
+                                member,
+                                workCells(cell, snapshot, member).filter((workCell) =>
+                                    Number.isFinite(distances(member, workCell)),
+                                ),
+                            ).length > 0
+                        );
+                    }),
+                );
+            },
             prepare(group) {
                 adjustPassageApproach(encounter, group, snapshot, distances);
                 adjustEnclosureApproach(encounter, group, snapshot, distances);
