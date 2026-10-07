@@ -34,6 +34,7 @@ const scenarios = [
         "spinner-work",
         "field-command",
         "saved-field-guard",
+        "unfinished-field-entry",
         "hunting-objective-entry",
         "feedback-walls",
         "feedback-ui",

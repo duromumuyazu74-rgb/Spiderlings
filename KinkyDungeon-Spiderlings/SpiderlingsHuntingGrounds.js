@@ -497,11 +497,9 @@
     }
 
     function cancelInfestation(reason) {
-        // A failed nest layout removes the escape objective, not the chosen
-        // spider ecology. Otherwise the native Maidforce pool fills the floor.
-        const plan = KDMapData.SpiderlingsPopulationPlan;
-        if (reason === "insufficient-space" && plan?.kind === MOD) plan.layoutFallback = true;
-        else delete KDMapData.SpiderlingsPopulationPlan;
+        // Rejected generators return to the native floor. Hunting ecology
+        // must not survive without its three marked objective nests.
+        delete KDMapData.SpiderlingsPopulationPlan;
         KDMapData[FIELD] = { status: "cancelled", reason };
         KDMapData.MapMod = "None";
         KDGameData.MapMod = "None";
@@ -514,6 +512,8 @@
     }
 
     function migrateHuntingGrounds(map, slot) {
+        if (map?.[FIELD]?.status === "cancelled" && map.SpiderlingsPopulationPlan?.kind === MOD)
+            delete map.SpiderlingsPopulationPlan;
         // test.32 saved the three-nest floor under the old Infestation ID.
         // The garrison marker leaves genuine five-nest saves unchanged.
         if (map?.MapMod === "SpiderlingsInfestation" && map.SpiderlingsInfestation?.garrisonVersion === 2) {
@@ -573,7 +573,21 @@
         )
             KDGameData.MapMod = MOD;
         for (const slot of Object.values(KDGameData.JourneyMap || {})) {
-            if (slot.MapMod !== MOD || slot.visited || !(slot.y < MIN_FLOOR)) continue;
+            if (
+                slot.MapMod !== MOD ||
+                slot.visited ||
+                (typeof KDWorldMap !== "undefined" &&
+                    Object.values(KDWorldMap).some(
+                        (world) =>
+                            world.jx === slot.x &&
+                            world.jy === slot.y &&
+                            Object.values(world.data || {}).some((map) => map[FIELD]?.status === "active"),
+                    )) ||
+                (slot === KDGameData.JourneyMap?.[`${KDGameData.JourneyX},${KDGameData.JourneyY}`] &&
+                    KDMapData?.[FIELD]?.status === "active") ||
+                (slot.y >= MIN_FLOOR && !slot.RoomType && slot.Faction === "Maidforce")
+            )
+                continue;
             slot.MapMod = "None";
             if (slot.EscapeMethod === MOD) slot.EscapeMethod = "Key";
         }
@@ -588,6 +602,7 @@
         if (KDMapData.MapMod !== MOD || KDMapData[FIELD]) return !!activeState();
         if (
             floor < MIN_FLOOR ||
+            KDMapData.MapFaction !== "Maidforce" ||
             KDMapData.RoomType ||
             !api.EncounterRules.isEligibleOrdinaryMap(room) ||
             room.nokeys ||
@@ -1172,7 +1187,7 @@
             get weight() {
                 return api.FloorSelection.weight(MOD);
             },
-            filter: (slot) => (slot?.y >= MIN_FLOOR && !slot.RoomType && slot.Faction ? 1 : 0),
+            filter: (slot) => (slot?.y >= MIN_FLOOR && !slot.RoomType && slot.Faction === "Maidforce" ? 1 : 0),
             tags: [],
             bonusTags: {},
             escapeMethod: MOD,

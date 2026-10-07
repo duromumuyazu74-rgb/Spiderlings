@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-test.123 将独立场地限制为每图三个，优先选择可达的大型多层围场，小通道场地作为后备。区域调动合并为一次寻找最近合法落点的搜索。新侵扰层的核心 Nest 各有三名初始守军；猎场仍保留六名及更大的蜘蛛预算。两种楼层均从第5层起参加普通楼层抽选，默认权重改为 200／200，保留自定义值和已进入地图。眼罩原生透视修复继续保留。见[施工与楼层调整](docs/spiderlings-test123-field-ecology.zh-CN.md)。
+独立捕获场地默认每图三个，可自定义上限。规划跟随场地正在接敌的角色位置，围场施工优先分配给最近的合适成员。可达的大型多层围场优先于小通道场地。侵扰和猎场从第5层起参与合法普通楼层抽选，默认权重为 200／200，可分别调整。猎场只在原生主势力为 Maidforce 的楼层出现，任务固定摧毁三个原始标记巢穴；初始场地按合法空间优先规划大型围场。生成无法成立时拒绝整个猎场类型。已有自定义值、单位和合法任务进度保留。见[协作施工与猎场约定](docs/spiderlings-test131-cooperative-hunting.zh-CN.md)。
 
 test.121 恢复普通与厚实丝织眼罩两种颜色的原生第二档面部透视；普通显示与第一档身体透视继续盖住前发和眉毛。视觉切换保留原有致盲效果。见[眼罩透视修复](docs/spiderlings-test121-blindfold-xray.zh-CN.md)。
 
@@ -74,7 +74,9 @@ Spiderlings 是适用于 Kinkiest Dungeon 5.4.92 的 Mod，包含幼蛛遭遇、
 
 幼蛛图鉴改用原生图鉴式见闻段落和定性危险等级。法师普通头像显示不发光的背部符文。结茧后安静等待 25 个实际回合，散开移动优先于场地指令，并覆盖单位单独使用的守卫 AI。见 [test.130 实现记录](docs/spiderlings-test130-vigil-lore-tools.zh-CN.md)。
 
-当前本地测试包为 `0.92.36-test.130`。见[场地调度修复](docs/spiderlings-test128-field-dispatch.zh-CN.md)、[场地设置、出生间距与档案修复](docs/spiderlings-test127-field-feedback.zh-CN.md)、[施工与楼层调整](docs/spiderlings-test123-field-ecology.zh-CN.md)、[眼罩透视修复](docs/spiderlings-test121-blindfold-xray.zh-CN.md)、[分层场地指挥实现](docs/spiderlings-test110-field-command.zh-CN.md)和[分版本验收](docs/COMPATIBILITY.md)。
+织网与喷网幼蛛的图鉴区分单独低威胁和群体协作的高威胁，掘穴幼蛛没有直接战斗威胁。角色进入未完工场地后，成员在保持近战压力的同时继续付费施工。
+
+当前本地测试包为 `0.92.36-test.131`。见[场地调度修复](docs/spiderlings-test128-field-dispatch.zh-CN.md)、[场地设置、出生间距与档案修复](docs/spiderlings-test127-field-feedback.zh-CN.md)、[施工与楼层调整](docs/spiderlings-test123-field-ecology.zh-CN.md)、[眼罩透视修复](docs/spiderlings-test121-blindfold-xray.zh-CN.md)、[分层场地指挥实现](docs/spiderlings-test110-field-command.zh-CN.md)和[分版本验收](docs/COMPATIBILITY.md)。
 
 历史 test.99 保留个人接触 NPC 猎物时最后一名未完成围场施工者，移除蛛丝设计标签，并以可被挣脱与救援重置的六回合非致命退场窗口替代四倍受伤。Spinner 会根据新鲜玩家观察调整围场入口，通过实际施工打开新入口并补上旧入口；破损通道仍可调整来向。玩家回收接入原生牵引和移动回合计数，取消单独的牵引操作栏。正常速度下，N 只有效牵线来源使每次移动间隔为 N 回合，没有八只上限；原有移动减速继续叠加。丝绳仍通过原生拘束面板脱困，旧存档迁移保留物品身份与挣脱进度。无牵引锚点时不再抢占施工职责。详见[调查与验证记录](docs/spiderlings-test89-native-recovery.zh-CN.md)和[分版本验收结果](docs/COMPATIBILITY.md)。 每次运行时交付现在都会 fetch 该分支并完成双版本原生验收。test.60 修复敌对 NPC 不破网、牵引忽略已打开缺口，以及读档时免费增加施工进度的问题。历史 test.59 增加的敌人持续缠丝与魔典四件原生拘束，已由 test.85 的纯蛛丝 NPC 效果替代；修复 NPC 两种颜色的腿袋，并修复缠裹完成后重试捕获仍扣行动的问题。开局试玩 Perk 已移除，控制台仍可进入复用测试场地。test.58 接入两种颜色的七阶段 Spinner 缠腿原画，角色恢复操作后继续播完最后 500 毫秒动画并收起拖尾。test.57 限制法师符文只能由 Mage 施放，并将 Spinner 丝质牵引移出通用拘束选择池，保留正常法术及 Recovery 的精确 ID 装备。test.56 增加两件 Mage 稀有掉落：织缚魔典与缠丝法杖。千丝归茧基础消耗 4 法力，施法后再过两回合向内收束；缠丝束先绑定首个命中的敌人，再施加减速。每次有效 Mage 战利品结算有 15% 概率掉落尚未持有的一件武器。本测试包保留 test.55 的修复：幼蛛小队改为 −2 点负面 Perk，编队为六只；Mage 巢穴增援在任意楼层按配置权重参与，腹部图案在转向和施法时保持贴合身体。本版包含此前修复。Mod 管理器的 major 5 提示兼容两条版本线，不代表所有 5.x 均已验证。公开 [itch.io 网页游戏](https://ada18980.itch.io/kinky-dungeon)和维护者已安装的 Windows 游戏此前均确认为 5.4.92。详见[已验证环境及覆盖范围](docs/COMPATIBILITY.md)。
 

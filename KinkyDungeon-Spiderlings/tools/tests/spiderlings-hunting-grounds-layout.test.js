@@ -7,14 +7,14 @@ const path = require("node:path");
 const vm = require("node:vm");
 const layout = require("../../SpiderlingsHuntingGroundsLayout.js");
 
-function fixture(size = 30, seed = 0.5, blocked = new Set()) {
+function fixture(size = 30, seed = 0.5, blocked = new Set(), metadata) {
     const grid = Array.from({ length: size }, () => Array(size).fill("1"));
     const start = { x: 1, y: 1 };
     const end = { x: size - 2, y: size - 2 };
     grid[start.y][start.x] = "0";
     grid[end.y][end.x] = "0";
     const get = (x, y) => grid[y]?.[x];
-    const meta = (x, y) => (blocked.has(`${x},${y}`) ? { Type: "Quest" } : undefined);
+    const meta = (x, y) => (blocked.has(`${x},${y}`) ? { Type: "Quest" } : metadata?.(x, y));
     let writes = 0;
     const shaped = layout.shapeTerrain({
         width: size,
@@ -55,6 +55,20 @@ function footprint(center, radius) {
         for (let x = center.x - radius; x <= center.x + radius; x += 1) cells.push(`${x},${y}`);
     return cells;
 }
+
+test("three objective nests remain possible when an ordinary floor cannot fit two large arenas", () => {
+    const map = fixture(23);
+    assert.ok(map.shaped, "Optional large arenas cannot cancel the Hunting objective");
+    assert.ok(map.plan);
+    assert.equal(map.plan.nests.length, 3);
+    assert.equal(map.plan.metrics.reachable, map.plan.metrics.passable - 3);
+});
+
+test("empty native tile records do not protect ordinary terrain from nest layout", () => {
+    const map = fixture(30, 0.5, new Set(), () => ({}));
+    assert.ok(map.shaped);
+    assert.equal(map.plan.nests.length, 3);
+});
 
 test("fixed seeds create a connected whole-floor hunting layout with three nest and three remote field sites", () => {
     for (const seed of [0, 0.5, 0.99]) {
@@ -152,9 +166,9 @@ test("large field bypasses keep both closed boundaries off the mandatory map rou
     }
 });
 
-test("small layouts reject insufficient space for two large fields before retaining the floor", () => {
-    assert.equal(fixture(23).plan, null, "three nominal 3x3 points do not constitute two usable hunting fields");
-    assert.equal(fixture(24).plan, null);
+test("small layouts keep three objectives while planning only legal initial fields", () => {
+    assert.equal(fixture(23).plan.nests.length, 3);
+    assert.equal(fixture(24).plan.nests.length, 3);
     const map = fixture(28);
     assert.ok(map.plan);
     assert.ok(map.plan.metrics.nestCandidates >= 3);
@@ -192,7 +206,7 @@ test("the authored large field retains its complete footprint and identity throu
     }
 });
 
-test("an unavailable pair of large footprints retries without publishing partial terrain", () => {
+test("an unavailable large pair retains objective rooms and preserves planned native cells", () => {
     const size = 44,
         grid = Array.from({ length: size }, () => Array(size).fill("1")),
         planned = [];
@@ -218,15 +232,15 @@ test("an unavailable pair of large footprints retries without publishing partial
         planned,
     };
     const diagnostics = {};
-    assert.equal(layout.shapeTerrain({ ...input, diagnostics }), null);
-    assert.equal(diagnostics.failure, "large-field-site");
-    assert.equal(writes, 0);
-    const fallback = layout.shapeTerrain({ ...input, fallback: true });
-    assert.equal(fallback, null);
-    assert.equal(writes, 0);
+    const shaped = layout.shapeTerrain({ ...input, diagnostics });
+    assert.ok(shaped);
+    assert.ok(shaped.anchors.length >= 3);
+    assert.equal(shaped.largeHuntingSite, undefined);
+    assert.ok(writes > 0);
+    for (const point of planned) assert.equal(grid[point.y][point.x], "0");
 });
 
-test("an unavailable required large preset rejects the theme while preserving existing NPCs", () => {
+test("an occupied large preset is skipped while preserving objective nests and existing NPCs", () => {
     const map = fixture(30),
         site = map.shaped.largeHuntingSite,
         blocker = { x: site.x + 3, y: site.y, hp: 10, Enemy: { name: "Maidforce" } };
@@ -248,8 +262,8 @@ test("an unavailable required large preset rejects the theme while preserving ex
             largeHuntingSite: site,
             diagnostics,
         });
-        assert.equal(plan, null, kind);
-        assert.equal(diagnostics.failure, "large-field-site");
+        assert.equal(plan.nests.length, 3, kind);
+        assert.ok(!plan.sites.some((field) => field.radius === 4 && field.x === site.x && field.y === site.y));
         assert.equal(JSON.stringify(blocker), original);
     }
 });

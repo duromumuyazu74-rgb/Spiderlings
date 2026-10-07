@@ -64,6 +64,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
         KDGameData: { MapMod: "SpiderlingsHuntingGrounds" },
         KDMapData: {
             MapMod: "SpiderlingsHuntingGrounds",
+            MapFaction: "Maidforce",
             RoomType: "",
             GridWidth: 30,
             GridHeight: 30,
@@ -205,10 +206,7 @@ test("both themes preserve population-plan publication, objective timing and sel
                     .every((birth) => birth.state === (kind === "SpiderlingsInfestation" ? "active" : undefined)),
             );
             assert.equal(c.KDMapData[kind].status, fail ? "cancelled" : "active");
-            assert.deepEqual(
-                nativeFilters,
-                fail && kind === "SpiderlingsHuntingGrounds" ? ["minor", "boss"] : ["boss"],
-            );
+            assert.deepEqual(nativeFilters, ["boss"]);
             if (fail) assert.equal(c.KDMapData.SpiderlingsPopulationPlan, undefined);
         }
     }
@@ -519,7 +517,7 @@ test("new Hunting population retains its authored large construction boundary un
     assert.equal(JSON.stringify(c.KinkyDungeonPlayerEntity), player);
 });
 
-test("a mobile NPC blocking a required large prefab cancels the objective but retains spider residents", () => {
+test("a mobile NPC blocking a large prefab is preserved without cancelling the three objectives", () => {
     const r = runtime(),
         c = r.context;
     c.KDMapData.Tiles = {};
@@ -538,8 +536,8 @@ test("a mobile NPC blocking a required large prefab cancels the objective but re
     c.Spiderlings.SpinnerAI = { initializeMapgenField: () => fields++ };
     r.generate();
     const state = c.KDMapData.SpiderlingsHuntingGrounds;
-    assert.equal(state.status, "cancelled");
-    assert.equal(state.reason, "insufficient-space");
+    assert.equal(state.status, "active");
+    assert.equal(state.targetIds.length, 3);
     assert.ok(c.KDMapData.Entities.includes(maid));
     assert.equal(
         c.KDMapData.Entities.filter((e) =>
@@ -548,9 +546,9 @@ test("a mobile NPC blocking a required large prefab cancels the objective but re
         45,
     );
     assert.equal(c.Spiderlings.availableSpiderlingSlots(), 0);
-    assert.ok(c.KDMapData.Entities.every((e) => e.Enemy.name !== "NestEntrance"));
+    assert.equal(c.KDMapData.Entities.filter((e) => e.Enemy.name === "NestEntrance").length, 3);
     r.event("postMapgen");
-    assert.equal(fields, 0);
+    assert.equal(fields, 1);
     assert.equal(JSON.stringify(maid), original);
     assert.equal(
         Object.values(c.KDMapData.Tiles).some((tile) => tile.SpiderlingsLayoutReserve || tile.OL),
@@ -706,7 +704,7 @@ function nativeJourneyRuntime(overrides = {}, withOld = false) {
     );
 }
 
-test("equal defaults produce equal spider themes across complete native journeys", (t) => {
+test("equal defaults share Maidforce draws while Hunting Grounds stay on Maidforce across native journeys", (t) => {
     const game = require("../reference-inputs.js").gamePath();
     const read = (name) => fs.readFileSync(path.join(game, name), "utf8").replaceAll("\r", "");
     const declaration = (text, name) => {
@@ -763,7 +761,7 @@ test("equal defaults produce equal spider themes across complete native journeys
                 counts.biomes[slot.Checkpoint] = (counts.biomes[slot.Checkpoint] || 0) + 1;
                 if (slot.MapMod === "SpiderlingsInfestation") counts.infestation++;
                 if (slot.MapMod === "SpiderlingsHuntingGrounds") {
-                    if (!slot.Faction) throw new Error("Hunting Grounds lost its native faction");
+                    if (slot.Faction !== "Maidforce") throw new Error("Hunting Grounds appeared outside Maidforce");
                     counts.hunting++;
                 }
             }
@@ -775,8 +773,7 @@ test("equal defaults produce equal spider themes across complete native journeys
     assert.ok(counts.nodes > 200000);
     assert.ok(Object.keys(counts.biomes).length > 4, "retain the native biome distribution");
     assert.ok(counts.infestation / counts.nodes > 0.15 && counts.infestation / counts.nodes < 0.22);
-    const ratio = counts.hunting / counts.infestation;
-    assert.ok(ratio > 0.97 && ratio < 1.03, JSON.stringify(counts));
+    assert.ok(counts.hunting > 0 && counts.hunting < counts.infestation, JSON.stringify(counts));
     t.diagnostic(JSON.stringify(counts));
 });
 
@@ -872,7 +869,7 @@ test("spider selection preserves every native primary faction and sets the objec
     }
 });
 
-test("Hunting Grounds retains every native primary faction when its theme is selected", () => {
+test("even maximal Hunting weight cannot select a different native primary faction", () => {
     const r = nativeJourneyRuntime({ CommonRandomItemFromList: () => "Bandit", KDRandom: () => 0.25 }, true);
     const c = r.context;
     c.Spiderlings.getSetting = (name) => (name === "spiderlingsInfestationWeight" ? "0" : "1000000");
@@ -881,7 +878,10 @@ test("Hunting Grounds retains every native primary faction when its theme is sel
             `KDMapModRefreshList = [KDMapMods.${base}]; KDJourneySlotTypes.basic(null, 0, 5, "grv")`,
             c,
         );
-        assert.equal(slot.MapMod, "SpiderlingsHuntingGrounds");
+        assert.equal(
+            slot.MapMod,
+            (c.KDMapMods[base].faction || "Bandit") === "Maidforce" ? "SpiderlingsHuntingGrounds" : base,
+        );
         assert.equal(slot.Faction, c.KDMapMods[base].faction || "Bandit");
     }
 });
@@ -984,7 +984,12 @@ test("loading repairs only unvisited early infestation previews and keeps indepe
             Faction: "Maidforce",
         },
         maid: { y: 2, MapMod: "Mold", EscapeMethod: "Key", Faction: "Maidforce" },
-        eligible: { y: 5, MapMod: "SpiderlingsHuntingGrounds", EscapeMethod: "SpiderlingsHuntingGrounds" },
+        eligible: {
+            y: 5,
+            Faction: "Maidforce",
+            MapMod: "SpiderlingsHuntingGrounds",
+            EscapeMethod: "SpiderlingsHuntingGrounds",
+        },
         visited: {
             y: 2,
             visited: true,
@@ -1006,7 +1011,40 @@ test("loading repairs only unvisited early infestation previews and keeps indepe
     assert.equal(JSON.stringify(slots), after);
 });
 
-test("maid floors have no infestation objective; infestation floors place three nests without a maid modifier", () => {
+test("cached legacy active objectives retain progress even when native visited is false", () => {
+    const slot = {
+        x: 1,
+        y: 7,
+        visited: false,
+        Faction: "Bandit",
+        MapMod: "SpiderlingsHuntingGrounds",
+        EscapeMethod: "SpiderlingsHuntingGrounds",
+    };
+    const map = {
+        MapMod: "SpiderlingsHuntingGrounds",
+        SpiderlingsHuntingGrounds: { status: "active", targetIds: [1, 2, 3], destroyedIds: [1], garrisonVersion: 3 },
+    };
+    const before = JSON.stringify({ slot, map });
+    const r = runtime({ KDWorldMap: { one: { jx: 1, jy: 7, data: { main: map } } } });
+    r.context.KDGameData.JourneyMap = { "1,7": slot };
+    r.event("afterLoadGame");
+    assert.equal(JSON.stringify({ slot, map }), before);
+});
+
+test("cancelled legacy Hunting population on another faction stops injecting hunting spawns on load", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.MapFaction = "Bountyhunter";
+    c.KDMapData.MapMod = "None";
+    c.KDMapData.SpiderlingsHuntingGrounds = { status: "cancelled", reason: "insufficient-space" };
+    c.KDMapData.SpiderlingsPopulationPlan = { kind: "SpiderlingsHuntingGrounds", layoutFallback: true };
+    r.event("afterLoadGame");
+    assert.equal(c.KDMapData.SpiderlingsPopulationPlan, undefined);
+    assert.equal(c.KDMapData.MapFaction, "Bountyhunter");
+    assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.status, "cancelled");
+});
+
+test("ordinary Maid floors have no objective and Hunting Grounds reject a different primary faction", () => {
     const r = runtime();
     r.context.KDMapData.MapMod = "Mold";
     r.generate();
@@ -1016,8 +1054,11 @@ test("maid floors have no infestation objective; infestation floors place three 
     r.context.KDMapData.MapMod = "SpiderlingsHuntingGrounds";
     r.context.KDMapData.MapFaction = "Bandit";
     r.generate();
-    assert.equal(r.context.KDMapData.Entities.length, 55);
-    assert.equal(r.context.Spiderlings.HuntingGrounds.activeState().targetIds.length, 3);
+    assert.equal(r.context.KDMapData.Entities.length, 0);
+    assert.equal(r.context.Spiderlings.HuntingGrounds.activeState(), null);
+    assert.equal(r.context.KDMapData.MapFaction, "Bandit");
+    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.filter({ y: 7, Faction: "Bandit" }), 0);
+    assert.equal(r.context.KDMapMods.SpiderlingsHuntingGrounds.filter({ y: 7, Faction: "Maidforce" }), 1);
 });
 
 function nativePopulationRuntime() {
@@ -1220,7 +1261,7 @@ test("initial maid ecology survives an exhausted neutral allowance while wanderi
     assert.equal(r.select(...args), undefined, "other main factions still use the native neutral allowance");
 });
 
-test("faction population and the three-nest objective vary independently across all four combinations", () => {
+test("Hunting Grounds require Maidforce while preserving other factions and their native population", () => {
     for (const faction of ["Maidforce", "Bandit", "Nevermere"]) {
         for (const mod of ["None", "SpiderlingsHuntingGrounds"]) {
             const r = nativePopulationRuntime();
@@ -1240,19 +1281,15 @@ test("faction population and the three-nest objective vary independently across 
             const state = c.Spiderlings.HuntingGrounds.activeState();
             assert.equal(
                 state?.targetIds.length || 0,
-                mod === "SpiderlingsHuntingGrounds" ? 3 : 0,
+                mod === "SpiderlingsHuntingGrounds" && faction === "Maidforce" ? 3 : 0,
                 `${faction}/${mod} objective`,
             );
-            if (mod === "SpiderlingsHuntingGrounds") assert.ok(picked?.tags.SpiderlingsFloorMobile);
+            if (state) assert.ok(picked?.tags.SpiderlingsFloorMobile);
             else assert.equal(picked?.name, faction === "Maidforce" ? undefined : "Unrelated");
-            assert.equal(
-                filters.includes("minor"),
-                faction !== "Maidforce" && mod !== "SpiderlingsHuntingGrounds",
-                `${faction}/${mod} ordinary slots`,
-            );
+            assert.equal(filters.includes("minor"), faction !== "Maidforce", `${faction}/${mod} ordinary slots`);
             assert.equal(
                 c.KinkyDungeonHandleWanderingSpawns(...pickArgs)?.name,
-                faction === "Maidforce" || mod === "SpiderlingsHuntingGrounds" ? undefined : "Unrelated",
+                faction === "Maidforce" ? undefined : "Unrelated",
                 `${faction}/${mod} wandering pool`,
             );
             if (state) {
@@ -1266,7 +1303,7 @@ test("faction population and the three-nest objective vary independently across 
     }
 });
 
-test("a hunting layout cancellation retains its bounded spider ecology and native escape", () => {
+test("an unsupported layout rejects the whole Hunting theme and returns to native population and escape", () => {
     const r = runtime();
     const c = r.context;
     c.KDMapData.GridWidth = 3;
@@ -1277,24 +1314,20 @@ test("a hunting layout cancellation retains its bounded spider ecology and nativ
     assert.equal(c.Spiderlings.HuntingGrounds.activeState(), null);
     assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), false);
     assert.equal(r.event("calcEscapeMethod", { escapeMethod: "SpiderlingsHuntingGrounds" }).escapeMethod, "Key");
-    assert.equal(plan.kind, "SpiderlingsHuntingGrounds");
-    assert.equal(plan.layoutFallback, true);
-    assert.equal(plan.cap, 45);
-    assert.equal(c.Spiderlings.getMapPopulationCap(), 45);
-    assert.equal(plan.preyQuota.Maid, 5);
-    assert.equal(plan.residentsSeeded, true);
+    assert.equal(plan, undefined);
+    assert.equal(c.Spiderlings.getMapPopulationCap(), 25);
     assert.ok(c.KDMapData.Entities.every((e) => e.Enemy.name !== "NestEntrance"));
 });
 
-test("a cancelled hunting floor keeps bounded wandering and a maid side room keeps its native pool", () => {
+test("a rejected hunting floor and its side room retain their native faction pools", () => {
     const r = nativePopulationRuntime();
     const c = r.context;
     delete c.KDMapData.SpiderlingsHuntingGrounds;
     c.KDMapData.GridWidth = 3;
     const args = [[], 3, "grv", "0", ["human"], undefined, undefined, ["maid", "dressmaker"]];
-    assert.equal(r.select(...args).tags.spiderlings, true);
+    assert.equal(r.select(...args), undefined);
     assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.status, "cancelled");
-    assert.equal(c.KinkyDungeonHandleWanderingSpawns(...args).tags.spiderlings, true);
+    assert.equal(c.KinkyDungeonHandleWanderingSpawns(...args), undefined);
     c.KDMapData.RoomType = "GuardOutpost";
     assert.equal(r.select(...args).name, "Unrelated");
     assert.equal(c.KinkyDungeonHandleWanderingSpawns(...args).name, "Unrelated");
@@ -1392,7 +1425,7 @@ test("twenty-one-place core capacity is atomic and a failed final Mage preserves
         c.KDMapData.Entities.push(...original);
         r.generate();
         assert.equal(c.Spiderlings.HuntingGrounds.activeState() !== null, existing === 279);
-        assert.equal(c.KDMapData.Entities.length, 300);
+        assert.equal(c.KDMapData.Entities.length, existing === 279 ? 300 : existing);
         assert.ok(original.every((entity) => c.KDMapData.Entities.includes(entity)));
     }
     const r = runtime();

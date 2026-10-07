@@ -259,16 +259,16 @@ KDModButtonspiderlingsSettingsNestsHelp,Un peso de especie de 0 impide ese refue
 KDModButtonspiderlingsSettingsGeneralHelp,Los pisos temáticos conservan sus cupos.
 KDModButtonspiderlingsSettingsHuntingHelp,Ambos temas arácnidos aparecen en pisos normales desde el piso 5.
 KinkyDungeonCheckpointLoreSpiderlings,Bestiario de arañitas
-KDLoreTextspiderlings.Spinner,"Nivel de peligro: Alto|Estas pequeñas arañas cuidan sus redes tanto como persiguen visitantes. Vi a una reparar un borde roto mientras sus compañeras guiaban de vuelta a un viajero. Su fina seda parece delicada, pero cada vuelta paciente añade otra capa ceñida.||-Notas de campo del sendero de seda"
+KDLoreTextspiderlings.Spinner,Peligro: bajo a solas; alto en grupo|Una sola me causa pocos problemas. Varias cooperan: una ocupa al visitante mientras las demás cierran la red y añaden capas suaves y ceñidas. Vigilo a sus compañeras tanto como a la pequeña araña frente a mí.||-Notas de campo del sendero de seda
 KDLoreTitlespiderlings.Spinner,Cría de araña hiladora
 KDLoreLabelspiderlings.Spinner,Cría de araña hiladora
 KDLoreTextspiderlings.Jumper,Nivel de peligro: Normal|Una pariente ágil de la hiladora. Recoge las patas antes de un salto corto y roza a su objetivo con seda al aterrizar. Vigilo el espacio que tiene delante; seguir sus pequeñas huellas solo me dice dónde estuvo.||-Notas de campo del sendero de seda
 KDLoreTitlespiderlings.Jumper,Cría de araña saltadora
 KDLoreLabelspiderlings.Jumper,Cría de araña saltadora
-KDLoreTextspiderlings.WebCaster,"Nivel de peligro: Normal|A diferencia de las tejedoras a mis pies, estas prefieren cierta distancia. Su seda se abre en suaves abanicos que se adhieren a los viajeros. Quien se resiste dentro de un capullo ya formado puede atraer otra capa de hilos, colocada con paciencia sobre su superficie.||-Notas de campo del sendero de seda"
+KDLoreTextspiderlings.WebCaster,"Peligro: bajo a solas; alto en grupo|Una sola rociadora me causa pocos problemas. Entre otras arañitas, sus suaves abanicos de seda acortan los pasos del visitante mientras las hiladoras se acercan. He visto cómo unos hilos sueltos se vuelven mucho más peligrosos gracias a su silenciosa cooperación.||-Notas de campo del sendero de seda"
 KDLoreTitlespiderlings.WebCaster,Cría de araña escupidora
 KDLoreLabelspiderlings.WebCaster,Cría de araña escupidora
-KDLoreTextspiderlings.Tunneler,"Nivel de peligro: Normal|El suave raspado bajo una sala suele ser mi primera advertencia. Esta cría abre nuevas entradas de nido y reviste sus bordes con seda. Mientras observo la caza en otro lugar, un rincón vacío puede convertirse en nido y dejar más patitas para encontrar después.||-Notas de campo del sendero de seda"
+KDLoreTextspiderlings.Tunneler,"Peligro: ninguna amenaza directa|Esta pequeña excavadora no combate a los visitantes. Abre entradas de nidos, reviste sus bordes de seda y se marcha. Escucho el suave raspado: la nueva abertura puede traer pronto más patitas.||-Notas de campo del sendero de seda"
 KDLoreTitlespiderlings.Tunneler,Cría de araña excavadora
 KDLoreLabelspiderlings.Tunneler,Cría de araña excavadora
 KDLoreTextspiderlings.MageSpiderlings,Nivel de peligro: Alto|Una pequeña hechicera de sombrero cuidado y runas rojo apagado en el lomo. Las runas brillan al lanzar magia y siguen encendidas mientras se prepara un efecto demorado. Vigilo sus pasos pacientes y los círculos que deja; la suave seda puede llegar desde ambos.||-Notas de campo del sendero de seda

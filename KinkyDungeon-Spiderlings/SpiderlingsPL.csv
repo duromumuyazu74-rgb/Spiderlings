@@ -259,16 +259,16 @@ KDModButtonspiderlingsSettingsNestsHelp,Waga gatunku 0 wyłącza jego posiłki.
 KDModButtonspiderlingsSettingsGeneralHelp,Piętra tematyczne zachowują własne limity.
 KDModButtonspiderlingsSettingsHuntingHelp,Oba motywy pająków pojawiają się na zwykłych piętrach od piętra 5.
 KinkyDungeonCheckpointLoreSpiderlings,Bestiariusz pajęcząt
-KDLoreTextspiderlings.Spinner,"Poziom zagrożenia: Wysoki|Te małe pająki pielęgnują sieci równie pilnie, jak ścigają gości. Widziałam jednego naprawiającego rozdartą krawędź, gdy towarzysze odprowadzali podróżnego do środka. Cienki jedwab wygląda delikatnie, lecz każdy cierpliwy obrót dodaje następną przylegającą warstwę.||-Notatki terenowe z jedwabnej ścieżki"
+KDLoreTextspiderlings.Spinner,"Zagrożenie: pojedynczo niskie, w grupie wysokie|Jedna sprawia mi niewiele kłopotu. Kilka współpracuje: jedna zajmuje gościa, a pozostałe zamykają sieć i dokładają miękkie, przylegające warstwy. Obserwuję jej towarzyszki równie uważnie jak małego pająka przed sobą.||-Notatki terenowe z jedwabnej ścieżki"
 KDLoreTitlespiderlings.Spinner,Młody pająk prządka
 KDLoreLabelspiderlings.Spinner,Młody pająk prządka
 KDLoreTextspiderlings.Jumper,"Poziom zagrożenia: Zwykły|Szybkonogi krewniak prządki. Składa nogi przed krótkim skokiem, a lądując, muska cel jedwabiem. Obserwuję przestrzeń przed nim; jego małe ślady mówią tylko, gdzie był przed chwilą.||-Notatki terenowe z jedwabnej ścieżki"
 KDLoreTitlespiderlings.Jumper,Młody pająk skoczek
 KDLoreLabelspiderlings.Jumper,Młody pająk skoczek
-KDLoreTextspiderlings.WebCaster,"Poziom zagrożenia: Zwykły|W przeciwieństwie do tkaczy u moich stóp te wolą zachować dystans. Rozkładają jedwab w miękkie wachlarze, które przylegają do przechodzących wędrowców. Gość szarpiący się w gotowym kokonie może przyciągnąć kolejną, cierpliwie ułożoną warstwę nici na jego powierzchni.||-Notatki terenowe z jedwabnej ścieżki"
+KDLoreTextspiderlings.WebCaster,"Zagrożenie: pojedynczo niskie, w grupie wysokie|Samotna miotaczka nici sprawia mi niewiele kłopotu. Wśród innych pajączków jej miękkie wachlarze jedwabiu skracają kroki gościa, gdy prządki podchodzą bliżej. Widziałam, jak luźne nici stają się znacznie groźniejsze dzięki cichej współpracy.||-Notatki terenowe z jedwabnej ścieżki"
 KDLoreTitlespiderlings.WebCaster,Młody pająk miotacz sieci
 KDLoreLabelspiderlings.WebCaster,Młody pająk miotacz sieci
-KDLoreTextspiderlings.Tunneler,"Poziom zagrożenia: Zwykły|Ciche skrobanie pod komnatą często jest moim pierwszym ostrzeżeniem. Ten pajączek otwiera nowe wejścia do gniazd i wyścieła ich brzegi jedwabiem. Gdy obserwuję łowy gdzie indziej, pusty kąt może stać się gniazdem, a później spotkam więcej małych nóg.||-Notatki terenowe z jedwabnej ścieżki"
+KDLoreTextspiderlings.Tunneler,"Zagrożenie: brak bezpośredniego zagrożenia|Ten mały kopacz nie walczy z gośćmi. Otwiera wejścia do gniazd, wyścieła brzegi jedwabiem i odchodzi. Nasłuchuję cichego skrobania: to pozostawiony otwór może wkrótce sprowadzić więcej małych nóg.||-Notatki terenowe z jedwabnej ścieżki"
 KDLoreTitlespiderlings.Tunneler,Młody pająk kopacz
 KDLoreLabelspiderlings.Tunneler,Młody pająk kopacz
 KDLoreTextspiderlings.MageSpiderlings,"Poziom zagrożenia: Wysoki|Mały czarodziej w schludnym kapeluszu, z matowoczerwonymi runami na grzbiecie. Rozjaśniają się podczas rzucania zaklęć i świecą, gdy opóźniona magia się zbiera. Obserwuję jego cierpliwe kroki oraz pozostawione kręgi; miękki jedwab może dotrzeć do mnie z obu stron.||-Notatki terenowe z jedwabnej ścieżki"
