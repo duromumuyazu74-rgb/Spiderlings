@@ -32,6 +32,117 @@ const rectangle = (left, top, right, bottom) => [
     { x: left, y: bottom },
 ];
 
+test("explicit retirement preserves paid residual silk but ends capture and gradually dissipates it", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "residual",
+        owners: [1, 2],
+        map: floorMap(),
+        layers: [{ id: "residual-inner", vertices: rectangle(10, 6, 14, 10), gate: { x: 10, y: 8 } }],
+    });
+    for (let n = 0; n < 80; n++) {
+        const action = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    const solids = JSON.stringify(topology.solidCells(state)),
+        hp = state.links.reduce((sum, link) => sum + link.hp, 0);
+    state = topology.retireField(state, "residual-inner", { residual: true });
+    assert.equal(JSON.stringify(topology.solidCells(state)), solids, "Paid webs remain physically present");
+    assert.equal(topology.isInsideCommonCore(state, "residual", { x: 12, y: 8 }), false);
+    assert.equal(topology.nextWorkAction(state, 1, { x: 12, y: 8 }), undefined);
+    state = topology.restore(JSON.parse(JSON.stringify(state)));
+    const zero = JSON.stringify(state);
+    state = topology.tickOwnerless(state, { delta: 0, activeOwnerIds: [1, 2] }).state;
+    assert.equal(JSON.stringify(state), zero);
+    state = topology.tickOwnerless(state, { delta: 10, activeOwnerIds: [1, 2] }).state;
+    assert.ok(state.links.reduce((sum, link) => sum + link.hp, 0) < hp);
+    assert.ok(topology.solidCells(state).length > 0);
+    state = topology.tickOwnerless(state, { delta: 10, activeOwnerIds: [1, 2] }).state;
+    assert.equal(topology.solidCells(state).length, 0);
+});
+
+test("retirement preserves shared active silk and occupied residuals until they become unused", () => {
+    const topology = rules();
+    let state = topology.createPhysicalGraph({
+        owners: [1, 2],
+        built: true,
+        fields: [
+            {
+                id: "left-inner",
+                type: "line",
+                vertices: [
+                    { x: 10, y: 6 },
+                    { x: 14, y: 6 },
+                ],
+            },
+            {
+                id: "right-inner",
+                type: "line",
+                vertices: [
+                    { x: 12, y: 6 },
+                    { x: 18, y: 6 },
+                ],
+            },
+        ],
+    });
+    const shared = state.links.find(
+        (link) => link.owners.includes("left-inner") && link.owners.includes("right-inner"),
+    );
+    assert.ok(shared);
+    const hp = shared.hp,
+        sharedId = shared.id;
+    state = topology.retireField(state, "left-inner", { residual: true });
+    state = topology.tickOwnerless(state, { delta: 20, activeOwnerIds: [2], occupiedCells: [{ x: 11, y: 6 }] }).state;
+    assert.equal(state.links.find((link) => link.id === sharedId).hp, hp);
+    assert.ok(
+        topology.solidCells(state).some((cell) => cell.x === 11 && cell.y === 6),
+        "Occupied residual remains",
+    );
+    state = topology.tickOwnerless(state, { delta: 20, activeOwnerIds: [2] }).state;
+    assert.ok(!topology.solidCells(state).some((cell) => cell.x === 11 && cell.y === 6));
+    assert.equal(state.links.find((link) => link.id === sharedId).hp, hp);
+    state = topology.retireField(state, "right-inner", { residual: true });
+    state = topology.tickOwnerless(state, { delta: 10, activeOwnerIds: [1, 2] }).state;
+    assert.ok(state.links.find((link) => link.id === sharedId).hp < hp);
+});
+
+test("a new legal enclosure reuses a residual corner without duplicate identities or phantom payment", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "previous",
+        owners: [1],
+        map: floorMap(),
+        layers: [{ id: "previous-inner", vertices: rectangle(10, 6, 14, 10), gate: { x: 10, y: 8 } }],
+    });
+    for (let n = 0; n < 100; n++) {
+        const action = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    state = topology.retireField(state, "previous-inner", { residual: true });
+    const paidBefore = state.actionLog.length;
+    state = topology.addEnclosure(state, {
+        compositeId: "replacement",
+        owners: [2],
+        map: floorMap(),
+        layers: [{ id: "replacement-inner", vertices: rectangle(14, 6, 18, 10), gate: { x: 18, y: 8 } }],
+    }).state;
+    assert.equal(state.actionLog.length, paidBefore);
+    assert.equal(new Set(state.anchors.map((anchor) => anchor.id)).size, state.anchors.length);
+    for (let n = 0; n < 100; n++) {
+        const action = topology.nextWorkAction(state, 2, { x: 16, y: 8 });
+        if (!action) break;
+        const applied = topology.applyAction(state, { ...action, ownerId: 2 }, clear(action.cell));
+        assert.equal(applied.outcome.legal, true, "Shared corner belongs to the active declared field");
+        state = applied.state;
+    }
+    assert.equal(state.fields["replacement-inner"].phase, "ready");
+    assert.ok(state.actionLog.length > paidBefore);
+});
+
 test("moving an enclosure entrance preserves silk until paid opening and closes the former gate", () => {
     const topology = rules(),
         clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });

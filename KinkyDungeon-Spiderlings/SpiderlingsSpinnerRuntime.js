@@ -46,24 +46,34 @@
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
-                    const dispersing = api.Webbing?.isCocoonDispersing?.(enemy, target);
-                    const duty = !dispersing && api.SpinnerDuties?.prepare(enemy, target, delta);
-                    const allowed = (handler) => !dispersing && (!duty || api.SpinnerDuties.allows(enemy, handler));
+                    const duty = api.SpinnerDuties?.beginAction(enemy, target, delta);
+                    const allowed = (handler) => !duty || api.SpinnerDuties.allows(enemy, handler);
                     const recovery = allowed("recovery") && api.SpinnerRecovery?.handleEnemyTurn(enemy, target, delta);
-                    if (recovery) return recovery;
+                    if (recovery) {
+                        api.SpinnerDuties?.recordResult?.(enemy, recovery);
+                        return recovery;
+                    }
                     const capture = allowed("capture") && api.SpinnerCapture.handleEnemyTurn(enemy, target, delta);
-                    if (capture) return capture;
+                    if (capture) {
+                        api.SpinnerDuties?.recordResult?.(enemy, capture);
+                        return capture;
+                    }
                     if (delta > 0) api.NPCWrapping?.preemptNativeCapture?.();
                     const npcCapture =
                         allowed("npcCapture") && api.SpinnerNPCCapture?.handleEnemyTurn(enemy, target, delta);
-                    if (npcCapture) return npcCapture;
+                    if (npcCapture) {
+                        api.SpinnerDuties?.recordResult?.(enemy, npcCapture);
+                        return npcCapture;
+                    }
                     const npcRecovery =
                         allowed("npcRecovery") && api.SpinnerNPCRecovery?.handleEnemyTurn(enemy, target, delta);
-                    if (npcRecovery) return npcRecovery;
-                    const nativeField =
-                        !dispersing && !duty && api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
+                    if (npcRecovery) {
+                        api.SpinnerDuties?.recordResult?.(enemy, npcRecovery);
+                        return npcRecovery;
+                    }
+                    const nativeField = !duty && api.SpinnerNativeField.handleEnemyTurn(enemy, target, delta);
                     if (nativeField) return nativeField;
-                    const legacyField = !dispersing && api.SpinnerField.handleEnemyTurn(enemy, target, delta);
+                    const legacyField = !duty && api.SpinnerField.handleEnemyTurn(enemy, target, delta);
                     if (legacyField) return legacyField;
                     enemy.SpiderlingsSpinnerRuntimeDelta = delta;
                     const previousObserver = nativeObserver;
@@ -92,11 +102,10 @@
                 ai.beforemove || (() => false),
                 (native) =>
                     function (enemy, target, aiData) {
-                        const dispersal = api.Webbing?.disperseCocoonEnemy?.(enemy, target, aiData);
-                        if (dispersal !== undefined) return dispersal;
                         api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                         if (api.SpinnerDuties?.current(enemy)) {
-                            if (api.SpinnerDuties.beforeMove(enemy, target, aiData)) return true;
+                            const handled = api.SpinnerDuties.beforeMove(enemy, target, aiData);
+                            if (handled || !api.SpinnerDuties.allowsBeforeMove(enemy)) return handled;
                             return native.apply(this, arguments);
                         }
                         if (api.FieldCommand?.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta)) {

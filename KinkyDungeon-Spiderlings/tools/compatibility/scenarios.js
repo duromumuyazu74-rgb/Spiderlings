@@ -35,6 +35,7 @@ const scenarios = [
         "field-command",
         "saved-field-guard",
         "unfinished-field-entry",
+        "field-project-lifecycle",
         "hunting-objective-entry",
         "feedback-walls",
         "feedback-ui",

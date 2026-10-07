@@ -609,6 +609,7 @@
                 ai.beforemove || (() => false),
                 (beforemove) =>
                     function (enemy, player, aiData) {
+                        if (api.SpinnerDuties?.current(enemy)) return beforemove.apply(this, arguments);
                         const outcome = disperseCocoonEnemy(enemy, player, aiData);
                         return outcome === undefined ? beforemove.apply(this, arguments) : outcome;
                     },

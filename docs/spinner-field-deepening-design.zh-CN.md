@@ -1,6 +1,6 @@
 # 场地 AI 深化设计
 
-状态：行为取舍已确定，供下一次实现使用；具体参数为待运行校准的初始候选。日期：2026-10-07。
+状态：已实现，test.132 完整双版本原生验收通过；具体参数保留为后续运行校准的起点。日期：2026-10-07。见[实现与验收记录](spiderlings-test132-field-lifecycle.zh-CN.md)。
 
 基线为 test.131，提交 `175b99e`。决定见 [ADR-0025](adr/0025-field-duty-and-investment-retirement.md)，三轮回答见[访谈记录](spinner-field-deepening-interview.zh-CN.md)，术语见 [GLOSSARY.md](../KinkyDungeon-Spiderlings/GLOSSARY.md)。这份方案深化 [ADR-0024](adr/0024-layered-field-command.md) 的既有层级，调整其已投入工程默认持续保留运行的策略，不改变真实捕获、拉回和原生行动资格。
 

@@ -453,6 +453,7 @@
                 ["occupied-gate", 0],
                 ["stun", 0],
                 ["kill", 0],
+                ["kill-all", 0],
             ]) {
                 row = undefined;
                 setup(`adversarial-spinner-core-entry-${seed}`);
@@ -498,17 +499,18 @@
                 };
                 rows.push(row);
                 KDMovePlayer(target.x, target.y, false);
-                let counterDone = !["stun", "kill"].includes(strategy);
+                let counterDone = !["stun", "kill", "kill-all"].includes(strategy);
                 for (let step = 1; step <= 160; step++) {
                     const current = Spiderlings.SpinnerNativeField.state(),
                         currentGroup = current.ai.groups[preset.groupId];
                     if (!counterDone) {
-                        const workers = actors.filter(
+                        const bodyWorkers = actors.filter(
                             (actor) =>
                                 String(actor.id) !== String(currentGroup.engagement?.lureId) &&
                                 currentGroup.assignments[actor.id]?.role === "body",
                         );
-                        if (workers.length === 2) {
+                        const workers = strategy === "kill-all" ? actors.filter((actor) => actor.hp > 0) : bodyWorkers;
+                        if (bodyWorkers.length === 2) {
                             row.counter = {
                                 tick: KinkyDungeonCurrentTick,
                                 workerIds: workers.map((actor) => actor.id),
@@ -630,10 +632,25 @@
                         "Core construction dispersed the retained crew",
                     );
                 } else {
-                    expect(
-                        !row.final.geometry && !row.final.capture,
-                        `${strategy} should prevent a legal core closure`,
-                    );
+                    if (strategy === "kill") {
+                        expect(
+                            row.final.geometry && !row.final.capture,
+                            "The surviving sole builder should finish geometry without admitting one-source Capture",
+                        );
+                        expect(
+                            row.actions.some(
+                                (action) =>
+                                    action.tick > row.counter.tick &&
+                                    !row.counter.workerIds.includes(action.source) &&
+                                    action.result.applied,
+                            ),
+                            "The surviving Spinner never continued real paid construction",
+                        );
+                    } else
+                        expect(
+                            !row.final.geometry && !row.final.capture,
+                            `${strategy} should prevent a legal core closure`,
+                        );
                     if (strategy === "occupied-gate")
                         expect(
                             !row.actions.some(
@@ -642,7 +659,7 @@
                             ),
                             "A worker constructed through the player's occupied gate",
                         );
-                    if (strategy === "kill")
+                    if (["kill", "kill-all"].includes(strategy))
                         expect(
                             !row.actions.some(
                                 (action) =>
