@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.131.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.132.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.132 field duties, stalled projects and residual retirement (2026-10-07)
+
+The same final ZIP passes all 57 native stages and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `dbfd74e08679b3a3935f1883f3e8cf2961d94f13` was freshly fetched at `2026-10-07T13:41:58.271Z`. Full acceptance: `<cache>/runs/2026-10-07T13-41-58-287Z-0.92.36-test.132/acceptance.json`. Final ZIP: 175 entries, 24,873,412 bytes; SHA-256 `6b7a5aab983b1196086c11f51c51fb89d0092dcfd4519e1608d61d0c39324735`.
+
+The sole builder requests support and continues paid work under adjacent contact. Positive enemy operations have separate duties; phases within one operation cannot double-pay. Cocoon dispersal uses the same decision and retains source protection. Planning compares effective interception before size, records actual work and blockage, and retires a small obsolete project only for a stable better candidate with real workers. Failed activation retains the original field. Residuals remain passive and decay through positive world time; active shared nodes and occupied residuals are protected. New declared fields reuse residual corners without duplicate anchor identities or free construction.
+
+The native lifecycle scene records 13 paid actions before replacement and 15 after its final observations in each game, with four residual links preserved and then dissipated across reload. These are fixture outcomes, not universal construction timings. Native counterplay distinguishes two killed workers with a surviving builder from killing every worker. The former permits paid completion without one-source Capture; the latter prevents closure. Completed-field entry waits for both actual Capture and full closure, and surplus staffing uses a genuinely uncovered route. Earlier full runs stopped at those obsolete fixture assumptions; their reports remain preserved.
+
+See [implementation and acceptance](spiderlings-test132-field-lifecycle.zh-CN.md). This controlled native acceptance does not establish a global performance improvement.
 
 ## Test.131 cooperative construction and the Maidforce Hunting contract (2026-10-07)
 

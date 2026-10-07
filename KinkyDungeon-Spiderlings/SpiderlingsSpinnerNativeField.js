@@ -352,11 +352,11 @@
         return { added: true, fieldId: input.layer.id };
     }
 
-    function retireField(fieldId) {
+    function retireField(fieldId, options) {
         const encounter = state(),
             field = fieldById(encounter, fieldId);
         if (!field) return false;
-        encounter.topology = topology().retireField(encounter.topology, fieldId);
+        encounter.topology = topology().retireField(encounter.topology, fieldId, options);
         reconcile();
         invalidateNavigation();
         return true;
@@ -620,6 +620,10 @@
         const settled = topology().tickOwnerless(encounter.topology, {
             activeOwnerIds: activeOwnerIds(encounter.topology),
             delta,
+            occupiedCells: [
+                KinkyDungeonPlayerEntity,
+                ...KDMapData.Entities.filter((entity) => entity.hp > 0 && !isOwnedProxy(entity)),
+            ],
         });
         encounter.topology = settled.state;
         updatePreyTargets(encounter.topology);
@@ -677,8 +681,13 @@
                 ...cell.linkIds.flatMap((id) => graph.links.find((link) => link.id === id)?.owners || []),
             ]);
             // A shared segment stays solid if any owning field has activated it. Legacy lines keep their behavior.
-            if ([...owners].some((id) => active.has(id) || graph.lineFields?.[id])) continue;
-            if ([...owners].some((id) => passive.has(id))) cells.set(cellKey(cell), cell);
+            if ([...owners].some((id) => active.has(id) || (graph.lineFields?.[id] && !graph.lineFields[id].retired)))
+                continue;
+            if (
+                [...owners].some((id) => passive.has(id)) ||
+                [...owners].every((id) => graph.fields?.[id]?.retired || graph.lineFields?.[id]?.retired)
+            )
+                cells.set(cellKey(cell), cell);
         }
         const result = [...cells.values()];
         preparedByGraph.set(graph, { stamp, cells: result });

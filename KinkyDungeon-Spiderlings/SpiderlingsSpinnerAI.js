@@ -24,6 +24,7 @@
     let observedGroups = new Map();
     let mapCache;
     let passageCache;
+    let workSnapshot;
 
     function seededRandom(seed) {
         let value = 2166136261;
@@ -209,19 +210,12 @@
     }
 
     function sourceBusy(entity) {
-        const id = entity?.id;
-        return !!(
-            api.SpinnerCapture?.state?.()?.sourceIds?.includes(id) ||
-            api.SpinnerRecovery?.sourceIds?.().includes(id) ||
-            api.SpinnerNPCCapture?.usesSource?.(id) ||
-            api.SpinnerNPCRecovery?.usesEntity?.(id) ||
-            entity?.SpiderlingsTaskNestDefenderTarget !== undefined
-        );
+        return !!(api.FieldCommand.sourceRole(entity) || entity?.SpiderlingsTaskNestDefenderTarget !== undefined);
     }
 
     function fieldStandbyCells(ai, group, snapshot, graph) {
         const plan = ai.plans[group.planId];
-        if (!plan || ["invalid", "abandoned"].includes(plan.status) || plan.kind === "line") return [];
+        if (!plan || ["invalid", "abandoned", "retired"].includes(plan.status) || plan.kind === "line") return [];
         const field =
                 graph?.fields?.[
                     (graph?.composites?.[plan.compositeId]?.layerIds || plan.fieldIds || [plan.fieldId]).at(-1)
@@ -232,7 +226,7 @@
             interior = new Set(interiorCells.filter(Boolean).map(cellKey)),
             otherFields = new Set(
                 Object.values(ai.plans)
-                    .filter((other) => other !== plan && !["invalid", "abandoned"].includes(other.status))
+                    .filter((other) => other !== plan && !["invalid", "abandoned", "retired"].includes(other.status))
                     .flatMap((other) => other.cells || []),
             ),
             byKey = new Map((snapshot?.cells || []).map((cell) => [cellKey(cell), cell])),
@@ -540,7 +534,10 @@
             nests = snapshot.nests || [],
             reserved = new Set(
                 Object.values(api.SpinnerNativeField.state()?.ai?.plans || {})
-                    .filter((plan) => plan.groupId !== group.id && !["invalid", "abandoned"].includes(plan.status))
+                    .filter(
+                        (plan) =>
+                            plan.groupId !== group.id && !["invalid", "abandoned", "retired"].includes(plan.status),
+                    )
                     .flatMap((plan) => plan.cells || []),
             ),
             candidates = [];
@@ -669,87 +666,7 @@
     }
 
     function selectSavedPlan(ai, group, candidates) {
-        if (group.planId && ai.plans[group.planId]) return ai.plans[group.planId];
-        const invalid = new Set(ai.invalidCandidateIds || []),
-            occupied = new Set(
-                Object.values(ai.plans)
-                    .filter((plan) => !["invalid", "abandoned"].includes(plan.status))
-                    .flatMap((plan) => plan.cells || []),
-            ),
-            eligible = candidates.filter(
-                (candidate) =>
-                    !invalid.has(candidate.id) && !candidate.cells.some((cell) => occupied.has(cellKey(cell))),
-            ),
-            largestArea = Math.max(
-                0,
-                ...eligible.map((candidate) => candidate.area || candidate.interiorCells?.length || 1),
-            ),
-            shortlist = eligible
-                .filter((candidate) => (candidate.area || candidate.interiorCells?.length || 1) === largestArea)
-                .sort(compareSites)
-                .slice(0, SHORTLIST_SIZE);
-        if (!shortlist.length) return undefined;
-        const random = seededRandom(`${ai.mapSeed}:${ai.mapIdentity}:${group.id}:${group.selectionOrdinal}`),
-            floorScore = shortlist[shortlist.length - 1].score,
-            weights = shortlist.map((candidate) => Math.max(1, candidate.score - floorScore + 2));
-        let draw = random() * weights.reduce((total, weight) => total + weight, 0),
-            selected = shortlist[0];
-        for (let index = 0; index < shortlist.length; index++) {
-            draw -= weights[index];
-            if (draw <= 0) {
-                selected = shortlist[index];
-                break;
-            }
-        }
-        const planId = `spinner-plan-${ai.nextPlanOrdinal++}`,
-            fieldId = `spinner-field-${group.id}-${group.selectionOrdinal}`;
-        ai.plans[planId] = {
-            id: planId,
-            kind: selected.type,
-            groupId: group.id,
-            candidateId: selected.id,
-            fieldId,
-            ...(selected.type === "enclosure" || selected.type === "passage"
-                ? {
-                      compositeId: fieldId,
-                      center: clone(selected.center),
-                      ...(selected.gate ? { gate: clone(selected.gate) } : {}),
-                      fieldIds:
-                          selected.type === "enclosure"
-                              ? selected.layers.map((_, index) => (index ? `${fieldId}:ring:${index + 1}` : fieldId))
-                              : [fieldId],
-                  }
-                : {}),
-            ...(selected.type === "enclosure"
-                ? {
-                      constructionOrder: "outer-first",
-                      radius: selected.radius,
-                      layers: selected.layers.map((layer, index) => ({
-                          ...clone(layer),
-                          id: index ? `${fieldId}:ring:${index + 1}` : fieldId,
-                      })),
-                  }
-                : {}),
-            ...(selected.type === "passage"
-                ? {
-                      interiorCells: clone(selected.interiorCells),
-                      gates: clone(selected.gates),
-                      nativeWallCells: clone(selected.nativeWallCells),
-                      proof: clone(selected.proof),
-                  }
-                : {}),
-            status: "traveling",
-            selectedRevision: ai.candidateRevision,
-            selectionOrdinal: group.selectionOrdinal,
-            anchors: clone(selected.anchors || []),
-            cells: selected.cells.map(cellKey),
-            ...(selected.type === "enclosure" ? { initialCells: selected.cells.map(cellKey) } : {}),
-            invalidReason: null,
-        };
-        group.planId = planId;
-        const observation = api.SpinnerAI.groupObservation?.(group);
-        if (observation) group.planningObservation = { ...clone(observation), turn: ai.coordinationTurn || 0 };
-        return ai.plans[planId];
+        return api.FieldProjects.selectSavedPlan(ai, group, candidates);
     }
 
     function nativeMapSnapshot() {
@@ -924,47 +841,6 @@
         ai.passageMetrics = { ...index.metrics };
         const local = candidates.filter((candidate) => candidate.focusDistance <= 6);
         return local.length ? local : candidates;
-    }
-
-    function activatePlan(plan, group) {
-        let result;
-        if (plan?.kind === "passage")
-            result = api.SpinnerNativeField.addPassage({
-                compositeId: plan.compositeId,
-                fieldId: plan.fieldId,
-                groupId: group.id,
-                owners: group.memberIds,
-                interiorCells: plan.interiorCells,
-                core: plan.center,
-                gates: plan.gates,
-                nativeWallCells: plan.nativeWallCells,
-                scenario: "autonomous-passage",
-            });
-        else if (plan?.kind === "enclosure")
-            result = api.SpinnerNativeField.addEnclosure({
-                compositeId: plan.compositeId,
-                groupId: group.id,
-                owners: group.memberIds,
-                layers: plan.layers || [{ id: plan.fieldId, vertices: plan.anchors, gate: plan.gate }],
-                constructionOrder: plan.constructionOrder,
-                autoSeal: false,
-                scenario: "autonomous-enclosure",
-            });
-        else if (plan)
-            result = api.SpinnerNativeField.addLine({
-                fieldId: plan.fieldId,
-                owners: group.memberIds,
-                anchors: plan.anchors,
-                scenario: "autonomous-line",
-            });
-        if (plan && result?.added === false) {
-            plan.status = "invalid";
-            plan.invalidReason = result.reason;
-            group.planId = null;
-            group.assignments = {};
-            delete group.noPlanSignature;
-        }
-        return result;
     }
 
     function initializeMapgenField(options = {}) {
@@ -1443,7 +1319,8 @@
         for (const group of Object.values(encounter.ai.groups)) {
             const plan = encounter.ai.plans[group.planId],
                 field = encounter.topology?.fields?.[plan?.fieldId];
-            if (plan?.kind !== "passage" || !field || ["invalid", "abandoned"].includes(plan.status)) continue;
+            if (plan?.kind !== "passage" || !field || ["invalid", "abandoned", "retired"].includes(plan.status))
+                continue;
             const members = group.memberIds.map((id) => KDMapData.Entities.find((entity) => entity.id === id)),
                 reserved = new Set(Object.values(group.assignments).map((action) => cellKey(action.workCell))),
                 known = groupObservation(group),
@@ -1790,50 +1667,11 @@
         return `${ai.geometrySignature}:${ai.candidateRevision}:${origins}:${occupied}:${cellKey(KinkyDungeonPlayerEntity)}`;
     }
 
-    function invalidatePlan(
-        encounter,
-        group,
-        reason,
-        snapshot,
-        distances = routeDistances(snapshot),
-        lines = lineCatalogue(snapshot),
-        work,
-        enclosureGeometry,
-    ) {
-        const ai = ensureAI(encounter),
-            plan = ai.plans[group.planId];
-        if (!plan) return;
+    function invalidatePlan(encounter, group, reason, _snapshot, _distances, _lines, work) {
         if (work) work.failedSiteReplans++;
-        else if (ai.plannerWorkLast)
-            ai.plannerWorkLast.failedSiteReplans = (ai.plannerWorkLast.failedSiteReplans || 0) + 1;
-        plan.status = "invalid";
-        plan.invalidReason = reason;
-        ai.invalidCandidateIds = Array.from(new Set([...(ai.invalidCandidateIds || []), plan.candidateId]));
-        ai.candidateRevision++;
-        for (const fieldId of plan.fieldIds || [plan.fieldId]) api.SpinnerNativeField.retireField(fieldId);
-        group.planId = null;
-        group.selectionOrdinal++;
-        const members = group.memberIds
-            .map((id) => KDMapData.Entities.find((entity) => entity.id === id))
-            .filter((entity) => eligibleSpinner(entity));
-        if (!members.length || api.FieldProjects.limit() === 0) return;
-        const passages = passageCandidates(snapshot, { ...group, members }, ai, distances),
-            enclosures = [
-                ...passages,
-                ...analyzeEnclosureCandidates(snapshot, { ...group, members }, distances, work, enclosureGeometry?.()),
-            ].sort(compareSites),
-            candidates =
-                enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
-                    ? enclosures
-                    : analyzeLineCandidates(snapshot, { ...group, members }, distances, lines, work);
-        ai.candidates = candidates;
-        if (members.length < 2 && candidates[0]?.type === "line") {
-            group.noPlanSignature = planningSignature(ai, members);
-            return;
-        }
-        const replacement = selectSavedPlan(ai, group, candidates);
-        if (!replacement) group.noPlanSignature = planningSignature(ai, members);
-        activatePlan(replacement, group);
+        else if (encounter.ai.plannerWorkLast)
+            encounter.ai.plannerWorkLast.failedSiteReplans = (encounter.ai.plannerWorkLast.failedSiteReplans || 0) + 1;
+        return api.FieldProjects.invalidate(encounter, group, reason);
     }
 
     function expandPlan(encounter, plan, group, snapshot, work) {
@@ -1861,7 +1699,7 @@
             ),
             otherFields = new Set(
                 Object.values(encounter.ai.plans)
-                    .filter((other) => other !== plan && other.status !== "invalid")
+                    .filter((other) => other !== plan && !["invalid", "abandoned", "retired"].includes(other.status))
                     .flatMap((other) => other.cells || []),
             ),
             signature = `${geometrySignature(snapshot)}:${boundary
@@ -1983,6 +1821,7 @@
                 ? (from, to) => api.SpinnerPassagePlanner.distance(index, from, to)
                 : routeDistances(snapshot, work),
             entities = input.entities || KDMapData.Entities;
+        workSnapshot = { map: KDMapData, snapshot };
         let lines, enclosureGeometry;
         const interceptionRoutes = new Map();
         // Share static geometry only within this turn; construction may change the next map snapshot.
@@ -2013,7 +1852,7 @@
         });
         refreshObservations(encounter);
         if (input.adoptExisting) adoptExistingTopology(encounter, ai);
-        const candidatesFor = (group, members) => {
+        const candidatesFor = (group, members, replacingPlanId) => {
             const passages = passageCandidates(snapshot, { ...group, members }, ai, distances);
             const enclosures = [
                 ...passages,
@@ -2031,7 +1870,10 @@
                     : analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines(), work);
             const occupied = new Set(
                 Object.values(ai.plans)
-                    .filter((plan) => !["invalid", "abandoned"].includes(plan.status))
+                    .filter(
+                        (plan) =>
+                            plan.id !== replacingPlanId && !["invalid", "abandoned", "retired"].includes(plan.status),
+                    )
                     .flatMap((plan) => plan.cells || []),
             );
             const available = candidates.filter(
@@ -2039,107 +1881,119 @@
                     !ai.invalidCandidateIds.includes(candidate.id) &&
                     !candidate.cells.some((cell) => occupied.has(cellKey(cell))),
             );
-            const legalPassages = available.filter((candidate) => candidate.type === "passage");
-            const largeEnclosures = available.filter(
+            const focus = group.recoveryAround || group.planningFocus;
+            const effective =
+                !focus || Object.hasOwn(snapshot, "candidateLines")
+                    ? available
+                    : available.filter(
+                          (candidate) =>
+                              distance(candidate.center || candidate.anchors[0], focus) <=
+                                  Math.max(6, (candidate.radius || 0) + 2) ||
+                              planner.intercepts({ ...candidate, kind: candidate.type }, focus),
+                      );
+            const legalPassages = effective.filter((candidate) => candidate.type === "passage");
+            const largeEnclosures = effective.filter(
                 (candidate) => candidate.type === "enclosure" && candidate.radius >= 3,
             );
-            return largeEnclosures.length ? largeEnclosures : legalPassages.length ? legalPassages : available;
+            return largeEnclosures.length ? largeEnclosures : legalPassages.length ? legalPassages : effective;
         };
-        api.FieldProjects.update(encounter, {
-            distances,
-            canWork: (group, member) => {
-                if ([member.stun, member.freeze, member.channel, member.teleporting].some((value) => value > 0))
-                    return false;
-                const plan = ai.plans[group.planId];
-                if (plan?.kind === "line") return true;
-                const skipped = new Set();
-                let action = nextGroupWork(encounter, group, member, []);
-                while (action?.cell) {
-                    const key = assignmentKey(action);
-                    if (skipped.has(key)) break;
-                    skipped.add(key);
-                    const status = api.SpinnerTopology.inspectWorkAction(encounter.topology, {
-                        ...action,
-                        ownerId: member.id,
-                    });
-                    if (
-                        status.pending &&
-                        (!api.SpinnerNativeField.snapshot(action.cell).actorOccupied ||
-                            status.allowsOccupiedTarget ||
-                            cellKey(member) === cellKey(action.cell)) &&
-                        occupancyRoute(
-                            member,
-                            workCells(action.cell, snapshot, member).filter((cell) =>
-                                Number.isFinite(distances(member, cell)),
-                            ),
-                        ).length > 0
-                    )
-                        return true;
-                    action = nextGroupWork(encounter, group, member, [...skipped]);
-                }
-                return false;
-            },
-            paid: (plan) => planHasPaidWork(encounter, plan),
-            relocate: (group) => {
-                const plan = ai.plans[group.planId];
-                plan.status = "abandoned";
-                plan.invalidReason = "position-demand";
-                for (const id of plan.fieldIds || [plan.fieldId]) api.SpinnerNativeField.retireField(id);
-                group.planId = null;
-                group.assignments = {};
-                group.selectionOrdinal++;
-                delete group.noPlanSignature;
-            },
-            intercepts: (plan, target) =>
-                plan.kind === "passage" &&
-                (snapshot.exits || []).some((exit) => {
-                    const key = `${cellKey(target)}:${cellKey(exit)}`;
-                    if (!interceptionRoutes.has(key)) {
-                        work.routeChecks++;
-                        interceptionRoutes.set(key, new Set(routeOnSnapshot(snapshot, target, exit).map(cellKey)));
-                    }
-                    return plan.interiorCells.some((cell) => interceptionRoutes.get(key).has(cellKey(cell)));
-                }),
+        const projectFacts = new Map();
+        const planner = {
+            route: distances,
             lineFixture: Object.hasOwn(snapshot, "candidateLines"),
-            members: (group) =>
-                group.memberIds
-                    .map((id) => entities.find((entity) => entity.id === id))
-                    .filter((entity) => eligibleSpinner(entity, input)),
-            legal: (plan) =>
-                staticCandidateLegal(plan, snapshot) &&
-                (plan.kind !== "line" || Object.hasOwn(snapshot, "candidateLines")),
-            invalidate: (group) =>
-                invalidatePlan(
-                    encounter,
-                    group,
-                    "terrain",
-                    snapshot,
-                    distances,
-                    currentLines(),
-                    work,
-                    currentEnclosureGeometry,
-                ),
-            propose: (group, members) => candidatesFor(group, members)[0],
-            prepareApproach: (group) => {
-                adjustPassageApproach(encounter, group, snapshot, distances);
-                adjustEnclosureApproach(encounter, group, snapshot, distances);
-            },
-            commit: (group, candidate) => activatePlan(selectSavedPlan(ai, group, [candidate]), group),
-            start: (group) => {
+            geometrySignature: signature,
+            facts(group) {
+                const cacheKey = `${group.planId}:${group.memberIds.join(",")}`;
+                const cached = projectFacts.get(group.id);
+                if (cached?.key === cacheKey && cached.graph === encounter.topology) return cached.value;
                 const members = group.memberIds
                     .map((id) => entities.find((entity) => entity.id === id))
                     .filter((entity) => eligibleSpinner(entity, input));
-                const signature = planningSignature(ai, members);
-                if (group.noPlanSignature === signature) return;
-                const candidates = candidatesFor(group, members);
-                ai.candidates = candidates;
-                if (members.length < 2 && candidates[0]?.type === "line") return;
-                const plan = selectSavedPlan(ai, group, candidates);
-                if (plan) delete group.noPlanSignature;
-                else group.noPlanSignature = signature;
-                activatePlan(plan, group);
+                const plan = ai.plans[group.planId];
+                const canWork = (member) => {
+                    if ([member.stun, member.freeze, member.channel, member.teleporting].some((value) => value > 0))
+                        return false;
+                    const plan = ai.plans[group.planId];
+                    if (plan?.kind === "line") return true;
+                    const skipped = new Set();
+                    let action = nextGroupWork(encounter, group, member, []);
+                    while (action?.cell) {
+                        const key = assignmentKey(action);
+                        if (skipped.has(key)) break;
+                        skipped.add(key);
+                        const status = api.SpinnerTopology.inspectWorkAction(encounter.topology, {
+                            ...action,
+                            ownerId: member.id,
+                        });
+                        if (
+                            status.pending &&
+                            (!api.SpinnerNativeField.snapshot(action.cell).actorOccupied ||
+                                status.allowsOccupiedTarget ||
+                                cellKey(member) === cellKey(action.cell)) &&
+                            occupancyRoute(
+                                member,
+                                workCells(action.cell, snapshot, member).filter((cell) =>
+                                    Number.isFinite(distances(member, cell)),
+                                ),
+                            ).length > 0
+                        )
+                            return true;
+                        action = nextGroupWork(encounter, group, member, [...skipped]);
+                    }
+                    return false;
+                };
+                const value = {
+                    members,
+                    legal:
+                        !plan || (staticCandidateLegal(plan, snapshot) && (plan.kind !== "line" || this.lineFixture)),
+                    paid: !!plan && planHasPaidWork(encounter, plan),
+                    signature: `${planningSignature(ai, members)}:${group.planningFocus?.x},${group.planningFocus?.y}`,
+                    capableIds: plan ? members.filter(canWork).map((member) => member.id) : [],
+                    blockReason: !members.length
+                        ? "no-workers"
+                        : members.every((member) =>
+                                [member.stun, member.freeze, member.channel, member.teleporting].some(
+                                    (number) => number > 0,
+                                ),
+                            )
+                          ? "incapacitated"
+                          : "work-route-blocked",
+                };
+                projectFacts.set(group.id, { key: cacheKey, graph: encounter.topology, value });
+                return value;
             },
-        });
+            candidates(group, members, replacing = false) {
+                return candidatesFor(group, members, replacing ? group.planId : undefined);
+            },
+            prepare(group) {
+                adjustPassageApproach(encounter, group, snapshot, distances);
+                adjustEnclosureApproach(encounter, group, snapshot, distances);
+            },
+            intercepts(plan, target) {
+                return (
+                    ["passage", "enclosure"].includes(plan.kind) &&
+                    (snapshot.exits || []).some((exit) => {
+                        const key = `${cellKey(target)}:${cellKey(exit)}`;
+                        if (!interceptionRoutes.has(key)) {
+                            work.routeChecks++;
+                            interceptionRoutes.set(key, new Set(routeOnSnapshot(snapshot, target, exit).map(cellKey)));
+                        }
+                        const route = interceptionRoutes.get(key);
+                        const interior =
+                            plan.interiorCells || encounter.topology?.fields?.[plan.fieldId]?.interiorCells;
+                        if (interior) return interior.some((cell) => route.has(cellKey(cell)));
+                        return (
+                            !!plan.center &&
+                            [...route].some((cell) => {
+                                const [x, y] = cell.split(",").map(Number);
+                                return distance({ x, y }, plan.center) < Math.min(plan.radius || 2, 2);
+                            })
+                        );
+                    })
+                );
+            },
+        };
+        api.FieldProjects.prepareTurn(encounter, planner);
         for (const group of Object.values(ai.groups)) {
             const plan = ai.plans[group.planId];
             if (plan?.kind === "enclosure") expandPlan(encounter, plan, group, snapshot, work);
@@ -2613,11 +2467,13 @@
             field = assignmentField(encounter, assignment),
             delta = enemy.SpiderlingsSpinnerRuntimeDelta || 1;
         if (!field) {
+            group.lastBlockReason = "field-invalid";
             record(group, "wait");
             return "wait";
         }
         const targetSnapshot = api.SpinnerNativeField.snapshot(assignment.target);
         if (!targetSnapshot.inBounds || !targetSnapshot.floor || targetSnapshot.protected) {
+            group.lastBlockReason = "terrain-invalid";
             invalidatePlan(encounter, group, "terrain", nativeMapSnapshot());
             record(group, "wait");
             return "wait";
@@ -2627,6 +2483,7 @@
             !api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).allowsOccupiedTarget &&
             !(enemy.x === assignment.target.x && enemy.y === assignment.target.y)
         ) {
+            group.lastBlockReason = "work-cell-occupied";
             record(group, "wait");
             return "wait";
         }
@@ -2650,6 +2507,7 @@
                 next = path.find((cell) => cell.x !== enemy.x || cell.y !== enemy.y);
             }
             if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
+                group.lastBlockReason = "work-route-blocked";
                 record(group, "wait");
                 return "wait";
             }
@@ -2662,6 +2520,7 @@
                 false,
             );
             record(group, moved ? "travel" : "wait");
+            group.lastBlockReason = moved ? undefined : "movement-budget";
             return "builder-move";
         }
         if (assignment.type === "rally") {
@@ -2669,6 +2528,7 @@
             return "rally-wait";
         }
         if (!api.SpinnerNativeField.accrueConstructionAction(enemy, delta)) {
+            group.lastBlockReason = "construction-credit";
             record(group, "wait");
             return "wait";
         }
@@ -2678,9 +2538,13 @@
             fieldId: assignment.fieldId,
         });
         if (outcome.applied) {
+            delete group.lastBlockReason;
             record(group, api.SpinnerTopology.inspectWorkAction(encounter.topology, assignment).metric);
             delete group.assignments[enemy.id];
-        } else record(group, outcome.reason === "occupied" ? "wait" : "wait");
+        } else {
+            group.lastBlockReason = outcome.reason;
+            record(group, "wait");
+        }
         return "field-work";
     }
 
@@ -2721,7 +2585,8 @@
             observeTarget(encounter, group, enemy, target, aiData);
         }
         const plan = state.plans[group.planId];
-        const validPlan = !!plan && !["invalid", "abandoned"].includes(plan.status) && !!planWaypoint(encounter, group);
+        const validPlan =
+            !!plan && !["invalid", "abandoned", "retired"].includes(plan.status) && !!planWaypoint(encounter, group);
         const homeGuard = group.source?.type === "nest" && plan?.kind !== "passage" && !enemy.SpiderlingsHuntRole;
         // A member's nest role cannot erase contact owned by its field commander.
         if (!validPlan) clearEngagement(group);
@@ -2838,6 +2703,7 @@
         const encounter = api.SpinnerNativeField.state();
         if (!encounter?.ai) return;
         encounter.ai.coordinationTurn = (encounter.ai.coordinationTurn || 0) + 1;
+        encounter.ai.worldTime = (encounter.ai.worldTime ?? encounter.ai.coordinationTurn - 1) + delta;
         for (const group of Object.values(encounter.ai.groups || {})) {
             auditEngagement(encounter, group);
             const engagement = group.engagement;
@@ -2915,6 +2781,7 @@
         preparedTick = -1;
         mapCache = undefined;
         passageCache = undefined;
+        workSnapshot = undefined;
         const encounter = api.SpinnerNativeField.state();
         if (!encounter?.ai) return undefined;
         api.FieldCommand.reconcile(encounter, KDMapData.Entities, {}, false);
@@ -2957,6 +2824,22 @@
         return performAssignment(enemy, group, assignment);
     }
 
+    function refreshWork(enemy) {
+        const encounter = api.SpinnerNativeField.state(),
+            member = encounter?.command?.members[enemy.id],
+            group = encounter?.ai?.groups[member?.commander],
+            plan = encounter?.ai?.plans[group?.planId];
+        if (!group || !plan || group.assignments[enemy.id] || sourceBusy(enemy) || !eligibleSpinner(enemy)) return;
+        const needs = api.SpinnerTopology.fieldWorkNeeds(encounter.topology, plan.fieldIds || [plan.fieldId]);
+        const pending =
+            plan.kind === "line"
+                ? api.SpinnerTopology.lineWorkActions(api.SpinnerNativeField.fieldById(encounter, plan.fieldId), true)
+                      .length > 0
+                : needs.construction || needs.repair;
+        if (pending)
+            reserveActions(encounter, workSnapshot?.map === KDMapData ? workSnapshot.snapshot : nativeMapSnapshot());
+    }
+
     function dispatchPath(enemy, target) {
         const cells = DIRECTIONS.map((direction) => ({ x: target.x + direction.x, y: target.y + direction.y }));
         return occupancyRoute(enemy, [target, ...cells]);
@@ -2967,6 +2850,7 @@
         dutyFacts,
         executeTacticalDuty,
         executeDuty,
+        refreshWork,
         dispatchPath,
         GROUP_RADIUS,
         SHORTLIST_SIZE,

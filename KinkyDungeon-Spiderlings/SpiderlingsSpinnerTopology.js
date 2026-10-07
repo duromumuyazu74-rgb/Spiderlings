@@ -452,14 +452,22 @@
         return !!(state.fields?.[fieldId]?.retired || state.lineFields?.[fieldId]?.retired);
     }
 
-    function retireField(state, fieldId) {
+    function retireField(state, fieldId, options = {}) {
         const next = clone(state);
         if (!next.lineFields?.[fieldId] && !next.fields?.[fieldId]) return next;
         if (next.lineFields?.[fieldId]) next.lineFields[fieldId].retired = true;
         if (next.fields?.[fieldId]) next.fields[fieldId].retired = true;
         const retiredOnly = (structure) => structure.owners.every((owner) => fieldRetired(next, owner));
-        next.anchors = next.anchors.filter((anchor) => !retiredOnly(anchor));
-        next.links = next.links.filter((link) => !retiredOnly(link));
+        if (options.residual) {
+            for (const structure of [...next.anchors, ...next.links])
+                if (retiredOnly(structure) && !structure.residual) {
+                    structure.residual = { age: 0, initialHp: structure.hp };
+                    structure.ownerlessAge = 0;
+                }
+        } else {
+            next.anchors = next.anchors.filter((anchor) => !retiredOnly(anchor));
+            next.links = next.links.filter((link) => !retiredOnly(link));
+        }
         const linkIds = new Set(next.links.map((link) => link.id));
         next.junctions = next.junctions
             .map((junction) => ({ ...junction, linkIds: junction.linkIds.filter((id) => linkIds.has(id)) }))
@@ -706,6 +714,18 @@
         next.kind = "graph";
         next.owners = unique([...next.owners, ...addition.owners]);
         next.anchors.push(...addition.anchors);
+        const anchorsById = new Map();
+        for (const anchor of next.anchors) {
+            const existing = anchorsById.get(anchor.id);
+            if (!existing) anchorsById.set(anchor.id, anchor);
+            else {
+                const owners = unique([...existing.owners, ...anchor.owners]);
+                if (!existing.built && anchor.built) Object.assign(existing, anchor);
+                existing.owners = owners;
+                if (owners.some((id) => !fieldRetired(next, id))) delete existing.residual;
+            }
+        }
+        next.anchors = [...anchorsById.values()];
         next.links.push(...addition.links);
         next.junctions.push(...addition.junctions);
         Object.assign(next.fields, addition.fields);
@@ -1297,6 +1317,28 @@
         };
     }
 
+    function workProgress(state, fieldIds) {
+        const ids = new Set(fieldIds),
+            planned = new Set(),
+            completed = new Set();
+        for (const anchor of state.anchors.filter((item) => item.owners.some((id) => ids.has(id)))) {
+            const key = `anchor:${anchor.id}`;
+            planned.add(key);
+            if (anchor.built) completed.add(key);
+        }
+        for (const link of state.links.filter((item) => item.owners.some((id) => ids.has(id)))) {
+            const connection = `connection:${link.id}`;
+            planned.add(connection);
+            if (link.connected) completed.add(connection);
+            for (const cell of link.plannedCells) {
+                const entry = `cell:${link.id}:${key(cell)}`;
+                planned.add(entry);
+                if (link.builtCells.some((built) => sameCell(built, cell))) completed.add(entry);
+            }
+        }
+        return { planned: [...planned], completed: [...completed] };
+    }
+
     function nextWorkAction(state, ownerId, actorCell, reservedKeys = [], fieldIds) {
         if (!state.owners.includes(ownerId)) return undefined;
         const allFields = Object.values(state.fields || {}),
@@ -1565,6 +1607,23 @@
             delta = Math.max(0, Number(input?.delta) || 0),
             structures = [...next.anchors, ...next.links];
         for (const structure of structures) {
+            const retiredOnly = structure.owners.every((id) => fieldRetired(next, id));
+            if (structure.residual && retiredOnly) {
+                const occupied = (input?.occupiedCells || []).some((cell) =>
+                    structure.plannedCells
+                        ? structure.builtCells.some((built) => sameCell(built, cell))
+                        : sameCell(structure, cell),
+                );
+                if (!occupied && delta > 0) {
+                    structure.residual.age += delta;
+                    structure.hp = Math.min(
+                        structure.hp,
+                        structure.residual.initialHp * Math.max(0, 1 - structure.residual.age / OWNERLESS_TURNS),
+                    );
+                    if (structure.residual.age >= OWNERLESS_TURNS) structure.collapsed = true;
+                }
+                continue;
+            }
             if (structureHasOwner(next, structure, active)) structure.ownerlessAge = 0;
             else if (delta > 0) structure.ownerlessAge = (structure.ownerlessAge || 0) + delta;
             if (structure.hp <= 0 && delta > 0) structure.cooldown = (structure.cooldown || 0) + delta;
@@ -1691,6 +1750,7 @@
         applyAction,
         nextWorkAction,
         fieldWorkNeeds,
+        workProgress,
         workKey,
         updateTarget,
         refresh,

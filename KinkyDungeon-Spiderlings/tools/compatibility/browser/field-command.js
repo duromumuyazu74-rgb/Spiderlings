@@ -58,6 +58,9 @@
         const initial = Spiderlings.SpinnerAI.beginTurn({ activate: true });
         const main = Object.values(initial.groups).find((group) => group.planId);
         const planId = main.planId;
+        // With eight workers, demand a genuinely uncovered route. The old enclosure
+        // intercepts the diagonal route to the original exit under the new planning rule.
+        if (count === 8) KDMapData.EndPosition = { x: 33, y: 1 };
         KDMovePlayer(33, 22, false);
         const ai = Spiderlings.SpinnerAI.beginTurn({ activate: true });
         const groups = Object.values(ai.groups).filter((group) => group.planId);
@@ -112,12 +115,28 @@
             KDMovePlayer(livePlan.center.x, livePlan.center.y, false);
             Spiderlings.SpinnerNativeField.onEntry(KinkyDungeonPlayerEntity);
             let captured = false;
+            const closureTrace = { scene: "completed-staffed-field-entry", planId, rows: [] };
+            globalThis.normalTrace = closureTrace;
             for (let step = 0; step < 60; step++) {
                 await turn();
+                closureTrace.rows.push({
+                    step,
+                    phases: livePlan.fieldIds.map((id) => live.topology.fields[id].phase),
+                    workers: crew.map((actor) => ({
+                        id: actor.id,
+                        x: actor.x,
+                        y: actor.y,
+                        hp: actor.hp,
+                        duty: Spiderlings.SpinnerDuties.current(actor)?.role,
+                        assignment: live.ai.groups[main.id]?.assignments[actor.id],
+                        result: Spiderlings.SpinnerDuties.current(actor)?.result,
+                    })),
+                    lifecycle: { ...livePlan.lifecycle, completed: livePlan.lifecycle?.completed.length },
+                });
                 if (Spiderlings.SpinnerCapture.state()) {
                     captured = true;
-                    break;
                 }
+                if (captured && livePlan.fieldIds.every((id) => live.topology.fields[id].phase === "sealed")) break;
             }
             expect(
                 livePlan.fieldIds.every((id) => live.topology.fields[id].phase === "sealed"),

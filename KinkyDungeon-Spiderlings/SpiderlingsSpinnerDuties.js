@@ -5,7 +5,8 @@
     const api = globalThis.Spiderlings;
     let map,
         tick,
-        decisions = new Map();
+        decisions = new Map(),
+        nextAction = 0;
 
     function current(enemy) {
         if (map !== KDMapData || tick !== KinkyDungeonCurrentTick) {
@@ -19,10 +20,10 @@
             const encounter = api.SpinnerNativeField.state();
             const invalidTask =
                 !api.FieldCommand.protectedMember(enemy) &&
-                (encounter.ai.groups[member?.commander]?.cancelled ||
+                (encounter?.ai?.groups[member?.commander]?.cancelled ||
                     (member?.phase !== "returning" &&
                         member?.requestId &&
-                        encounter.command.requests[member.requestId]?.closed));
+                        encounter?.command?.requests[member.requestId]?.closed));
             if (
                 invalidTask ||
                 duty.commander !== member?.commander ||
@@ -49,12 +50,15 @@
     }
 
     function prepare(enemy, target, delta) {
-        if (!(delta > 0) || enemy.Enemy?.name !== "Spinner") return undefined;
+        if (!(delta > 0)) return undefined;
+        const source = api.FieldCommand.sourceRole(enemy);
+        const dispersing = !source && api.Webbing?.isCocoonDispersing?.(enemy, target);
+        if (enemy.Enemy?.name !== "Spinner" && !dispersing) return undefined;
         const cached = current(enemy);
         if (cached) return cached;
         const group = groupFor(enemy),
             order = api.FieldCommand.movingOrder(enemy);
-        if (!group && !order) return undefined;
+        if (!group && !order && !source && !dispersing) return undefined;
         let role = "native";
         const offer = group?.maintenanceOffer;
         if (
@@ -75,10 +79,9 @@
             group.maintenance = { memberId: enemy.id, fieldId: offer.assignment.fieldId };
             delete group.maintenanceOffer;
         }
-        if (api.SpinnerRecovery?.sourceIds?.().includes(enemy.id)) role = "recovery";
-        else if (api.SpinnerCapture?.state?.()?.sourceIds?.includes(enemy.id)) role = "capture";
-        else if (api.SpinnerNPCCapture?.usesSource?.(enemy.id)) role = "npcCapture";
-        else if (api.SpinnerNPCRecovery?.usesEntity?.(enemy.id)) role = "npcRecovery";
+        const currentSource = api.FieldCommand.sourceRole(enemy);
+        if (currentSource) role = currentSource;
+        else if (dispersing) role = "disperse";
         else if (order) role = "dispatch";
         else if (
             api.HuntingGrounds?.isNestAttacker?.(enemy, target) ||
@@ -99,20 +102,40 @@
         }
         const member = api.FieldCommand.ensure(api.SpinnerNativeField.state())?.members[enemy.id];
         const decision = {
+            actionId: ++nextAction,
             commander: member?.commander,
             loan: member?.loan,
             phase: member?.phase,
             role,
             groupId: group?.id,
             planId: group?.planId,
+            origin: { x: enemy.x, y: enemy.y },
             task: role === "work" ? JSON.stringify(group.assignments[enemy.id]) : undefined,
             assignment: role === "work" ? JSON.parse(JSON.stringify(group.assignments[enemy.id])) : undefined,
             resolved: !["native", "work"].includes(role),
             nativeAllowed: role === "native",
+            nativeBeforeMove: role !== "disperse",
             executed: false,
         };
         decisions.set(String(enemy.id), decision);
         return decision;
+    }
+
+    function beginAction(enemy, target, delta) {
+        if (!(delta > 0)) return undefined;
+        const previous = current(enemy);
+        if (previous?.executed && previous.role === "work") api.SpinnerAI.refreshWork(enemy);
+        decisions.delete(String(enemy.id));
+        return prepare(enemy, target, delta);
+    }
+
+    function recordResult(enemy, result) {
+        const duty = decisions.get(String(enemy.id));
+        if (!duty || duty.resultRecorded) return;
+        duty.executed = true;
+        duty.result = result;
+        duty.resultRecorded = true;
+        api.FieldProjects?.recordOutcome?.(duty, enemy);
     }
 
     function allows(enemy, handler) {
@@ -155,14 +178,13 @@
         } else if (!facts.validPlan || facts.nestAttacker) {
             duty.category = facts.nestAttacker ? "crew" : "delegate-native";
         } else if (
-            facts.perceivedThreat &&
-            adjacent(target) &&
-            facts.soleBuilder &&
-            (target.player || (!KinkyDungeonIsDisabled(target) && !KDHelpless(target)))
-        ) {
-            duty.category = "native-defense";
-            duty.handled = true;
-        } else if (facts.maintenance || facts.gateWork || facts.bodyWorker || facts.coreRally) work();
+            facts.maintenance ||
+            facts.gateWork ||
+            facts.bodyWorker ||
+            facts.coreRally ||
+            (facts.soleBuilder && facts.assignment && facts.assignment.type !== "rally")
+        )
+            work();
         else if (facts.observed && facts.targetInCore) {
             if (!adjacent(target)) pursue(target, facts.perceivedThreat);
         } else if (facts.lure) pursue(facts.perceivedThreat ? target : facts.known, facts.perceivedThreat);
@@ -191,11 +213,21 @@
         if (!duty.resolved) resolve(duty, enemy, target, aiData);
         else api.SpinnerAI.observeDuty(enemy, target, aiData);
         duty.executed = true;
-        if (duty.role === "dispatch") api.FieldCommand.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta);
-        else if (duty.role === "work") duty.result = api.SpinnerAI.executeDuty(enemy, duty.groupId, duty.assignment);
-        else if (["pursuit", "yield"].includes(duty.category))
+        if (duty.role === "disperse") {
+            const result = api.Webbing.disperseCocoonEnemy(enemy, target, aiData);
+            duty.handled = result === true;
+            recordResult(enemy, result);
+            return duty.handled;
+        }
+        if (duty.role === "dispatch")
+            duty.result = api.FieldCommand.handleMove(enemy, enemy.SpiderlingsSpinnerRuntimeDelta);
+        else if (duty.role === "work") {
+            duty.workStart = api.SpinnerNativeField.state()?.topology?.actionLog?.length || 0;
+            duty.result = api.SpinnerAI.executeDuty(enemy, duty.groupId, duty.assignment);
+        } else if (["pursuit", "yield"].includes(duty.category))
             duty.result = api.SpinnerAI.executeTacticalDuty(enemy, duty);
         else if (duty.category === "crew") duty.handled = !!api.HuntingGrounds?.handleCrewMove?.(enemy, target, aiData);
+        recordResult(enemy, duty.result);
         if (duty.handled !== false) aiData.idle = false;
         return duty.handled !== false;
     }
@@ -211,5 +243,15 @@
         decisions = new Map();
     }
 
-    api.SpinnerDuties = { prepare, allows, beforeMove, gate, current, restore };
+    api.SpinnerDuties = {
+        prepare,
+        beginAction,
+        recordResult,
+        allows,
+        beforeMove,
+        gate,
+        current,
+        restore,
+        allowsBeforeMove: (enemy) => current(enemy)?.nativeBeforeMove !== false,
+    };
 })();

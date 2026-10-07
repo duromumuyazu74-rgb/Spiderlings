@@ -31,7 +31,7 @@
     function validGroup(ai, id) {
         const group = ai.groups[id],
             plan = ai.plans[group?.planId];
-        return !!group && !group.cancelled && (!plan || !["invalid", "abandoned"].includes(plan.status));
+        return !!group && !group.cancelled && (!plan || !["invalid", "abandoned", "retired"].includes(plan.status));
     }
 
     function ensure(encounter) {
@@ -72,13 +72,18 @@
         return ai.groups[id];
     }
 
-    function protectedMember(entity) {
+    function sourceRole(entity) {
         const id = entity?.id;
+        if (api.SpinnerRecovery?.sourceIds?.().some((source) => same(source, id))) return "recovery";
+        if (api.SpinnerCapture?.state?.()?.sourceIds?.some((source) => same(source, id))) return "capture";
+        if (api.SpinnerNPCCapture?.usesSource?.(id)) return "npcCapture";
+        if (api.SpinnerNPCRecovery?.usesEntity?.(id)) return "npcRecovery";
+        return undefined;
+    }
+
+    function protectedMember(entity) {
         return !!(
-            api.SpinnerCapture?.state?.()?.sourceIds?.some((source) => same(source, id)) ||
-            api.SpinnerRecovery?.sourceIds?.().some((source) => same(source, id)) ||
-            api.SpinnerNPCCapture?.usesSource?.(id) ||
-            api.SpinnerNPCRecovery?.usesEntity?.(id) ||
+            sourceRole(entity) ||
             entity?.SpiderlingsTaskNestDefenderTarget !== undefined ||
             api.SpinnerRecovery?.wantsPursuit?.(entity, KinkyDungeonPlayerEntity) ||
             KDMapData.Entities.some((target) => api.SpinnerNPCRecovery?.wantsPursuit?.(entity, target))
@@ -114,7 +119,8 @@
     }
 
     function reserve(encounter, group, minimum = false) {
-        if (projectThreat(encounter, group)) return 2;
+        if (projectThreat(encounter, group))
+            return Math.max(2, pending(encounter, group) ? encounter.ai.plans[group.planId]?.workforceTarget || 1 : 0);
         if (!pending(encounter, group)) return 0;
         return minimum ? 1 : Math.max(1, encounter.ai.plans[group?.planId]?.workforceTarget || 1);
     }
@@ -593,6 +599,7 @@
         location,
         pending,
         protectedMember,
+        sourceRole,
         offers,
         request,
         allocate,

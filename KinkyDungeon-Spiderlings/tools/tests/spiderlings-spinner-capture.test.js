@@ -1157,7 +1157,7 @@ test("capture preserves a nearby nonparticipant's reserved maintenance operation
     helper.Enemy.tags = { spiderlings: true };
     let paid = 0;
     r.c.Spiderlings.SpinnerDuties = {
-        prepare: () => undefined,
+        beginAction: () => undefined,
         current: () => undefined,
         allows: (enemy, role) => enemy !== helper || role === "work",
     };
