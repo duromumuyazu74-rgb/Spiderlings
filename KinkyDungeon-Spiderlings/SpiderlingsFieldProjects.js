@@ -89,7 +89,11 @@
         const ai = encounter.ai,
             old = ai.plans[group.planId],
             focus = group.planningFocus;
-        if (!old || !focus || limit() === 0 || !smallProject(encounter, old) || adapter.lineFixture) return false;
+        if (!old) return false;
+        if (!focus || limit() === 0 || !smallProject(encounter, old) || adapter.lineFixture) {
+            if (old.lifecycle) delete old.lifecycle.replacement;
+            return false;
+        }
         if (
             Object.values(ai.groups).filter(
                 (entry) =>
@@ -105,41 +109,49 @@
             delete life.replacement;
             return false;
         }
+        const facts = adapter.facts(group),
+            offered = facts.members.filter(
+                (member) =>
+                    !api.FieldCommand.protectedMember(member) &&
+                    ![member.stun, member.freeze, member.channel, member.teleporting].some((value) => value > 0),
+            );
+        if (!offered.length) {
+            delete life.replacement;
+            return false;
+        }
+        // Cheap live validation runs between expensive site scans too.
+        const observation = life.replacement;
+        if (observation) {
+            const candidate = observation.candidate;
+            const workers = candidate ? adapter.workersFor(candidate, offered) : [];
+            if (
+                !candidate ||
+                observation.signature !== replacementSignature(candidate, focus, adapter) ||
+                !workers.length ||
+                !betterReplacement(encounter, old, focus, candidate, workers, planner)
+            )
+                delete life.replacement;
+        }
         if (life.lastSearchTurn !== undefined && clock - life.lastSearchTurn < SEARCH_INTERVAL) return false;
         life.lastSearchTurn = clock;
-        const facts = adapter.facts(group),
-            available = facts.members.filter((member) => !api.FieldCommand.protectedMember(member));
+        const candidate = adapter.candidates(group, offered, true)[0];
+        const available = candidate ? adapter.workersFor(candidate, offered) : [];
         if (!available.length) {
             delete life.replacement;
             return false;
         }
-        const candidate = adapter.candidates(group, available, true)[0];
         if (!candidate || !covers({ ...candidate, kind: candidate.type }, focus, planner)) {
             delete life.replacement;
             return false;
         }
-        const oldCoverage = covers(old, focus, planner),
-            oldArea = old.area || old.interiorCells?.length || (2 * (old.radius || 1) + 1) ** 2;
-        const area = candidate.area || candidate.interiorCells?.length || 1;
-        const travel = Math.min(
-            ...available.map((member) => planner.distances(member, candidate.center || candidate.anchors[0])),
-        );
-        const cost = travel + candidate.cells.length + (candidate.layers?.length || 1) * 8;
-        const oldWork = api.SpinnerTopology.fieldWorkNeeds(
-            encounter.topology,
-            old.fieldIds || [old.fieldId],
-        ).remainingActions;
-        const oldCost =
-            oldWork + Math.min(...available.map((member) => planner.distances(member, old.center || old.anchors[0])));
-        const better =
-            !oldCoverage || (area > oldArea && cost <= oldCost) || (area >= oldArea && cost <= oldCost * 0.75);
-        if (!better || !Number.isFinite(cost)) {
+        if (!betterReplacement(encounter, old, focus, candidate, available, planner)) {
             delete life.replacement;
             return false;
         }
-        const signature = `${candidate.id}:${focus.target.kind}:${focus.target.id}:${adapter.geometrySignature}`;
+        const signature = replacementSignature(candidate, focus, adapter);
         if (life.replacement?.signature !== signature) life.replacement = { signature, since: clock };
         life.replacement.candidateId = candidate.id;
+        life.replacement.candidate = clone(candidate);
         const stable = life.completion >= 0.5 ? REPLACEMENT_TURNS * 2 : REPLACEMENT_TURNS;
         if (clock - life.replacement.since < stable) return false;
         // No world action can interleave with this synchronous, revalidated submission.
@@ -176,6 +188,34 @@
         replacement.revision = (old.revision || 0) + 1;
         progress(encounter, replacement);
         return true;
+    }
+
+    function replacementSignature(candidate, focus, adapter) {
+        return `${candidate.id}:${focus.target.kind}:${focus.target.id}:${adapter.geometrySignature}`;
+    }
+
+    function betterReplacement(encounter, old, focus, candidate, available, planner) {
+        if (!covers({ ...candidate, kind: candidate.type }, focus, planner)) return false;
+        const oldArea = old.area || old.interiorCells?.length || (2 * (old.radius || 1) + 1) ** 2;
+        const area = candidate.area || candidate.interiorCells?.length || 1;
+        const cost =
+            Math.min(
+                ...available.map((member) => planner.distances(member, candidate.center || candidate.anchors[0])),
+            ) +
+            candidate.cells.length +
+            (candidate.layers?.length || 1) * 8;
+        const oldWork = api.SpinnerTopology.fieldWorkNeeds(
+            encounter.topology,
+            old.fieldIds || [old.fieldId],
+        ).remainingActions;
+        const oldCost =
+            oldWork + Math.min(...available.map((member) => planner.distances(member, old.center || old.anchors[0])));
+        return (
+            Number.isFinite(cost) &&
+            (!covers(old, focus, planner) ||
+                (area > oldArea && cost <= oldCost) ||
+                (area >= oldArea && cost <= oldCost * 0.75))
+        );
     }
 
     function compareSites(a, b) {
