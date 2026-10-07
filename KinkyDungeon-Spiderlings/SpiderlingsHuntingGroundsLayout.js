@@ -126,8 +126,12 @@
                 .filter((point) => Number.isInteger(point?.x) && Number.isInteger(point?.y))
                 .map(pointKey),
         );
+        const unclaimed = (x, y) => {
+            const data = meta(x, y);
+            return !data || Object.keys(data).length === 0;
+        };
         const natural = (x, y) =>
-            !planned.has(`${x},${y}`) && !meta(x, y) && (tile(x, y) === "0" || carveable.includes(tile(x, y)));
+            !planned.has(`${x},${y}`) && unclaimed(x, y) && (tile(x, y) === "0" || carveable.includes(tile(x, y)));
         const candidates = [];
         for (let y = 4; y < height - 4; y += 1)
             for (let x = 4; x < width - 4; x += 1) {
@@ -184,8 +188,16 @@
             if (largeSites.length === 2) break;
         }
         if (largeSites.length < 2) {
-            diagnostics.failure = "large-field-site";
-            return null;
+            // The three objective nests are mandatory; large construction sites
+            // are preferred geometry and cannot replace that objective with a key.
+            for (const center of largeCandidates) {
+                const selected = selectAnchors([center]);
+                if (selected.length < 3) continue;
+                largeSites = [center];
+                anchors = selected;
+                break;
+            }
+            if (anchors.length < 3) anchors = selectAnchors();
         }
         const largeSite = largeSites[0];
         diagnostics.anchors = anchors;
@@ -228,7 +240,7 @@
                 x < width - 1 &&
                 y < height - 1 &&
                 carveable.includes(tile(x, y)) &&
-                !meta(x, y) &&
+                unclaimed(x, y) &&
                 !planned.has(`${x},${y}`)
             )
                 proposed.add(`${x},${y}`);
@@ -343,7 +355,14 @@
                 const radius = usableAnchors.includes(center) ? 4 : center.radius;
                 for (let y = center.y - radius; y <= center.y + radius; y += 1)
                     for (let x = center.x - radius; x <= center.x + radius; x += 1)
-                        if (x > 0 && y > 0 && x < width - 1 && y < height - 1 && tile(x, y) === "0" && !meta(x, y)) {
+                        if (
+                            x > 0 &&
+                            y > 0 &&
+                            x < width - 1 &&
+                            y < height - 1 &&
+                            tile(x, y) === "0" &&
+                            unclaimed(x, y)
+                        ) {
                             options.reserve(x, y);
                             reserved.push(`${x},${y}`);
                         }
@@ -351,7 +370,7 @@
         if (options.reserve)
             for (const name of bypassCells) {
                 const [x, y] = name.split(",").map(Number);
-                if (tile(x, y) !== "0" || meta(x, y)) continue;
+                if (tile(x, y) !== "0" || !unclaimed(x, y)) continue;
                 options.reserve(x, y);
                 reserved.push(name);
             }
@@ -369,8 +388,10 @@
     }
 
     function release(map) {
-        const reserved = reservations.get(map);
-        if (!reserved) return;
+        const reserved =
+            reservations.get(map) ||
+            new Set(Object.keys(map.Tiles || {}).filter((name) => map.Tiles[name]?.SpiderlingsLayoutReserve));
+        if (!reserved.size) return;
         for (const name of reserved) {
             const data = map.Tiles?.[name];
             if (!data?.SpiderlingsLayoutReserve) continue;
@@ -502,7 +523,6 @@
         const legal = (x, y) => floor.has(`${x},${y}`) && !allProtected.has(`${x},${y}`);
         const requestedLargeSite = options.largeHuntingSite,
             requestedLargeSites = (options.huntingSites || []).filter((site) => site.radius === 4).slice(0, 2),
-            requiredLargeSites = requestedLargeSites.length === 2,
             fieldProtected = new Set([...allProtected, ...spawnPointCells]),
             legalLargeSite = (site) =>
                 footprint(
@@ -514,19 +534,24 @@
                         (chebyshev(site, { x, y }) < 2 || !constructionOccupied.has(`${x},${y}`)),
                 ),
             largeLegal = !requestedLargeSite || legalLargeSite(requestedLargeSite);
-        if (requiredLargeSites && !requestedLargeSites.every(legalLargeSite)) {
-            diagnostics.failure = "large-field-site";
-            return null;
-        }
         const largeSite = largeLegal ? requestedLargeSite : undefined,
-            largeSites = requiredLargeSites ? requestedLargeSites : largeSite ? [largeSite] : [],
+            largeSites = requestedLargeSites.length
+                ? requestedLargeSites.filter(legalLargeSite)
+                : largeSite
+                  ? [largeSite]
+                  : [],
             presetSkipReason = largeLegal ? undefined : "large-field-site";
         // The optional prefab must not invalidate a legal native objective.
         // If its spacing prevents a safe three-nest plan, retry that plan once
         // without the prefab while preserving every native actor and tile.
         const withoutLargeSite = () => {
-            if (!largeSite || requiredLargeSites) return null;
-            const fallback = planEncounter({ ...options, largeHuntingSite: undefined, diagnostics: {} });
+            if (!largeSites.length) return null;
+            const fallback = planEncounter({
+                ...options,
+                largeHuntingSite: undefined,
+                huntingSites: (options.huntingSites || []).filter((site) => site.radius !== 4),
+                diagnostics: {},
+            });
             return fallback && { ...fallback, presetSkipReason: "large-field-site" };
         };
         const available = [];
@@ -612,10 +637,7 @@
             if (sites.length < 3 && sites.every((site) => chebyshev(site, point) > site.radius + point.radius))
                 sites.push(point);
         diagnostics.sites = sites;
-        if (sites.length < 2) {
-            diagnostics.failure = "field-sites";
-            return withoutLargeSite();
-        }
+        // Initial fields use available geometry. Their count is not the nest objective.
         return {
             nests,
             sites,
@@ -710,6 +732,9 @@
                 KDMapData.MapMod === "SpiderlingsHuntingGrounds" &&
                 !KDMapData.RoomType &&
                 !KDMapData.SpiderlingsHuntingGrounds;
+            // Native CreateMap can retry the entire generator after a failed
+            // navigation proof. Release this attempt's owned reservations first.
+            if (eligible) release(KDMapData);
             const originalMap = eligible ? cloneValue(KDMapData) : null;
             const originalArgs = eligible ? args.map((arg) => cloneValue(arg)) : null;
             let result;

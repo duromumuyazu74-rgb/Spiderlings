@@ -8,7 +8,7 @@
         [
             "Spinner",
             "Spinner",
-            "Danger Level: High|These little spiders spend as much time tending webs as chasing visitors. I have watched one mend a torn boundary while its companions guided a traveller back inside. Their fine silk looks delicate, but each patient turn adds another close-fitting layer.||-Silk-Path Field Notes",
+            "Danger Level: Low alone; high in groups|One alone gives me little trouble. Several work together: one occupies a visitor while others close the web and add soft, close-fitting layers. I watch their companions as carefully as the small spider in front of me.||-Silk-Path Field Notes",
         ],
         [
             "Jumper",
@@ -18,12 +18,12 @@
         [
             "WebCaster",
             "Web Caster",
-            "Danger Level: Normal|Unlike the weavers at my feet, these prefer a little space. They spread silk in soft fans that cling to passing travellers. A visitor who struggles inside an existing cocoon may draw another patient layer of threads across its surface.||-Silk-Path Field Notes",
+            "Danger Level: Low alone; high in groups|A lone sprayer gives me little trouble. Among other spiderlings, its soft fans of silk shorten a visitor's steps while the weavers draw closer. I have watched loose threads become a much greater danger through their quiet cooperation.||-Silk-Path Field Notes",
         ],
         [
             "Tunneler",
             "Tunneler",
-            "Danger Level: Normal|The soft scraping beneath a room is often my first warning. This spiderling opens new nest entrances and dresses their mouths with silk. An empty corner can become a nest while I watch the hunt elsewhere, leaving more little feet to meet later.||-Silk-Path Field Notes",
+            "Danger Level: None directly|This little digger does not fight visitors. It opens nest entrances and lines their rims with silk, then slips away. I listen for the soft scraping; the new opening, rather than its maker, may soon bring other little feet.||-Silk-Path Field Notes",
         ],
         [
             "MageSpiderlings",

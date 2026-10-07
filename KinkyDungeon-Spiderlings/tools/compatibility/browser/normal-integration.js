@@ -39,6 +39,21 @@
             const row = { modifier, faction, target: state?.target, initialIds: [...(state?.targetIds || [])] };
             report.objectives.push(row);
             expect(map.MapFaction === faction, "The selected theme replaced its native primary faction");
+            if (modifier === "SpiderlingsHuntingGrounds" && faction !== "Maidforce") {
+                expect(
+                    state?.status === "cancelled" &&
+                        state.reason === "ineligible" &&
+                        map.MapMod !== modifier &&
+                        !map.SpiderlingsPopulationPlan,
+                    "A non-Maidforce floor retained the Hunting theme or its population",
+                );
+                expect(
+                    !Spiderlings.HuntingGrounds.activeState() && KDGetEscapeMethod(5) !== modifier,
+                    "A rejected faction retained Hunting descent conditions",
+                );
+                row.rejected = true;
+                continue;
+            }
             if (modifier === "SpiderlingsHuntingGrounds") {
                 const spiders = map.Entities.filter(
                     (entity) =>

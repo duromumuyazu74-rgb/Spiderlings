@@ -41,10 +41,23 @@
                         .map((enemy) => enemy.Enemy.name)
                         .sort(),
                 }));
+                if (
+                    state?.status === "active" &&
+                    (nests.some((nest) => nest.hp <= 0) ||
+                        state.complete ||
+                        state.destroyedIds.length !== 0 ||
+                        KDGetEscapeMethod(floor) !== "SpiderlingsHuntingGrounds" ||
+                        KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check())
+                )
+                    throw Error(`Fresh Hunting task is not live and blocked: ${JSON.stringify({ zone, floor, seed })}`);
                 const cancelled =
                     state?.status === "cancelled" &&
                     ["insufficient-space", "population-budget", "garrison-failed", "creation-failed"].includes(
                         state.reason,
+                    );
+                if (cancelled)
+                    throw Error(
+                        `Eligible Maidforce Hunting Grounds lost its three-nest objective: ${JSON.stringify({ zone, floor, seed, reason: state.reason })}`,
                     );
                 if (cancelled && (nests.length || KDMapData.MapMod === "SpiderlingsHuntingGrounds"))
                     throw Error("Cancelled floor retained an impossible objective");
@@ -91,10 +104,11 @@
                 if (
                     !cancelled &&
                     (fieldPreset?.status !== "placed" ||
-                        fieldPreset.fields?.filter((field) => field.radius === 4).length < 2)
+                        fieldPreset.fields?.filter((field) => field.radius === 4).length <
+                            Math.min(2, state.layout.sites.filter((site) => site.radius === 4).length))
                 )
                     throw Error(
-                        `New Hunting Grounds did not initialize at least two large staffed fields: ${JSON.stringify({
+                        `New Hunting Grounds skipped its legal large staffed fields: ${JSON.stringify({
                             zone,
                             floor,
                             seed,
@@ -120,7 +134,6 @@
                     if (
                         Object.keys(encounter.topology.composites).length !== fieldPreset.fields.length ||
                         encounter.topology.actionLog.length !== 0 ||
-                        requiredSites.length !== 2 ||
                         requiredSites.some(
                             (site) =>
                                 !fieldPreset.fields.some(

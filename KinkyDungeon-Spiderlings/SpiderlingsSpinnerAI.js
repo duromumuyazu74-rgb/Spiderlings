@@ -1309,15 +1309,16 @@
                             ),
                     );
             const workDistance = new Map();
-            if (plan?.kind === "passage")
+            if (["passage", "enclosure"].includes(plan?.kind))
                 for (const member of members) {
                     const action = nextGroupWork(encounter, group, member, []);
                     workDistance.set(member.id, action?.cell ? distances(action.cell, member) : Infinity);
                 }
             for (const member of members.sort(
                 (a, b) =>
-                    (plan?.kind === "passage" ? workDistance.get(a.id) - workDistance.get(b.id) : 0) ||
-                    String(a.id).localeCompare(String(b.id)),
+                    (["passage", "enclosure"].includes(plan?.kind)
+                        ? workDistance.get(a.id) - workDistance.get(b.id)
+                        : 0) || String(a.id).localeCompare(String(b.id)),
             )) {
                 const previous = previousAssignments[member.id],
                     retainedTask =

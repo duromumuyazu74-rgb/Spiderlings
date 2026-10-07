@@ -259,16 +259,16 @@ KDModButtonspiderlingsSettingsNestsHelp,종류 가중치가 0이면 해당 지�
 KDModButtonspiderlingsSettingsGeneralHelp,특수 층은 고유 개체 수 예산을 유지합니다.
 KDModButtonspiderlingsSettingsHuntingHelp,두 거미 테마 모두 5층부터 일반 층에서 등장할 수 있습니다.
 KinkyDungeonCheckpointLoreSpiderlings,어린 거미 도감
-KDLoreTextspiderlings.Spinner,"위험도: 높음|이 작은 거미들은 손님을 쫓는 만큼 부지런히 거미줄을 돌본다. 한 마리가 찢어진 가장자리를 고치는 동안 동료들이 여행자를 안으로 이끄는 모습을 보았다. 가는 실은 여려 보이지만, 끈기 있게 감을 때마다 몸에 붙는 층이 하나씩 늘어난다.||-비단길 관찰 기록"
+KDLoreTextspiderlings.Spinner,"위험도: 혼자일 때 낮음, 무리에서는 높음|한 마리만 있을 때는 나를 크게 곤란하게 하지 않는다. 여럿이 모이면 한 마리가 손님의 주의를 끄는 동안 다른 이들이 그물을 닫고 부드럽게 밀착되는 실 층을 보탠다. 눈앞의 작은 다리만큼 그 동료들도 살피게 되었다.||-비단길 관찰 기록"
 KDLoreTitlespiderlings.Spinner,새끼 거미 방적자
 KDLoreLabelspiderlings.Spinner,새끼 거미 방적자
 KDLoreTextspiderlings.Jumper,"위험도: 보통|새끼 거미 방적자의 발 빠른 친척이다. 짧게 뛰기 전에 다리를 모으고, 내려앉으며 목표에 실을 얹는다. 나는 앞쪽의 빈틈을 살핀다. 작은 발자국을 따라가도 조금 전 어디 있었는지만 알 수 있다.||-비단길 관찰 기록"
 KDLoreTitlespiderlings.Jumper,새끼 거미 도약자
 KDLoreLabelspiderlings.Jumper,새끼 거미 도약자
-KDLoreTextspiderlings.WebCaster,"위험도: 보통|발치의 직조자들과 달리 이들은 조금 거리를 둔다. 부드러운 부채꼴로 퍼진 실이 지나가는 여행자에게 달라붙는다. 이미 만들어진 고치 안에서 저항하면, 그 표면에 또 한 겹의 실이 끈기 있게 덧대어질 수도 있다.||-비단길 관찰 기록"
+KDLoreTextspiderlings.WebCaster,"위험도: 혼자일 때 낮음, 무리에서는 높음|혼자 있는 실 분사자는 내게 큰 부담이 되지 않는다. 다른 새끼 거미들과 모이면 부드러운 부채 모양의 실로 손님의 걸음을 늦추고 그 사이 방적자들이 다가온다. 성긴 실도 조용한 협력 속에서는 훨씬 큰 위협이 되는 것을 보았다.||-비단길 관찰 기록"
 KDLoreTitlespiderlings.WebCaster,새끼 거미 거미줄 투사자
 KDLoreLabelspiderlings.WebCaster,새끼 거미 거미줄 투사자
-KDLoreTextspiderlings.Tunneler,"위험도: 보통|방 아래에서 들리는 작은 긁는 소리가 첫 경고일 때가 많다. 이 새끼거미는 새 둥지 입구를 만들고 가장자리를 실로 정돈한다. 다른 곳의 사냥을 보는 동안 빈 구석이 둥지가 되어, 나중에 만날 작은 발들이 더 늘어나기도 한다.||-비단길 관찰 기록"
+KDLoreTextspiderlings.Tunneler,위험도: 직접적인 위협 없음|이 작은 굴착자는 손님과 싸우지 않는다. 둥지 입구를 열고 가장자리에 실을 깐 다음 떠난다. 바닥 아래의 작은 긁는 소리에 귀를 기울인다. 곧 다른 새끼 거미들을 불러올 수도 있는 것은 남겨진 새 입구다.||-비단길 관찰 기록
 KDLoreTitlespiderlings.Tunneler,새끼 거미 굴착자
 KDLoreLabelspiderlings.Tunneler,새끼 거미 굴착자
 KDLoreTextspiderlings.MageSpiderlings,"위험도: 높음|단정한 작은 모자를 쓰고 등에 흐린 붉은 룬을 지닌 마법사다. 시전할 때 룬이 밝아지고, 지연된 마법이 준비되는 동안에도 빛이 남는다. 나는 조심스러운 발걸음과 남겨진 마법진을 함께 살핀다. 부드러운 실은 어느 쪽에서도 닿을 수 있다.||-비단길 관찰 기록"

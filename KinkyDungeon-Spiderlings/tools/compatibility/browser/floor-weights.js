@@ -36,6 +36,10 @@
                 special.every((s) => !!s.Faction),
                 "Spider theme lost its native faction",
             );
+            expect(
+                special.every((s) => s.MapMod !== "SpiderlingsHuntingGrounds" || s.Faction === "Maidforce"),
+                "Hunting Grounds appeared outside the Maidforce faction",
+            );
             rows.push({
                 seed,
                 infestation: special.filter((s) => s.MapMod === "SpiderlingsInfestation").length,
@@ -46,15 +50,13 @@
             (sum, row) => ({ infestation: sum.infestation + row.infestation, hunting: sum.hunting + row.hunting }),
             { infestation: 0, hunting: 0 },
         );
-        expect(
-            Math.abs(totals.infestation - totals.hunting) < Math.max(15, totals.infestation * 0.25),
-            "Native journey themes missed frequency parity",
-        );
+        expect(totals.hunting > 0 && totals.infestation > 0, "Native journey lost an eligible spider theme");
         for (const faction of ["Maidforce", "Bandit", "Nevermere"])
             expect(
-                KDMapMods.SpiderlingsInfestation.filter({ y: 5, Faction: faction }) ===
-                    KDMapMods.SpiderlingsHuntingGrounds.filter({ y: 5, Faction: faction }),
-                "The themes still use different ordinary-floor pools",
+                KDMapMods.SpiderlingsInfestation.filter({ y: 5, Faction: faction }) === 1 &&
+                    KDMapMods.SpiderlingsHuntingGrounds.filter({ y: 5, Faction: faction }) ===
+                        (faction === "Maidforce" ? 1 : 0),
+                "The spider themes ignored their ordinary-floor faction contracts",
             );
         KDGameData.JourneyY = 12;
         delete KDGameData.SpiderlingsFloorWeights90;

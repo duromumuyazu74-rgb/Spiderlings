@@ -44,8 +44,16 @@
                 .filter((target) => members.some((member) => Number.isFinite(planner.distances(member, target))))
                 .sort(
                     (a, b) =>
+                        Number(
+                            b.target.kind === group.engagement?.target.kind &&
+                                String(b.target.id) === String(group.engagement?.target.id),
+                        ) -
+                            Number(
+                                a.target.kind === group.engagement?.target.kind &&
+                                    String(a.target.id) === String(group.engagement?.target.id),
+                            ) ||
                         Math.min(...members.map((member) => planner.distances(member, a))) -
-                        Math.min(...members.map((member) => planner.distances(member, b))),
+                            Math.min(...members.map((member) => planner.distances(member, b))),
                 )[0];
             if (
                 plan &&

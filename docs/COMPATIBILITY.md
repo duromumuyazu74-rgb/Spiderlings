@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.130.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.131.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,20 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.131 cooperative construction and the Maidforce Hunting contract (2026-10-07)
+
+The same final ZIP passes all 56 native stages and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `dbfd74e08679b3a3935f1883f3e8cf2961d94f13` was freshly fetched at `2026-10-07T10:29:50.558Z`. Full acceptance: `<cache>/runs/2026-10-07T10-29-50-574Z-0.92.36-test.131/acceptance.json`. Final ZIP: 175 entries, 24,869,221 bytes; SHA-256 `555f53ca1d7094a82ffe9d3eba440e396c4e2c0180c501b178443b922268a7cc`.
+
+Thirty normal Maidforce Hunting seeds per game now require three living original targets, zero initial destruction and blocked Hunting descent. The earlier baseline test.130 sample allowed seventeen cancellations; those cancellations no longer count as successful normal generation. Large initial arenas use legal available space, empty native records permit ordinary shaping, and whole-generator retries release owned reservations. Unsupported generators reject the whole modifier. Non-Maidforce selection and generation are rejected; the integration scene retains native factions and still verifies real nest destruction and paid descent.
+
+Enclosure jobs rank eligible workers by route distance. An engaged field plans around its current character before a closer unrelated NPC. The new unfinished-field-entry scene records 5/5 paid workers and 40/40 construction actions across the recorded baseline/GitHub runs, alongside actual melee contact. Reload preserves paid progress. The copied latest slot fifteen clears its cancelled Hunting population plan, retains its Bountyhunter map and paid field centers, and its active field groups plan from the current player position.
+
+Spinner/WebCaster notes distinguish low individual threat and high cooperative group threat; Tunneler has no direct combat threat. Independent review covers all 24 changed texts. English/Chinese views of the three changed entries were inspected. Other entries, images and enemy statistics are unchanged.
+
+The first final full run stopped at an outdated fixture demanding Hunting on Bandit. Its replacement asserts rejection and preserves the native faction. Package bytes are unchanged. See [implementation and saved-floor limits](spiderlings-test131-cooperative-hunting.zh-CN.md).
+
+Repository checks, 12 policy tests, 675 public tests, the complete 1002-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-07T10-42-03-449Z-X7etPN/REPORT.md` records stable source and package bytes. Only outcome documentation was added afterward, followed by repository and whitespace checks.
 
 ## Test.130 Cocoon dispersal, field-note lore and maintenance fixtures (2026-10-07)
 

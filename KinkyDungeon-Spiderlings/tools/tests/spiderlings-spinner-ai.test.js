@@ -971,6 +971,59 @@ function cellKeyForTest(cell) {
     return `${cell.x},${cell.y}`;
 }
 
+test("the nearest free enclosure worker takes the last body job instead of the lowest ID", () => {
+    const actors = [spinner(1, 5, 5), spinner(2, 6, 5)],
+        r = runtime(actors),
+        c = r.context;
+    const { SpinnerAI: ai, SpinnerNativeField: native, SpinnerTopology: topology } = c.Spiderlings;
+    const placed = ai.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] });
+    const encounter = native.state(),
+        group = encounter.ai.groups[placed.groupId],
+        plan = encounter.ai.plans[group.planId];
+    encounter.topology.composites[plan.compositeId].constructionOrder = "outer-first";
+    plan.constructionOrder = "outer-first";
+    let held;
+    for (let i = 0; i < 300; i++) {
+        const reserved = held ? [`${held.type}:${held.linkId || held.anchorId}:${cellKeyForTest(held.cell)}`] : [];
+        const action = topology.nextWorkAction(encounter.topology, actors[0].id, actors[0], reserved, plan.fieldIds);
+        if (!action) break;
+        if (!held && action.type === "extendLink") {
+            held = action;
+            continue;
+        }
+        const result = topology.applyAction(
+            encounter.topology,
+            { ...action, ownerId: actors[0].id },
+            native.snapshot(action.cell),
+        );
+        assert.ok(result.outcome.legal);
+        encounter.topology = result.state;
+    }
+    assert.ok(held);
+    Object.assign(actors[0], { x: 2, y: 2 });
+    Object.assign(actors[1], { x: held.cell.x, y: held.cell.y + 1 });
+    group.assignments = {};
+    ai.reserveActions(encounter, mapSnapshot());
+    assert.equal(group.assignments[actors[1].id]?.fieldId, held.fieldId);
+    assert.equal(group.assignments[actors[1].id]?.type, "extendLink");
+});
+
+test("a field engaged with the player plans from that current position instead of a closer unrelated NPC", () => {
+    const actors = [spinner(1, 5, 5), spinner(2, 6, 5)],
+        r = runtime(actors),
+        c = r.context;
+    start(r);
+    const group = Object.values(c.Spiderlings.SpinnerNativeField.state().ai.groups)[0];
+    c.KDMapData.Entities.push({ id: 50, x: 5, y: 6, hp: 20, Enemy: { name: "Bandit", tags: {} } });
+    actors[0].aware = actors[0].testSense = true;
+    c.KinkyDungeonEnemyLoop(actors[0], c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.engagement?.target.kind, "player");
+    c.KinkyDungeonCurrentTick++;
+    start(r);
+    assert.equal(group.planningFocus.target.kind, "player");
+    assert.equal(group.planningFocus.x, c.KinkyDungeonPlayerEntity.x);
+});
+
 for (const outside of [false, true])
     test(`recognized prey ${outside ? "outside" : "inside"} an unfinished core leaves assigned builders paying for its enclosure`, () => {
         const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
