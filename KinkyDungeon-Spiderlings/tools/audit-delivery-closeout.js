@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { run, repository } = require("./delivery-commands.js");
+const { writeJson } = require("./task-runner.js");
 
 function referencedIssues(body) {
     return [...new Set([...body.matchAll(/\b(?:Refs|Fixes|Closes|Resolves)\s+#(\d+)\b/gi)].map((m) => Number(m[1])))];
@@ -128,18 +129,42 @@ function closeoutMarkdown(result) {
     );
 }
 
-if (require.main === module) {
+function collectAuditResult(root, input, execute = run) {
+    if (input?.schemaVersion !== 1 || !Array.isArray(input.issues) || !input.issues.length)
+        return { status: "invalid-input", phase: "input", errors: ["Closeout requires schemaVersion 1 and issues."] };
     try {
-        const inputPath = process.argv[2];
-        if (!inputPath || process.argv.length !== 3) throw new Error("Usage: npm run audit:closeout -- closeout.json");
-        const input = JSON.parse(fs.readFileSync(inputPath, "utf8").replace(/^\uFEFF/, ""));
-        const result = collectCloseout(path.resolve(__dirname, "../.."), input);
-        console.log(JSON.stringify(result, null, 2));
-        process.exitCode = result.status === "passed" ? 0 : 1;
+        return collectCloseout(root, input, execute);
     } catch (error) {
-        console.error(error.message);
-        process.exitCode = 1;
+        return { status: "unavailable", phase: "read", errors: [error.message] };
     }
 }
 
-module.exports = { auditCloseout, collectCloseout, closeoutMarkdown };
+if (require.main === module) {
+    let output;
+    let result;
+    try {
+        const [inputPath, flag, destination, extra] = process.argv.slice(2);
+        output = flag === "--output" ? destination : undefined;
+        if (!inputPath || extra || (flag && (!output || flag !== "--output")))
+            throw new Error("Usage: npm run audit:closeout -- closeout.json [--output result.json]");
+        if (output && path.resolve(output) === path.resolve(inputPath)) {
+            output = undefined;
+            throw Error("Audit output cannot overwrite input.");
+        }
+        const input = JSON.parse(fs.readFileSync(inputPath, "utf8").replace(/^\uFEFF/, ""));
+        result = collectAuditResult(path.resolve(__dirname, "../.."), input);
+    } catch (error) {
+        result = { status: "invalid-input", phase: "input", errors: [error.message] };
+    }
+    if (output) {
+        try {
+            writeJson(output, result);
+        } catch (error) {
+            result = { status: "unavailable", phase: "output", errors: [error.message] };
+        }
+    }
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = result.status === "passed" ? 0 : result.status === "failed" ? 1 : 2;
+}
+
+module.exports = { auditCloseout, collectCloseout, closeoutMarkdown, collectAuditResult };

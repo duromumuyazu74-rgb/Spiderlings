@@ -66,6 +66,50 @@
             delete KDEventMapGeneric.enemyCast.CompatibilityCocoonVigil;
         }
     }
+    setup("cocoon-vigil-field-guard-orders");
+    KDMapData.GridWidth = 24;
+    KDMapData.GridHeight = 20;
+    KDMapData.Grid =
+        Array.from({ length: 20 }, (_, y) =>
+            Array.from({ length: 24 }, (_, x) => (x && y && x < 23 && y < 19 ? "0" : "1")).join(""),
+        ).join("\n") + "\n";
+    KDMapData.Tiles = {};
+    KDMapData.StartPosition = { x: 1, y: 1 };
+    KDMapData.EndPosition = { x: 22, y: 1 };
+    KDMovePlayer(12, 10, false);
+    equip();
+    for (let i = 0; i < 24; i++) await turn();
+    const controlled = [
+        spawn("Spinner", 11, 9),
+        spawn("Spinner", 11, 10),
+        spawn("Spinner", 13, 10),
+        spawn("WebCaster", 13, 9),
+    ];
+    for (const actor of controlled) {
+        actor.AI = "guard";
+        actor.hostile = 999;
+    }
+    Spiderlings.SpinnerAI.beginTurn({ activate: true });
+    expect(
+        Object.values(Spiderlings.FieldCommand.inspect().members).length >= 3,
+        "Field vigil fixture did not assign real Spinner commanders",
+    );
+    const fieldSteps = [];
+    for (let i = 0; i < 40; i++) {
+        await turn();
+        fieldSteps.push(
+            controlled.map((actor) => ({
+                id: actor.id,
+                distance: Math.hypot(actor.x - KDPlayer().x, actor.y - KDPlayer().y),
+                dispersing: Spiderlings.Webbing.isCocoonDispersing(actor, KDPlayer()),
+            })),
+        );
+    }
+    expect(
+        fieldSteps.at(-1).every((actor) => actor.dispersing && actor.distance >= 4),
+        "Guard/field orders kept spiders around the quiet Cocoon",
+    );
+    rows.push({ mode: "field-guard-orders", steps: fieldSteps });
     setup("cocoon-vigil-pending-webcaster");
     const cocoon = equip();
     for (let i = 0; i < 25; i++) await turn();

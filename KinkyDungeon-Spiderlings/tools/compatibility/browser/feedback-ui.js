@@ -55,13 +55,7 @@
     explored[ids[1]] = 1;
     localStorage.setItem("kdexpLore", JSON.stringify(explored));
     KinkyDungeonCurrentLoreTabs = ["Default"];
-    {
-        const loadedPackage = Object.keys(KDMods).find((name) => name.startsWith("Spiderlings_"));
-        const loadedEntries = await model.getEntries(KDMods[loadedPackage], {});
-        const entry = loadedEntries.find((file) => file.filename === "SpiderlingsBestiary.js");
-        const source = await fetch(await model.getURL(entry, {})).then((response) => response.text());
-        (0, eval)(source);
-    }
+    await globalThis.normalAcceptance.registerPackagedScript("SpiderlingsBestiary.js");
     expect(KinkyDungeonCurrentLoreTabs.includes("Spiderlings"), "Persisted single-entry category remains Unknown");
     KinkyDungeonCurrentLoreTab = "Spiderlings";
     KinkyDungeonUpdateLore(explored);
@@ -105,6 +99,21 @@
         KinkyDungeonDrawLore();
         images[`entry-${id}`] = await photo();
         expect(kdpixisprites.get("kdlorimage0")?.visible, `Native Journal did not render ${id}`);
+        const rune = kdpixisprites.get("SpiderlingsBestiaryMageRune"),
+            body = kdpixisprites.get("kdlorimage0");
+        if (id === "spiderlings.MageSpiderlings") {
+            expect(
+                rune?.visible && rune.blendMode === PIXI.BLEND_MODES.NORMAL,
+                "Mage Journal regular rune is absent or glowing",
+            );
+            expect(
+                rune.position.x === body.position.x &&
+                    rune.position.y === body.position.y &&
+                    Math.abs(rune.width - body.width) < 0.01 &&
+                    Math.abs(rune.height - body.height) < 0.01,
+                "Mage Journal rune is detached from its body",
+            );
+        } else expect(!rune?.visible, `Mage rune leaked into ${id}`);
     }
     KinkyDungeonCurrentLore = ids[0];
     KinkyDungeonDrawLore();
@@ -114,6 +123,7 @@
     KinkyDungeonDrawTitles();
     images.titles = await photo();
     expect(!kdpixisprites.get("kdlorimage0")?.visible, "Owned Journal portrait leaked into Titles");
+    expect(!kdpixisprites.get("SpiderlingsBestiaryMageRune")?.visible, "Mage rune leaked into Titles");
     expect(KinkyDungeonCurrentLore === ids[0] && KDLoreImg[ids[0]], "Titles damaged Journal selection or image");
     KinkyDungeonDrawState = "Logbook";
     KinkyDungeonDrawLore();

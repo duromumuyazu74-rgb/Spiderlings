@@ -8,32 +8,32 @@
         [
             "Spinner",
             "Spinner",
-            "Fine threads tremble between its feet as it tests the edges of its web. Once a visitor steps inside, the loose mesh draws taut. It tends a torn strand as patiently as it wraps a struggling guest.",
+            "Danger Level: High|These little spiders spend as much time tending webs as chasing visitors. I have watched one mend a torn boundary while its companions guided a traveller back inside. Their fine silk looks delicate, but each patient turn adds another close-fitting layer.||-Silk-Path Field Notes",
         ],
         [
             "Jumper",
             "Jumper",
-            "It folds its legs beneath a small, restless body, then springs across the gap in a single bound. A soft brush of feet is followed by a sticky loop. The next leap leaves a trembling thread behind.",
+            "Danger Level: Normal|A quick-footed cousin of the Spinner. It gathers its legs before a short leap, then brushes its target with silk as it lands. I watch the gap ahead of it; following its little footprints only tells me where it has been.||-Silk-Path Field Notes",
         ],
         [
             "WebCaster",
             "Web Caster",
-            "Silk gathers at its mouth before spreading in a pale fan. The spray settles over boots and hems, joining stray threads into a clinging mesh. It keeps its distance while the silk draws the visitor's steps shorter.",
+            "Danger Level: Normal|Unlike the weavers at my feet, these prefer a little space. They spread silk in soft fans that cling to passing travellers. A visitor who struggles inside an existing cocoon may draw another patient layer of threads across its surface.||-Silk-Path Field Notes",
         ],
         [
             "Tunneler",
             "Tunneler",
-            "A faint scraping beneath the floor precedes its arrival. It noses through the stone and lines the new opening with silk. The passage stays warm with movement long after it slips below again.",
+            "Danger Level: Normal|The soft scraping beneath a room is often my first warning. This spiderling opens new nest entrances and dresses their mouths with silk. An empty corner can become a nest while I watch the hunt elsewhere, leaving more little feet to meet later.||-Silk-Path Field Notes",
         ],
         [
             "MageSpiderlings",
             "Mage",
-            "The marks on its back brighten as it gathers a spell. A glimmer remains while the waiting circle hums, then fades with the released magic. Fine silk drifts through the light before settling against its visitor.",
+            "Danger Level: High|A small spellcaster with a neat hat and dull red runes on its back. The runes brighten when it casts and remain lit while delayed magic gathers. I watch both its patient little steps and the circles it leaves; soft silk can reach me from either.||-Silk-Path Field Notes",
         ],
         [
             "NestEntrance",
             "Nest Entrance",
-            "Layers of silk soften the rim of a dark opening. Small feet stir beyond it, and fresh threads appear wherever the lining has frayed. The nest feels quiet until another pair of eyes glints from within.",
+            "Danger Level: High|A dark opening with a rim so carefully lined that it looks almost inviting. Small shapes inside keep its silk fresh. I have learnt to count the footsteps, not trust the quiet: another spiderling may emerge while its neighbours are busy with a visitor.||-Silk-Path Field Notes",
         ],
     ];
     const checkpoints = Object.keys(KDLore).filter((tab) => tab !== "Spiderlings" && tab !== "Enemy");
@@ -81,6 +81,45 @@
     };
     // Native startup computes visible tabs before Mod entries are registered.
     refreshDiscovery();
+    const portraitRune = "SpiderlingsBestiaryMageRune";
+    const hidePortraitRune = () => {
+        if (typeof kdpixisprites !== "undefined") {
+            const sprite = kdpixisprites.get(portraitRune);
+            if (sprite) sprite.visible = false;
+        }
+    };
+    if (typeof KinkyDungeonDrawLore === "function") {
+        KinkyDungeonDrawLore = api.Hooks.wrap(
+            "SpiderlingsBestiaryPortrait",
+            KinkyDungeonDrawLore,
+            (native) =>
+                function (...args) {
+                    hidePortraitRune();
+                    const result = native.apply(this, args);
+                    if (KinkyDungeonCurrentLore !== "spiderlings.MageSpiderlings") return result;
+                    const body = kdpixisprites.get("kdlorimage0");
+                    if (!body?.visible || !KDLoreImg[KinkyDungeonCurrentLore]) return result;
+                    const rune = KDDraw(
+                        body.parent,
+                        kdpixisprites,
+                        portraitRune,
+                        KinkyDungeonRootDirectory + "Enemies/MageSpiderlingsRegular.png",
+                        body.position.x,
+                        body.position.y,
+                        Math.abs(body.width),
+                        Math.abs(body.height),
+                        undefined,
+                        { zIndex: body.zIndex + 0.001, blendMode: PIXI.BLEND_MODES.NORMAL, alpha: 1 },
+                        undefined,
+                        undefined,
+                        undefined,
+                        true,
+                    );
+                    if (rune) rune.scale.x = Math.abs(rune.scale.x) * (body.scale.x < 0 ? -1 : 1);
+                    return result;
+                },
+        );
+    }
     // Both supported native Titles draws also read the selected Journal image.
     // Mask only our image during that draw; discovery and the Journal selection stay intact.
     if (typeof KinkyDungeonDrawTitles === "function" && typeof KDLoreImg !== "undefined") {
@@ -89,6 +128,7 @@
             KinkyDungeonDrawTitles,
             (native) =>
                 function (...args) {
+                    hidePortraitRune();
                     const id = KinkyDungeonCurrentLore;
                     if (!api.Bestiary.ids.includes(id)) return native.apply(this, args);
                     const image = KDLoreImg[id];

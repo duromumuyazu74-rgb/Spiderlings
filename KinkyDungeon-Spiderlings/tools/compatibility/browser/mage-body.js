@@ -32,6 +32,12 @@
             .filter(([id, sprite]) => id.startsWith(`spr_${mage.id}_mage_cast_`) && sprite.visible)
             .map(([, sprite]) => sprite);
         expect(layers.length === (lit ? 3 : 1), `Wrong body glow: ${label}, layers=${layers.length}`);
+        expect(
+            layers[0].texture.baseTexture.resource.url ===
+                KDModFiles[KinkyDungeonRootDirectory + "Enemies/MageSpiderlingsRegular.png"],
+            `Missing regular body rune: ${label}`,
+        );
+        expect(layers[0].blendMode === PIXI.BLEND_MODES.NORMAL, `Regular rune glows: ${label}`);
         const aligned = layers.every(
             (layer) =>
                 layer.position.x === base.position.x &&

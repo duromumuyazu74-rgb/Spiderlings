@@ -208,3 +208,47 @@ test("owned journal portraits stay on the Journal and survive throwing Titles dr
     assert.throws(() => c.KinkyDungeonDrawTitles(), /draw/);
     assert.equal(seen, "Cover.png");
 });
+
+test("ordinary Mage Journal portraits carry the unlit rune and clear it on other entries and Titles", () => {
+    const { context: c } = loadLifecycleRuntime({ addTextKey: () => {} });
+    c.KDLore = { Default: {}, Enemy: {} };
+    c.KDNewLore = () => {};
+    c.localStorage = { getItem: () => "{}" };
+    c.KinkyDungeonRootDirectory = "Game/";
+    c.KinkyDungeonCurrentLore = "spiderlings.MageSpiderlings";
+    c.KDLoreImg = { "spiderlings.MageSpiderlings": "Enemies/MageSpiderlings.png" };
+    c.PIXI = { BLEND_MODES: { NORMAL: 0, ADD: 1 } };
+    const body = {
+        visible: true,
+        parent: {},
+        position: { x: 12, y: 18 },
+        width: 200,
+        height: 200,
+        zIndex: 4,
+        scale: { x: 1 },
+    };
+    c.kdpixisprites = new Map([["kdlorimage0", body]]);
+    let drawn;
+    c.KDDraw = (_parent, sprites, id, image, x, y, width, height, _rotation, options) => {
+        drawn = { id, image, x, y, width, height, options };
+        const sprite = { visible: true, scale: { x: 1 } };
+        sprites.set(id, sprite);
+        return sprite;
+    };
+    c.KinkyDungeonDrawLore = () => "native";
+    c.KinkyDungeonDrawTitles = () => "titles";
+    load(c, "SpiderlingsBestiary.js");
+    assert.equal(c.KinkyDungeonDrawLore(), "native");
+    assert.ok(drawn, "Mage Journal omitted the regular rune");
+    assert.equal(drawn.image, "Game/Enemies/MageSpiderlingsRegular.png");
+    assert.equal(drawn.options.blendMode, 0);
+    assert.deepEqual([drawn.x, drawn.y, drawn.width, drawn.height], [12, 18, 200, 200]);
+    const overlay = c.kdpixisprites.get(drawn.id);
+    c.KinkyDungeonCurrentLore = "spiderlings.Jumper";
+    c.KinkyDungeonDrawLore();
+    assert.equal(overlay.visible, false);
+    c.KinkyDungeonCurrentLore = "spiderlings.MageSpiderlings";
+    c.KinkyDungeonDrawLore();
+    assert.equal(c.KinkyDungeonDrawTitles(), "titles");
+    assert.equal(c.kdpixisprites.get(drawn.id).visible, false);
+});

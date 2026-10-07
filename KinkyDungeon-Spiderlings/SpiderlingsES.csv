@@ -259,22 +259,22 @@ KDModButtonspiderlingsSettingsNestsHelp,Un peso de especie de 0 impide ese refue
 KDModButtonspiderlingsSettingsGeneralHelp,Los pisos temáticos conservan sus cupos.
 KDModButtonspiderlingsSettingsHuntingHelp,Ambos temas arácnidos aparecen en pisos normales desde el piso 5.
 KinkyDungeonCheckpointLoreSpiderlings,Bestiario de arañitas
-KDLoreTextspiderlings.Spinner,"Hilos finos tiemblan entre sus patas mientras comprueba los bordes de la red. Cuando entra una visita, la malla floja se tensa. Remienda un hilo roto con la misma paciencia con que envuelve a una visita inquieta."
+KDLoreTextspiderlings.Spinner,"Nivel de peligro: Alto|Estas pequeñas arañas cuidan sus redes tanto como persiguen visitantes. Vi a una reparar un borde roto mientras sus compañeras guiaban de vuelta a un viajero. Su fina seda parece delicada, pero cada vuelta paciente añade otra capa ceñida.||-Notas de campo del sendero de seda"
 KDLoreTitlespiderlings.Spinner,Cría de araña hiladora
 KDLoreLabelspiderlings.Spinner,Cría de araña hiladora
-KDLoreTextspiderlings.Jumper,Recoge las patas bajo su pequeño cuerpo inquieto y cruza el hueco de un salto. Un roce suave va seguido de un lazo pegajoso. Al saltar de nuevo deja atrás un hilo tembloroso.
+KDLoreTextspiderlings.Jumper,Nivel de peligro: Normal|Una pariente ágil de la hiladora. Recoge las patas antes de un salto corto y roza a su objetivo con seda al aterrizar. Vigilo el espacio que tiene delante; seguir sus pequeñas huellas solo me dice dónde estuvo.||-Notas de campo del sendero de seda
 KDLoreTitlespiderlings.Jumper,Cría de araña saltadora
 KDLoreLabelspiderlings.Jumper,Cría de araña saltadora
-KDLoreTextspiderlings.WebCaster,"La seda se reúne en su boca y se abre como un abanico pálido. Cae sobre botas y dobladillos, uniendo los hilos sueltos en una malla adherente. Observa desde lejos cómo se acortan los pasos de su visita."
+KDLoreTextspiderlings.WebCaster,"Nivel de peligro: Normal|A diferencia de las tejedoras a mis pies, estas prefieren cierta distancia. Su seda se abre en suaves abanicos que se adhieren a los viajeros. Quien se resiste dentro de un capullo ya formado puede atraer otra capa de hilos, colocada con paciencia sobre su superficie.||-Notas de campo del sendero de seda"
 KDLoreTitlespiderlings.WebCaster,Cría de araña escupidora
 KDLoreLabelspiderlings.WebCaster,Cría de araña escupidora
-KDLoreTextspiderlings.Tunneler,Un leve roce bajo el suelo anuncia su llegada. Se abre paso entre la piedra y forra la nueva abertura con seda. El túnel conserva el calor del movimiento después de que vuelva a ocultarse.
+KDLoreTextspiderlings.Tunneler,"Nivel de peligro: Normal|El suave raspado bajo una sala suele ser mi primera advertencia. Esta cría abre nuevas entradas de nido y reviste sus bordes con seda. Mientras observo la caza en otro lugar, un rincón vacío puede convertirse en nido y dejar más patitas para encontrar después.||-Notas de campo del sendero de seda"
 KDLoreTitlespiderlings.Tunneler,Cría de araña excavadora
 KDLoreLabelspiderlings.Tunneler,Cría de araña excavadora
-KDLoreTextspiderlings.MageSpiderlings,Las marcas de su espalda brillan al reunir un hechizo. Un resplandor persiste mientras zumba el círculo pendiente y se apaga al liberarse la magia. La seda flota en la luz antes de posarse sobre su visita.
+KDLoreTextspiderlings.MageSpiderlings,Nivel de peligro: Alto|Una pequeña hechicera de sombrero cuidado y runas rojo apagado en el lomo. Las runas brillan al lanzar magia y siguen encendidas mientras se prepara un efecto demorado. Vigilo sus pasos pacientes y los círculos que deja; la suave seda puede llegar desde ambos.||-Notas de campo del sendero de seda
 KDLoreTitlespiderlings.MageSpiderlings,Cría de araña maga
 KDLoreLabelspiderlings.MageSpiderlings,Cría de araña maga
-KDLoreTextspiderlings.NestEntrance,Capas de seda suavizan el borde de una abertura oscura. Detrás se agitan patas pequeñas y nuevos hilos reparan el revestimiento gastado. El nido parece tranquilo hasta que otro par de ojos brilla dentro.
+KDLoreTextspiderlings.NestEntrance,Nivel de peligro: Alto|Una abertura oscura con un borde tan bien revestido que casi parece acogedor. Las pequeñas figuras del interior mantienen fresca la seda. Aprendí a contar los pasos y no confiar en el silencio: otra cría puede salir mientras sus vecinas se ocupan de un visitante.||-Notas de campo del sendero de seda
 KDLoreTitlespiderlings.NestEntrance,Entrada del nido
 KDLoreLabelspiderlings.NestEntrance,Entrada del nido
 SpiderlingsRecoveryPlayerPull,Tensas la seda y acercas a la Hiladora.

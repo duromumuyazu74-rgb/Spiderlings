@@ -259,22 +259,22 @@ KDModButtonspiderlingsSettingsNestsHelp,Artgewicht 0 verhindert diese Verstärku
 KDModButtonspiderlingsSettingsGeneralHelp,Themenetagen behalten ihre Bevölkerungsbudgets.
 KDModButtonspiderlingsSettingsHuntingHelp,Beide Spinnenthemen erscheinen auf normalen Etagen ab Etage 5.
 KinkyDungeonCheckpointLoreSpiderlings,Spinnenlexikon
-KDLoreTextspiderlings.Spinner,"Feine Fäden zittern zwischen seinen Füßen, während er die Netzränder prüft. Sobald ein Gast eintritt, spannt sich das lockere Netz. Gerissene Seide flickt er mit derselben Geduld, mit der er einen zappelnden Gast einwickelt."
+KDLoreTextspiderlings.Spinner,"Gefahrenstufe: Hoch|Diese kleinen Spinnen pflegen ihre Netze ebenso eifrig, wie sie Besucher verfolgen. Ich sah eine den zerrissenen Rand flicken, während ihre Gefährten einen Reisenden zurückführten. Ihre feine Seide wirkt zart, doch jede geduldige Runde fügt eine eng anliegende Schicht hinzu.||-Feldnotizen vom Seidenpfad"
 KDLoreTitlespiderlings.Spinner,Spinnenjunges Spinner
 KDLoreLabelspiderlings.Spinner,Spinnenjunges Spinner
-KDLoreTextspiderlings.Jumper,"Er faltet die Beine unter seinen kleinen, rastlosen Körper und überspringt die Lücke. Auf die sanfte Berührung der Füße folgt eine klebrige Schlinge. Beim nächsten Sprung bleibt ein zitternder Faden zurück."
+KDLoreTextspiderlings.Jumper,"Gefahrenstufe: Normal|Ein flinkfüßiger Verwandter des Spinners. Er zieht die Beine vor einem kurzen Sprung ein und streift sein Ziel bei der Landung mit Seide. Ich beobachte lieber die Lücke vor ihm; seine kleinen Spuren zeigen nur, wo er eben war.||-Feldnotizen vom Seidenpfad"
 KDLoreTitlespiderlings.Jumper,Spinnenjunges Springer
 KDLoreLabelspiderlings.Jumper,Spinnenjunges Springer
-KDLoreTextspiderlings.WebCaster,Seide sammelt sich am Mund und fächert sich blass auf. Sie legt sich über Stiefel und Säume und verbindet lose Fäden zu einem haftenden Netz. Aus der Ferne beobachtet er die kürzer werdenden Schritte.
+KDLoreTextspiderlings.WebCaster,"Gefahrenstufe: Normal|Anders als die Weber zu meinen Füßen halten diese etwas Abstand. Ihre Seide breitet sich in weichen Fächern aus und haftet an vorbeiziehenden Reisenden. Wer sich in einem vorhandenen Kokon wehrt, kann eine weitere geduldig gelegte Fadenschicht auf dessen Oberfläche erhalten.||-Feldnotizen vom Seidenpfad"
 KDLoreTitlespiderlings.WebCaster,Spinnenjunges Netzwerfer
 KDLoreLabelspiderlings.WebCaster,Spinnenjunges Netzwerfer
-KDLoreTextspiderlings.Tunneler,Ein leises Schaben unter dem Boden kündigt ihn an. Er drückt sich durch den Stein und kleidet die neue Öffnung mit Seide aus. Noch nach seinem Abtauchen bleibt der Gang warm von Bewegung.
+KDLoreTextspiderlings.Tunneler,"Gefahrenstufe: Normal|Das leise Schaben unter einem Raum ist oft meine erste Warnung. Diese junge Spinne öffnet neue Nesteingänge und kleidet deren Ränder mit Seide aus. Während ich anderswo die Jagd beobachte, kann eine leere Ecke zum Nest werden; später begegnen mir dort mehr kleine Füße.||-Feldnotizen vom Seidenpfad"
 KDLoreTitlespiderlings.Tunneler,Spinnenjunges Gräber
 KDLoreLabelspiderlings.Tunneler,Spinnenjunges Gräber
-KDLoreTextspiderlings.MageSpiderlings,"Die Zeichen auf seinem Rücken leuchten beim Wirken eines Zaubers auf. Ein Schimmer bleibt, während der wartende Kreis summt, und verblasst mit der freigesetzten Magie. Feine Seide treibt im Licht und legt sich an den Gast."
+KDLoreTextspiderlings.MageSpiderlings,"Gefahrenstufe: Hoch|Ein kleiner Zauberwirker mit ordentlichem Hut und mattroten Runen auf dem Rücken. Beim Zaubern werden sie hell und bleiben es, solange verzögerte Magie sich sammelt. Ich beobachte seine geduldigen Schritte ebenso wie seine Kreise; weiche Seide kann mich von beiden Seiten erreichen.||-Feldnotizen vom Seidenpfad"
 KDLoreTitlespiderlings.MageSpiderlings,Spinnenjunges Magier
 KDLoreLabelspiderlings.MageSpiderlings,Spinnenjunges Magier
-KDLoreTextspiderlings.NestEntrance,"Seidenschichten polstern den Rand einer dunklen Öffnung. Kleine Füße regen sich dahinter, und ausgefranste Stellen erhalten frische Fäden. Das Nest wirkt still, bis ein weiteres Augenpaar im Inneren glänzt."
+KDLoreTextspiderlings.NestEntrance,"Gefahrenstufe: Hoch|Eine dunkle Öffnung, deren sorgfältig ausgekleideter Rand beinahe einladend wirkt. Kleine Gestalten darin halten die Seide frisch. Ich habe gelernt, die Schritte zu zählen und mich nicht auf die Stille zu verlassen: Eine weitere junge Spinne kann erscheinen, während ihre Nachbarn einen Besucher beschäftigen.||-Feldnotizen vom Seidenpfad"
 KDLoreTitlespiderlings.NestEntrance,Nesteingang
 KDLoreLabelspiderlings.NestEntrance,Nesteingang
 SpiderlingsRecoveryPlayerPull,Du spannst die Seide und ziehst das Spinnenjunge Spinner näher heran.

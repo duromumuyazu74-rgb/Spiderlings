@@ -508,6 +508,45 @@
         );
     }
 
+    function disperseCocoonEnemy(enemy, player, aiData) {
+        if (!isCocoonDispersing(enemy, player)) return undefined;
+        aiData.ignore = true;
+        aiData.wantsToAttack = false;
+        aiData.holdStillWhenNear = false;
+        aiData.kite = false;
+        enemy.attackPoints = 0;
+        enemy.warningTiles = [];
+        // Give KD a legal outward goal; native movement still pays its normal cost.
+        const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
+        if (
+            distance >= 4 ||
+            KDIsImmobile(enemy) ||
+            KDEnemyHasFlag(enemy, "StayHere") ||
+            KDEnemyHasFlag(enemy, "overrideMove")
+        )
+            return true;
+        let goal;
+        let farthest = distance;
+        for (let dx = -1; dx <= 1; dx++)
+            for (let dy = -1; dy <= 1; dy++) {
+                if (!dx && !dy) continue;
+                const dir = { x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2 };
+                const range = Math.hypot(enemy.x + dx - player.x, enemy.y + dy - player.y);
+                if (
+                    range > farthest &&
+                    KinkyDungeonEnemyCanMove(enemy, dir, aiData.MovableTiles, aiData.AvoidTiles, aiData.ignoreLocks, 0)
+                ) {
+                    goal = { x: enemy.x + dx, y: enemy.y + dy };
+                    farthest = range;
+                }
+            }
+        if (!goal) return true;
+        enemy.gx = goal.x;
+        enemy.gy = goal.y;
+        enemy.path = null;
+        return false;
+    }
+
     function registerCocoonVigil() {
         if (typeof KDEventMapGeneric == "undefined") return;
         addRuntimeEvent(KDEventMapGeneric, "beforeMove", VIGIL_STATE, (_event, data) => {
@@ -564,57 +603,14 @@
             };
         }
         if (typeof KDAIType == "undefined") return;
-        for (const name of ["hunt", "wander"]) {
-            const ai = KDAIType[name];
-            if (!ai) continue;
+        for (const [name, ai] of Object.entries(KDAIType)) {
             ai.beforemove = api.Hooks.wrap(
                 `Cocoon.${name}`,
-                ai.beforemove,
+                ai.beforemove || (() => false),
                 (beforemove) =>
                     function (enemy, player, aiData) {
-                        if (!isCocoonDispersing(enemy, player)) return beforemove.apply(this, arguments);
-                        aiData.ignore = true;
-                        aiData.wantsToAttack = false;
-                        aiData.holdStillWhenNear = false;
-                        aiData.kite = false;
-                        enemy.attackPoints = 0;
-                        enemy.warningTiles = [];
-                        // Give KD a legal outward goal; native movement still pays its normal cost.
-                        const distance = Math.hypot(enemy.x - player.x, enemy.y - player.y);
-                        if (
-                            distance >= 4 ||
-                            KDIsImmobile(enemy) ||
-                            KDEnemyHasFlag(enemy, "StayHere") ||
-                            KDEnemyHasFlag(enemy, "overrideMove")
-                        )
-                            return true;
-                        let goal;
-                        let farthest = distance;
-                        for (let dx = -1; dx <= 1; dx++)
-                            for (let dy = -1; dy <= 1; dy++) {
-                                if (!dx && !dy) continue;
-                                const dir = { x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2 };
-                                const range = Math.hypot(enemy.x + dx - player.x, enemy.y + dy - player.y);
-                                if (
-                                    range > farthest &&
-                                    KinkyDungeonEnemyCanMove(
-                                        enemy,
-                                        dir,
-                                        aiData.MovableTiles,
-                                        aiData.AvoidTiles,
-                                        aiData.ignoreLocks,
-                                        0,
-                                    )
-                                ) {
-                                    goal = { x: enemy.x + dx, y: enemy.y + dy };
-                                    farthest = range;
-                                }
-                            }
-                        if (!goal) return true;
-                        enemy.gx = goal.x;
-                        enemy.gy = goal.y;
-                        enemy.path = null;
-                        return false;
+                        const outcome = disperseCocoonEnemy(enemy, player, aiData);
+                        return outcome === undefined ? beforemove.apply(this, arguments) : outcome;
                     },
             );
         }
@@ -1294,6 +1290,7 @@
         COCOON_ID,
         isCocoonPassive,
         isCocoonDispersing,
+        disperseCocoonEnemy,
         needsCocoonReinforcement,
         COCOON_MODEL_ID,
         COCOON_REPAIR_AMOUNT,

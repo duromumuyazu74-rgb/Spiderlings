@@ -123,6 +123,45 @@ test("failed commands stop the task before any following command", () => {
     assert.equal(called.length, 1);
 });
 
+test("preparation checks all script syntax before executing a generator or publication", () => {
+    const calls = [];
+    const plan = {
+        prepare: [
+            { id: "body", script: "body.cjs" },
+            { id: "later", script: "broken.cjs" },
+        ],
+        steps: [{ id: "publish", command: "gh", args: [] }],
+    };
+    assert.throws(
+        () =>
+            runSteps(".", plan, (_root, _command, args) => {
+                calls.push(args);
+                if (args.includes(path.resolve("broken.cjs"))) throw Error("Syntax error");
+            }),
+        (error) => error.code === "preparation-syntax-failed" && error.step === "later",
+    );
+    assert.equal(calls.length, 2);
+    assert.ok(calls.every((args) => args[0] === "--check"));
+});
+
+test("file preparation runs before commands and its failures prevent publication", () => {
+    const calls = [];
+    const plan = {
+        prepare: [{ id: "body", script: "body.cjs", args: ["正文"] }],
+        steps: [{ id: "publish", command: "gh", args: [] }],
+    };
+    assert.throws(
+        () =>
+            runSteps(".", plan, (_root, _command, args) => {
+                calls.push(args);
+                if (args[0] !== "--check") throw Error("Generator failed");
+            }),
+        (error) => error.code === "preparation-failed",
+    );
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].at(-1), "正文");
+});
+
 test("real nonzero child exits preserve literal UTF-8 arguments and prevent the following write", () => {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "spiderlings-diagnostics-"));
     try {
@@ -146,6 +185,43 @@ test("real nonzero child exits preserve literal UTF-8 arguments and prevent the 
         );
         assert.equal(fs.readFileSync(first, "utf8"), literal);
         assert.equal(fs.existsSync(next), false);
+    } finally {
+        assert.equal(path.dirname(fs.realpathSync(directory)), fs.realpathSync(os.tmpdir()));
+        assert.ok(path.basename(directory).startsWith("spiderlings-diagnostics-"));
+        fs.rmSync(directory, { recursive: true });
+    }
+});
+
+test("real preparation preflights every file and loads generated readback expectations", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "spiderlings-diagnostics-"));
+    try {
+        writeText(
+            path.join(directory, "prepare.cjs"),
+            'require("node:fs").writeFileSync("expected.json", JSON.stringify({body: process.argv[2]}));',
+        );
+        writeText(path.join(directory, "broken.cjs"), "const = ;");
+        const plan = {
+            prepare: [{ id: "body", script: "prepare.cjs", args: ["正文 `literal` $(literal)"] }],
+            steps: [
+                {
+                    id: "readback",
+                    command: process.execPath,
+                    args: ["-e", "process.stdout.write('ok')"],
+                    verify: {
+                        command: process.execPath,
+                        args: ["-e", "process.stdout.write(require('node:fs').readFileSync('expected.json'))"],
+                        expectedFile: "expected.json",
+                    },
+                },
+            ],
+        };
+        assert.throws(
+            () => runSteps(directory, { ...plan, prepare: [...plan.prepare, { id: "broken", script: "broken.cjs" }] }),
+            (error) => error.code === "preparation-syntax-failed",
+        );
+        assert.equal(fs.existsSync(path.join(directory, "expected.json")), false);
+        assert.equal(runSteps(directory, plan).status, "passed");
+        assert.equal(readJson(path.join(directory, "expected.json")).body, plan.prepare[0].args[0]);
     } finally {
         assert.equal(path.dirname(fs.realpathSync(directory)), fs.realpathSync(os.tmpdir()));
         assert.ok(path.basename(directory).startsWith("spiderlings-diagnostics-"));

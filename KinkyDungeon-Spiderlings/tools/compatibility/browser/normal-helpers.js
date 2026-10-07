@@ -1,3 +1,4 @@
+/* global KDMods */
 (() => {
     const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
     const expect = (condition, message) => {
@@ -87,6 +88,42 @@
         Spiderlings.SpinnerNativeField.reconcile();
         return field;
     };
-    globalThis.normalAcceptance = { setup, spawn, turn, frame, expect, save, restore, enemy, pin, photo, line };
+    const registerPackagedScript = async (filename) => {
+        const name = Object.keys(KDMods).find((entry) => entry.startsWith("Spiderlings_"));
+        const entries = await model.getEntries(KDMods[name], {});
+        const script = entries.find((entry) => entry.filename === filename);
+        expect(script, `Packaged script is missing: ${filename}`);
+        const response = await fetch(await model.getURL(script, {}));
+        expect(response.ok, `Packaged script could not load: ${filename}`);
+        (0, eval)(await response.text());
+        return { filename, registered: true };
+    };
+    const withPopulationBudget = async (kind, cap, action) => {
+        const original = Spiderlings.Population.prepareFloor;
+        Spiderlings.Population.prepareFloor = function (...args) {
+            const result = original.apply(this, args);
+            return args[0] === kind ? { ...result, cap } : result;
+        };
+        try {
+            return await action();
+        } finally {
+            Spiderlings.Population.prepareFloor = original;
+        }
+    };
+    globalThis.normalAcceptance = {
+        setup,
+        spawn,
+        turn,
+        frame,
+        expect,
+        save,
+        restore,
+        enemy,
+        pin,
+        photo,
+        line,
+        registerPackagedScript,
+        withPopulationBudget,
+    };
     return { initialized: true };
 })();

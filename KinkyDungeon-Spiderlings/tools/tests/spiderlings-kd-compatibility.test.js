@@ -9,6 +9,55 @@ const vm = require("node:vm");
 const { selectScenarios, parseArguments } = require("../compatibility/scenarios.js");
 const { createDiagnostics, browserDiagnostics } = require("../compatibility/diagnostics.js");
 
+test("shared budget fixture restores the production function after an asynchronous failure", async () => {
+    const original = (kind) => ({ kind, cap: 60 });
+    const context = vm.createContext({ Spiderlings: { Population: { prepareFloor: original } } });
+    vm.runInContext(
+        fs.readFileSync(path.resolve(__dirname, "../compatibility/browser/normal-helpers.js"), "utf8"),
+        context,
+    );
+    await assert.rejects(
+        context.normalAcceptance.withPopulationBudget("hunting", 1, async () => {
+            assert.equal(context.Spiderlings.Population.prepareFloor("hunting").cap, 1);
+            assert.equal(context.Spiderlings.Population.prepareFloor("other").cap, 60);
+            await Promise.resolve();
+            throw Error("fixture failed");
+        }),
+        /fixture failed/,
+    );
+    assert.equal(context.Spiderlings.Population.prepareFloor, original);
+});
+
+test("shared registration fixture evaluates the requested script from the loaded ZIP", async () => {
+    const zip = {},
+        entry = { filename: "Module.js" };
+    const context = vm.createContext({
+        KDMods: { Spiderlings_test: zip },
+        model: {
+            getEntries: async (actual) => {
+                assert.equal(actual, zip);
+                return [entry];
+            },
+            getURL: async (actual) => {
+                assert.equal(actual, entry);
+                return "blob:packaged";
+            },
+        },
+        fetch: async (url) => {
+            assert.equal(url, "blob:packaged");
+            return { ok: true, text: async () => "globalThis.registrations = (globalThis.registrations || 0) + 1;" };
+        },
+    });
+    vm.runInContext(
+        fs.readFileSync(path.resolve(__dirname, "../compatibility/browser/normal-helpers.js"), "utf8"),
+        context,
+    );
+    await context.normalAcceptance.registerPackagedScript("Module.js");
+    assert.equal(context.registrations, 1);
+    await assert.rejects(context.normalAcceptance.registerPackagedScript("Missing.js"), /missing/);
+    assert.equal(context.registrations, 1);
+});
+
 test("native locale evidence checks the loaded ZIP, rendered text and placeholders", () => {
     const { inspectLocale } = require("../compatibility/locales.js");
     const csv = 'Label,Du versuchst TargetRestraint.\r\nCounter,"CURRENT/TARGET · {count}"\n';
