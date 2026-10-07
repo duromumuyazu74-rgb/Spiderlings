@@ -168,3 +168,11 @@ Finish with the [per-Issue closeout audit](DELIVERY-EVIDENCE.md#issue-closeout),
 Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
 
 For a manual verification after repository maintenance, run the `Repository checks` workflow on the selected maintained branch. Manual runs compare against their own checked-out commit and still run policy/public tests and package verification. An unchanged root-directory move is exempt from retroactive content formatting/linting; modified files and all path, manifest and delivery checks remain enforced.
+
+### File preparation and structured closeout
+
+A task plan may include `prepare: [{ id, script, args }]` for JavaScript file scripts. The runner syntax-checks every preparation file before executing any generator, then completes all preparation before its main steps. `verify.expectedFile` reads a generated JSON object before any main command. Existing inline `verify.expected` plans remain supported. Prefer a checked file generator for PR text and expected readbacks; pass the body with `--body-file`. Preparation failures stop the plan.
+
+`npm run audit:closeout -- closeout.json --output result.json` writes the same structured result returned on stdout. Exit 0 means acceptance passed; exit 1 means the collected evidence fails acceptance; exit 2 means invalid input or an unavailable read/output. Inspect `status`, `phase` and `errors` from the file instead of parsing truncated console output. The output cannot overwrite the input.
+
+Native scenarios share `normalAcceptance.registerPackagedScript(filename)` for re-registration from the actual loaded ZIP and `withPopulationBudget(kind, cap, action)` for budget exhaustion at the production boundary. The latter restores the original function even when its asynchronous callback fails. These helpers change fixture setup, not the assertions.

@@ -220,6 +220,38 @@ function start(r, snapshot = mapSnapshot()) {
     return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
 }
 
+test("Cocoon dispersal preempts field duties and selected guard movement", () => {
+    const actor = spinner(1, 8, 5, { AI: "guard" });
+    const r = runtime([actor]),
+        c = r.context,
+        api = c.Spiderlings;
+    const forbidden = () => {
+        throw Error("Field command overrode dispersal");
+    };
+    api.Webbing = {
+        isCocoonDispersing: () => true,
+        disperseCocoonEnemy: (enemy, target, aiData) => {
+            assert.equal(enemy, actor);
+            assert.equal(target, c.KinkyDungeonPlayerEntity);
+            aiData.ignore = true;
+            return false;
+        },
+    };
+    api.SpinnerDuties.prepare = forbidden;
+    api.SpinnerDuties.beforeMove = forbidden;
+    api.FieldCommand.handleMove = forbidden;
+    api.SpinnerCapture.handleEnemyTurn = forbidden;
+    api.SpinnerNativeField.handleEnemyTurn = forbidden;
+    api.SpinnerField.handleEnemyTurn = forbidden;
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(r.nativeCalls, [actor.id]);
+    const aiData = {};
+    assert.equal(c.KDAIType.guard.beforemove(actor, c.KinkyDungeonPlayerEntity, aiData), false);
+    assert.equal(aiData.ignore, true);
+    api.Webbing.disperseCocoonEnemy = () => true;
+    assert.equal(c.KDAIType.guard.beforemove(actor, c.KinkyDungeonPlayerEntity, {}), true);
+});
+
 function remotePlayerReporter(context) {
     const player = context.KinkyDungeonPlayerEntity,
         reporter = {

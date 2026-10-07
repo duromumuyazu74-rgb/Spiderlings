@@ -3,13 +3,7 @@
     const { setup, expect, save, restore } = globalThis.normalAcceptance;
     const kind = "SpiderlingsHuntingGrounds";
     setup("cancelled-hunting-objective-entry");
-    const prepareFloor = Spiderlings.Population.prepareFloor;
-    try {
-        // Inject an exhausted budget at its production boundary; the Hunting setting has a +20 allowance.
-        Spiderlings.Population.prepareFloor = function (...args) {
-            const result = prepareFloor.apply(this, args);
-            return args[0] === kind ? { ...result, cap: 1 } : result;
-        };
+    return globalThis.normalAcceptance.withPopulationBudget(kind, 1, async () => {
         MiniGameKinkyDungeonLevel = 5;
         KinkyDungeonCreateMap(
             KinkyDungeonMapParams.grv,
@@ -36,7 +30,5 @@
         expect(!KDMapData[kind].complete, "Loading fabricated completed progress");
         expect(!KDGetEscapeMinimapText("Key").includes("0/3"), "Native fallback still shows a nest task");
         return { status: "passed", reason: state.reason, method: KDGetEscapeMethod(5), complete: false };
-    } finally {
-        Spiderlings.Population.prepareFloor = prepareFloor;
-    }
+    });
 })();

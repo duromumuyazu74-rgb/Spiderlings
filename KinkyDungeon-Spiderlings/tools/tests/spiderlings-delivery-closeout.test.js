@@ -2,7 +2,49 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { auditCloseout, collectCloseout, closeoutMarkdown } = require("../audit-delivery-closeout.js");
+const fs = require("node:fs");
+const path = require("node:path");
+const os = require("node:os");
+const { spawnSync } = require("node:child_process");
+const {
+    auditCloseout,
+    collectCloseout,
+    closeoutMarkdown,
+    collectAuditResult,
+} = require("../audit-delivery-closeout.js");
+
+test("structured collection distinguishes unavailable reads from unmet acceptance", () => {
+    const { input } = fixture();
+    const unavailable = collectAuditResult(".", input, () => {
+        throw Error("network EOF");
+    });
+    assert.equal(unavailable.status, "unavailable");
+    assert.equal(unavailable.phase, "read");
+    assert.match(unavailable.errors[0], /EOF/);
+    assert.equal(collectAuditResult(".", {}).status, "invalid-input");
+});
+
+test("CLI writes structured input failures and refuses to overwrite its input", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "spiderlings-closeout-"));
+    try {
+        const input = path.join(directory, "input.json"),
+            output = path.join(directory, "result.json");
+        fs.writeFileSync(input, "{broken", "utf8");
+        const cli = path.resolve(__dirname, "../audit-delivery-closeout.js");
+        const failed = spawnSync(process.execPath, [cli, input, "--output", output], { encoding: "utf8" });
+        assert.equal(failed.status, 2);
+        assert.deepEqual(JSON.parse(failed.stdout), JSON.parse(fs.readFileSync(output, "utf8")));
+        assert.equal(JSON.parse(failed.stdout).status, "invalid-input");
+        const refused = spawnSync(process.execPath, [cli, input, "--output", input], { encoding: "utf8" });
+        assert.equal(refused.status, 2);
+        assert.match(JSON.parse(refused.stdout).errors[0], /overwrite/);
+        assert.equal(fs.readFileSync(input, "utf8"), "{broken");
+    } finally {
+        assert.equal(path.dirname(fs.realpathSync(directory)), fs.realpathSync(os.tmpdir()));
+        assert.ok(path.basename(directory).startsWith("spiderlings-closeout-"));
+        fs.rmSync(directory, { recursive: true });
+    }
+});
 
 function fixture() {
     const input = {

@@ -40,12 +40,53 @@ function runSteps(root, plan, execute = run) {
         if (
             step.verify &&
             (!commandValid(step.verify) ||
-                !step.verify.expected ||
-                typeof step.verify.expected !== "object" ||
-                Array.isArray(step.verify.expected) ||
-                !Object.keys(step.verify.expected).length)
+                (!step.verify.expected && !step.verify.expectedFile) ||
+                (step.verify.expectedFile && typeof step.verify.expectedFile !== "string") ||
+                (step.verify.expected &&
+                    (typeof step.verify.expected !== "object" ||
+                        Array.isArray(step.verify.expected) ||
+                        !Object.keys(step.verify.expected).length)))
         )
             throw Error("Readback requires a command and expected JSON fields.");
+    }
+    const preparation = plan.prepare || [];
+    if (!Array.isArray(preparation)) throw Error("prepare must be a file-script array.");
+    for (const stage of preparation) {
+        if (
+            !stage.id ||
+            typeof stage.script !== "string" ||
+            !/\.(?:cjs|mjs|js)$/.test(stage.script) ||
+            (stage.args && (!Array.isArray(stage.args) || stage.args.some((arg) => typeof arg !== "string")))
+        )
+            throw Error("Preparation requires id, JavaScript script and optional string args.");
+    }
+    // Check every preparation file before executing any of them, including later generators.
+    for (const stage of preparation) {
+        try {
+            execute(root, process.execPath, ["--check", path.resolve(root, stage.script)]);
+        } catch (error) {
+            throw failure("preparation-syntax-failed", stage.id, error);
+        }
+    }
+    for (const stage of preparation) {
+        try {
+            execute(root, process.execPath, [path.resolve(root, stage.script), ...(stage.args || [])]);
+        } catch (error) {
+            throw failure("preparation-failed", stage.id, error);
+        }
+    }
+    const expectedFiles = new Map();
+    for (const step of plan.steps) {
+        if (!step.verify?.expectedFile) continue;
+        let expected;
+        try {
+            expected = readJson(path.resolve(root, step.verify.expectedFile));
+        } catch (error) {
+            throw failure("expected-read-failed", step.id, error);
+        }
+        if (!expected || typeof expected !== "object" || Array.isArray(expected) || !Object.keys(expected).length)
+            throw failure("expected-invalid", step.id);
+        expectedFiles.set(step.id, expected);
     }
     const completed = [];
     for (const step of plan.steps) {
@@ -70,14 +111,18 @@ function runSteps(root, plan, execute = run) {
             } catch (error) {
                 throw failure("readback-failed", step.id, error);
             }
-            for (const [key, expected] of Object.entries(step.verify.expected)) {
+            for (const [key, expected] of Object.entries(expectedFiles.get(step.id) || step.verify.expected)) {
                 const value = key.split(".").reduce((object, part) => object?.[part], actual);
                 if (JSON.stringify(value) !== JSON.stringify(expected)) throw failure("readback-mismatch", step.id);
             }
         }
         completed.push({ id: step.id, status: "passed" });
     }
-    return { status: "passed", steps: completed };
+    return {
+        status: "passed",
+        preparation: preparation.map((stage) => ({ id: stage.id, status: "passed" })),
+        steps: completed,
+    };
 }
 
 if (require.main === module) {

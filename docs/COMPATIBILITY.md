@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.129.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.130.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.130 Cocoon dispersal, field-note lore and maintenance fixtures (2026-10-07)
+
+The same final ZIP passes all 55 native stages and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `dbfd74e08679b3a3935f1883f3e8cf2961d94f13` was freshly fetched at `2026-10-07T07:51:18.180Z`. Full acceptance: `<cache>/runs/2026-10-07T07-51-18-196Z-0.92.36-test.130/acceptance.json`. Final ZIP: 175 entries, 24,868,960 bytes; SHA-256 `ccaeae6789e80278d7a010adee88cc0a2c03dd61080be571887d7787fc826ad5`.
+
+Cocoon dispersal now runs before field construction, capture/recovery and region commands directed at the quiet player, and intercepts every registered selected AI. The native regression assigns real guard Spinners to field commanders and includes a guard WebCaster. All move beyond four tiles through paid native actions; pending reinforcement and resumed Mage aggression retain their tests. The copied slot fifteen replay compares eighty unchanged paid waits: test.129 retains nine spiders within three tiles; test.130 retains none. Two WebCasters stop at about 3.6 tiles with occupied or walled outward neighbors. Original saves are unchanged.
+
+All six species notes use native-style danger/paragraph/credit formatting. Independent review covers English and seven locales. English/Chinese Journal views were inspected. The ordinary Mage portrait layers the authored Regular rune with normal blend and body geometry; other entries and Titles hide that layer. World regular/casting textures, timing, facing and load behavior retain full native coverage.
+
+Preparation file syntax, generated readback expectations, actual child failures and structured audit output have public regressions. Shared loaded-ZIP registration and restorable budget injection preserve the native assertions. See [implementation and saved replay](spiderlings-test130-vigil-lore-tools.zh-CN.md) and [tool contracts](DEVELOPMENT.md#file-preparation-and-structured-closeout).
+
+Repository checks, 12 policy tests, 671 public tests, the complete 996-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-07T08-01-54-435Z-HIOK9Q/REPORT.md` records stable source and package bytes. Only outcome documentation was added afterward, followed by repository and whitespace checks.
 
 ## Test.129 save diagnostics, cancelled objectives and bestiary discovery (2026-10-07)
 
