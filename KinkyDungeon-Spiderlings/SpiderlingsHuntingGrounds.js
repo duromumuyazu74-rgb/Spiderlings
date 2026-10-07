@@ -1187,13 +1187,15 @@
         KinkyDungeonEscapeTypes[MOD] = {
             selectValid: false,
             filterRandom: () => 0,
-            check: () => !activeState() || activeState().complete || api.FloorSelection?.canBypassObjective() === true,
+            check: () => activeState()?.complete === true || api.FloorSelection?.canBypassObjective() === true,
             minimaptext: () => progressText(false, true),
             doortext: () =>
                 api.FloorSelection?.canBypassObjective() ? api.FloorSelection.bypassText() : progressText(true),
         };
         KDAddEvent(KDEventMapGeneric, "calcEscapeMethod", MOD, (_event, data) => {
             if (activeState()) data.escapeMethod = MOD;
+            // Native forced escape selection and older saves can retain this type after cancellation.
+            else if (KDMapData[FIELD]?.status === "cancelled" && data.escapeMethod === MOD) data.escapeMethod = "Key";
         });
         KDAddEvent(KDEventMapGeneric, "beforeStairCancel", MOD, (_event, data) => {
             if (

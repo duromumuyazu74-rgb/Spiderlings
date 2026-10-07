@@ -33,6 +33,8 @@ const scenarios = [
         "adhesion-recovery",
         "spinner-work",
         "field-command",
+        "saved-field-guard",
+        "hunting-objective-entry",
         "feedback-walls",
         "feedback-ui",
         "feedback-blindfolds",

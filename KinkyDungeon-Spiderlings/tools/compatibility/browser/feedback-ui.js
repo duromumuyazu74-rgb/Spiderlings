@@ -51,6 +51,29 @@
     KinkyDungeonState = previousState;
     const ids = Spiderlings.Bestiary.ids;
     const explored = JSON.parse(localStorage.getItem("kdexpLore") || "{}");
+    // Persisted notes can precede Mod registration during native startup.
+    explored[ids[1]] = 1;
+    localStorage.setItem("kdexpLore", JSON.stringify(explored));
+    KinkyDungeonCurrentLoreTabs = ["Default"];
+    {
+        const loadedPackage = Object.keys(KDMods).find((name) => name.startsWith("Spiderlings_"));
+        const loadedEntries = await model.getEntries(KDMods[loadedPackage], {});
+        const entry = loadedEntries.find((file) => file.filename === "SpiderlingsBestiary.js");
+        const source = await fetch(await model.getURL(entry, {})).then((response) => response.text());
+        (0, eval)(source);
+    }
+    expect(KinkyDungeonCurrentLoreTabs.includes("Spiderlings"), "Persisted single-entry category remains Unknown");
+    KinkyDungeonCurrentLoreTab = "Spiderlings";
+    KinkyDungeonUpdateLore(explored);
+    expect(KinkyDungeonCurrentLoreItems.includes(ids[1]), "Persisted Jumper note disappeared after registration");
+    const unlocked = Spiderlings.Bestiary.unlockAll();
+    expect(unlocked.added <= 5 && unlocked.discovered === 6, "Debug unlock returned an invalid discovery count");
+    expect(
+        ids.every((id) => JSON.parse(localStorage.getItem("kdexpLore"))[id]),
+        "Debug unlock left missing entries",
+    );
+    expect(Spiderlings.Bestiary.unlockAll().added === 0, "Repeated debug unlock duplicated discovery");
+    expect(JSON.parse(localStorage.getItem("kdexpLore")).Cover === explored.Cover, "Debug unlock changed native lore");
     for (const id of ids) delete explored[id];
     localStorage.setItem("kdexpLore", JSON.stringify(explored));
     localStorage.setItem("kdnewLore", JSON.stringify(["Cover"]));
@@ -77,6 +100,13 @@
     KinkyDungeonCurrentLoreTabOffset = 0;
     KinkyDungeonCurrentLoreItemOffset = 0;
     KinkyDungeonDrawState = "Logbook";
+    for (const id of ids) {
+        KinkyDungeonCurrentLore = id;
+        KinkyDungeonDrawLore();
+        images[`entry-${id}`] = await photo();
+        expect(kdpixisprites.get("kdlorimage0")?.visible, `Native Journal did not render ${id}`);
+    }
+    KinkyDungeonCurrentLore = ids[0];
     KinkyDungeonDrawLore();
     images.bestiary = await photo();
     expect(kdpixisprites.get("kdlorimage0")?.visible, "Native Journal did not render the owned enemy portrait");
@@ -114,6 +144,13 @@
         }
         KinkyDungeonState = previousState;
         KinkyDungeonDrawState = "Logbook";
+        for (const id of ids) {
+            KinkyDungeonCurrentLore = id;
+            KinkyDungeonDrawLore();
+            images[`entry-CN-${id}`] = await photo();
+            expect(kdpixisprites.get("kdlorimage0")?.visible, `Chinese Journal did not render ${id}`);
+        }
+        KinkyDungeonCurrentLore = ids[0];
         KinkyDungeonDrawLore();
         images["bestiary-CN"] = await photo();
         KinkyDungeonDrawState = "Titles";

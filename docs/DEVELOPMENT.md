@@ -82,6 +82,26 @@ Full compatibility runs additionally load CN, DE, ES, JP, KR, PL and RU from the
 
 Each scene starts with a named native RNG seed. The shared setup and Hunting Grounds fixture seed before new-game initialization and again before the controlled map, so initial map creation cannot consume an inherited random stream. Diagnostic records retain scene, seed, timestamp, resource URL/status and available error stacks. Request records keep the context at request initiation even if a response arrives in a later scene. Asset requests and subsequent render frames settle before switching scenes. A final runtime-error or Mod-asset failure names its gate rather than the last successful scene; the retained diagnostics identify originating resources. Failure traces include current actors and fixture state. These controls improve reproduction without certifying all native artwork as valid.
 
+## Save and evidence diagnostics
+
+For saved-field stalls, unexpected objective completion or persisted Journal discovery, inventory every supplied save slot and visited map before selecting a replay. Saves may retain the fault in `KDWorldMap` after the character moves to another floor. These maintenance tools are excluded from the Mod ZIP.
+
+```powershell
+npm run diagnose:save -- '.scratch/case/copied-storage.json' --codec 'D:/KD-reference-inputs/game/Scripts/lib/LZString.js'
+npm run diagnose:replay -- --save '.scratch/case/copied-storage.json' --slot 7 --runtime '<cache>/runs/<run>/baseline/result.json' --package './Spiderlings_<version>.zip' --location '0,6' --center '23,29' --turns 80
+npm run diagnose:evidence -- '<cache>/runs/<run>/baseline/result.json' field-command
+```
+
+Save inventory accepts a native base64 export, decoded save JSON or an object with `slots[].content`. Encoded content uses the selected game's supplied codec. Inventory prints map/objective/field counts and selected AI types, without player identity or equipment. Replay requires a compatibility runtime result and a package; it uses isolated browser storage and native save/map loading. Omitting `--location` inspects the current saved map. `--room` selects a cached side room. `--center` moves the copied character into the selected project's center. `--isolate-mobile-npcs` removes other mobile NPCs only in the copy; report this intervention when interpreting results. Returning to a cached map uses current saved character state and does not reconstruct the original screenshot's exact time. Output goes to a new directory under this checkout's `.scratch`; `--output` selects a new path there. Input files and the desktop profile are not written.
+
+Use `REPORT.md` for overall delivery gates. The evidence command reads one native scene or a saved-turn record and projects status, seeds, counts, paid turns, phase changes and evidence paths. Oversized row/image lists report their omitted count; detailed state remains in the source JSON. Raw recorded error counts are diagnostic counts, not a replacement for the report's pass/fail status.
+
+File-based maintenance batches can use `npm run run:task -- '.scratch/case/plan.json'`. A plan has a nonempty `steps` array with `id`, executable `command` and string `args`. It reuses `delivery-commands.run`, preserves UTF-8 and stops at the first failure. Use executable binaries such as `node`, `git`, `gh` or PowerShell; shell expressions inside arguments remain literal. JavaScript authors can reuse `readJson`, `writeJson` and `writeText` from `tools/task-runner.js` for exact file bodies.
+
+For an already authorized GitHub write step, add `githubAccount` and `verify: { command, args, expected }`. Expected fields are exact JSON values addressed by dotted paths, for example `object.sha`. Identity-read failure, account mismatch, command failure and readback mismatch are distinct; each stops subsequent steps. This runner executes the supplied plan and does not create authorization to merge, publish or contact others.
+
+The `saved-field-guard` native regression is an anonymous retained enclosure with actual borrowed guard AI, paid repair/closure and native-hit Capture. The `hunting-objective-entry` scene covers cancelled generation and a stale objective type in a saved map. Focused runs remain partial; final delivery still uses full dual-version acceptance and the existing collector.
+
 ## Text changes
 
 Run the read-only text audit against an explicit baseline to list changed text, structural differences and test references before the final package build:

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.128.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.129.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.129 save diagnostics, cancelled objectives and bestiary discovery (2026-10-07)
+
+The same final ZIP passes all 55 native stages and seven language loads per game on KD 5.4.92 and latest official 5.5.3. Official `5.5` commit `dbfd74e08679b3a3935f1883f3e8cf2961d94f13` was freshly fetched at `2026-10-07T05:54:08.222Z`. Full acceptance: `<cache>/runs/2026-10-07T05-54-08-237Z-0.92.36-test.129/acceptance.json`. Final ZIP: 175 entries, 24,866,618 bytes; SHA-256 `09ac7a317448c91536eb66dd2bc446c60d0f5d1202a3131d3c739ad5915b3d8c`.
+
+Cancelled Hunting objectives no longer award completion, and native escape resolution changes their stale Hunting type to Key. The final ZIP replay of copied desktop slot seven replaces green 0/3 with the native key hint, retaining cancelled status and zero destroyed targets. Original saves are unchanged. Fresh active targets, actual destruction and progress reload retain their existing gates. Native forced selection and old saved types have dedicated cancellation coverage.
+
+Persisted single-note discovery refreshes the Spiderlings category on registration. `Spiderlings.Bestiary.unlockAll()` unlocks the six owned entries, preserves unrelated/read lore and adds only new entries to the unread list. Both native versions exercise re-registration of the packaged Bestiary module, all-entry debug discovery, random pickup, six English/Chinese portraits and Journal/Titles transitions. The first focused run did not actually re-register the module and its setting-only budget fixture remained eligible on 5.5; the corrected fixture evaluates the packaged module and injects exhausted budget at the existing production boundary. Runtime package bytes did not change for these fixture corrections.
+
+The anonymous retained-field regression uses a real dispatcher loan with guard AI and native paid repair/closure/Capture. It fails to seal under test.127; final full test.129 reaches Capture in 26 paid turns on 5.4.92 and 22 on 5.5.3. These counts describe the recorded runs, not a universal timing promise. The new read-only inventory finds all fifteen copied slots and their cached floors. The native replay CLI reproduces the saved field and cancelled objective in isolated storage. Task and summary commands use UTF-8 files, structured arguments, failure stopping and bounded evidence projections. See [implementation and limits](spiderlings-test129-diagnostics-objectives.zh-CN.md) and [commands](DEVELOPMENT.md#save-and-evidence-diagnostics).
+
+Repository checks, 12 policy tests, 662 public tests, the complete 987-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-07T06-12-45-912Z-ro4rUG/REPORT.md` imports both complete native records and reports unchanged source and package bytes. Only this outcome documentation was added afterward, followed by repository and whitespace checks.
 
 ## Test.128 field dispatch across native AI types (2026-10-06)
 

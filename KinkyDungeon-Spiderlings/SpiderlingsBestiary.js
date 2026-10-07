@@ -52,7 +52,35 @@
             enemy,
         );
     }
-    api.Bestiary = { ids: entries.map(([enemy]) => `spiderlings.${enemy}`) };
+    function refreshDiscovery() {
+        const explored = JSON.parse(localStorage.getItem("kdexpLore") || "{}");
+        if (typeof KinkyDungeonUpdateTabs === "function") KinkyDungeonUpdateTabs(explored);
+        if (typeof KinkyDungeonUpdateLore === "function") KinkyDungeonUpdateLore(explored);
+    }
+    const ids = entries.map(([enemy]) => `spiderlings.${enemy}`);
+    api.Bestiary = {
+        ids,
+        unlockAll() {
+            const explored = JSON.parse(localStorage.getItem("kdexpLore") || "{}");
+            const unread = new Set(JSON.parse(localStorage.getItem("kdnewLore") || "[]"));
+            let added = 0;
+            for (const id of ids) {
+                if (!explored[id]) {
+                    explored[id] = 1;
+                    unread.add(id);
+                    added++;
+                }
+            }
+            localStorage.setItem("kdexpLore", JSON.stringify(explored));
+            const pending = [...unread];
+            localStorage.setItem("kdnewLore", JSON.stringify(pending));
+            if (typeof KinkyDungeonNewLoreList !== "undefined") KinkyDungeonNewLoreList = pending;
+            refreshDiscovery();
+            return { discovered: ids.length, added };
+        },
+    };
+    // Native startup computes visible tabs before Mod entries are registered.
+    refreshDiscovery();
     // Both supported native Titles draws also read the selected Journal image.
     // Mask only our image during that draw; discovery and the Journal selection stay intact.
     if (typeof KinkyDungeonDrawTitles === "function" && typeof KDLoreImg !== "undefined") {

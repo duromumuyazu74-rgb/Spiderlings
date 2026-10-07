@@ -11,6 +11,10 @@
     "test:local": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js all",
     "test:compatibility": "node KinkyDungeon-Spiderlings/tools/verify-kd-compatibility.js",
     "audit:text": "node KinkyDungeon-Spiderlings/tools/audit-spiderlings-text.js",
+    "diagnose:save": "node KinkyDungeon-Spiderlings/tools/save-diagnostics.js",
+    "diagnose:replay": "node KinkyDungeon-Spiderlings/tools/replay-spiderlings-save.js",
+    "diagnose:evidence": "node KinkyDungeon-Spiderlings/tools/evidence-summary.js",
+    "run:task": "node KinkyDungeon-Spiderlings/tools/task-runner.js",
     "report:delivery": "node KinkyDungeon-Spiderlings/tools/report-spiderlings-delivery.js",
     "audit:closeout": "node KinkyDungeon-Spiderlings/tools/audit-delivery-closeout.js",
     "verify:publication": "node KinkyDungeon-Spiderlings/tools/verify-spiderlings-publication.js"

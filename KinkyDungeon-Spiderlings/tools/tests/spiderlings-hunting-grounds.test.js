@@ -149,6 +149,27 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
     };
 }
 
+test("cancelled saved hunting objectives resolve stale escape types without awarding completion", () => {
+    const r = runtime(),
+        c = r.context,
+        kind = "SpiderlingsHuntingGrounds";
+    c.KDMapData.MapMod = "None";
+    c.KDMapData.EscapeMethod = kind;
+    c.KDMapData[kind] = { status: "cancelled", reason: "insufficient-space" };
+    assert.equal(c.KinkyDungeonEscapeTypes[kind].check(), false, "Absent objectives must not count as completed");
+    assert.equal(r.event("calcEscapeMethod", { escapeMethod: kind }).escapeMethod, "Key");
+    assert.equal(c.KDMapData[kind].status, "cancelled");
+    assert.equal(c.KDMapData[kind].complete, undefined);
+    assert.equal(r.event("calcEscapeMethod", { escapeMethod: "Trap" }).escapeMethod, "Trap");
+    c.KDMapData.MapMod = kind;
+    c.KDMapData[kind] = { status: "active", target: 3, targetIds: [1, 2, 3], destroyedIds: [], complete: false };
+    assert.equal(r.event("calcEscapeMethod", { escapeMethod: "Key" }).escapeMethod, kind);
+    assert.equal(c.KinkyDungeonEscapeTypes[kind].check(), false);
+    c.KDMapData[kind].destroyedIds = [1, 2, 3];
+    c.KDMapData[kind].complete = true;
+    assert.equal(c.KinkyDungeonEscapeTypes[kind].check(), true);
+});
+
 test("both themes preserve population-plan publication, objective timing and selector cancellation", () => {
     for (const kind of ["SpiderlingsInfestation", "SpiderlingsHuntingGrounds"]) {
         for (const fail of [false, true]) {
@@ -1254,7 +1275,8 @@ test("a hunting layout cancellation retains its bounded spider ecology and nativ
     assert.equal(c.KDMapData.SpiderlingsHuntingGrounds.reason, "insufficient-space");
     assert.equal(c.KDMapData.MapMod, "None");
     assert.equal(c.Spiderlings.HuntingGrounds.activeState(), null);
-    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), true);
+    assert.equal(c.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), false);
+    assert.equal(r.event("calcEscapeMethod", { escapeMethod: "SpiderlingsHuntingGrounds" }).escapeMethod, "Key");
     assert.equal(plan.kind, "SpiderlingsHuntingGrounds");
     assert.equal(plan.layoutFallback, true);
     assert.equal(plan.cap, 45);
@@ -1330,7 +1352,8 @@ test("excluded, tiny, occupied and locked maps cancel infestation and keep nativ
         if (scenario === "no-enemies-call") r.event("postMapgen");
         else r.generate(undefined, scenario === "early" ? 4 : 5);
         assert.equal(r.context.KDMapData.MapMod, "None", scenario);
-        assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), true);
+        assert.equal(r.context.KinkyDungeonEscapeTypes.SpiderlingsHuntingGrounds.check(), false);
+        assert.equal(r.event("calcEscapeMethod", { escapeMethod: "SpiderlingsHuntingGrounds" }).escapeMethod, "Key");
     }
 });
 
