@@ -70,6 +70,46 @@ test("native note pools offer undiscovered Spiderlings while their journal uses 
     }
 });
 
+test("loading discovered notes refreshes the category and debug unlock preserves other lore", () => {
+    const { context: c } = loadLifecycleRuntime({ addTextKey: () => {} });
+    const storage = new Map([
+        ["kdexpLore", JSON.stringify({ Cover: 1, NativeNote: 1, "spiderlings.Jumper": 1 })],
+        ["kdnewLore", JSON.stringify(["NativeNote"])],
+    ]);
+    c.localStorage = { getItem: (key) => storage.get(key), setItem: (key, value) => storage.set(key, value) };
+    c.KDLore = { Default: { Cover: {} }, grv: {}, Enemy: {} };
+    c.KinkyDungeonCurrentLoreTab = "Spiderlings";
+    c.KinkyDungeonCurrentLoreTabs = ["Default"];
+    c.KinkyDungeonNewLoreList = ["NativeNote"];
+    c.KDNewLore = (tabs, id, _label, _title, _text, _condition, _image, hidden) => {
+        for (const tab of tabs) (c.KDLore[tab] ||= {})[id] = { noShow: hidden.includes(tab) };
+    };
+    c.KinkyDungeonUpdateTabs = (explored) => {
+        c.KinkyDungeonCurrentLoreTabs = Object.keys(c.KDLore).filter((tab) =>
+            Object.keys(explored).some((id) => c.KDLore[tab][id] && !c.KDLore[tab][id].noShow),
+        );
+    };
+    c.KinkyDungeonUpdateLore = (explored) => {
+        c.KinkyDungeonCurrentLoreItems = Object.keys(c.KDLore[c.KinkyDungeonCurrentLoreTab] || {}).filter(
+            (id) => explored[id],
+        );
+    };
+    load(c, "SpiderlingsBestiary.js");
+    assert.ok(c.KinkyDungeonCurrentLoreTabs.includes("Spiderlings"), "Discovered category stays unknown after reload");
+    assert.deepEqual(Array.from(c.KinkyDungeonCurrentLoreItems), ["spiderlings.Jumper"]);
+    const result = c.Spiderlings.Bestiary.unlockAll();
+    const explored = JSON.parse(storage.get("kdexpLore"));
+    assert.equal(result.added, 5);
+    assert.equal(explored.NativeNote, 1);
+    assert.equal(explored.Cover, 1);
+    assert.equal(c.KinkyDungeonCurrentLoreItems.length, 6);
+    assert.equal(new Set(c.KinkyDungeonNewLoreList).size, 6);
+    assert.ok(c.KinkyDungeonNewLoreList.includes("NativeNote"));
+    assert.ok(!c.KinkyDungeonNewLoreList.includes("spiderlings.Jumper"), "Read entries stay read");
+    assert.equal(c.Spiderlings.Bestiary.unlockAll().added, 0);
+    assert.equal(new Set(c.KinkyDungeonNewLoreList).size, 6);
+});
+
 test("blindfold artwork covers foreground hair and brows without removing the hairstyle", () => {
     const { context: c } = loadWebbingRuntime();
     const definitions = [
@@ -159,6 +199,7 @@ test("owned journal portraits stay on the Journal and survive throwing Titles dr
         seen = c.KDLoreImg[c.KinkyDungeonCurrentLore];
         throw Error("draw");
     };
+    c.localStorage = { getItem: () => "{}" };
     load(c, "SpiderlingsBestiary.js");
     assert.throws(() => c.KinkyDungeonDrawTitles(), /draw/);
     assert.equal(seen, undefined);
