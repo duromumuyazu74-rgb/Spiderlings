@@ -225,13 +225,14 @@
                 duty.nativeAllowed = false;
                 return true;
             }
-            const range = Math.max(1, enemy.Enemy.followRange || 1);
-            if (Math.max(Math.abs(enemy.x - target.x), Math.abs(enemy.y - target.y)) > range) {
+            const approach = api.SpinnerAI.attackApproach(enemy, target);
+            if (!approach.ready) {
                 duty.nativeAllowed = false;
                 duty.result = api.SpinnerAI.executeTacticalDuty(enemy, {
                     groupId: duty.groupId,
                     category: "intercept",
                     destination: target,
+                    approach: approach.path,
                 });
                 recordResult(enemy, duty.result);
             }

@@ -134,11 +134,10 @@
             originalCarrier.struggleProgress = 0.23;
         }
         const originalContents = originalCarrier && JSON.stringify(originalCarrier);
-        KDGameData[recovery.DEPARTURE] = {
-            version: 1,
-            compositeId: "movement",
-            eligibleSourceIds: actors.map((a) => a.id),
-        };
+        globalThis.normalAcceptance.seedRecoveryDeparture(
+            "movement",
+            actors.map((a) => a.id),
+        );
         for (const actor of actors) expect(recovery.hit(actor), "Native tether admission failed");
         expect(
             KDPlayer().leash?.reason === recovery.TETHER_REASON &&
@@ -150,14 +149,26 @@
             "Independent recovery inputs remain registered",
         );
         KinkyDungeonUpdateStats(0);
-        const moves = [];
+        const moves = [],
+            nativeCosts = [];
+        const nativeMoveTo = KinkyDungeonMoveTo;
+        KinkyDungeonMoveTo = function (...args) {
+            const cost = nativeMoveTo.apply(this, args);
+            if (cost > 0) nativeCosts.push(cost);
+            return cost;
+        };
         let direction = -1;
         for (let i = 0; i < count * 3 + 2; i++) {
             const before = { x: KDPlayer().x, y: KDPlayer().y };
             KinkyDungeonMove({ x: 0, y: direction }, 1, true, true);
             await frame();
             if (KDPlayer().x !== before.x || KDPlayer().y !== before.y) {
-                moves.push({ input: i, tick: KinkyDungeonCurrentTick, points: KDGameData.MovePoints });
+                moves.push({
+                    input: i,
+                    tick: KinkyDungeonCurrentTick,
+                    points: KDGameData.MovePoints,
+                    nativeCost: nativeCosts.at(-1),
+                });
                 direction *= -1;
             }
             if (i === 0 && count === 12) {
@@ -175,12 +186,16 @@
                 );
             }
         }
+        KinkyDungeonMoveTo = nativeMoveTo;
         expect(
             recovery.strength() === count,
             `Movement silently lost a live connected tether source: ${JSON.stringify({ count, moves, player: KDPlayer(), recovery: recovery.state(), actors })}`,
         );
         expect(
-            moves.length >= 3 && moves.slice(1).every((move, i) => move.input - moves[i].input === count),
+            moves.length >= 3 &&
+                moves
+                    .slice(1)
+                    .every((move, i) => move.input - moves[i].input === Math.max(1, moves[i].nativeCost) + count - 1),
             `Wrong native movement interval: ${JSON.stringify({ count, moves })}`,
         );
         if (originalCarrier)
@@ -230,11 +245,10 @@
             ],
         });
         KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-        KDGameData[recovery.DEPARTURE] = {
-            version: 1,
-            compositeId: "move-home",
-            eligibleSourceIds: actors.map((a) => a.id),
-        };
+        globalThis.normalAcceptance.seedRecoveryDeparture(
+            "move-home",
+            actors.map((a) => a.id),
+        );
         for (const a of actors) expect(recovery.hit(a), "hit failed");
         const initialTick = KinkyDungeonCurrentTick,
             trace = [];
@@ -305,11 +319,10 @@
         encounter.builders = {};
         Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
         KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-        KDGameData[recovery.DEPARTURE] = {
-            version: 1,
-            compositeId: "crowded-return",
-            eligibleSourceIds: actors.map((a) => a.id),
-        };
+        globalThis.normalAcceptance.seedRecoveryDeparture(
+            "crowded-return",
+            actors.map((a) => a.id),
+        );
         for (const actor of actors) expect(recovery.hit(actor), "Crowded return could not attach native sources");
         const trace = [];
         const row = { mode: "crowded-core-return", trace, work: [] };
@@ -442,11 +455,10 @@
         expect(field.state().topology.fields["one-cell-inner"], "One-cell fixture did not create a legal enclosure");
         Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
         KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-        KDGameData[recovery.DEPARTURE] = {
-            version: 1,
-            compositeId: "one-cell-return",
-            eligibleSourceIds: actors.map((actor) => actor.id),
-        };
+        globalThis.normalAcceptance.seedRecoveryDeparture(
+            "one-cell-return",
+            actors.map((actor) => actor.id),
+        );
         for (const actor of actors) expect(recovery.hit(actor), "One-cell recovery did not attach sources");
         const positions = JSON.stringify(actors.map(({ x, y }) => ({ x, y })));
         KinkyDungeonAdvanceTime(0, true);
@@ -496,7 +508,7 @@
             ],
         });
         KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-        KDGameData[recovery.DEPARTURE] = { version: 1, compositeId: "reverse-pull", eligibleSourceIds: [actor.id] };
+        globalThis.normalAcceptance.seedRecoveryDeparture("reverse-pull", [actor.id]);
         expect(recovery.hit(actor), "Reverse pull lacks a native source");
         const before = KinkyDungeonCurrentTick;
         KinkyDungeonMove({ x: 1, y: 0 }, 1, true, true);

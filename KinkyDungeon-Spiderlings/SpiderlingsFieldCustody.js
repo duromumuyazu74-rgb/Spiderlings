@@ -119,10 +119,11 @@
                 (!center || distance(actor, center) <= 10) &&
                 (actor.Enemy.name !== "Spinner" || encounter().command?.members[actor.id]?.commander === saved.groupId),
         );
-        const choose = (candidates, previous, target) =>
+        const choose = (candidates, previous, target, priority = () => 0) =>
             candidates
                 .sort(
                     (a, b) =>
+                        priority(a) - priority(b) ||
                         Number(previous.some((id) => same(id, b.id))) - Number(previous.some((id) => same(id, a.id))) ||
                         distance(a, target) - distance(b, target) ||
                         String(a.id).localeCompare(String(b.id)),
@@ -136,15 +137,23 @@
                   threat,
               )
             : [];
+        const contacts =
+            !threat && api.SpinnerRecovery?.requested?.()
+                ? available
+                      .filter((actor) => actor.Enemy.name === "Spinner" && perceives(actor, player()))
+                      .map((actor) => ({ actor, approach: api.SpinnerAI.attackApproach(actor, player()) }))
+                      .filter((entry) => entry.approach.path.length)
+                : [];
         saved.contacts =
             !threat &&
             center &&
             !same(temporary()?.admittedCompositeId, saved.compositeId) &&
-            (player().x !== center.x || player().y !== center.y)
+            api.SpinnerRecovery?.requested?.()
                 ? choose(
-                      available.filter((a) => a.Enemy.name === "Spinner"),
+                      contacts.map((entry) => entry.actor),
                       saved.contacts || [],
                       player(),
+                      (actor) => (contacts.find((entry) => entry.actor === actor).approach.ready ? 0 : 1),
                   )
                 : [];
         const sources = Object.keys(api.SpinnerRecovery?.state?.()?.sources || {}).length;
@@ -170,7 +179,7 @@
     function permitsRecovery(actor) {
         const saved = record();
         if (!saved) return undefined;
-        if (competitor()) return false;
+        if (competitor() || !api.SpinnerRecovery?.requested?.()) return false;
         const recovery = api.SpinnerRecovery?.state?.();
         return (
             Object.values(recovery?.sources || {}).some((s) => same(s.id, actor?.id)) ||

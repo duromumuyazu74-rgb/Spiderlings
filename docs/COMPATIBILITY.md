@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.145.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.146.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -15,7 +15,19 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.146 boundary-triggered recovery and Maid Knight rivalry (2026-10-09)
+
+The same final ZIP passes all 60 native checks and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `67412350bd0c23dbf5875a73496aed4045f8e252` was fetched at `2026-10-08T15:49:46.067Z`. Full acceptance: `<cache>/runs/2026-10-08T15-49-46-084Z-0.92.36-test.146/acceptance.json`. The package has 177 entries and 24,885,789 bytes; SHA-256 `43dcee63defa07dd8fe121f6a3e1b85e350611e1d021a98a59b02ff15d4a2b14`.
+
+Player recovery requires a recorded actual whole-field exit while wearing the leg bag. Interior movement, bag/collar possession alone and unproven old records cannot start it. Contact selection excludes unseen or unreachable uncommitted actors; ranged interception selects real firing positions. Ordinary Maidforce and both native Adventurer-faction Maid Knights join Spiderlings rivalry. Both knights execute native attack attempts without changing their factions.
+
+The copied slot-15 no-escort replay remains inside at `(18,15)` for twelve waits without starting recovery. A bootstrap Logo fetch failure in the first full attempt was retained; the unchanged ZIP passed the complete retry without relaxed checks. See [rule correction and evidence](archive/validation/spiderlings-test146-boundary-recovery.zh-CN.md).
+
+Repository/module checks, 12 policy tests, 774 public tests, the complete 1,102-test local watcher and byte-for-byte package/source verification pass. Full collector `.scratch/delivery/2026-10-08T16-15-06-582Z-FebmL8/REPORT.md` records unchanged source and ZIP bytes. Only outcome documentation was updated afterward, followed by repository checks.
+
 ## Test.145 field custody and recovery (2026-10-08)
+
+Historical behavior: the user subsequently required a real bag-bearing boundary exit. Test.145 interior/off-center recall is superseded by test.146 and is not current acceptance.
 
 The same final ZIP passes all 60 native checks and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `67412350bd0c23dbf5875a73496aed4045f8e252` was freshly fetched at `2026-10-08T14:20:12.604Z`. Full acceptance: `<cache>/runs/2026-10-08T14-20-12-619Z-0.92.36-test.145/acceptance.json`. Final ZIP: 177 entries, 24,884,819 bytes; SHA-256 `a81ca812ade3e508b283d0567f3a175dc196955caa8dc007cd1e1bbaba5a48db`.
 

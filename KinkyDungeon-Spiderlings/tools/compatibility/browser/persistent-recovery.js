@@ -52,7 +52,9 @@
         };
         try {
             for (let cycle = 0; cycle < 2; cycle++) {
+                KDMovePlayer(10, 10, false);
                 KDMovePlayer(14, 10, false);
+                expect(recovery.requested(), "Only a new actual field exit can arm repeated recovery");
                 for (const original of actors) {
                     const actor = KDMapData.Entities.find((entry) => entry.id === original.id);
                     actor.aware = true;

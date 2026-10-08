@@ -47,7 +47,9 @@ function fixture() {
             },
             FieldCommand: { sourceRole: (actor) => (actor.busy ? "capture" : undefined), adoptCustodyCrew() {} },
             SpinnerCapture: { state: () => undefined },
+            SpinnerAI: { attackApproach: (actor) => ({ ready: true, path: actor.blocked ? [] : [actor] }) },
             SpinnerRecovery: {
+                requested: () => true,
                 state: () => undefined,
                 departure: () => c.KDGameData.SpiderlingsSpinnerRecoveryDeparture,
             },
@@ -130,4 +132,31 @@ test("active recovery sources fill the contact team instead of recruiting anothe
     assert.equal(r.api.state().status, "recovering");
     assert.equal(r.api.permitsRecovery(r.actors[0]), true);
     assert.equal(r.api.permitsRecovery(r.actors[2]), false);
+});
+
+test("custody only recruits contacts after recovery receives an actual departure", () => {
+    const r = fixture();
+    r.api.capture("field", 77);
+    r.c.Spiderlings.SpinnerRecovery.requested = () => false;
+    r.api.prepare();
+    assert.equal(r.api.state().contacts.length, 0);
+    assert.equal(r.api.permitsRecovery(r.actors[0]), false);
+    r.player.leash = { entity: 201, reason: "Default" };
+    r.api.prepare();
+    assert.equal(r.api.state().defenders.length, 2, "Interception remains independent of departure");
+});
+
+test("blocked or unseen uncommitted contacts give their slots to reachable visible members", () => {
+    const r = fixture();
+    r.api.capture("field", 77);
+    r.api.prepare();
+    const prior = [...r.api.state().contacts];
+    for (const actor of r.actors) if (prior.includes(actor.id)) actor.blocked = true;
+    r.api.prepare();
+    assert.ok(r.api.state().contacts.every((id) => !prior.includes(id)));
+    for (const actor of r.actors) actor.blocked = false;
+    const replacement = [...r.api.state().contacts];
+    r.c.KDCanDetect = (actor) => !replacement.includes(actor.id);
+    r.api.prepare();
+    assert.ok(r.api.state().contacts.every((id) => !replacement.includes(id)));
 });
