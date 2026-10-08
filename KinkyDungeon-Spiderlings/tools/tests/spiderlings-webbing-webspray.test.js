@@ -420,6 +420,7 @@ function loadRuntime(options = {}) {
     for (const source of options.nativeSources || []) vm.runInContext(stripTypeScriptTypes(source), context);
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsNativeActions.js",
         "SpiderlingsPopulation.js",
         "SpiderlingsEncounters.js",
         "SpiderlingsWebCaster.js",

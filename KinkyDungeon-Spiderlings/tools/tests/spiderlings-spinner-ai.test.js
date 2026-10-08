@@ -209,6 +209,7 @@ function runtime(entities = []) {
     context.window = context;
     vm.createContext(context);
     load(context, "SpiderlingsCore.js");
+    load(context, "SpiderlingsNativeActions.js");
     load(context, "SpiderlingsSpinnerTopology.js");
     load(context, "SpiderlingsSpinnerNativeField.js");
     load(context, "SpiderlingsSpinnerPassagePlanner.js");

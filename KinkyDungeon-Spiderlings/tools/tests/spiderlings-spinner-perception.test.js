@@ -329,6 +329,7 @@ test("native positive sneak publishes first recognition even without beforemove 
         enemy.vp += delta * 0.6;
         return context.KinkyDungeonTrackSneak(enemy, delta, target);
     };
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsNativeActions.js"), "utf8"), context);
     vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsSpinnerRuntime.js"), "utf8"), context);
     r.scout.vp = 0;
     assert.equal(context.KinkyDungeonEnemyLoop(r.scout, r.player, 0), 0);

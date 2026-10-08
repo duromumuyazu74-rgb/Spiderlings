@@ -269,22 +269,18 @@ const SPIDERLINGS = globalThis.Spiderlings;
         }
         return false;
     }
-    if (typeof KDAIType != "undefined") {
-        for (const name of ["hunt", "wander"]) {
-            const ai = KDAIType[name];
-            const nativeAfterMove = ai.aftermove;
-            ai.aftermove = function (enemy, player, aiData) {
-                if (zeroTimeUpdate) return nativeAfterMove.apply(this, arguments);
-                return (
-                    nativeAfterMove.apply(this, arguments) ||
-                    SPIDERLINGS.HuntingGrounds.seekCrewDuty?.(enemy, player, aiData) ||
-                    seekRival(enemy, player, aiData) ||
-                    SPIDERLINGS.Infestation?.seekPatrol(enemy, player, aiData) ||
-                    false
-                );
-            };
-        }
-    }
+    SPIDERLINGS.NativeActions.registerBehavior("Rivalry", {
+        aiTypes: ["hunt", "wander"],
+        afterMove(enemy, player, aiData) {
+            if (zeroTimeUpdate) return undefined;
+            return (
+                SPIDERLINGS.HuntingGrounds.seekCrewDuty?.(enemy, player, aiData) ||
+                seekRival(enemy, player, aiData) ||
+                SPIDERLINGS.Infestation?.seekPatrol(enemy, player, aiData) ||
+                false
+            );
+        },
+    });
     KDAddEvent(KDEventMapGeneric, "playerAttack", "SpiderlingsRivalry", (_event, data) => {
         // A committed melee attempt provokes even when it misses.
         if (data.attacker?.player && data.damage?.type !== "heal" && data.damage?.type !== "inert") provoke(data.enemy);

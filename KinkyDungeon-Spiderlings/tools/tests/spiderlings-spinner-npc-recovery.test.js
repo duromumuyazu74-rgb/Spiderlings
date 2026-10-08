@@ -134,6 +134,7 @@ function fixture() {
     context.globalThis = context;
     vm.createContext(context);
     load(context, "SpiderlingsCore.js");
+    load(context, "SpiderlingsNativeActions.js");
     load(context, "SpiderlingsCombat.js");
     load(context, "SpiderlingsSpinnerRecoveryCore.js");
     context.Spiderlings.SpinnerCapture = {
