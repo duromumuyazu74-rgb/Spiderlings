@@ -22,4 +22,6 @@ Preserve unrelated working and staged changes. Complete authorized local work an
 
 Maintain `README.md` in English and `README.zh-CN.md` in Simplified Chinese as equivalent versions, with reciprocal links at the top and matching installation, version and download information.
 
+For field coordination, shared native actions or compatibility-harness changes, use `.agents/skills/spiderlings-modularity/SKILL.md` and the ownership contracts in `docs/MODULES.md`.
+
 For library, SDK, API or CLI usage questions, fetch current documentation through Context7 first; if unavailable use the official source. Ordinary business-logic work does not require a documentation lookup.

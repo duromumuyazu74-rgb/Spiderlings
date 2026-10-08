@@ -42,6 +42,10 @@ To verify an existing package against the checked-out commit without rebuilding 
 powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-spiderlings-release.ps1 -VerifyOnly -PackagePath .\Spiderlings_<modbuild>.zip
 ```
 
+## Module changes
+
+Read [MODULES.md](MODULES.md) for state owners, native registration and scenario environment contracts. Use `npm run check:modules` and `npm run test:affected -- --base <starting-commit>` for development feedback. The latter runs mapped public tests and reports native follow-up scenes using the existing registry; shared or unclassified changes keep full public coverage. Final package gates remain defined by CONTRIBUTING.
+
 ## Dual-version runtime acceptance
 
 Runtime deliveries require the same final ZIP to pass KD 5.4.92 and the latest official GitHub `5.5` commit, as specified in [CONTRIBUTING.md](../CONTRIBUTING.md#verification). Install the locked maintenance dependencies with `npm ci` and have Google Chrome available. Configure two absolute paths outside the Mod checkout:
@@ -74,7 +78,7 @@ npm run test:compatibility -- --scenario native-escape
 npm run test:compatibility -- --scenario spinner-art,target-overlay
 ```
 
-Selection includes dependencies automatically, such as `normal-helpers` for `native-escape`, `spinner-inside` for `spinner-art`, and `rune-hit` for `target-overlay`. Names may be comma-separated or supplied in repeated `--scenario` arguments. Unknown names fail before fetching or launching a browser. Listing requires no local game. Selected runs still fetch the latest upstream and exercise both versions, but their reports mark `verification.mode` as `partial`, with requested/executed scenarios and the full-suite size. Even an explicit selection of every name stays partial. Final delivery uses the command without `--scenario`; the delivery collector rejects partial acceptance inputs.
+Selection includes state continuations automatically, such as `spinner-inside` for `spinner-art` and `rune-hit` for `target-overlay`. Code helpers such as `normal-helpers.js` load into each requiring group without becoming an extra selected check. Each independent state group gets a fresh runtime and verifies the same ZIP; explicit continuation checks share their prerequisite's state. Group results, environment preparation and failure attribution are recorded in per-version evidence. Names may be comma-separated or supplied in repeated `--scenario` arguments. Unknown names fail before fetching or launching a browser. Listing requires no local game. Selected runs still fetch the latest upstream and exercise both versions, but their reports mark `verification.mode` as `partial`, with requested/executed scenarios and the full-suite size. Even an explicit selection of every name stays partial. Final delivery uses the command without `--scenario`; the delivery collector rejects partial acceptance inputs.
 
 Native acceptance also verifies custom escape messages from the restraints actually registered in the loaded ZIP. The checker and public regressions use the same native consumer contract for English, all seven locales and item placeholders. New custom suffixes and escape methods therefore acquire required keys automatically.
 
