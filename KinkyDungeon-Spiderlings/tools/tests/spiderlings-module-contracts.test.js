@@ -2,8 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { auditModule, auditRepository, selectAffected } = require("../check-spiderlings-modules.js");
-const suites = require("../test-suites.json");
+const { auditModule, auditRepository } = require("../check-spiderlings-modules.js");
 
 test("module contracts reject cross-owner work, request and structure mutations", () => {
     const cases = [
@@ -72,24 +71,6 @@ test("native phase installation belongs to the shared adapter, including named A
     assert.equal(auditModule(source, "SpiderlingsWebCaster.js").length, 3);
     assert.deepEqual(auditModule(source, "SpiderlingsNativeActions.js"), []);
     assert.deepEqual(auditModule("KDGetDir = wrapped;", "SpiderlingsWebMobility.js"), []);
-});
-
-test("affected tests keep a field-rule edit out of unrelated species visual checks", () => {
-    const selection = selectAffected(["KinkyDungeon-Spiderlings/SpiderlingsFieldProjects.js"], suites);
-    assert.ok(selection.tests.includes("spiderlings-field-permits.test.js"));
-    assert.ok(selection.scenarios.includes("field-permits"));
-    assert.ok(!selection.scenarios.includes("webcaster"));
-    assert.ok(!selection.tests.includes("spiderlings-mage-visuals.test.js"));
-    assert.deepEqual(selection.unknown, []);
-});
-
-test("affected tests preserve full public coverage for changes without an owned selection", () => {
-    const selection = selectAffected(["KinkyDungeon-Spiderlings/SpiderlingsCore.js"], suites);
-    assert.ok(suites.public.every((file) => selection.tests.includes(file)));
-    assert.deepEqual(selection.unknown, ["KinkyDungeon-Spiderlings/SpiderlingsCore.js"]);
-    assert.deepEqual(selectAffected(["docs/RUNTIME.md"], suites).tests, []);
-    const ownTest = selectAffected(["KinkyDungeon-Spiderlings/tools/tests/spiderlings-field-permits.test.js"], suites);
-    assert.ok(ownTest.tests.includes("spiderlings-field-permits.test.js"));
 });
 
 test("packaged runtime satisfies the recorded module ownership contracts", () => {

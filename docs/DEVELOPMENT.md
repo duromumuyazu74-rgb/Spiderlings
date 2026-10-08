@@ -44,7 +44,7 @@ powershell -ExecutionPolicy Bypass -File .\KinkyDungeon-Spiderlings\tools\build-
 
 ## Module changes
 
-Read [MODULES.md](MODULES.md) for state owners, native registration and scenario environment contracts. Use `npm run check:modules` and `npm run test:affected -- --base <starting-commit>` for development feedback. The latter runs mapped public tests and reports native follow-up scenes using the existing registry; shared or unclassified changes keep full public coverage. Final package gates remain defined by CONTRIBUTING.
+Read [MODULES.md](MODULES.md) for state owners, native registration and scenario environment contracts. Use `npm run check:modules` and preview `npm run test:affected -- --base <starting-commit> --plan` for development feedback. Omit `--plan` to run selected public tests; add `--include-local` for selected native-source/art contracts. The plan reports native game scenes separately and includes real state consumers/prerequisites. Runtime modules have explicit profiles; proven same-path field edits can use narrower behavior profiles. Unknown inputs stop with `needs-mapping`, while explicitly shared infrastructure retains justified broad coverage. Final package gates remain defined by CONTRIBUTING.
 
 ## Dual-version runtime acceptance
 

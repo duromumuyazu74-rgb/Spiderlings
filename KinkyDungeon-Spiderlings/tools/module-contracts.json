@@ -23,81 +23,17 @@
     }
   ],
   "nativeOwners": [
-    { "root": "KDAIType", "owners": ["SpiderlingsNativeActions.js"] },
-    { "root": "KDGetDir", "owners": ["SpiderlingsNativeActions.js", "SpiderlingsWebMobility.js"] },
+    {
+      "root": "KDAIType",
+      "owners": ["SpiderlingsNativeActions.js"]
+    },
+    {
+      "root": "KDGetDir",
+      "owners": ["SpiderlingsNativeActions.js", "SpiderlingsWebMobility.js"]
+    },
     {
       "root": "KinkyDungeonEnemyLoop",
       "owners": ["SpiderlingsNativeActions.js", "SpiderlingsCombat.js", "SpiderlingsNPCAdhesion.js"]
     }
-  ],
-  "areas": {
-    "field": {
-      "files": [
-        "SpiderlingsFieldCommand.js",
-        "SpiderlingsFieldProjects.js",
-        "SpiderlingsSpinnerAI.js",
-        "SpiderlingsSpinnerDuties.js",
-        "SpiderlingsSpinnerTopology.js",
-        "SpiderlingsSpinnerNativeField.js",
-        "SpiderlingsSpinnerRollout.js",
-        "SpiderlingsSpinnerPassagePlanner.js"
-      ],
-      "tests": [
-        "spiderlings-spinner-ai.test.js",
-        "spiderlings-field-permits.test.js",
-        "spiderlings-spinner-work-obstruction.test.js",
-        "spiderlings-spinner-native-field.test.js",
-        "spiderlings-spinner-enclosure.test.js",
-        "spiderlings-spinner-passage.test.js",
-        "spiderlings-spinner-passage-planner.test.js",
-        "spiderlings-spinner-rollout.test.js",
-        "spiderlings-spinner-capture.test.js",
-        "spiderlings-spinner-recovery.test.js",
-        "spiderlings-spinner-npc-capture.test.js",
-        "spiderlings-spinner-npc-recovery.test.js"
-      ],
-      "scenarios": [
-        "field-command",
-        "field-reinforcement",
-        "field-permits",
-        "field-project-lifecycle",
-        "spinner-work",
-        "saved-field-guard",
-        "spinner-maintenance"
-      ]
-    },
-    "native-actions": {
-      "files": ["SpiderlingsNativeActions.js", "SpiderlingsSpinnerRuntime.js"],
-      "tests": [
-        "spiderlings-native-actions.test.js",
-        "spiderlings-runtime-boundaries.test.js",
-        "spiderlings-spinner-work-obstruction.test.js",
-        "spiderlings-spinner-capture.test.js",
-        "spiderlings-spinner-recovery.test.js",
-        "spiderlings-spinner-npc-capture.test.js",
-        "spiderlings-spinner-npc-recovery.test.js",
-        "spiderlings-webbing-enemy.test.js",
-        "spiderlings-web-mobility.test.js"
-      ],
-      "scenarios": [
-        "webcaster",
-        "web-mobility",
-        "crew-native-duties",
-        "field-command",
-        "spinner-crowded-control",
-        "cocoon-vigil",
-        "action-cadence"
-      ]
-    },
-    "webcaster": {
-      "files": ["SpiderlingsWebCaster.js"],
-      "tests": ["spiderlings-webbing-enemy.test.js", "spiderlings-runtime-boundaries.test.js"],
-      "scenarios": ["webcaster", "orphan-spray", "npc-cooperation"]
-    },
-    "scenarios": {
-      "files": ["tools/verify-kd-compatibility.js", "tools/compatibility/"],
-      "tests": ["spiderlings-kd-compatibility.test.js", "spiderlings-delivery-evidence.test.js"],
-      "scenarios": []
-    }
-  }
+  ]
 }
