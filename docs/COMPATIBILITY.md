@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.133.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.134.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.134 field reinforcement and Spinner population permits (2026-10-08)
+
+The same final ZIP passes all 59 native stages and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `dbfd74e08679b3a3935f1883f3e8cf2961d94f13` was freshly fetched at `2026-10-08T03:29:30.166Z`. Full acceptance: `<cache>/runs/2026-10-08T03-29-30-191Z-0.92.36-test.134/acceptance.json`. Final ZIP: 175 entries, 24,877,599 bytes; SHA-256 `863bf7465824ddad9383e0fc299346c5ba86c27d15fc574ccb55a85221310887`.
+
+Approaching an unmanned ready field requests preparation staff before core entry. Urgent demands can safely redirect lower-priority loans, same-field duties reuse their loan, and arrived/usable staff are distinguished from promised or blocked members. Paid friendly yielding and perceived hostile-blocker combat restore executable construction. New independent fields require both `floor(n / 4)` Spinner population permits and the configured maximum; existing invested fields survive reductions.
+
+The unchanged copied Infestation encounter reaches first paid work in two turns and native Capture in six, compared with seven and fourteen under test.133 with the same replay seed. Small-crew native fixtures retain their actionable crew and add disabled residents for population permits; blocker and action-payment assertions remain. Render checks wait for the native fade-in phase instead of a fixed wall-clock frame, preserving direction, texture and opacity assertions. Earlier incomplete runs remain preserved. See [implementation and saved-encounter scope](spiderlings-test134-field-reinforcement.zh-CN.md).
+
+Repository checks, 12 policy tests, 719 public tests, the complete 1046-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-08T04-05-52-859Z-JiQRc4/REPORT.md` records unchanged source and package bytes. Only outcome documentation was added afterward, followed by repository and whitespace checks.
 
 ## Test.133 field replacement review fixes (2026-10-08)
 

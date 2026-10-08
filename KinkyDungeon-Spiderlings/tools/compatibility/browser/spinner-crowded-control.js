@@ -120,8 +120,8 @@
         const actors = [
                 spawn("Spinner", 5, 9),
                 spawn("Spinner", 6, 11),
-                spawn("Spinner", 23, 9),
-                spawn("Spinner", 24, 11),
+                spawn("Spinner", 22, 9),
+                spawn("Spinner", 23, 11),
             ],
             reporter = spawn("WebCaster", 14, 8),
             row = { mode: "two-crews", paid: [], turns: [], hits: 0 };
@@ -130,11 +130,14 @@
         reporter.movePoints = -1000;
         reporter.Enemy = { ...reporter.Enemy, noAttack: true, spells: [] };
         reporter.modified = true;
+        globalThis.normalAcceptance.addDisabledSpinnerReserves(2);
         const placed = Spiderlings.SpinnerAI.initializeMapgenField({
             maxFields: 2,
             preferredSites: [
                 { x: 6, y: 10 },
-                { x: 23, y: 10 },
+                // Both outer boundaries are four cells from the player. This
+                // checks equal-demand cooperation; urgent preemption has its own scene.
+                { x: 22, y: 10 },
             ],
         });
         expect(placed.fields?.length === 2, `Fixture did not create two staffed fields: ${JSON.stringify(placed)}`);

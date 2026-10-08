@@ -110,6 +110,65 @@
             Spiderlings.Population.prepareFloor = original;
         }
     };
+    const addDisabledSpinnerReserves = (minimumPermits = 1) => {
+        // A small active crew still needs the new map-wide population permit.
+        // These distant disabled enemies count as living population without
+        // joining work, pressure or capture in the behavior under test.
+        const living = KDMapData.Entities.filter(
+            (actor) =>
+                actor.hp > 0 &&
+                actor.Enemy.name === "Spinner" &&
+                KDHostile(actor) &&
+                !KDAllied(actor) &&
+                !KDIsInParty(actor) &&
+                !KDIsImprisoned(actor),
+        );
+        const count = Math.max(0, minimumPermits * 4 - living.length);
+        const cells = [];
+        for (let y = 1; y < KDMapData.GridHeight - 1; y++)
+            for (let x = 1; x < KDMapData.GridWidth - 1; x++)
+                if (
+                    KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y)) &&
+                    !KinkyDungeonEntityAt(x, y) &&
+                    (x !== KDPlayer().x || y !== KDPlayer().y)
+                )
+                    cells.push({
+                        x,
+                        y,
+                        clearance: [-1, 0, 1].reduce(
+                            (total, dx) =>
+                                total +
+                                [-1, 0, 1].filter((dy) =>
+                                    KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x + dx, y + dy)),
+                                ).length,
+                            0,
+                        ),
+                        distance: Math.min(
+                            ...living.map((actor) => Math.max(Math.abs(actor.x - x), Math.abs(actor.y - y))),
+                        ),
+                    });
+        cells.sort(
+            (left, right) =>
+                right.clearance - left.clearance ||
+                right.distance - left.distance ||
+                left.y - right.y ||
+                left.x - right.x,
+        );
+        expect(cells.length >= count, "Field permit fixture has no room for disabled reserve population");
+        const reserves = cells.slice(0, count).map((cell) => {
+            const actor = spawn("Spinner", cell.x, cell.y);
+            actor.hostile = 999;
+            actor.aware = false;
+            actor.vp = 0;
+            actor.stun = 10000;
+            return actor;
+        });
+        expect(
+            Spiderlings.FieldProjects.permits() >= minimumPermits,
+            "Disabled living reserves did not supply population permits",
+        );
+        return reserves;
+    };
     globalThis.normalAcceptance = {
         setup,
         spawn,
@@ -124,6 +183,7 @@
         line,
         registerPackagedScript,
         withPopulationBudget,
+        addDisabledSpinnerReserves,
     };
     return { initialized: true };
 })();

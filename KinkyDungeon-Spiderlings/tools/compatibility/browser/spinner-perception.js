@@ -28,6 +28,7 @@
         expect(ratio > 0, "Native sneak threshold could not be sampled");
         scout.vp = 0.7 / ratio;
         KDMapData.Entities = reverse ? [helper, scout] : [scout, helper];
+        globalThis.normalAcceptance.addDisabledSpinnerReserves();
         KDUpdateEnemyCache = true;
         return { scout, helper };
     };
@@ -172,6 +173,7 @@
     builder.aware = false;
     builder.vp = 0;
     builder.hostile = 999;
+    globalThis.normalAcceptance.addDisabledSpinnerReserves();
     Spiderlings.SpinnerAI.beginTurn({ activate: true });
     for (let tick = 0; tick < 40; tick++) {
         await turn();

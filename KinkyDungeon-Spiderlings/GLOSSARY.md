@@ -1,6 +1,6 @@
 # KD Spiderlings
 
-This glossary defines the field-command terms settled in the current design discussion.
+This glossary defines the field-command terms used by the current implementation.
 
 ## Field command
 
@@ -19,6 +19,14 @@ _Avoid_: every web tile, one concentric ring equals one field
 **Field project**:
 The ongoing work to construct, repair and operate a capture field. A project's investment includes work already completed, while its remaining work describes what is still needed.
 _Avoid_: one-time site selection, a moving copy of the target
+
+**Field permit**:
+Population authorization for one independent capture field. The current map grants `floor(n / 4)` permits for its living hostile Spinners, excluding allied, party and imprisoned actors. Temporary incapacity and existing duties retain population membership. New deployments must fit both this permit count and the configured maximum. Concentric rings share one permit; a lower count pauses new deployment without removing existing fields.
+_Avoid_: overwriting the configured limit, four active builders required per field, permission to spawn more Spinners
+
+**Field readiness**:
+Preparation staff requested when a character is within four reachable steps of a field boundary or inside its outer area. Arrival and the ability to serve the current target remain separate from a promise of support. Entering the capture core still requires native closure and a qualifying melee hit to begin Capture.
+_Avoid_: proximity capture, travelling helpers counted as arrived, global planning granting combat perception
 
 **Field retirement**:
 The deliberate ending of a field project and its active management, releasing its capture-field slot and leaving residual webs. Retirement is distinct from waiting for workers or recovering from a temporary obstruction.

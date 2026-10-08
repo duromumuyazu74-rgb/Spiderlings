@@ -43,6 +43,7 @@
                     target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
                     target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target, delta) || target;
                     target = api.SpinnerAI?.recoveryTarget?.(enemy, target, delta) || target;
+                    target = api.SpinnerAI?.constructionTarget?.(enemy, target, delta) || target;
                     arguments[1] = target;
                     if (api.SpinnerNativeField.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };

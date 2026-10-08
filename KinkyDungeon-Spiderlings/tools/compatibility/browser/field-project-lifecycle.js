@@ -25,6 +25,7 @@
         worker.aware = true;
         worker.vp = 10;
         worker.AI = "guard";
+        globalThis.normalAcceptance.addDisabledSpinnerReserves();
         const placed = Spiderlings.SpinnerNativeField.addEnclosure({
             compositeId: "retained-small-native",
             owners: [worker.id],

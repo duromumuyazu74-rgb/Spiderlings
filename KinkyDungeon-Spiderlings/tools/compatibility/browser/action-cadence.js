@@ -79,6 +79,7 @@
                 if (action === "construction") {
                     source.aware = false;
                     source.vp = 0;
+                    globalThis.normalAcceptance.addDisabledSpinnerReserves();
                     Spiderlings.SpinnerAI.beginTurn({ activate: true });
                 }
                 KDUpdateEnemyCache = true;
