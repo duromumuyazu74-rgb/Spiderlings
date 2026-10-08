@@ -7,6 +7,7 @@ import * as prettier from "prettier";
 import { firstPrivateCommit, unchangedPackageMoves } from "./migration-checks.mjs";
 import referenceInputs from "../../KinkyDungeon-Spiderlings/tools/reference-inputs.js";
 import moduleContracts from "../../KinkyDungeon-Spiderlings/tools/check-spiderlings-modules.js";
+import testImpact from "../../KinkyDungeon-Spiderlings/tools/test-impact.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const policy = JSON.parse(readFileSync(new URL("../repository-policy.json", import.meta.url), "utf8"));
@@ -172,6 +173,8 @@ async function main() {
     if (!chinese.split("\n").slice(0, 6).join("\n").includes("](README.md)"))
         errors.push("Chinese README must link to English at the top");
     const manifest = JSON.parse(readFileSync("KinkyDungeon-Spiderlings/mod.json", "utf8").replace(/^\uFEFF/, ""));
+    const suites = JSON.parse(readFileSync("KinkyDungeon-Spiderlings/tools/test-suites.json", "utf8"));
+    errors.push(...testImpact.validateMappings(suites, manifest));
     for (const file of manifest.fileorder) {
         if (file.includes("..") || path.isAbsolute(file) || !existsSync(path.join("KinkyDungeon-Spiderlings", file))) {
             errors.push(`Manifest entry is unsafe or missing: ${file}`);

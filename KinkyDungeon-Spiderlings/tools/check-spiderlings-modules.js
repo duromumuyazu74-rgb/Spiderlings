@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 const contracts = require("./module-contracts.json");
-const { selectScenarios } = require("./compatibility/scenarios.js");
+const { selectAffected } = require("./test-impact.js");
 
 function auditModule(text, filename, policy = contracts) {
     const source = ts.createSourceFile(filename, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
@@ -161,50 +161,6 @@ function auditRepository(root = path.resolve(__dirname, "..")) {
     return manifest.fileorder
         .filter((file) => file.endsWith(".js"))
         .flatMap((file) => auditModule(fs.readFileSync(path.join(root, file), "utf8"), file));
-}
-
-function selectAffected(files, suites, policy = contracts) {
-    const tests = new Set(),
-        scenarios = new Set(),
-        areas = new Set(),
-        unknown = [];
-    const catalog = selectScenarios().checks;
-    let nativeScope = "focused";
-    for (const raw of files) {
-        const file = raw.replaceAll("\\", "/").replace(/^KinkyDungeon-Spiderlings\//, "");
-        if (/\.md$/.test(file) || file.startsWith(".agents/")) continue;
-        if (file.startsWith("tools/tests/") && suites.public.includes(path.posix.basename(file))) {
-            tests.add(path.posix.basename(file));
-            continue;
-        }
-        const matched = Object.entries(policy.areas).filter(([, area]) =>
-            area.files.some((entry) => (entry.endsWith("/") ? file.startsWith(entry) : file === entry)),
-        );
-        if (!matched.length) unknown.push(raw);
-        for (const [name, area] of matched) {
-            areas.add(name);
-            area.tests.forEach((test) => tests.add(test));
-            area.scenarios.forEach((scene) => scenarios.add(scene));
-        }
-        if (file.startsWith("tools/compatibility/browser/") && file.endsWith(".js")) {
-            const script = path.posix.basename(file);
-            catalog
-                .filter((check) => check.file === script || check.helpers?.includes(script))
-                .forEach((check) => scenarios.add(check.name));
-        } else if (matched.some(([name]) => name === "scenarios")) nativeScope = "full";
-    }
-    if (unknown.length) {
-        suites.public.forEach((test) => tests.add(test));
-        nativeScope = "full";
-    }
-    if (tests.size) tests.add("spiderlings-module-contracts.test.js");
-    return {
-        tests: [...tests].sort(),
-        scenarios: [...scenarios].sort(),
-        areas: [...areas].sort(),
-        unknown,
-        nativeScope,
-    };
 }
 
 module.exports = { auditModule, auditRepository, selectAffected };
