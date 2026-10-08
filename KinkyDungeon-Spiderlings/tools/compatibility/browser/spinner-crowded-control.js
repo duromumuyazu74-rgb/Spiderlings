@@ -130,7 +130,7 @@
         reporter.movePoints = -1000;
         reporter.Enemy = { ...reporter.Enemy, noAttack: true, spells: [] };
         reporter.modified = true;
-        globalThis.normalAcceptance.addDisabledSpinnerReserves(2);
+        globalThis.normalAcceptance.prepareCrew({ actors, fieldPermits: 2 });
         const placed = Spiderlings.SpinnerAI.initializeMapgenField({
             maxFields: 2,
             preferredSites: [

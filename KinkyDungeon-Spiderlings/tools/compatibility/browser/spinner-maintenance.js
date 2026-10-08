@@ -255,7 +255,7 @@
         construction = { mode: "sole-builder-contact", actions: [], turns: [] };
     rows.push(construction);
     prey.stun = 999;
-    globalThis.normalAcceptance.addDisabledSpinnerReserves();
+    globalThis.normalAcceptance.prepareCrew({ actors: [worker], fieldPermits: 1 });
     ai.beginTurn({ activate: true });
     const apply = native.applyPaidAction;
     native.applyPaidAction = function (actor, action) {

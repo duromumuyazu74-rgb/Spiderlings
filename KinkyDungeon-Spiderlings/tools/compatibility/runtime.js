@@ -51,9 +51,9 @@ async function createRuntime(game, output) {
     });
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const temporary = path.join(output, "browser-temp");
-    await fs.mkdir(temporary, { recursive: true });
     let browser;
     try {
+        await fs.mkdir(temporary, { recursive: true });
         browser = await chromium.launch({
             headless: true,
             channel: "chrome",
@@ -112,13 +112,19 @@ async function createRuntime(game, output) {
                 throw new Error(`Assets did not settle: ${JSON.stringify(diagnostics.pendingAssets())}`);
             },
             async close() {
-                await browser.close();
-                await new Promise((resolve) => server.close(resolve));
+                try {
+                    await browser.close();
+                } finally {
+                    await new Promise((resolve) => server.close(resolve));
+                }
             },
         };
     } catch (error) {
-        await browser?.close();
-        await new Promise((resolve) => server.close(resolve));
+        try {
+            await browser?.close();
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
+        }
         throw error;
     }
 }

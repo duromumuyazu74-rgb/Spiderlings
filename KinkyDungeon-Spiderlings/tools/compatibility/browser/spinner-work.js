@@ -44,7 +44,7 @@
                 source.Enemy = { ...source.Enemy, visionRadius: 0 };
                 source.modified = true;
             }
-            globalThis.normalAcceptance.addDisabledSpinnerReserves();
+            globalThis.normalAcceptance.prepareCrew({ actors, fieldPermits: 1 });
             Spiderlings.SpinnerAI.beginTurn({ activate: true });
             row = { count, actions: [], turns: [], reload: undefined };
             rows.push(row);
@@ -357,7 +357,7 @@
     setup("mapgen-outer-body");
     KDMovePlayer(28, 18, false);
     const presetActors = [spawn("Spinner", 12, 8), spawn("Spinner", 14, 8)];
-    const presetReserves = globalThis.normalAcceptance.addDisabledSpinnerReserves();
+    const presetCrew = globalThis.normalAcceptance.prepareCrew({ actors: presetActors, fieldPermits: 1 });
     const preset = Spiderlings.SpinnerAI.initializeMapgenField({ preferredSites: [{ x: 14, y: 10 }] });
     expect(preset.status === "placed", "The legal mapgen outer field was not generated");
     const presetState = Spiderlings.SpinnerNativeField.state(),
@@ -390,8 +390,7 @@
         "Temporary dispatch lost prefab members' original physical ownership",
     );
     expect(
-        KDMapData.Entities.filter((source) => source.Enemy?.name === "Spinner").length ===
-            presetActors.length + presetReserves.length,
+        KDMapData.Entities.filter((source) => source.Enemy?.name === "Spinner").length === presetCrew.population.length,
         "Field creation granted uncontrolled Spinner reinforcement",
     );
     const coreDefense = await (async () => {
@@ -472,7 +471,7 @@
                     actor.aware = false;
                     actor.vp = 0;
                 }
-                globalThis.normalAcceptance.addDisabledSpinnerReserves();
+                globalThis.normalAcceptance.prepareCrew({ actors, fieldPermits: 1 });
                 const preset = Spiderlings.SpinnerAI.initializeMapgenField({ preferredSites: [{ x: 14, y: 10 }] }),
                     encounter = Spiderlings.SpinnerNativeField.state(),
                     group = encounter.ai.groups[preset.groupId],

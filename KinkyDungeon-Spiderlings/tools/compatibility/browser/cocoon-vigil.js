@@ -89,7 +89,7 @@
         actor.AI = "guard";
         actor.hostile = 999;
     }
-    globalThis.normalAcceptance.addDisabledSpinnerReserves();
+    globalThis.normalAcceptance.prepareCrew({ actors: controlled, fieldPermits: 1 });
     Spiderlings.SpinnerAI.beginTurn({ activate: true });
     expect(
         Object.values(Spiderlings.FieldCommand.inspect().members).length >= 3,

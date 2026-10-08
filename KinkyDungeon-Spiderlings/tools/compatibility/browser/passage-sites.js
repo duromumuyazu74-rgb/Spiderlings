@@ -184,7 +184,7 @@
             KDUpdateEnemyCache = true;
         }
         row.initialActors = actors.map((actor) => ({ id: actor.id, x: actor.x, y: actor.y }));
-        globalThis.normalAcceptance.addDisabledSpinnerReserves();
+        globalThis.normalAcceptance.prepareCrew({ actors, fieldPermits: 1 });
         ai.beginTurn({ activate: true });
         row.originalHomes = Object.fromEntries(
             row.initialActors.map(({ id }) => [id, Spiderlings.FieldCommand.inspect().members[id]?.home]),
@@ -579,7 +579,7 @@
             const blocker = spawn("Maidforce", blockerX, 7);
             worker.aware = false;
             worker.vp = 0;
-            globalThis.normalAcceptance.addDisabledSpinnerReserves();
+            globalThis.normalAcceptance.prepareCrew({ actors: [worker], fieldPermits: 1 });
             KDUpdateEnemyCache = true;
             ai.beginTurn({ activate: true });
             const plan = passagePlans()[0];

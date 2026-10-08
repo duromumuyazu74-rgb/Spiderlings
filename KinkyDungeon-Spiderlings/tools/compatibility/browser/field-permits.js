@@ -1,5 +1,5 @@
 (async () => {
-    const { setup, spawn, expect } = globalThis.normalAcceptance;
+    const { setup, spawn, expect, prepareCrew } = globalThis.normalAcceptance;
     const oldLimit = KDModSettings.Spiderlings.spiderlingsCaptureFieldLimit;
     const projects = Spiderlings.FieldProjects;
     const native = Spiderlings.SpinnerNativeField;
@@ -18,7 +18,7 @@
         KDMapData.EndPosition = { x: 42, y: 24 };
         KDMovePlayer(2, 23, false);
         KinkyDungeonGenNavMap();
-        return Array.from({ length: count }, (_, index) => {
+        const actors = Array.from({ length: count }, (_, index) => {
             const site = { x: index < 4 ? 8 : 30, y: 10 };
             const actor = spawn("Spinner", site.x + (index % 2), site.y + (Math.floor(index / 2) % 2));
             actor.SpiderlingsPresetFieldCenter = site;
@@ -29,6 +29,12 @@
             actor.modified = true;
             return actor;
         });
+        const crew = prepareCrew({ actors });
+        expect(
+            crew.population.length === count && crew.reserves.length === 0,
+            "Permit threshold fixture changed real population",
+        );
+        return crew.actors;
     };
     try {
         for (const [count, setting] of [

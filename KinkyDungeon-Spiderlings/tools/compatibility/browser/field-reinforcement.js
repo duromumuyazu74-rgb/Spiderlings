@@ -1,5 +1,5 @@
 (async () => {
-    const { setup, spawn, turn, expect } = globalThis.normalAcceptance;
+    const { setup, spawn, turn, expect, prepareCrew } = globalThis.normalAcceptance;
     const oldLimit = KDModSettings.Spiderlings.spiderlingsCaptureFieldLimit;
     const native = Spiderlings.SpinnerNativeField;
     const command = Spiderlings.FieldCommand;
@@ -64,6 +64,11 @@
             unaware(spawn("Spinner", 25, 9)),
         ];
         for (const actor of crew.slice(1)) actor.stun = 100;
+        const prepared = prepareCrew({ actors: crew });
+        expect(
+            prepared.population.length === 4 && prepared.actionable.length === 1 && prepared.reserves.length === 0,
+            "Reassignment fixture must retain four real Spinners with one actionable worker",
+        );
         command.reconcile(encounter, KDMapData.Entities, {}, true);
         for (const request of Object.values(encounter.command.requests)) request.closed = true;
         const remote = command.newGroup(encounter.ai);
