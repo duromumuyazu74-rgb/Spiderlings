@@ -100,4 +100,4 @@ Mage 坠牢蓄力由三回合改为五回合，成功爆发后仍冷却七回合
 
 原生模拟脚本及 JSON 位于工作树的忽略目录 `.scratch/native-escape-redesign/`：`calibrated.js`、`families.js`、`arm-cut.js`、`weapons.js`、`weapon-combat.js`、`ecology.js` 及 `baseline/`、`github/` 结果。Arm 小范围参数扫描属于校准反事实，最终结果须由打包后的正常定义再次验证。正式可重跑的 `native-escape` 场景随仓库交付，覆盖普通面板、完整内层、真实无工具、查询无进度及旧存档迁移；`player-recovery` 覆盖付费接力、断根和实际追击，`mage-timing` 覆盖固定截止时间。
 
-最终 ZIP、双版本运行证据和检查汇总记录于 [COMPATIBILITY.md](COMPATIBILITY.md)。这些场景验证已描述的行为；完整玩家新局和其他 Mod 组合仍是后续体验观察的范围。
+最终 ZIP、双版本运行证据和检查汇总记录于 [COMPATIBILITY.md](../../COMPATIBILITY.md)。这些场景验证已描述的行为；完整玩家新局和其他 Mod 组合仍是后续体验观察的范围。

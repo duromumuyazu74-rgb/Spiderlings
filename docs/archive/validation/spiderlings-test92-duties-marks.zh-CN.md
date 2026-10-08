@@ -17,4 +17,4 @@
 
 ## 验证
 
-完整交付结果及最终 ZIP 的双版本证据见 [COMPATIBILITY.md](COMPATIBILITY.md)。候选调试中 Mage 的叠层、消层、间隔、读档和图标已在 KD 5.4.92 与官方 5.5.3 验证；交付仍以最终包验收为准。
+完整交付结果及最终 ZIP 的双版本证据见 [COMPATIBILITY.md](../../COMPATIBILITY.md)。候选调试中 Mage 的叠层、消层、间隔、读档和图标已在 KD 5.4.92 与官方 5.5.3 验证；交付仍以最终包验收为准。

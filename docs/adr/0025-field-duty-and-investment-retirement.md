@@ -10,4 +10,4 @@
 
 持续停工时先更换合法工位或可行动施工者，再请求支援；仍不能推进时报告实际阻塞原因并重新评价工程，短暂受阻不直接退役。无人使用且不被在用场地共用的退役残网逐渐自然消散，并保留正常破坏途径，避免反复更换工程令地图结构持续累积。
 
-行为选择见[设计访谈](../spinner-field-deepening-interview.zh-CN.md)，interface、生命周期与初始参数见[详细设计](../spinner-field-deepening-design.zh-CN.md)，执行与验收见[实现记录](../spiderlings-test132-field-lifecycle.zh-CN.md)。
+行为选择见[设计访谈](../spinner-field-deepening-interview.zh-CN.md)，interface、生命周期与初始参数见[详细设计](../spinner-field-deepening-design.zh-CN.md)，执行与验收见[实现记录](../archive/validation/spiderlings-test132-field-lifecycle.zh-CN.md)。

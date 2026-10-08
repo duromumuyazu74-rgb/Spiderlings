@@ -16,6 +16,6 @@ AI 测试新增真实 Capture、AI、Topology、NativeField 与 Runtime 的组�
 
 新增 Topology 回归覆盖维修目标被占用、重建冷却、读档、退休和通道入口变化。既有原生 `spinner-maintenance` 场景继续验证两种损伤、真实支付和重建中读档。未增加全局调度或独立的薄分类模块。
 
-四个相关测试文件共 144 项通过。最终包和双版本完整验收结果以 [COMPATIBILITY.md](COMPATIBILITY.md) 及交付报告为准。
+四个相关测试文件共 144 项通过。最终包和双版本完整验收结果以 [COMPATIBILITY.md](../../COMPATIBILITY.md) 及交付报告为准。
 
 最终 test.96 包通过 KD 5.4.92 与新 fetch 的官方 5.5.3 完整验收，各 48 阶段；官方提交为 `960d36d214c36c882a15735bda3c5da3e8b4fcdf`。12 项策略测试、566 项公共测试、887 项完整本地测试及最终 ZIP 核对通过。交付报告位于 `.scratch/delivery/2026-10-05T02-52-07-568Z-eyq7fZ/REPORT.md`。两版原生场景均用七回合修复轻伤、57 回合恢复打穿的多格边界并闭合场地，捕获期间发生实际维修和补线；这些是固定夹具结果。

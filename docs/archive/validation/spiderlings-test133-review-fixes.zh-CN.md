@@ -2,7 +2,7 @@
 
 日期：2026-10-08。状态：三项审查修复、完整双版本验收与本地交付检查通过。
 
-本版本修复 test.132 审查确认的三处问题，沿用 [ADR-0025](adr/0025-field-duty-and-investment-retirement.md) 的行为选择和[场地设计](spinner-field-deepening-design.zh-CN.md)。
+本版本修复 test.132 审查确认的三处问题，沿用 [ADR-0025](../../adr/0025-field-duty-and-investment-retirement.md) 的行为选择和[场地设计](../../spinner-field-deepening-design.zh-CN.md)。
 
 ## 残网寿命终点后的重建
 

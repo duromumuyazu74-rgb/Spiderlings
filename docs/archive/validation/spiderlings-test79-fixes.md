@@ -2,7 +2,7 @@
 
 Tracks the accepted follow-up in [Issue #113](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/113). Test.78 and its evidence remain preserved.
 
-The current package is Test.80. It retains these gameplay fixes and replaces the Test.79 AI-generated silk-ball candidate with the original spider-icon placeholder. The candidate is withdrawn and no longer used; thin silk trails and the spread-web impact remain. Replacement runtime artwork will be supplied by the user and artist. AI-generated assets will not be adopted. Test.79's measurements below remain historical evidence; Test.80 verification is recorded separately in [COMPATIBILITY.md](COMPATIBILITY.md).
+The current package is Test.80. It retains these gameplay fixes and replaces the Test.79 AI-generated silk-ball candidate with the original spider-icon placeholder. The candidate is withdrawn and no longer used; thin silk trails and the spread-web impact remain. Replacement runtime artwork will be supplied by the user and artist. AI-generated assets will not be adopted. Test.79's measurements below remain historical evidence; Test.80 verification is recorded separately in [COMPATIBILITY.md](../../COMPATIBILITY.md).
 
 ## Spinner movement and fields
 
@@ -53,4 +53,4 @@ A prior controlled native scan covered 192 cases: four targets, three seeds and 
 
 Complete body cocoons require native helplessness and independently sufficient surviving player-owned silk from either weapon. Unrelated Slime cannot pay for the transition. Partial binding stays as bands; native recovery removes the cocoon visual. Drawing and zero-time queries do not equip new restraints, add binding or collect an NPC. Mage/hunting silk uses its own ownership predicate for the same final appearance.
 
-Final package verification and the exact fetched game commit are recorded in [COMPATIBILITY.md](COMPATIBILITY.md).
+Final package verification and the exact fetched game commit are recorded in [COMPATIBILITY.md](../../COMPATIBILITY.md).

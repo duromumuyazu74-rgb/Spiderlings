@@ -1,6 +1,6 @@
 # test.110 场地分层指挥实现
 
-根据已确认的[目标设计](spinner-field-command-design.zh-CN.md)及[三项深化](spinner-field-command-strengthening.zh-CN.md)，实现总控、场地 sub AI 与受指挥 Spinner 的层级。任务记录为 [Issue #118](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/118)，领域决定为 [ADR-0024](adr/0024-layered-field-command.md)。
+根据已确认的[目标设计](../../spinner-field-command-design.zh-CN.md)及[三项深化](../../spinner-field-command-strengthening.zh-CN.md)，实现总控、场地 sub AI 与受指挥 Spinner 的层级。任务记录为 [Issue #118](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/118)，领域决定为 [ADR-0024](../../adr/0024-layered-field-command.md)。
 
 ## 运行行为
 

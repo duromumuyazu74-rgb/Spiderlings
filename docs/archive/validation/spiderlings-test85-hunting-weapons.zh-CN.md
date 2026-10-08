@@ -1,6 +1,6 @@
 # 资深 KD 玩家模拟反馈：test.85 楼层狩猎与武器改进
 
-本轮实现已接受的[调查方案](spiderlings-floor-identity-and-weapons-proposal-2026-10-02.zh-CN.md)。这是熟悉 KD 原生规则的玩家策略模拟及原生运行记录，不是真人试玩访谈。当前 checkout 为 `codex/spinner-coordination-20260930`，实现起点为 `c374960f19feb059d5420cba54153d12437361c9`；新的运行包为 `0.92.36-test.85`。
+本轮实现已接受的[调查方案](../../spiderlings-floor-identity-and-weapons-proposal-2026-10-02.zh-CN.md)。这是熟悉 KD 原生规则的玩家策略模拟及原生运行记录，不是真人试玩访谈。当前 checkout 为 `codex/spinner-coordination-20260930`，实现起点为 `c374960f19feb059d5420cba54153d12437361c9`；新的运行包为 `0.92.36-test.85`。
 
 本报告沿用请求中的“侵袭”，对应游戏现有名称“幼蛛侵扰”（Spiderling Infestation）；“猎场”对应“幼蛛猎场”。本轮没有改这两个主题的名称或存档标识。
 
