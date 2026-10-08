@@ -8,7 +8,7 @@ const scenarios = [
     ["spinner-inside", "spinner.js", "inside"],
     ["capture-reload", "capture-reload.js", null, ["spinner-inside"]],
     ["spinner-art", "spinner-art.js", null, ["spinner-inside"]],
-    ["webcaster", "webcaster.js"],
+    ["webcaster", "webcaster.js", null, [], "browser", ["normal-helpers.js"]],
     ["rune-hit", "01-rune-hit.js"],
     ["target-overlay", "02-target-overlay.js", null, ["rune-hit"]],
     ["orphan-spray", "orphan-spray.js"],
@@ -60,9 +60,16 @@ const scenarios = [
         "passage-sites",
         "debug-stairs",
         "floor-weights",
-    ].map((name) => [name, `${name}.js`, null, ["normal-helpers"]]),
+    ].map((name) => [name, `${name}.js`, null, [], "browser", ["normal-helpers.js"]]),
     ["native-locales", null, null, [], "locales"],
-].map(([name, file, variant, dependencies = [], kind = "browser"]) => ({ name, file, variant, dependencies, kind }));
+].map(([name, file, variant, continues = [], kind = "browser", helpers = []]) => ({
+    name,
+    file,
+    variant,
+    continues,
+    helpers,
+    kind,
+}));
 
 function selectScenarios(requested = []) {
     const byName = new Map(scenarios.map((scenario) => [scenario.name, scenario]));
@@ -72,7 +79,7 @@ function selectScenarios(requested = []) {
         if (!scenario) throw new Error(`Unknown scenario: ${name}. Use --list-scenarios.`);
         if (selected.has(name)) return;
         selected.add(name);
-        for (const dependency of scenario.dependencies) include(dependency);
+        for (const dependency of scenario.continues) include(dependency);
     }
     for (const name of requested.length ? requested : byName.keys()) include(name);
     const checks = scenarios.filter((scenario) => selected.has(scenario.name));
@@ -83,6 +90,22 @@ function selectScenarios(requested = []) {
         total: scenarios.length,
         checks,
     };
+}
+
+function stateGroups(checks) {
+    const groups = [],
+        byName = new Map();
+    for (const check of checks) {
+        const parents = [...new Set(check.continues.map((name) => byName.get(name)))];
+        if (parents.some((group) => !group)) throw new Error(`Missing continuation for ${check.name}`);
+        if (parents.length > 1) throw new Error(`Continuation crosses state groups: ${check.name}`);
+        const group = parents[0] || { id: check.name, checks: [], helpers: [] };
+        if (!parents.length) groups.push(group);
+        group.checks.push(check);
+        group.helpers = [...new Set([...group.helpers, ...check.helpers])];
+        byName.set(check.name, group);
+    }
+    return groups;
 }
 
 function parseArguments(args) {
@@ -107,4 +130,4 @@ function parseArguments(args) {
     return options;
 }
 
-module.exports = { selectScenarios, parseArguments };
+module.exports = { selectScenarios, stateGroups, parseArguments };

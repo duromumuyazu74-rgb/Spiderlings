@@ -17,8 +17,9 @@
     KDMapData.StartPosition = { x: 1, y: 7 };
     KDMapData.EndPosition = { x: 31, y: 7 };
     KDMovePlayer(4, 7, false);
-    spawn("Spinner", 3, 7).hostile = 999;
-    globalThis.normalAcceptance.addDisabledSpinnerReserves();
+    const solo = spawn("Spinner", 3, 7);
+    solo.hostile = 999;
+    globalThis.normalAcceptance.prepareCrew({ actors: [solo], fieldPermits: 1 });
     const largeFirst = Spiderlings.SpinnerAI.beginTurn({ activate: true });
     expect(
         Object.values(largeFirst.plans).some(

@@ -18,10 +18,14 @@
     KDPathCache = new Map();
     KDPathCacheIgnoreLocks = new Map();
     const actors = [spawn("Spinner", 9, 5), spawn("Spinner", 11, 5)];
-    // Keep the permit population in the isolated pocket, outside gate jobs and
-    // work routes. Disabled enemies cannot yield if placed on a future gate.
-    const reserves = [spawn("Spinner", 2, 2), spawn("Spinner", 3, 2)];
-    for (const actor of reserves) Object.assign(actor, { hostile: 999, aware: false, vp: 0, stun: 10000 });
+    const { reserves } = globalThis.normalAcceptance.prepareCrew({
+        actors,
+        fieldPermits: 1,
+        reserveCells: [
+            { x: 2, y: 2 },
+            { x: 3, y: 2 },
+        ],
+    });
     const native = Spiderlings.SpinnerNativeField;
     Spiderlings.SpinnerAI.beginTurn({ activate: true });
     const state = () => native.state();

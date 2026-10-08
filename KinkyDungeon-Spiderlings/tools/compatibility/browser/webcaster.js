@@ -1,4 +1,5 @@
 (async () => {
+    const { renderFrame: frame, waitForVisualStage } = globalThis.normalAcceptance;
     KinkyDungeonStartNewGame(false);
     KDMapData.Entities = [];
     KDMapData.Bullets = [];
@@ -12,24 +13,6 @@
     KDMovePlayer(12, 10, false);
     const caster = DialogueCreateEnemy(10, 8, "WebCaster");
     caster.stun = 100;
-    const frame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const waitForVisualStage = async (select) => {
-        const deadline = performance.now() + 12000;
-        let bullets;
-        do {
-            await frame();
-            bullets = select();
-        } while (
-            (!bullets.length ||
-                bullets.some(
-                    (bullet) =>
-                        KinkyDungeonBulletsVisual.get(bullet.spriteID)?.alpha !== 1 ||
-                        !kdpixisprites.get(bullet.spriteID)?.texture?.baseTexture?.valid,
-                )) &&
-            performance.now() < deadline
-        );
-        return bullets;
-    };
     KinkyDungeonAdvanceTime(1);
     const result = [];
     for (const pink of [false, true]) {
