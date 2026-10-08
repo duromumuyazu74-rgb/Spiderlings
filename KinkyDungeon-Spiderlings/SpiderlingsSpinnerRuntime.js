@@ -8,7 +8,9 @@
 
     if (typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => {
+            api.FieldCustody?.observe();
             api.SpinnerAI?.preparePositiveTurn(data?.delta);
+            if (data?.delta > 0) api.FieldCustody?.prepare();
             if (data?.delta > 0) api.SpinnerRollout?.preparePositiveTurn();
             api.SpinnerNPCCapture?.prepareTurn(data?.delta);
             if (data?.delta > 0) api.NPCWrapping?.preemptNativeCapture();
@@ -33,6 +35,7 @@
         KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => {
             api.SpinnerAI?.completePositiveTurn(data?.delta);
             api.SpinnerNativeField.tick(data?.delta);
+            api.FieldCustody?.observe();
             api.SpinnerRecovery?.audit();
             api.SpinnerNPCCapture?.settleTurn(data?.delta);
             if (data?.delta > 0) api.SpinnerNPCRecovery?.audit();
@@ -52,6 +55,7 @@
             api.SpinnerNPCCapture?.afterLoad();
             api.SpinnerNPCRecovery?.afterLoad();
             api.NPCWrapping?.afterLoad();
+            api.FieldCustody?.observe();
         });
         KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
             api.SpinnerNPCCapture?.draw(data);

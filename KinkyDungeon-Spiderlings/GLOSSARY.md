@@ -9,7 +9,7 @@ The highest commander of field deployment and mobile Spiderlings assignments acr
 _Avoid_: omniscient combat AI, independent field-to-field loans
 
 **Field sub AI**:
-The commander responsible for Spinner assignments within one managed capture field. It requests additional support through the global field AI.
+The commander responsible for Spinner assignments within one managed capture field. It requests additional support through the global field AI and coordinates temporary Spiderling attacks on competing prey escorts.
 _Avoid_: commander of every Spiderling species, second simultaneous commander
 
 **Capture field**:
@@ -35,3 +35,11 @@ _Avoid_: temporary pause, automatic deletion on target movement
 **Residual webs**:
 Web structures left after a capture field has retired, without that field's active sealing, capture, recovery or repair management. Unused residual webs gradually dissipate; structures still shared by an active field retain that field's separate role.
 _Avoid_: dormant capture field, new independent web-wall category
+
+**Field custody**:
+The saved attribution of prey captured by a field, independent of its temporary Capture or Recovery sources. Competing NPC escorts do not erase this attribution. The field assigns Spiderlings to attack the escort and resumes recovery when native transport becomes available. A later prison handoff can transfer this attribution; no prison transfer is implemented in the ordinary field system.
+_Avoid_: a second native tether, proximity alone proving capture, every eligible Spinner becoming a protected control source
+
+**Field action**:
+An explicit assignment to work, contact prey for recovery, escort it, hold a position or attack a competing escort. Native mechanisms execute its movement, payment and combat rules. An assigned field member does not independently choose to roam or ignore its approved recovery contact.
+_Avoid_: free attacks, skipping native hit checks, changing the enemy template's policy for unrelated encounters

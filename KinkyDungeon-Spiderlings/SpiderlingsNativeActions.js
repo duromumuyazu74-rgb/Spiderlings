@@ -33,6 +33,7 @@
                         api.SpinnerAI?.reportPlayerContact(enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta);
                         if (api.SpinnerDuties?.current(enemy)) {
                             const handled = api.SpinnerDuties.beforeMove(enemy, target, aiData);
+                            api.SpinnerDuties.admitNative?.(enemy, target, aiData);
                             if (handled || !api.SpinnerDuties.allowsBeforeMove(enemy)) return handled;
                             return nativeMove(native, this, arguments, name);
                         }
@@ -55,6 +56,7 @@
                     function (enemy, target, aiData) {
                         const result = native.apply(this, arguments);
                         if (result) return result;
+                        if (api.FieldCustody?.targetFor(enemy)) return result;
                         for (const behavior of behaviors.values()) {
                             if (behavior.aiTypes && !behavior.aiTypes.includes(name)) continue;
                             const outcome = behavior.afterMove?.(enemy, target, aiData);
@@ -142,6 +144,7 @@
                     target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target, delta) || target;
                     target = api.SpinnerAI?.recoveryTarget?.(enemy, target, delta) || target;
                     target = api.SpinnerAI?.constructionTarget?.(enemy, target, delta) || target;
+                    if (delta > 0) target = api.FieldCustody?.targetFor(enemy) || target;
                     arguments[1] = target;
                     if (api.SpinnerNativeField?.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
@@ -164,9 +167,27 @@
                     enemy.SpiderlingsSpinnerRuntimeDelta = delta;
                     const previousObserver = nativeObserver;
                     nativeObserver = { enemy, delta };
+                    // KD checks the player's leash even for spells targeting an
+                    // NPC. Override that autonomous policy only for this order.
+                    const definition = enemy.Enemy;
+                    const actionDefinition =
+                        duty?.role === "intercept" && !target.player
+                            ? { ...definition, followLeashedOnly: false }
+                            : definition;
+                    const hadModified = Object.hasOwn(enemy, "modified"),
+                        modified = enemy.modified;
+                    enemy.Enemy = actionDefinition;
+                    // KDUnPackEnemy is also called by detection/helplessness checks.
+                    // Protect this action template from being reloaded mid-action.
+                    if (actionDefinition !== definition) enemy.modified = true;
                     try {
                         return native.apply(this, arguments);
                     } finally {
+                        if (enemy.Enemy === actionDefinition) enemy.Enemy = definition;
+                        if (actionDefinition !== definition) {
+                            if (hadModified) enemy.modified = modified;
+                            else delete enemy.modified;
+                        }
                         nativeObserver = previousObserver;
                         delete enemy.SpiderlingsSpinnerRuntimeDelta;
                     }

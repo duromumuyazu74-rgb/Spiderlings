@@ -4,25 +4,33 @@
 
 ## 源码、安装包与合并
 
-| 项目               | 当前状态                                                                                           |
-| ------------------ | -------------------------------------------------------------------------------------------------- |
-| 正式 Release       | [v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)                |
-| 运行时包           | `Spiderlings_0.92.36-test.135.zip`，176 项、24,879,517 字节                                        |
-| 最新功能与工具提交 | `a5a17d649e42c6dc8557bc3c35af3caea03e494d`，完成测试映射；运行时包未变                             |
-| 源码候选           | [PR #147](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/147)，草稿，目标 `test`，尚未合并 |
+| 项目               | 当前状态                                                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| 正式 Release       | [v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)                                   |
+| 运行时包           | `Spiderlings_0.92.36-test.145.zip`，双版本原生与完整本地交付检查均通过                                                |
+| 最新功能与工具提交 | 基于 `b9431be` 实现 [Issue #148](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/148) 的回收、猎物归属与拦截 |
+| 源码候选           | `fix/148-field-custody-recovery`，基于 PR #147；目标 `test`，尚未合并                                                 |
 
 PR #147 包含前序场地修复及模块重构候选。PR #143、#145 和更早的候选仍保留；代码完成、安装包验收和目标分支集成是不同状态。本页不把本地候选写成已进入 `main` 或 `test`。
 
-## 已完成
+## 已完成实现
+
+- FieldCustody 保存场地猎物归属；FieldCommand 统一附近空闲 Spinner 的指挥。场地安排回收接触或小队攻击竞争牵引 NPC，保留正在执行的捕获、牵引及冲刺。重度受缚玩家的回收接触通过原生付费攻击完成；援助者避让中心与运输路线。
 
 - 场地待备与增援按需求及急度分配，区分承诺、在途、到场和可执行人数。新部署同时受 `floor(n / 4)` 人口许可及配置上限限制。
 - FieldProjects、FieldCommand、SpinnerDuties、Topology 和 NativeField 分别管理工程、指挥、单次行动、结构和原生事务。共用原生阶段集中于 NativeActions；物种登记自己的策略。
 - 独立原生测试组使用新环境，`helpers` 只表示代码依赖，`continues` 表示必须共享前置场景状态。
-- 46 个运行时脚本均有测试映射。已识别函数改动可缩小范围，混合改动合并覆盖，共用代码包含实际消费者，未知输入以 `needs-mapping` 停止。
+- 47 个运行时脚本均有测试映射。已识别函数改动可缩小范围，混合改动合并覆盖，共用代码包含实际消费者，未知输入以 `needs-mapping` 停止。
 
 具体职责和验证入口由 [MODULES.md](MODULES.md)、[RUNTIME.md](RUNTIME.md) 与 [DEVELOPMENT.md](DEVELOPMENT.md) 维护。
 
-## 最近验收
+## 本次验收
+
+test.145 同包在 KD 5.4.92 和新拉取的官方 5.5.3 各通过 60 项原生检查及七种语言加载；12 项策略检查、767 项公共测试、1,094 项完整本地回归与逐字节包核对通过。安装包 SHA-256、上游提交及报告见 [COMPATIBILITY.md](COMPATIBILITY.md#test145-field-custody-and-recovery-2026-10-08)。
+
+实际存档副本记录到主动向冰元素施放 WebSpray。该短回放中冰元素仍持有牵引，不能认定已经夺回猎物；移除竞争者的独立副本在第 2 回合自行开始回收，第 5 回合回到最近中心。顺序对照的平均等待处理时间由 581.6 ms 降至 82.9 ms，详见 [存档回放记录](archive/validation/spiderlings-test145-field-custody.zh-CN.md)。
+
+## 此前已完成的验收
 
 test.135 包的 SHA-256 为 `0ce796dd5e7a8a1213f10fd41f948155d405c5655334eb9a4dd0aa5f8bef6a82`。同一包于 2026-10-08 在 KD 5.4.92 和官方 5.5.3 各通过 59 项原生场景及七种语言加载；当时拉取的官方提交是 `04ded07e619c31424b8074b336b6c3c70121cebd`。详见 [COMPATIBILITY.md](COMPATIBILITY.md#test135-module-ownership-and-isolated-native-environments-2026-10-08)。这是该次验收快照，不是对未来上游版本的保证。
 

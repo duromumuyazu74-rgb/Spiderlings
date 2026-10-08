@@ -289,7 +289,7 @@ test("native visual phase waiting advances render frames without paying world ti
 
 test("native locale evidence checks the loaded ZIP, rendered text and placeholders", () => {
     const { inspectLocale } = require("../compatibility/locales.js");
-    const csv = 'Label,Du versuchst TargetRestraint.\r\nCounter,"CURRENT/TARGET · {count}"\n';
+    const csv = 'Label,Du versuchst TargetRestraint.\r\nCounter,"CURRENT/TARGET 路 {count}"\n';
     const loaded = {
         language: "DE",
         csvFile: "SpiderlingsDE.csv",
@@ -305,9 +305,9 @@ test("native locale evidence checks the loaded ZIP, rendered text and placeholde
             },
             {
                 key: "Counter",
-                english: "CURRENT/TARGET · {count}",
-                source: "CURRENT/TARGET · {count}",
-                rendered: "CURRENT/TARGET · {count}",
+                english: "CURRENT/TARGET 路 {count}",
+                source: "CURRENT/TARGET 路 {count}",
+                rendered: "CURRENT/TARGET 路 {count}",
             },
         ],
     };
@@ -702,7 +702,7 @@ test("scene, helper, native diagnostic and teardown failures retain group attrib
     }
 });
 
-test("full acceptance still runs all 59 checks and seven native languages against one ZIP", async (t) => {
+test("full acceptance still runs all 60 checks and seven native languages against one ZIP", async (t) => {
     const { verifyGame } = require("../verify-kd-compatibility.js"),
         { file, output } = localePackage(t),
         runs = scenarioRuntimes({}),
@@ -710,7 +710,7 @@ test("full acceptance still runs all 59 checks and seven native languages agains
     const report = await verifyGame({ version: "5.4.92" }, file, output, selection, runs.factory);
     assert.equal(report.status, "passed");
     assert.equal(report.verification.mode, "full");
-    assert.equal(report.checks.length, 59);
+    assert.equal(report.checks.length, 60);
     assert.deepEqual(
         report.checks.map((check) => check.name),
         selection.executed,
@@ -743,7 +743,7 @@ test("selection separates code helpers from state continuation and preserves all
     const full = selectScenarios();
     assert.equal(full.mode, "full");
     assert.equal(full.total, full.executed.length);
-    assert.equal(full.total, 59);
+    assert.equal(full.total, 60);
     assert.equal(full.checks.find((scenario) => scenario.name === "native-locales").kind, "locales");
     for (const scenario of full.checks) {
         if (scenario.kind === "locales") continue;

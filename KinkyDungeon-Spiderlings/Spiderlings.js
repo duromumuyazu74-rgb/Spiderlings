@@ -106,6 +106,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return isHostileSpiderlingTarget(entity) || isHostileWebTarget(entity);
     }
     function isRivalPair(enemy, other) {
+        if (SPIDERLINGS.FieldCustody?.interceptionPair(enemy, other)) return true;
         return (
             other?.hp > 0 &&
             ((isMaidRival(enemy) && isMaidTarget(other)) ||

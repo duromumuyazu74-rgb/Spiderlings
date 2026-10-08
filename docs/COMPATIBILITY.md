@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.135.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.145.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.145 field custody and recovery (2026-10-08)
+
+The same final ZIP passes all 60 native checks and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `67412350bd0c23dbf5875a73496aed4045f8e252` was freshly fetched at `2026-10-08T14:20:12.604Z`. Full acceptance: `<cache>/runs/2026-10-08T14-20-12-619Z-0.92.36-test.145/acceptance.json`. Final ZIP: 177 entries, 24,884,819 bytes; SHA-256 `a81ca812ade3e508b283d0567f3a175dc196955caa8dc007cd1e1bbaba5a48db`.
+
+FieldCustody preserves captured-prey attribution and selects bounded recovery contacts or an escort-interception team. Native action admission permits actual contact with heavily restrained prey and melee/ranged interception against the competing NPC. Scoped casting policy survives ordinary native enemy-template reloads and is restored after execution. Recovery caches valid path facts, coordinates paid center clearance and ends only at the exact nearest reachable center.
+
+The copied slot-15 replay records two native WebSpray casts at the Ice escort; that escort still holds its tether after twelve waits, so this is not a recapture claim. Removing only the competitor in an isolated copy lets normal native hits start recovery on turn 2 and return to center on turn 5. Mean synchronous wait processing decreases from 581.6 ms to 82.9 ms in the recorded comparison; path calls decrease from 8,828 to 1,227. See [reproduction and scope](archive/validation/spiderlings-test145-field-custody.zh-CN.md).
+
+Repository checks, 12 policy tests, 767 public tests, the complete 1,094-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-08T14-47-11-928Z-S0t02V/REPORT.md` records unchanged source and package bytes. The first collector exposed a stale exact-manifest test list; adding the new runtime module to that list corrected it without changing the ZIP or its native acceptance. Only outcome documentation was updated afterward, followed by repository checks.
 
 ## Test.135 module ownership and isolated native environments (2026-10-08)
 

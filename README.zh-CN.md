@@ -9,7 +9,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 | 通道         | 版本               | 获取方式                                                                                                               |
 | ------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | 正式版       | `0.92.38`          | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) |
-| 当前开发候选 | `0.92.36-test.135` | 源码候选见 [PR #147](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/147)，目标为 `test`；尚非正式 Release      |
+| 当前开发候选 | `0.92.36-test.145` | 源码候选见 [Issue #148](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/148)，目标为 `test`；尚非正式 Release |
 | 巢穴监狱实验 | `prison.alpha.N`   | 独立 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77)，不包含在普通测试包中                         |
 
 1. 下载[正式版 Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest) 的 ZIP 附件，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
@@ -21,6 +21,8 @@ GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入
 开发包已在 KD 5.4.92 和 [COMPATIBILITY.md](docs/COMPATIBILITY.md) 记录的官方 `5.5` 提交上验证。每次新运行时交付都重新拉取并测试最新官方 `5.5`。Manifest 的宽泛 5.x 提示不代表未测试版本也已兼容。源码、安装包和合并状态见[当前进度](docs/STATUS.md)。
 
 ## 当前开发玩法
+
+场地保留已捕获猎物的归属，分配幼蛛主动攻击试图牵走猎物的 NPC，其他成员继续场地职责。已批准的回收接触通过原生付费攻击执行，不因玩家重度受缚而停滞；回收目标是可达场地的实际中心格。
 
 - 普通蛛丝按身体部位独立递进。Hood 开关、原生装备共存和 Cocoon 资格分别判断，具体数值与条件见[参数说明](KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md)。
 - Spinner 付费建设、修复和开闭场地。总控处理增援与借调，各场地指挥自己的 Spinner。施工者、在途援兵和可用人手分别统计；优先合法大型多层围场，适用时回退通道场地。

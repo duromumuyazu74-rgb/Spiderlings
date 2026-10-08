@@ -49,6 +49,7 @@ const scripts = [
     "SpiderlingsSpinnerAI.js",
     "SpiderlingsFieldCommand.js",
     "SpiderlingsFieldProjects.js",
+    "SpiderlingsFieldCustody.js",
     "SpiderlingsSpinnerDuties.js",
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",

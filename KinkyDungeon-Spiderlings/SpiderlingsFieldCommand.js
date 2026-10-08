@@ -6,7 +6,7 @@
     const clone = (value) => JSON.parse(JSON.stringify(value));
     const same = (a, b) => String(a) === String(b);
     const species = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"]);
-    const priority = { defense: 0, capture: 0, recovery: 0, repair: 1, build: 2, readiness: 2 };
+    const priority = { defense: 0, capture: 0, recovery: 0, custody: 0, repair: 1, build: 2, readiness: 2 };
 
     function compareDemand(a, b) {
         return (b.urgency || 0) - (a.urgency || 0) || priority[a.kind] - priority[b.kind];
@@ -46,6 +46,11 @@
     function servesRequest(entity, entry, encounter = api.SpinnerNativeField.state()) {
         if (!actionable(entity)) return false;
         if (!protectedMember(entity)) return true;
+        if (entry.kind === "custody")
+            return (
+                api.FieldCustody?.ownsGroup(entry.fieldId) &&
+                ensure(encounter).members[entity.id]?.commander === entry.fieldId
+            );
         const group = encounter?.ai?.groups[entry.fieldId];
         const plan = encounter?.ai?.plans[group?.planId];
         const target = entry.target || group?.engagement?.target;
@@ -156,7 +161,7 @@
         return !!(
             sourceRole(entity) ||
             entity?.SpiderlingsTaskNestDefenderTarget !== undefined ||
-            api.SpinnerRecovery?.wantsPursuit?.(entity, KinkyDungeonPlayerEntity) ||
+            api.FieldCustody?.assigned(entity) ||
             KDMapData.Entities.some((target) => api.SpinnerNPCRecovery?.wantsPursuit?.(entity, target))
         );
     }
@@ -201,6 +206,7 @@
     }
 
     function projectThreat(encounter, group) {
+        if (api.FieldCustody?.ownsGroup(group?.id)) return true;
         const plan = encounter.ai.plans[group?.planId];
         return (
             !!plan?.compositeId &&
@@ -462,13 +468,59 @@
     function reviseDemands(encounter, groupId, demands, destination, options = {}) {
         const state = ensure(encounter);
         for (const entry of Object.values(state.requests))
-            if (entry.fieldId === groupId && !(demands.get(entry.kind) > 0)) entry.closed = true;
+            if (
+                entry.fieldId === groupId &&
+                !(demands.get(entry.kind) > 0) &&
+                !(entry.kind === "custody" && api.FieldCustody?.ownsGroup(groupId))
+            )
+                entry.closed = true;
         for (const [kind, count] of demands)
             if (count > 0) request(encounter, groupId, kind, count, destination, options);
     }
 
     function endProjectSupport(encounter, groupId) {
         reviseDemands(encounter, groupId, new Map());
+    }
+
+    function adoptCustodyCrew(encounter, groupId) {
+        const state = ensure(encounter),
+            group = encounter?.ai?.groups[groupId];
+        if (!state || !group || !api.FieldCustody?.ownsGroup(groupId)) return;
+        const destination = location(encounter, group);
+        if (!destination) return;
+        const id = `${groupId}:custody`;
+        for (const entity of KDMapData.Entities) {
+            const member = state.members[entity.id];
+            if (
+                !member ||
+                member.commander === groupId ||
+                entity.Enemy?.name !== "Spinner" ||
+                !actionable(entity) ||
+                sourceRole(entity) ||
+                entity.SpiderlingsTaskNestDefenderTarget !== undefined ||
+                !atSite(entity, groupId, encounter)
+            )
+                continue;
+            const donor = encounter.ai.groups[member.commander];
+            if (donor && pending(encounter, donor)) continue;
+            Object.assign(member, {
+                commander: groupId,
+                phase: "support",
+                requestId: id,
+                loan: member.loan || state.nextLoan++,
+                origin: member.loan ? member.origin : { x: entity.x, y: entity.y },
+                destination: clone(destination),
+                blocked: false,
+                blockedTurns: 0,
+            });
+        }
+        const count = Object.values(state.members).filter((m) => m.commander === groupId && m.requestId === id).length;
+        if (count)
+            request(encounter, groupId, "custody", count, destination, {
+                urgency: 2,
+                target: { kind: "player", id: KinkyDungeonPlayerEntity.id },
+            });
+        sync(encounter);
     }
 
     function dispatch(encounter, requestState, offer, distances) {
@@ -675,16 +727,18 @@
         projectOwners(encounter);
     }
 
+    function canYield(entity) {
+        return (
+            actionable(entity) &&
+            !protectedMember(entity) &&
+            !api.JumperDash?.runtimeController?.snapshot?.().some((entry) => same(entry.sourceId, entity.id))
+        );
+    }
+
     function movingOrder(entity) {
         const encounter = api.SpinnerNativeField.state(),
             state = ensure(encounter);
-        if (
-            !state ||
-            !actionable(entity) ||
-            protectedMember(entity) ||
-            api.JumperDash?.runtimeController?.snapshot?.().some((entry) => same(entry.sourceId, entity.id))
-        )
-            return undefined;
+        if (!state || !canYield(entity)) return undefined;
         const member = state.members[entity.id];
         return member && ["travelling", "returning"].includes(member.phase) ? member : state.regions[entity.id];
     }
@@ -775,6 +829,8 @@
     }
 
     api.FieldCommand = {
+        canYield,
+        adoptCustodyCrew,
         reconcile,
         ensure,
         newGroup,

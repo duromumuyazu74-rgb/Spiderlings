@@ -79,7 +79,8 @@ test("mixed edits select the union and exported or unknown changes retain owning
     assert.ok(s.scenarios.includes("spinner-maintenance"));
     const exported = before.replace("api.FieldProjects = {", "api.FieldProjects = { newSurface: true,");
     const full = selectAffected(change(exported), suites);
-    assert.deepEqual(full.areas, ["field-lifecycle", "field-permits", "field-staffing", "field-work"]);
+    assert.deepEqual(full.areas, ["field-custody", "field-lifecycle", "field-permits", "field-staffing", "field-work"]);
+    assert.ok(full.scenarios.includes("field-custody"));
     assert.equal(full.reasons[0].kind, "file");
     const renamed = before.replaceAll("function permits()", "function otherPermits()");
     assert.equal(selectAffected(change(renamed), suites).reasons[0].kind, "file");
@@ -135,7 +136,7 @@ test("native scene edits expand real state continuations and shared helpers only
     assert.ok(!helper.scenarios.includes("rune-hit"));
     const runner = selectAffected(["tools/verify-kd-compatibility.js"], suites);
     assert.equal(runner.nativeScope, "full");
-    assert.equal(runner.scenarios.length, 59);
+    assert.equal(runner.scenarios.length, 60);
 });
 
 test("direct local test edits and renamed tests are retained and unmapped/deleted tests do not trigger everything", () => {
