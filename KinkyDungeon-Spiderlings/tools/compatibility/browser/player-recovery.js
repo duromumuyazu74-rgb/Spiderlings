@@ -314,6 +314,41 @@
         const trace = [];
         const row = { mode: "crowded-core-return", trace, work: [] };
         rows.push(row);
+        row.blockerMoves = [];
+        let tetherDepth = 0,
+            paidMovement = 0;
+        const updateTether = KinkyDungeonUpdateTether,
+            moveEntity = KDMoveEntity,
+            tryMove = KinkyDungeonEnemyTryMove;
+        KinkyDungeonEnemyTryMove = function (...args) {
+            const paid = args[2] > 0 && args[5] !== true;
+            if (paid) paidMovement++;
+            try {
+                return tryMove.apply(this, args);
+            } finally {
+                if (paid) paidMovement--;
+            }
+        };
+        KinkyDungeonUpdateTether = function (...args) {
+            tetherDepth++;
+            try {
+                return updateTether.apply(this, args);
+            } finally {
+                tetherDepth--;
+            }
+        };
+        KDMoveEntity = function (actor, ...args) {
+            const before = { x: actor.x, y: actor.y };
+            const result = moveEntity.call(this, actor, ...args);
+            if (actor.id === blocker.id && (actor.x !== before.x || actor.y !== before.y))
+                row.blockerMoves.push({
+                    before,
+                    after: { x: actor.x, y: actor.y },
+                    nativeTether: tetherDepth > 0,
+                    paidMovement: paidMovement > 0,
+                });
+            return result;
+        };
         const executeDuty = Spiderlings.SpinnerAI.executeDuty;
         Spiderlings.SpinnerAI.executeDuty = function (actor, groupId, assignment) {
             const result = executeDuty.apply(this, arguments);
@@ -328,6 +363,9 @@
             return result;
         };
         for (let i = 0; i < 35; i++) {
+            // Restore the fixture's frozen credit; clearance must still use a
+            // native paid move or the native tether collision consumer.
+            if (i === 8) blocker.movePoints = 0;
             await turn();
             trace.push({
                 i,
@@ -338,6 +376,9 @@
             if (encounter.topology.fields["crowded-inner"].phase === "sealed") break;
         }
         Spiderlings.SpinnerAI.executeDuty = executeDuty;
+        KinkyDungeonUpdateTether = updateTether;
+        KDMoveEntity = moveEntity;
+        KinkyDungeonEnemyTryMove = tryMove;
         row.state = structuredClone(field.state());
         row.actors = actors.map((actor) => ({
             ...structuredClone(actor),
@@ -348,14 +389,19 @@
             "Nearby helper stayed behind the player",
         );
         expect(
-            field.containsComposite("crowded-return", KDPlayer()) && !recovery.state(),
+            KDPlayer().x === 10 && KDPlayer().y === 10 && !recovery.state(),
             `Crowded core prevented native return: ${JSON.stringify(trace)}`,
         );
         expect(
             encounter.topology.fields["crowded-inner"].phase === "sealed",
             `Returned prey was not sealed in again: ${JSON.stringify(trace)}`,
         );
-        expect(blocker.x === 10 && blocker.y === 10, "Fixture blocker unexpectedly vacated the core");
+        const clearanceMoves = row.blockerMoves.filter((move) => move.before.x === 10 && move.before.y === 10);
+        expect(clearanceMoves.length > 0, "The occupied center must be cleared before completed return");
+        expect(
+            clearanceMoves.every((move) => move.nativeTether || move.paidMovement),
+            `Core clearance bypassed native movement: ${JSON.stringify(row.blockerMoves)}`,
+        );
         images["crowded-core-return"] = await photo();
     }
 
