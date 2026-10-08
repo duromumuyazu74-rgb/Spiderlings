@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spiderlings module work"
+  short_description: "Keep field, native action and test changes with their owners"
+  default_prompt: "Use $spiderlings-modularity to implement this Spiderlings change at its owning module and verify the affected behavior."

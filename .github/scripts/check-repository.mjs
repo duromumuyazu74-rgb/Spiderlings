@@ -6,6 +6,7 @@ import { ESLint } from "eslint";
 import * as prettier from "prettier";
 import { firstPrivateCommit, unchangedPackageMoves } from "./migration-checks.mjs";
 import referenceInputs from "../../KinkyDungeon-Spiderlings/tools/reference-inputs.js";
+import moduleContracts from "../../KinkyDungeon-Spiderlings/tools/check-spiderlings-modules.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const policy = JSON.parse(readFileSync(new URL("../repository-policy.json", import.meta.url), "utf8"));
@@ -96,6 +97,7 @@ async function main() {
     const present = new Set(git("ls-files", "--cached", "--others", "--exclude-standard", "-z").split("\0"));
     const files = changed.filter((file) => present.has(file) && existsSync(file));
     const errors = files.map(validateFile).filter(Boolean);
+    errors.push(...moduleContracts.auditRepository());
     const unchangedMoves = unchangedPackageMoves(base, root);
     const contentFiles = files.filter((file) => !unchangedMoves.has(file));
     if (policy.historySanitized && firstPrivateCommit(root, policy.privateFiles)) {

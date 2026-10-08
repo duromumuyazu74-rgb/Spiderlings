@@ -14,3 +14,5 @@ Test plausible explanations against evidence, using targeted instrumentation or 
 If runtime access is missing, continue useful source analysis and report which conclusions remain unverified. Ask for the specific unavailable artifact or decision only when it is needed for the next dependent action.
 
 Implement the cause-specific fix and add a regression test when a real behavioral boundary can reproduce the failure. Run the original scenario and affected checks, remove task-created temporary instrumentation, and report the cause, result and any actual remaining uncertainty. Broader architecture work requires its own scope.
+
+For Spiderlings native failures, use the active checkout's `docs/MODULES.md` and existing scenario selector to reproduce the failing scene with its declared state continuation. Read its group/environment diagnostics before changing gameplay or assertions. Record a separately caused test-environment fix independently; complete final delivery gates on the final ZIP.

@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.134.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.135.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.135 module ownership and isolated native environments (2026-10-08)
+
+The same final ZIP passes all 59 native checks and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `04ded07e619c31424b8074b336b6c3c70121cebd` was freshly fetched at `2026-10-08T05:37:30.160Z`. Full acceptance: `<cache>/runs/2026-10-08T05-37-30-175Z-0.92.36-test.135/acceptance.json`. Final ZIP: 176 entries, 24,879,517 bytes; SHA-256 `0ce796dd5e7a8a1213f10fd41f948155d405c5655334eb9a4dd0aa5f8bef6a82`.
+
+FieldProjects owns project work and maintenance, Command owns request transitions, and NativeField owns structure replacement/rollback. NativeActions installs common action phases while species register their policies. Independent native scenario groups load fresh runtimes; explicit state continuations and the full same-ZIP gate remain. Crew preparation separates actionable actors from population permits and keeps reserve actors outside the work map.
+
+The first full run exposed a save fixture that relied on an earlier character render to initialize native model poses. Shared save preparation now performs native dress/render only when that model is missing, preserving existing poses and world time. The failing scene and saved-state chain pass in focused replay and in this final full run. Failed/interrupted records remain preserved. See [implementation and validation](spiderlings-test135-module-ownership.zh-CN.md) and [module contracts](MODULES.md).
+
+Repository checks, 12 policy tests, 743 public tests, the complete 1070-test local watcher and exact ZIP verification pass. Full collector `.scratch/delivery/2026-10-08T06-02-21-544Z-MnWrHC/REPORT.md` records unchanged source and package bytes. Only outcome documentation was added afterward, followed by repository and whitespace checks.
 
 ## Test.134 field reinforcement and Spinner population permits (2026-10-08)
 
