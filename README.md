@@ -6,11 +6,11 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 
 ## Versions and installation
 
-| Channel                       | Version            | Availability                                                                                                                         |
-| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Formal release                | `0.92.38`          | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) |
-| Current development candidate | `0.92.36-test.135` | Source candidate in [PR #147](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/147), targeting `test`; not a formal Release    |
-| Nest prison experiment        | `prison.alpha.N`   | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package              |
+| Channel                       | Version            | Availability                                                                                                                           |
+| ----------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Formal release                | `0.92.38`          | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip)   |
+| Current development candidate | `0.92.36-test.145` | Source candidate in [Issue #148](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/148), targeting `test`; not a formal Release |
+| Nest prison experiment        | `prison.alpha.N`   | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package                |
 
 1. Download the ZIP attached to the [formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest), or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).
 2. Load that ZIP through the game's Mod manager.
@@ -21,6 +21,8 @@ GitHub's automatic Source code archives are repository downloads, not loadable M
 The development package is verified on KD 5.4.92 and the specific official `5.5` commit recorded in [COMPATIBILITY.md](docs/COMPATIBILITY.md). Every new runtime delivery fetches and tests the latest official `5.5` commit again. The manifest's broad 5.x hint does not certify untested versions. See [current progress](docs/STATUS.md) for source, package and integration status.
 
 ## Current development gameplay
+
+Captured field prey retains its field attribution. Spiderlings assigned to interception actively attack competing NPC escorts; other members keep their field duties. Approved recovery contacts use native paid attacks even when the player is heavily restrained, and recovery aims for the exact reachable field center.
 
 - Webbing progresses independently by body region. The Hood toggle, native equipment compatibility and Cocoon admission rules remain separate. See the [parameter guide](KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md) for values and conditions.
 - Spinner fields use paid construction, repair and gate work. A global controller handles support requests and loans; each field commands its Spinners. Workers, travelling reinforcements and usable staff are counted separately. Large legal layered enclosures are preferred, with passage fallback where appropriate.

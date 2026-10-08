@@ -716,6 +716,50 @@ test("recovery detours a native faction route blocked by a coworker with paid mo
 });
 
 const legBag = (r) => r.gear.push({ id: "leg-bag", name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } });
+test("a holder already opposite occupied center keeps its approach instead of orbiting the prey", () => {
+    const r = attached();
+    r.source.x = 4;
+    r.source.y = 5;
+    r.addSource(99, 5, 5);
+    r.c.Spiderlings.SpinnerTopology.isInsideCommonCore = (_graph, _id, cell) =>
+        Math.max(Math.abs(cell.x - 5), Math.abs(cell.y - 5)) <= 1;
+    for (let i = 0; i < 4; i++) r.api.handleEnemyTurn(r.source, r.player, 1);
+    assert.deepEqual({ x: r.source.x, y: r.source.y }, { x: 4, y: 5 });
+    assert.equal(r.player.leash.length, 1.5);
+});
+test("recovery eligibility rejects other species before routing and shares unchanged field queries", () => {
+    let routes = 0;
+    const r = recoveryRuntime({
+        pathFinder: (_x, _y, x, y) => {
+            routes++;
+            return [{ x, y }];
+        },
+    });
+    legBag(r);
+    const field = r.c.Spiderlings.SpinnerNativeField.state();
+    r.c.Spiderlings.SpinnerNativeField.state = () => field;
+    let revision = 0;
+    r.c.Spiderlings.WebMobility = { navigationVersion: () => revision };
+    assert.equal(r.api.wantsPursuit({ id: 99, hp: 1, Enemy: { name: "WebCaster" } }, r.player), false);
+    assert.equal(routes, 0);
+    for (let i = 0; i < 20; i++) r.api.wantsPursuit(r.source, r.player);
+    assert.equal(routes, 1, "unchanged eligibility shares the player's open route across callers");
+    revision++;
+    r.api.wantsPursuit(r.source, r.player);
+    assert.equal(routes, 2, "navigation changes invalidate the route result");
+    r.player.x++;
+    r.api.wantsPursuit(r.source, r.player);
+    assert.equal(routes, 3, "a changed player cell cannot reuse the former destination result");
+});
+
+test("a core-edge wearer remains eligible until reaching the actual recovery center", () => {
+    const r = recoveryRuntime();
+    legBag(r);
+    r.c.Spiderlings.SpinnerTopology.isInsideCommonCore = () => true;
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
+    assert.equal(r.api.hit(r.source), true);
+    assert.ok(r.api.state());
+});
 test("retained leg bag reacquires recovery after returning and leaving an intact field", () => {
     const r = attached();
     legBag(r);

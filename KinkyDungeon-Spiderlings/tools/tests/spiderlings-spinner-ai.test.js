@@ -248,6 +248,36 @@ test("a sole commanded builder keeps paid work under adjacent contact and reques
     assert.ok(Object.values(encounter.command.requests).some((request) => request.kind === "build"));
 });
 
+test("a field recovery contact overrides native tied-up indifference only for its approved positive action", () => {
+    const actor = spinner(1, 5, 3),
+        r = runtime([actor, spinner(2, 5, 9)]),
+        c = r.context;
+    start(r, mapSnapshot());
+    const target = c.KinkyDungeonPlayerEntity;
+    target.x = actor.x + 1;
+    target.y = actor.y;
+    c.Spiderlings.SpinnerRecovery = { wantsPursuit: () => true };
+    c.Spiderlings.SpinnerAI.dutyFacts = () => ({
+        validPlan: true,
+        recoveryPursuit: true,
+        recoveryTarget: target,
+        perceivedRecovery: true,
+        perceivedThreat: true,
+    });
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.beginAction(actor, target, 1);
+    const data = { hostile: true, canSensePlayer: true, ignore: true, wantsToAttack: false };
+    c.KDAIType.hunt.beforemove(actor, target, data);
+    assert.equal(data.ignore, false, JSON.stringify(c.Spiderlings.SpinnerDuties.current(actor)));
+    assert.equal(data.wantsToAttack, true);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).category, "recovery-contact");
+    actor.SpiderlingsSpinnerRuntimeDelta = 0;
+    const refresh = { hostile: true, canSensePlayer: true, ignore: true, wantsToAttack: false };
+    c.Spiderlings.SpinnerDuties.admitNative(actor, target, refresh);
+    assert.equal(refresh.ignore, true);
+    assert.equal(refresh.wantsToAttack, false);
+});
+
 test("separate positive enemy operations in one tick do not reuse an executed construction duty", () => {
     const actor = spinner(1, 2, 2),
         r = runtime([actor]),
@@ -710,7 +740,7 @@ test("nest guards form their own construction group and natural Spinners remain 
     );
 });
 
-test("construction wait preserves native movement credit and unassigned guards use native AI", () => {
+test("construction wait preserves native movement credit and field guards await explicit orders", () => {
     const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
         r = runtime(actors),
         ai = start(r),
@@ -725,8 +755,8 @@ test("construction wait preserves native movement credit and unassigned guards u
     r.context.Spiderlings.SpinnerDuties.prepare(worker, r.context.KinkyDungeonPlayerEntity, 1);
     assert.equal(
         r.context.KDAIType.hunt.beforemove(worker, r.context.KinkyDungeonPlayerEntity, aiData),
-        false,
-        "a guard with no work should be free to fight or roam",
+        true,
+        "a field guard without an order must not independently fight or roam",
     );
 });
 
@@ -1535,7 +1565,7 @@ test("native player and hostile NPC targets establish one stable target without 
     assert.equal(unseenGroup.engagement, undefined, "awareness without computed sensing is not an observation");
 });
 
-test("last-known data expires at age four and native pursuit resumes after eight turns without sight", () => {
+test("last-known data expires at age four and field orders do not follow hidden live positions", () => {
     const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
         r = runtime(actors),
         ai = start(r),
@@ -1566,8 +1596,8 @@ test("last-known data expires at age four and native pursuit resumes after eight
     r.context.KinkyDungeonCurrentTick++;
     const phases = r.phaseCalls.length,
         result = r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
-    assert.equal(result.idle, true, "pursuit delegates movement to the native AI");
-    assert.equal(r.phaseCalls.length, phases + 2, "native attack and spell gates reopen for delegated pursuit");
+    assert.equal(result.idle, false, "the field holds the member after its usable observation expires");
+    assert.equal(r.phaseCalls.length, phases, "lost contact cannot reopen autonomous attack and spell decisions");
 });
 
 test("a builder uses native adjacent defense and resumes its retained assignment", () => {
@@ -3221,8 +3251,8 @@ test("passage AI moves support beside sealed prey using fresh observations befor
                     adjacent = c.KinkyDungeonEnemyLoop(helper, player, 1);
                 assert.equal(
                     adjacent.idle,
-                    true,
-                    "Only after reaching an adjacent cell does support delegate to native melee",
+                    false,
+                    "The field holds adjacent support in place while admitting native melee",
                 );
                 assert.equal(adjacent.attacked, true);
                 assert.equal(adjacent.cast, true);
@@ -4098,6 +4128,75 @@ function loanScene() {
     return { r, c, command, encounter, ai, actors, home, receiver, distances };
 }
 
+test("nearby custody crews receive one field commander while retaining their home and active sources", () => {
+    const { c, command, encounter, home, receiver, actors } = loanScene();
+    let claimed = true;
+    c.Spiderlings.FieldCustody = { ownsGroup: (id) => claimed && id === receiver.id, assigned: () => false };
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: [actors[2].id] });
+    home.planId = null;
+    for (const actor of actors) Object.assign(actor, { x: 13, y: 6 });
+    command.adoptCustodyCrew(encounter, receiver.id);
+    const members = command.inspect().members;
+    assert.equal(members[actors[0].id].commander, receiver.id);
+    assert.equal(members[actors[0].id].home, home.id);
+    assert.equal(members[actors[2].id].commander, home.id, "A live capture source cannot be adopted by another field");
+    const loan = members[actors[0].id].loan;
+    command.adoptCustodyCrew(encounter, receiver.id);
+    assert.equal(command.inspect().members[actors[0].id].loan, loan);
+    claimed = false;
+    command.reviseDemands(encounter, receiver.id, new Map(), { x: 13, y: 6 });
+    assert.equal(command.inspect().requests[`${receiver.id}:custody`].closed, true);
+});
+
+test("field clearance cannot commandeer allied, disabled or committed actors", () => {
+    const { c, command, actors } = loanScene();
+    const actor = actors[0];
+    assert.equal(command.canYield(actor), true);
+    actor.allied = true;
+    assert.equal(command.canYield(actor), false);
+    actor.allied = false;
+    actor.stun = 2;
+    assert.equal(command.canYield(actor), false);
+    actor.stun = 0;
+    c.Spiderlings.JumperDash = { runtimeController: { snapshot: () => [{ sourceId: actor.id }] } };
+    assert.equal(command.canYield(actor), false);
+});
+
+test("field interception overrides guard movement without adding attacks to a paid approach", () => {
+    const actor = spinner(1, 5, 3, { AI: "guard" }),
+        intruder = { id: 99, x: 9, y: 3, hp: 4, Enemy: { name: "Maidforce" } },
+        r = runtime([actor, spinner(2, 5, 9), intruder]),
+        c = r.context,
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    actor.aware = true;
+    actor.testSense = true;
+    let active = true;
+    c.Spiderlings.FieldCustody = {
+        state: () => ({ groupId: group.id }),
+        targetFor: (enemy) => (active && enemy === actor ? intruder : undefined),
+        assigned: (enemy) => active && enemy === actor,
+    };
+    const before = { x: actor.x, y: actor.y };
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(c.lastNativeTarget, intruder);
+    assert.notDeepEqual({ x: actor.x, y: actor.y }, before);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "intercept");
+    assert.equal(r.phaseCalls.filter((entry) => entry.id === actor.id).length, 0);
+    actor.x = intruder.x - 1;
+    actor.y = intruder.y;
+    c.KinkyDungeonCurrentTick++;
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.beginAction(actor, intruder, 1);
+    const castData = { hostile: true, canSensePlayer: true, harmless: true, ignoreRanged: true, wantsToCast: false };
+    c.KDAIType.guard.beforemove(actor, intruder, castData);
+    assert.equal(castData.harmless, false);
+    assert.equal(castData.ignoreRanged, false);
+    assert.equal(castData.wantsToCast, true);
+    active = false;
+    assert.equal(c.Spiderlings.SpinnerDuties.gate(actor), false);
+});
+
 test("global loans prevent double promises and preserve original physical ownership", () => {
     const { c, command, encounter, home, receiver, distances } = loanScene();
     const second = command.newGroup(encounter.ai);
@@ -4771,13 +4870,13 @@ test("support waiting for native movement credit does not become a blocked loan"
     assert.ok(actor.movePoints > 0, "Native credit accumulates without extra movement");
 });
 
-test("a resolved native delegation becomes paid wait when its field is cancelled", () => {
+test("a field guard remains gated when its field is cancelled", () => {
     const { c, encounter, actors, home } = loanScene();
     const actor = actors[0];
     home.assignments = {};
     actor.SpiderlingsSpinnerRuntimeDelta = 1;
     c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
-    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, {}), false);
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, {}), true);
     home.cancelled = true;
     const before = plain(encounter.topology.actionLog),
         aiData = { idle: true };

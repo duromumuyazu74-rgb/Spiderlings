@@ -486,10 +486,11 @@
         "spiderlings-field-permits.test.js",
         "spiderlings-spinner-native-field.test.js",
         "spiderlings-spinner-enclosure.test.js",
-        "spiderlings-spinner-rollout.test.js"
+        "spiderlings-spinner-rollout.test.js",
+        "spiderlings-field-custody.test.js"
       ],
       "localTests": ["spiderlings-spinner-native-contract.test.js"],
-      "scenarios": ["field-project-lifecycle", "field-permits", "saved-field-guard", "passage-sites"],
+      "scenarios": ["field-project-lifecycle", "field-permits", "saved-field-guard", "passage-sites", "field-custody"],
       "reason": "Planning investment, replacement rollback, restoration and residual retirement."
     },
     "field-rollout": {
@@ -647,13 +648,24 @@
       "scenarios": [],
       "policyTests": true,
       "reason": "Repository policy and workflow consumers need policy, package and Windows safety contracts."
+    },
+    "field-custody": {
+      "tests": [
+        "spiderlings-field-custody.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": ["player-recovery", "persistent-recovery", "field-command", "field-custody"],
+      "reason": "Field prey ownership, explicit contact/defense duties and native recovery execution."
     }
   },
   "files": {
     "SpiderlingsCore.js": ["foundation"],
-    "Spiderlings.js": ["catalogue"],
-    "SpiderlingsNativeActions.js": ["native-actions"],
-    "SpiderlingsSpinnerRuntime.js": ["native-actions"],
+    "Spiderlings.js": ["catalogue", "field-custody"],
+    "SpiderlingsNativeActions.js": ["native-actions", "field-custody"],
+    "SpiderlingsSpinnerRuntime.js": ["native-actions", "field-custody"],
     "SpiderlingsPopulation.js": ["population"],
     "SpiderlingsEncounters.js": ["encounters"],
     "SpiderlingsSettings.js": ["settings"],
@@ -681,18 +693,24 @@
     "SpiderlingsSpinnerPassagePlanner.js": ["field-layout"],
     "SpiderlingsSpinnerTopology.js": ["field-structure"],
     "SpiderlingsSpinnerNativeField.js": ["field-structure"],
-    "SpiderlingsFieldCommand.js": ["field-command"],
-    "SpiderlingsSpinnerAI.js": ["field-observation"],
-    "SpiderlingsSpinnerDuties.js": ["field-duties"],
-    "SpiderlingsFieldProjects.js": ["field-permits", "field-staffing", "field-work", "field-lifecycle"],
+    "SpiderlingsFieldCommand.js": ["field-command", "field-custody"],
+    "SpiderlingsSpinnerAI.js": ["field-observation", "field-custody"],
+    "SpiderlingsSpinnerDuties.js": ["field-duties", "field-custody"],
+    "SpiderlingsFieldProjects.js": [
+      "field-permits",
+      "field-staffing",
+      "field-work",
+      "field-lifecycle",
+      "field-custody"
+    ],
     "SpiderlingsSpinnerRollout.js": ["field-rollout"],
     "SpiderlingsSpinnerScenarios.js": ["field-rollout"],
     "SpiderlingsSpinnerArt.js": ["field-art"],
     "SpiderlingsSpinnerField.js": ["field-legacy"],
-    "SpiderlingsSpinnerCapture.js": ["capture"],
+    "SpiderlingsSpinnerCapture.js": ["capture", "field-custody"],
     "SpiderlingsSpinnerNPCCapture.js": ["capture"],
     "SpiderlingsSpinnerRecoveryCore.js": ["recovery"],
-    "SpiderlingsSpinnerRecovery.js": ["recovery"],
+    "SpiderlingsSpinnerRecovery.js": ["recovery", "field-custody"],
     "SpiderlingsSpinnerNPCRecovery.js": ["recovery"],
     "SpiderlingsWebMobility.js": ["mobility"],
     "SpiderlingsSpellVisuals.js": ["spell-visuals"],
@@ -726,7 +744,8 @@
     "tools/watch-spiderlings-mod.ps1": ["dependency-config"],
     "tools/measure-spinner-rollout.js": ["field-rollout"],
     "tools/verify-kd-compatibility.js": ["compatibility-tools"],
-    "eslint.config.mjs": ["repository-policy"]
+    "eslint.config.mjs": ["repository-policy"],
+    "SpiderlingsFieldCustody.js": ["field-custody"]
   },
   "symbols": {
     "SpiderlingsFieldProjects.js": {

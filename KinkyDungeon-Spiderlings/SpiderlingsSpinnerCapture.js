@@ -336,6 +336,7 @@
             weaveProgress: 0,
             escapeProgress: 0,
         };
+        api.FieldCustody?.capture(composite.id);
         animate(0.08);
         api.JumperDash?.runtimeController.auditSources();
         say("SpiderlingsSpinnerStart");
@@ -423,6 +424,7 @@
         if (!deposited)
             bag.data.wrapProgress = Math.min(1, Math.round((progress(bag) + 1 / CONFIG.wrapTurns) * 1000) / 1000);
         animate(bag.data.wrapProgress);
+        api.FieldCustody?.capture(s.admittedCompositeId, bag.id);
         if (bag.data.wrapProgress >= 1) {
             finishingItemId = bag.id;
             clearTemporary("complete");

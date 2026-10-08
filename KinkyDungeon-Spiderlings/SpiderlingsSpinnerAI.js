@@ -1758,7 +1758,25 @@
     function executeTacticalDuty(enemy, duty) {
         const group = api.SpinnerNativeField.state()?.ai?.groups[duty.groupId];
         if (!group) return "invalid";
-        const path = duty.category === "pursuit" ? nativePath(enemy, duty.destination) : [duty.destination];
+        // A competing NPC occupies its own tile. Choose a reachable adjacent
+        // attack position instead of asking occupied-goal pathfinding to succeed.
+        const approach =
+            duty.category === "intercept"
+                ? DIRECTIONS.map((d) => ({ x: duty.destination.x + d.x, y: duty.destination.y + d.y }))
+                      .filter((cell) => {
+                          const tile = api.SpinnerNativeField.snapshot(cell);
+                          return tile.inBounds && tile.floor && !tile.protected && !tile.actorOccupied;
+                      })
+                      .map((cell) => nativePath(enemy, cell))
+                      .filter((route) => route.length)
+                      .sort((a, b) => a.length - b.length)[0]
+                : undefined;
+        const path =
+            duty.category === "intercept"
+                ? approach || []
+                : duty.category === "pursuit"
+                  ? nativePath(enemy, duty.destination)
+                  : [duty.destination];
         const next = path.find((cell) => cell && (cell.x !== enemy.x || cell.y !== enemy.y));
         if (!next || api.SpinnerNativeField.snapshot(next).actorOccupied) {
             record(group, "wait");

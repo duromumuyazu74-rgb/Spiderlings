@@ -7,6 +7,7 @@
 | 改动                         | 维护位置                                                            |
 | ---------------------------- | ------------------------------------------------------------------- |
 | 场地许可、需求、施工和退役   | `SpiderlingsFieldProjects.js`                                       |
+| 猎物归属、回收接触与攻击拦截 | `SpiderlingsFieldCustody.js`                                        |
 | 成员、请求、借调、改派与归还 | `SpiderlingsFieldCommand.js`                                        |
 | 观察、候选、路径与战术       | `SpiderlingsSpinnerAI.js`、`SpiderlingsSpinnerPassagePlanner.js`    |
 | 单次行动及原生阶段准入       | `SpiderlingsSpinnerDuties.js`、`SpiderlingsNativeActions.js`        |

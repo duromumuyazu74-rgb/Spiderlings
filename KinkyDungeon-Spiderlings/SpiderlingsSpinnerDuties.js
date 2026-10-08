@@ -53,18 +53,27 @@
     function prepare(enemy, target, delta) {
         if (!(delta > 0)) return undefined;
         const source = api.FieldCommand.sourceRole(enemy);
+        const interception = !source && api.FieldCustody?.targetFor(enemy);
         const dispersing = !source && api.Webbing?.isCocoonDispersing?.(enemy, target);
-        const yieldWork = !source && !dispersing && api.SpinnerAI.constructionYield(enemy);
-        if (enemy.Enemy?.name !== "Spinner" && !dispersing && !yieldWork) return undefined;
+        const yieldWork =
+            !source &&
+            !dispersing &&
+            (api.SpinnerRecovery?.clearanceFor?.(enemy) || api.SpinnerAI.constructionYield(enemy));
+        if (enemy.Enemy?.name !== "Spinner" && !dispersing && !yieldWork && !interception) return undefined;
         const cached = current(enemy);
         if (cached) return cached;
-        const group = yieldWork ? api.SpinnerNativeField.state()?.ai?.groups[yieldWork.groupId] : groupFor(enemy),
+        const group = yieldWork
+                ? api.SpinnerNativeField.state()?.ai?.groups[yieldWork.groupId]
+                : interception
+                  ? api.SpinnerNativeField.state()?.ai?.groups[api.FieldCustody.state()?.groupId]
+                  : groupFor(enemy),
             order = api.FieldCommand.movingOrder(enemy);
-        if (!group && !order && !source && !dispersing && !yieldWork) return undefined;
+        if (!group && !order && !source && !dispersing && !yieldWork && !interception) return undefined;
         let role = "native";
         const work = api.FieldProjects.beginWork(enemy);
         const currentSource = api.FieldCommand.sourceRole(enemy);
         if (currentSource) role = currentSource;
+        else if (interception) role = "intercept";
         else if (dispersing) role = "disperse";
         else if (yieldWork) role = "yield";
         else if (order) role = "dispatch";
@@ -98,10 +107,11 @@
             origin: { x: enemy.x, y: enemy.y },
             task: role === "work" ? JSON.stringify(work) : undefined,
             assignment: role === "work" ? work : undefined,
-            category: role === "yield" ? "yield" : undefined,
+            category: role === "intercept" ? "intercept" : role === "yield" ? "yield" : undefined,
+            targetId: interception?.id,
             destination: role === "yield" ? yieldWork.destination : undefined,
             resolved: !["native", "work"].includes(role),
-            nativeAllowed: role === "native",
+            nativeAllowed: role === "native" || role === "intercept",
             nativeBeforeMove: role !== "disperse",
             executed: false,
         };
@@ -161,8 +171,10 @@
             duty.handled = true;
         };
         if (facts.recoveryPursuit) {
-            if (facts.perceivedRecovery || facts.recentRecovery)
+            if (facts.perceivedRecovery || facts.recentRecovery) {
                 pursue(facts.perceivedRecovery ? facts.recoveryTarget : facts.recoveryKnown, facts.perceivedRecovery);
+                if (facts.perceivedRecovery && adjacent(facts.recoveryTarget)) duty.category = "recovery-contact";
+            }
         } else if (!facts.validPlan || facts.nestAttacker) {
             duty.category = facts.nestAttacker ? "crew" : "delegate-native";
         } else if (
@@ -175,6 +187,10 @@
             work();
         else if (facts.observed && facts.targetInCore) {
             if (!adjacent(target)) pursue(target, facts.perceivedThreat);
+            else {
+                duty.category = "native-defense";
+                duty.handled = true;
+            }
         } else if (facts.lure) pursue(facts.perceivedThreat ? target : facts.known, facts.perceivedThreat);
         else if (facts.perceivedThreat && adjacent(target)) {
             duty.category = "native-defense";
@@ -188,12 +204,40 @@
             duty.nativeAllowed = false;
             duty.handled = true;
         }
+        // An assigned field member with no executable order holds position.
+        // Roaming and target selection belong to the field, not another native AI.
+        if (facts.validPlan && duty.role === "native" && duty.category === "delegate-native" && !facts.nestAttacker) {
+            duty.role = "wait";
+            duty.nativeAllowed = false;
+            duty.handled = true;
+        }
     }
 
     function beforeMove(enemy, target, aiData) {
         if (!(enemy.SpiderlingsSpinnerRuntimeDelta > 0)) return false;
         const duty = current(enemy);
         if (!duty) return false;
+        if (duty.role === "intercept") {
+            if (duty.executed) return true;
+            const intruder = api.FieldCustody?.targetFor(enemy);
+            duty.executed = true;
+            if (!intruder || intruder !== target) {
+                duty.nativeAllowed = false;
+                return true;
+            }
+            const range = Math.max(1, enemy.Enemy.followRange || 1);
+            if (Math.max(Math.abs(enemy.x - target.x), Math.abs(enemy.y - target.y)) > range) {
+                duty.nativeAllowed = false;
+                duty.result = api.SpinnerAI.executeTacticalDuty(enemy, {
+                    groupId: duty.groupId,
+                    category: "intercept",
+                    destination: target,
+                });
+                recordResult(enemy, duty.result);
+            }
+            aiData.idle = false;
+            return true;
+        }
         if (duty.executed) {
             if (duty.handled !== false) aiData.idle = false;
             return duty.handled !== false;
@@ -222,7 +266,36 @@
 
     function gate(enemy) {
         const duty = current(enemy);
-        return !duty || (duty.role === "native" && duty.nativeAllowed);
+        if (duty?.role === "intercept") {
+            const target = api.FieldCustody?.targetFor(enemy);
+            return duty.nativeAllowed && target && String(target.id) === String(duty.targetId) ? true : false;
+        }
+        return !duty || (["native", "intercept"].includes(duty.role) && duty.nativeAllowed);
+    }
+
+    function admitNative(enemy, target, data) {
+        const duty = current(enemy);
+        if (
+            !duty?.nativeAllowed ||
+            !(enemy.SpiderlingsSpinnerRuntimeDelta > 0) ||
+            !data?.canSensePlayer ||
+            data.hostile !== true
+        )
+            return;
+        const interception = duty.role === "intercept" && api.FieldCustody?.targetFor(enemy) === target;
+        const contact = duty.category === "recovery-contact" && api.SpinnerRecovery?.wantsPursuit(enemy, target);
+        if (!interception && !contact) return;
+        // Native ignore-tied-up is an autonomous policy. An approved field contact
+        // still uses native attack credit, warnings, detection, hit and costs.
+        data.ignore = false;
+        data.wantsToAttack = true;
+        if (interception) {
+            // KD also derives these ranged policies from the player's equipment,
+            // even when this action targets the competing NPC escort.
+            data.harmless = false;
+            data.ignoreRanged = false;
+            data.wantsToCast = true;
+        }
     }
 
     function restore() {
@@ -238,6 +311,7 @@
         allows,
         beforeMove,
         gate,
+        admitNative,
         current,
         restore,
         allowsBeforeMove: (enemy) => current(enemy)?.nativeBeforeMove !== false,

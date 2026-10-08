@@ -247,3 +247,24 @@ test("native failure clears its action context and cannot publish later contact 
     assert.equal(c.KinkyDungeonTrackSneak(actor, 1, c.KinkyDungeonPlayerEntity), 0.75);
     assert.equal(reports.length, 0);
 });
+
+test("interception scopes player-leash policy to the action without changing the shared enemy definition", () => {
+    const { c, actions } = fixture(),
+        definition = { name: "WebCaster", followLeashedOnly: true },
+        actor = { id: 1, Enemy: definition },
+        target = { id: 2, Enemy: { name: "ElementalIce" } };
+    c.Spiderlings.FieldCustody = { targetFor: () => target };
+    c.Spiderlings.SpinnerDuties = { beginAction: () => ({ role: "intercept" }), allows: () => false };
+    c.KinkyDungeonEnemyLoop = (enemy) => {
+        // Native KDHelpless/KDUnPackEnemy reloads ordinary enemy templates.
+        if (!enemy.modified) enemy.Enemy = definition;
+        assert.equal(enemy.Enemy.followLeashedOnly, false);
+        assert.equal(definition.followLeashedOnly, true);
+        throw Error("native cast failure");
+    };
+    actions.install();
+    assert.throws(() => c.KinkyDungeonEnemyLoop(actor, target, 1), /native cast failure/);
+    assert.equal(actor.Enemy, definition);
+    assert.equal(actor.Enemy.followLeashedOnly, true);
+    assert.equal(Object.hasOwn(actor, "modified"), false);
+});

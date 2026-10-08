@@ -1337,6 +1337,7 @@
             old = ai.plans[group.planId],
             focus = group.planningFocus;
         if (!old) return false;
+        if (api.FieldCustody?.ownsField(old.compositeId)) return false;
         if (!focus || capacity() === 0 || !smallProject(encounter, old) || adapter.lineFixture) {
             if (old.lifecycle) delete old.lifecycle.replacement;
             return false;

@@ -33,6 +33,7 @@ const scenarios = [
         "adhesion-recovery",
         "spinner-work",
         "field-command",
+        "field-custody",
         "field-reinforcement",
         "field-permits",
         "saved-field-guard",

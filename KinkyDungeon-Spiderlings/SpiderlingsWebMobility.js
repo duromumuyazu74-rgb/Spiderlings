@@ -7,7 +7,8 @@
         WEB_COST = 1 / SPEED;
     let routes = new Map(),
         routeMap,
-        webKeys;
+        webKeys,
+        navigationRevision = 0;
 
     const key = (cell) => `${cell.x},${cell.y}`;
     const same = (a, b) => a.x === b.x && a.y === b.y;
@@ -43,6 +44,7 @@
     }
 
     function invalidateNavigation(webChanged = false) {
+        navigationRevision++;
         routes = new Map();
         const nextMap = typeof KDMapData === "undefined" ? undefined : KDMapData;
         if (webChanged || routeMap !== nextMap) webKeys = undefined;
@@ -392,5 +394,6 @@
         movementCredit,
         weightedPath,
         invalidateNavigation,
+        navigationVersion: () => navigationRevision,
     });
 })();

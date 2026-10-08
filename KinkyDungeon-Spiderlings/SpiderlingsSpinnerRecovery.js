@@ -17,6 +17,7 @@
         ESCAPE_PENALTY = CONFIG.escapePenaltyPerExtraSource;
     const strandVisuals = new Map();
     let movementAttempt;
+    let routeFrame;
 
     const player = () => KinkyDungeonPlayerEntity;
     const entities = () => KDMapData?.Entities || [];
@@ -29,6 +30,7 @@
     const sameId = (left, right) => left !== undefined && right !== undefined && String(left) === String(right);
     const result = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
     const sourceKey = (id) => String(id);
+    const cellKey = (cell) => `${cell.x},${cell.y}`;
 
     function event(map, trigger, type, handler) {
         if (typeof KDAddEvent === "function") KDAddEvent(map, trigger, type, handler);
@@ -170,7 +172,8 @@
                     sourceActionable(actor, false) &&
                     !npcCaptureUsesSource(actor.id) &&
                     !api.SpinnerNPCRecovery?.usesEntity?.(actor.id) &&
-                    actor.SpiderlingsTaskNestDefenderTarget === undefined,
+                    actor.SpiderlingsTaskNestDefenderTarget === undefined &&
+                    api.FieldCustody?.permitsRecovery(actor) !== false,
             )
             .map((actor) => actor.id);
     }
@@ -225,6 +228,15 @@
 
     // Eligibility only: native perception must supply the target before AI pursues it.
     function wantsPursuit(source, target) {
+        if (
+            target !== player() ||
+            !sourceActionable(source, false) ||
+            api.SpinnerCapture?.isControllingPlayer?.() ||
+            npcCaptureUsesSource(source.id) ||
+            api.SpinnerNPCRecovery?.usesEntity?.(source.id) ||
+            api.FieldCustody?.permitsRecovery(source) === false
+        )
+            return false;
         const eligibility = state() || bagEligibility(source) || departure();
         if (
             target !== player() ||
@@ -239,9 +251,11 @@
         const compositeId = eligibility.compositeId || sourceAssociation(source, eligibility)?.compositeId;
         if (!compositeId || !api.SpinnerNativeField?.compositeById?.(compositeId)) return false;
         return legBag()
-            ? !api.SpinnerTopology.isInsideCommonCore(api.SpinnerNativeField.state()?.topology, compositeId, target)
+            ? !atCenter(api.SpinnerNativeField.commonCore(compositeId), target)
             : !api.SpinnerNativeField?.containsComposite?.(compositeId, target);
     }
+
+    const atCenter = (goal, target = player()) => !!goal && goal.x === target.x && goal.y === target.y;
 
     function sourceRecords(recovery = state()) {
         return core.sourceRecords(recovery);
@@ -627,6 +641,7 @@
 
     // This is called only by the successful native Spinner player-effect entrance.
     function hit(source) {
+        if (api.FieldCustody?.permitsRecovery(source) === false) return false;
         if (api.SpinnerCapture?.isControllingPlayer?.() || npcCaptureUsesSource(source?.id)) return false;
         audit();
         const recovery = state();
@@ -647,12 +662,7 @@
         const eligibility = bagEligibility(source) || departure();
         if (
             legBag() &&
-            (!eligibility?.compositeId ||
-                api.SpinnerTopology.isInsideCommonCore(
-                    api.SpinnerNativeField.state()?.topology,
-                    eligibility.compositeId,
-                    player(),
-                ))
+            (!eligibility?.compositeId || atCenter(api.SpinnerNativeField.commonCore(eligibility.compositeId)))
         )
             return false;
         if (!eligibility || !allowedSource(eligibility, source) || !sourceActionable(source)) return false;
@@ -694,7 +704,29 @@
         // Pull the player through an open breach before considering paid web
         // crossings. Spider movement discounts otherwise prefer a blocked corner
         // over the open cell; recovery can cross webs only along a cardinal run.
-        return route(undefined, false) || route(source, true);
+        const revision = api.WebMobility?.navigationVersion?.();
+        // Share player routes within an unchanged navigation snapshot. Actor moves,
+        // web changes, map/load and each new turn invalidate that snapshot.
+        if (revision === undefined) return route(undefined, false) || route(source, true);
+        const graph = api.SpinnerNativeField?.state()?.topology;
+        const signature = `${turn()}:${player().x},${player().y}:${revision}`;
+        if (
+            !routeFrame ||
+            routeFrame.map !== KDMapData ||
+            routeFrame.graph !== graph ||
+            routeFrame.grid !== KDMapData.Grid ||
+            routeFrame.signature !== signature
+        )
+            routeFrame = { map: KDMapData, graph, grid: KDMapData.Grid, signature, paths: new Map() };
+        const cached = (key, actor, taxicab) => {
+            if (!routeFrame.paths.has(key)) routeFrame.paths.set(key, route(actor, taxicab));
+            return routeFrame.paths.get(key);
+        };
+        const goalKey = `${goal.x},${goal.y}`;
+        return (
+            cached(goalKey, undefined, false) ||
+            cached(`${goalKey}:${source?.id}:${source?.x},${source?.y}`, source, true)
+        );
     }
 
     function destination(recovery) {
@@ -760,7 +792,9 @@
                       holder,
                   )
                 : [];
-        const reserved = new Set((approach || []).map((cell) => `${cell.x},${cell.y}`));
+        const reserved = new Set(
+            [...(approach || []), ...(nativePath(goal, holder) || []), goal].map((cell) => `${cell.x},${cell.y}`),
+        );
         const forward = (cell) => (cell.x - goal.x) * (goal.x - player().x) + (cell.y - goal.y) * (goal.y - player().y);
         const endpoints = [];
         const radius = leading ? 1 : 2;
@@ -771,8 +805,10 @@
                     (cell.x === player().x && cell.y === player().y) ||
                     (leading && atCenter) ||
                     occupied(cell) ||
-                    (leading && cell.x === source.x && cell.y === source.y) ||
                     (!leading && cell.x === goal.x && cell.y === goal.y) ||
+                    (!leading &&
+                        goal.compositeId &&
+                        api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, cell)) ||
                     (!leading && reserved.has(`${cell.x},${cell.y}`)) ||
                     (leading &&
                         goal.compositeId &&
@@ -789,9 +825,28 @@
                 a.y - b.y ||
                 a.x - b.x,
         );
+        const crowded = leading && occupied(goal),
+            transportKey = `${goal.compositeId}:${goal.x},${goal.y}`;
+        if (
+            leading &&
+            (!crowded || recovery.transport?.key !== transportKey || !sameId(recovery.transport?.executorId, source.id))
+        )
+            delete recovery.transport;
+        if (crowded && recovery.transport) {
+            const saved = recovery.transport.cell;
+            endpoints.sort(
+                (a, b) => Number(b.x === saved.x && b.y === saved.y) - Number(a.x === saved.x && a.y === saved.y),
+            );
+        }
+        const retainApproach = (cell) => {
+            if (crowded) recovery.transport = { key: transportKey, executorId: source.id, cell: { ...cell } };
+        };
         let next;
         for (const endpoint of endpoints) {
-            if (endpoint.x === source.x && endpoint.y === source.y) break;
+            if (endpoint.x === source.x && endpoint.y === source.y) {
+                retainApproach(endpoint);
+                break;
+            }
             const path = KinkyDungeonFindPath(
                 source.x,
                 source.y,
@@ -815,6 +870,7 @@
                 );
             if (!step || occupied(step) || (step.x === player().x && step.y === player().y)) continue;
             next = step;
+            retainApproach(endpoint);
             break;
         }
         let moved = false;
@@ -835,19 +891,72 @@
                 : source.x === goal.x && source.y === goal.y;
             // An obstructed route is not arrival: tighten only after paid progress
             // or when the executor already stands inside the destination.
-            if (ownerDistance < playerDistance && (moved || atCore))
+            const opposite =
+                (source.x - goal.x) * (player().x - goal.x) + (source.y - goal.y) * (player().y - goal.y) <= 0;
+            if ((ownerDistance < playerDistance || (atCore && opposite)) && (moved || atCore))
                 player().leash.length = source.x === goal.x && source.y === goal.y ? 0.5 : 1.5;
             KinkyDungeonUpdateTether(delta, true, player());
         }
         return moved;
     }
 
+    function clearanceFor(actor) {
+        const recovery = state();
+        if (
+            !recovery ||
+            !ownsNativeTether() ||
+            !api.WebMobility?.isMobileSpider?.(actor) ||
+            api.FieldCommand?.canYield?.(actor) !== true ||
+            sourceRecords(recovery)[sourceKey(actor.id)]
+        )
+            return undefined;
+        const goal = destination(recovery),
+            e = api.SpinnerNativeField.state();
+        if (
+            !goal?.compositeId ||
+            atCenter(goal) ||
+            !api.SpinnerTopology.isInsideCommonCore(e.topology, goal.compositeId, actor)
+        )
+            return undefined;
+        const groupId =
+            e.topology.composites[goal.compositeId]?.groupId ||
+            Object.values(e.ai?.groups || {}).find(
+                (group) => e.ai.plans[group.planId]?.compositeId === goal.compositeId,
+            )?.id;
+        if (!groupId) return undefined;
+        const reserved = new Set([goal, ...(nativePath(goal, sourceById(recovery.executorId)) || [])].map(cellKey));
+        const cells = [];
+        for (let dy = -1; dy <= 1; dy++)
+            for (let dx = -1; dx <= 1; dx++) {
+                if (!dx && !dy) continue;
+                const cell = { x: actor.x + dx, y: actor.y + dy },
+                    tile = api.SpinnerNativeField.snapshot(cell);
+                if (
+                    tile.inBounds &&
+                    tile.floor &&
+                    !tile.protected &&
+                    !tile.actorOccupied &&
+                    !atCenter(cell) &&
+                    !reserved.has(cellKey(cell))
+                )
+                    cells.push(cell);
+            }
+        cells.sort(
+            (a, b) =>
+                Math.max(Math.abs(b.x - goal.x), Math.abs(b.y - goal.y)) -
+                    Math.max(Math.abs(a.x - goal.x), Math.abs(a.y - goal.y)) ||
+                a.y - b.y ||
+                a.x - b.x,
+        );
+        return cells[0] && { groupId, destination: cells[0] };
+    }
+
     function finishReturn(recovery) {
         const goal = destination(recovery);
         if (!goal?.compositeId) return false;
-        const graph = api.SpinnerNativeField?.state?.()?.topology;
-        if (!(graph && api.SpinnerTopology.isInsideCommonCore(graph, goal.compositeId, player()))) return false;
+        if (!atCenter(goal)) return false;
         const eligibility = bagEligibility();
+        api.FieldCustody?.capture(goal.compositeId, legBag()?.id);
         clearControl();
         if (eligibility) rememberDeparture(eligibility);
         return true;
@@ -1151,5 +1260,6 @@
         wantsPursuit,
         usableLeash,
         needsField,
+        clearanceFor,
     });
 })();
