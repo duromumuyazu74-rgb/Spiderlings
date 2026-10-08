@@ -96,6 +96,7 @@ function fixture() {
     context.globalThis = context;
     vm.createContext(context);
     load(context, "SpiderlingsCore.js");
+    load(context, "SpiderlingsNativeActions.js");
     load(context, "SpiderlingsCombat.js");
     context.Spiderlings.SpinnerCapture = { state: () => undefined, handleEnemyTurn: () => undefined };
     context.Spiderlings.SpinnerRecovery = {

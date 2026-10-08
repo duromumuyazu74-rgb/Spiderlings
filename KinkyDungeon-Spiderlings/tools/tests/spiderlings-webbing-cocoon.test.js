@@ -246,6 +246,7 @@ function loadRuntime(options = {}) {
     vm.createContext(context);
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsNativeActions.js",
         "SpiderlingsPopulation.js",
         "SpiderlingsEncounters.js",
         "SpiderlingsWebCaster.js",

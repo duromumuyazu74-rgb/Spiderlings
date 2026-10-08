@@ -602,19 +602,12 @@
                 return original;
             };
         }
-        if (typeof KDAIType == "undefined") return;
-        for (const [name, ai] of Object.entries(KDAIType)) {
-            ai.beforemove = api.Hooks.wrap(
-                `Cocoon.${name}`,
-                ai.beforemove || (() => false),
-                (beforemove) =>
-                    function (enemy, player, aiData) {
-                        if (api.SpinnerDuties?.current(enemy)) return beforemove.apply(this, arguments);
-                        const outcome = disperseCocoonEnemy(enemy, player, aiData);
-                        return outcome === undefined ? beforemove.apply(this, arguments) : outcome;
-                    },
-            );
-        }
+        api.NativeActions.registerBehavior("Cocoon", {
+            beforeNativeMove(enemy, player, aiData) {
+                if (api.SpinnerDuties?.current(enemy)) return undefined;
+                return disperseCocoonEnemy(enemy, player, aiData);
+            },
+        });
     }
 
     function registerCocoonOuterEvents() {

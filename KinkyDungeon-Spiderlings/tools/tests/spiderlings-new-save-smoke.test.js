@@ -37,6 +37,7 @@ const groups = Object.freeze({
 });
 const scripts = [
     "SpiderlingsCore.js",
+    "SpiderlingsNativeActions.js",
     "SpiderlingsPopulation.js",
     "SpiderlingsEncounters.js",
     "SpiderlingsSettings.js",

@@ -112,6 +112,7 @@ function loadRuntime() {
     const nativeNearest = context.KinkyDungeonNearestPlayer;
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsNativeActions.js",
         "SpiderlingsPopulation.js",
         "SpiderlingsEncounters.js",
         "SpiderlingsWebCaster.js",

@@ -1137,7 +1137,7 @@ function nativePopulationRuntime() {
         [
             native,
             `globalThis.KDTileGen = {${tiles.slice(tiles.indexOf('"ForceSpawn":'), tiles.indexOf('"Prisoner":'))}};`,
-            ["SpiderlingsCore.js", "SpiderlingsEncounters.js", "SpiderlingsWebCaster.js"]
+            ["SpiderlingsCore.js", "SpiderlingsNativeActions.js", "SpiderlingsEncounters.js", "SpiderlingsWebCaster.js"]
                 .map((file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8"))
                 .join("\n"),
             fs.readFileSync(path.join(__dirname, "../../Spiderlings.js"), "utf8"),

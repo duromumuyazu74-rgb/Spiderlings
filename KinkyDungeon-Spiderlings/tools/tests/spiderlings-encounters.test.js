@@ -33,6 +33,7 @@ function loadCoreRuntime(overrides = {}, nativeSources = []) {
     for (const source of nativeSources) vm.runInContext(stripTypeScriptTypes(source), context);
     for (const file of [
         "SpiderlingsCore.js",
+        "SpiderlingsNativeActions.js",
         "SpiderlingsPopulation.js",
         "SpiderlingsEncounters.js",
         "SpiderlingsWebCaster.js",
