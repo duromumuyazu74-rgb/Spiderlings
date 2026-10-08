@@ -138,12 +138,9 @@
                 nestIds.length && nestIds[0] !== undefined && nestIds.every((nest) => same(nest, nestIds[0]))
                     ? { type: "nest", nestId: nestIds[0] }
                     : { type: "ordinary" },
-            selectionOrdinal: 0,
-            planId: null,
-            assignments: {},
             metrics: { travel: 0, construction: 0, wait: 0, yield: 0, repair: 0 },
         };
-        return ai.groups[id];
+        return api.FieldProjects?.enrollCrew(ai.groups[id]) || ai.groups[id];
     }
 
     function sourceRole(entity) {
@@ -228,9 +225,8 @@
                 .filter((member) => member.commander === group.id && member.phase !== "returning")
                 .map((member) => member.id)
                 .sort((a, b) => String(a).localeCompare(String(b)));
-            for (const id of Object.keys(group.assignments || {}))
-                if (!group.memberIds.some((member) => same(member, id))) delete group.assignments[id];
         }
+        api.FieldProjects?.reconcileCrew(encounter);
     }
 
     function owners(encounter, groupId) {
@@ -461,6 +457,18 @@
         };
         if (compareDemand(state.requests[key], previous || { kind }) < 0) delete state.requests[key].retryAfter;
         return state.requests[key];
+    }
+
+    function reviseDemands(encounter, groupId, demands, destination, options = {}) {
+        const state = ensure(encounter);
+        for (const entry of Object.values(state.requests))
+            if (entry.fieldId === groupId && !(demands.get(entry.kind) > 0)) entry.closed = true;
+        for (const [kind, count] of demands)
+            if (count > 0) request(encounter, groupId, kind, count, destination, options);
+    }
+
+    function endProjectSupport(encounter, groupId) {
+        reviseDemands(encounter, groupId, new Map());
     }
 
     function dispatch(encounter, requestState, offer, distances) {
@@ -781,6 +789,8 @@
         servesRequest,
         offers,
         request,
+        reviseDemands,
+        endProjectSupport,
         allocate,
         dispatchRegions,
         reportNest,

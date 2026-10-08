@@ -736,6 +736,18 @@
         return { state: next, added: true };
     }
 
+    function prepareEnclosureProject(state, compositeId, groupId) {
+        const composite = state?.composites?.[compositeId];
+        if (!composite || !groupId || composite.layerIds.some((id) => state.fields[id]?.retired))
+            return { state, changed: false };
+        if (composite.groupId === groupId && composite.constructionOrder === "outer-first")
+            return { state, changed: false };
+        const next = clone(state);
+        next.composites[compositeId].groupId = groupId;
+        next.composites[compositeId].constructionOrder = "outer-first";
+        return { state: next, changed: true };
+    }
+
     function addEnclosureLayer(state, input) {
         const composite = state?.composites?.[input.compositeId],
             inner = composite && state.fields[composite.layerIds.at(-1)],
@@ -1763,6 +1775,7 @@
         setPassageOpenGates,
         setEnclosureGate,
         addEnclosureLayer,
+        prepareEnclosureProject,
         validatePolygon,
         inspectWorkAction,
         lineWorkActions,

@@ -33,7 +33,7 @@
                 duty.planId !== encounter?.ai?.groups[duty.groupId]?.planId ||
                 (!duty.executed &&
                     duty.role === "work" &&
-                    duty.task !== JSON.stringify(encounter?.ai?.groups[duty.groupId]?.assignments?.[enemy.id]))
+                    duty.task !== JSON.stringify(api.FieldProjects.workFor(enemy)))
             ) {
                 duty.role = "wait";
                 duty.executed = true;
@@ -62,25 +62,7 @@
             order = api.FieldCommand.movingOrder(enemy);
         if (!group && !order && !source && !dispersing && !yieldWork) return undefined;
         let role = "native";
-        const offer = group?.maintenanceOffer;
-        if (
-            offer?.memberId === enemy.id &&
-            !(enemy.SpiderlingsTaskNestDefenderTarget !== undefined) &&
-            !api.SpinnerRecovery?.sourceIds?.().includes(enemy.id) &&
-            !api.SpinnerNPCCapture?.usesSource?.(enemy.id) &&
-            !api.SpinnerNPCRecovery?.usesEntity?.(enemy.id) &&
-            api.SpinnerCapture?.state?.()?.admittedCompositeId ===
-                api.SpinnerNativeField.state()?.ai?.plans[group.planId]?.compositeId &&
-            api.SpinnerTopology.inspectWorkAction(api.SpinnerNativeField.state()?.topology, {
-                ...offer.assignment,
-                ownerId: enemy.id,
-            }).pending &&
-            api.SpinnerCapture?.releaseMaintenanceSource?.(enemy)
-        ) {
-            group.assignments[enemy.id] = offer.assignment;
-            group.maintenance = { memberId: enemy.id, fieldId: offer.assignment.fieldId };
-            delete group.maintenanceOffer;
-        }
+        const work = api.FieldProjects.beginWork(enemy);
         const currentSource = api.FieldCommand.sourceRole(enemy);
         if (currentSource) role = currentSource;
         else if (dispersing) role = "disperse";
@@ -94,7 +76,7 @@
         )
             role = "native";
         else if (api.SpinnerAI.hasMaintenanceAssignment(enemy)) role = "work";
-        else if (group?.assignments?.[enemy.id]?.type !== "rally" && group?.assignments?.[enemy.id]) {
+        else if (work?.type !== "rally" && work) {
             const adjacent = target && Math.max(Math.abs(enemy.x - target.x), Math.abs(enemy.y - target.y)) <= 1;
             const threat =
                 enemy.aware &&
@@ -114,8 +96,8 @@
             groupId: group?.id,
             planId: group?.planId,
             origin: { x: enemy.x, y: enemy.y },
-            task: role === "work" ? JSON.stringify(group.assignments[enemy.id]) : undefined,
-            assignment: role === "work" ? JSON.parse(JSON.stringify(group.assignments[enemy.id])) : undefined,
+            task: role === "work" ? JSON.stringify(work) : undefined,
+            assignment: role === "work" ? work : undefined,
             category: role === "yield" ? "yield" : undefined,
             destination: role === "yield" ? yieldWork.destination : undefined,
             resolved: !["native", "work"].includes(role),
