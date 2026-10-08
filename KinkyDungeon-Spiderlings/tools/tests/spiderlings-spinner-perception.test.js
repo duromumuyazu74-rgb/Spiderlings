@@ -69,6 +69,9 @@ function fixture(reverse = false) {
     vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsFieldCommand.js"), "utf8"), context, {
         filename: "SpiderlingsFieldCommand.js",
     });
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsFieldProjects.js"), "utf8"), context, {
+        filename: "SpiderlingsFieldProjects.js",
+    });
     vm.runInContext(fs.readFileSync(path.resolve(__dirname, "../../SpiderlingsSpinnerDuties.js"), "utf8"), context, {
         filename: "SpiderlingsSpinnerDuties.js",
     });

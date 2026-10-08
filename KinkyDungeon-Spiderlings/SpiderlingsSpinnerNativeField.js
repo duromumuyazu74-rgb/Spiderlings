@@ -339,6 +339,31 @@
         return { changed: changed.changed, reason: changed.reason };
     }
 
+    function prepareEnclosureProject(compositeId, groupId) {
+        const encounter = state();
+        if (!encounter?.topology) return false;
+        const result = topology().prepareEnclosureProject(encounter.topology, compositeId, groupId);
+        if (result.changed) encounter.topology = result.state;
+        return result.changed;
+    }
+
+    function commitProjectStructure(kind, input, replaceFieldIds = []) {
+        const encounter = ensureMap(input),
+            previous = encounter.topology;
+        const create = { line: "addLine", enclosure: "addEnclosure", passage: "addPassage" }[kind];
+        if (!create) return { added: false, reason: "field-kind" };
+        const result = api.SpinnerNativeField[create](input);
+        if (result?.added === false) {
+            if (replaceFieldIds.length) {
+                encounter.topology = previous;
+                reconcile();
+            }
+            return result;
+        }
+        for (const id of replaceFieldIds) retireField(id, { residual: true });
+        return result;
+    }
+
     function addEnclosureLayer(input) {
         const encounter = state();
         if (!encounter?.topology) return { added: false, reason: "inactive" };
@@ -1061,6 +1086,8 @@
         setEnclosureGate,
         auditPassageTerrain,
         addEnclosureLayer,
+        prepareEnclosureProject,
+        commitProjectStructure,
         retireField,
         setOwners,
         initializeMap,

@@ -5051,3 +5051,23 @@ test("support that leaves its field stops satisfying readiness and returns under
     command.allocate(encounter, distances);
     assert.equal(Object.values(encounter.command.members).filter((entry) => entry.requestId === request.id).length, 1);
 });
+
+test("a field demand revision closes obsolete work while retaining the same support commitment", () => {
+    const { command, encounter, receiver, distances } = loanScene();
+    command.reviseDemands(encounter, receiver.id, new Map([["readiness", 1]]), { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const loan = member.loan;
+    command.reviseDemands(encounter, receiver.id, new Map([["capture", 1]]), { x: 13, y: 6 }, { urgency: 2 });
+    command.allocate(encounter, distances);
+    assert.equal(encounter.command.requests[`${receiver.id}:readiness`].closed, true);
+    assert.equal(member.requestId, `${receiver.id}:capture`);
+    assert.equal(member.loan, loan);
+    assert.equal(member.commander, receiver.id);
+    command.endProjectSupport(encounter, receiver.id);
+    assert.ok(
+        Object.values(encounter.command.requests)
+            .filter((entry) => entry.fieldId === receiver.id)
+            .every((entry) => entry.closed),
+    );
+});
