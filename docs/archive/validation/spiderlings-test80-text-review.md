@@ -35,4 +35,4 @@ Mage 丝球恢复为 T_Swizzle 提供的蜘蛛图标占位，等待用户与画�
 
 最终包含 169 项，24,822,000 字节，SHA-256 为 `4cf0e33e8322cd03f8978d9816d250a5aa67b11abf50b84ddd0edfef0cb913d1`。12 项仓库策略测试、516 项公开测试、830 项完整本地测试及逐字节包校验通过；同一包在 KD 5.4.92 和官方 5.5.3 提交 `29219e97a362228e64d885fb569b1b35ec74b3ef` 各通过 36 个原生场景。额外七语言原生加载与 TextGet 共比对 3,458 次，全部一致。
 
-最终安装包与双版本原生验收记录见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+最终安装包与双版本原生验收记录见 [COMPATIBILITY.md](../../COMPATIBILITY.md)。

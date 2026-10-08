@@ -1,6 +1,6 @@
-# KD Spiderlings
+# Spiderlings gameplay context
 
-This glossary defines the terms used when evolving the Spiderlings mod for KD 5.5.
+This document describes gameplay concepts and native integration. Field-command terminology is owned by [GLOSSARY.md](GLOSSARY.md); module contracts by [MODULES.md](../docs/MODULES.md); current delivery status by [STATUS.md](../docs/STATUS.md).
 
 ## Item descriptions
 
@@ -11,7 +11,7 @@ Restraint `Desc` and `Desc2` describe the item's own material, form, coverage, t
 ## Spiderlings encounters
 
 **Spiderling Hunting Grounds (幼蛛猎场)**:
-A post-first-boss ordinary floor occupied by Spiderlings, retaining its native primary faction, with three objective nests, at least two large staffed capture fields and dispersed legal NPC prey. Fresh maps provide three six-member nest crews, additional patrol crews and mobile spiders up to the global map setting plus twenty. With the default setting of 25, the population target is 45 spiders, five elite Maids, one Dressmaker and one Nurse. Existing independent mobile guards count toward their faction quota before new residents are added; required scene births can exceed a prey quota. Mobile combat NPCs count toward the ecology even when neutral to the player; protected authored actors retain their rules and structures are excluded.
+A post-first-boss ordinary floor whose native primary faction is Maidforce, occupied by Spiderlings, with three objective nests, optional legal large staffed capture fields and dispersed eligible NPC prey. Fresh maps provide three six-member nest crews, additional patrol crews and mobile spiders up to the global map setting plus twenty. With the default setting of 25, the population target is 45 spiders, five elite Maids, one Dressmaker and one Nurse. Existing independent mobile guards count toward their faction quota before new residents are added; required scene births can exceed a prey quota. Mobile combat NPCs count toward the ecology even when neutral to the player; protected authored actors retain their rules and structures are excluded.
 _Avoid_: every NPC is a spider, one isolated arena, rewriting visited maps
 
 **Spiderling Infestation (幼蛛侵扰)**:
@@ -164,7 +164,7 @@ The eight full-coverage third-layer restraints: Arm, Belly, Legs, Ankles, Foot, 
 _Avoid_: manual-only stage, consumed inner restraints, Lv3 mittens or Stuffing
 
 **Native escape calibration**:
-`WebbingData.ESCAPE_PROFILES` supplies native escapeChance, struggleSpeed and minimum speed for Lv1/Lv2/Lv3, the leg bag and Cocoon. Counts are simulation outcomes for an ordinary unperked panel, not hard gates: roughly one, two, then two-to-four actions; full bags are tougher and Cocoon additionally consumes much more stamina and gates its real inner equipment. Cut remains subject to native tool/environment access. Old counted-save work migrates once to native struggleProgress, capped below completion, without replacing equipment or locks. See the [test.77 simulation record](../docs/spiderlings-test77-balance.md).
+`WebbingData.ESCAPE_PROFILES` supplies native escapeChance, struggleSpeed and minimum speed for Lv1/Lv2/Lv3, the leg bag and Cocoon. Counts are simulation outcomes for an ordinary unperked panel, not hard gates: roughly one, two, then two-to-four actions; full bags are tougher and Cocoon additionally consumes much more stamina and gates its real inner equipment. Cut remains subject to native tool/environment access. Old counted-save work migrates once to native struggleProgress, capped below completion, without replacing equipment or locks. See the [test.77 simulation record](../docs/archive/validation/spiderlings-test77-balance.md).
 
 **Binding profile**:
 A source-specific weight vector used by the shared exact-ID selector after equipment, pose, group, and native-add eligibility filtering. Each family contributes only its next layer; upgrades compete with empty parts using the same family weight, and saturated parts leave the pool. Every hit reads current physical equipment without a turn-boundary gate. It expresses preference and never supplies a fallback item.

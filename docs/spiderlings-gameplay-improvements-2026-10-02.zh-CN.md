@@ -1,6 +1,6 @@
 # 资深 KD 玩家模拟反馈：玩法改进与复测
 
-后续 test.84 根据用户纠正，撤去物品描述中的内层规则、挂绳条件及脱困方法，改为描写物品本身。见[物品描述修正](spiderlings-test84-item-descriptions.zh-CN.md)。下文保留 test.83 的历史修改与验证记录。
+后续 test.84 根据用户纠正，撤去物品描述中的内层规则、挂绳条件及脱困方法，改为描写物品本身。见[物品描述修正](archive/validation/spiderlings-test84-item-descriptions.zh-CN.md)。下文保留 test.83 的历史修改与验证记录。
 
 日期为 2026-10-02。本记录落实[对抗性玩法审查](spiderlings-adversarial-gameplay-2026-10-02.zh-CN.md)的建议，保留旧报告及其原始结果。用户已要求进一步改进游戏性与怪物行为，本轮采纳其未完工核心的施工分工建议。目标包为 `0.92.36-test.83`，基线是 `aa528662253543d4f676ef4c59fe7e6aad541edd` 的 test.82。
 

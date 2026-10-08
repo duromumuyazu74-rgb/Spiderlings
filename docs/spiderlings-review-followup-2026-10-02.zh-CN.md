@@ -1,6 +1,6 @@
 # test.86 审查修复与后续方案
 
-后续实施见 [test.87 特殊楼层人口与目标提示](spiderlings-test87-population.zh-CN.md)。本页保留 test.86 当时的调查与方案状态。
+后续实施见 [test.87 特殊楼层人口与目标提示](archive/validation/spiderlings-test87-population.zh-CN.md)。本页保留 test.86 当时的调查与方案状态。
 
 本轮按用户选择，以本地 test.85 为基线修复确定问题，保留既有 Spinner、猎场、逃脱和武器改进。Mage 是对 Maid 的专攻角色；普通 8 HP Maid 被两次未减伤的基础 4 伤害命中击杀符合设计，不降低伤害，也不以统一捕获率衡量其效果。
 

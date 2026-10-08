@@ -18,4 +18,4 @@ NPC Capture 的已有来源仍保留参与关系，本次只保护其非参与�
 
 原生保存前使用现有夹具的角色初始化步骤；读档断言覆盖受保护状态，不把 AI 正规化字段当作游戏进度。增加捕获持续时实际付费补线的断言后，第二个候选在原生 5.5.3 复现了第一格之后停工。两个未发布候选保留在 `.scratch/spinner-maintenance-candidate-01.zip` 和 `-02.zip`，正式交付仍使用新的 test.95 包，不替换 test.94。
 
-完整双版本验收与最终交付检查结果见 [COMPATIBILITY.md](COMPATIBILITY.md)。原用户游戏进程和存档不用于这些一次性测试。
+完整双版本验收与最终交付检查结果见 [COMPATIBILITY.md](../../COMPATIBILITY.md)。原用户游戏进程和存档不用于这些一次性测试。

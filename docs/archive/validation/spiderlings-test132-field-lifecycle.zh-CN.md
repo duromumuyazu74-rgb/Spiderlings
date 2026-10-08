@@ -2,7 +2,7 @@
 
 日期：2026-10-07。状态：运行实现、完整双版本原生验收与本地交付检查均通过。
 
-实现依据为 [ADR-0025](adr/0025-field-duty-and-investment-retirement.md) 和[详细设计](spinner-field-deepening-design.zh-CN.md)。保留总控 > 场地 sub AI > Spinner，非 Spinner 仍只接收区域移动命令。
+实现依据为 [ADR-0025](../../adr/0025-field-duty-and-investment-retirement.md) 和[详细设计](../../spinner-field-deepening-design.zh-CN.md)。保留总控 > 场地 sub AI > Spinner，非 Spinner 仍只接收区域移动命令。
 
 ## 行为与职责
 

@@ -14,14 +14,14 @@
 
 其他移动 Spiderlings 本阶段仅受总控区域调配，到达后继续物种原有行为。已经开始的法术、冲刺和建巢不因调配清空。固定 Nest 接收需求并汇报原生增援状态，不移动，不改变出生资格、间隔、概率、权重、人口、守军或 Tunneler 终身额度。零时间与加载不推进任何行动。
 
-详细约定见[目标设计](../spinner-field-command-design.zh-CN.md)、[三项深化](../spinner-field-command-strengthening.zh-CN.md)，交付证据见[实现记录](../spiderlings-test110-field-command.zh-CN.md)。
+详细约定见[目标设计](../spinner-field-command-design.zh-CN.md)、[三项深化](../spinner-field-command-strengthening.zh-CN.md)，交付证据见[实现记录](../archive/validation/spiderlings-test110-field-command.zh-CN.md)。
 
 test.113 补充并发需求约定：捕获与维修分别提出请求，NPC 捕获来源保持保护，由总控借调额外工人。持续请求保留身份和等待年龄；工程目标修订后，刷新在途 Spinner 借调和非 Spinner 区域命令的目的地，不重复借调。
 
-test.120 补充工程推进约定：Projects 汇总实际剩余工作和可执行成员，供给方保留工程目标人手；无施工者的受损等待工程不冒充可恢复覆盖。Command 主动重评需求缩减、原场地告急及持续受阻的借调，保留来源保护与付费返回。Duties 独占最终职责缓存和原生阶段许可；AI 只提供事实、维护建议和执行，维护释放在最终入口重新验证。实现与验收范围见[推进改进记录](../spiderlings-test120-field-progress.zh-CN.md)。
+test.120 补充工程推进约定：Projects 汇总实际剩余工作和可执行成员，供给方保留工程目标人手；无施工者的受损等待工程不冒充可恢复覆盖。Command 主动重评需求缩减、原场地告急及持续受阻的借调，保留来源保护与付费返回。Duties 独占最终职责缓存和原生阶段许可；AI 只提供事实、维护建议和执行，维护释放在最终入口重新验证。实现与验收范围见[推进改进记录](../archive/validation/spiderlings-test120-field-progress.zh-CN.md)。
 
-test.123 根据 [Issue #127](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/127) 调整选址与扩张约定：合法、可达的半径至少 3 的多层围场优先于拦截通道，通道仍优先于小围场作为后备。这取代首次建设的通道优先规则。独立活动工程最多每图 3 个，同心圈共用一个名额；已有存档中投入过的超额工程保留，达到上限后暂停新建。区域派遣合并搜索所有合法落点，角色到出口的规划路径只在同轮共享，行动时仍使用当前占位和原生支付。见[施工与楼层调整](../spiderlings-test123-field-ecology.zh-CN.md)。
+test.123 根据 [Issue #127](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/127) 调整选址与扩张约定：合法、可达的半径至少 3 的多层围场优先于拦截通道，通道仍优先于小围场作为后备。这取代首次建设的通道优先规则。独立活动工程最多每图 3 个，同心圈共用一个名额；已有存档中投入过的超额工程保留，达到上限后暂停新建。区域派遣合并搜索所有合法落点，角色到出口的规划路径只在同轮共享，行动时仍使用当前占位和原生支付。见[施工与楼层调整](../archive/validation/spiderlings-test123-field-ecology.zh-CN.md)。
 
-test.127 将独立工程上限改为用户设置，默认仍为 3，0 禁止新部署，包括预建和失效工程替换；已有场地保留并继续运行。同心圈仍共用一个名额。见[场地反馈实现](../spiderlings-test127-field-feedback.zh-CN.md)。
+test.127 将独立工程上限改为用户设置，默认仍为 3，0 禁止新部署，包括预建和失效工程替换；已有场地保留并继续运行。同心圈仍共用一个名额。见[场地反馈实现](../archive/validation/spiderlings-test127-field-feedback.zh-CN.md)。
 
-test.128 补齐原生 AI 接入约定：职责必须覆盖实体实际选用的所有原生 AI 类型，含守卫与游走；无场地命令的角色继续原生行为。场地共享接触与交战状态由所属指挥维护，个体的原巢守卫身份不能清除整组状态。付费施工、封口与捕获资格保持原有规则。见[保存场地调度修复](../spiderlings-test128-field-dispatch.zh-CN.md)。
+test.128 补齐原生 AI 接入约定：职责必须覆盖实体实际选用的所有原生 AI 类型，含守卫与游走；无场地命令的角色继续原生行为。场地共享接触与交战状态由所属指挥维护，个体的原巢守卫身份不能清除整组状态。付费施工、封口与捕获资格保持原有规则。见[保存场地调度修复](../archive/validation/spiderlings-test128-field-dispatch.zh-CN.md)。
