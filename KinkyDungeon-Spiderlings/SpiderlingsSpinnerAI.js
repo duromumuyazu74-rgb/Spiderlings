@@ -1755,25 +1755,55 @@
         };
     }
 
+    // Select an executable attack position. Native combat still decides whether
+    // the available spell/attack can execute and pays its normal costs.
+    function attackApproach(enemy, target) {
+        const spells = (enemy.Enemy.spells || [])
+            .map((name) => typeof KinkyDungeonFindSpell === "function" && KinkyDungeonFindSpell(name, true))
+            .filter((spell) => spell && !spell.selfcast && !spell.buff && (spell.castRange || spell.range) > 0);
+        const bands = spells.map((spell) => ({
+            min: spell.minRange || 0,
+            max: spell.castRange || spell.range,
+            ranged: true,
+        }));
+        if (!bands.length || enemy.Enemy.attack?.includes("Melee"))
+            bands.push({
+                min: 0,
+                max: enemy.Enemy.attackRange === 1 ? 1.5 : enemy.Enemy.attackRange || 1.5,
+                ranged: !!enemy.Enemy.projectileAttack,
+            });
+        const legal = (cell) => {
+            const length = Math.hypot(cell.x - target.x, cell.y - target.y);
+            return bands.some(
+                (band) =>
+                    length > 0 &&
+                    length >= band.min &&
+                    length <= band.max &&
+                    KinkyDungeonCheckLOS({ ...enemy, x: cell.x, y: cell.y }, target, length, band.max, false, true) &&
+                    (!band.ranged ||
+                        typeof KinkyDungeonCheckProjectileClearance !== "function" ||
+                        KinkyDungeonCheckProjectileClearance(cell.x, cell.y, target.x, target.y, !target.player)),
+            );
+        };
+        if (legal(enemy)) return { ready: true, path: [{ x: enemy.x, y: enemy.y }] };
+        const radius = Math.ceil(Math.max(...bands.map((band) => band.max))),
+            cells = [];
+        for (let dy = -radius; dy <= radius; dy++)
+            for (let dx = -radius; dx <= radius; dx++) {
+                const cell = { x: target.x + dx, y: target.y + dy },
+                    tile = api.SpinnerNativeField.snapshot(cell);
+                if (tile.inBounds && tile.floor && !tile.protected && !tile.actorOccupied && legal(cell))
+                    cells.push(cell);
+            }
+        return { ready: false, path: cells.length ? occupancyRoute(enemy, cells) : [] };
+    }
+
     function executeTacticalDuty(enemy, duty) {
         const group = api.SpinnerNativeField.state()?.ai?.groups[duty.groupId];
         if (!group) return "invalid";
-        // A competing NPC occupies its own tile. Choose a reachable adjacent
-        // attack position instead of asking occupied-goal pathfinding to succeed.
-        const approach =
-            duty.category === "intercept"
-                ? DIRECTIONS.map((d) => ({ x: duty.destination.x + d.x, y: duty.destination.y + d.y }))
-                      .filter((cell) => {
-                          const tile = api.SpinnerNativeField.snapshot(cell);
-                          return tile.inBounds && tile.floor && !tile.protected && !tile.actorOccupied;
-                      })
-                      .map((cell) => nativePath(enemy, cell))
-                      .filter((route) => route.length)
-                      .sort((a, b) => a.length - b.length)[0]
-                : undefined;
         const path =
             duty.category === "intercept"
-                ? approach || []
+                ? duty.approach || attackApproach(enemy, duty.destination).path
                 : duty.category === "pursuit"
                   ? nativePath(enemy, duty.destination)
                   : [duty.destination];
@@ -1898,6 +1928,7 @@
         observeDuty,
         dutyFacts,
         executeTacticalDuty,
+        attackApproach,
         executeDuty,
         refreshWork,
         dispatchPath,

@@ -178,11 +178,30 @@
             .map((actor) => actor.id);
     }
 
+    function qualifiedDeparture(record) {
+        const exit = record?.boundaryExit;
+        return !!(
+            legBag() &&
+            sameId(record?.legBagId, legBag().id) &&
+            exit?.compositeId &&
+            exit.from &&
+            exit.to &&
+            [exit.from.x, exit.from.y, exit.to.x, exit.to.y].every(Number.isFinite) &&
+            (exit.from.x !== exit.to.x || exit.from.y !== exit.to.y)
+        );
+    }
+
+    function requested() {
+        return qualifiedDeparture(state()) || qualifiedDeparture(departure());
+    }
+
     function bagEligibility(source) {
-        if (!legBag()) return undefined;
+        const pending = state() || departure();
+        if (!qualifiedDeparture(pending)) return undefined;
         const goal = nearestField(source);
         return {
             legBagId: legBag().id,
+            boundaryExit: pending.boundaryExit,
             compositeId: goal?.compositeId,
             groupId: goal?.groupId,
             eligibleSourceIds: bagSourceIds(),
@@ -230,6 +249,7 @@
     function wantsPursuit(source, target) {
         if (
             target !== player() ||
+            !requested() ||
             !sourceActionable(source, false) ||
             api.SpinnerCapture?.isControllingPlayer?.() ||
             npcCaptureUsesSource(source.id) ||
@@ -237,7 +257,7 @@
             api.FieldCustody?.permitsRecovery(source) === false
         )
             return false;
-        const eligibility = state() || bagEligibility(source) || departure();
+        const eligibility = state() || bagEligibility(source);
         if (
             target !== player() ||
             !core.pendingSource(eligibility, source?.id) ||
@@ -309,6 +329,7 @@
         KDGameData[DEPARTURE] = {
             version: 1,
             ...(record.legBagId !== undefined ? { legBagId: record.legBagId } : {}),
+            boundaryExit: record.boundaryExit,
             compositeId: record.compositeId,
             groupId: record.groupId,
             eligibleSourceIds: [...new Set(record.eligibleSourceIds || [])],
@@ -320,6 +341,7 @@
         const first = Object.values(sourceRecords(recovery))[0];
         return {
             ...(recovery.legBagId !== undefined ? { legBagId: recovery.legBagId } : {}),
+            boundaryExit: recovery.boundaryExit,
             compositeId: first?.compositeId || recovery.compositeId,
             groupId: first?.groupId || recovery.groupId,
             eligibleSourceIds: recovery.eligibleSourceIds,
@@ -488,9 +510,13 @@
     }
 
     function audit() {
-        if (KDGameData?.[DEPARTURE] && !departure()) delete KDGameData[DEPARTURE];
+        if (KDGameData?.[DEPARTURE] && !qualifiedDeparture(departure())) delete KDGameData[DEPARTURE];
         let recovery = state();
         if (!recovery) return false;
+        if (!qualifiedDeparture(recovery)) {
+            clearControl();
+            return false;
+        }
         if (player().leash && !ownsNativeTether()) {
             clearControl();
             return false;
@@ -590,6 +616,7 @@
         KDGameData[STATE] = {
             version: VERSION,
             compositeId: eligibility.compositeId,
+            boundaryExit: eligibility.boundaryExit,
             groupId: eligibility.groupId,
             carrierId: carrier.item.id,
             ...(legBag() ? { legBagId: legBag().id } : {}),
@@ -641,6 +668,7 @@
 
     // This is called only by the successful native Spinner player-effect entrance.
     function hit(source) {
+        if (!requested()) return false;
         if (api.FieldCustody?.permitsRecovery(source) === false) return false;
         if (api.SpinnerCapture?.isControllingPlayer?.() || npcCaptureUsesSource(source?.id)) return false;
         audit();
@@ -659,7 +687,7 @@
             bindNativeTether(recovery);
             return true;
         }
-        const eligibility = bagEligibility(source) || departure();
+        const eligibility = bagEligibility(source);
         if (
             legBag() &&
             (!eligibility?.compositeId || atCenter(api.SpinnerNativeField.commonCore(eligibility.compositeId)))
@@ -672,12 +700,31 @@
     }
 
     function onPlayerMove(data) {
-        if (!data || data.cancelmove) return false;
+        if (!data || data.cancelmove || !legBag()) return false;
         if (api.SpinnerCapture?.isControllingPlayer?.() || state()) return false;
         const from = { x: data.lastX, y: data.lastY },
             to = { x: data.moveX, y: data.moveY },
-            breached = api.SpinnerNativeField?.breachedDeparture(from, to);
-        return rememberDeparture(bagEligibility() || breached);
+            field = api.SpinnerNativeField;
+        if (player().x !== to.x || player().y !== to.y) return false;
+        const pending = departure();
+        if (pending?.boundaryExit && field.containsComposite(pending.boundaryExit.compositeId, to))
+            delete KDGameData[DEPARTURE];
+        const crossed = Object.values(field.state()?.topology?.composites || {})
+            .filter(
+                (entry) =>
+                    field.compositeById(entry.id) &&
+                    field.containsComposite(entry.id, from) &&
+                    !field.containsComposite(entry.id, to),
+            )
+            .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0];
+        if (!crossed) return false;
+        return rememberDeparture({
+            legBagId: legBag().id,
+            compositeId: crossed.id,
+            groupId: crossed.groupId,
+            boundaryExit: { compositeId: crossed.id, from, to },
+            eligibleSourceIds: [],
+        });
     }
 
     function nativePath(goal, source) {
@@ -955,10 +1002,8 @@
         const goal = destination(recovery);
         if (!goal?.compositeId) return false;
         if (!atCenter(goal)) return false;
-        const eligibility = bagEligibility();
         api.FieldCustody?.capture(goal.compositeId, legBag()?.id);
         clearControl();
-        if (eligibility) rememberDeparture(eligibility);
         return true;
     }
 
@@ -1258,6 +1303,7 @@
         destination,
         sourceActionable,
         wantsPursuit,
+        requested,
         usableLeash,
         needsField,
         clearanceFor,

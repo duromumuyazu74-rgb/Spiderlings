@@ -38,6 +38,26 @@
     (bag.data ||= {}).wrapProgress = 1;
     KinkyDungeonStatWill = 0;
     Spiderlings.FieldCustody.capture("custody-field", bag.id);
+    for (let i = 0; i < 3; i++) {
+        await turn();
+        expect(!Spiderlings.SpinnerRecovery.state(), "Inside-field bag wearer started recovery");
+        expect(!Spiderlings.SpinnerRecovery.requested(), "Inside-field position fabricated a departure");
+    }
+    KDMovePlayer(13, 10, false);
+    expect(!Spiderlings.SpinnerRecovery.requested(), "Moving inside the field armed recovery");
+    const wall = KDMapData.Entities.find((actor) => field.isOwnedProxy(actor) && actor.x === 14 && actor.y === 10);
+    if (wall)
+        KinkyDungeonDamageEnemy(
+            wall,
+            { damage: 100, type: "crush" },
+            false,
+            true,
+            undefined,
+            undefined,
+            KinkyDungeonPlayerEntity,
+        );
+    KDMovePlayer(15, 10, false);
+    expect(Spiderlings.SpinnerRecovery.requested(), "Actual bag-bearing field exit did not arm recovery");
     let hits = 0;
     const nativeBind = KDPlayerEffects.SpiderlingsWebbingEnemyBind;
     KDPlayerEffects.SpiderlingsWebbingEnemyBind = function (...args) {
@@ -94,9 +114,9 @@
         if (actor) actor.channel = 30;
     }
     const position = [
-        { x: intruder.x + 2, y: intruder.y },
-        { x: intruder.x, y: intruder.y - 2 },
-        { x: intruder.x - 2, y: intruder.y },
+        { x: intruder.x + 4, y: intruder.y },
+        { x: intruder.x, y: intruder.y - 4 },
+        { x: intruder.x - 4, y: intruder.y },
     ].find(
         (cell) =>
             KinkyDungeonMapGet(cell.x, cell.y) === "0" &&
@@ -120,5 +140,35 @@
     );
     expect(!caster.modified, "The action must preserve an ordinary native enemy");
     expect(caster.Enemy.followLeashedOnly === true, "The scoped action leaked a changed WebCaster definition");
-    return { hits, attacks, casts, trace, custody: Spiderlings.FieldCustody.state() };
+    const custody = Spiderlings.FieldCustody.state(),
+        knights = [];
+    for (const name of ["MaidKnightHeavy", "MaidKnightLight"]) {
+        setup("native-rivalry-" + name);
+        for (let y = 1; y < KDMapData.GridHeight - 1; y++)
+            for (let x = 1; x < KDMapData.GridWidth - 1; x++) KinkyDungeonMapSet(x, y, "0");
+        KDMovePlayer(2, 2, false);
+        const knight = spawn(name, 10, 10),
+            spider = spawn("Spinner", 11, 10);
+        for (const actor of [knight, spider]) Object.assign(actor, { aware: true, vp: 10 });
+        expect(KDGetFaction(knight) === "Adventurer", "Maid Knight fixture must preserve its real native faction");
+        expect(KDHostile(knight, spider) && KDHostile(spider, knight), "Maid Knight did not join Spiderlings rivalry");
+        for (const definition of KinkyDungeonEnemies.filter((enemy) => enemy.faction === "Maidforce")) {
+            const maid = { id: -999, x: 10, y: 10, hp: 10, Enemy: definition };
+            expect(KDHostile(maid, spider) && KDHostile(spider, maid), "Maidforce variant missed: " + definition.name);
+        }
+        let attempts = 0;
+        const native = KinkyDungeonEnemyTryAttack;
+        KinkyDungeonEnemyTryAttack = function (actor, target, ...args) {
+            if (actor.id === knight.id && target?.id === spider.id) attempts++;
+            return native.call(this, actor, target, ...args);
+        };
+        try {
+            for (let i = 0; i < 16 && !attempts; i++) await turn();
+        } finally {
+            KinkyDungeonEnemyTryAttack = native;
+        }
+        expect(attempts > 0, "Maid Knight selected no actual native attack: " + name);
+        knights.push({ name, attempts });
+    }
+    return { hits, attacks, casts, trace, custody, knights };
 })();

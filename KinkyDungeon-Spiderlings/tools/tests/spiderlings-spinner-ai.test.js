@@ -5170,3 +5170,40 @@ test("a field demand revision closes obsolete work while retaining the same supp
             .every((entry) => entry.closed),
     );
 });
+
+test("ranged interception uses firing range even when all melee-adjacent cells are occupied", () => {
+    const caster = spinner(1, 5, 3, {
+            Enemy: {
+                name: "WebCaster",
+                attack: "Spell",
+                followRange: 3,
+                spells: ["WebSpray"],
+                tags: { spiderlings: true },
+            },
+        }),
+        target = { id: 99, x: 9, y: 3, hp: 8, Enemy: { name: "ElementalIce" } },
+        r = runtime([spinner(2, 5, 9), spinner(3, 5, 8), caster, target]),
+        c = r.context,
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    c.KinkyDungeonFindSpell = () => ({ castRange: 6, minRange: 0 });
+    c.KinkyDungeonCheckProjectileClearance = () => true;
+    let id = 700;
+    for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++)
+            if (dx || dy) c.KDMapData.Entities.push(spinner(id++, target.x + dx, target.y + dy, { stun: 100 }));
+    c.Spiderlings.FieldCustody = {
+        state: () => ({ groupId: group.id }),
+        targetFor: (actor) => (actor === caster ? target : undefined),
+        assigned: (actor) => actor === caster,
+    };
+    caster.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.beginAction(caster, target, 1);
+    c.Spiderlings.SpinnerDuties.beforeMove(caster, target, {});
+    assert.equal(c.Spiderlings.SpinnerDuties.gate(caster), true);
+    assert.deepEqual([caster.x, caster.y], [5, 3]);
+    c.KinkyDungeonCheckProjectileClearance = (x, y) => x === 6 && y === 3;
+    const approach = c.Spiderlings.SpinnerAI.attackApproach(caster, target);
+    assert.equal(approach.ready, false);
+    assert.deepEqual(plain(approach.path.at(-1)), { x: 6, y: 3 });
+});

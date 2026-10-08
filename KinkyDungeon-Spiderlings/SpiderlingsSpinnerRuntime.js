@@ -51,11 +51,11 @@
             api.SpinnerDuties?.restore();
             api.SpinnerNativeField.afterLoad?.();
             api.SpinnerNativeField.reconcile();
+            api.FieldCustody?.observe();
             api.SpinnerRecovery?.afterLoad();
             api.SpinnerNPCCapture?.afterLoad();
             api.SpinnerNPCRecovery?.afterLoad();
             api.NPCWrapping?.afterLoad();
-            api.FieldCustody?.observe();
         });
         KDAddEvent(KDEventMapGeneric, "draw", KEY, (_event, data) => {
             api.SpinnerNPCCapture?.draw(data);

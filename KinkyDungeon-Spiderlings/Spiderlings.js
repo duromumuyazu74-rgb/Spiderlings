@@ -84,7 +84,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
     function isMaidRival(entity) {
         return (
             entity?.Enemy &&
-            KDGetFaction(entity) === "Maidforce" &&
+            (KDGetFaction(entity) === "Maidforce" ||
+                (["MaidKnightHeavy", "MaidKnightLight"].includes(entity.Enemy.name) &&
+                    KDGetFaction(entity) === "Adventurer")) &&
             (!onHuntingGrounds() || SPIDERLINGS.HuntingGrounds.independentCombatant(entity)) &&
             !entity.allied &&
             !entity.Enemy.allied &&

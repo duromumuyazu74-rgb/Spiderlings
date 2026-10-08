@@ -744,3 +744,22 @@ test("KD 5.5 perception still requires a visible target within the maid's vision
     kd.KinkyDungeonCheckLOS = () => false;
     assert.equal(kd.KinkyDungeonNearestPlayer(maid, false, true, 6), kd.KinkyDungeonPlayerEntity);
 });
+
+test("both Adventurer-faction Maid Knights join Maidforce rivalry without recruiting other Adventurers", () => {
+    const { context: kd, make, nativeHostile } = loadRuntime();
+    const spider = make("Spinner", { x: 5 });
+    for (const name of ["MaidKnightHeavy", "MaidKnightLight"]) {
+        const knight = make(name, {
+            faction: "Adventurer",
+            Enemy: { name, faction: "Adventurer", visionRadius: 8, tags: {} },
+        });
+        kd.KDMapData.Entities = [knight, spider];
+        assert.equal(kd.KDHostile(knight, spider), true);
+        assert.equal(kd.KDHostile(spider, knight), true);
+        assert.equal(kd.KinkyDungeonNearestPlayer(knight, false, true, 8), spider);
+        knight.allied = 10;
+        assert.equal(kd.KDHostile(knight, spider), nativeHostile(knight, spider));
+    }
+    const unrelated = make("AdventurerFighter", { faction: "Adventurer" });
+    assert.equal(kd.KDHostile(unrelated, spider), nativeHostile(unrelated, spider));
+});

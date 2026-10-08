@@ -44,11 +44,7 @@
             layers: [layer("return-inner", 7, 8, 11, 12)],
         });
         KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("BasicCollar"), 0, false, "");
-        KDGameData[recovery.DEPARTURE] = {
-            version: 1,
-            compositeId: "return-home",
-            eligibleSourceIds: [actor.id],
-        };
+        globalThis.normalAcceptance.seedRecoveryDeparture("return-home", [actor.id]);
         expect(recovery.hit(actor), "Recovery fixture failed native tether admission");
         actor.attackPoints = 3;
         actor.warningTiles = [{ x: 1, y: 0 }];

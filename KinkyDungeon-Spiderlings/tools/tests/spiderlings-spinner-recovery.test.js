@@ -289,7 +289,10 @@ function recoveryRuntime(options = {}) {
             nativeLeash = value;
             player.leash = value;
         },
-        leave: () => {
+        // Successful departure fixtures wear the required bag unless testing its absence.
+        leave: (withBag = true) => {
+            if (withBag && !gear.some((item) => item.name === "SpiderlingsSpinnerLegbinder"))
+                gear.push({ id: "leg-bag", name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } });
             player.x = 6;
             return c.KDMovePlayer(7, 5, true);
         },
@@ -336,17 +339,21 @@ test("no actual departure and rejected carrier do not consume ordinary binding",
         if (options.canAdd === false || options.blockers) {
             assert.equal(r.api.hit(r.source), false);
             assert.equal(r.api.state(), undefined);
-            assert.equal(r.gear.length, 0);
+            assert.equal(r.gear.length, 1);
         }
     }
 });
-test("a pending departure without an anchor cannot steal construction for an impossible leash", () => {
+test("adding a collar or bag after departure cannot manufacture a new crossing", () => {
     const r = recoveryRuntime();
-    r.leave();
-    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    r.leave(false);
     collar(r);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    legBag(r);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    r.leave();
     assert.equal(r.api.wantsPursuit(r.source, r.player), true);
 });
+
 test("foreign native tether ownership and external carrier contents are preserved", () => {
     const item = {
         id: 901,
@@ -377,7 +384,7 @@ test("a native owner taking over clears only Spiderlings' temporary duty", () =>
     r.setNativeLeash(foreign);
     assert.equal(r.api.audit(), false);
     assert.equal(r.player.leash, foreign);
-    assert.equal(r.gear.length, 1);
+    assert.equal(r.gear.length, 2);
 });
 test("native movement debt grows linearly beyond eight sources and includes ordinary slow cost", () => {
     for (const count of [1, 2, 4, 8, 12, 32])
@@ -478,7 +485,7 @@ test("death, hostility, lost contact, and incapacity clear the native tether wit
         r.api.audit();
         assert.equal(r.api.strength(), 0);
         assert.equal(r.player.leash, undefined);
-        assert.equal(r.gear.length, 1);
+        assert.equal(r.gear.length, 2);
     }
 });
 test("carrier removal clears control and another native owner is never erased", () => {
@@ -501,7 +508,7 @@ test("core arrival ends the escort while preserving the actual restraint", () =>
     assert.equal(r.api.handleEnemyTurn(r.source, r.player, 1), undefined);
     assert.equal(r.api.state(), undefined);
     assert.equal(r.player.leash, undefined);
-    assert.equal(r.gear.length, 1);
+    assert.equal(r.gear.length, 2);
 });
 test("v2 saves migrate to native ownership without moving or losing carrier progress", () => {
     const r = attached();
@@ -715,7 +722,10 @@ test("recovery detours a native faction route blocked by a coworker with paid mo
     assert.ok(r.c.tetherCalls.length > 0, "The native tether still owns dragging");
 });
 
-const legBag = (r) => r.gear.push({ id: "leg-bag", name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } });
+function legBag(r) {
+    if (!r.gear.some((item) => item.name === "SpiderlingsSpinnerLegbinder"))
+        r.gear.push({ id: "leg-bag", name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } });
+}
 test("a holder already opposite occupied center keeps its approach instead of orbiting the prey", () => {
     const r = attached();
     r.source.x = 4;
@@ -736,6 +746,7 @@ test("recovery eligibility rejects other species before routing and shares uncha
         },
     });
     legBag(r);
+    r.leave();
     const field = r.c.Spiderlings.SpinnerNativeField.state();
     r.c.Spiderlings.SpinnerNativeField.state = () => field;
     let revision = 0;
@@ -752,13 +763,13 @@ test("recovery eligibility rejects other species before routing and shares uncha
     assert.equal(routes, 3, "a changed player cell cannot reuse the former destination result");
 });
 
-test("a core-edge wearer remains eligible until reaching the actual recovery center", () => {
+test("a core-edge bag wearer without a departure stays outside recovery", () => {
     const r = recoveryRuntime();
     legBag(r);
     r.c.Spiderlings.SpinnerTopology.isInsideCommonCore = () => true;
-    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
-    assert.equal(r.api.hit(r.source), true);
-    assert.ok(r.api.state());
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    assert.equal(r.api.hit(r.source), false);
+    assert.equal(r.api.state(), undefined);
 });
 test("retained leg bag reacquires recovery after returning and leaving an intact field", () => {
     const r = attached();
@@ -818,4 +829,62 @@ test("carrier-loss retry keeps its leg bag identity until the bag is removed", (
         1,
     );
     assert.equal(r.api.departure(), undefined);
+});
+
+test("leg bag alone and inside movement never admit recovery", () => {
+    const r = recoveryRuntime();
+    legBag(r);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    assert.equal(r.api.hit(r.source), false);
+    r.player.x = 4;
+    r.c.KDMovePlayer(5, 5, true);
+    assert.equal(r.api.departure(), undefined);
+    r.c.KDMovePlayer(6, 5, true);
+    assert.equal(r.api.hit(r.source), false);
+    r.c.KDMovePlayer(7, 5, true);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
+    assert.equal(r.api.hit(r.source), true);
+});
+
+test("collar-only exits and unproven legacy records cannot start player recovery", () => {
+    const r = recoveryRuntime();
+    collar(r);
+    r.leave(false);
+    assert.equal(r.api.hit(r.source), false);
+    legBag(r);
+    r.c.KDGameData[r.api.DEPARTURE] = {
+        version: 1,
+        legBagId: "leg-bag",
+        compositeId: "field-1",
+        eligibleSourceIds: [41],
+    };
+    r.api.afterLoad();
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    assert.equal(r.api.hit(r.source), false);
+});
+
+test("cancelled movement, outer-to-outer movement and inner-ring exits cannot qualify", () => {
+    const r = recoveryRuntime();
+    legBag(r);
+    r.api.onPlayerMove({ lastX: 6, lastY: 5, moveX: 7, moveY: 5, cancelmove: true });
+    assert.equal(r.api.requested(), false);
+    r.c.KDMovePlayer(8, 5, true);
+    assert.equal(r.api.requested(), false);
+    r.player.x = 4;
+    r.c.KDMovePlayer(6, 5, true);
+    assert.equal(r.api.requested(), false);
+    r.leave();
+    assert.equal(r.api.requested(), true);
+    r.c.KDMovePlayer(6, 5, true);
+    assert.equal(r.api.requested(), false, "Re-entry before contact consumes a pending departure");
+});
+
+test("unproven active legacy recovery releases its tether but keeps the actual inventory", () => {
+    const r = attached();
+    delete r.api.state().boundaryExit;
+    const inventory = JSON.stringify(r.gear);
+    r.api.afterLoad();
+    assert.equal(r.api.state(), undefined);
+    assert.equal(r.player.leash, undefined);
+    assert.equal(JSON.stringify(r.gear), inventory);
 });

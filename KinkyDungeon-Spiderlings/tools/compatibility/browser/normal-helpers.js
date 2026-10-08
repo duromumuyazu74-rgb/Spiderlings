@@ -259,7 +259,31 @@
         );
         return bullets;
     };
+    // Transport-only scenes seed a saved, qualified crossing; admission scenes
+    // separately exercise actual native movement without injecting a hit.
+    const seedRecoveryDeparture = (compositeId, sourceIds) => {
+        const field = Spiderlings.SpinnerNativeField,
+            from = field.commonCore(compositeId);
+        expect(from && field.containsComposite(compositeId, from), "Departure snapshot needs a real field interior");
+        let to;
+        for (let y = 1; y < KDMapData.GridHeight - 1 && !to; y++)
+            for (let x = 1; x < KDMapData.GridWidth - 1 && !to; x++)
+                if (KinkyDungeonMapGet(x, y) === "0" && !field.containsComposite(compositeId, { x, y })) to = { x, y };
+        expect(to, "Departure snapshot needs a point outside the whole field");
+        KinkyDungeonAddRestraint(KinkyDungeonGetRestraintByName("SpiderlingsSpinnerLegbinder"), 0, false, "");
+        const bag = Spiderlings.SpinnerCapture.item();
+        expect(bag, "Recovery transport requires its leg bag");
+        (bag.data ||= {}).wrapProgress = 1;
+        KDGameData[Spiderlings.SpinnerRecovery.DEPARTURE] = {
+            version: 1,
+            compositeId,
+            legBagId: bag.id,
+            eligibleSourceIds: sourceIds,
+            boundaryExit: { compositeId, from: { ...from }, to },
+        };
+    };
     globalThis.normalAcceptance = {
+        seedRecoveryDeparture,
         setup,
         spawn,
         turn,

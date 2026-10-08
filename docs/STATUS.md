@@ -1,15 +1,15 @@
 # 当前开发进度
 
-核对日期：2026-10-08。本页汇总开发候选，任务状态以 GitHub Issues 和 PR 为准。
+核对日期：2026-10-09。本页汇总开发候选，任务状态以 GitHub Issues 和 PR 为准。
 
 ## 源码、安装包与合并
 
-| 项目               | 当前状态                                                                                                              |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| 正式 Release       | [v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)                                   |
-| 运行时包           | `Spiderlings_0.92.36-test.145.zip`，双版本原生与完整本地交付检查均通过                                                |
-| 最新功能与工具提交 | 基于 `b9431be` 实现 [Issue #148](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/148) 的回收、猎物归属与拦截 |
-| 源码候选           | `fix/148-field-custody-recovery`，基于 PR #147；目标 `test`，尚未合并                                                 |
+| 项目               | 当前状态                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| 正式 Release       | [v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)                                       |
+| 运行时包           | `Spiderlings_0.92.36-test.146.zip`，双版本原生、完整本地回归及包核对全部通过                                              |
+| 最新功能与工具提交 | [Issue #148](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/148) 的越界准入、补位、远程站位与女仆骑士修正已验收 |
+| 源码候选           | [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149)，草稿，目标 `test`，尚未合并                        |
 
 PR #147 包含前序场地修复及模块重构候选。PR #143、#145 和更早的候选仍保留；代码完成、安装包验收和目标分支集成是不同状态。本页不把本地候选写成已进入 `main` 或 `test`。
 
@@ -24,7 +24,13 @@ PR #147 包含前序场地修复及模块重构候选。PR #143、#145 和更早
 
 具体职责和验证入口由 [MODULES.md](MODULES.md)、[RUNTIME.md](RUNTIME.md) 与 [DEVELOPMENT.md](DEVELOPMENT.md) 维护。
 
-## 本次验收
+## 当前修正
+
+用户已澄清回收必须由穿腿套的真实场内到场外越界触发。test.145 的场内自动回中心行为已被取代；本次同时修复回收接触补位、远程拦截站位和两种 Adventurer 派系女仆骑士的敌对识别。修正及完成记录由 Issue #148 和 PR #149 维护。
+
+test.146 在 KD 5.4.92 和新拉取的官方 5.5.3 各通过 60 项原生检查及七种语言加载；12 项策略测试、774 项公共测试、1,102 项完整本地回归与同包逐字节核对通过。存档副本在场内 `(18,15)` 等待 12 回合没有启动回收，实际越界后的回收由原生场景验证。详见 [test.146 验证记录](archive/validation/spiderlings-test146-boundary-recovery.zh-CN.md)。
+
+## test.145 历史验收
 
 test.145 同包在 KD 5.4.92 和新拉取的官方 5.5.3 各通过 60 项原生检查及七种语言加载；12 项策略检查、767 项公共测试、1,094 项完整本地回归与逐字节包核对通过。安装包 SHA-256、上游提交及报告见 [COMPATIBILITY.md](COMPATIBILITY.md#test145-field-custody-and-recovery-2026-10-08)。
 
