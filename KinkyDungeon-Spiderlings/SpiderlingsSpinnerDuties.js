@@ -28,6 +28,7 @@
                 invalidTask ||
                 duty.commander !== member?.commander ||
                 duty.loan !== member?.loan ||
+                duty.requestId !== member?.requestId ||
                 duty.phase !== member?.phase ||
                 duty.planId !== encounter?.ai?.groups[duty.groupId]?.planId ||
                 (!duty.executed &&
@@ -53,12 +54,13 @@
         if (!(delta > 0)) return undefined;
         const source = api.FieldCommand.sourceRole(enemy);
         const dispersing = !source && api.Webbing?.isCocoonDispersing?.(enemy, target);
-        if (enemy.Enemy?.name !== "Spinner" && !dispersing) return undefined;
+        const yieldWork = !source && !dispersing && api.SpinnerAI.constructionYield(enemy);
+        if (enemy.Enemy?.name !== "Spinner" && !dispersing && !yieldWork) return undefined;
         const cached = current(enemy);
         if (cached) return cached;
-        const group = groupFor(enemy),
+        const group = yieldWork ? api.SpinnerNativeField.state()?.ai?.groups[yieldWork.groupId] : groupFor(enemy),
             order = api.FieldCommand.movingOrder(enemy);
-        if (!group && !order && !source && !dispersing) return undefined;
+        if (!group && !order && !source && !dispersing && !yieldWork) return undefined;
         let role = "native";
         const offer = group?.maintenanceOffer;
         if (
@@ -82,6 +84,7 @@
         const currentSource = api.FieldCommand.sourceRole(enemy);
         if (currentSource) role = currentSource;
         else if (dispersing) role = "disperse";
+        else if (yieldWork) role = "yield";
         else if (order) role = "dispatch";
         else if (
             api.HuntingGrounds?.isNestAttacker?.(enemy, target) ||
@@ -105,6 +108,7 @@
             actionId: ++nextAction,
             commander: member?.commander,
             loan: member?.loan,
+            requestId: member?.requestId,
             phase: member?.phase,
             role,
             groupId: group?.id,
@@ -112,6 +116,8 @@
             origin: { x: enemy.x, y: enemy.y },
             task: role === "work" ? JSON.stringify(group.assignments[enemy.id]) : undefined,
             assignment: role === "work" ? JSON.parse(JSON.stringify(group.assignments[enemy.id])) : undefined,
+            category: role === "yield" ? "yield" : undefined,
+            destination: role === "yield" ? yieldWork.destination : undefined,
             resolved: !["native", "work"].includes(role),
             nativeAllowed: role === "native",
             nativeBeforeMove: role !== "disperse",

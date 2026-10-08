@@ -90,6 +90,7 @@
             actor.aware = true;
         }
         const field = Spiderlings.SpinnerNativeField;
+        globalThis.normalAcceptance.addDisabledSpinnerReserves();
         Spiderlings.SpinnerAI.beginTurn({ activate: true });
         const row = { count, actions: [], turns: [], observedActions: 0 };
         rows.push(row);

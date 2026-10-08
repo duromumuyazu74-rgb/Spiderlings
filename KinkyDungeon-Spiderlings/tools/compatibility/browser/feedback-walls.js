@@ -6,7 +6,7 @@
             const floor =
                 (x >= 9 && x <= 11 && ((y >= 3 && y <= 7) || (y >= 13 && y <= 17))) ||
                 (x === 10 && y >= 8 && y <= 12) ||
-                (x === 2 && y === 2);
+                (x >= 2 && x <= 3 && y >= 2 && y <= 3);
             KinkyDungeonMapSet(x, y, floor ? "0" : "1");
             KinkyDungeonTilesDelete(`${x},${y}`);
         }
@@ -18,10 +18,19 @@
     KDPathCache = new Map();
     KDPathCacheIgnoreLocks = new Map();
     const actors = [spawn("Spinner", 9, 5), spawn("Spinner", 11, 5)];
+    // Keep the permit population in the isolated pocket, outside gate jobs and
+    // work routes. Disabled enemies cannot yield if placed on a future gate.
+    const reserves = [spawn("Spinner", 2, 2), spawn("Spinner", 3, 2)];
+    for (const actor of reserves) Object.assign(actor, { hostile: 999, aware: false, vp: 0, stun: 10000 });
     const native = Spiderlings.SpinnerNativeField;
     Spiderlings.SpinnerAI.beginTurn({ activate: true });
     const state = () => native.state();
     const field = () => Object.values(state().topology.fields).find((entry) => entry.kind === "passage");
+    const trace = (globalThis.normalTrace = {
+        actors: actors.map((actor) => actor.id),
+        reserves: reserves.map((actor) => actor.id),
+        closure: [],
+    });
     expect(field(), "The vertical corridor did not produce a passage field");
     for (let n = 0; n < 120 && field().phase !== "ready"; n++) await turn();
     expect(field().phase === "ready", "Spinners did not pay to prepare the passage");
@@ -50,7 +59,39 @@
     expect(state().topology.composites[field().compositeId].closureArmed, "Entry did not request closure");
     expect(native.isPreparedSilk(lower), "Closure intent activated an unpaid gate");
     for (const actor of actors) actor.stun = 0;
-    for (let n = 0; n < 80 && field().phase !== "sealed"; n++) await turn();
+    for (let n = 0; n < 80 && field().phase !== "sealed"; n++) {
+        await turn();
+        trace.closure.push({
+            n,
+            player: { x: KDPlayer().x, y: KDPlayer().y },
+            phase: field().phase,
+            groups: Object.values(state().ai.groups).map((group) => ({
+                id: group.id,
+                members: group.memberIds,
+                planId: group.planId,
+                assignments: Object.values(group.assignments).map((assignment) => ({
+                    type: assignment.type,
+                    target: assignment.target,
+                    workCell: assignment.workCell,
+                })),
+            })),
+            actors: [...actors, ...reserves].map((original) => {
+                const actor = KDMapData.Entities.find((entry) => entry.id === original.id);
+                return (
+                    actor && {
+                        id: actor.id,
+                        x: actor.x,
+                        y: actor.y,
+                        stun: actor.stun,
+                        source: Spiderlings.FieldCommand.sourceRole(actor),
+                        duty: Spiderlings.SpinnerDuties.current(actor)?.role,
+                    }
+                );
+            }),
+            capture: Spiderlings.SpinnerCapture.state()?.phase,
+            actions: state().topology.actionLog.length,
+        });
+    }
     expect(field().phase === "sealed", "Spinners did not pay to activate the web wall");
     expect(
         state().topology.actionLog.some((action) => action.type === "closeGate"),

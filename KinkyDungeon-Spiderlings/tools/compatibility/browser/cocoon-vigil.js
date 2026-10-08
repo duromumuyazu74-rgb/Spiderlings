@@ -89,10 +89,17 @@
         actor.AI = "guard";
         actor.hostile = 999;
     }
+    globalThis.normalAcceptance.addDisabledSpinnerReserves();
     Spiderlings.SpinnerAI.beginTurn({ activate: true });
     expect(
         Object.values(Spiderlings.FieldCommand.inspect().members).length >= 3,
         "Field vigil fixture did not assign real Spinner commanders",
+    );
+    expect(
+        Object.values(Spiderlings.SpinnerNativeField.state().ai.plans).some(
+            (plan) => !["invalid", "abandoned", "retired"].includes(plan.status),
+        ),
+        "Field vigil fixture did not retain an actual field order",
     );
     const fieldSteps = [];
     for (let i = 0; i < 40; i++) {

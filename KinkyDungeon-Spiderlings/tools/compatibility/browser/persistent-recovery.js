@@ -97,6 +97,7 @@
         const { bag } = prepare("persistent-recovery-rebuild");
         field.ensureMap({ scenario: "recovery-no-field" });
         expect(recovery.needsField(), "Fixture already has a recovery field");
+        globalThis.normalAcceptance.addDisabledSpinnerReserves();
         ai.beginTurn({ activate: true });
         const row = { mode: "rebuild", turns: [] };
         rows.push(row);

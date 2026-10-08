@@ -64,7 +64,14 @@ function runtime(entities = []) {
             KDMapData: {
                 GridWidth: 18,
                 GridHeight: 12,
-                Entities: entities,
+                // These duty/geometry fixtures isolate the active crew. Dormant
+                // hostile residents provide permits without becoming builders.
+                Entities: [
+                    ...entities,
+                    ...Array.from({ length: 16 }, (_, index) =>
+                        spinner(90000 + index, 0, 0, { disabled: true, stun: 10000 }),
+                    ),
+                ],
                 StartPosition: { x: 1, y: 6 },
                 EndPosition: { x: 16, y: 6 },
                 ShortcutPositions: {},
@@ -674,7 +681,9 @@ test("groups require eligible hostile Spinners within ten path steps and keep st
 
     const savedId = state.groups["spinner-group-1"].id;
     actors[0].x = 6;
-    actors.push(spinner(8, 12, 3, { SpiderlingsNestParentID: 90 }));
+    const newcomer = spinner(8, 12, 3, { SpiderlingsNestParentID: 90 });
+    actors.push(newcomer);
+    r.context.KDMapData.Entities.push(newcomer);
     start(r);
     assert.equal(state.groups[savedId].id, savedId);
     assert.deepEqual(plain(state.groups[savedId].memberIds), [1, 2]);
@@ -1849,9 +1858,17 @@ test("groups meeting after paid passage work keep both maintenance fields owned"
         native = c.Spiderlings.SpinnerNativeField;
     assert.equal(groups.length, 2);
     for (const group of groups) {
-        const worker = workers.find((entry) => group.memberIds.includes(entry.id)),
+        // Urgent work may borrow a background owner before these fixtures pay
+        // their first action. Physical home ownership must still survive.
+        const worker = workers.find((entry) => native.state().command.members[entry.id]?.home === group.id),
             graph = native.state().topology,
-            action = c.Spiderlings.SpinnerTopology.nextWorkAction(graph, worker.id, worker);
+            action = c.Spiderlings.SpinnerTopology.nextWorkAction(
+                graph,
+                worker.id,
+                worker,
+                [],
+                ai.plans[group.planId].fieldIds,
+            );
         assert.ok(action);
         const paid = c.Spiderlings.SpinnerTopology.applyAction(
             graph,
@@ -1870,7 +1887,10 @@ test("groups meeting after paid passage work keep both maintenance fields owned"
         const plan = ai.plans[group.planId];
         assert.notEqual(plan.status, "abandoned");
         for (const fieldId of plan.fieldIds)
-            assert.deepEqual(plain(native.fieldOwners(fieldId)), plain(group.memberIds));
+            assert.deepEqual(
+                plain(native.fieldOwners(fieldId)),
+                plain(c.Spiderlings.FieldCommand.owners(native.state(), group.id)),
+            );
     }
 });
 
@@ -2677,7 +2697,10 @@ test("a planless saved crew pauses when its last worker disappears and resumes w
     assert.doesNotThrow(() => r.begin());
     assert.equal(group.planId, null);
     assert.deepEqual(plain(group.memberIds), []);
-    c.KDMapData.Entities = [worker];
+    c.KDMapData.Entities = [
+        worker,
+        ...Array.from({ length: 3 }, (_, index) => spinner(91000 + index, 0, 0, { disabled: true, stun: 10000 })),
+    ];
     c.KinkyDungeonCurrentTick++;
     r.begin();
     const assigned = Object.values(ai.groups).find((entry) => entry.memberIds.includes(worker.id));
@@ -4123,7 +4146,11 @@ test("protected NPC capture sources request a separate paid repair worker", () =
     api.SpinnerTopology.refresh(encounter.topology);
     c.KDMapData.Entities.push({ id: 99, x: 8, y: 6, hp: 30, Enemy: { name: "MaidKnightHeavy" } });
     const sourceIds = actors.map((actor) => actor.id).filter((id) => id === 1 || id === 2);
-    api.SpinnerNPCCapture = { usesSource: (id) => sourceIds.includes(id) };
+    load(c, "SpiderlingsSpinnerNPCCapture.js");
+    c.KDGameData[api.SpinnerNPCCapture.STATE] = {
+        version: 1,
+        records: { 99: { targetId: 99, admittedCompositeId: encounter.ai.plans[home.planId].compositeId, sourceIds } },
+    };
     const donor = command.newGroup(encounter.ai);
     for (const [id, x] of [
         [101, 14],
@@ -4151,7 +4178,8 @@ test("protected NPC capture sources request a separate paid repair worker", () =
     const state = command.inspect(),
         request = state.requests[`${home.id}:repair`];
     assert.equal(request.count, 1);
-    assert.equal(request.status, "satisfied");
+    assert.equal(request.status, "travelling");
+    assert.equal(request.usable, 0);
     assert.equal(encounter.topology.actionLog.length, paid, "requesting workers cannot grant free repairs");
     assert.ok(sourceIds.every((id) => state.members[id].commander === home.id && !state.members[id].loan));
     assert.equal(Object.values(state.members).filter((member) => member.requestId === request.id).length, 1);
@@ -4337,7 +4365,8 @@ test("an unreachable continuing request preserves waiting age and retries when a
     const sameRequest = command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
     assert.equal(sameRequest.since, 7);
     command.allocate(encounter, distances);
-    assert.equal(sameRequest.status, "satisfied");
+    assert.equal(sameRequest.status, "travelling");
+    assert.equal(sameRequest.usable, 0);
     assert.equal(Object.values(encounter.command.requests).filter((entry) => !entry.closed).length, 1);
 });
 
@@ -4459,13 +4488,19 @@ test("final lure duty can replace a provisional construction task using only his
 
 test("reduced support returns only surplus members and keeps protected sources", () => {
     const { c, command, encounter, receiver, home, distances } = loanScene();
-    const request = command.request(encounter, receiver.id, "repair", 2, { x: 13, y: 6 });
+    const target = { kind: "npc", id: 91 };
+    encounter.ai.plans[receiver.planId].compositeId = "support-composite";
+    const request = command.request(encounter, receiver.id, "capture", 2, { x: 13, y: 6 }, { target });
     command.allocate(encounter, distances);
     const deployed = Object.values(encounter.command.members).filter((member) => member.loan);
     const sourceId = deployed[0].id;
-    c.Spiderlings.SpinnerNPCCapture = { usesSource: (id) => id === sourceId };
+    load(c, "SpiderlingsSpinnerNPCCapture.js");
+    c.KDGameData[c.Spiderlings.SpinnerNPCCapture.STATE] = {
+        version: 1,
+        records: { 91: { targetId: 91, admittedCompositeId: "support-composite", sourceIds: [sourceId] } },
+    };
     const log = plain(encounter.topology.actionLog);
-    command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 }, { target });
     command.allocate(encounter, distances);
     assert.equal(encounter.command.requests[request.id].deployed, 1);
     assert.equal(encounter.command.members[sourceId].commander, receiver.id);
@@ -4546,6 +4581,171 @@ test("urgent repair may borrow construction workers while independent expansion 
     assert.ok([1, 2, 3].every((id) => command.owners(encounter, home.id).includes(id)));
     assert.deepEqual(plain(encounter.topology.actionLog), before);
 });
+
+test("a field approaching contact borrows background builders without changing its work kind", () => {
+    const { command, encounter, receiver, home, distances } = loanScene();
+    encounter.ai.plans[home.planId].workforceTarget = 4;
+    const background = command.request(encounter, receiver.id, "build", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(background.deployed, 0);
+    const urgent = command.request(encounter, receiver.id, "build", 2, { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    assert.equal(urgent.kind, "build");
+    assert.equal(urgent.urgency, 1);
+    assert.equal(urgent.deployed, 2);
+    assert.equal(home.memberIds.length, 1);
+    assert.ok([1, 2, 3].every((id) => command.owners(encounter, home.id).includes(id)));
+});
+
+for (const phase of ["travelling", "support", "returning"])
+    test(`urgent field construction directly redirects a safe ${phase} helper`, () => {
+        const { c, command, encounter, receiver, home, distances } = loanScene();
+        const oldRequest = command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+        command.allocate(encounter, distances);
+        const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+        const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+        Object.assign(actor, { x: 12, y: 6 });
+        if (phase === "support") command.handleMove(actor, 1);
+        if (phase === "returning") {
+            oldRequest.urgency = 2;
+            oldRequest.closed = true;
+            command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+        }
+        assert.equal(member.phase, phase);
+        const original = plain(member);
+        const urgentField = command.newGroup(encounter.ai);
+        const urgent = command.request(encounter, urgentField.id, "build", 1, { x: 11, y: 6 }, { urgency: 1 });
+        command.allocate(encounter, distances);
+        assert.equal(member.commander, urgentField.id);
+        assert.equal(member.phase, "travelling");
+        assert.equal(member.home, home.id);
+        assert.deepEqual(plain(member.origin), original.origin);
+        assert.notEqual(member.loan, original.loan);
+        assert.equal(member.requestId, urgent.id);
+        assert.equal(urgent.deployed, 1);
+        assert.ok(command.owners(encounter, home.id).includes(member.id));
+        assert.ok(!command.owners(encounter, receiver.id).includes(member.id));
+        assert.ok(command.owners(encounter, urgentField.id).includes(member.id));
+        assert.deepEqual({ x: actor.x, y: actor.y }, { x: 12, y: 6 });
+        command.allocate(encounter, distances);
+        assert.equal(member.commander, urgentField.id);
+        assert.equal(
+            Object.values(encounter.command.members).filter((entry) => entry.requestId === urgent.id).length,
+            1,
+        );
+    });
+
+test("an urgent field may pause the only available background builder while its paid work stays", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    for (const entity of c.KDMapData.Entities.filter((entity) => entity.Enemy.name === "Spinner" && entity !== actor))
+        entity.stun = 2;
+    const paid = plain(encounter.topology.actionLog);
+    const urgentField = command.newGroup(encounter.ai);
+    const urgent = command.request(encounter, urgentField.id, "build", 1, { x: 11, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    assert.equal(member.commander, urgentField.id);
+    assert.equal(urgent.deployed, 1);
+    assert.equal(encounter.ai.plans[receiver.planId].status, "traveling");
+    assert.deepEqual(plain(encounter.topology.actionLog), paid);
+});
+
+test("support reports arrival separately and replaces sustained blocked travel without double promises", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    const originalPosition = { x: actor.x, y: actor.y };
+    assert.equal(request.deployed, 1);
+    assert.equal(request.arrived, 0);
+    assert.equal(request.usable, 0);
+    assert.equal(request.incoming, 1);
+    assert.equal(request.status, "travelling");
+    for (let turn = 0; turn < 3; turn++) command.allocate(encounter, distances);
+    assert.equal(Object.values(encounter.command.members).filter((entry) => entry.requestId === request.id).length, 1);
+    Object.assign(member, { blocked: true, blockedTurns: 8 });
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "returning");
+    assert.equal(request.deployed, 1);
+    assert.equal(request.usable, 0);
+    const replacement = Object.values(encounter.command.members).find(
+        (entry) => entry.requestId === request.id && entry.phase === "travelling",
+    );
+    assert.notEqual(replacement.id, member.id);
+    const replacementActor = c.KDMapData.Entities.find((entity) => entity.id === replacement.id);
+    Object.assign(replacementActor, { x: 13, y: 6 });
+    command.handleMove(replacementActor, 1);
+    command.allocate(encounter, distances);
+    assert.equal(request.arrived, 1);
+    assert.equal(request.usable, 1);
+    assert.equal(request.incoming, 0);
+    assert.equal(request.status, "satisfied");
+    assert.deepEqual({ x: actor.x, y: actor.y }, originalPosition);
+});
+
+for (const phase of ["travelling", "support", "returning"])
+    test(`a field retains its ${phase} helper when readiness changes to capture`, () => {
+        const { c, command, encounter, receiver, home, distances } = loanScene();
+        const readiness = command.request(encounter, receiver.id, "readiness", 1, { x: 13, y: 6 }, { urgency: 1 });
+        command.allocate(encounter, distances);
+        const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+        const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+        if (phase === "support") {
+            Object.assign(actor, { x: 13, y: 6 });
+            command.handleMove(actor, 1);
+        }
+        readiness.closed = true;
+        if (phase === "returning") command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+        assert.equal(member.phase, phase);
+        const loan = member.loan;
+        const capture = command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 }, { urgency: 2 });
+        command.allocate(encounter, distances);
+        assert.equal(member.commander, receiver.id);
+        assert.equal(member.requestId, capture.id);
+        assert.equal(member.loan, loan);
+        assert.equal(member.home, home.id);
+        assert.notEqual(member.phase, "returning");
+        assert.equal(capture.deployed, 1);
+        assert.equal(
+            Object.values(encounter.command.members).filter((entry) => entry.requestId === capture.id).length,
+            1,
+        );
+    });
+
+for (const mismatch of ["target", "field"])
+    test(`a protected NPC source does not satisfy another ${mismatch}'s capture request`, () => {
+        const { c, command, encounter, receiver, distances } = loanScene();
+        const target = { kind: "npc", id: 91 };
+        encounter.ai.plans[receiver.planId].compositeId = "support-composite";
+        const request = command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 }, { target });
+        command.allocate(encounter, distances);
+        const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+        const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+        Object.assign(actor, { x: 13, y: 6 });
+        command.handleMove(actor, 1);
+        load(c, "SpiderlingsSpinnerNPCCapture.js");
+        const record = {
+            targetId: mismatch === "target" ? 92 : 91,
+            admittedCompositeId: mismatch === "field" ? "another-composite" : "support-composite",
+            sourceIds: [actor.id],
+        };
+        c.KDGameData[c.Spiderlings.SpinnerNPCCapture.STATE] = { version: 1, records: { 91: record } };
+        command.allocate(encounter, distances);
+        assert.equal(request.usable, 0);
+        assert.notEqual(request.status, "satisfied");
+        assert.equal(member.commander, receiver.id);
+        assert.equal(command.servesRequest(actor, request, encounter), false);
+        Object.assign(record, { targetId: 91, admittedCompositeId: "support-composite" });
+        command.allocate(encounter, distances);
+        assert.equal(request.usable, 1);
+        assert.equal(request.status, "satisfied");
+        assert.equal(command.servesRequest(actor, request, encounter), true);
+        assert.deepEqual(record.sourceIds, [actor.id]);
+    });
 
 test("support waiting for native movement credit does not become a blocked loan", () => {
     const { c, command, encounter, receiver, distances } = loanScene();
@@ -4825,4 +5025,28 @@ test("a borrowed nest guard cannot erase its commander's shared field engagement
     assert.equal(facts.validPlan, true);
     assert.ok(receiver.engagement, "An individual guard decision must not clear group-owned contact");
     assert.equal(receiver.engagement.lastKnown.source, "native");
+});
+
+test("support that leaves its field stops satisfying readiness and returns under its existing promise", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "readiness", 1, { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.requestId === request.id);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    Object.assign(actor, { x: 13, y: 6 });
+    command.handleMove(actor, 1);
+    command.allocate(encounter, distances);
+    assert.equal(request.status, "satisfied");
+    const loan = member.loan;
+    Object.assign(actor, { x: 2, y: 9 });
+    command.allocate(encounter, distances);
+    assert.equal(request.arrived, 0);
+    assert.equal(request.usable, 0);
+    assert.equal(request.incoming, 1);
+    assert.equal(request.status, "travelling");
+    assert.equal(member.phase, "travelling");
+    assert.equal(member.loan, loan);
+    assert.equal(member.commander, receiver.id);
+    command.allocate(encounter, distances);
+    assert.equal(Object.values(encounter.command.members).filter((entry) => entry.requestId === request.id).length, 1);
 });

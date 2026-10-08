@@ -844,12 +844,16 @@
     }
 
     function initializeMapgenField(options = {}) {
-        const deploymentLimit = api.FieldProjects.limit();
-        if (deploymentLimit === 0) return { status: "skipped", reason: "deployment-disabled" };
         const previous = api.SpinnerNativeField.state();
         // Both legacy single-field and new multi-field saves are one-time investments.
         if (previous?.ai?.mapgenField || Object.keys(previous?.topology?.composites || {}).length)
             return { status: "skipped", reason: "existing-field" };
+        const deploymentLimit = api.FieldProjects.capacity();
+        if (deploymentLimit === 0)
+            return {
+                status: "skipped",
+                reason: api.FieldProjects.limit() === 0 ? "deployment-disabled" : "insufficient-spinners",
+            };
         const nativeSnapshot = nativeMapSnapshot(),
             snapshot = { ...nativeSnapshot, cells: nativeSnapshot.cells.map((cell) => ({ ...cell })) },
             protectedPoints = new Set((options.protectedPoints || []).map(cellKey));
@@ -1942,13 +1946,15 @@
                     }
                     return false;
                 };
+                const capableIds = plan ? members.filter(canWork).map((member) => member.id) : [],
+                    obstruction = capableIds.length ? undefined : workObstruction(encounter, group, () => true);
                 const value = {
                     members,
                     legal:
                         !plan || (staticCandidateLegal(plan, snapshot) && (plan.kind !== "line" || this.lineFixture)),
                     paid: !!plan && planHasPaidWork(encounter, plan),
                     signature: `${planningSignature(ai, members)}:${group.planningFocus?.x},${group.planningFocus?.y}`,
-                    capableIds: plan ? members.filter(canWork).map((member) => member.id) : [],
+                    capableIds,
                     blockReason: !members.length
                         ? "no-workers"
                         : members.every((member) =>
@@ -1957,7 +1963,11 @@
                                 ),
                             )
                           ? "incapacitated"
-                          : "work-route-blocked",
+                          : obstruction
+                            ? KDHostile(obstruction.worker, obstruction.occupant)
+                                ? "hostile-work-occupant"
+                                : "friendly-work-occupant"
+                            : "work-route-blocked",
                 };
                 projectFacts.set(group.id, { key: cacheKey, graph: encounter.topology, value });
                 return value;
@@ -2300,7 +2310,7 @@
         let radius = enemy.Enemy.visionRadius ? KDEnemyVisionRadius(enemy) : 0;
         if (enemy.Enemy.visionRadius && enemy.lifetime > 0) radius += enemy.Enemy.visionSummoned || 0;
         radius = Math.max(1.5, radius + KinkyDungeonGetBuffedStat(enemy.buffs, "Vision"));
-        if (KinkyDungeonStatsChoice.get("KillSquad"))
+        if (typeof KinkyDungeonStatsChoice !== "undefined" && KinkyDungeonStatsChoice.get("KillSquad"))
             radius = Math.max(radius * 1.2, (enemy.Enemy.blindSight || 0) + 3.5);
         if (enemy.blind && !enemy.aware) radius = 1.5;
         const distance = Math.hypot(enemy.x - target.x, enemy.y - target.y),
@@ -2582,6 +2592,123 @@
             passable = new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey));
         const destinations = Array.isArray(destination) ? destination : [destination];
         return routeOnSnapshot(snapshot, enemy, destinations, blocked, passable);
+    }
+
+    function workObstruction(encounter, group, predicate) {
+        const plan = encounter?.ai?.plans[group?.planId];
+        if (!plan?.compositeId || group.cancelled || ["invalid", "abandoned", "retired"].includes(plan.status))
+            return undefined;
+        const worker = group.memberIds
+            .map((id) => KDMapData.Entities.find((entity) => String(entity.id) === String(id)))
+            .find((entity) => eligibleSpinner(entity) && !api.FieldCommand.protectedMember(entity));
+        if (!worker) return undefined;
+        const skipped = new Set();
+        let action = nextGroupWork(encounter, group, worker, []);
+        const fieldId = action?.fieldId;
+        while (action?.cell && action.fieldId === fieldId) {
+            const key = assignmentKey(action);
+            if (skipped.has(key)) break;
+            skipped.add(key);
+            const occupant = KDMapData.Entities.findLast(
+                (entity) =>
+                    entity.hp > 0 &&
+                    cellKey(entity) === cellKey(action.cell) &&
+                    !api.SpinnerNativeField.isOwnedProxy(entity),
+            );
+            if (
+                occupant &&
+                !api.SpinnerTopology.inspectWorkAction(encounter.topology, action).allowsOccupiedTarget &&
+                predicate(occupant, worker)
+            )
+                return { occupant, group, worker };
+            action = nextGroupWork(encounter, group, worker, [...skipped]);
+        }
+        return undefined;
+    }
+
+    function constructionYield(enemy) {
+        if (
+            !eligibleObserver(enemy) ||
+            enemy.Enemy.name === "NestEntrance" ||
+            api.FieldCommand.protectedMember(enemy) ||
+            enemy.IntentAction ||
+            enemy.CurrentAction ||
+            enemy.action ||
+            enemy.leash ||
+            enemy.channel > 0 ||
+            api.JumperDash?.runtimeController?.snapshot?.().some((entry) => String(entry.sourceId) === String(enemy.id))
+        )
+            return undefined;
+        const encounter = api.SpinnerNativeField.state();
+        const member = encounter?.command?.members[enemy.id],
+            ownGroup = encounter?.ai?.groups[member?.commander],
+            assignment = ownGroup?.assignments?.[enemy.id];
+        // A builder can work from its own target cell; do not replace that
+        // executable assignment with a movement request from another worker.
+        if (assignment && assignment.type !== "rally" && assignmentPending(encounter, assignment, enemy.id))
+            return undefined;
+        const obstruction = Object.values(encounter?.ai?.groups || {})
+            .filter((group) => encounter.ai.plans[group.planId]?.cells?.includes(cellKey(enemy)))
+            .map((group) =>
+                workObstruction(
+                    encounter,
+                    group,
+                    (occupant, worker) => occupant === enemy && !KDHostile(worker, enemy),
+                ),
+            )
+            .find(Boolean);
+        if (!obstruction) return undefined;
+        const reserved = new Set(
+            Object.values(encounter.ai.groups).flatMap((group) => [
+                ...(encounter.ai.plans[group.planId]?.fieldIds || [encounter.ai.plans[group.planId]?.fieldId])
+                    .map((id) => encounter.topology.fields?.[id])
+                    .filter((field) => field && !field.retired)
+                    .flatMap((field) => field.boundaryCells.map(cellKey)),
+                ...Object.values(group.assignments || {}).flatMap((assignment) =>
+                    [assignment.target, assignment.workCell].filter(Boolean).map(cellKey),
+                ),
+            ]),
+        );
+        const destination = DIRECTIONS.map((direction) => ({ x: enemy.x + direction.x, y: enemy.y + direction.y }))
+            .filter((cell) => {
+                const tile = api.SpinnerNativeField.snapshot(cell);
+                return (
+                    tile.inBounds &&
+                    tile.floor &&
+                    !tile.protected &&
+                    !tile.locked &&
+                    !tile.occupied &&
+                    !reserved.has(cellKey(cell))
+                );
+            })
+            .sort((a, b) => cellKey(a).localeCompare(cellKey(b)))
+            .find((cell) => occupancyRoute(enemy, cell).length === 2);
+        return destination ? { groupId: obstruction.group.id, destination } : undefined;
+    }
+
+    function constructionTarget(enemy, target, delta) {
+        if (!(delta > 0) || !eligibleSpinner(enemy) || api.FieldCommand.protectedMember(enemy)) return target;
+        const encounter = api.SpinnerNativeField.state(),
+            member = encounter?.command?.members[enemy.id],
+            group = encounter?.ai?.groups[member?.commander];
+        if (
+            !group ||
+            api.FieldCommand.movingOrder(enemy) ||
+            (group.assignments?.[enemy.id]?.type !== "rally" && group.assignments?.[enemy.id])
+        )
+            return target;
+        const obstruction = workObstruction(
+            encounter,
+            group,
+            (occupant) =>
+                !occupant.player &&
+                !group.memberIds.some((id) => String(id) === String(occupant.id)) &&
+                KDHostile(enemy, occupant) &&
+                !!nativeSenses(enemy, occupant)?.canSeePlayer,
+        );
+        if (!obstruction) return target;
+        group.lastBlockReason = "hostile-work-occupant";
+        return obstruction.occupant;
     }
 
     // Facts and paid executors are native adapters; final priority and phase permission live in Duties.
@@ -2869,6 +2996,8 @@
     }
 
     api.SpinnerAI = {
+        constructionYield,
+        constructionTarget,
         observeDuty,
         dutyFacts,
         executeTacticalDuty,

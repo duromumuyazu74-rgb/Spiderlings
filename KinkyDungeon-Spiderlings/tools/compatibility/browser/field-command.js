@@ -18,6 +18,7 @@
     KDMapData.EndPosition = { x: 31, y: 7 };
     KDMovePlayer(4, 7, false);
     spawn("Spinner", 3, 7).hostile = 999;
+    globalThis.normalAcceptance.addDisabledSpinnerReserves();
     const largeFirst = Spiderlings.SpinnerAI.beginTurn({ activate: true });
     expect(
         Object.values(largeFirst.plans).some(
@@ -213,7 +214,7 @@
     };
     const request = command.request(current, receiver.id, "build", 1, destination);
     command.allocate(current, distances);
-    if (request.status !== "satisfied") {
+    if (request.deployed < request.count) {
         expect(
             ["necessary-duty", "committed", "unreachable"].includes(request.reason),
             "Busy crews rejected support without their actual reason",
@@ -226,7 +227,7 @@
     command.reconcile(current, KDMapData.Entities, {}, true);
     command.allocate(current, distances);
     expect(
-        request.status === "satisfied",
+        request.deployed >= request.count && request.status === "travelling",
         `A donor with spare workers rejected support: ${JSON.stringify({ reason: request.reason, protected: actors.map((actor) => ({ id: actor.id, protected: command.protectedMember(enemy(actor.id)) })), capture: Spiderlings.SpinnerCapture.state(), recovery: Spiderlings.SpinnerRecovery.state() })}`,
     );
     const member = Object.values(command.inspect().members).find((entry) => entry.commander === receiver.id);

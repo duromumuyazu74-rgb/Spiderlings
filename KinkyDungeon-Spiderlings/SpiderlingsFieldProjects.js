@@ -9,6 +9,12 @@
         const number = Number(value);
         return /^\d+$/.test(value) && Number.isSafeInteger(number) ? number : MAX_PROJECTS;
     }
+    function permits() {
+        return Math.floor(api.FieldCommand.spinnerCount() / 4);
+    }
+    function capacity() {
+        return Math.min(limit(), permits());
+    }
     const clone = (value) => JSON.parse(JSON.stringify(value));
     const cellKey = (cell) => (typeof cell === "string" ? cell : `${cell.x},${cell.y}`);
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
@@ -90,7 +96,7 @@
             old = ai.plans[group.planId],
             focus = group.planningFocus;
         if (!old) return false;
-        if (!focus || limit() === 0 || !smallProject(encounter, old) || adapter.lineFixture) {
+        if (!focus || capacity() === 0 || !smallProject(encounter, old) || adapter.lineFixture) {
             if (old.lifecycle) delete old.lifecycle.replacement;
             return false;
         }
@@ -100,7 +106,7 @@
                     entry.planId &&
                     !entry.cancelled &&
                     !["invalid", "abandoned", "retired"].includes(ai.plans[entry.planId]?.status),
-            ).length > limit()
+            ).length > capacity()
         )
             return false;
         const life = progress(encounter, old),
@@ -382,6 +388,12 @@
                 invalidate(encounter, group, "terrain");
             },
             start: (group) => {
+                const maximum = adapter.lineFixture ? limit() : capacity();
+                const active = Object.values(encounter.ai.groups).filter((entry) => {
+                    const plan = encounter.ai.plans[entry.planId];
+                    return plan && !entry.cancelled && !["invalid", "abandoned", "retired"].includes(plan.status);
+                }).length;
+                if (maximum === 0 || (!adapter.lineFixture && active >= maximum)) return;
                 const facts = adapter.facts(group);
                 if (group.noPlanSignature === facts.signature) return;
                 const search = group.lastSiteSearch;
@@ -414,7 +426,7 @@
         abandon(encounter, group, reason);
         plan.status = "invalid";
         delete group.lastSiteSearch;
-        if (limit() > 0) frames.get(encounter)?.start(group);
+        if (capacity() > 0) frames.get(encounter)?.start(group);
     }
 
     function abandon(encounter, group, reason) {
@@ -429,18 +441,40 @@
         delete group.noPlanSignature;
     }
 
+    function readiness(encounter, plan, positions, planner) {
+        const outerId = encounter.topology.composites?.[plan.compositeId]?.layerIds.at(-1);
+        const outer = encounter.topology.fields?.[outerId];
+        if (!outer || outer.retired) return 0;
+        let urgency = 0;
+        for (const target of positions) {
+            if (api.SpinnerTopology.containsDeclaredField(encounter.topology, outerId, target)) {
+                urgency = 2;
+                break;
+            }
+            if (outer.boundaryCells.some((cell) => distance(cell, target) <= 4 && planner.distances(cell, target) <= 4))
+                urgency = Math.max(urgency, 1);
+        }
+        if (urgency) plan.readiness = { urgency, lastNearTurn: now(encounter) };
+        // Crossing one edge and returning must not send an approaching crew home.
+        else if (plan.readiness && now(encounter) - plan.readiness.lastNearTurn <= 2) urgency = plan.readiness.urgency;
+        else delete plan.readiness;
+        return urgency;
+    }
+
     function update(encounter, planner, adapter) {
         const ai = encounter.ai,
             command = api.FieldCommand,
             state = command.ensure(encounter);
         const positions = command.positions(encounter),
-            maximum = limit();
+            maximum = planner.lineFixture ? limit() : capacity();
         const activeProjects = () =>
             Object.values(ai.groups).filter((group) => {
                 const plan = ai.plans[group.planId];
                 return plan && !["invalid", "abandoned", "retired"].includes(plan.status) && !group.cancelled;
             });
         ai.projects ||= { version: 1, coverage: [], unmet: [] };
+        ai.projects.permits = permits();
+        ai.projects.maximum = maximum;
         // Global position knowledge is planning-only. It never creates a native engagement or attack awareness.
         ai.projects.positions = positions;
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
@@ -505,7 +539,7 @@
                 return (
                     saved &&
                     !["invalid", "abandoned", "retired"].includes(saved.status) &&
-                    saved.coverageAvailable &&
+                    (saved.coverageAvailable || saved.usableCoverage) &&
                     point &&
                     group.planningFocus &&
                     (distance(point, group.planningFocus) <= Math.max(6, (saved.radius || 0) + 2) ||
@@ -544,6 +578,10 @@
             const needs = api.SpinnerTopology.fieldWorkNeeds(encounter.topology, plan.fieldIds || [plan.fieldId]);
             const { repair, construction } = needs;
             const workers = workforce(plan, needs, fields);
+            const urgency = readiness(encounter, plan, positions, planner);
+            const outerId = encounter.topology.composites?.[plan.compositeId]?.layerIds.at(-1);
+            const outer = encounter.topology.fields?.[outerId];
+            const atSite = (member) => command.atSite(member, group.id, encounter);
             const capable = members.filter(
                 (member) =>
                     !command.protectedMember(member) &&
@@ -567,13 +605,40 @@
                   ? api.SpinnerRecovery?.needsField?.()
                       ? "recovery"
                       : "capture"
-                  : repair
-                    ? "repair"
-                    : "build";
-            const required = defense ? 2 : targets.length ? 2 : construction ? workers : repair ? 1 : 0;
-            const own = members.filter((member) => !state.members[member.id]?.loan).length;
+                  : urgency
+                    ? "readiness"
+                    : repair
+                      ? "repair"
+                      : "build";
+            const nearby = positions.filter(
+                (target) =>
+                    outer &&
+                    (api.SpinnerTopology.containsDeclaredField(encounter.topology, outerId, target) ||
+                        outer.boundaryCells.some(
+                            (cell) => distance(cell, target) <= 4 && planner.distances(cell, target) <= 4,
+                        )),
+            );
+            const target = defense
+                ? {
+                      kind: "npc",
+                      id: members.find((member) => member.SpiderlingsTaskNestDefenderTarget !== undefined)
+                          .SpiderlingsTaskNestDefenderTarget,
+                  }
+                : (targets.length ? targets : nearby).find((entry) => entry.target.kind === "player")?.target ||
+                  (targets.length ? targets : nearby)[0]?.target ||
+                  group.engagement?.target;
+            const staffing = members.filter(
+                (member) =>
+                    command.servesRequest(member, { kind, fieldId: group.id, target }, encounter) &&
+                    !state.members[member.id]?.blocked &&
+                    Number.isFinite(planner.distances(member, origin)),
+            );
+            const required = defense ? 2 : targets.length || urgency ? 2 : construction ? workers : repair ? 1 : 0;
+            const own = staffing.filter((member) => !state.members[member.id]?.loan && atSite(member)).length;
             plan.workforceTarget = workers;
             plan.availableWorkers = capable.length;
+            plan.availableStaff = staffing.filter(atSite).length;
+            plan.urgency = urgency;
             plan.usableCoverage = !!geometryReady;
             plan.projectState =
                 (repair || construction) && !capable.length
@@ -587,16 +652,27 @@
             // Capture sources cannot also repair their field. Keep their commitment and ask for a separate worker.
             if (repair || construction) {
                 const workKind = repair ? "repair" : "build";
-                const available = capable.filter((member) => !state.members[member.id]?.loan).length;
+                // A blocked cell is an execution problem, not missing staff.
+                // Keep the committed workers and resolve the obstruction before
+                // asking for another identical crew that cannot work either.
+                const workStaff = members.filter(
+                    (member) =>
+                        command.servesRequest(member, { kind: workKind, fieldId: group.id, target }, encounter) &&
+                        !state.members[member.id]?.loan &&
+                        !state.members[member.id]?.blocked &&
+                        Number.isFinite(planner.distances(member, origin)),
+                );
+                const available = workStaff.length,
+                    availableAtSite = workStaff.filter(atSite).length;
                 const retained = ["capture", "recovery", "defense"].includes(kind)
-                    ? Math.max(0, required - (own - available))
+                    ? Math.min(availableAtSite, Math.max(0, required - (own - availableAtSite)))
                     : 0;
                 demands.set(workKind, Math.max(0, (repair ? 1 : workers) - Math.max(0, available - retained)));
             }
             for (const request of Object.values(state.requests))
                 if (request.fieldId === group.id && !demands.has(request.kind)) request.closed = true;
             for (const [duty, count] of demands) {
-                if (count > 0) command.request(encounter, group.id, duty, count, origin);
+                if (count > 0) command.request(encounter, group.id, duty, count, origin, { urgency, target });
                 else if (state.requests[`${group.id}:${duty}`]) state.requests[`${group.id}:${duty}`].closed = true;
             }
             const stalled = (repair || construction) && now(encounter) - life.lastAdvanceTurn >= STALL_TURNS;
@@ -604,7 +680,13 @@
                 plan.projectState = "waiting";
                 life.blockReason ||= adapter?.facts(group).blockReason || "no-workers";
             }
-            plan.coverageAvailable = !!geometryReady || (capable.length > 0 && !stalled);
+            const activeSources = members.some(
+                (member) =>
+                    command.sourceRole(member) &&
+                    command.servesRequest(member, { kind: "capture", fieldId: group.id, target }, encounter),
+            );
+            plan.coverageAvailable =
+                (!!geometryReady && (plan.availableStaff >= 2 || activeSources)) || (capable.length > 0 && !stalled);
         }
         const active = Object.values(ai.groups).filter((group) => {
             const plan = ai.plans[group.planId];
@@ -623,6 +705,13 @@
                 );
             });
         const unmet = positions.filter((target) => !covered(target));
+        // A ready field with missing staff still reports unmet demand. Moving
+        // its last worker into a duplicate project does not fill that deficit.
+        const reusable = (target) =>
+            active.some((group) => {
+                const plan = ai.plans[group.planId];
+                return plan.usableCoverage && covers(plan, target, planner);
+            });
         ai.projects.coverage = active.map((group) => ({
             groupId: group.id,
             planId: group.planId,
@@ -636,7 +725,7 @@
         if (!planner.lineFixture && active.length)
             for (const target of unmet) {
                 if (active.length >= maximum) break;
-                if (covered(target)) continue;
+                if (covered(target) || reusable(target)) continue;
                 const supply = command.offers(encounter, target, planner.distances);
                 if (!supply.members.length) continue;
                 const first = KDMapData.Entities.find((entity) => String(entity.id) === String(supply.members[0].id));
@@ -687,6 +776,8 @@
         selectSavedPlan,
         activatePlan,
         limit,
+        permits,
+        capacity,
         MAX_PROJECTS,
         SEARCH_INTERVAL,
         STALL_TURNS,
