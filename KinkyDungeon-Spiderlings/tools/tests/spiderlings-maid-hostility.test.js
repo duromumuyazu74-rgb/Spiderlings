@@ -754,12 +754,15 @@ test("both Adventurer-faction Maid Knights join Maidforce rivalry without recrui
             Enemy: { name, faction: "Adventurer", visionRadius: 8, tags: {} },
         });
         kd.KDMapData.Entities = [knight, spider];
+        assert.equal(kd.Spiderlings.Rivalry.isMaid(knight), true);
         assert.equal(kd.KDHostile(knight, spider), true);
         assert.equal(kd.KDHostile(spider, knight), true);
         assert.equal(kd.KinkyDungeonNearestPlayer(knight, false, true, 8), spider);
         knight.allied = 10;
+        assert.equal(kd.Spiderlings.Rivalry.isMaid(knight), false);
         assert.equal(kd.KDHostile(knight, spider), nativeHostile(knight, spider));
     }
     const unrelated = make("AdventurerFighter", { faction: "Adventurer" });
+    assert.equal(kd.Spiderlings.Rivalry.isMaid(unrelated), false);
     assert.equal(kd.KDHostile(unrelated, spider), nativeHostile(unrelated, spider));
 });

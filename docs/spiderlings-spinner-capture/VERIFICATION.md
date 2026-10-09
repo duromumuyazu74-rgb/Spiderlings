@@ -1,5 +1,7 @@
 # HTML 制作手册验证
 
+历史记录：以下命令、源文件路径和结果属于 2026-09-12 的策划演示。旧维护脚本已移除，保留的 HTML 和本记录不代表当前游戏验收。当前入口见 [README.md](README.md)。
+
 日期：2026-09-12。成品：`production-plan.zh-CN.html`，7,262,707 字节。
 
 验证命令：`node docs/spiderlings-spinner-capture/verify-plan.mjs`。

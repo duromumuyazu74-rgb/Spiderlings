@@ -15,6 +15,12 @@ function fixture() {
     const player = { id: 1, player: true, faction: "Player" };
     const c = {
         Spiderlings: {
+            Rivalry: {
+                isMaid: (target) =>
+                    target.faction === "Maidforce" ||
+                    (["MaidKnightHeavy", "MaidKnightLight"].includes(target.Enemy?.name) &&
+                        target.faction === "Adventurer"),
+            },
             Webbing: {
                 applyEnemyProgression: (...args) => {
                     calls.binds.push(args);
@@ -137,6 +143,27 @@ test("Mage bonus does not affect allies or unrelated NPC targets", () => {
         r.calls.npcDamage.every(({ damage }) => damage.damage === 0.5),
         true,
     );
+});
+
+test("Mage bolts use the shared Maid identity and approved field interception targets", () => {
+    for (const name of ["MaidKnightHeavy", "MaidKnightLight", "ElementalIce"]) {
+        const r = fixture();
+        const target = { id: 11, faction: "Adventurer", Enemy: { name }, hp: 20 };
+        if (name === "ElementalIce") {
+            target.faction = "Enemy";
+            r.c.Spiderlings.FieldCustody = { interceptionPair: (a, b) => a === r.source && b === target };
+            r.c.KDHostile = (a, b) => r.c.Spiderlings.FieldCustody.interceptionPair(a, b);
+        }
+        r.c.KDBulletHitEnemy(r.bullet(), target);
+        assert.equal(target.hp, 16, name);
+        assert.equal(target.SpiderlingsNPCAdhesion?.ownedSilk, 6, name);
+        if (name === "ElementalIce") {
+            r.c.Spiderlings.FieldCustody.interceptionPair = () => false;
+            r.c.KDBulletHitEnemy(r.bullet(), target);
+            assert.equal(target.hp, 15.5, "Ended interception restores the ordinary bolt path");
+            assert.equal(target.SpiderlingsNPCAdhesion.ownedSilk, 6);
+        }
+    }
 });
 
 test("Hunting Grounds Mage bolts subdue hostile NPC prey while preserving ally and ceasefire protection", () => {

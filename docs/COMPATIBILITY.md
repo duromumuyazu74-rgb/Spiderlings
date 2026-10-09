@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.151.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.152.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.152 formal review corrections (2026-10-09)
+
+Review against v0.92.38 found duplicated Mage target classification. Bolts, runes, Hex and Collapse now consume the shared Maid identity, including both Adventurer-faction Maid Knights, and recognize approved field interception targets. Existing native hostility, player behavior, shields and resistance remain authoritative. Obsolete offline planning maintenance sources were retired while their historical HTML and verification record remain.
+
+The same test.152 ZIP passes all 63 native checks and seven language loads on KD 5.4.92 and official 5.5.3, commit `e441c0d3971b1b7a53477e63496c09fea87a7b11`, fetched at `2026-10-09T07:17:57.004Z`. Full acceptance: `<cache>/runs/2026-10-09T07-17-57-020Z-0.92.36-test.152/acceptance.json`. The package has 177 entries and 24,887,692 bytes; SHA-256 `6f14afa299342688fc6b347ce0dc1ca4415f1c31764e7001fcf5e0e31e80f47f`.
+
+Repository/module checks, 12 policy tests, 785 public tests, the complete 1,114-test local watcher and exact package/source verification pass. Collector `.scratch/delivery/2026-10-09T07-54-06-611Z-oBsZms/REPORT.md` records stable source and package bytes. Only outcome docs changed afterward, followed by repository checks. [Release review](archive/validation/spiderlings-0.92.39-review.zh-CN.md) records findings and the remaining formal CI-artifact publication stages.
 
 ## Test.151 layered residents and field action continuity (2026-10-09)
 

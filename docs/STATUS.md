@@ -7,7 +7,7 @@
 | 项目               | 当前状态                                                                                                                                |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 正式 Release       | [v0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)                                                     |
-| 运行时包           | `Spiderlings_0.92.36-test.151.zip`，最低常驻与行动生命周期修正，双版本原生与完整交付验收通过                                            |
+| 运行时包           | `Spiderlings_0.92.36-test.152.zip`，最低常驻与行动生命周期修正，双版本原生与完整交付验收通过                                            |
 | 最新功能与工具提交 | [Issue #148](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/148) 最低常驻、Jumper 已批准冲刺与 Capture 中越界记录已实现并验收 |
 | 源码候选           | [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149)，草稿，目标 `test`，尚未合并                                      |
 
@@ -25,7 +25,11 @@ PR #147 包含前序场地修复及模块重构候选。PR #143、#145 和更早
 
 具体职责和验证入口由 [MODULES.md](MODULES.md)、[RUNTIME.md](RUNTIME.md) 与 [DEVELOPMENT.md](DEVELOPMENT.md) 维护。
 
-## 当前修正
+## 正式发布审查
+
+[Issue #150](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/150) 跟踪 0.92.39 晋升。test.152 已修复 Mage 对女仆骑士及场地拦截者的旧分类遗漏，并移除失效策划演示维护脚本。双版本各 63 项原生检查及七种语言加载、785 项公共测试、1,114 项本地回归和包核对通过。正式 main CI 附件与 Release 发布仍在准备，详见[审查记录](archive/validation/spiderlings-0.92.39-review.zh-CN.md)。
+
+## 场地修正
 
 test.151 保留 Jumper 对竞争牵引者已批准冲刺的敌意与小队名额，修复冷却已消耗却立即自行取消的情况。玩家在部分 Capture 期间穿腿套真实越界会保留待回收记录，Capture 结束前仍不启动重叠 Recovery。最终同包在 KD 5.4.92 与新拉取的官方 5.5.3 各通过全部 62 项原生检查及七种语言加载；12 项策略测试、782 项公共测试、1,111 项完整本地回归和逐字节包核对通过。详见 [test.151 验证记录](archive/validation/spiderlings-test151-residency.zh-CN.md)。
 

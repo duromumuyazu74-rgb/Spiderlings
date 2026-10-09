@@ -104,6 +104,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
             !(entity.ceasefire > 0)
         );
     }
+    SPIDERLINGS.Rivalry = Object.freeze({ isMaid: isMaidRival });
     function isMaidTarget(entity) {
         return isHostileSpiderlingTarget(entity) || isHostileWebTarget(entity);
     }
