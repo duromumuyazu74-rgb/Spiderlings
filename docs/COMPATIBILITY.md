@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.152.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current formal package is `Spiderlings_0.92.39fix1.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## 0.92.39fix1 field maintenance hotfix (2026-10-09)
+
+[PR #155](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/155) restores paid repairs for damaged enclosure corners and cooldown-qualified rebuilding of collapsed links in active enclosures. Loading damage performs no free work. A retained affected save completes its two outer-corner repairs and records 33 successful paid work actions without invalid tasks over 24 native turns.
+
+The published package comes from successful [main CI run 37940996265](https://github.com/duromumuyazu74-rgb/Spiderlings/actions/runs/37940996265), source commit `030038593be73c2f0823b66e53cc59507bbd8a66`. Its 177 entries match that source. Both KD 5.4.92 and official KD 5.5.3, fetched GitHub `5.5` commit `c4f4035282ad6e79663df28a079e6c9b30fec349`, pass all 63 native checks and seven language loads per target using this exact ZIP. The native maintenance scene includes paid corner repair, collapsed-link rebuilding, later extension and zero-time reload checks. Repository/module checks, 12 policy tests, 788 public tests and the complete 1,117-test local watcher pass.
+
+[Formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1) attachment `Spiderlings_0.92.39fix1.zip` has 24,933,888 bytes and SHA-256 `76afb32d9d3d08458ebc9a30de5a328b8f1831a4d33f122a970130e6476d33ec`. Publication verification confirms the tag, bilingual notes, Latest status and matching downloaded attachment.
 
 ## Test.152 formal review corrections (2026-10-09)
 
