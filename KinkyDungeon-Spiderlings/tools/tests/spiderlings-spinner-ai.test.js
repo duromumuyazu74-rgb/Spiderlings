@@ -634,7 +634,22 @@ test("builders do not oscillate along a free prefix whose later native step is o
 });
 
 test("separate Spinner groups perform paid work on their own enclosures", () => {
-    const workers = [spinner(1, 3, 3), spinner(2, 15, 8)],
+    const workers = [
+            spinner(1, 3, 3),
+            spinner(2, 15, 8),
+            ...[
+                [2, 3],
+                [3, 2],
+                [4, 3],
+                [3, 4],
+                [4, 4],
+                [14, 8],
+                [15, 7],
+                [16, 8],
+                [15, 9],
+                [14, 9],
+            ].map(([x, y], i) => spinner(10 + i, x, y)),
+        ],
         r = runtime([...workers, { id: 81, x: 2, y: 2, hp: 4, Enemy: { name: "Maidforce" } }]),
         snapshot = mapSnapshot();
     delete snapshot.candidateLines;
@@ -646,7 +661,25 @@ test("separate Spinner groups perform paid work on their own enclosures", () => 
     assert.ok(wrongAssignment);
     groups[1].assignments[workers[1].id] = plain(wrongAssignment);
     start(r, snapshot);
-    assert.ok(ai.plans[groups[1].planId].fieldIds.includes(groups[1].assignments[workers[1].id]?.fieldId));
+    assert.ok(Object.keys(groups[1].assignments).length > 0);
+    assert.ok(
+        Object.values(groups[1].assignments).every((assignment) =>
+            ai.plans[groups[1].planId].fieldIds.includes(assignment.fieldId),
+        ),
+        "A foreign reservation must be replaced or withdrawn",
+    );
+    const payments = [],
+        native = r.context.Spiderlings.SpinnerNativeField,
+        apply = native.applyPaidAction;
+    native.applyPaidAction = function (actor, action) {
+        const member = r.context.Spiderlings.FieldCommand.inspect().members[actor.id],
+            group = ai.groups[member?.commander];
+        const owns = native.fieldOwners(action.fieldId).includes(actor.id);
+        const ownPlan = ai.plans[group?.planId]?.fieldIds.includes(action.fieldId);
+        const result = apply.apply(this, arguments);
+        if (result.paid && result.applied) payments.push({ owns, ownPlan, fieldId: action.fieldId });
+        return result;
+    };
     for (let turn = 0; turn < 30; turn++) {
         start(r, snapshot);
         for (const group of groups)
@@ -655,17 +688,18 @@ test("separate Spinner groups perform paid work on their own enclosures", () => 
         for (const worker of workers) r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
         r.context.KinkyDungeonCurrentTick++;
     }
+    native.applyPaidAction = apply;
+    assert.ok(payments.length > 0);
+    assert.ok(
+        payments.every((payment) => payment.owns && payment.ownPlan),
+        "Each paid action must belong to its current field command at payment time",
+    );
     const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
     for (const [workerId, fieldId] of fieldByWorker) {
         const ownedFields = ai.plans[groups.find((group) => group.memberIds.includes(workerId)).planId].fieldIds;
         assert.ok(
             graph.actionLog.some((action) => ownedFields.includes(action.fieldId)),
             `${workerId}: ${fieldId}`,
-        );
-        assert.ok(
-            graph.actionLog.every(
-                (action) => action.fieldId !== fieldId || graph.fieldOwners[fieldId].includes(workerId),
-            ),
         );
     }
 });
@@ -1973,6 +2007,28 @@ test("fresh native approach redirects an unpaid plan while hidden coordinates an
         "Paid construction keeps its maintenance owners after prey changes sides",
     );
     assert.deepEqual(plain(native.fieldOwners(redirected.fieldIds[2])), [worker.id]);
+});
+
+test("an unpaid field holding attributed prey is not relocated when its recovery target moves", () => {
+    const r = runtime([spinner(1, 4, 4)]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    c.Spiderlings.FieldCustody = {
+        ownsField: (id) => id === plan.compositeId,
+        ownsGroup: () => false,
+        assigned: () => false,
+    };
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 2, y: 7 });
+    start(r, snapshot);
+    ai.coordinationTurn = 20;
+    start(r, snapshot);
+    assert.equal(group.planId, plan.id);
+    assert.notEqual(plan.status, "abandoned");
+    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].retired, false);
 });
 
 test("an unpaid project retains newly reachable approach progress after an initially blocked assignment", () => {
@@ -4965,7 +5021,11 @@ test("large project crews finish staffing before independent expansion borrows s
             encounter = c.Spiderlings.SpinnerNativeField.state();
         const projects = Object.values(ai.groups).filter((group) => group.planId);
         assert.equal(projects.length, count === 4 ? 1 : 2);
-        assert.ok(projects.every((group) => group.memberIds.length === 4));
+        assert.deepEqual(
+            projects.map((group) => group.memberIds.length).sort((a, b) => b - a),
+            count === 4 ? [4] : [6, 2],
+        );
+        assert.ok(projects.every((group) => c.Spiderlings.FieldCommand.residency(encounter, group.id).minimum === 6));
         assert.ok(projects.every((group) => ai.plans[group.planId].radius === 4));
         assert.equal(encounter.topology.actionLog.length, 0, "Staffing cannot build for free");
     }
@@ -5011,9 +5071,13 @@ test("a large layered enclosure outranks a small legal passage on the same route
 
 test("independent fields are limited without counting their individual rings", () => {
     for (const maximum of [0, 1, 3, 4]) {
-        const actors = Array.from({ length: 5 }, (_, i) =>
-            spinner(i + 1, 10 + i * 24, 10, { SpiderlingsNestParentID: 100 + i }),
-        );
+        const actors = Array.from({ length: 5 }, (_, group) =>
+            Array.from({ length: 6 }, (_, index) =>
+                spinner(group * 6 + index + 1, 10 + group * 24 + (index % 3), 10 + Math.floor(index / 3), {
+                    SpiderlingsNestParentID: 100 + group,
+                }),
+            ),
+        ).flat();
         const r = runtime(actors),
             c = r.context;
         c.Spiderlings.getSetting = () => String(maximum);
@@ -5206,4 +5270,151 @@ test("ranged interception uses firing range even when all melee-adjacent cells a
     const approach = c.Spiderlings.SpinnerAI.attackApproach(caster, target);
     assert.equal(approach.ready, false);
     assert.deepEqual(plain(approach.path.at(-1)), { x: 6, y: 3 });
+});
+
+function residentScene(layers = 2) {
+    const scene = loanScene(),
+        { c, ai, home, receiver } = scene;
+    home.planId = null;
+    const definitions = Array.from({ length: layers }, (_, index) => {
+        const radius = index + 1;
+        return {
+            id: "resident-ring-" + index,
+            vertices: [
+                { x: 12 - radius, y: 6 - radius },
+                { x: 12 + radius, y: 6 - radius },
+                { x: 12 + radius, y: 6 + radius },
+                { x: 12 - radius, y: 6 + radius },
+            ],
+            gate: { x: 12 + radius, y: 6 },
+        };
+    });
+    const added = c.Spiderlings.SpinnerNativeField.addEnclosure({
+        compositeId: "resident-field",
+        owners: [4],
+        built: true,
+        layers: definitions,
+    });
+    assert.equal(added.added, true);
+    // The geometry fixture clips edge-constrained layers. The quota formula
+    // also accepts a saved fourth layer independently of map-generation limits.
+    if (layers === 4 && scene.encounter.topology.composites["resident-field"].layerIds.length === 3) {
+        const graph = scene.encounter.topology;
+        graph.fields["resident-ring-3"] = { ...graph.fields["resident-ring-2"], id: "resident-ring-3" };
+        graph.composites["resident-field"].layerIds.push("resident-ring-3");
+    }
+    Object.assign(ai.plans[receiver.planId], {
+        kind: "enclosure",
+        compositeId: "resident-field",
+        fieldIds: definitions.map((x) => x.id),
+        center: { x: 12, y: 6 },
+        status: "ready",
+    });
+    return scene;
+}
+
+test("resident floors follow the cumulative layer rule and ignore retired layers", () => {
+    for (const [layers, minimum] of [
+        [1, 1],
+        [2, 3],
+        [3, 6],
+        [4, 10],
+    ]) {
+        const { command, encounter, receiver } = residentScene(layers);
+        assert.equal(command.residency(encounter, receiver.id).minimum, minimum);
+        encounter.topology.fields["resident-ring-" + (layers - 1)].retired = true;
+        assert.equal(command.residency(encounter, receiver.id).minimum, ((layers - 1) * layers) / 2);
+    }
+});
+
+test("minimum residents are assigned before urgent optional loans and incoming stays distinct from arrived", () => {
+    const { command, encounter, receiver, ai, distances } = residentScene(2);
+    const other = command.newGroup(ai);
+    command.request(encounter, other.id, "defense", 2, { x: 5, y: 5 }, { urgency: 2 });
+    command.allocate(encounter, distances);
+    const facts = command.residency(encounter, receiver.id);
+    assert.equal(facts.minimum, 3);
+    assert.equal(facts.usable, 1);
+    assert.equal(facts.incoming, 2);
+    assert.equal(facts.committed, 3);
+    assert.equal(facts.missing, 2);
+    assert.equal(ai.groups[other.id].memberIds.length, 1);
+    command.allocate(encounter, distances);
+    assert.equal(command.residency(encounter, receiver.id).committed, 3);
+    command.reviseDemands(encounter, receiver.id, new Map(), { x: 12, y: 6 });
+    assert.equal(command.inspect().requests[receiver.id + ":residency"].closed, false);
+});
+
+test("an incoming permanent resident keeps field command when selected for protected contact", () => {
+    const { c, command, encounter, receiver, distances } = residentScene(2);
+    command.allocate(encounter, distances);
+    const member = Object.values(command.ensure(encounter).members).find(
+        (entry) => entry.commander === receiver.id && entry.phase === "travelling",
+    );
+    c.Spiderlings.FieldCustody = { assigned: (actor) => actor?.id === member.id };
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    assert.equal(member.commander, receiver.id);
+    assert.equal(member.home, receiver.id);
+    assert.equal(member.phase, "home");
+    assert.equal(member.loan, undefined);
+    assert.equal(member.requestId, undefined);
+    assert.equal(command.residency(encounter, receiver.id).committed, 3);
+});
+
+test("arrived permanent residents cannot be borrowed below the floor and dead residents create a new gap", () => {
+    const { c, command, encounter, receiver, distances } = residentScene(2);
+    command.allocate(encounter, distances);
+    const members = Object.values(command.inspect().members).filter((m) => m.commander === receiver.id);
+    for (const [i, member] of members.entries()) {
+        const actor = c.KDMapData.Entities.find((a) => a.id === member.id);
+        actor.x = 11 + i;
+        actor.y = 6;
+        command.handleMove(actor, 1);
+    }
+    assert.equal(command.residency(encounter, receiver.id).usable, 3);
+    const state = command.inspect();
+    assert.ok(members.every((m) => state.members[m.id].home === receiver.id && !state.members[m.id].loan));
+    assert.equal(
+        command
+            .offers(encounter, { x: 3, y: 3 }, distances, undefined, "defense", { urgency: 2 })
+            .members.filter((m) => m.donor === receiver.id).length,
+        0,
+    );
+    c.KDMapData.Entities.find((a) => a.id === members[0].id).hp = 0;
+    command.allocate(encounter, distances);
+    assert.equal(command.residency(encounter, receiver.id).minimum, 3);
+    assert.equal(command.residency(encounter, receiver.id).missing, 1);
+});
+
+test("existing topology adoption registers each independent field with its own command", () => {
+    const actors = [spinner(1, 3, 3), spinner(2, 14, 8)],
+        r = runtime(actors),
+        c = r.context,
+        native = c.Spiderlings.SpinnerNativeField;
+    const enclosure = (id, x, y, owner) => ({
+        compositeId: id,
+        owners: [owner],
+        built: true,
+        layers: [
+            {
+                id: id + "-ring",
+                vertices: [
+                    { x: x - 2, y: y - 2 },
+                    { x: x + 2, y: y - 2 },
+                    { x: x + 2, y: y + 2 },
+                    { x: x - 2, y: y + 2 },
+                ],
+                gate: { x: x + 2, y },
+            },
+        ],
+    });
+    native.initializeEnclosure(enclosure("adopt-a", 4, 4, 1));
+    assert.equal(native.addEnclosure(enclosure("adopt-b", 13, 7, 2)).added, true);
+    const ai = c.Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
+    const plans = Object.values(ai.plans).filter((p) => !["invalid", "abandoned", "retired"].includes(p.status));
+    assert.equal(plans.filter((p) => p.compositeId === "adopt-a").length, 1);
+    assert.equal(plans.filter((p) => p.compositeId === "adopt-b").length, 1);
+    for (const p of plans)
+        if (["adopt-a", "adopt-b"].includes(p.compositeId))
+            assert.equal(c.Spiderlings.FieldCommand.residency(native.state(), p.groupId).minimum, 1);
 });

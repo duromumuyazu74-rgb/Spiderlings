@@ -28,6 +28,10 @@ _Avoid_: overwriting the configured limit, four active builders required per fie
 Preparation staff requested when a character is within four reachable steps of a field boundary or inside its outer area. Arrival and the ability to serve the current target remain separate from a promise of support. Entering the capture core still requires native closure and a qualifying melee hit to begin Capture.
 _Avoid_: proximity capture, travelling helpers counted as arrived, global planning granting combat perception
 
+**Field residency**:
+Permanent Spinner allocation to one field's home and command. L live valid enclosure layers require L*(L+1)/2 residents. Global command fills these allocations before optional assignments and preserves donor minimums. Residents on their own field's missions retain allocation; on-site, incoming, away and actionable counts remain separate. Permanent transfers change home, while temporary loans retain it.
+_Avoid_: a new field permit formula, travelling residents reported as on-site, interrupting active control sources to fill a quota
+
 **Field retirement**:
 The deliberate ending of a field project and its active management, releasing its capture-field slot and leaving residual webs. Retirement is distinct from waiting for workers or recovering from a temporary obstruction.
 _Avoid_: temporary pause, automatic deletion on target movement

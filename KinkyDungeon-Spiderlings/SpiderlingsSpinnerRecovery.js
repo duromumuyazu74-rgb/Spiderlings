@@ -701,7 +701,9 @@
 
     function onPlayerMove(data) {
         if (!data || data.cancelmove || !legBag()) return false;
-        if (api.SpinnerCapture?.isControllingPlayer?.() || state()) return false;
+        // Remember the event while Capture is active; pursuit/hit admission
+        // already defers control until that controller finishes.
+        if (state()) return false;
         const from = { x: data.lastX, y: data.lastY },
             to = { x: data.moveX, y: data.moveY },
             field = api.SpinnerNativeField;

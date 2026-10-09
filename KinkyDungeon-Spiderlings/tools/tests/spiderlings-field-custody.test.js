@@ -160,3 +160,29 @@ test("blocked or unseen uncommitted contacts give their slots to reachable visib
     r.api.prepare();
     assert.ok(r.api.state().contacts.every((id) => !replacement.includes(id)));
 });
+
+test("an approved committed interception retains hostility and reserves its team slot", () => {
+    const r = fixture();
+    r.actors[0].Enemy.name = "Jumper";
+    r.api.capture("field", 77);
+    r.player.leash = { entity: r.intruder.id, reason: "Default" };
+    r.api.prepare();
+    const source = r.actors[0];
+    let pending = [{ sourceId: source.id, targetId: r.intruder.id, interceptionCompositeId: "field" }];
+    r.c.Spiderlings.JumperDash = { runtimeController: { snapshot: () => pending } };
+    assert.equal(r.api.targetFor(source), undefined, "Wind-up cannot accept a new field order");
+    assert.equal(r.api.interceptionPair(source, r.intruder), true);
+    assert.equal(r.api.interceptionPair(r.intruder, source), true);
+    r.api.prepare();
+    assert.equal(r.api.state().defenders.length, 2);
+    assert.ok(r.api.state().defenders.includes(source.id));
+    assert.equal(r.api.assigned(source), true);
+    pending = [{ sourceId: source.id, targetId: r.intruder.id }];
+    assert.equal(r.api.interceptionPair(source, r.intruder), false, "An unrelated dash cannot acquire field hostility");
+    pending = [{ sourceId: source.id, targetId: r.intruder.id, interceptionCompositeId: "field" }];
+    source.allied = true;
+    assert.equal(r.api.interceptionPair(source, r.intruder), false);
+    source.allied = false;
+    delete r.player.leash;
+    assert.equal(r.api.interceptionPair(source, r.intruder), false);
+});

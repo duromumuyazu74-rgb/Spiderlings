@@ -888,3 +888,23 @@ test("unproven active legacy recovery releases its tether but keeps the actual i
     assert.equal(r.player.leash, undefined);
     assert.equal(JSON.stringify(r.gear), inventory);
 });
+
+test("a partial bag exit is recorded during Capture without starting a second controller", () => {
+    const r = recoveryRuntime();
+    legBag(r);
+    r.gear.find((item) => item.name === "SpiderlingsSpinnerLegbinder").data.wrapProgress = 0.2;
+    let active = true;
+    r.c.Spiderlings.SpinnerCapture.isControllingPlayer = () => active;
+    r.leave();
+    assert.equal(r.api.requested(), true);
+    assert.equal(r.api.wantsPursuit(r.source, r.player), false);
+    assert.equal(r.api.hit(r.source), false);
+    assert.equal(r.api.state(), undefined);
+    const saved = JSON.stringify(r.api.departure());
+    r.api.afterLoad();
+    assert.equal(JSON.stringify(r.api.departure()), saved);
+    active = false;
+    assert.equal(r.api.wantsPursuit(r.source, r.player), true);
+    assert.equal(r.api.hit(r.source), true);
+    assert.equal(r.gear.find((item) => item.name === "SpiderlingsSpinnerLegbinder").data.wrapProgress, 0.2);
+});

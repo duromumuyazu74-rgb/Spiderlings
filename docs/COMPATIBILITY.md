@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.146.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local package is `Spiderlings_0.92.36-test.151.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.151 layered residents and field action continuity (2026-10-09)
+
+The same final ZIP passes all 62 native checks and seven language loads per game on KD 5.4.92 and official 5.5.3. Official `5.5` commit `e441c0d3971b1b7a53477e63496c09fea87a7b11` was fetched at `2026-10-09T05:36:55.219Z`. Full acceptance: `<cache>/runs/2026-10-09T05-36-55-234Z-0.92.36-test.151/acceptance.json`. The package has 177 entries and 24,887,592 bytes; SHA-256 `e0334db10af124238c9df11a65666668f8e3e40a298c7c63af132d3d93304a2e`.
+
+Live layered fields require L*(L+1)/2 permanent Spinners. Minimum allocation precedes optional support, preserves donor floors and distinguishes actual arrival from incoming or own-field missions. Existing multi-field topology is adopted per enclosure. Committed escort-interception Dash retains its approved hostility and reaction window; a genuine partial-Capture boundary exit remains pending until Capture releases control. Resident contacts retain their field commander, and attributed fields survive position-demand relocation during recovery.
+
+The latest copied save has 12 living Spinners against minimum demand 13. Its first allocation is 5/6/1; thirty normal waits show paid movement and separate on-site/incoming/away facts, with one unresolved allocation gap. The original save is untouched. Intermediate failures and the strict repeated-nearest-return regression are retained in [the validation record](archive/validation/spiderlings-test151-residency.zh-CN.md). Repository/module checks, 12 policy tests, 782 public tests, the complete 1,111-test local watcher and byte-for-byte package/source verification pass. Full collector `.scratch/delivery/2026-10-09T06-01-56-968Z-UojKvT/REPORT.md` records unchanged source and ZIP bytes. Only outcome documentation was updated afterward, followed by repository checks.
 
 ## Test.146 boundary-triggered recovery and Maid Knight rivalry (2026-10-09)
 

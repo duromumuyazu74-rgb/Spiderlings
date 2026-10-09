@@ -47,7 +47,9 @@
             const sourceId = source && source.id;
             if (sourceId === undefined || states.has(sourceId)) return { started: false, reason: "already-winding-up" };
             if (!isEligible(source, target, !committedByKD)) return { started: false, reason: "ineligible" };
+            const interceptionCompositeId = world.interceptionCompositeId?.(source, target);
             const state = {
+                ...(interceptionCompositeId !== undefined ? { interceptionCompositeId } : {}),
                 sourceId,
                 source,
                 target: { x: Number(target.x), y: Number(target.y) },
@@ -78,6 +80,9 @@
                 target: { ...state.target },
                 opportunities: state.opportunities,
                 ...(state.targetId !== undefined ? { targetId: state.targetId } : {}),
+                ...(state.interceptionCompositeId !== undefined
+                    ? { interceptionCompositeId: state.interceptionCompositeId }
+                    : {}),
             }));
         }
 
@@ -260,6 +265,8 @@
                 source,
                 target?.Enemy && !target.player ? target : KinkyDungeonPlayerEntity,
             ) || !!api.SpinnerCapture?.holdsSpiderAttack(source, target),
+        interceptionCompositeId: (source, target) =>
+            api.FieldCustody?.targetFor(source) === target ? api.FieldCustody.state()?.compositeId : undefined,
         validNPC: (source, target) => !!api.Combat?.eligible(source, target),
         bindNPC: (source, target) => api.Combat.hitNPC(source, target, "dash"),
         isCooldownReady: (source) => !(Number((source && source.castCooldownSpecial) || 0) > 0),

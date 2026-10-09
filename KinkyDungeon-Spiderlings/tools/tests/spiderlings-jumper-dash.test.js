@@ -682,3 +682,31 @@ test("map, defeat, prison, and fresh-runtime boundaries leave no orphan Dash sta
         "a freshly initialized runtime starts empty",
     );
 });
+
+test("Dash owns the approved interception identity through its full reaction window", () => {
+    const c = loadDefinitions(),
+        source = { id: 8, x: 0, y: 0, hp: 2, Enemy: { name: "Jumper" } },
+        target = { id: 99, x: 3, y: 0, hp: 5, Enemy: { name: "ElementalIce" } };
+    let approved = "field",
+        hits = 0;
+    const controller = c.Spiderlings.JumperDash.createController({
+        interceptionCompositeId: () => approved,
+        validNPC: () => true,
+        landingCandidates: () => [{ x: 2, y: 0 }],
+        findSource: (id) => (id === 8 ? source : target),
+        bindNPC: () => {
+            hits++;
+            return { progressed: true };
+        },
+        moveSource: () => {},
+    });
+    assert.equal(controller.begin(source, target).started, true);
+    approved = undefined;
+    assert.equal(controller.snapshot()[0].interceptionCompositeId, "field");
+    controller.advancePlayerAction();
+    controller.advancePlayerAction();
+    assert.equal(controller.snapshot()[0].interceptionCompositeId, "field");
+    controller.advancePlayerAction();
+    assert.equal(hits, 1);
+    assert.equal(controller.snapshot().length, 0);
+});

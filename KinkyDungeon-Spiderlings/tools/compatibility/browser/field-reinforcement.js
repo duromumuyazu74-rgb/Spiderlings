@@ -56,7 +56,6 @@
         const encounter = native.state();
         const receiver = Object.values(encounter.ai.groups).find((group) => group.planId);
         expect(receiver, "Retained field was not adopted into command control");
-        former.hp = 0;
         const crew = [
             unaware(spawn("Spinner", 24, 8)),
             unaware(spawn("Spinner", 25, 8)),
@@ -66,8 +65,8 @@
         for (const actor of crew.slice(1)) actor.stun = 100;
         const prepared = prepareCrew({ actors: crew });
         expect(
-            prepared.population.length === 4 && prepared.actionable.length === 1 && prepared.reserves.length === 0,
-            "Reassignment fixture must retain four real Spinners with one actionable worker",
+            prepared.population.length === 5 && prepared.actionable.length === 1 && prepared.reserves.length === 0,
+            "Reassignment fixture needs one resident and four real reserve Spinners, only one reserve actionable",
         );
         command.reconcile(encounter, KDMapData.Entities, {}, true);
         for (const request of Object.values(encounter.command.requests)) request.closed = true;
@@ -76,6 +75,7 @@
         command.allocate(encounter, distances);
         const oldLoan = { ...command.inspect().members[crew[0].id] };
         expect(oldLoan.commander === remote.id && oldLoan.loan, "Reserve worker did not begin a low priority loan");
+        former.hp = 0;
         const origin = { x: crew[0].x, y: crew[0].y, movePoints: crew[0].movePoints };
         const originalActions = encounter.topology.actionLog.length;
         KDModSettings.Spiderlings.spiderlingsCaptureFieldLimit = "1";
@@ -83,7 +83,7 @@
         KDMovePlayer(3, 10, false);
         Spiderlings.SpinnerAI.beginTurn({ activate: true });
         const urgent = Object.values(encounter.command.requests).find(
-            (request) => request.fieldId === receiver.id && !request.closed && request.urgency >= 1,
+            (request) => request.fieldId === receiver.id && !request.closed && request.kind === "residency",
         );
         const redirected = command.inspect().members[crew[0].id];
         rows.push({
@@ -98,7 +98,10 @@
             redirected.commander === receiver.id && ["travelling", "support"].includes(redirected.phase),
             "An urgent field waited for a low priority loan to return home",
         );
-        expect(redirected.home === oldLoan.home, "Direct reassignment lost the worker's original home");
+        expect(
+            redirected.home === receiver.id && !redirected.loan,
+            "Minimum refill was not a permanent resident transfer",
+        );
         expect(
             crew[0].x === origin.x && crew[0].y === origin.y && crew[0].movePoints === origin.movePoints,
             "Immediate allocation moved a worker without native payment",

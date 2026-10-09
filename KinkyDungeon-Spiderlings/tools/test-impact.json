@@ -397,7 +397,8 @@
         "saved-field-guard",
         "spinner-crowded-control",
         "spinner-maintenance",
-        "action-cadence"
+        "action-cadence",
+        "field-residency"
       ],
       "reason": "Unique command, support loans and protected-source staffing."
     },
@@ -457,7 +458,7 @@
         "spiderlings-spinner-perception.test.js"
       ],
       "localTests": [],
-      "scenarios": ["field-reinforcement", "field-command", "spinner-maintenance"],
+      "scenarios": ["field-reinforcement", "field-command", "spinner-maintenance", "field-residency"],
       "reason": "Readiness/workforce demand affects support requests and source accounting."
     },
     "field-work": {
@@ -490,7 +491,14 @@
         "spiderlings-field-custody.test.js"
       ],
       "localTests": ["spiderlings-spinner-native-contract.test.js"],
-      "scenarios": ["field-project-lifecycle", "field-permits", "saved-field-guard", "passage-sites", "field-custody"],
+      "scenarios": [
+        "field-project-lifecycle",
+        "field-permits",
+        "saved-field-guard",
+        "passage-sites",
+        "field-custody",
+        "field-residency"
+      ],
       "reason": "Planning investment, replacement rollback, restoration and residual retirement."
     },
     "field-rollout": {
@@ -657,7 +665,7 @@
         "spiderlings-native-actions.test.js"
       ],
       "localTests": ["spiderlings-spinner-native-contract.test.js"],
-      "scenarios": ["player-recovery", "persistent-recovery", "field-command", "field-custody"],
+      "scenarios": ["player-recovery", "persistent-recovery", "field-command", "field-custody", "field-commitments"],
       "reason": "Field prey ownership, explicit contact/defense duties and native recovery execution."
     }
   },
@@ -682,7 +690,7 @@
     "SpiderlingsMageRunes.js": ["mage-runes"],
     "SpiderlingsMageSpells.js": ["mage-spells"],
     "SpiderlingsMageVisuals.js": ["mage-visuals"],
-    "SpiderlingsJumperDash.js": ["jumper"],
+    "SpiderlingsJumperDash.js": ["jumper", "field-custody"],
     "SpiderlingsModelRuntime.js": ["models"],
     "SpiderlingsWebbingModels.js": ["models"],
     "SpiderlingsWebbingData.js": ["webbing"],
