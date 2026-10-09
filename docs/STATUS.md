@@ -2,11 +2,17 @@
 
 核对日期：2026-10-09。任务完成条件和发布状态以 GitHub Issues、PR 与 Release 为准。
 
+## 0.92.39fix1 正式修复版
+
+[Issue #154](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/154) 的角点维修遗漏和坍塌丝墙无效重建任务已修复，[PR #155](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/155) 已合入 `main`。正式 [0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1) 使用提交 `030038593be73c2f0823b66e53cc59507bbd8a66` 的 CI 安装包，上传后的下载文件已核对一致。
+
+同一正式包通过 KD 5.4.92 与最新拉取的官方 5.5.3 完整原生验收，以及 12 项策略测试、788 项公共测试和 1,117 项完整本地回归。最新存档回放 24 回合后完成两处外圈角点维修，施工不再反复返回 invalid。包哈希、官方提交及验收范围见 [COMPATIBILITY.md](COMPATIBILITY.md)。
+
 ## 0.92.39 正式晋升
 
 [Issue #150](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/150) 跟踪本次全面审查、主线晋升与发布。审查发现的 Mage 目标分类遗漏已修复，失效的策划演示维护脚本已移除，历史 HTML 与验证记录保留。
 
-[PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149) 已合入 `test`，提交 `d1358b1c95c7a8505be1794648ad724bf443e321` 的文件树与已验收源码 `c54dd02` 一致。正式源码使用 0.92.39，从当前 main 历史晋升；最近已发布版本仍为 [0.92.38](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.38)。正式 main CI 附件的双版本验收、发布及下载核验正在进行。
+[PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149) 已合入 `test`，提交 `d1358b1c95c7a8505be1794648ad724bf443e321` 的文件树与已验收源码 `c54dd02` 一致。正式源码使用 0.92.39，从当前 main 历史晋升；[0.92.39](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39) 已完成正式 main CI 附件的双版本验收、发布及下载核验。
 
 ## 已完成的玩法与验证
 
