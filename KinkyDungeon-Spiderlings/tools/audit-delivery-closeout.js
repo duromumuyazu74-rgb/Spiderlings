@@ -81,7 +81,14 @@ function collectCloseout(root, input, execute = run) {
     const issues = numbers.map((number) =>
         gh(["issue", "view", String(number), "--repo", repo, "--json", "number,title,state,body,labels,comments,url"]),
     );
-    const target = gh(["api", `repos/${repo}/commits/${encodeURIComponent(pr.baseRefName)}`, "--method", "GET"]).sha;
+    const target = gh([
+        "api",
+        `repos/${repo}/commits/${encodeURIComponent(pr.baseRefName)}`,
+        "--method",
+        "GET",
+        "--jq",
+        "{sha: .sha}",
+    ]).sha;
     const integrated = {},
         comparisons = new Map();
     for (const entry of input.issues) {
@@ -91,7 +98,14 @@ function collectCloseout(root, input, execute = run) {
         if (!comparisons.has(entry.implementationCommit))
             comparisons.set(
                 entry.implementationCommit,
-                gh(["api", `repos/${repo}/compare/${entry.implementationCommit}...${target}`, "--method", "GET"]),
+                gh([
+                    "api",
+                    `repos/${repo}/compare/${entry.implementationCommit}...${target}`,
+                    "--method",
+                    "GET",
+                    "--jq",
+                    "{status: .status}",
+                ]),
             );
         const comparison = comparisons.get(entry.implementationCommit);
         integrated[entry.number] = ["ahead", "identical"].includes(comparison.status);
