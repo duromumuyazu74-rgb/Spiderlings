@@ -299,5 +299,93 @@
     } finally {
         native.applyPaidAction = apply;
     }
+    for (const kind of ["corner", "collapsed-link"]) {
+        setup(`spinner-maintenance-${kind}`);
+        for (let y = 1; y < KDMapData.GridHeight - 1; y++)
+            for (let x = 1; x < KDMapData.GridWidth - 1; x++) {
+                KinkyDungeonMapSet(x, y, "0");
+                KinkyDungeonTilesDelete(`${x},${y}`);
+            }
+        KDMovePlayer(22, 16, false);
+        const worker = spawn("Spinner", 11, 7),
+            row = { mode: kind, actions: [], turns: [] };
+        rows.push(row);
+        worker.hostile = 999;
+        globalThis.normalAcceptance.prepareCrew({ actors: [worker], fieldPermits: 1 });
+        native.initializeEnclosure({
+            compositeId: "maintenance-hotfix",
+            owners: [worker.id],
+            built: true,
+            autoSeal: true,
+            layers: [
+                {
+                    id: "maintenance-hotfix-ring",
+                    vertices: [
+                        { x: 10, y: 6 },
+                        { x: 18, y: 6 },
+                        { x: 18, y: 14 },
+                        { x: 10, y: 14 },
+                    ],
+                    gate: { x: 18, y: 10 },
+                },
+            ],
+        });
+        native.state().builders = {};
+        const graph = native.state().topology,
+            structure = kind === "corner" ? graph.anchors[0] : graph.links[0],
+            structureId = structure.id;
+        structure.hp = kind === "corner" ? 0.2 : 0;
+        if (kind === "collapsed-link")
+            Object.assign(structure, {
+                collapsed: true,
+                cooldown: Spiderlings.SpinnerTopology.REBUILD_TURNS,
+                builtCells: [],
+                connected: false,
+            });
+        Spiderlings.SpinnerTopology.refresh(graph);
+        native.reconcile();
+        ai.beginTurn({ activate: true, adoptExisting: true });
+        const currentStructure = () =>
+                (kind === "corner" ? native.state().topology.anchors : native.state().topology.links).find(
+                    (entry) => entry.id === structureId,
+                ),
+            before = { hp: currentStructure().hp, actions: native.state().topology.actionLog.length };
+        restore(save());
+        expect(
+            currentStructure().hp === before.hp && native.state().topology.actionLog.length === before.actions,
+            "Loading maintenance damage must not perform free work",
+        );
+        const paid = native.applyPaidAction;
+        native.applyPaidAction = function (actor, action) {
+            const result = paid.apply(this, arguments);
+            if (actor.id === worker.id)
+                row.actions.push({ type: action.type, applied: result.applied, tick: KinkyDungeonCurrentTick });
+            return result;
+        };
+        try {
+            for (let tick = 0; tick < 80; tick++) {
+                await turn();
+                const value = currentStructure();
+                row.turns.push({
+                    tick,
+                    hp: value.hp,
+                    collapsed: value.collapsed,
+                    phase: native.state().topology.fields["maintenance-hotfix-ring"].phase,
+                });
+                if (value.hp === value.maxHp && !value.collapsed) break;
+            }
+        } finally {
+            native.applyPaidAction = paid;
+        }
+        expect(
+            currentStructure().hp === currentStructure().maxHp,
+            `Maintenance did not finish: ${JSON.stringify(row)}`,
+        );
+        expect(!currentStructure().collapsed, "Paid rebuilding must restore the link for subsequent work");
+        const types = new Set(row.actions.filter((action) => action.applied).map((action) => action.type));
+        expect(types.has(kind === "corner" ? "repairAnchor" : "rebuildLink"), "Maintenance skipped its paid action");
+        if (kind === "collapsed-link")
+            expect(types.has("extendLink"), "Rebuilt links must accept later paid extension");
+    }
     return { rows };
 })();
