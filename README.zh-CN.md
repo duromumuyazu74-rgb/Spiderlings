@@ -6,10 +6,10 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 ## 版本与安装
 
-| 通道         | 版本             | 获取方式                                                                                                               |
-| ------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 正式版       | `0.92.39`        | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39/Spiderlings_0.92.39.zip) |
-| 巢穴监狱实验 | `prison.alpha.N` | 独立 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77)，不包含在普通测试包中                         |
+| 通道         | 版本             | 获取方式                                                                                                                       |
+| ------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 正式版       | `0.92.39fix1`    | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip) |
+| 巢穴监狱实验 | `prison.alpha.N` | 独立 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77)，不包含在普通测试包中                                 |
 
 1. 下载[正式版 Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest) 的 ZIP 附件，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
 2. 在游戏 Mod 管理器中载入该 ZIP。
@@ -31,7 +31,7 @@ GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入
 - Mage 的丝弹、符文、蚀盾咒印与坠牢分别维护技能状态和危险格反馈。魔典与法杖提供玩家蛛丝攻击及技能，原生日志收录六项幼蛛见闻。
 - 合格 NPC 在连续六回合保持自有蛛丝控制后可非致命退场；挣脱或救援可以中断。捕获、恢复、原生伤害与死亡分别处理。
 
-以上描述 0.92.39。旧版本和既有存档场景可能不同，逐版结果见[历史记录](docs/archive/README.md)。
+以上描述 0.92.39fix1。旧版本和既有存档场景可能不同，逐版结果见[历史记录](docs/archive/README.md)。
 
 ## 开发与反馈
 

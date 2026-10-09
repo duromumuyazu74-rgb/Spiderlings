@@ -1072,7 +1072,7 @@
         if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
             const link = state.links.find((candidate) => candidate.id === action.linkId),
                 cell = actionCell(state, action);
-            if (!link || link.collapsed) return { legal: false, reason: "link" };
+            if (!link || (link.collapsed && action.type !== "rebuildLink")) return { legal: false, reason: "link" };
             if (action.type === "connectGate")
                 return { legal: !link.connected && !!action.fieldId, reason: link.connected ? "link" : "" };
             if (action.type === "rebuildLink" && (!(link.cooldown >= REBUILD_TURNS) || link.hp > 0))
@@ -1158,6 +1158,7 @@
             if (action.type === "rebuildLink") {
                 link.hp = Math.max(link.maxHp * 0.1, 0.1);
                 link.cooldown = 0;
+                link.collapsed = false;
                 link.builtCells = [];
                 link.rebuilding = true;
             }
@@ -1311,7 +1312,11 @@
             active = new Set(fields.map((field) => field.id));
         return {
             remainingActions:
-                state.anchors.filter((anchor) => anchor.owners.some((id) => active.has(id)) && !anchor.built).length +
+                state.anchors.filter(
+                    (anchor) =>
+                        anchor.owners.some((id) => active.has(id)) &&
+                        (!anchor.built || (anchor.hp > 0 && anchor.hp < anchor.maxHp)),
+                ).length +
                 state.links
                     .filter((link) => link.owners.some((id) => active.has(id)))
                     .reduce(
@@ -1482,6 +1487,12 @@
                 const action = { type: "rebuildLink", linkId: link.id, fieldId, role: "rebuild", cell };
                 if (!reserved.has(workKey(action))) return action;
             }
+        }
+        for (const anchor of state.anchors) {
+            const fieldId = anchor.owners.find((id) => ownedIds.has(id) && !state.fields[id]?.retired);
+            if (!fieldId || !anchor.built || !(anchor.hp > 0 && anchor.hp < anchor.maxHp)) continue;
+            const action = { type: "repairAnchor", anchorId: anchor.id, fieldId, role: "repair", cell: point(anchor) };
+            if (!reserved.has(workKey(action))) return action;
         }
         return undefined;
     }

@@ -419,6 +419,65 @@ test("a destroyed 3x3 corner and its links can be rebuilt with paid work", () =>
     assert.equal(state.fields.inner.phase, "sealed");
 });
 
+test("corner-only damage produces paid repair work until the same anchor reaches full health", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "corner-maintenance",
+        owners: [1],
+        built: true,
+        map: floorMap(),
+        layers: [{ id: "inner", vertices: rectangle(12, 9, 16, 13), gate: { x: 12, y: 11 } }],
+    });
+    const anchorId = state.anchors[0].id;
+    state.anchors[0].hp = 0.2;
+    assert.equal(topology.fieldWorkNeeds(state, ["inner"]).remainingActions, 1);
+    let paid = 0;
+    while (state.anchors.find((anchor) => anchor.id === anchorId).hp < 2 && paid < 12) {
+        const action = topology.nextWorkAction(state, 1, { x: 13, y: 10 }, [], ["inner"]);
+        assert.equal(action?.type, "repairAnchor");
+        assert.equal(action.anchorId, anchorId);
+        const result = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell));
+        assert.equal(result.outcome.legal, true);
+        state = topology.restore(JSON.parse(JSON.stringify(result.state)));
+        paid++;
+    }
+    assert.equal(paid, 9);
+    assert.equal(state.anchors.find((anchor) => anchor.id === anchorId).hp, 2);
+    assert.equal(topology.nextWorkAction(state, 1, { x: 13, y: 10 }, [], ["inner"]), undefined);
+});
+
+test("a cooldown-qualified collapsed link rebuilds and accepts later paid extension", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "collapsed-maintenance",
+        owners: [1],
+        built: true,
+        autoSeal: true,
+        map: floorMap(),
+        layers: [{ id: "inner", vertices: rectangle(12, 9, 16, 13), gate: { x: 12, y: 11 } }],
+    });
+    const link = state.links.find((entry) => !entry.cells.some((cell) => cell.x === 12 && cell.y === 11));
+    Object.assign(link, { hp: 0, collapsed: true, cooldown: topology.REBUILD_TURNS, builtCells: [], connected: false });
+    const linkId = link.id,
+        cell = link.plannedCells[0],
+        action = { type: "rebuildLink", fieldId: "inner", linkId, ownerId: 1, cell };
+    assert.equal(topology.inspectWorkAction(state, action).pending, true);
+    assert.equal(topology.legalAction(state, { ...action, ownerId: 2 }, clear(cell)).legal, false);
+    assert.equal(topology.legalAction(state, action, { ...clear(cell), occupied: true }).legal, false);
+    link.cooldown--;
+    assert.equal(topology.legalAction(state, action, clear(cell)).legal, false);
+    link.cooldown++;
+    const rebuilt = topology.applyAction(state, action, clear(cell));
+    assert.equal(rebuilt.outcome.legal, true);
+    state = topology.restore(JSON.parse(JSON.stringify(rebuilt.state)));
+    assert.equal(state.links.find((entry) => entry.id === linkId).collapsed, false);
+    const next = topology.nextWorkAction(state, 1, cell, [], ["inner"]);
+    assert.equal(next.type, "extendLink");
+    assert.equal(topology.applyAction(state, { ...next, ownerId: 1 }, clear(next.cell)).outcome.legal, true);
+});
+
 test("an undersized enclosure falls back to the declared line or is saved as abandoned", () => {
     const topology = rules(),
         input = {

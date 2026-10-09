@@ -231,6 +231,8 @@ Active Hex still lasts three turns over its unchanged 4-by-4 cells. A mark gains
 
 The saved spell state records `lastNativeTick` alongside its local clock. Repeated positive `tickAfter` events in the same native turn, including after load, do not advance spell timing or restack. Legacy states without this field admit their first genuine tick. Rendering never advances this state.
 
-## Field maintenance during Capture
+## Field maintenance
+
+Topology includes built enclosure anchors below full durability in repair demand and produces paid `repairAnchor` work after pending wall maintenance. A cooldown-qualified collapsed link in an active enclosure accepts `rebuildLink`; its first paid rebuilt cell clears the collapsed flag so later extension and repair can proceed. Ownership, legal placement and native action credit are checked at execution. Loading damage records performs no work.
 
 `SpinnerAI.hasMaintenanceAssignment` validates a current maintenance reservation before player or NPC Capture recruits a nonparticipant. The positive-turn planner can release one effective player Capture source for reachable work in its admitted composite, through `SpinnerCapture.releaseMaintenanceSource`; at least one source and existing counters remain. Real Capture sources, Recovery and nest defense retain their duties. FieldProjects keeps that reservation through contact and load audits; its admitted field maintenance member also retains subsequent extension and connection after the first rebuilt cell. Completion or Capture ending clears the maintenance identity. NativeField still owns paid work and movement; no free repair or zero-time dispatch is added. The shared native `spinner-maintenance` scenario exercises real Runtime with partial and destroyed web damage while prey stays inside.

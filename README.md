@@ -6,10 +6,10 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 
 ## Versions and installation
 
-| Channel                | Version          | Availability                                                                                                                         |
-| ---------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Formal release         | `0.92.39`        | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39/Spiderlings_0.92.39.zip) |
-| Nest prison experiment | `prison.alpha.N` | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package              |
+| Channel                | Version          | Availability                                                                                                                                 |
+| ---------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formal release         | `0.92.39fix1`    | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip) |
+| Nest prison experiment | `prison.alpha.N` | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package                      |
 
 1. Download the ZIP attached to the [formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest), or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).
 2. Load that ZIP through the game's Mod manager.
@@ -31,7 +31,7 @@ Captured field prey retains its field attribution. Spiderlings assigned to inter
 - Mage bolts, runes, Hex and Collapse keep separate spell state and visible danger cells. The Tome and Staff provide player silk attacks and abilities. Six native Journal entries record Spiderlings discoveries.
 - Eligible NPC prey can leave nonlethally after six consecutive turns of sustained owned silk control; struggle or rescue can interrupt this. Capture, recovery, native damage and death retain their separate rules.
 
-These describe version 0.92.39. Older releases and saved encounters may differ; historical results are in [the archive](docs/archive/README.md).
+These describe version 0.92.39fix1. Older releases and saved encounters may differ; historical results are in [the archive](docs/archive/README.md).
 
 ## Development
 
