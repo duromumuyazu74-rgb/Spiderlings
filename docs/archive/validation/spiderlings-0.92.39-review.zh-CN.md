@@ -36,3 +36,15 @@ PR #149 已将开发改动合入 test，`d1358b1c95c7a8505be1794648ad724bf443e32
 晋升范围的定向测试选择曾因旧拓扑研究产物和 `.prettierignore` 缺少映射而报告 needs-mapping。已确认该独立原型没有运行时或已注册测试消费者，源码与原有 pacing/durability 证据哈希一致，显式记录其历史文档范围；格式策略仍走仓库检查。没有把未知输入默认为通过。
 
 本地主线准备包的自动交付检查通过，报告为 `.scratch/delivery/2026-10-09T08-35-06-380Z-FFnKla/REPORT.md`。该报告明确标记正式包游戏验收尚未执行。其候选 ZIP SHA-256 为 `329c91219ab3f9e11b12ecf78a1f1d0fdb6ca5196bfcbb9cd7faab0af8824b83`，不是最终发布附件的承诺。发布前必须验收实际 main CI 附件并核对下载。
+
+## 正式发布结果
+
+PR #151 已将正式版合入 main，发布提交为 `b760e304693749ccfb36b8f50392c633b95b0f5b`。[v0.92.39](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39) 已发布并标记为 Latest，附件来自该提交的 [CI 37906892968](https://github.com/duromumuyazu74-rgb/Spiderlings/actions/runs/37906892968)。
+
+最终附件 `Spiderlings_0.92.39.zip` 包含 177 项、24,933,796 字节，SHA-256 为 `8ef75905e2f1d725223f429382375d2ce187073cf5624b1c4563c43d13078167`。同一 ZIP 在 KD 5.4.92 和官方 5.5.3 各通过 63 项原生检查及七种语言加载；官方提交为 2026-10-09 重新拉取的 `c4f4035282ad6e79663df28a079e6c9b30fec349`。完整验收为 `<cache>/runs/2026-10-09T08-51-56-676Z-0.92.39/acceptance.json`，最终交付报告为 `.scratch/delivery/2026-10-09T09-18-57-079Z-Ll63VH/REPORT.md`，仓库、策略、公共测试、完整本地 watcher 和源码包核对全部通过。
+
+发布回读通过 `verify:publication`，确认远端标签指向上述提交、英文及简体中文正文与审校文件一致、正式发布类型及 Latest 正确。实际下载附件的文件名、大小和 SHA-256 与验收 ZIP 一致，结果保存于 `.scratch/publication/0.92.39-YbgQvK/`。
+
+收尾审计在读取大规模晋升提交时曾因完整差异响应超过进程缓冲区而失败。查询现仅提取所需的提交 SHA 和比较状态；九项定向测试、18 项关联任务的实际回读及上述完整交付检查通过。该修正仅涉及维护工具，不改变已发布的运行包。
+
+旧开发 PR 已按实际集成结果收尾；#127 保持待原始存档验证，独立监狱实验与依赖更新保持原范围。英文与中文 Discord 草稿分别为 1,927 和 759 字符，留给用户检查，未发送。
