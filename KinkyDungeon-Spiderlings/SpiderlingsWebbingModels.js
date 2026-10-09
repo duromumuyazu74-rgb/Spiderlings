@@ -2,7 +2,7 @@
 
 // Spiderlings-owned models for the atomic Webbing catalogue.
 (() => {
-    const api = globalThis.Spiderlings = globalThis.Spiderlings || {};
+    const api = (globalThis.Spiderlings = globalThis.Spiderlings || {});
     const FOLDER = "SpiderlingsWebbingLv1";
     const LV2_FOLDER = "SpiderlingsWebbingLv2";
     const LV3_FOLDER = "SpiderlingsWebbingLv3";
@@ -21,27 +21,44 @@
     const LV3_PRIORITY = 52;
     // Adopted from DSmap exports. Lv2 and Lv3 share the same cropped PNG,
     // native canvas translation, targets and strength for each body region.
-    const BODY_DISPLACEMENTS = Object.freeze(Object.fromEntries([
-        ["Arm", "Rope1", 1200, 650, 749],
-        ["Belly", "CorsetTorso", 1200, 459, 1280],
-        ["Legs", "Skirts", 2000, 110, 1657],
-        ["Ankles", "Skirts", 2000, 383, 2085],
-        ["Foot", "Shoes", 100, 741, 2928],
-    ].map(([family, target, amount, xPad, yPad]) => {
-        const sprite = `SpiderlingsWebbingLv2${family}Squish`;
-        if (typeof KDOptimizeDisplacementMapInfo != "undefined") {
-            KDOptimizeDisplacementMapInfo[`DisplacementMaps/${sprite}.png`] = {xPad, yPad};
-        }
-        return [family, Object.freeze({
-            DisplacementSprite: sprite,
-            DisplacementInvariant: true,
-            DisplaceLayers: ToMap([target]),
-            DisplaceAmount: amount,
-        })];
-    })));
+    const BODY_DISPLACEMENTS = Object.freeze(
+        Object.fromEntries(
+            [
+                ["Arm", "Rope1", 1200, 650, 749],
+                ["Belly", "CorsetTorso", 1200, 459, 1280],
+                ["Legs", "Skirts", 2000, 110, 1657],
+                ["Ankles", "Skirts", 2000, 383, 2085],
+                ["Foot", "Shoes", 100, 741, 2928],
+            ].map(([family, target, amount, xPad, yPad]) => {
+                const sprite = `SpiderlingsWebbingLv2${family}Squish`;
+                if (typeof KDOptimizeDisplacementMapInfo != "undefined") {
+                    KDOptimizeDisplacementMapInfo[`DisplacementMaps/${sprite}.png`] = { xPad, yPad };
+                }
+                return [
+                    family,
+                    Object.freeze({
+                        DisplacementSprite: sprite,
+                        DisplacementInvariant: true,
+                        DisplaceLayers: ToMap([target]),
+                        DisplaceAmount: amount,
+                    }),
+                ];
+            }),
+        ),
+    );
 
-    function directModel(name, folder, categories, sprite, layer, poses, addPose = [], removePoses = [], pri = LV1_PRIORITY,
-        extraLayerFields = {}) {
+    function directModel(
+        name,
+        folder,
+        categories,
+        sprite,
+        layer,
+        poses,
+        addPose = [],
+        removePoses = [],
+        pri = LV1_PRIORITY,
+        extraLayerFields = {},
+    ) {
         const layerDefinition = {
             Name: sprite,
             Sprite: sprite,
@@ -107,16 +124,18 @@
                     Categories: [...COMMON_CATEGORIES],
                     AddPose: [],
                     RemovePoses: [],
-                    Layers: ToLayerMap([{
-                        Name: "MittenLeft",
-                        Sprite: "MittenLeft",
-                        Layer: "MittenLeft",
-                        Pri: 50,
-                        Invariant: true,
-                        NoColorize: true,
-                        RequirePoses: ToMap(["Free"]),
-                        HidePoses: ToMap([COCOON_COVER_POSE]),
-                    }]),
+                    Layers: ToLayerMap([
+                        {
+                            Name: "MittenLeft",
+                            Sprite: "MittenLeft",
+                            Layer: "MittenLeft",
+                            Pri: 50,
+                            Invariant: true,
+                            NoColorize: true,
+                            RequirePoses: ToMap(["Free"]),
+                            HidePoses: ToMap([COCOON_COVER_POSE]),
+                        },
+                    ]),
                 };
             },
         }),
@@ -133,16 +152,18 @@
                     Categories: [...COMMON_CATEGORIES],
                     AddPose: [],
                     RemovePoses: [],
-                    Layers: ToLayerMap([{
-                        Name: "MittenRight",
-                        Sprite: "MittenRight",
-                        Layer: "MittenRight",
-                        Pri: 50,
-                        Invariant: true,
-                        NoColorize: true,
-                        RequirePoses: ToMap(["Free"]),
-                        HidePoses: ToMap([COCOON_COVER_POSE]),
-                    }]),
+                    Layers: ToLayerMap([
+                        {
+                            Name: "MittenRight",
+                            Sprite: "MittenRight",
+                            Layer: "MittenRight",
+                            Pri: 50,
+                            Invariant: true,
+                            NoColorize: true,
+                            RequirePoses: ToMap(["Free"]),
+                            HidePoses: ToMap([COCOON_COVER_POSE]),
+                        },
+                    ]),
                 };
             },
         }),
@@ -151,7 +172,16 @@
             id: "SpiderlingsWebbingLv1BellyModel",
             asset: "Models/SpiderlingsWebbingLv1/Belly.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Belly", "WrappingTorsoLower", ["Closed"], [], CLOSED_ONLY);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Belly",
+                    "WrappingTorsoLower",
+                    ["Closed"],
+                    [],
+                    CLOSED_ONLY,
+                );
             },
         }),
         Object.freeze({
@@ -159,7 +189,16 @@
             id: "SpiderlingsWebbingLv1LegsModel",
             asset: "Models/SpiderlingsWebbingLv1/Legs.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Legs", "WrappingLegsOver", ["Closed"], ["FeetLinked"], CLOSED_ONLY);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Legs",
+                    "WrappingLegsOver",
+                    ["Closed"],
+                    ["FeetLinked"],
+                    CLOSED_ONLY,
+                );
             },
         }),
         Object.freeze({
@@ -167,7 +206,16 @@
             id: "SpiderlingsWebbingLv1AnklesModel",
             asset: "Models/SpiderlingsWebbingLv1/Ankles.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Ankles", "WrappingAnklesOver", ["Closed"], ["FeetLinked"], CLOSED_ONLY);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Ankles",
+                    "WrappingAnklesOver",
+                    ["Closed"],
+                    ["FeetLinked"],
+                    CLOSED_ONLY,
+                );
             },
         }),
         Object.freeze({
@@ -175,7 +223,16 @@
             id: "SpiderlingsWebbingLv1FootModel",
             asset: "Models/SpiderlingsWebbingLv1/Foot.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Foot", "WrappingLegs", ["Closed"], ["FeetLinked"], CLOSED_ONLY);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Foot",
+                    "WrappingLegs",
+                    ["Closed"],
+                    ["FeetLinked"],
+                    CLOSED_ONLY,
+                );
             },
         }),
         Object.freeze({
@@ -183,7 +240,23 @@
             id: "SpiderlingsWebbingLv1BlindfoldModel",
             asset: "Models/SpiderlingsWebbingLv1/Blindfold.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Blindfold", "Blindfold", [], [], [], -1);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Blindfold",
+                    "Blindfold",
+                    [],
+                    [],
+                    [],
+                    LV1_PRIORITY,
+                    {
+                        NoOverride: true,
+                        HideOverrideLayer: "Blindfold",
+                        // Dressing detects the physical layer; rendering selects the native face mask only in face X-ray.
+                        SwapLayerPose: { XrayFace: "Blindfold", SpiderlingsWebbingLv1: "Brows" },
+                    },
+                );
             },
         }),
         Object.freeze({
@@ -191,7 +264,17 @@
             id: "SpiderlingsWebbingLv1StuffingModel",
             asset: "Models/SpiderlingsWebbingLv1/Stuffing.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Stuffing", "GagUnder", [], ["StuffMouth"], [], -100);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Stuffing",
+                    "GagUnder",
+                    [],
+                    ["StuffMouth"],
+                    [],
+                    -100,
+                );
             },
         }),
         Object.freeze({
@@ -199,7 +282,17 @@
             id: "SpiderlingsWebbingLv1GagModel",
             asset: "Models/SpiderlingsWebbingLv1/Gag.png",
             create() {
-                return directModel(this.id, FOLDER, COMMON_CATEGORIES, "Gag", "GagMuzzle", [], ["FaceCoverGag"], [], -50);
+                return directModel(
+                    this.id,
+                    FOLDER,
+                    COMMON_CATEGORIES,
+                    "Gag",
+                    "GagMuzzle",
+                    [],
+                    ["FaceCoverGag"],
+                    [],
+                    -50,
+                );
             },
         }),
     ]);
@@ -209,17 +302,41 @@
         id: COCOON_MODEL_ID,
         asset: COCOON_ASSET,
         create() {
-            const model = directModel(COCOON_MODEL_ID, COCOON_FOLDER,
+            const model = directModel(
+                COCOON_MODEL_ID,
+                COCOON_FOLDER,
                 ["Restraints", "Wrapping", "Latex", "SpiderlingsWebbingCocoon"],
-                "Cocoon", "FurnitureFront", ["Closed"],
-                ["Wristties", "FeetLinked", "EncaseArmLeft", "EncaseArmRight", "WrapArms",
-                    "EncaseChest", "EncaseTorsoUpper", "EncaseTorsoLower", "EncaseHandLeft", "EncaseHandRight",
-                    "EncaseLegs", "EncaseAnkles", "EncaseFeet", COCOON_COVER_POSE],
-                CLOSED_ONLY, 100);
+                "Cocoon",
+                "FurnitureFront",
+                ["Closed"],
+                [
+                    "Wristties",
+                    "FeetLinked",
+                    "EncaseArmLeft",
+                    "EncaseArmRight",
+                    "WrapArms",
+                    "EncaseChest",
+                    "EncaseTorsoUpper",
+                    "EncaseTorsoLower",
+                    "EncaseHandLeft",
+                    "EncaseHandRight",
+                    "EncaseLegs",
+                    "EncaseAnkles",
+                    "EncaseFeet",
+                    COCOON_COVER_POSE,
+                ],
+                CLOSED_ONLY,
+                100,
+            );
             model.HideLayers = ["Tail", "TailNoRot", "TailFront"];
             model.Layers.OuterWebs = {
-                Name: "OuterWebs", Sprite: "OuterWebs", Layer: "FurnitureBack", Pri: 100,
-                Invariant: true, NoColorize: true, NoOverride: true,
+                Name: "OuterWebs",
+                Sprite: "OuterWebs",
+                Layer: "FurnitureBack",
+                Pri: 100,
+                Invariant: true,
+                NoColorize: true,
+                NoOverride: true,
                 RequirePoses: ToMap(["SpiderlingsCocoonAnchored"]),
             };
             return model;
@@ -232,9 +349,18 @@
             id: "SpiderlingsWebbingLv2ArmModel",
             asset: "Models/SpiderlingsWebbingLv2/ArmWebbing.png",
             create() {
-                return directModel(this.id, LV2_FOLDER, LV2_CATEGORIES, "ArmWebbing", "WrapArms", ["Wristtie"],
-                    ["Wristties"], CLOSED_ONLY,
-                    LV2_PRIORITY, {...BODY_DISPLACEMENTS.Arm, NoOverride: true});
+                return directModel(
+                    this.id,
+                    LV2_FOLDER,
+                    LV2_CATEGORIES,
+                    "ArmWebbing",
+                    "WrapArms",
+                    ["Wristtie"],
+                    ["Wristties"],
+                    CLOSED_ONLY,
+                    LV2_PRIORITY,
+                    { ...BODY_DISPLACEMENTS.Arm, NoOverride: true },
+                );
             },
         }),
         Object.freeze({
@@ -242,8 +368,18 @@
             id: "SpiderlingsWebbingLv2BellyModel",
             asset: "Models/SpiderlingsWebbingLv2/Belly.png",
             create() {
-                return directModel(this.id, LV2_FOLDER, LV2_CATEGORIES, "Belly", "WrappingTorsoLower", ["Closed"], [], CLOSED_ONLY,
-                    LV2_PRIORITY, {...BODY_DISPLACEMENTS.Belly, NoOverride: true});
+                return directModel(
+                    this.id,
+                    LV2_FOLDER,
+                    LV2_CATEGORIES,
+                    "Belly",
+                    "WrappingTorsoLower",
+                    ["Closed"],
+                    [],
+                    CLOSED_ONLY,
+                    LV2_PRIORITY,
+                    { ...BODY_DISPLACEMENTS.Belly, NoOverride: true },
+                );
             },
         }),
         Object.freeze({
@@ -251,8 +387,18 @@
             id: "SpiderlingsWebbingLv2LegsModel",
             asset: "Models/SpiderlingsWebbingLv2/Legs.png",
             create() {
-                return directModel(this.id, LV2_FOLDER, LV2_CATEGORIES, "Legs", "OverSkirtDeco", ["Closed"], ["FeetLinked"], CLOSED_ONLY,
-                    LV2_PRIORITY, {...BODY_DISPLACEMENTS.Legs, NoOverride: true});
+                return directModel(
+                    this.id,
+                    LV2_FOLDER,
+                    LV2_CATEGORIES,
+                    "Legs",
+                    "OverSkirtDeco",
+                    ["Closed"],
+                    ["FeetLinked"],
+                    CLOSED_ONLY,
+                    LV2_PRIORITY,
+                    { ...BODY_DISPLACEMENTS.Legs, NoOverride: true },
+                );
             },
         }),
         Object.freeze({
@@ -260,8 +406,18 @@
             id: "SpiderlingsWebbingLv2AnklesModel",
             asset: "Models/SpiderlingsWebbingLv2/Ankles.png",
             create() {
-                return directModel(this.id, LV2_FOLDER, LV2_CATEGORIES, "Ankles", "OverSkirtDeco", ["Closed"], ["FeetLinked"], CLOSED_ONLY,
-                    LV2_PRIORITY, {...BODY_DISPLACEMENTS.Ankles, NoOverride: true});
+                return directModel(
+                    this.id,
+                    LV2_FOLDER,
+                    LV2_CATEGORIES,
+                    "Ankles",
+                    "OverSkirtDeco",
+                    ["Closed"],
+                    ["FeetLinked"],
+                    CLOSED_ONLY,
+                    LV2_PRIORITY,
+                    { ...BODY_DISPLACEMENTS.Ankles, NoOverride: true },
+                );
             },
         }),
         Object.freeze({
@@ -269,57 +425,152 @@
             id: "SpiderlingsWebbingLv2FootModel",
             asset: "Models/SpiderlingsWebbingLv2/Foot.png",
             create() {
-                return directModel(this.id, LV2_FOLDER, LV2_CATEGORIES, "Foot", "WrappingLegs", ["Closed"], ["FeetLinked"], CLOSED_ONLY,
-                    LV2_PRIORITY, {...BODY_DISPLACEMENTS.Foot, NoOverride: true});
+                return directModel(
+                    this.id,
+                    LV2_FOLDER,
+                    LV2_CATEGORIES,
+                    "Foot",
+                    "WrappingLegs",
+                    ["Closed"],
+                    ["FeetLinked"],
+                    CLOSED_ONLY,
+                    LV2_PRIORITY,
+                    { ...BODY_DISPLACEMENTS.Foot, NoOverride: true },
+                );
             },
         }),
     ]);
 
-    const lv3Definitions = Object.freeze([
-        {family: "Arm", sprite: "ArmWebbing", layer: "WrappingChest", poses: ["Wristtie"],
-            addPose: ["Wristties", "EncaseArmLeft", "EncaseArmRight", "EncaseTorsoUpper", "EncaseChest", "WrapArms"],
-            extra: {CrossHideOverride: true, HideOverrideLayerMulti: ["ChestBinding"], ForceSingleOverride: true,
-                // Native priority collection checks this field before it checks
-                // drawable poses. An invisible wrap must not suppress the chest.
-                HidePoseConditional: ["Free", "Boxtie", "Yoked", "Front", "Up", "Crossed", COCOON_COVER_POSE]
-                    .map((pose) => [pose])}},
-        {family: "Belly", sprite: "Belly", layer: "WrappingTorsoLower", poses: ["Closed"], addPose: ["EncaseTorsoLower"]},
-        // The uppermost standing skirt slot keeps the outer webbing above
-        // OverSkirt as well as SkirtOver/Skirt, without hiding the skirt itself.
-        {family: "Legs", sprite: "Legs", layer: "OverSkirtDeco", poses: ["Closed"], addPose: ["FeetLinked", "EncaseLegs"],
-            extra: {NoOverride: true}},
-        {family: "Ankles", sprite: "Ankles", layer: "OverSkirtDeco", poses: ["Closed"], addPose: ["FeetLinked", "EncaseAnkles"],
-            extra: {NoOverride: true}},
-        {family: "Foot", sprite: "Foot", layer: "WrappingLegs", poses: ["Closed"], addPose: ["FeetLinked", "EncaseFeet"]},
-        {family: "Blindfold", sprite: "Blindfold", layer: "Blindfold", poses: [], addPose: ["EncaseEyes"]},
-        {family: "Gag", sprite: "Gag", layer: "GagMuzzle", poses: [], addPose: ["FaceCoverGag", "EncaseMouth"]},
-        {family: "Hood", sprite: "Hood", layer: "Hood", poses: [],
-            addPose: ["HideEars", "FaceCoverGag", "Hooded", "FullHood", "EncaseHead"]},
-    ].map((entry) => Object.freeze({
-        family: entry.family,
-        id: `SpiderlingsWebbingLv3${entry.family}Model`,
-        asset: `Models/${LV3_FOLDER}/${entry.sprite}.png`,
-        create() {
-            const head = ["Blindfold", "Gag", "Hood"].includes(entry.family);
-            const model = directModel(this.id, LV3_FOLDER, LV3_CATEGORIES, entry.sprite, entry.layer, entry.poses,
-                [...entry.addPose, `SpiderlingsWebbingLv3${entry.family}Cover`], head ? [] : CLOSED_ONLY,
-                LV3_PRIORITY, {
-                    ...BODY_DISPLACEMENTS[entry.family],
-                    ...entry.extra,
-                    HidePoses: ToMap(head ? (entry.family === "Hood" ? [] : ["FullHood"]) : [COCOON_COVER_POSE]),
-                });
-            if (entry.family === "Hood") {
-                model.HideLayers = ["HairFront", "HairOver", "Hair", "HairMid", "HairBack", "HairPonytail", "Ahoge", "Brows", "Ears",
-                    "AnimalEars", "AnimalEarsFront", "AnimalEarsMid"];
-            } else if (entry.family === "Legs") {
-                model.HideLayers = ["Tail", "TailNoRot", "TailFront"];
-            }
-            return model;
-        },
-    })));
+    const lv3Definitions = Object.freeze(
+        [
+            {
+                family: "Arm",
+                sprite: "ArmWebbing",
+                layer: "WrappingChest",
+                poses: ["Wristtie"],
+                addPose: [
+                    "Wristties",
+                    "EncaseArmLeft",
+                    "EncaseArmRight",
+                    "EncaseTorsoUpper",
+                    "EncaseChest",
+                    "WrapArms",
+                ],
+                extra: {
+                    CrossHideOverride: true,
+                    HideOverrideLayerMulti: ["ChestBinding"],
+                    ForceSingleOverride: true,
+                    // Native priority collection checks this field before it checks
+                    // drawable poses. An invisible wrap must not suppress the chest.
+                    HidePoseConditional: ["Free", "Boxtie", "Yoked", "Front", "Up", "Crossed", COCOON_COVER_POSE].map(
+                        (pose) => [pose],
+                    ),
+                },
+            },
+            {
+                family: "Belly",
+                sprite: "Belly",
+                layer: "WrappingTorsoLower",
+                poses: ["Closed"],
+                addPose: ["EncaseTorsoLower"],
+            },
+            // The uppermost standing skirt slot keeps the outer webbing above
+            // OverSkirt as well as SkirtOver/Skirt, without hiding the skirt itself.
+            {
+                family: "Legs",
+                sprite: "Legs",
+                layer: "OverSkirtDeco",
+                poses: ["Closed"],
+                addPose: ["FeetLinked", "EncaseLegs"],
+                extra: { NoOverride: true },
+            },
+            {
+                family: "Ankles",
+                sprite: "Ankles",
+                layer: "OverSkirtDeco",
+                poses: ["Closed"],
+                addPose: ["FeetLinked", "EncaseAnkles"],
+                extra: { NoOverride: true },
+            },
+            {
+                family: "Foot",
+                sprite: "Foot",
+                layer: "WrappingLegs",
+                poses: ["Closed"],
+                addPose: ["FeetLinked", "EncaseFeet"],
+            },
+            {
+                family: "Blindfold",
+                sprite: "Blindfold",
+                layer: "Blindfold",
+                poses: [],
+                addPose: ["EncaseEyes"],
+                extra: {
+                    NoOverride: true,
+                    HideOverrideLayer: "Blindfold",
+                    SwapLayerPose: { XrayFace: "Blindfold", SpiderlingsWebbingLv3: "Brows" },
+                },
+            },
+            { family: "Gag", sprite: "Gag", layer: "GagMuzzle", poses: [], addPose: ["FaceCoverGag", "EncaseMouth"] },
+            {
+                family: "Hood",
+                sprite: "Hood",
+                layer: "Hood",
+                poses: [],
+                addPose: ["HideEars", "FaceCoverGag", "Hooded", "FullHood", "EncaseHead"],
+            },
+        ].map((entry) =>
+            Object.freeze({
+                family: entry.family,
+                id: `SpiderlingsWebbingLv3${entry.family}Model`,
+                asset: `Models/${LV3_FOLDER}/${entry.sprite}.png`,
+                create() {
+                    const head = ["Blindfold", "Gag", "Hood"].includes(entry.family);
+                    const model = directModel(
+                        this.id,
+                        LV3_FOLDER,
+                        LV3_CATEGORIES,
+                        entry.sprite,
+                        entry.layer,
+                        entry.poses,
+                        [...entry.addPose, `SpiderlingsWebbingLv3${entry.family}Cover`],
+                        head ? [] : CLOSED_ONLY,
+                        LV3_PRIORITY,
+                        {
+                            ...BODY_DISPLACEMENTS[entry.family],
+                            ...entry.extra,
+                            HidePoses: ToMap(
+                                head ? (entry.family === "Hood" ? [] : ["FullHood"]) : [COCOON_COVER_POSE],
+                            ),
+                        },
+                    );
+                    if (entry.family === "Hood") {
+                        model.HideLayers = [
+                            "HairFront",
+                            "HairOver",
+                            "Hair",
+                            "HairMid",
+                            "HairBack",
+                            "HairPonytail",
+                            "Ahoge",
+                            "Brows",
+                            "Ears",
+                            "AnimalEars",
+                            "AnimalEarsFront",
+                            "AnimalEarsMid",
+                        ];
+                    } else if (entry.family === "Legs") {
+                        model.HideLayers = ["Tail", "TailNoRot", "TailFront"];
+                    }
+                    return model;
+                },
+            }),
+        ),
+    );
 
     function registerModels() {
-        if (typeof AddModel != "function" || typeof ToLayerMap != "function" || typeof ToMap != "function") return false;
+        if (typeof AddModel != "function" || typeof ToLayerMap != "function" || typeof ToMap != "function")
+            return false;
         for (const definition of definitions) AddModel(definition.create());
         for (const definition of lv2Definitions) AddModel(definition.create());
         for (const definition of lv3Definitions) AddModel(definition.create());

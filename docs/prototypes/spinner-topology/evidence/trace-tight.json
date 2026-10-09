@@ -1,0 +1,12 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [14, 10],
+    "blocked": 0,
+    "reachableCells": 4,
+    "exitReachable": true,
+    "geometryReady": false
+  }
+]

@@ -1,6 +1,6 @@
 NameSpinner,Spinnenjunges Spinner
 AttackSpinner,Das Spinnenjunge Spinner huscht über deinen Körper; seine feinen Beine hinterlassen ein prickelndes Jucken.
-AttackSpinnerBind,Das Spinnenjunge Spinner flitzt um dich herum, hinterlässt eine Schlinge klebriger Seide und verschwindet. (+RestraintAdded)
+AttackSpinnerBind,Die Spinne wickelt Seide um deine Beine und bleibt zum Weiterweben in der Nähe. (+RestraintAdded)
 KillSpinner,Das Spinnenjunge Spinner zieht seine feinen Beine an und verschwindet rückwärts in den Schatten.
 NameJumper,Spinnenjunges Springer
 AttackJumper,Das Spinnenjunge Springer schnellt heran; seine feinen Beine streifen deinen Körper und lassen ihn jucken.
@@ -9,7 +9,7 @@ KillJumper,Das Spinnenjunge Springer taumelt zurück und verschwindet rasch in d
 NameTunneler,Spinnenjunges Gräber
 KillTunneler,Das Spinnenjunge Gräber verschwindet; nur einige Seidenfäden bleiben zurück.
 NameNestEntrance,Nesteingang
-KillNestEntrance,Der Nesteingang bricht krachend ein, und die darin verborgenen Spinnenjungen strömen heraus!
+KillNestEntrance,Der Nesteingang bricht ein. Feine Seidenfäden lösen sich vom Rand und fallen zu Boden.
 NameWebCaster,Spinnenjunges Netzwerfer
 KillWebCaster,Das Spinnenjunge Netzwerfer zieht sich zusammen und weicht ins Dunkel zurück.
 KinkyDungeonSpellSummonSpinner,Spinner beschwören
@@ -30,26 +30,29 @@ KinkyDungeonSpellSummonNestEntrance,Spinnennest graben
 KinkyDungeonSummonSummonNestEntrance,Der Boden reißt zu einem seidenbedeckten Loch auf; ein neuer Nesteingang ist entstanden!
 KinkyDungeonSpellCastSummonNestEntrance,Das Spinnenjunge Gräber kauert am Boden und scharrt, während Seide die Risse entlangwächst!
 KinkyDungeonSpellWebSpray,Netzstrahl
-KinkyDungeonSpellCastWebSpray,Das Spinnenjunge Netzwerfer spritzt klebrige Seide auf dich; weiße Fäden fächern sich in der Luft auf!
+KinkyDungeonSpellCastWebSpray,Das Spinnenjunge Netzwerfer spritzt klebrige Seide auf dich; Fäden fächern sich in der Luft auf!
 KinkyDungeonSpellWebSprayDamage,Die heranfliegende klebrige Seide trifft dich frontal! (DamageDealt)
 KinkyDungeonSpellWebSprayBind,Die gespritzte Seide klebt an deinem Körper und verknäuelt sich zu einem Netz!
 KinkyDungeonSpellSpiderWeb,Bodennetz
 KinkyDungeonSpellCastSpiderWeb,Klebrige Fäden sinken zu Boden und breiten ringsum ein zerrissenes Netz aus.
 KinkyDungeonSpellSpiderWebDamage,Du trittst ins Netz, und klebrige Fäden wickeln sich um deine Füße! (DamageDealt)
 KinkyDungeonSpellSpiderWebBind,Du trittst ins Netz, und die klebrigen Fäden neben deinen Füßen winden sich an ihnen hoch!
-KDModButtonSpiderlings,Spinnenjunge
-KDModButtonspiderlingsSquad,Feste Spinnenjungengruppe
+KDModButtonSpiderlings,Spiderlings
+KinkyDungeonStatSpiderlingsSquad,Spinnenjungentrupp
+KinkyDungeonStatDescSpiderlingsSquad,"Auf jeder neuen geeigneten normalen Karte erscheint ein feindlicher Trupp: zwei Spinner und je ein Gräber, Netzwerfer, Springer und Magier. Dafür braucht es Platz und freie Plätze unter der Spinnenobergrenze."
+KDModButtonspiderlingsSpinnerEncounters,Spinner-Fangfelder
 KDModButtonspiderlingsNestSummonWeights,Gewichte der Verstärkungsarten
 KDModButtonspiderlingsNestSpinnerWeight,Spinner Gewicht
 KDModButtonspiderlingsNestJumperWeight,Springer Gewicht
 KDModButtonspiderlingsNestWebCasterWeight,Netzwerfer Gewicht
 KDModButtonspiderlingsNestTunnelerWeight,Gräber Gewicht
+KDModButtonspiderlingsNestMageWeight,Magier Gewicht
 KDModButtonspiderlingsNestReinforcementControl,Wiederkehrende Nestverstärkung
-KDModButtonspiderlingsNestReinforcementCap,Lebende Verstärkung je Nest
+KDModButtonspiderlingsNestReinforcementCap,Lebende Verstärkungen je Nest
 KDModButtonspiderlingsNestReinforcementInterval,Prüfintervall für Verstärkung (Runden)
 RestraintSpiderlingsWebbingLv1Arm,Seidene Armfesseln
 RestraintSpiderlingsWebbingLv1ArmDesc,Einige klebrige Fäden winden sich um deine Handgelenke und ziehen deine Arme hinter den Rücken.
-RestraintSpiderlingsWebbingLv1ArmDesc2,Zwischen den Fäden bleiben Lücken. Eine leichte Drehung spannt die feinen weißen Linien.
+RestraintSpiderlingsWebbingLv1ArmDesc2,Zwischen den Fäden bleiben Lücken. Eine leichte Drehung spannt die feinen Linien.
 RestraintSpiderlingsWebbingLv1MittenLeft,Seidenfäustling · Links
 RestraintSpiderlingsWebbingLv1MittenLeftDesc,Dünne Seide schmiegt sich um deine linke Hand und fasst die Finger in einer weichen Hülle zusammen.
 RestraintSpiderlingsWebbingLv1MittenLeftDesc2,Deine Fingerspitzen drücken gegen lockeren Seidenflaum; vom Rand hängen einzelne lose Fäden.
@@ -60,11 +63,11 @@ RestraintSpiderlingsWebbingLv1Belly,Seidene Bauchbinde
 RestraintSpiderlingsWebbingLv1BellyDesc,Ein schmales Band aus klebriger Seide liegt an deinem Unterbauch.
 RestraintSpiderlingsWebbingLv1BellyDesc2,Feiner Flaum säumt die Ränder und bewegt sich sanft mit deinem Körper.
 RestraintSpiderlingsWebbingLv1Legs,Seidene Beinfesseln
-RestraintSpiderlingsWebbingLv1LegsDesc,Lockere Fäden kreuzen deine geschlossenen Beine und ziehen feine weiße Linien zwischen ihnen.
+RestraintSpiderlingsWebbingLv1LegsDesc,Lockere Fäden kreuzen deine geschlossenen Beine und ziehen feine Linien zwischen ihnen.
 RestraintSpiderlingsWebbingLv1LegsDesc2,Die Maschen sind noch deutlich erkennbar; ein Zug an einer Stelle lässt die benachbarten Fäden zittern.
 RestraintSpiderlingsWebbingLv1Ankles,Seidene Knöchelfesseln
 RestraintSpiderlingsWebbingLv1AnklesDesc,Einige Fäden kreuzen sich zwischen deinen Knöcheln und ziehen sie sanft zusammen.
-RestraintSpiderlingsWebbingLv1AnklesDesc2,Weiße Fäden laufen um die Knöchel und spannen eine schmale Brücke zwischen deinen Füßen.
+RestraintSpiderlingsWebbingLv1AnklesDesc2,Fäden laufen um die Knöchel und spannen eine schmale Brücke zwischen deinen Füßen.
 RestraintSpiderlingsWebbingLv1Foot,Seidene Fußhülle
 RestraintSpiderlingsWebbingLv1FootDesc,Dünne Seide umhüllt deine aneinanderliegenden Füße und verklebt an ihren Rändern.
 RestraintSpiderlingsWebbingLv1FootDesc2,Feine Fäden breiten sich über die Fußrücken aus; die Zehen zeichnen sich noch deutlich unter dem Netz ab.
@@ -82,7 +85,7 @@ RestraintSpiderlingsWebbingLv2LegsDesc,Dicke Seide kreuzt deine Beine und webt d
 RestraintSpiderlingsWebbingLv2LegsDesc2,Die offenen Maschen sind zu kleinen Schlitzen geschrumpft; überlappende Bänder bewegen sich gemeinsam mit deinen Beinen.
 RestraintSpiderlingsWebbingLv2Ankles,Verwobene Knöchelfesseln
 RestraintSpiderlingsWebbingLv2AnklesDesc,Seide windet sich immer wieder um die Knöchel und überzieht die gekreuzten Fäden mit dicken Ringen.
-RestraintSpiderlingsWebbingLv2AnklesDesc2,Klebrige Fäden verbinden die Ringe; jede Bewegung zieht die verknäuelten weißen Linien gegeneinander.
+RestraintSpiderlingsWebbingLv2AnklesDesc2,Klebrige Fäden verbinden die Ringe; jede Bewegung zieht die verknäuelten Linien gegeneinander.
 RestraintSpiderlingsWebbingLv2Foot,Verwobene Fußhülle
 RestraintSpiderlingsWebbingLv2FootDesc,Seide wird immer wieder über deine Füße gelegt und hüllt Ränder und Fußrücken in ein dickes Netz.
 RestraintSpiderlingsWebbingLv2FootDesc2,Die Umrisse der Zehen verschwimmen; auf der Oberfläche bleiben nur überlappende Seidenrillen.
@@ -93,63 +96,187 @@ RestraintSpiderlingsWebbingLv1Gag,Seidener Knebel
 RestraintSpiderlingsWebbingLv1GagDesc,Ein breites Seidenband liegt über deinem Mund und dämpft deine Stimme.
 RestraintSpiderlingsWebbingLv1GagDesc2,Klebrige Fäden ziehen sich von den Mundwinkeln auf die Wangen; ihre überlappenden Enden sind noch zu erkennen.
 RestraintSpiderlingsWebbingLv3Arm,Dichte Armfesseln
-RestraintSpiderlingsWebbingLv3ArmDesc,Dicht verwobene Seide umschließt deine Arme hinter dem Rücken und begräbt die Knoten an den Handgelenken in einer dicken weißen Hülle.
+RestraintSpiderlingsWebbingLv3ArmDesc,Dicht verwobene Seide umschließt deine Arme hinter dem Rücken und begräbt die Knoten an den Handgelenken in einer dicken Hülle.
 RestraintSpiderlingsWebbingLv3ArmDesc2,Dein Winden drückt kleine Falten in die Hülle; die einst deutlichen Lücken sind nicht mehr zu finden.
 RestraintSpiderlingsWebbingLv3Belly,Dichte Bauchbinde
 RestraintSpiderlingsWebbingLv3BellyDesc,Feine Seide liegt dicht übereinander und umschließt deinen Bauch mit einer durchgehenden Hülle.
 RestraintSpiderlingsWebbingLv3BellyDesc2,Die Webmuster verschwinden in der dicken Oberfläche; nur flache Falten folgen deinen Bewegungen.
 RestraintSpiderlingsWebbingLv3Legs,Dichte Beinfesseln
-RestraintSpiderlingsWebbingLv3LegsDesc,Seide umschließt deine geschlossenen Beine vollständig und füllt die Maschen dazwischen mit dichten weißen Fäden.
+RestraintSpiderlingsWebbingLv3LegsDesc,Seide umschließt deine geschlossenen Beine vollständig und füllt die Maschen dazwischen mit dichten Fäden.
 RestraintSpiderlingsWebbingLv3LegsDesc2,Die Umrisse beider Beine verschmelzen; die einst sichtbaren Bänder liegen unter der glatten Hülle verborgen.
 RestraintSpiderlingsWebbingLv3Ankles,Dichte Knöchelfesseln
 RestraintSpiderlingsWebbingLv3AnklesDesc,Dichte Seide umschließt deine Knöchel und verwebt die benachbarten Ringe zu einer nahtlosen Hülle.
 RestraintSpiderlingsWebbingLv3AnklesDesc2,Knoten und Nähte sind verschwunden; nur flache Abdrücke neben den Knöcheln bewegen sich mit dir.
 RestraintSpiderlingsWebbingLv3Foot,Dichte Fußhülle
 RestraintSpiderlingsWebbingLv3FootDesc,Seide umschließt deine Füße vollständig; die Einzelheiten von Rändern und Fußrücken verschwinden in einer dicken Hülle.
-RestraintSpiderlingsWebbingLv3FootDesc2,Unzählige Fäden verschmelzen zu einer weißen Fläche. Nur die gemeinsame Form deiner Füße bleibt.
+RestraintSpiderlingsWebbingLv3FootDesc2,Unzählige Fäden verschmelzen zu einer Fläche. Nur die gemeinsame Form deiner Füße bleibt.
 RestraintSpiderlingsWebbingLv3Blindfold,Dichte Augenbinde
-RestraintSpiderlingsWebbingLv3BlindfoldDesc,Dichte Seide bedeckt deine Augen und begräbt die Ränder der Augenbinde in einer durchgehenden weißen Fläche.
+RestraintSpiderlingsWebbingLv3BlindfoldDesc,Dichte Seide bedeckt deine Augen und begräbt die Ränder der Augenbinde in einer durchgehenden Fläche.
 RestraintSpiderlingsWebbingLv3BlindfoldDesc2,Neben deinen Wangen wehen keine losen Fäden mehr; die eng anliegende Hülle dreht sich als Ganzes mit deinem Kopf.
 RestraintSpiderlingsWebbingLv3Gag,Dichter Seidenknebel
 RestraintSpiderlingsWebbingLv3GagDesc,Dicke Seide breitet sich über deinen Mund aus und bedeckt das überlappende Netz mit einer dichten Fläche.
 RestraintSpiderlingsWebbingLv3GagDesc2,Die Nähte neben deinen Lippen sind verschwunden; gedämpfte Laute lassen die Seide leicht erzittern.
 RestraintSpiderlingsWebbingLv3Hood,Dichte Seidenhaube
 RestraintSpiderlingsWebbingLv3HoodDesc,Lichtundurchlässige Seide zieht sich vom Scheitel herab und hüllt deinen ganzen Kopf in eine dicke Haube.
-RestraintSpiderlingsWebbingLv3HoodDesc2,Haarspitzen und Gesichtszüge verschwinden unter weißer Seide; nur ein schwankender Umriss bleibt.
+RestraintSpiderlingsWebbingLv3HoodDesc2,Haarspitzen und Gesichtszüge verschwinden unter Seide; nur ein schwankender Umriss bleibt.
 RestraintSpiderlingsWebbingCocoon,Spinnenseidenkokon
 RestraintSpiderlingsWebbingCocoonDesc,Dichte Seide hüllt deinen Körper in einen dicken Kokon. Sein Rand reicht bis unter deinen Mund; der obere Teil deines Kopfes bleibt draußen.
-RestraintSpiderlingsWebbingCocoonDesc2,Die Kokonwand zittert, wenn du dich windest. Nachschleifende Fäden rascheln über den Boden, als trügen sie die Regungen im Inneren in die Dunkelheit.
-KinkyDungeonSpiderlingsWebbingLv1Covered,TargetLv1 liegt unter TargetLv2 begraben; du berührst nur die klebrige Seide darüber.
+RestraintSpiderlingsWebbingCocoonDesc2,Bei einer kleinen Bewegung legt sich die weiche Kokonwand in flache Falten, und die übereinanderliegenden Fäden spannen sich sanft.
+KinkyDungeonSpiderlingsWebbingLv1Covered,"TargetLv1 liegt unter TargetLv2. Entferne zuerst die äußere Schicht, um an die Seide darunter zu gelangen."
 KinkyDungeonSpiderlingsCocoonAnchored,Die Spinnenjungen ziehen Netze um den Kokon und halten dich fest an Ort und Stelle!
+KDMapMod_SpiderlingsHuntingGrounds,Jagdrevier der Jungspinnen
+KinkyDungeonMapModSpiderlingsHuntingGrounds,Weiche Netze ziehen sich durch die ganze Etage. Jungspinnen huschen zwischen ihren Nestern umher und ein leises Rascheln folgt dir durch die Gänge.
+KDEscapeMethod_SpiderlingsHuntingGrounds,Markierte Nester zerstören
+KDEscapeMethodDesc_SpiderlingsHuntingGrounds,Zerstöre die ursprünglichen Zielnester zum Abstieg (rote Aufgabenmarkierungen auf der Minikarte). Spätere Nester zählen nicht.
+SpiderlingsHuntingGroundsProgress,Markierte Nester zerstört: CURRENT/TARGET
+SpiderlingsHuntingGroundsBlocked,Zerstöre die ursprünglichen Zielnester zum Abstieg: rote Aufgabenmarkierungen auf der Minikarte. (CURRENT/TARGET)
+SpiderlingsHuntingGroundsComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (TARGET/TARGET)
+KDModButtonspiderlingsPinkWebbing,Rosa Seide
+KDModButtonspiderlingsEnableHood,Seidenhauben erlauben
+KinkyDungeonSpiderlingsWebbingInterwoven,Die sich kreuzenden Fäden ziehen sich zu und fesseln einen weiteren Teil deines Körpers.
+KinkyDungeonStruggleCutFailSpiderlingsWebbing,Du führst die Klinge an einer Naht von TargetRestraint entlang.
+KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Du führst die Klinge an einer Naht von TargetRestraint entlang.
+KinkyDungeonStruggleCutSuccessSpiderlingsWebbing,Du durchtrennst die letzten Fäden von TargetRestraint. Das zerschnittene Gespinst fällt ab.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,Du ziehst an TargetRestraint. Das Gewebe wirft Falten bei deinen Bewegungen.
+KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,Du ziehst an TargetRestraint. Das Gewebe wirft Falten bei deinen Bewegungen.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsWebbing,Du befreist dich von den letzten haftenden Fäden von TargetRestraint und sammelst das gelöste Gespinst ein.
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Fäden voneinander zu lösen."
+KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Fäden voneinander zu lösen."
+KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Du streifst TargetRestraint ab und sammelst die gelöste Seide ein.
+KinkyDungeonStruggleCutFailSpiderlingsCocoon,Du führst die Klinge an einer Naht von TargetRestraint entlang und drückst sie gegen die Seidenschichten.
+KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Du führst die Klinge an einer Naht von TargetRestraint entlang und drückst sie gegen die Seidenschichten.
+KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Du durchtrennst die letzte Naht von TargetRestraint. Die äußere Kokonhülle öffnet sich.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Du drückst gegen TargetRestraint. Flache Falten ziehen sich über die Kokonwand.
+KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Du drückst gegen TargetRestraint. Flache Falten ziehen sich über die Kokonwand.
+KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Du drückst die äußere Hülle von TargetRestraint auf und sammelst die lose Seide.
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Schichten voneinander zu lösen."
+KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,"Du zupfst am Rand von TargetRestraint und versuchst, die verklebten Schichten voneinander zu lösen."
+KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Du schälst die äußere Hülle von TargetRestraint auf und sammelst den gelösten Kokon.
+KDModButtonspiderlingsMapPopulationCap,Mobile Spinnen (0: unbegrenzt)
+KinkyDungeonStatSpiderlingsCocoonStart,Erwachen im Kokon
+KinkyDungeonStatDescSpiderlingsCocoonStart,"Du erwachst in einem weichen Kokon, umhüllt von dicht gewebter Spinnseide. Bei jeder kleinen Bewegung ziehen die Fäden an deinem Körper."
+KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Das Springer-Spinnenjunge fixiert den Boden unter seinem Gegner und duckt sich zum Sprung.
+KDModButtonspiderlingsNestTunnelerCap,Gräber insgesamt je Nest (0: keine)
+RestraintSpiderlingsSpinnerLegbinder,Seidener Beinbeutel
+RestraintSpiderlingsSpinnerLegbinderDesc,Seide umhüllt deine Beine von oberhalb der Knöchel bis zu den oberen Oberschenkeln.
+RestraintSpiderlingsSpinnerLegbinderDesc2,Das dichte Gewebe folgt der Form deiner Beine, sein weicher Rand liegt an deinen Oberschenkeln an.
+SpiderlingsSpinnerPull,Losreißen · 10 Ausdauer · 1 Runde
+SpiderlingsSpinnerContest,Spinner: {count} · Weben +{rate}/Runde
+SpiderlingsSpinnerStart,"Die Fäden des umliegenden Netzes ziehen deine Beine zusammen. Du kannst daran ziehen, bevor die Seide dich ganz umschließt."
+SpiderlingsSpinnerWin,Du ziehst dich frei. Die webenden Spinner bleiben benommen zurück.
+SpiderlingsSpinnerInterrupt,Das Weben bricht ab. Du kannst handeln; bereits gewebte Seide bleibt.
+SpiderlingsSpinnerTired,Du brauchst 10 Ausdauer. Warten oder einen Trank nutzen ist weiter möglich.
+SpiderlingsSpinnerWrap,"Spinner beginnen, einen Seidenbeutel um deine Beine zu weben."
+SpiderlingsSpinnerDone,Der Seidenbeutel ist fertig. Das Gehen darin ist langsam.
+NameSpiderlingsSilkAnchor,Netzknoten
+KillSpiderlingsSilkAnchor,Die Netzgrenze reißt auf.
+SpiderlingsFieldPreparing,Spinner weben eine Netzgrenze um das Feld. Der Eingang ist noch offen.
+SpiderlingsFieldReady,Ein Grenzabschnitt ist verbunden. Die Spinner bauen das Fangfeld weiter.
+SpiderlingsFieldSprung,Das Fangfeld ist geschlossen. Spieler im Inneren können gefangen werden.
+SpiderlingsFieldBroken,Ein Netzknoten reißt. Das Weben stoppt; die bereits um dich gewickelte Seide bleibt.
+SpiderlingsFieldReset,Testfeld zurücksetzen
+SpiderlingsFieldJumper,Springer freilassen
+SpiderlingsFieldStatus,Fangfeld: {phase} · Ecken {count}/4 · Verbindungen {links}/4
+SpiderlingsFieldPhasepreparing,Aufbau
+SpiderlingsFieldPhaseready,Verbindung bereit
+SpiderlingsFieldPhasesprung,Geschlossen
+SpiderlingsFieldPhasebroken,Zerstört
+SpiderlingsFieldPhasecomplete,Abgeschlossen
+SpiderlingsSpinnerWeave,Fesselung: {value}/100
+SpiderlingsSpinnerEscape,Flucht: {value}/{goal}
+SpiderlingsFieldAddSpinner,Spinner hinzufügen
+SpiderlingsFieldRebuild,Spinner beginnen in {turns} Weltrunden erneut zu bauen.
+SpiderlingsFieldWaiting,Die Netzgrenze ist bereit. Ihr westlicher Eingang bleibt offen.
+NameMageSpiderlings,Spinnenjunges Magier
+NameSpiderlingsSpinnerTrap,Grenze des Fangfelds
+KillMageSpiderlings,Das Spinnenjunge zieht seine feinen Beine ein und weicht in den Schatten zurück.
+KinkyDungeonSpellSpiderlingsMageBolt,Seidenkugel
+KinkyDungeonSpellCastSpiderlingsMageBolt,Das Magier-Spinnenjunge sammelt leuchtende Seide zu einer Kugel und schickt sie nach vorn.
+KinkyDungeonSpellSpiderlingsMageRune,Seidenrune
+KinkyDungeonSpellCastSpiderlingsMageRune,Das Magier-Spinnenjunge zeichnet eine leuchtende Rune auf den Boden in der Nähe.
+KinkyDungeonSpellSpiderlingsMageHex,Schildzehrendes Siegel
+KinkyDungeonSpellCastSpiderlingsMageHex,Das Magier-Spinnenjunge zieht feine Seidenfäden zur Mitte eines leuchtenden Siegels.
+KinkyDungeonSpellSpiderlingsMageCollapse,Sturz der tausend Fäden
+KinkyDungeonSpellCastSpiderlingsMageCollapse,Seide zieht sich vom Rand der markierten Fläche zur Mitte und sammelt sich für einen Ausbruch.
+SpiderlingsNPCAdhesionInitial,Fixiert
+SpiderlingsNPCAdhesionFull,Vollständig gefesselt
+SpiderlingsNPCAdhesionHelpless,Hilflos
+SpiderlingsNPCWrapping,Verwundbar im Spinnennetz
 KDMapMod_SpiderlingsInfestation,Spinnenbefall
 KinkyDungeonMapModSpiderlingsInfestation,Seide überzieht die Ecken. Im Schatten antwortet Rascheln auf Rascheln. Dieser Ort hat längst andere Bewohner.
 KDEscapeMethod_SpiderlingsInfestation,Markierte Nester zerstören
-KDEscapeMethodDesc_SpiderlingsInfestation,Die Nester, die sich zuerst hier angesiedelt haben, regen sich noch im Dunkeln; tief in ihren Öffnungen ist leises Scharren zu hören.
+KDEscapeMethodDesc_SpiderlingsInfestation,Zerstöre die ursprünglichen Zielnester zum Abstieg (rote Aufgabenmarkierungen auf der Minikarte). Spätere Nester zählen nicht.
 SpiderlingsInfestationProgress,Markierte Nester zerstört: CURRENT/5
-SpiderlingsInfestationBlocked,Du hältst vor der Treppe inne. Tief in den Nestern ist noch immer Rascheln zu hören. (CURRENT/5)
+SpiderlingsInfestationBlocked,Zerstöre die ursprünglichen Zielnester zum Abstieg: rote Aufgabenmarkierungen auf der Minikarte. (CURRENT/5)
 SpiderlingsInfestationComplete,Die Nester der ersten Bewohner sind allesamt eingestürzt. Vor dir liegt die Treppe in die Tiefe. (5/5)
-KDModButtonspiderlingsPinkWebbing,Rosa Spinnweben (aus: Original)
-KinkyDungeonSpiderlingsWebbingInterwoven,Die sich kreuzenden Fäden ziehen sich zu und fesseln einen weiteren Teil deines Körpers.
-KinkyDungeonStruggleCutFailSpiderlingsWebbing,Du schneidest in TargetRestraint. Klebrige Fäden reißen und der Schnitt wird tiefer.
-KinkyDungeonStruggleCutFailSpiderlingsWebbingAroused,Du schneidest in TargetRestraint. Klebrige Fäden reißen und der Schnitt wird tiefer.
-KinkyDungeonStruggleCutSuccessSpiderlingsWebbing,Du durchtrennst die letzten Fäden von TargetRestraint. Das zerschnittene Gespinst fällt ab.
-KinkyDungeonStruggleStruggleFailSpiderlingsWebbing,Du stemmst dich gegen TargetRestraint. Gespannte Fäden lockern sich und eine Lücke im Gewebe wird breiter.
-KinkyDungeonStruggleStruggleFailSpiderlingsWebbingAroused,Du stemmst dich gegen TargetRestraint. Gespannte Fäden lockern sich und eine Lücke im Gewebe wird breiter.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsWebbing,Du befreist dich von den letzten haftenden Fäden von TargetRestraint und sammelst das gelöste Gespinst ein.
-KinkyDungeonStruggleRemoveFailSpiderlingsWebbing,Du löst die verklebten Fäden von TargetRestraint voneinander. Ein kleines Stück des Gewebes löst sich.
-KinkyDungeonStruggleRemoveFailSpiderlingsWebbingAroused,Du löst die verklebten Fäden von TargetRestraint voneinander. Ein kleines Stück des Gewebes löst sich.
-KinkyDungeonStruggleRemoveSuccessSpiderlingsWebbing,Du streifst TargetRestraint ab und sammelst die gelöste Seide ein.
-KinkyDungeonStruggleCutFailSpiderlingsCocoon,Du führst die Klinge in TargetRestraint. Weitere Fäden entlang des schmalen Schnitts in der Kokonwand reißen.
-KinkyDungeonStruggleCutFailSpiderlingsCocoonAroused,Du führst die Klinge in TargetRestraint. Weitere Fäden entlang des schmalen Schnitts in der Kokonwand reißen.
-KinkyDungeonStruggleCutSuccessSpiderlingsCocoon,Du durchtrennst die letzte Naht von TargetRestraint. Die aufgeschnittene Kokonhülle fällt von dir ab.
-KinkyDungeonStruggleStruggleFailSpiderlingsCocoon,Du drückst gegen TargetRestraint. Die Kokonwand zittert und einige Fäden im Inneren geben nach.
-KinkyDungeonStruggleStruggleFailSpiderlingsCocoonAroused,Du drückst gegen TargetRestraint. Die Kokonwand zittert und einige Fäden im Inneren geben nach.
-KinkyDungeonStruggleStruggleSuccessSpiderlingsCocoon,Du drückst den Riss in TargetRestraint auseinander und zwängst dich aus der schlaffen Kokonhülle.
-KinkyDungeonStruggleRemoveFailSpiderlingsCocoon,Du löst einen Rand von TargetRestraint. Die verklebten Seidenschichten trennen sich ein Stück weiter.
-KinkyDungeonStruggleRemoveFailSpiderlingsCocoonAroused,Du löst einen Rand von TargetRestraint. Die verklebten Seidenschichten trennen sich ein Stück weiter.
-KinkyDungeonStruggleRemoveSuccessSpiderlingsCocoon,Du schälst TargetRestraint auf und schlüpfst aus der gelösten Kokonhülle.
-KDModButtonspiderlingsMapPopulationCap,Spinnen pro Karte (0: unbegrenzt)
-KinkyDungeonStatSpiderlingsCocoonStart,Erwachen im Kokon
-KinkyDungeonStatDescSpiderlingsCocoonStart,Du erwachst in einem weichen Kokon, von Kopf bis Fuß vollständig in dicht gewebte Schichten aus Spinnseide gehüllt. Jede kleine Bewegung zieht an den Fäden, die sich an deinen Körper schmiegen.
-KinkyDungeonSpellCastSpiderlingsJumperDashNPC,Die Springspinne fixiert den Boden unter ihrem Gegner und duckt sich zum Sprung.
-KDModButtonspiderlingsNestTunnelerCap,Tunneler je Nest insgesamt (0: keine)
+KDModButtonspiderlingsInfestationWeight,Befall-Gewicht
+KDModButtonspiderlingsHuntingGroundsWeight,Jagdgründe-Gewicht
+KinkyDungeonInventoryItemSpiderlingTome,Foliant der Seidenfessel
+KinkyDungeonInventoryItemSpiderlingStaff,Seidenweberstab
+KinkyDungeonSpecialSpiderlingTome,Kokonkonvergenz
+KinkyDungeonSpecialSpiderlingStaff,Seidenfessel
+KinkyDungeonInventoryItemSpiderlingTomeDesc,Weiche Seidenfäden durchziehen den Buchrücken und liegen über den Seiten.
+KinkyDungeonInventoryItemSpiderlingStaffDesc,Ein feines Netz trägt ein schwaches Leuchten an der Stabspitze.
+KinkyDungeonInventoryItemSpiderlingTomeDesc2,"Kokonkonvergenz: Ein Seidenkreis in bis zu 6 Feldern Entfernung zieht sich nach zwei weiteren Aktionen zu; die Mitte fesselt am stärksten. Erneut einsetzen, bevor er sich schließt: höchstens drei Stufen. Jede weitere Lage kostet Mana und eine Aktion und verzögert den Schluss um eine Runde. In jeder Hand +20% Fesselstärke. Wirksame Treffer können Ausdauer erstatten; der erste vollständige Kokon dieser Seide pro Beute kann begrenzt Mana zurückgeben."
+KinkyDungeonInventoryItemSpiderlingStaffDesc2,Seidenfessel: Schießt Seide bis zu 6 Felder weit. Sie fesselt und verlangsamt das erste getroffene feindliche Ziel; Wände halten sie auf. Wirksame Treffer können Ausdauer erstatten; der erste vollständige Kokon dieser Seide pro Beute kann begrenzt Mana zurückgeben.
+ItemPickupSpiderlingTome,Du hebst den Folianten der Seidenfessel auf.
+ItemPickupSpiderlingStaff,Du hebst den Seidenweberstab auf.
+KDPrereqFailSpiderlingsCocoonConvergence,"Halte den Folianten in der Hand und habe genug Mana für diese Lage. Nach dem Schließen muss der Kreis abklingen, bevor ein neuer entsteht."
+KDPrereqFailSpiderlingsSilkenSnare,Halte den Stab in der Hand; du brauchst genug Mana und die Abklingzeit muss vorüber sein.
+KinkyDungeonSpellCastSpiderlingsCocoonConvergence,Du webst einen Kreis aus Seide. Die Fäden ziehen sich nach innen.
+KinkyDungeonSpellCastSpiderlingsSilkenSnare,Du schleuderst einen klebrigen Seidenfaden auf dein Ziel.
+KinkyDungeonSpellSpiderlingsCocoonConvergence,Kokonkonvergenz
+KinkyDungeonSpellSpiderlingsSilkenSnare,Seidenfessel
+SpiderlingsDebugStairBypass,Debug-Treppenfreigabe aktiv; markierte Nester bleiben unverändert.
+RestraintSpiderlingsSilkLeash,Spinnen-Seidenleine
+RestraintSpiderlingsSilkLeashDesc,"Feine Seidenfäden bilden eine leichte Schnur mit sanftem Schimmer."
+RestraintSpiderlingsSilkLeashDesc2,"Wird die Schnur gestreckt, spannen sich ihre feinen Fäden sanft. Lässt die Spannung nach, sinkt sie in einen weichen Bogen."
+SpiderlingsRecoveryAttached,Ein Spinner befestigt einen Seidenstrang ({count}). Der gespannte Seidenstrang kann dich zurückziehen.
+SpiderlingsRecoveryAttachBlocked,Die Seidenleine lässt sich nicht befestigen. Sie braucht ein passendes Halsband oder einen Seidenbeinsack; andere Ausrüstung darf sie nicht blockieren.
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
+KinkyDungeonStruggleCutImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht durchschneiden."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbing,"Deine Fesseln verhindern, dass du die Klinge fest genug hältst, um TargetRestraint zu durchschneiden."
+KinkyDungeonStruggleCutImpossibleBoundSpiderlingsWebbingAroused,"Deine Fesseln verhindern, dass du die Klinge fest genug hältst, um TargetRestraint zu durchschneiden."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du dich nicht aus TargetRestraint befreien."
+KinkyDungeonStruggleStruggleImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du dich nicht aus TargetRestraint befreien."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbing,"Deine übrigen Fesseln sitzen zu eng, um dich aus TargetRestraint herauszuwinden."
+KinkyDungeonStruggleStruggleImpossibleBoundSpiderlingsWebbingAroused,"Deine übrigen Fesseln sitzen zu eng, um dich aus TargetRestraint herauszuwinden."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbing,"In deinem jetzigen Zustand kannst du TargetRestraint nicht lösen."
+KinkyDungeonStruggleRemoveImpossibleSpiderlingsWebbingAroused,"In deinem jetzigen Zustand kannst du TargetRestraint nicht lösen."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbing,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
+KinkyDungeonStruggleRemoveImpossibleBoundSpiderlingsWebbingAroused,"Deine übrigen Fesseln hindern dich daran, TargetRestraint zu lösen."
+KinkyDungeonSpellDescription2SpiderlingsCocoonConvergence,"Zusätzliche Lagen kosten jeweils 20 Mana als Grundwert. Fesselstärke: 1 / 1,5 / 4,5; Abklingzeit ab der ersten Lage: 8 / 9 / 12 Runden. Wirksame Treffer geben einmal pro Kreis 6 Ausdauer zurück. Der erste vollständige Seidenkokon eines Ziels gibt Mana zurück: höchstens die Hälfte des bezahlten Manas und insgesamt maximal 20 pro Kreis."
+KinkyDungeonSpellDescriptionSpiderlingsCocoonConvergence,"Webe einen Seidenkreis in bis zu 6 Feldern Entfernung. Nach zwei weiteren Aktionen zieht er sich zusammen; zur Mitte hin wird die Fesselung stärker. Nutze diese Fähigkeit erneut, um denselben Kreis bis auf drei Stufen zu verstärken. Jede zusätzliche Lage kostet Mana und eine Aktion und verzögert das Schließen um eine Runde. Wände halten die Seide auf."
+KinkyDungeonSpellDescriptionSpiderlingsSilkenSnare,Schicke klebrige Seide bis zu 6 Felder weit auf das erste feindliche Ziel. Der Faden fesselt und verlangsamt es; Wände stoppen ihn. Abklingzeit: 3 Runden. Ein wirksamer Treffer gibt 6 Ausdauer zurück. Der erste vollständige Seidenkokon eines Ziels gibt höchstens die Hälfte des bezahlten Manas zurück.
+KDSpiderlingsWeaponSustainSpiderlingTome,"+20% Fesselstärke in Haupt- oder Nebenhand. Wirksame Nahkampftreffer geben 20% der bezahlten Ausdauer zurück, als Grundwert höchstens 3. Der erste im Nahkampf erzeugte Seidenkokon jedes Ziels gibt einmalig 7,5 Mana als Grundwert zurück."
+KDSpiderlingsWeaponSustainSpiderlingStaff,"Wirksame Nahkampftreffer geben 20% der bezahlten Ausdauer zurück, als Grundwert höchstens 6. Der erste im Nahkampf erzeugte Seidenkokon jedes Ziels gibt einmalig 7,5 Mana als Grundwert zurück."
+KDSpiderlingsWeaponWeaveStatus,Gewebe STAGE/3. Nächste Manakosten: COST. Neuer Kreis in COOLDOWN Runden.
+KDModButtonspiderlingsSettingsFloors,Etagenoptionen
+KDModButtonspiderlingsSettingsNests,Nestoptionen
+KDModButtonspiderlingsSettingsBack,Zurück zu Allgemein
+KDModButtonspiderlingsSettingsFloorsHelp,Gewichte gelten für neue Etagen. 0 deaktiviert.
+KDModButtonspiderlingsSettingsNestsHelp,Artgewicht 0 verhindert diese Verstärkung.
+KDModButtonspiderlingsSettingsGeneralHelp,Themenetagen behalten ihre Bevölkerungsbudgets.
+KDModButtonspiderlingsSettingsHuntingHelp,Beide Spinnenthemen erscheinen auf normalen Etagen ab Etage 5.
+KinkyDungeonCheckpointLoreSpiderlings,Spinnenlexikon
+KDLoreTextspiderlings.Spinner,"Gefahr: allein gering; in Gruppen hoch|Eine allein macht mir wenig Mühe. Mehrere arbeiten zusammen: Eine beschäftigt den Gast, während die anderen das Netz schließen und weiche, eng anliegende Lagen hinzufügen. Ich beachte ihre Gefährten ebenso wie die kleine Spinne vor mir.||-Feldnotizen vom Seidenpfad"
+KDLoreTitlespiderlings.Spinner,Spinnenjunges Spinner
+KDLoreLabelspiderlings.Spinner,Spinnenjunges Spinner
+KDLoreTextspiderlings.Jumper,"Gefahrenstufe: Normal|Ein flinkfüßiger Verwandter des Spinners. Er zieht die Beine vor einem kurzen Sprung ein und streift sein Ziel bei der Landung mit Seide. Ich beobachte lieber die Lücke vor ihm; seine kleinen Spuren zeigen nur, wo er eben war.||-Feldnotizen vom Seidenpfad"
+KDLoreTitlespiderlings.Jumper,Spinnenjunges Springer
+KDLoreLabelspiderlings.Jumper,Spinnenjunges Springer
+KDLoreTextspiderlings.WebCaster,"Gefahr: allein gering; in Gruppen hoch|Eine einzelne Sprüherin macht mir wenig Mühe. Unter anderen jungen Spinnen verkürzen ihre weichen Seidenfächer die Schritte eines Gastes, während die Spinner näher kommen. Lose Fäden werden durch diese stille Zusammenarbeit weit gefährlicher.||-Feldnotizen vom Seidenpfad"
+KDLoreTitlespiderlings.WebCaster,Spinnenjunges Netzwerfer
+KDLoreLabelspiderlings.WebCaster,Spinnenjunges Netzwerfer
+KDLoreTextspiderlings.Tunneler,"Gefahr: keine direkte Bedrohung|Diese kleine Gräberin kämpft nicht mit Gästen. Sie öffnet Nesteingänge, kleidet ihre Ränder mit Seide aus und zieht weiter. Ich lausche dem leisen Schaben: Die neue Öffnung kann bald weitere kleine Füße heranbringen.||-Feldnotizen vom Seidenpfad"
+KDLoreTitlespiderlings.Tunneler,Spinnenjunges Gräber
+KDLoreLabelspiderlings.Tunneler,Spinnenjunges Gräber
+KDLoreTextspiderlings.MageSpiderlings,"Gefahrenstufe: Hoch|Ein kleiner Zauberwirker mit ordentlichem Hut und mattroten Runen auf dem Rücken. Beim Zaubern werden sie hell und bleiben es, solange verzögerte Magie sich sammelt. Ich beobachte seine geduldigen Schritte ebenso wie seine Kreise; weiche Seide kann mich von beiden Seiten erreichen.||-Feldnotizen vom Seidenpfad"
+KDLoreTitlespiderlings.MageSpiderlings,Spinnenjunges Magier
+KDLoreLabelspiderlings.MageSpiderlings,Spinnenjunges Magier
+KDLoreTextspiderlings.NestEntrance,"Gefahrenstufe: Hoch|Eine dunkle Öffnung, deren sorgfältig ausgekleideter Rand beinahe einladend wirkt. Kleine Gestalten darin halten die Seide frisch. Ich habe gelernt, die Schritte zu zählen und mich nicht auf die Stille zu verlassen: Eine weitere junge Spinne kann erscheinen, während ihre Nachbarn einen Besucher beschäftigen.||-Feldnotizen vom Seidenpfad"
+KDLoreTitlespiderlings.NestEntrance,Nesteingang
+KDLoreLabelspiderlings.NestEntrance,Nesteingang
+SpiderlingsRecoveryPlayerPull,Du spannst die Seide und ziehst das Spinnenjunge Spinner näher heran.
+SpiderlingsRecoveryPull,Die gespannte Seide zieht dich zum Spinnenjungen Spinner.
+KDModButtonspiderlingsCaptureFieldLimit,Fangfeldlimit (0: keine neuen Felder)

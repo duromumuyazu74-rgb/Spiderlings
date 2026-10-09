@@ -22,7 +22,11 @@ Historical `.scratch/<feature>/PRD.md`, specs and `issues/*.md` retain their ori
 
 `main` holds formal releases; `test` holds test development. Test deliveries retain their formal baseline and increment `-test.N`. A formal promotion uses the next version after the latest formal release, rather than reverting to the older test baseline. Promote test gameplay only when explicitly requested and accepted.
 
-Formal versions use `v<modbuild>` tags and GitHub Releases, attaching `Spiderlings_<modbuild>.zip` built from the explicit allowlist. Currently only formal Releases are published. Test source stays on `test`; successful CI runs retain test ZIPs as temporary workflow artifacts, and maintainers may also build them locally. GitHub's automatic Source code ZIP is not an installable Mod.
+Follow [Releases](../DEVELOPMENT.md#releases) for publication channels and authorization. GitHub's automatic Source code ZIP is not an installable Mod.
+
+For delivery closeout, record every associated Issue's own completion condition, evidence, disposition, reason and next action. An implementation-and-package ticket can finish before integration; a ticket requiring integration stays open until its target branch contains the change. Evaluate each condition independently. Publication does not change an Issue's acceptance criteria.
+
+Use the read-only [closeout audit](../DELIVERY-EVIDENCE.md#issue-closeout) before the final delivery result and again after authorized Issue updates. Completed work must not retain `ready-for-agent`; unfinished integration or acceptance needs an explicit remaining action. Close satisfied tickets and read back their state and labels. Include older tickets carried by the branch, not only the newest ticket. The audit checks consistency, not whether a human-written acceptance claim is true.
 
 ## Wayfinding operations
 

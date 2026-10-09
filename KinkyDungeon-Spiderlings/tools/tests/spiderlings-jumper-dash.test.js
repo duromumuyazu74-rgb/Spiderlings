@@ -5,10 +5,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const { gamePath } = require("../reference-inputs.js");
 
 const modRoot = path.join(__dirname, "..", "..");
-const kdEnemyLoopPath = gamePath("Game", "src", "enemy", "KinkyDungeonEnemies.ts");
+const kdEnemyLoopPath = require("../reference-inputs.js").gamePath("Game/src/enemy/KinkyDungeonEnemies.ts");
 
 function plain(value) {
     return JSON.parse(JSON.stringify(value));
@@ -37,7 +36,15 @@ function loadDefinitions(options = {}) {
     context.globalThis = context;
     context.window = context;
     vm.createContext(context);
-    const files = ["SpiderlingsCore.js", "Spiderlings.js", "SpiderlingsCombat.js"];
+    const files = [
+        "SpiderlingsCore.js",
+        "SpiderlingsNativeActions.js",
+        "SpiderlingsPopulation.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
+        "Spiderlings.js",
+        "SpiderlingsCombat.js",
+    ];
     if (fs.existsSync(path.join(modRoot, "SpiderlingsJumperDash.js"))) files.push("SpiderlingsJumperDash.js");
     for (const file of files) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
@@ -53,6 +60,40 @@ function kd55SpellModeGate(enemy, AIData) {
     assert.ok(match, "KD 5.5 enemy spell-loop mode gate must remain discoverable");
     return Function("enemy", "AIData", `return ${match.groups.gate};`)(enemy, AIData);
 }
+
+test("native numeric-string IDs still clear only their own Dash transport and warnings", () => {
+    const source = { id: 17, x: 0, y: 0, hp: 5, Enemy: { name: "Jumper" } };
+    const context = loadDefinitions({
+        globals: {
+            KDMapData: {
+                Entities: [source],
+                Bullets: [
+                    { bullet: { source: "17", spell: { name: "SpiderlingsJumperDash" } } },
+                    { bullet: { source: "18", spell: { name: "SpiderlingsJumperDash" } } },
+                ],
+            },
+            KinkyDungeonExtraWarningTiles: [],
+        },
+    });
+    context.KDEventMapGeneric.enemyCast.SpiderlingsJumperDash(
+        {},
+        {
+            enemy: source,
+            spell: { name: "SpiderlingsJumperDash" },
+            tx: 3,
+            ty: 0,
+        },
+    );
+    assert.equal(context.KDMapData.Bullets.length, 1);
+    assert.equal(context.KDMapData.Bullets[0].bullet.source, "18");
+    assert.equal(context.Spiderlings.JumperDash.runtimeController.snapshot().length, 1);
+    context.KinkyDungeonExtraWarningTiles.push(
+        { spiderlingsJumperDashSourceId: "17" },
+        { spiderlingsJumperDashSourceId: "18" },
+    );
+    context.Spiderlings.JumperDash.runtimeController.clearAll("test");
+    assert.deepEqual(plain(context.KinkyDungeonExtraWarningTiles), [{ spiderlingsJumperDashSourceId: "18" }]);
+});
 
 test("Jumper can enter the KD 5.5 enemy spell loop", () => {
     const context = loadDefinitions();
@@ -148,6 +189,25 @@ test("Dash locks one tile, starts five-turn cooldown, and creates one purple war
     assert.deepEqual(calls.cooldowns, [5]);
     assert.deepEqual(calls.warnings, [{ target: { x: 4, y: 0 }, color: "#ff66ff" }]);
     assert.deepEqual(calls.messages, [8]);
+});
+
+test("automatic capture ticks age the cast boundary but preserve both subsequent reaction opportunities", () => {
+    const context = loadDefinitions(),
+        source = { id: 501, x: 0, y: 0, hp: 2, Enemy: { name: "Jumper" } };
+    const controller = context.Spiderlings.JumperDash.createController({
+        landingCandidates: () => [{ x: 3, y: 0 }],
+        isPlayerAt: () => false,
+        findSource: () => source,
+    });
+    assert.equal(controller.begin(source, { x: 4, y: 0 }).started, true);
+    controller.advancePlayerAction(false);
+    controller.advancePlayerAction(false);
+    assert.equal(controller.snapshot()[0].opportunities, 0);
+    controller.advancePlayerAction();
+    assert.equal(controller.snapshot()[0].opportunities, 1);
+    controller.advancePlayerAction(false);
+    assert.equal(controller.snapshot()[0].opportunities, 1);
+    assert.equal(controller.advancePlayerAction()[0].outcome, "evaded");
 });
 
 test("Dash resolves only after two complete player actions and lands before one certain contact payload", () => {
@@ -621,4 +681,32 @@ test("map, defeat, prison, and fresh-runtime boundaries leave no orphan Dash sta
         [],
         "a freshly initialized runtime starts empty",
     );
+});
+
+test("Dash owns the approved interception identity through its full reaction window", () => {
+    const c = loadDefinitions(),
+        source = { id: 8, x: 0, y: 0, hp: 2, Enemy: { name: "Jumper" } },
+        target = { id: 99, x: 3, y: 0, hp: 5, Enemy: { name: "ElementalIce" } };
+    let approved = "field",
+        hits = 0;
+    const controller = c.Spiderlings.JumperDash.createController({
+        interceptionCompositeId: () => approved,
+        validNPC: () => true,
+        landingCandidates: () => [{ x: 2, y: 0 }],
+        findSource: (id) => (id === 8 ? source : target),
+        bindNPC: () => {
+            hits++;
+            return { progressed: true };
+        },
+        moveSource: () => {},
+    });
+    assert.equal(controller.begin(source, target).started, true);
+    approved = undefined;
+    assert.equal(controller.snapshot()[0].interceptionCompositeId, "field");
+    controller.advancePlayerAction();
+    controller.advancePlayerAction();
+    assert.equal(controller.snapshot()[0].interceptionCompositeId, "field");
+    controller.advancePlayerAction();
+    assert.equal(hits, 1);
+    assert.equal(controller.snapshot().length, 0);
 });

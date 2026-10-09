@@ -4,8 +4,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const vm = require("node:vm");
 const { gamePath } = require("../reference-inputs.js");
+const vm = require("node:vm");
 const { stripTypeScriptTypes } = require("node:module");
 
 const modRoot = path.join(__dirname, "..", "..");
@@ -418,7 +418,18 @@ function loadRuntime(options = {}) {
     context.window = context;
     vm.createContext(context);
     for (const source of options.nativeSources || []) vm.runInContext(stripTypeScriptTypes(source), context);
-    for (const file of ["SpiderlingsCore.js", "Spiderlings.js", "SpiderlingsCombat.js", "SpiderlingsWebbing.js"]) {
+    for (const file of [
+        "SpiderlingsCore.js",
+        "SpiderlingsNativeActions.js",
+        "SpiderlingsPopulation.js",
+        "SpiderlingsEncounters.js",
+        "SpiderlingsWebCaster.js",
+        "Spiderlings.js",
+        "SpiderlingsCombat.js",
+        "SpiderlingsWebbingData.js",
+        "SpiderlingsWebbingRules.js",
+        "SpiderlingsWebbing.js",
+    ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
     }
 

@@ -6,7 +6,6 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const { gamePath } = require("../reference-inputs.js");
 
 const modRoot = path.join(__dirname, "..", "..");
 const families = [
@@ -38,13 +37,52 @@ const groups = Object.freeze({
 });
 const scripts = [
     "SpiderlingsCore.js",
+    "SpiderlingsNativeActions.js",
+    "SpiderlingsPopulation.js",
+    "SpiderlingsEncounters.js",
+    "SpiderlingsSettings.js",
+    "SpiderlingsFloorSelection.js",
+    "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
+    "SpiderlingsBestiary.js",
+    "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
+    "SpiderlingsHuntingGrounds.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsNPCAdhesion.js",
+    "SpiderlingsNPCWrapping.js",
+    "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
+    "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
+    "SpiderlingsWebbingData.js",
+    "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsMageSpells.js",
+    "SpiderlingsWeapons.js",
+    "SpiderlingsWeaponWebbing.js",
+    "SpiderlingsSpinnerTopology.js",
+    "SpiderlingsSpinnerArt.js",
+    "SpiderlingsSpinnerCapture.js",
+    "SpiderlingsSpinnerRecoveryCore.js",
+    "SpiderlingsSpinnerNPCCapture.js",
+    "SpiderlingsSpinnerField.js",
+    "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsWebMobility.js",
+    "SpiderlingsSpinnerRecovery.js",
+    "SpiderlingsSpinnerNPCRecovery.js",
+    "SpiderlingsSpinnerPassagePlanner.js",
+    "SpiderlingsSpinnerAI.js",
+    "SpiderlingsFieldCommand.js",
+    "SpiderlingsFieldProjects.js",
+    "SpiderlingsFieldCustody.js",
+    "SpiderlingsSpinnerDuties.js",
+    "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRollout.js",
+    "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsSpellVisuals.js",
 ];
 const lv1Id = (family) => `SpiderlingsWebbingLv1${family}`;
 const lv2Id = (family) => `SpiderlingsWebbingLv2${family}`;
@@ -61,8 +99,37 @@ function freshNewSaveRuntime() {
     const refresh = { force: 0, dress: 0 };
     const context = {
         console,
+        Map,
+        Weapon: "weapon",
         KinkyDungeonEnemies: [],
+        KinkyDungeonRootDirectory: "Game/",
         KinkyDungeonRestraints: [],
+        KinkyDungeonWeapons: {},
+        KinkyDungeonInventory: new Map([["weapon", new Map()]]),
+        KinkyDungeonWeaponVariants: {},
+        KinkyDungeonWeaponChoices: [],
+        KinkyDungeonLostItems: [],
+        KinkyDungeonPlayerWeapon: "",
+        KinkyDungeonInventoryAddWeapon() {},
+        KinkyDungeonInventoryGetWeapon() {},
+        KinkyDungeonInventoryGet() {},
+        KinkyDungeonInventoryGetSafe() {},
+        KinkyDungeonFindWeapon() {},
+        KDSetWeapon() {},
+        KDPrereqs: {},
+        KDCastConditions: {},
+        KinkyDungeonSpellSpecials: {},
+        KinkyDungeonCastSpell() {},
+        KinkyDungeonActivateWeaponSpell() {},
+        KinkyDungeonGetManaCost(spell) {
+            return spell.manacost || 0;
+        },
+        KDChangeMana() {},
+        KDChangeStamina() {},
+        KinkyDungeonDrawActionBar() {},
+        KDBulletCanHitEntity() {},
+        KDBulletAoECanHitEntity() {},
+        KDDropItems() {},
         KinkyDungeonSpellListEnemies: [],
         KDEventMapGeneric: {},
         KDEventMapInventory: {},
@@ -77,6 +144,13 @@ function freshNewSaveRuntime() {
         KinkyDungeonPlayerEntity: { player: true },
         KinkyDungeonPlayerBuffs: {},
         KDGameData: { PrisonerState: "" },
+        KDMapData: { Entities: [] },
+        KDAddEntity(entity) {
+            context.KDMapData.Entities.push(entity);
+            return entity;
+        },
+        KDWorldMap: {},
+        KDPersistentNPCs: {},
         KDCurrentModels: new Map(),
         KDTapeLink: ["Wrapping"],
         KDTapeRender: ["Wrapping"],
@@ -197,7 +271,10 @@ function freshNewSaveRuntime() {
 
 test("native perk initialization equips all 24 physical layers only when selected", () => {
     const { context, equipment } = freshNewSaveRuntime();
-    const source = fs.readFileSync(gamePath("Game/src/player/KinkyDungeonPerks.ts"), "utf8");
+    const source = fs.readFileSync(
+        require("../reference-inputs.js").gamePath("Game/src/player/KinkyDungeonPerks.ts"),
+        "utf8",
+    );
     const start = source.indexOf("function KDInitPerks() {");
     const end = source.indexOf("let KDPerkStart =", start);
     assert.ok(start >= 0 && end > start);
@@ -257,6 +334,39 @@ test("native perk initialization equips all 24 physical layers only when selecte
     assert.equal(context.KinkyDungeonAllRestraintDynamic().length, 24, "existing layers are not duplicated");
 });
 
+test("Spiderlings Hood toggle and native NoHood each skip the start Hood; disabling removes only an owned Hood", () => {
+    const disabled = freshNewSaveRuntime();
+    disabled.context.KinkyDungeonStatsChoice = new Map();
+    const setting = disabled.context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsEnableHood");
+    assert.equal(setting.default, true);
+    disabled.context.KDModSettings.Spiderlings.spiderlingsEnableHood = false;
+    disabled.context.KDPerkStart.SpiderlingsCocoonStart();
+    const disabledNames = disabled.context.KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name);
+    assert.equal(disabledNames.length, 23);
+    assert.equal(disabledNames.includes("SpiderlingsWebbingLv3Hood"), false);
+    assert.equal(disabledNames.includes(cocoonId), true);
+
+    const perk = freshNewSaveRuntime();
+    perk.context.KinkyDungeonStatsChoice = new Map([["NoHood", true]]);
+    perk.context.KDPerkStart.SpiderlingsCocoonStart();
+    assert.equal(
+        perk.context.KinkyDungeonAllRestraintDynamic().some(({ item }) => item.name === "SpiderlingsWebbingLv3Hood"),
+        false,
+    );
+
+    const changed = freshNewSaveRuntime();
+    changed.context.KinkyDungeonStatsChoice = new Map();
+    changed.context.KDPerkStart.SpiderlingsCocoonStart();
+    assert.equal(changed.context.KinkyDungeonAllRestraintDynamic().length, 24);
+    changed.context.KDModSettings.Spiderlings.spiderlingsEnableHood = false;
+    changed.context.KDEventMapGeneric.tickAfter.SpiderlingsHoodPreference({}, { delta: 1 });
+    const names = changed.context.KinkyDungeonAllRestraintDynamic().map(({ item }) => item.name);
+    assert.equal(names.length, 23);
+    assert.equal(names.includes("SpiderlingsWebbingLv3Hood"), false);
+    assert.equal(names.includes("SpiderlingsWebbingLv3Blindfold"), true);
+    assert.equal(names.includes(cocoonId), true);
+});
+
 function syntheticCatalog(stages = [1, 2, 3]) {
     return stages.flatMap((stage) =>
         (stage === 3 ? lv3Families : stage === 2 ? lv2Families : families).map((family) => ({
@@ -293,10 +403,13 @@ function resolve(runtime, state, action, catalog) {
     return runtime.context.Spiderlings.Webbing.resolveWebbingAction(request);
 }
 
-test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Cocoon and their models", async () => {
+test("fresh manifest VM exposes active restraints and a Mage bolt with native Damage", async () => {
     const runtime = freshNewSaveRuntime();
     const restraintIds = runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort();
     const modelIds = runtime.models.map((entry) => entry.Name).sort();
+    const bolt = runtime.context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "SpiderlingsMageBolt");
+    assert.equal(bolt?.playerEffect?.name, "Damage");
+    assert.equal(bolt.playerEffect.power, 0.5);
     assert.deepEqual(
         restraintIds,
         [
@@ -304,6 +417,8 @@ test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Coc
             ...lv2Families.map(lv2Id),
             ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}`),
             cocoonId,
+            "SpiderlingsSpinnerLegbinder",
+            "SpiderlingsSilkLeash",
         ].sort(),
     );
     assert.deepEqual(
@@ -313,6 +428,7 @@ test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Coc
             ...lv2Families.map((family) => `${lv2Id(family)}Model`),
             ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}Model`),
             "SpiderlingsWebbingCocoonModel",
+            "SpiderlingsSpinnerLegbinderModel",
         ].sort(),
     );
     assert.equal(runtime.context.Spiderlings.LooseWebbing, undefined);
@@ -411,8 +527,7 @@ test("fresh manifest VM exposes ten Lv1, five Lv2, eight Lv3 restraints plus Coc
         assert.equal(isolated.equipment.get(groups[family]).tightness, 0);
         assert.equal(isolated.equipment.get(groups[family]).lock, "");
         assert.equal(
-            isolated.context.Spiderlings.Webbing.completeEffectiveEscape(lv1Id(family), "Remove", { legal: true })
-                .completed,
+            !!isolated.context.KinkyDungeonRemoveRestraintSpecific(isolated.equipment.get(groups[family]), true),
             true,
         );
         assert.equal(isolated.equipment.has(groups[family]), false, `${family} can be removed independently`);
@@ -423,9 +538,10 @@ test("new-save resolver keeps profiles, no-op, WebSpray provenance, cap, and tim
     const runtime = freshNewSaveRuntime();
     const api = runtime.context.Spiderlings.Webbing;
     assert.deepEqual(plain(api.ENEMY_PROFILES), {
-        Spinner: [3, 3, 3, 3, 2, 1, 1, 3, 3, 3, 3],
+        Spinner: [0.25, 0.25, 0.25, 0.25, 2, 1, 1, 0.25, 0.25, 0.25, 0.25],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     });
     assert.equal(api.ENEMY_PROFILES.Tunneler, undefined);
     assert.equal(api.ENEMY_PROFILES.NestEntrance, undefined);
@@ -500,7 +616,8 @@ test("developer Cocoon scenario keeps gates, twenty-fourth layer, repair, escape
     assert.notEqual(resolve(runtime, snapshot(lv1, 5), bind("Spinner")).outcome.selectedId, cocoonId);
     assert.notEqual(resolve(runtime, snapshot(lv1, 5), bind("Spinner", true)).outcome.selectedId, cocoonId);
     assert.notEqual(resolve(runtime, snapshot(allPhysical, 4), bind("Spinner")).outcome.selectedId, cocoonId);
-    assert.equal(resolve(runtime, snapshot(allPhysical, 5), bind("Spinner")).outcome.selectedId, cocoonId);
+    assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("Spinner")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, snapshot(allPhysical, 5), bind("Jumper")).outcome.selectedId, cocoonId);
     assert.equal(
         allPhysical.length + 1,
         24,
@@ -539,8 +656,9 @@ test("developer Cocoon scenario keeps gates, twenty-fourth layer, repair, escape
     assert.equal(cocoon.Group, "ItemDevices");
     assert.notEqual(cocoon.immobile, true);
     assert.equal(cocoon.hobble, 3);
-    assert.deepEqual(plain(cocoon.escapeChance), { Cut: 0.025, Struggle: 0.02, Remove: 0.02 });
-    assert.deepEqual(plain(api.COCOON_ESCAPE_ACTIONS), { Cut: 40, Struggle: 50, Remove: 50 });
+    assert.deepEqual(plain(cocoon.escapeChance), { Cut: 0.5, Remove: 0.04, Struggle: 0.03 });
+    assert.equal(api.COCOON_ESCAPE_ACTIONS, undefined);
+    assert.deepEqual(plain(api.ESCAPE_PROFILES.Cocoon.speedMult), { Cut: 0.1, Remove: 0.2, Struggle: 0.24 });
     assert.equal(api.COCOON_REPAIR_AMOUNT, 0.1);
     assert.equal(cocoon.inventory, true);
     for (const field of ["removePrison", "forceRemovePrison", "removeOnDefeat", "removeOnCapture"])

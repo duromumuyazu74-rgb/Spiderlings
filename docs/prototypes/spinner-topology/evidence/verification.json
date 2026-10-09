@@ -1,0 +1,256 @@
+{
+  "date": "2026-09-21T12:33:16.383Z",
+  "artifactSHA256": "8ee5452f206da098fc07d5c59f654f859e408c94f7d526218c7adb62819656c8",
+  "scope": "Topology and disposable browser UI only; no runtime Mod integration",
+  "walkthroughs": [
+    {
+      "id": "door",
+      "kind": "hand-authored",
+      "candidates": 1,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 2,
+      "debugLureVacated": false,
+      "elapsedMs": 24,
+      "passed": true
+    },
+    {
+      "id": "corridor",
+      "kind": "hand-authored",
+      "candidates": 27,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 16,
+      "debugLureVacated": false,
+      "elapsedMs": 16,
+      "passed": true
+    },
+    {
+      "id": "tee",
+      "kind": "hand-authored",
+      "candidates": 32,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 4,
+      "debugLureVacated": false,
+      "elapsedMs": 17,
+      "passed": true
+    },
+    {
+      "id": "cross",
+      "kind": "hand-authored",
+      "candidates": 40,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 11,
+      "debugLureVacated": false,
+      "elapsedMs": 13,
+      "passed": true
+    },
+    {
+      "id": "room",
+      "kind": "hand-authored",
+      "candidates": 751,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 22,
+      "debugLureVacated": false,
+      "elapsedMs": 97,
+      "passed": true
+    },
+    {
+      "id": "irregular",
+      "kind": "hand-authored",
+      "candidates": 135,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 20,
+      "debugLureVacated": false,
+      "elapsedMs": 49,
+      "passed": true
+    },
+    {
+      "id": "exit",
+      "kind": "hand-authored",
+      "candidates": 529,
+      "selected": "rectangle",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 27,
+      "debugLureVacated": false,
+      "elapsedMs": 71,
+      "passed": true
+    },
+    {
+      "id": "tight",
+      "kind": "hand-authored",
+      "candidates": 0,
+      "selected": null,
+      "layers": 0,
+      "sharedLinks": 0,
+      "prebuildTurns": 0,
+      "debugLureVacated": false,
+      "elapsedMs": 8,
+      "passed": true
+    },
+    {
+      "id": "overlap",
+      "kind": "hand-authored",
+      "candidates": 1311,
+      "selected": "rectangle",
+      "layers": 2,
+      "sharedLinks": 4,
+      "prebuildTurns": 13,
+      "debugLureVacated": false,
+      "elapsedMs": 168,
+      "passed": true
+    },
+    {
+      "id": "nested",
+      "kind": "hand-authored",
+      "candidates": 1819,
+      "selected": "rectangle",
+      "layers": 2,
+      "sharedLinks": 0,
+      "prebuildTurns": 42,
+      "debugLureVacated": false,
+      "elapsedMs": 403,
+      "passed": true
+    },
+    {
+      "id": "native-0",
+      "kind": "native-generated",
+      "candidates": 191,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 53,
+      "debugLureVacated": false,
+      "elapsedMs": 355,
+      "passed": true
+    },
+    {
+      "id": "native-1",
+      "kind": "native-generated",
+      "candidates": 82,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 2,
+      "debugLureVacated": false,
+      "elapsedMs": 89,
+      "passed": true
+    },
+    {
+      "id": "native-2",
+      "kind": "native-generated",
+      "candidates": 381,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 97,
+      "debugLureVacated": false,
+      "elapsedMs": 1258,
+      "passed": true
+    },
+    {
+      "id": "native-3",
+      "kind": "native-generated",
+      "candidates": 230,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 139,
+      "debugLureVacated": false,
+      "elapsedMs": 1038,
+      "passed": true
+    },
+    {
+      "id": "native-4",
+      "kind": "native-generated",
+      "candidates": 208,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 96,
+      "debugLureVacated": false,
+      "elapsedMs": 706,
+      "passed": true
+    },
+    {
+      "id": "native-5",
+      "kind": "native-generated",
+      "candidates": 202,
+      "selected": "line",
+      "layers": 1,
+      "sharedLinks": 0,
+      "prebuildTurns": 2,
+      "debugLureVacated": false,
+      "elapsedMs": 194,
+      "passed": true
+    }
+  ],
+  "experiments": [
+    {
+      "name": "concave-orthogonal-loop",
+      "passed": true,
+      "vertices": [
+        [5, 7],
+        [9, 7],
+        [9, 11],
+        [13, 11],
+        [13, 15],
+        [5, 15]
+      ]
+    },
+    {
+      "name": "per-cell-aoe",
+      "expectedDamage": 1.95,
+      "actualDamage": 1.95,
+      "passed": true
+    },
+    {
+      "name": "shared-anchor-destruction",
+      "physicalLinks": 4,
+      "fields": 2,
+      "passed": true
+    },
+    {
+      "name": "dynamic-terrain-replan",
+      "old": "f1",
+      "new": "f2",
+      "shape": "line",
+      "passed": true
+    },
+    {
+      "name": "ownerless-20-turn-boundary",
+      "passed": true
+    }
+  ],
+  "browser": {
+    "status": "passed",
+    "errors": [],
+    "mobileNoHorizontalOverflow": true,
+    "offline": true,
+    "guidedShared": true,
+    "stateRoundtrip": true,
+    "desktopClosure": true,
+    "roomBreach": true,
+    "nestedClosure": true,
+    "sharedDamage": true,
+    "sharedOwnerRetirement": true,
+    "partialSharedDurability": true,
+    "partialBoundaryBreach": true,
+    "partialFinalOwnerCollapse": true,
+    "fullReachableRegion": true,
+    "fixedLureVacancy": true,
+    "interiorInvalidation": true
+  },
+  "passed": true
+}
