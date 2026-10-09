@@ -6,10 +6,23 @@
     const clone = (value) => JSON.parse(JSON.stringify(value));
     const same = (a, b) => String(a) === String(b);
     const species = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"]);
-    const priority = { defense: 0, capture: 0, recovery: 0, custody: 0, repair: 1, build: 2, readiness: 2 };
+    const priority = {
+        residency: 0,
+        defense: 0,
+        capture: 0,
+        recovery: 0,
+        custody: 0,
+        repair: 1,
+        build: 2,
+        readiness: 2,
+    };
 
     function compareDemand(a, b) {
-        return (b.urgency || 0) - (a.urgency || 0) || priority[a.kind] - priority[b.kind];
+        return (
+            Number(b.kind === "residency") - Number(a.kind === "residency") ||
+            (b.urgency || 0) - (a.urgency || 0) ||
+            priority[a.kind] - priority[b.kind]
+        );
     }
 
     function groupDemand(encounter, group) {
@@ -18,7 +31,11 @@
         return [
             { kind: needs.repair ? "repair" : "build", urgency: plan?.urgency || 0 },
             ...Object.values(ensure(encounter).requests).filter(
-                (entry) => !entry.closed && entry.fieldId === group.id && entry.count > 0,
+                (entry) =>
+                    !entry.closed &&
+                    entry.fieldId === group.id &&
+                    entry.count > 0 &&
+                    (entry.kind !== "residency" || requestStaffing(encounter, entry).committed < entry.count),
             ),
         ].sort(compareDemand)[0];
     }
@@ -45,6 +62,13 @@
 
     function servesRequest(entity, entry, encounter = api.SpinnerNativeField.state()) {
         if (!actionable(entity)) return false;
+        if (entry.kind === "residency") {
+            const member = ensure(encounter).members[entity.id];
+            return (
+                member?.home === entry.fieldId &&
+                ((member.commander === entry.fieldId && !member.loan) || member.phase === "returning")
+            );
+        }
         if (!protectedMember(entity)) return true;
         if (entry.kind === "custody")
             return (
@@ -85,6 +109,13 @@
     }
 
     function requestMembers(encounter, entry) {
+        if (entry.kind === "residency")
+            return Object.values(ensure(encounter).members).filter(
+                (member) =>
+                    member.home === entry.fieldId &&
+                    ((member.commander === entry.fieldId && !member.loan && member.phase !== "returning") ||
+                        member.phase === "returning"),
+            );
         return Object.values(ensure(encounter).members).filter(
             (member) =>
                 member.requestId === entry.id && member.commander === entry.fieldId && member.phase !== "returning",
@@ -92,15 +123,26 @@
     }
 
     function requestStaffing(encounter, entry) {
-        const deployed = requestMembers(encounter, entry);
+        const deployed = requestMembers(encounter, entry).filter(
+            (member) =>
+                entry.kind !== "residency" || eligible(KDMapData.Entities.find((entity) => same(entity.id, member.id))),
+        );
         const entityFor = (member) => KDMapData.Entities.find((entity) => same(entity.id, member.id));
-        const present = (member) => atSite(entityFor(member), entry.fieldId, encounter);
+        const present = (member) => member.phase !== "returning" && atSite(entityFor(member), entry.fieldId, encounter);
         const capable = deployed.filter((member) => servesRequest(entityFor(member), entry, encounter));
         return {
             deployed: deployed.length,
             arrived: deployed.filter(present).length,
             usable: capable.filter((member) => present(member) && !member.blocked).length,
-            incoming: capable.filter((member) => !present(member) && !member.blocked).length,
+            incoming: capable.filter(
+                (member) =>
+                    !present(member) &&
+                    !member.blocked &&
+                    (entry.kind !== "residency" || ["travelling", "returning"].includes(member.phase)),
+            ).length,
+            ...(entry.kind === "residency"
+                ? { away: capable.filter((member) => !present(member) && member.phase === "home").length }
+                : {}),
             blocked: deployed.filter((member) => member.blocked).length,
             // A brief blockage keeps its promise; sustained failure is released by reassessment.
             committed: capable.filter((member) => !(member.blockedTurns >= 8)).length,
@@ -216,6 +258,82 @@
         );
     }
 
+    function minimumResidents(encounter, group) {
+        if (!group || !validGroup(encounter.ai, group.id)) return 0;
+        const plan = encounter.ai.plans[group.planId];
+        const layers = encounter.topology?.composites?.[plan?.compositeId]?.layerIds || [];
+        const count = layers.filter((id) => {
+            const field = encounter.topology.fields[id];
+            return field && !field.retired && field.nativeTerrainValid !== false;
+        }).length;
+        return (count * (count + 1)) / 2;
+    }
+
+    function residency(encounter, groupId) {
+        const minimum = minimumResidents(encounter, encounter.ai.groups[groupId]);
+        const staffing = requestStaffing(encounter, {
+            id: groupId + ":residency",
+            fieldId: groupId,
+            kind: "residency",
+        });
+        return {
+            minimum,
+            ...staffing,
+            missing: Math.max(0, minimum - staffing.usable),
+            unassigned: Math.max(0, minimum - staffing.committed),
+        };
+    }
+
+    function residencyPending(encounter) {
+        return Object.values(encounter.ai.groups).some((group) => residency(encounter, group.id).unassigned > 0);
+    }
+
+    function releaseResident(encounter, group, entity, reserved = 0) {
+        const minimum = minimumResidents(encounter, group);
+        if (!minimum) return true;
+        const member = ensure(encounter).members[entity?.id];
+        const counted =
+            member?.home === group?.id &&
+            ((member.commander === group.id && !member.loan) || member.phase === "returning");
+        return residency(encounter, group.id).committed - Number(counted) - reserved >= minimum;
+    }
+
+    function settleResident(member) {
+        member.home = member.commander;
+        member.phase = "home";
+        for (const key of ["loan", "requestId", "destination", "origin", "reason"]) delete member[key];
+        member.blocked = false;
+        member.blockedTurns = 0;
+    }
+
+    function retainResident(encounter, member) {
+        const entity = KDMapData.Entities.find((actor) => same(actor.id, member.id));
+        const group = encounter.ai.groups[member.commander];
+        if (
+            !actionable(entity) ||
+            !group ||
+            !atSite(entity, group.id, encounter) ||
+            !minimumResidents(encounter, group) ||
+            residency(encounter, group.id).committed >= minimumResidents(encounter, group)
+        )
+            return false;
+        settleResident(member);
+        return true;
+    }
+
+    function residencyDemands(encounter) {
+        const state = ensure(encounter);
+        for (const group of Object.values(encounter.ai.groups)) {
+            const minimum = minimumResidents(encounter, group),
+                destination = location(encounter, group);
+            if (!minimum || !destination) {
+                if (state.requests[group.id + ":residency"]) state.requests[group.id + ":residency"].closed = true;
+                continue;
+            }
+            request(encounter, group.id, "residency", minimum, destination, { urgency: 2 });
+        }
+    }
+
     function reserve(encounter, group, minimum = false) {
         if (projectThreat(encounter, group))
             return Math.max(2, pending(encounter, group) ? encounter.ai.plans[group.planId]?.workforceTarget || 1 : 0);
@@ -281,10 +399,24 @@
             if (member.commander && !validGroup(ai, member.commander))
                 returnMember(encounter, member, "receiver-invalid");
             if (member.phase === "returning" && !member.home) returnMember(encounter, member, "home-invalid");
-            if (member.phase === "travelling" && protectedMember(entity))
-                returnMember(encounter, member, "protected-duty");
-            if (member.phase === "travelling" && state.requests[member.requestId]?.closed)
-                returnMember(encounter, member, "request-complete");
+            if (member.phase === "travelling" && protectedMember(entity)) {
+                if (
+                    state.requests[member.requestId]?.kind === "residency" &&
+                    member.home === member.commander &&
+                    !member.loan
+                )
+                    settleResident(member);
+                else returnMember(encounter, member, "protected-duty");
+            }
+            if (member.phase === "travelling" && state.requests[member.requestId]?.closed) {
+                if (
+                    state.requests[member.requestId].kind === "residency" &&
+                    member.home === member.commander &&
+                    !member.loan
+                )
+                    settleResident(member);
+                else returnMember(encounter, member, "request-complete");
+            }
             if (member.phase === "support" && !protectedMember(entity)) {
                 const request = state.requests[member.requestId];
                 if (
@@ -293,7 +425,7 @@
                     (!pending(encounter, ai.groups[member.commander]) &&
                         !projectThreat(encounter, ai.groups[member.commander]))
                 )
-                    returnMember(encounter, member, "support-complete");
+                    if (!retainResident(encounter, member)) returnMember(encounter, member, "support-complete");
             }
         }
         for (const [id, order] of Object.entries(state.regions))
@@ -388,9 +520,10 @@
                 !demand.urgency &&
                 !residents.some(protectedMember) &&
                 !projectThreat(encounter, group);
-            const retained = pauseBackground
-                ? 0
-                : reserve(encounter, group, compareDemand({ kind, ...options }, demand) < 0);
+            const retained =
+                kind === "residency" || pauseBackground
+                    ? 0
+                    : reserve(encounter, group, compareDemand({ kind, ...options }, demand) < 0);
             const candidates = members.filter((entity) => {
                 const member = state.members[entity.id];
                 const current = state.requests[member?.requestId];
@@ -410,11 +543,19 @@
                 reasons.add("necessary-duty");
             if (members.some((entity) => state.members[entity.id]?.loan || state.members[entity.id]?.phase !== "home"))
                 reasons.add("committed");
+            let reservedResidents = 0;
             const offered = candidates
                 .map((entity) => ({ id: entity.id, donor: group.id, steps: distances(entity, target) }))
                 .filter((offer) => Number.isFinite(offer.steps))
                 .sort((a, b) => a.steps - b.steps || String(a.id).localeCompare(String(b.id)))
-                .slice(0, Math.max(0, candidates.length - retained));
+                .slice(0, Math.max(0, candidates.length - retained))
+                .filter((offer) => {
+                    const entity = byId.get(String(offer.id));
+                    if (!releaseResident(encounter, group, entity, reservedResidents)) return false;
+                    const member = state.members[entity.id];
+                    if (member.home === group.id && !member.loan) reservedResidents++;
+                    return true;
+                });
             if (candidates.length && !offered.length) reasons.add("unreachable");
             result.push(...offered);
         }
@@ -427,7 +568,9 @@
                 protectedMember(entity) ||
                 member.home === excludeGroup ||
                 (current && !current.closed && compareDemand({ kind, ...options }, current) >= 0) ||
-                (home && compareDemand({ kind, ...options }, groupDemand(encounter, home)) >= 0)
+                (home &&
+                    (!releaseResident(encounter, home, entity) ||
+                        compareDemand({ kind, ...options }, groupDemand(encounter, home)) >= 0))
             )
                 continue;
             const steps = distances(entity, target);
@@ -471,7 +614,8 @@
             if (
                 entry.fieldId === groupId &&
                 !(demands.get(entry.kind) > 0) &&
-                !(entry.kind === "custody" && api.FieldCustody?.ownsGroup(groupId))
+                !(entry.kind === "custody" && api.FieldCustody?.ownsGroup(groupId)) &&
+                !(entry.kind === "residency" && minimumResidents(encounter, encounter.ai.groups[groupId]))
             )
                 entry.closed = true;
         for (const [kind, count] of demands)
@@ -501,8 +645,8 @@
                 !atSite(entity, groupId, encounter)
             )
                 continue;
-            const donor = encounter.ai.groups[member.commander];
-            if (donor && pending(encounter, donor)) continue;
+            const donor = encounter.ai.groups[member.commander || member.home];
+            if (donor && (pending(encounter, donor) || !releaseResident(encounter, donor, entity))) continue;
             Object.assign(member, {
                 commander: groupId,
                 phase: "support",
@@ -552,6 +696,10 @@
             blocked: false,
             blockedTurns: 0,
         });
+        if (requestState.kind === "residency") {
+            member.home = requestState.fieldId;
+            delete member.loan;
+        }
         encounter.ai.groups[requestState.fieldId].incomingIds = [
             ...new Set([...(encounter.ai.groups[requestState.fieldId].incomingIds || []), offer.id]),
         ];
@@ -572,7 +720,7 @@
             let extra = Math.max(0, deployed.length - requestState.count);
             for (const member of deployed.sort((a, b) => String(b.id).localeCompare(String(a.id))))
                 if (extra && !protectedMember(entityFor(member))) {
-                    returnMember(encounter, member, "demand-reduced");
+                    if (!retainResident(encounter, member)) returnMember(encounter, member, "demand-reduced");
                     extra--;
                 }
         }
@@ -586,11 +734,13 @@
                 (entry) =>
                     !entry.closed &&
                     entry.count >
-                        Object.values(state.members).filter(
-                            (candidate) =>
-                                (candidate.requestId === entry.id && candidate.phase !== "returning") ||
-                                (candidate.home === member.home && candidate.phase === "returning"),
-                        ).length &&
+                        (entry.kind === "residency"
+                            ? requestStaffing(encounter, entry).committed
+                            : Object.values(state.members).filter(
+                                  (candidate) =>
+                                      (candidate.requestId === entry.id && candidate.phase !== "returning") ||
+                                      (candidate.home === member.home && candidate.phase === "returning"),
+                              ).length) &&
                     entry.fieldId === member.home &&
                     compareDemand(entry, requestState) < 0,
             );
@@ -637,7 +787,16 @@
                     )
                 )
                     continue;
+                if (
+                    member.phase === "returning" &&
+                    !releaseResident(encounter, encounter.ai.groups[member.home], entity)
+                )
+                    continue;
                 member.commander = entry.fieldId;
+                if (entry.kind === "residency") {
+                    member.home = entry.fieldId;
+                    delete member.loan;
+                }
                 const destinationChanged =
                     member.destination?.x !== entry.destination.x || member.destination?.y !== entry.destination.y;
                 if (member.phase === "returning" || destinationChanged) member.phase = "travelling";
@@ -656,6 +815,7 @@
 
     function allocate(encounter, distances) {
         const state = ensure(encounter);
+        residencyDemands(encounter);
         continueSupport(encounter);
         reassess(encounter);
         // Replanning retains request identity, but every order must follow its current destination.
@@ -705,17 +865,19 @@
         for (const entry of Object.values(state.requests).filter((request) => !request.closed)) {
             const staffing = requestStaffing(encounter, entry);
             Object.assign(entry, staffing);
-            entry.missing = Math.max(0, entry.count - staffing.usable - staffing.incoming);
+            entry.missing = Math.max(0, entry.count - staffing.usable - staffing.incoming - (staffing.away || 0));
             entry.status =
                 staffing.usable >= entry.count
                     ? "satisfied"
-                    : staffing.blocked
-                      ? "blocked"
-                      : staffing.incoming
-                        ? "travelling"
-                        : staffing.usable
-                          ? "partial"
-                          : "rejected";
+                    : entry.kind === "residency" && staffing.committed >= entry.count && !staffing.incoming
+                      ? "assigned"
+                      : staffing.blocked
+                        ? "blocked"
+                        : staffing.incoming
+                          ? "travelling"
+                          : staffing.usable
+                            ? "partial"
+                            : "rejected";
             entry.reason = entry.missing
                 ? offers(encounter, entry.destination, distances, entry.fieldId, entry.kind, entry).reason
                 : null;
@@ -740,6 +902,15 @@
             state = ensure(encounter);
         if (!state || !canYield(entity)) return undefined;
         const member = state.members[entity.id];
+        if (
+            member?.phase === "travelling" &&
+            state.requests[member.requestId]?.kind === "residency" &&
+            atSite(entity, member.commander, encounter)
+        ) {
+            settleResident(member);
+            sync(encounter);
+            projectOwners(encounter);
+        }
         return member && ["travelling", "returning"].includes(member.phase) ? member : state.regions[entity.id];
     }
 
@@ -748,10 +919,16 @@
         const order = movingOrder(entity);
         if (!order?.destination) return false;
         const encounter = api.SpinnerNativeField.state();
-        if (Math.max(Math.abs(entity.x - order.destination.x), Math.abs(entity.y - order.destination.y)) <= 2) {
+        const residentOrder = encounter.command.requests[order.requestId]?.kind === "residency";
+        if (
+            residentOrder
+                ? atSite(entity, order.commander, encounter)
+                : Math.max(Math.abs(entity.x - order.destination.x), Math.abs(entity.y - order.destination.y)) <= 2
+        ) {
             order.blocked = false;
             order.blockedTurns = 0;
-            if (order.phase === "travelling") order.phase = "support";
+            if (order.phase === "travelling" && residentOrder) settleResident(order);
+            else if (order.phase === "travelling") order.phase = "support";
             else if (order.phase === "returning") {
                 order.commander = order.home;
                 order.phase = "home";
@@ -829,6 +1006,8 @@
     }
 
     api.FieldCommand = {
+        residency,
+        residencyPending,
         canYield,
         adoptCustodyCrew,
         reconcile,
@@ -856,7 +1035,17 @@
             KDMapData.Entities.filter((entity) => eligible(entity) && entity.Enemy.name === "Spinner").length,
         inspect: () => {
             const state = ensure(api.SpinnerNativeField.state());
-            return state ? clone(state) : undefined;
+            return state
+                ? {
+                      ...clone(state),
+                      residency: Object.fromEntries(
+                          Object.keys(api.SpinnerNativeField.state().ai.groups).map((id) => [
+                              id,
+                              residency(api.SpinnerNativeField.state(), id),
+                          ]),
+                      ),
+                  }
+                : undefined;
         },
     };
 })();

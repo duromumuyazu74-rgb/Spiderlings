@@ -34,6 +34,8 @@ const scenarios = [
         "spinner-work",
         "field-command",
         "field-custody",
+        "field-commitments",
+        "field-residency",
         "field-reinforcement",
         "field-permits",
         "saved-field-guard",

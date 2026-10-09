@@ -71,8 +71,9 @@
             `Crew spread across premature projects: ${JSON.stringify(ai.projects)}`,
         );
         expect(
-            groups.every((group) => group.memberIds.length === 4),
-            "An existing large field lost its construction workforce",
+            JSON.stringify(groups.map((group) => group.memberIds.length).sort((a, b) => b - a)) ===
+                JSON.stringify(count === 4 ? [4] : [6, 2]),
+            "Resident minimums were not filled before surplus construction staffing",
         );
         expect(
             groups.every((group) => ai.plans[group.planId].radius === 4),
@@ -223,8 +224,14 @@
     }
     // The continuing planner can commit every original worker to a project.
     // Author a genuinely free reserve crew for the dispatcher contract here.
-    const spare = spawn("Spinner", 2, 2);
-    spare.hostile = 999;
+    const shortfall = Object.values(current.ai.groups).reduce(
+        (sum, group) => sum + command.residency(current, group.id).unassigned,
+        0,
+    );
+    for (let index = 0; index <= shortfall; index++) {
+        const spare = spawn("Spinner", 2 + index, 2);
+        spare.hostile = 999;
+    }
     command.reconcile(current, KDMapData.Entities, {}, true);
     command.allocate(current, distances);
     expect(

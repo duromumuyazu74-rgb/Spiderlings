@@ -9,7 +9,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 | 通道         | 版本               | 获取方式                                                                                                               |
 | ------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | 正式版       | `0.92.38`          | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) |
-| 当前开发候选 | `0.92.36-test.146` | 源码候选见 [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149)，目标为 `test`；尚非正式 Release      |
+| 当前开发候选 | `0.92.36-test.151` | 源码候选见 [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149)，目标为 `test`；尚非正式 Release      |
 | 巢穴监狱实验 | `prison.alpha.N`   | 独立 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77)，不包含在普通测试包中                         |
 
 1. 下载[正式版 Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest) 的 ZIP 附件，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
@@ -26,6 +26,7 @@ GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入
 
 - 普通蛛丝按身体部位独立递进。Hood 开关、原生装备共存和 Cocoon 资格分别判断，具体数值与条件见[参数说明](KinkyDungeon-Spiderlings/Spiderlings_0.9_Parameter_Guide.md)。
 - Spinner 付费建设、修复和开闭场地。总控处理增援与借调，各场地指挥自己的 Spinner。施工者、在途援兵和可用人手分别统计；优先合法大型多层围场，适用时回退通道场地。
+- 捕获场地一至四层最低常驻分别为 1、3、6、10 名 Spinner。总控优先满足最低分配，再安排可选支援，出借保留供给场地的下限。本场地任务保留常驻归属，分配与实际到场分别统计。人口短缺时暂停新增独立工程。
 - 新独立场地需要 `floor(n / 4)` 个人口许可，n 为存活且符合条件的敌对 Spinner，同时受默认三座的设置上限约束。许可数不覆盖设置值。角色靠近时，规划阶段提出待备需求；移动、战斗与 Capture 仍须满足各自原生条件。
 - 侵扰有五个任务巢和两支初始三人队。猎场要求原生主派系为 Maidforce，有三支六人巢队，幼蛛上限为全局设置加二十。初始大型场地取决于合法空间与许可。两种楼层默认权重均为 200，权重表示符合条件时的抽选关系，不是全局出现百分比。
 - Mage 的丝弹、符文、蚀盾咒印与坠牢分别维护技能状态和危险格反馈。魔典与法杖提供玩家蛛丝攻击及技能，原生日志收录六项幼蛛见闻。

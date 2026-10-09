@@ -914,13 +914,36 @@
 
     function adoptExistingTopology(encounter, ai) {
         const graph = encounter.topology;
-        if (graph?.kind !== "enclosure") return;
-        const composite = Object.values(graph.composites || {})[0];
-        if (!composite) return;
-        for (const group of Object.values(ai.groups)) {
-            if (group.planId) continue;
-            if (!group.memberIds.some((id) => graph.owners.includes(id))) continue;
-            const id = `spinner-plan-${ai.nextPlanOrdinal++}`;
+        if (!graph?.composites) return;
+        for (const composite of Object.values(graph.composites || {})) {
+            const fields = composite.layerIds.map((id) => graph.fields[id]);
+            if (
+                !fields.length ||
+                fields.some(
+                    (field) =>
+                        !field || field.kind !== "enclosure" || field.retired || field.nativeTerrainValid === false,
+                )
+            )
+                continue;
+            if (
+                Object.values(ai.plans).some(
+                    (plan) =>
+                        plan.compositeId === composite.id &&
+                        !["invalid", "abandoned", "retired"].includes(plan.status) &&
+                        !ai.groups[plan.groupId]?.cancelled,
+                )
+            )
+                continue;
+            const owners = api.SpinnerNativeField.fieldOwners(composite.id);
+            const group =
+                Object.values(ai.groups).find(
+                    (entry) => !entry.planId && entry.memberIds.some((id) => owners.includes(id)),
+                ) ||
+                api.FieldCommand.newGroup(
+                    ai,
+                    KDMapData.Entities.filter((actor) => owners.includes(actor.id)),
+                );
+            const id = "spinner-plan-" + ai.nextPlanOrdinal++;
             ai.plans[id] = {
                 id,
                 kind: "enclosure",
@@ -930,8 +953,10 @@
                 compositeId: composite.id,
                 status: "preparing",
                 center: clone(composite.core),
-                anchors: graph.anchors.map((anchor) => ({ x: anchor.x, y: anchor.y })),
-                cells: Object.values(graph.fields).flatMap((field) => field.boundaryCells.map(cellKey)),
+                anchors: graph.anchors
+                    .filter((anchor) => anchor.owners.some((owner) => composite.layerIds.includes(owner)))
+                    .map((anchor) => ({ x: anchor.x, y: anchor.y })),
+                cells: fields.flatMap((field) => field.boundaryCells.map(cellKey)),
                 invalidReason: null,
             };
             group.planId = id;
@@ -1780,6 +1805,7 @@
                     plan.planningFocus &&
                     distance(group.planningFocus, plan.planningFocus) >= 4 &&
                     !planner.paid(plan) &&
+                    !api.FieldCustody?.ownsField(plan.compositeId) &&
                     now - (plan.selectedTurn || 0) >= 12 &&
                     now - plan.approachProgress.turn >= 8
                 ) {
@@ -1806,6 +1832,7 @@
                 !plan &&
                 members.length &&
                 !existing &&
+                !command.residencyPending(encounter) &&
                 maximum > 0 &&
                 (planner.lineFixture || activeProjects().length < maximum)
             ) {
@@ -1890,6 +1917,9 @@
             );
             const required = defense ? 2 : targets.length || urgency ? 2 : construction ? workers : repair ? 1 : 0;
             const own = staffing.filter((member) => !state.members[member.id]?.loan && atSite(member)).length;
+            const residents = command.residency(encounter, group.id);
+            plan.minimumResidents = residents.minimum;
+            plan.residentStaff = residents.usable;
             plan.workforceTarget = workers;
             plan.availableWorkers = capable.length;
             plan.availableStaff = staffing.filter(atSite).length;
@@ -1972,7 +2002,7 @@
         }));
         ai.projects.unmet = unmet;
         // Supplied line fixtures describe legacy diagnostic fields, not a normal-map area planner.
-        if (!planner.lineFixture && active.length)
+        if (!planner.lineFixture && active.length && !command.residencyPending(encounter))
             for (const target of unmet) {
                 if (active.length >= maximum) break;
                 if (covered(target) || reusable(target)) continue;

@@ -702,7 +702,7 @@ test("scene, helper, native diagnostic and teardown failures retain group attrib
     }
 });
 
-test("full acceptance still runs all 60 checks and seven native languages against one ZIP", async (t) => {
+test("full acceptance still runs all 62 checks and seven native languages against one ZIP", async (t) => {
     const { verifyGame } = require("../verify-kd-compatibility.js"),
         { file, output } = localePackage(t),
         runs = scenarioRuntimes({}),
@@ -710,7 +710,7 @@ test("full acceptance still runs all 60 checks and seven native languages agains
     const report = await verifyGame({ version: "5.4.92" }, file, output, selection, runs.factory);
     assert.equal(report.status, "passed");
     assert.equal(report.verification.mode, "full");
-    assert.equal(report.checks.length, 60);
+    assert.equal(report.checks.length, 62);
     assert.deepEqual(
         report.checks.map((check) => check.name),
         selection.executed,
@@ -743,7 +743,7 @@ test("selection separates code helpers from state continuation and preserves all
     const full = selectScenarios();
     assert.equal(full.mode, "full");
     assert.equal(full.total, full.executed.length);
-    assert.equal(full.total, 60);
+    assert.equal(full.total, 62);
     assert.equal(full.checks.find((scenario) => scenario.name === "native-locales").kind, "locales");
     for (const scenario of full.checks) {
         if (scenario.kind === "locales") continue;

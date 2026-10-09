@@ -60,7 +60,7 @@
         if (e.custody && !record()) delete e.custody;
     }
 
-    function eligible(actor) {
+    function eligible(actor, committed = false) {
         return !!(
             actor?.hp > 0 &&
             mobile.has(actor.Enemy?.name) &&
@@ -72,7 +72,8 @@
             !KDHelpless(actor) &&
             !KinkyDungeonIsDisabled(actor) &&
             (actor.Enemy.name !== "Spinner" || !(actor.disarm > 0)) &&
-            !api.JumperDash?.runtimeController?.snapshot?.().some((entry) => same(entry.sourceId, actor.id)) &&
+            (committed ||
+                !api.JumperDash?.runtimeController?.snapshot?.().some((entry) => same(entry.sourceId, actor.id))) &&
             ![actor.stun, actor.freeze, actor.channel, actor.teleporting].some((v) => v > 0) &&
             actor.SpiderlingsTaskNestDefenderTarget === undefined
         );
@@ -105,6 +106,23 @@
         );
     }
 
+    // Dash owns its committed action. Field assignment eligibility must not
+    // revoke the approved pair while that action is still winding up.
+    function committedTarget(actor) {
+        const saved = record(),
+            target = competitor();
+        if (!saved || !target || !eligible(actor, true)) return undefined;
+        const committed = api.JumperDash?.runtimeController
+            ?.snapshot?.()
+            .some(
+                (entry) =>
+                    same(entry.sourceId, actor.id) &&
+                    same(entry.targetId, target.id) &&
+                    same(entry.interceptionCompositeId, saved.compositeId),
+            );
+        return committed ? target : undefined;
+    }
+
     function prepare() {
         observe();
         const saved = record();
@@ -130,12 +148,16 @@
                 )
                 .slice(0, 2)
                 .map((actor) => actor.id);
+        const committed = threat ? actors().filter((actor) => committedTarget(actor) === threat) : [];
         saved.defenders = threat
-            ? choose(
-                  available.filter((a) => a.Enemy.name !== "Tunneler" && perceives(a, threat)),
-                  saved.defenders || [],
-                  threat,
-              )
+            ? [
+                  ...committed.map((actor) => actor.id),
+                  ...choose(
+                      available.filter((a) => a.Enemy.name !== "Tunneler" && perceives(a, threat)),
+                      saved.defenders || [],
+                      threat,
+                  ).slice(0, Math.max(0, 2 - committed.length)),
+              ]
             : [];
         const contacts =
             !threat && api.SpinnerRecovery?.requested?.()
@@ -199,7 +221,14 @@
         },
         ownsField: (id) => same(record()?.compositeId, id),
         ownsGroup: (id) => same(record()?.groupId, id),
-        assigned: (actor) => !!record() && (record().contacts?.some((id) => same(id, actor?.id)) || !!targetFor(actor)),
-        interceptionPair: (left, right) => !!right && (targetFor(left) === right || targetFor(right) === left),
+        assigned: (actor) =>
+            !!record() &&
+            (record().contacts?.some((id) => same(id, actor?.id)) || !!targetFor(actor) || !!committedTarget(actor)),
+        interceptionPair: (left, right) =>
+            !!right &&
+            (targetFor(left) === right ||
+                targetFor(right) === left ||
+                committedTarget(left) === right ||
+                committedTarget(right) === left),
     });
 })();
