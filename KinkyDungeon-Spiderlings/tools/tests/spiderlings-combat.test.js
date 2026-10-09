@@ -2,9 +2,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const vm = require("node:vm");
-const { gamePath } = require("../reference-inputs.js");
 const fs = require("node:fs");
 const path = require("node:path");
+const { gamePath } = require("../reference-inputs.js");
 
 function fixture(overrides = {}) {
     const c = { Spiderlings: {}, KDEventMapGeneric: {}, KDMapData: { Entities: [] } };
@@ -85,7 +85,7 @@ function fixture(overrides = {}) {
             .replace(/function [^{]+\{/, `function ${name}(bullet, enemy, inWarningOnly, overrideCollide) {`);
         vm.runInContext(body, c);
     }
-    for (const file of ["SpiderlingsCombat.js", "SpiderlingsJumperDash.js"])
+    for (const file of ["SpiderlingsCombat.js", "SpiderlingsNPCAdhesion.js", "SpiderlingsJumperDash.js"])
         vm.runInContext(fs.readFileSync(path.join(__dirname, "../..", file), "utf8"), c);
     const spawn = (id, name, faction) => {
         const e = { id, Enemy: { name }, faction, hp: 8, boundLevel: 0, equipment: 0, x: 0, y: 0 };
@@ -94,6 +94,25 @@ function fixture(overrides = {}) {
     };
     return { c, events, spawn };
 }
+
+test("NPC silk contact applies native shield drain while shield still blocks binding", () => {
+    const applied = [];
+    const { c, spawn } = fixture({
+        KDGetShieldRegen: () => 4,
+        KinkyDungeonApplyBuffToEntity: (enemy, buff) => applied.push({ enemy, buff }),
+    });
+    const spider = spawn(1, "Spinner", "Enemy");
+    const maid = spawn(2, "MaidforceMini", "Maidforce");
+    maid.shield = 8;
+    c.Spiderlings.Combat.hitNPC(spider, maid, "direct");
+    assert.equal(maid.boundLevel, 0);
+    assert.equal(applied.length, 1);
+    assert.equal(applied[0].enemy, maid);
+    assert.equal(applied[0].buff.type, "ShieldDrain");
+    assert.equal(applied[0].buff.power, 6);
+    assert.equal(applied[0].buff.duration, 2);
+    assert.equal(maid.shield < 8, true);
+});
 
 test("native alarm recipients refresh entity goals on KD 5.5.3 while silk-gagged callers remain silent", () => {
     const { stripTypeScriptTypes } = require("node:module");
@@ -165,7 +184,7 @@ test("signal goal compatibility preserves redirected listeners and old runtimes"
     assert.equal(legacy.c.KDUpdateMoveToEntity, undefined);
 });
 
-test("only the armed native Spiderling melee converts damage, consumes on binding and reports success", () => {
+test("armed Spinner melee keeps the source alive while converting native NPC binding", () => {
     const { c, spawn } = fixture();
     const source = spawn(1, "Spinner", "Enemy"),
         target = spawn(2, "Maidforce", "Maidforce");
@@ -173,10 +192,13 @@ test("only the armed native Spiderling melee converts damage, consumes on bindin
     assert.equal(c.KinkyDungeonEnemyLoop(source, target), 1.5);
     assert.equal(target.hp, 7.95);
     assert.equal(target.boundLevel, 1.5);
-    assert.equal(source.hp, 0);
+    assert.equal(source.hp, 8);
     assert.equal(source.failed, false);
+    assert.equal(c.KinkyDungeonEnemyLoop(source, target), 1.5);
+    assert.equal(source.hp, 8);
+    assert.equal(target.boundLevel, 3);
     c.KinkyDungeonDamageEnemy(target, { damage: 2, type: "fire" }, false, true, undefined, undefined, source);
-    assert.equal(target.hp, 5.95, "unrelated damage retains native return semantics");
+    assert.ok(Math.abs(target.hp - 5.9) < 1e-8, "unrelated damage retains native return semantics");
 });
 
 test("spider silk blocks helpless NPC speech and signals, and releases on recovery or silk removal", () => {
@@ -230,8 +252,8 @@ test("unrelated slime, resisted silk and native silence keep their own speech ru
 
 test("native spray collision honors entity hostility without bypassing positions, noEnemyCollision or unique hits", () => {
     const { c, spawn } = fixture();
-    spawn(1, "WebCaster", "Enemy");
-    const target = spawn(2, "Maidforce", "Maidforce");
+    const _source = spawn(1, "WebCaster", "Enemy"),
+        target = spawn(2, "Maidforce", "Maidforce");
     const b = {
         x: 0,
         y: 0,
@@ -279,6 +301,50 @@ test("failed and unrelated NPC melee retain their native outcomes", () => {
         target = spawn(2, "Spinner", "Enemy");
     assert.equal(c.KinkyDungeonEnemyLoop(source, target), 2);
     assert.equal(target.hp, 6);
+});
+
+test("orphaned direct and trail spray retain saved faction, collision and native binding", () => {
+    for (const departed of ["removed", "dead"]) {
+        const { c, spawn, events } = fixture();
+        const source = spawn(1, "WebCaster", "Player");
+        const target = spawn(2, "Maidforce", "Maidforce");
+        const friend = spawn(3, "Ally", "Player");
+        const make = (kind) =>
+            JSON.parse(
+                JSON.stringify({
+                    x: 0,
+                    y: 0,
+                    time: 10,
+                    bullet: {
+                        name: "WebSpray",
+                        source: source.id,
+                        faction: "Player",
+                        damage: { type: "inert" },
+                        spell: {
+                            noUniqueHits: true,
+                            playerEffect: { provenance: "WebCaster.WebSpray", triggerSource: kind },
+                        },
+                    },
+                }),
+            );
+        if (departed === "removed") c.KDMapData.Entities.splice(0, 1);
+        else source.hp = 0;
+        const direct = make("direct");
+        assert.equal(c.KDBulletCanHitEntity(direct, target), true, departed);
+        assert.equal(c.KDBulletAoECanHitEntity(direct, target), true);
+        assert.equal(c.KDBulletCanHitEntity(direct, friend), false);
+        c.KDBulletHitEnemy(direct, target);
+        c.KDBulletHitEnemy(direct, target);
+        assert.equal(target.boundLevel, 3);
+        c.KDBulletHitEnemy(make("trail"), target);
+        c.KDBulletHitEnemy(make("trail"), target);
+        assert.equal(target.boundLevel, 3.5);
+        events("tickAfter", { delta: 1 });
+        c.KDBulletHitEnemy(make("trail"), target);
+        assert.equal(target.boundLevel, 4);
+        assert.equal(target.equipment, 0);
+        assert.equal(friend.boundLevel, 0);
+    }
 });
 
 test("spray preserves the real bullet bookkeeping and shared player effects without creating NPC equipment", () => {
@@ -443,6 +509,20 @@ test("two successful NPC direct sources add binding only, at most once per targe
     assert.equal(target.equipment, 0);
     const other = c.KDMapData.Entities[2];
     assert.equal(other, target);
+});
+
+test("native spray adapter opens adhesion only after Slime and crossfire adds no paid pressure", () => {
+    const { c, a, b, target, shot } = cooperationFixture();
+    target.shield = 5;
+    shot(a);
+    assert.equal(c.Spiderlings.NPCAdhesion.status(target), "free");
+    delete target.shield;
+    shot(a);
+    assert.equal(c.Spiderlings.NPCAdhesion.status(target), "initial");
+    shot(b);
+    assert.equal(target.specialBoundLevel.Slime, 8);
+    assert.equal(c.Spiderlings.NPCAdhesion.pressure(target), 6);
+    assert.equal(c.Spiderlings.NPCAdhesion.status(target), "full");
 });
 
 test("NPC cooperation excludes repeats, trails, stale or disabled partners, blocked hits and reused bullets", () => {

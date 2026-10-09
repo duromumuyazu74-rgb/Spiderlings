@@ -1,0 +1,372 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 323,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 1,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 323,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 2,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 4,
+    "reachableCells": 319,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 3,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 5,
+    "reachableCells": 318,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 4,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 5,
+    "reachableCells": 318,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 5,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 5,
+    "reachableCells": 318,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 6,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 8,
+    "reachableCells": 315,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 7,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 8,
+    "reachableCells": 315,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 8,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 8,
+    "reachableCells": 315,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 9,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 8,
+    "reachableCells": 315,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 10,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 10,
+    "reachableCells": 313,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 11,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 13,
+    "reachableCells": 310,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 12,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 15,
+    "reachableCells": 308,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 13,
+    "phases": ["ready", "ready"],
+    "target": [2, 10],
+    "blocked": 19,
+    "reachableCells": 300,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "target-in-core",
+    "turn": 14,
+    "phases": ["ready", "ready"],
+    "target": [23, 8],
+    "blocked": 19,
+    "reachableCells": 300,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 15,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 16,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 17,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 18,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 19,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 20,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 21,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 22,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 23,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 24,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 25,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 26,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 27,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 28,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 29,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 30,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 31,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 32,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 33,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 34,
+    "phases": ["sealed", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "shared-owner-retirement",
+    "turn": 35,
+    "phases": ["retired", "sealed"],
+    "target": [23, 8],
+    "blocked": 20,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "inner-edge-broken",
+    "turn": 35,
+    "phases": ["retired", "breached"],
+    "target": [23, 8],
+    "blocked": 17,
+    "reachableCells": 302,
+    "exitReachable": false,
+    "geometryReady": false
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 81,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 1,
+    "phases": ["preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 81,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 2,
+    "phases": ["barrier"],
+    "target": [2, 10],
+    "blocked": 2,
+    "reachableCells": 38,
+    "exitReachable": false,
+    "geometryReady": false
+  }
+]

@@ -1,0 +1,885 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { runtime } = require("./helpers/spinner-native-runtime.js");
+
+test("a retired overlapping enclosure cannot mask a new sealed capture field", () => {
+    const c = runtime().context,
+        field = c.Spiderlings.SpinnerNativeField;
+    const input = (id) => ({
+        compositeId: id,
+        owners: [1, 2],
+        built: true,
+        autoSeal: true,
+        layers: [
+            {
+                id,
+                vertices: [
+                    { x: 4, y: 4 },
+                    { x: 6, y: 4 },
+                    { x: 6, y: 6 },
+                    { x: 4, y: 6 },
+                ],
+                gate: { x: 5, y: 4 },
+            },
+        ],
+    });
+    field.initializeEnclosure(input("old"));
+    field.retireField("old");
+    field.addEnclosure(input("new"));
+    const target = { x: 5, y: 5 };
+    assert.equal(c.Spiderlings.SpinnerTopology.containsDeclaredField(field.state().topology, "old", target), false);
+    assert.equal(field.containingComposite(target)?.id, "new");
+    assert.equal(field.captureGeometryReady(target), true);
+});
+
+test("legacy native entity admission projects silk under an occupant without kicking it", () => {
+    const r = runtime(),
+        c = r.context;
+    buildAll(r);
+    const field = c.Spiderlings.SpinnerNativeField;
+    const proxy = c.KDMapData.Entities.find(field.isOwnedProxy);
+    c.KDMapData.Entities.splice(c.KDMapData.Entities.indexOf(proxy), 1);
+    const occupant = { id: 9998, x: proxy.x, y: proxy.y, hp: 10, Enemy: { name: "Spinner" } };
+    c.KDMapData.Entities.push(occupant);
+    delete c.KDAddNewEntity;
+    let admitted = 0;
+    c.KDAddEntity = (entity, persistent, teleport, noLoadout) => {
+        assert.equal(persistent, false);
+        assert.equal(teleport, false);
+        assert.equal(noLoadout, true);
+        c.KDMapData.Entities.push(entity);
+        admitted++;
+        return entity;
+    };
+    c.DialogueCreateEnemy = () => {
+        throw new Error("Occupied cell must not kick its actor");
+    };
+    field.reconcile();
+    assert.equal(admitted, 1);
+    assert.equal(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).length,
+        c.Spiderlings.SpinnerTopology.solidCells(field.state().topology).length,
+    );
+    assert.equal(occupant.x, proxy.x);
+    assert.equal(occupant.y, proxy.y);
+    assert.equal(occupant.hp, 10);
+    field.reconcile();
+    assert.equal(admitted, 1);
+});
+
+test("capture boundaries and legacy load aliases use SpinnerTrap artwork in both colors", () => {
+    const c = runtime().context;
+    for (const prefix of ["", "Game/"])
+        for (const color of ["", "Pink"])
+            assert.equal(
+                c.KDModFiles[`${prefix}Enemies/SpiderlingsSpinnerTrap${color}.png`],
+                c.KDModFiles[`Bullets/SpiderlingsSpinnerTrapTop${color}.png`],
+            );
+});
+
+function buildAll(
+    r,
+    anchors = [
+        { x: 5, y: 3 },
+        { x: 5, y: 7 },
+    ],
+) {
+    const c = r.context,
+        owners = [
+            { id: 1, x: 3, y: 3, hp: 10, Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } } },
+            { id: 2, x: 3, y: 7, hp: 10, Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } } },
+        ];
+    c.KDMapData.Entities.push(...owners);
+    const started = c.Spiderlings.SpinnerScenarios.setupDoorway({
+        fieldId: "doorway",
+        ownerIds: owners.map((owner) => owner.id),
+        anchors,
+    });
+    assert.equal(started.started, true);
+    let handled = 0;
+    while (Object.values(started.encounter.builders).some((builder) => builder.actions.length)) {
+        for (const owner of owners) {
+            const before = { x: owner.x, y: owner.y };
+            if (started.encounter.builders[owner.id].actions.length) {
+                assert.ok(c.Spiderlings.SpinnerNativeField.handleEnemyTurn(owner, c.KinkyDungeonPlayerEntity, 1));
+                handled++;
+                assert.deepEqual({ x: owner.x, y: owner.y }, before);
+            }
+        }
+    }
+    return { owners, encounter: started.encounter, handled };
+}
+
+test("reconciliation shares one physical-cell snapshot while reading current shared HP", () => {
+    const r = runtime(),
+        c = r.context,
+        built = buildAll(r),
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        native = topology.solidCells,
+        ids = c.KDMapData.Entities.filter(field.isOwnedProxy).map((proxy) => proxy.id);
+    let scans = 0;
+    topology.solidCells = (...args) => {
+        scans++;
+        return native(...args);
+    };
+    assert.equal(ids.length, 5);
+    assert.equal(field.reconcile().reused, ids.length);
+    assert.equal(scans, 1, "Each retained projection must reuse the physical cell already found for this reconcile");
+    assert.deepEqual(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).map((proxy) => proxy.id),
+        ids,
+    );
+
+    const middle = c.KDMapData.Entities.find((proxy) => field.isOwnedProxy(proxy) && proxy.x === 5 && proxy.y === 5),
+        before = built.encounter.topology.links[0].hp;
+    assert.equal(field.onNativeDamage({ enemy: middle, dmgDealt: 1 }), true);
+    assert.equal(built.encounter.topology.links[0].hp, before - 0.7);
+    assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === before - 0.7));
+    assert.equal(middle.maxhp, before);
+    assert.equal(middle.Enemy.maxhp, before, "Native tooltip keeps the full shared durability after damage");
+    assert.equal(middle.modified, true, "Native unpacking must preserve the owned per-cell definition");
+
+    scans = 0;
+    field.reconcile();
+    assert.equal(scans, 1, "A later reconcile must derive its own current topology instead of retaining the old HP");
+    assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === before - 0.7));
+});
+
+test("recreating a missing projection uses its physical IDs and post-admission HP", () => {
+    const r = runtime(),
+        c = r.context,
+        built = buildAll(r),
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        nativeCells = topology.solidCells,
+        nativeCreate = c.DialogueCreateEnemy,
+        missing = c.KDMapData.Entities.find((proxy) => field.isOwnedProxy(proxy) && proxy.x === 5 && proxy.y === 5);
+    c.KDMapData.Entities.splice(c.KDMapData.Entities.indexOf(missing), 1);
+    let scans = 0;
+    topology.solidCells = (...args) => {
+        scans++;
+        return nativeCells(...args);
+    };
+    c.DialogueCreateEnemy = (...args) => {
+        const admitted = nativeCreate(...args);
+        built.encounter.topology.links[0].hp = 3.25;
+        return admitted;
+    };
+    assert.equal(field.reconcile().created, 1);
+    assert.equal(scans, 1, "A newly admitted projection also receives the physical cell from this reconcile");
+    const rebuilt = c.KDMapData.Entities.find((proxy) => field.isOwnedProxy(proxy) && proxy.x === 5 && proxy.y === 5);
+    assert.ok(rebuilt);
+    assert.notEqual(rebuilt.id, missing.id);
+    assert.equal(rebuilt.hp, 3.25, "Native admission callbacks must not leave a captured numeric HP stale");
+    assert.equal(rebuilt.maxhp, built.encounter.topology.links[0].maxHp);
+    assert.equal(rebuilt.Enemy.maxhp, rebuilt.maxhp);
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 5);
+    scans = 0;
+    assert.equal(field.reconcile().reused, 5);
+    assert.equal(scans, 1);
+    assert.ok(c.KDMapData.Entities.filter(field.isOwnedProxy).every((proxy) => proxy.hp === 3.25));
+});
+
+test("retained crews skip immutable graph copies but real owner changes still update attribution", () => {
+    const r = runtime(),
+        c = r.context,
+        built = buildAll(r),
+        field = c.Spiderlings.SpinnerNativeField,
+        topology = c.Spiderlings.SpinnerTopology,
+        saved = built.encounter.topology,
+        proxyIds = c.KDMapData.Entities.filter(field.isOwnedProxy).map((entity) => entity.id),
+        native = topology.setFieldOwners;
+    let updates = 0;
+    topology.setFieldOwners = (...args) => {
+        updates++;
+        return native(...args);
+    };
+    for (let turn = 0; turn < 50; turn++) assert.equal(field.setOwners("doorway", [1, 2, 2]), true);
+    assert.equal(updates, 0, "Unchanged crews must not copy their entire accumulated field graph every turn");
+    assert.equal(built.encounter.topology, saved);
+    assert.equal(field.setOwners("doorway", [2]), true);
+    assert.equal(updates, 1);
+    assert.deepEqual(Array.from(field.fieldOwners("doorway")), [2]);
+    assert.deepEqual(Array.from(built.encounter.topology.owners), [2]);
+    assert.deepEqual(Array.from(saved.owners), [1, 2], "The real update still preserves the previous graph snapshot");
+    assert.deepEqual(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).map((entity) => entity.id),
+        proxyIds,
+    );
+});
+
+test("native capture boundaries draw SpinnerTrap sides and corners without changing saved authority", () => {
+    for (const [pink, clockwise] of [
+        [false, true],
+        [true, true],
+        [false, false],
+        [true, false],
+    ]) {
+        const draws = [],
+            native = [];
+        const r = runtime({
+                KinkyDungeonGridSizeDisplay: 72,
+                kdpixisprites: new Map(),
+                KDDraw: (...args) => {
+                    draws.push(args);
+                    return {};
+                },
+                KDDrawEnemySprite: (...args) => {
+                    native.push(args);
+                    return "Bandit";
+                },
+            }),
+            c = r.context;
+        c.Spiderlings.getSetting = () => pink;
+        const encounter = c.Spiderlings.SpinnerNativeField.initializeEnclosure({
+            compositeId: "art",
+            owners: [1],
+            built: true,
+            layers: [
+                {
+                    id: "art-ring",
+                    vertices: [
+                        { x: 4, y: 4 },
+                        { x: 8, y: 4 },
+                        { x: 8, y: 8 },
+                        { x: 4, y: 8 },
+                    ],
+                    gate: { x: 6, y: 4 },
+                },
+            ],
+        });
+        if (!clockwise) encounter.topology.fields["art-ring"].vertices.reverse();
+        const before = JSON.stringify({ encounter, entities: c.KDMapData.Entities });
+        const expected = [
+            [4, 4, "Corner", Math.PI / 2],
+            [8, 4, "Corner", Math.PI],
+            [8, 8, "Corner", (3 * Math.PI) / 2],
+            [4, 8, "Corner", 0],
+            [5, 4, "Top", 0],
+            [8, 5, "Side", Math.PI],
+            [5, 8, "Top", Math.PI],
+            [4, 5, "Side", 0],
+        ];
+        for (const [x, y, part, rotation] of expected) {
+            const enemy = c.KDMapData.Entities.find((entity) => entity.x === x && entity.y === y);
+            assert.ok(enemy, `${x},${y}`);
+            c.KDDrawEnemySprite({}, enemy, x, y, 2, 3, false, 5, "test");
+            const call = draws.at(-1);
+            assert.equal(call[3], `Game/Bullets/SpiderlingsSpinnerTrap${part}${pink ? "Pink" : ""}.png`);
+            assert.deepEqual(call.slice(4, 9), [(x - 1.5) * 72, (y - 2.5) * 72, 72, 72, rotation]);
+            assert.equal(call[10], true);
+        }
+        c.KDDrawEnemySprite({}, { Enemy: { name: "Bandit" } }, 1, 2, 0, 0);
+        assert.equal(native.length, 1);
+        assert.equal(JSON.stringify({ encounter, entities: c.KDMapData.Entities }), before);
+        assert.ok(draws.every((call) => !call[3].includes("WebSprayTrail")));
+    }
+});
+
+test("pure topology requires paid anchor and connection operations and rejects action-boundary blockers", () => {
+    const c = runtime().context,
+        rules = c.Spiderlings.SpinnerTopology,
+        initial = rules.createLine({
+            fieldId: "line",
+            owners: [1, 2],
+            anchors: [
+                { x: 3, y: 3 },
+                { x: 3, y: 4 },
+            ],
+        }),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let result = rules.applyAction(
+        initial,
+        { type: "placeAnchor", ownerId: 1, anchorId: initial.anchors[0].id },
+        clear(initial.anchors[0]),
+    );
+    result = rules.applyAction(
+        result.state,
+        { type: "placeAnchor", ownerId: 2, anchorId: initial.anchors[1].id },
+        clear(initial.anchors[1]),
+    );
+    assert.equal(result.state.links[0].connected, false);
+    result = rules.applyAction(
+        result.state,
+        { type: "extendLink", ownerId: 1, linkId: initial.links[0].id },
+        clear({ x: -1, y: -1 }),
+    );
+    assert.equal(result.state.links[0].connected, true);
+    assert.equal(rules.solidCells(result.state).length, 2);
+
+    for (const snapshot of [
+        { inBounds: true, floor: false, protected: false, occupied: false },
+        { inBounds: true, floor: true, protected: true, occupied: false },
+        { inBounds: true, floor: true, protected: false, occupied: true },
+    ]) {
+        const rejected = rules.applyAction(
+            initial,
+            { type: "placeAnchor", ownerId: 1, anchorId: initial.anchors[0].id },
+            { ...snapshot, cell: { x: 3, y: 3 } },
+        );
+        assert.equal(rejected.outcome.legal, false);
+        assert.equal(rejected.state.anchors[0].built, false);
+    }
+});
+
+test("independent Spinner owners finish their own enclosures in one topology graph", () => {
+    const rules = runtime().context.Spiderlings.SpinnerTopology,
+        layer = (id, x) => ({
+            id,
+            vertices: [
+                { x: x - 1, y: 4 },
+                { x: x + 1, y: 4 },
+                { x: x + 1, y: 6 },
+                { x: x - 1, y: 6 },
+            ],
+            gate: { x, y: 4 },
+        });
+    let graph = rules.createEnclosure({
+        compositeId: "one",
+        owners: [1],
+        layers: [layer("one-field", 5)],
+        autoSeal: true,
+    });
+    graph = rules.addEnclosure(graph, {
+        compositeId: "two",
+        owners: [2],
+        layers: [layer("two-field", 14)],
+        autoSeal: true,
+    }).state;
+    const expected = new Map([
+        [1, "one-field"],
+        [2, "two-field"],
+    ]);
+    for (let turn = 0; turn < 30; turn++) {
+        for (const [ownerId, fieldId] of expected) {
+            const action = rules.nextWorkAction(graph, ownerId, { x: ownerId === 1 ? 5 : 14, y: 7 });
+            if (!action) continue;
+            assert.equal(action.fieldId, fieldId);
+            const result = rules.applyAction(
+                graph,
+                { ...action, ownerId },
+                {
+                    cell: action.cell,
+                    inBounds: true,
+                    floor: true,
+                    protected: false,
+                    occupied: false,
+                },
+            );
+            assert.equal(result.outcome.legal, true, `${fieldId}: ${JSON.stringify(result.outcome)}`);
+            graph = result.state;
+        }
+    }
+    for (const fieldId of expected.values()) {
+        assert.equal(graph.fields[fieldId].phase, "sealed");
+        assert.ok(graph.actionLog.some((action) => action.fieldId === fieldId && action.type === "closeGate"));
+    }
+});
+
+test("two supplied Spinners construct one cell per paid action without moving", () => {
+    const r = runtime(),
+        built = buildAll(r),
+        solids = r.context.Spiderlings.SpinnerTopology.solidCells(built.encounter.topology),
+        proxies = r.context.KDMapData.Entities.filter(r.context.Spiderlings.SpinnerNativeField.isOwnedProxy);
+    assert.equal(built.handled, 5);
+    assert.equal(solids.length, 5);
+    assert.equal(proxies.length, 5);
+    assert.equal(new Set(proxies.map((proxy) => `${proxy.x},${proxy.y}`)).size, 5);
+    assert.ok(proxies.every((proxy) => proxy.flags.targetedForAttack === -1 && proxy.Enemy.immobile === false));
+    assert.ok(proxies.every((proxy) => proxy.Enemy.lowpriority === false));
+});
+
+test("native pathcondition lets a spider stand on a web while preserving both identities", () => {
+    const r = runtime();
+    buildAll(r, [
+        { x: 5, y: 4 },
+        { x: 5, y: 6 },
+    ]);
+    const c = r.context,
+        proxy = c.KDMapData.Entities.find(
+            (entity) => c.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5,
+        ),
+        spiderling = { id: 9, x: 4, y: 5, hp: 5, Enemy: { tags: { spiderlings: true } } },
+        bandit = { id: 10, x: 4, y: 4, hp: 5, Enemy: { tags: {} } };
+    c.KDMapData.Entities.push(spiderling, bandit);
+    assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(spiderling, proxy), true);
+    assert.equal(c.KDPathConditions.SpiderlingsWebTraversal.query(bandit, proxy), false);
+    assert.equal(
+        c.KDPathConditions.SpiderlingsWebTraversal.doPassthrough(spiderling, proxy, c.KDMapData),
+        0,
+        "stop the native continuation after moving onto the web",
+    );
+    assert.deepEqual({ x: spiderling.x, y: spiderling.y }, { x: 5, y: 5 });
+    assert.deepEqual({ x: proxy.x, y: proxy.y }, { x: 5, y: 5 });
+    assert.equal(c.KDMapData.Entities.filter((entity) => entity.x === 5 && entity.y === 5).length, 2);
+    assert.equal(c.KinkyDungeonEntityAt(5, 5), spiderling);
+    assert.equal(c.Spiderlings.SpinnerNativeField.snapshot({ x: 5, y: 5 }).occupied, false);
+    assert.equal(c.Spiderlings.SpinnerNativeField.snapshot({ x: 5, y: 5 }).actorOccupied, true);
+});
+
+test("a builder places web beneath a spider without kicking it or redirecting its hit", () => {
+    const r = runtime(),
+        c = r.context,
+        standing = { id: 77, x: 5, y: 5, hp: 5, Enemy: { name: "Jumper", tags: { spiderlings: true } } };
+    c.KDMapData.Entities.push(standing);
+    const built = buildAll(r);
+    assert.equal(
+        built.encounter.topology.links[0].builtCells.some((cell) => cell.x === 5 && cell.y === 5),
+        true,
+    );
+    const proxy = c.KDMapData.Entities.find(
+        (entity) => c.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5,
+    );
+    assert.ok(proxy);
+    assert.deepEqual({ x: standing.x, y: standing.y, hp: standing.hp }, { x: 5, y: 5, hp: 5 });
+    assert.equal(c.KinkyDungeonEntityAt(5, 5), standing);
+    const hp = built.encounter.topology.links[0].hp;
+    assert.equal(c.Spiderlings.SpinnerNativeField.onNativeDamage({ enemy: standing, dmgDealt: 1 }), false);
+    assert.equal(built.encounter.topology.links[0].hp, hp);
+});
+
+test("native planning snapshot protects object shortcuts, jail points, and required interaction tiles", () => {
+    const r = runtime(),
+        c = r.context;
+    c.KDMapData.ShortcutPositions = { side: { x: 7, y: 8 } };
+    c.KDMapData.JailPoints = [{ x: 8, y: 8, type: "jail", radius: 1 }];
+    r.tiles.set("10,8", { Type: "Shrine" });
+    r.tiles.set("11,8", { Type: "Door", Priority: true });
+    const snapshot = c.Spiderlings.SpinnerNativeField.mapSnapshot();
+    for (const cell of ["2,10", "28,10", "7,8", "8,8", "10,8", "11,8"])
+        assert.ok(snapshot.protected.includes(cell), cell);
+});
+
+test("final native damage updates shared durability once and invalidates both path caches", () => {
+    const r = runtime();
+    buildAll(r);
+    const c = r.context,
+        field = c.Spiderlings.SpinnerNativeField,
+        encounter = field.state(),
+        middle = c.KDMapData.Entities.find((entity) => field.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5),
+        before = encounter.topology.links[0].hp;
+    c.KDPathCache.set("seed", []);
+    c.KDPathCacheIgnoreLocks.set("seed", []);
+    assert.equal(field.onNativeDamage({ enemy: middle, dmgDealt: 1, dmg: 99 }), true);
+    assert.equal(encounter.topology.links[0].hp, before - 0.7);
+    assert.equal(c.KDPathCache.size, 0);
+    assert.equal(c.KDPathCacheIgnoreLocks.size, 0);
+    assert.equal(c.KDUpdateEnemyCache, true);
+
+    const anchor = c.KDMapData.Entities.find(
+            (entity) => field.isOwnedProxy(entity) && entity.x === 5 && entity.y === 3,
+        ),
+        linkBeforeAnchor = encounter.topology.links[0].hp;
+    field.onNativeDamage({ enemy: anchor, dmgDealt: 0.5 });
+    assert.equal(encounter.topology.anchors[0].hp, 1.5);
+    assert.equal(encounter.topology.links[0].hp, linkBeforeAnchor - 0.5);
+});
+
+test("native area hits contribute once per covered proxy and a middle-cell breach reopens the route", () => {
+    const r = runtime();
+    buildAll(r);
+    const c = r.context,
+        field = c.Spiderlings.SpinnerNativeField,
+        encounter = field.state(),
+        proxies = c.KDMapData.Entities.filter((entity) => field.isOwnedProxy(entity) && entity.y > 3 && entity.y < 7),
+        before = encounter.topology.links[0].hp;
+    field.onNativeDamage({ enemy: proxies[0], dmgDealt: 0.5, bullet: { aoe: 3 } });
+    field.onNativeDamage({ enemy: proxies[1], dmgDealt: 0.5, bullet: { aoe: 3 } });
+    assert.equal(encounter.topology.links[0].hp, before - 0.775);
+
+    const middle = c.KDMapData.Entities.find(
+        (entity) => field.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5,
+    );
+    field.onNativeDamage({ enemy: middle, dmgDealt: 99 });
+    assert.equal(encounter.topology.links[0].hp, 0);
+    assert.equal(
+        c.KDMapData.Entities.some((entity) => field.isOwnedProxy(entity) && entity.x === 5 && entity.y === 5),
+        false,
+    );
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 2);
+});
+
+test("touching a capture boundary never creates a ground snare or a capture", () => {
+    const r = runtime();
+    buildAll(r);
+    const c = r.context,
+        target = { id: 44, x: 5, y: 3, hp: 5, Enemy: { tags: {} } };
+    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(target, 5, 3), false);
+    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(target, 5, 3), false);
+    assert.equal(r.buffs.length, 0);
+    assert.equal(c.KDGameData.SpiderlingsSpinnerCapture, undefined);
+});
+
+test("touching a boundary cannot bypass the sealed-field requirement for shield pressure", () => {
+    const r = runtime();
+    buildAll(r);
+    const c = r.context;
+    const pressured = [];
+    c.Spiderlings.Combat = { pressureNPCShield: (enemy) => pressured.push(enemy.id) };
+    const maid = { id: 71, x: 5, y: 3, hp: 8, shield: 8, Enemy: { name: "MaidforceMini", tags: {} } };
+    c.KDMapData.Entities.push(maid);
+    assert.equal(c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3), false);
+    assert.deepEqual(pressured, []);
+    c.Spiderlings.SpinnerNativeField.onEntry(maid, 5, 3);
+    assert.deepEqual(pressured, []);
+});
+
+test("moving actors only rescan entered or previously occupied enclosure cores", () => {
+    const c = runtime().context,
+        workers = [1, 2].map((id) => ({
+            id,
+            x: 10 + id,
+            y: 9 + id,
+            hp: 10,
+            Enemy: { name: "Spinner", tags: { spiderlings: true } },
+        }));
+    c.KDMapData.Entities.push(...workers);
+    const encounter = c.Spiderlings.SpinnerScenarios.setupNested({ ownerIds: [1, 2] }).encounter,
+        composite = Object.values(encounter.topology.composites)[0],
+        prey = { id: 70, x: 1, y: 1, hp: 8, Enemy: { name: "Maidforce", tags: {} } },
+        native = c.Spiderlings.SpinnerTopology.updateTarget;
+    let updates = 0;
+    c.Spiderlings.SpinnerTopology.updateTarget = (...args) => {
+        updates++;
+        return native(...args);
+    };
+    c.KDMapData.Entities.push(prey);
+    c.Spiderlings.SpinnerNativeField.onEntry(workers[0]);
+    c.Spiderlings.SpinnerNativeField.onEntry(prey);
+    assert.equal(updates, 0);
+    Object.assign(prey, composite.core);
+    c.Spiderlings.SpinnerNativeField.onEntry(prey);
+    assert.equal(updates, 1);
+    assert.equal(composite.closureArmed, true);
+    assert.equal(composite.targetId, prey.id);
+    prey.x = 1;
+    prey.y = 1;
+    c.Spiderlings.SpinnerNativeField.onEntry(prey);
+    assert.equal(updates, 2);
+    assert.equal(composite.closureArmed, false);
+    assert.equal(composite.targetId, undefined);
+});
+
+test("voluntary, forced, and NPC boundary entry never applies the retired ground-trap buff", () => {
+    for (const entry of [
+        { event: "playerMove", willing: true, npc: false },
+        { event: "playerMove", willing: false, npc: false },
+        { event: "enemyMove", willing: true, npc: true },
+    ]) {
+        const r = runtime();
+        buildAll(r);
+        const c = r.context,
+            target = entry.npc ? { id: 71, x: 5, y: 3, hp: 2, Enemy: { tags: {} } } : c.KinkyDungeonPlayerEntity,
+            data = { enemy: target, moveX: 5, moveY: 3, willing: entry.willing, cancelmove: false };
+        c.KDEventMapGeneric[entry.event].SpiderlingsSpinnerRuntime({}, data);
+        assert.equal(r.buffs.length, 0);
+    }
+});
+
+test("old saves retain field owners and HP while retiring WebCell names and snare state", () => {
+    const r = runtime();
+    buildAll(r);
+    const c = r.context,
+        field = c.Spiderlings.SpinnerNativeField,
+        encounter = field.state();
+    encounter.topology.anchors[0].snaredTargetIds = [55];
+    encounter.topology.links[0].hp -= 0.25;
+    encounter.topology.ownerlessAge = 7;
+    const saved = JSON.parse(JSON.stringify(encounter));
+    c.KDMapData.SpiderlingsSpinnerEncounter = saved;
+    const proxies = c.KDMapData.Entities.filter(field.isOwnedProxy),
+        proxy = proxies[0];
+    c.KDMapData.Entities.push({ ...proxy, id: 999 });
+    c.KDMapData.Entities.splice(c.KDMapData.Entities.indexOf(proxies[1]), 1);
+    const oldDefinition = c.KinkyDungeonEnemies.find((enemy) => enemy.name === "SpiderlingsSpinnerWebCell");
+    for (const entity of c.KDMapData.Entities.filter(field.isOwnedProxy)) entity.Enemy = oldDefinition;
+    proxy.buffs = { SpiderlingsSpinnerSnaringSilk: {}, ForeignBuff: { duration: 9 } };
+    c.KinkyDungeonPlayerEntity.buffs = { SpiderlingsSpinnerGroundTrap: {} };
+    c.KinkyDungeonPlayerBuffs = { SpiderlingsSpinnerSnaringSilk: {}, ForeignBuff: { duration: 7 } };
+    c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+    const reconciled = field.reconcile();
+    const restored = field.state().topology,
+        solids = c.Spiderlings.SpinnerTopology.solidCells(restored);
+    assert.equal(reconciled.created, 0);
+    assert.equal(reconciled.removed, 0);
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, solids.length);
+    assert.deepEqual(Array.from(restored.owners), [1, 2]);
+    assert.equal(restored.anchors[0].snaredTargetIds, undefined);
+    assert.equal(restored.ownerlessAge, 7);
+    assert.equal(restored.links[0].hp, saved.topology.links[0].hp);
+    assert.equal(proxy.id, proxies[0].id);
+    assert.equal(proxy.buffs.SpiderlingsSpinnerSnaringSilk, undefined);
+    assert.equal(proxy.buffs.ForeignBuff.duration, 9);
+    assert.equal(c.KinkyDungeonPlayerEntity.buffs.SpiderlingsSpinnerGroundTrap, undefined);
+    assert.equal(c.KinkyDungeonPlayerBuffs.SpiderlingsSpinnerSnaringSilk, undefined);
+    assert.equal(c.KinkyDungeonPlayerBuffs.ForeignBuff.duration, 7);
+    assert.ok(
+        c.KDMapData.Entities.filter(field.isOwnedProxy).every((enemy) => enemy.Enemy.name === "SpiderlingsSpinnerTrap"),
+    );
+});
+
+test("one surviving owner retains the line and final-owner collapse occurs on active turn twenty", () => {
+    const r = runtime(),
+        built = buildAll(r),
+        c = r.context,
+        field = c.Spiderlings.SpinnerNativeField;
+    built.owners[0].hp = 0;
+    field.tick(30);
+    assert.equal(built.encounter.topology.ownerlessAge, 0);
+    assert.equal(built.encounter.topology.collapsed, false);
+    built.owners[1].hp = 0;
+    field.tick(19);
+    assert.equal(built.encounter.topology.ownerlessAge, 19);
+    assert.equal(built.encounter.topology.collapsed, false);
+    field.tick(1);
+    assert.equal(built.encounter.topology.collapsed, true);
+    assert.equal(c.KDMapData.Entities.filter(field.isOwnedProxy).length, 0);
+});
+
+function regularTiming(workerCount, onSite = false) {
+    const r = runtime(),
+        c = r.context,
+        starts = onSite
+            ? [
+                  [19, 6],
+                  [25, 12],
+                  [25, 6],
+                  [19, 12],
+                  [22, 4],
+                  [22, 14],
+                  [18, 9],
+                  [26, 9],
+              ]
+            : [
+                  [11, 9],
+                  [12, 11],
+                  [11, 11],
+                  [12, 9],
+                  [10, 8],
+                  [10, 12],
+                  [13, 8],
+                  [13, 12],
+              ],
+        workers = starts.slice(0, workerCount).map(([x, y], index) => ({
+            id: index + 1,
+            x,
+            y,
+            hp: 10,
+            buffs: {},
+            Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+        }));
+    c.KDMapData.Entities.push(...workers);
+    const started = c.Spiderlings.SpinnerScenarios.setupRegular({ ownerIds: workers.map((worker) => worker.id) });
+    assert.equal(started.started, true);
+    let turn = 0;
+    while (turn < 60 && started.encounter.topology.fields.inner.phase === "preparing") {
+        turn++;
+        c.KinkyDungeonCurrentTick = turn;
+        for (const worker of workers)
+            c.Spiderlings.SpinnerNativeField.handleEnemyTurn(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerNativeField.tick(1);
+    }
+    return { turn, ...started.encounter.timing, phase: started.encounter.topology.fields.inner.phase };
+}
+
+test("pinned regular room meets the two-worker native target and keeps useful scaling", () => {
+    const arrival = [2, 4, 8].map((count) => regularTiming(count)),
+        onSite = [2, 4, 8].map((count) => regularTiming(count, true));
+    assert.ok(arrival.every((measurement) => measurement.phase === "ready"));
+    assert.ok(onSite.every((measurement) => measurement.phase === "ready"));
+    assert.ok(arrival[0].turn <= 30);
+    assert.ok(arrival[1].turn < arrival[0].turn);
+    assert.ok(arrival[2].turn <= arrival[1].turn);
+    assert.ok(onSite[1].turn < onSite[0].turn);
+    assert.ok(onSite[2].turn <= onSite[1].turn);
+    assert.deepEqual(
+        arrival.map((measurement) => measurement.turn),
+        [25, 19, 15],
+    );
+    assert.deepEqual(
+        onSite.map((measurement) => measurement.turn),
+        [15, 6, 4],
+    );
+    assert.ok(arrival.every((measurement) => measurement.blocked.length === 0));
+});
+
+test("a sealed owned web field keeps pressure on a shielded NPC inside", () => {
+    const r = runtime(),
+        c = r.context;
+    const workers = [1, 2].map((id) => ({
+        id,
+        x: 10 + id,
+        y: 9 + id,
+        hp: 10,
+        Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+    }));
+    c.KDMapData.Entities.push(...workers);
+    const encounter = c.Spiderlings.SpinnerScenarios.setupNested({ ownerIds: workers.map((e) => e.id) }).encounter;
+    for (const anchor of encounter.topology.anchors) anchor.built = true;
+    for (const link of encounter.topology.links) {
+        link.builtCells = JSON.parse(JSON.stringify(link.plannedCells));
+        link.connected = true;
+    }
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    const core = Object.values(encounter.topology.composites)[0].core;
+    const maid = { id: 70, x: core.x, y: core.y, hp: 8, shield: 8, Enemy: { name: "MaidforceMini", tags: {} } };
+    c.KDMapData.Entities.push(maid);
+    const pressured = [];
+    c.Spiderlings.Combat = { pressureNPCShield: (enemy) => pressured.push(enemy.id) };
+    c.Spiderlings.SpinnerNativeField.tick(1);
+    assert.deepEqual(pressured, [70]);
+    maid.shield = 0;
+    c.Spiderlings.SpinnerNativeField.tick(1);
+    assert.deepEqual(pressured, [70]);
+});
+
+test("native enclosure reload deduplicates partial, sealed, and breached projections", () => {
+    const r = runtime(),
+        c = r.context,
+        workers = [
+            {
+                id: 1,
+                x: 11,
+                y: 9,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+            {
+                id: 2,
+                x: 12,
+                y: 11,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+            {
+                id: 3,
+                x: 11,
+                y: 11,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+            {
+                id: 4,
+                x: 12,
+                y: 9,
+                hp: 10,
+                buffs: {},
+                Enemy: { name: "Spinner", movePoints: 1, tags: { spiderlings: true } },
+            },
+        ];
+    c.KDMapData.Entities.push(...workers);
+    const encounter = c.Spiderlings.SpinnerScenarios.setupNested({
+        ownerIds: workers.map((worker) => worker.id),
+    }).encounter;
+    for (const worker of workers)
+        c.Spiderlings.SpinnerNativeField.handleEnemyTurn(worker, c.KinkyDungeonPlayerEntity, 1);
+    const partial = JSON.parse(JSON.stringify(encounter.topology));
+    assert.equal(partial.fields.inner.phase, "preparing");
+
+    for (const anchor of encounter.topology.anchors) anchor.built = true;
+    for (const link of encounter.topology.links) {
+        link.builtCells = JSON.parse(JSON.stringify(link.plannedCells));
+        link.connected = true;
+    }
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    const sealed = JSON.parse(JSON.stringify(encounter.topology));
+    assert.ok(Object.values(sealed.fields).every((field) => field.phase === "sealed"));
+    encounter.topology.links[0].hp = 0;
+    encounter.topology.links[0].builtCells = [];
+    encounter.topology.links[0].connected = false;
+    encounter.topology.links[0].cooldown = 3;
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    const breached = JSON.parse(JSON.stringify(encounter.topology));
+    assert.ok(Object.values(breached.fields).some((field) => field.phase === "breached"));
+
+    for (const saved of [partial, sealed, breached]) {
+        encounter.topology = JSON.parse(JSON.stringify(saved));
+        c.Spiderlings.SpinnerNativeField.reconcile();
+        const proxy = c.KDMapData.Entities.find(c.Spiderlings.SpinnerNativeField.isOwnedProxy);
+        if (proxy) c.KDMapData.Entities.push({ ...proxy, id: 9999 });
+        c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+        c.KDEventMapGeneric.afterLoadGame.SpiderlingsSpinnerRuntime({}, {});
+        const solids = c.Spiderlings.SpinnerTopology.solidCells(encounter.topology);
+        assert.equal(c.KDMapData.Entities.filter(c.Spiderlings.SpinnerNativeField.isOwnedProxy).length, solids.length);
+        assert.equal(JSON.stringify(encounter.topology), JSON.stringify(saved));
+    }
+});
+
+test("Topology work inspection preserves repair occupancy and rebuilding cooldown through restore", () => {
+    const topology = runtime().context.Spiderlings.SpinnerTopology;
+    let state = topology.createLine({
+        fieldId: "work-status",
+        owners: [1, 2],
+        anchors: [
+            { x: 3, y: 3 },
+            { x: 3, y: 6 },
+        ],
+    });
+    const anchor = state.anchors[0];
+    anchor.built = true;
+    anchor.hp = anchor.maxHp / 2;
+    const repair = { type: "repairAnchor", fieldId: "work-status", anchorId: anchor.id, ownerId: 1 },
+        occupied = { inBounds: true, floor: true, protected: false, occupied: true, cell: { x: 3, y: 3 } },
+        before = JSON.stringify(state),
+        status = topology.inspectWorkAction(state, repair);
+    assert.equal(status.pending, true);
+    assert.equal(status.maintenance, true);
+    assert.equal(status.allowsOccupiedTarget, true);
+    assert.equal(status.metric, "repair");
+    assert.equal(JSON.stringify(state), before, "Inspection cannot advance work or counters");
+    assert.equal(topology.applyAction(state, repair, occupied).outcome.legal, true);
+    assert.equal(topology.inspectWorkAction(state, { ...repair, ownerId: 99 }).pending, false);
+    anchor.hp = 0;
+    anchor.cooldown = topology.REBUILD_TURNS - 1;
+    const rebuild = { ...repair, type: "rebuildAnchor" };
+    assert.equal(topology.inspectWorkAction(state, rebuild).pending, false);
+    anchor.cooldown++;
+    state = topology.restore(JSON.parse(JSON.stringify(state)));
+    assert.equal(topology.inspectWorkAction(state, rebuild).pending, true);
+    assert.equal(topology.inspectWorkAction(state, rebuild).allowsOccupiedTarget, false);
+    assert.equal(topology.applyAction(state, rebuild, occupied).outcome.legal, false);
+    assert.equal(state.anchors[0].hp, 0);
+    state.lineFields["work-status"].retired = true;
+    assert.equal(topology.inspectWorkAction(state, rebuild).pending, false);
+});
+
+test("partial paid link reconstruction remains maintenance through save and completion", () => {
+    const topology = runtime().context.Spiderlings.SpinnerTopology;
+    let state = topology.createLine({
+        fieldId: "repair-continuation",
+        owners: [1],
+        anchors: [
+            { x: 3, y: 3 },
+            { x: 3, y: 7 },
+        ],
+    });
+    for (const anchor of state.anchors) anchor.built = true;
+    const link = state.links[0];
+    link.hp = 0;
+    link.cooldown = topology.REBUILD_TURNS;
+    const snapshot = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    const rebuild = {
+        type: "rebuildLink",
+        fieldId: "repair-continuation",
+        linkId: link.id,
+        ownerId: 1,
+        cell: link.plannedCells[0],
+    };
+    state = topology.applyAction(state, rebuild, snapshot(rebuild.cell)).state;
+    state = topology.restore(JSON.parse(JSON.stringify(state)));
+    for (const cell of link.plannedCells.slice(1)) {
+        const action = { ...rebuild, type: "extendLink", cell };
+        assert.equal(topology.inspectWorkAction(state, action).maintenance, true);
+        const result = topology.applyAction(state, action, snapshot(cell));
+        assert.equal(result.outcome.legal, true);
+        state = result.state;
+    }
+    assert.equal(state.links[0].connected, true);
+    assert.equal(state.links[0].rebuilding, undefined);
+});

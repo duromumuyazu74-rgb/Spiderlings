@@ -1,6 +1,6 @@
-"""Build one lossless Spiderlings Webbing runtime texture atlas per color.
+"""Build lossless Webbing and Spinner runtime texture atlases per color.
 
-The fifty source PNGs are an explicit compatibility fallback and are never
+The sixty-six source PNGs are an explicit compatibility fallback and are never
 rewritten.  This builder reads their alpha bounds, copies those RGBA pixels
 without resampling, and records the original canvas offset in Pixi v7
 spritesheet metadata.
@@ -76,6 +76,29 @@ PINK_SOURCES = (
     "Models/SpiderlingsWebbingCocoonPink/OuterWebs.png",
 )
 
+SPINNER_SOURCES = (
+    "Models/SpiderlingsSpinnerLegbinder/Stage1.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage2.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage3.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage4.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage5.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage6.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage7.png",
+    "Models/SpiderlingsSpinnerLegbinder/Tail.png",
+)
+
+SPINNER_PINK_SOURCES = (
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage1.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage2.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage3.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage4.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage5.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage6.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage7.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Tail.png",
+)
+
+
 def read_source(runtime_path: str) -> dict[str, object]:
     source_path = MOD_ROOT / runtime_path
     if not source_path.is_file():
@@ -101,17 +124,18 @@ def read_source(runtime_path: str) -> dict[str, object]:
         }
 
 
-def pack(sources: list[dict[str, object]]) -> dict[str, tuple[int, int]]:
+def pack(sources: list[dict[str, object]], atlas_size: int | None = None) -> dict[str, tuple[int, int]]:
     # Best-short-side-fit packing reuses free space beside the full-height
     # Cocoon. Frames keep their orientation and a transparent one-pixel border.
+    atlas_size = ATLAS_SIZE if atlas_size is None else atlas_size
     placements: dict[str, tuple[int, int]] = {}
-    free_rectangles = [(0, 0, ATLAS_SIZE, ATLAS_SIZE)]
+    free_rectangles = [(0, 0, atlas_size, atlas_size)]
 
     for source in sorted(sources, key=lambda item: (-int(item["height"]), str(item["runtime_path"]))):
         packed_width = int(source["width"]) + FRAME_GAP * 2
         packed_height = int(source["height"]) + FRAME_GAP * 2
-        if packed_width > ATLAS_SIZE or packed_height > ATLAS_SIZE:
-            raise ValueError(f"Atlas frame exceeds {ATLAS_SIZE}: {source['runtime_path']}")
+        if packed_width > atlas_size or packed_height > atlas_size:
+            raise ValueError(f"Atlas frame exceeds {atlas_size}: {source['runtime_path']}")
         candidates = [
             (min(width - packed_width, height - packed_height),
              max(width - packed_width, height - packed_height), y, x)
@@ -119,7 +143,7 @@ def pack(sources: list[dict[str, object]]) -> dict[str, tuple[int, int]]:
             if packed_width <= width and packed_height <= height
         ]
         if not candidates:
-            raise ValueError(f"Explicit Webbing sources do not fit one {ATLAS_SIZE} atlas page")
+            raise ValueError(f"Explicit Webbing sources do not fit one {atlas_size} atlas page")
         _, _, frame_y, frame_x = min(candidates)
         placements[str(source["runtime_path"])] = (frame_x + FRAME_GAP, frame_y + FRAME_GAP)
 
@@ -155,10 +179,10 @@ def pack(sources: list[dict[str, object]]) -> dict[str, tuple[int, int]]:
     return placements
 
 
-def build_page(atlas_name: str, runtime_paths: tuple[str, ...]) -> None:
+def build_page(atlas_name: str, runtime_paths: tuple[str, ...], atlas_size: int = ATLAS_SIZE) -> None:
     sources = [read_source(runtime_path) for runtime_path in runtime_paths]
-    placements = pack(sources)
-    page = Image.new("RGBA", (ATLAS_SIZE, ATLAS_SIZE), (0, 0, 0, 0))
+    placements = pack(sources, atlas_size)
+    page = Image.new("RGBA", (atlas_size, atlas_size), (0, 0, 0, 0))
     frames: dict[str, object] = {}
 
     for source in sources:
@@ -195,7 +219,7 @@ def build_page(atlas_name: str, runtime_paths: tuple[str, ...]) -> None:
             "version": "1.0",
             "image": f"{atlas_name}.png",
             "format": "RGBA8888",
-            "size": {"w": ATLAS_SIZE, "h": ATLAS_SIZE},
+            "size": {"w": atlas_size, "h": atlas_size},
             "scale": "1",
         },
     }
@@ -220,6 +244,8 @@ def build_page(atlas_name: str, runtime_paths: tuple[str, ...]) -> None:
 def build() -> None:
     build_page("spiderlings-webbing-0", SOURCES)
     build_page("spiderlings-webbing-pink-0", PINK_SOURCES)
+    build_page("spiderlings-spinner-0", SPINNER_SOURCES, 2048)
+    build_page("spiderlings-spinner-pink-0", SPINNER_PINK_SOURCES, 2048)
 
 
 if __name__ == "__main__":

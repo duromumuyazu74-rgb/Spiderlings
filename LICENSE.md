@@ -12,11 +12,11 @@ The grant excludes Kinky Dungeon code, including the attributed native excerpt i
 
 The original Spiderlings artwork credited to T_Swizzle in the following paths, including Spiderlings recolors and atlas images derived from that artwork, is licensed under [Creative Commons Attribution-NonCommercial 4.0 International](https://creativecommons.org/licenses/by-nc/4.0/legalcode):
 
-| Path in `KinkyDungeon-Spiderlings/`                    | Included files                                               |
-| ------------------------------------------------------ | ------------------------------------------------------------ |
-| `Bullets/`, `DisplacementMaps/`, `Enemies/`, `Models/` | PNG artwork in these directories and their subdirectories    |
-| `UI/MapMod/SpiderlingsInfestation.png`                 | The Spiderlings map icon                                     |
-| `TextureAtlas/`                                        | Generated PNG atlas images derived from the licensed artwork |
+| Path in `KinkyDungeon-Spiderlings/`                              | Included files                                               |
+| ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| `Bullets/`, `DisplacementMaps/`, `Enemies/`, `Items/`, `Models/` | PNG artwork in these directories and their subdirectories    |
+| `UI/MapMod/SpiderlingsInfestation.png`                           | The Spiderlings map icon                                     |
+| `TextureAtlas/`                                                  | Generated PNG atlas images derived from the licensed artwork |
 
 Credit T_Swizzle, link to the CC BY-NC 4.0 license, and indicate changes when sharing this artwork. The license allows sharing and adaptation for noncommercial purposes. Commercial use of the artwork requires separate permission. The MIT code license does not change these conditions.
 

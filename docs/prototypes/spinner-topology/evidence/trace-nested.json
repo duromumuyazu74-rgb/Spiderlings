@@ -1,0 +1,512 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 1,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 2,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 3,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 4,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 5,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 6,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 0,
+    "reachableCells": 397,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 7,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 8,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 9,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 10,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 11,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 12,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 13,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 6,
+    "reachableCells": 391,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 14,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 8,
+    "reachableCells": 389,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 15,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 13,
+    "reachableCells": 384,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 16,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 16,
+    "reachableCells": 381,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 17,
+    "phases": ["preparing", "preparing"],
+    "target": [2, 10],
+    "blocked": 18,
+    "reachableCells": 379,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 18,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 19,
+    "reachableCells": 378,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 19,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 19,
+    "reachableCells": 378,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 20,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 19,
+    "reachableCells": 378,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 21,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 19,
+    "reachableCells": 378,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 22,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 23,
+    "reachableCells": 374,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 23,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 26,
+    "reachableCells": 371,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 24,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 27,
+    "reachableCells": 370,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 25,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 30,
+    "reachableCells": 367,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 26,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 33,
+    "reachableCells": 364,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 27,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 35,
+    "reachableCells": 362,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 28,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 37,
+    "reachableCells": 360,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 29,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 39,
+    "reachableCells": 358,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 30,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 41,
+    "reachableCells": 356,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 31,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 43,
+    "reachableCells": 354,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 32,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 45,
+    "reachableCells": 352,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 33,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 47,
+    "reachableCells": 350,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 34,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 50,
+    "reachableCells": 347,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 35,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 52,
+    "reachableCells": 345,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 36,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 54,
+    "reachableCells": 340,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 37,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 57,
+    "reachableCells": 337,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 38,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 59,
+    "reachableCells": 335,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 39,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 61,
+    "reachableCells": 333,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 40,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 61,
+    "reachableCells": 333,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 41,
+    "phases": ["ready", "preparing"],
+    "target": [2, 10],
+    "blocked": 61,
+    "reachableCells": 333,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 42,
+    "phases": ["ready", "ready"],
+    "target": [2, 10],
+    "blocked": 62,
+    "reachableCells": 332,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "target-in-core",
+    "turn": 43,
+    "phases": ["ready", "ready"],
+    "target": [21, 10],
+    "blocked": 62,
+    "reachableCells": 332,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 44,
+    "phases": ["sealed", "sealing"],
+    "target": [21, 10],
+    "blocked": 63,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 45,
+    "phases": ["sealed", "sealing"],
+    "target": [21, 10],
+    "blocked": 63,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 46,
+    "phases": ["sealed", "sealing"],
+    "target": [21, 10],
+    "blocked": 63,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 47,
+    "phases": ["sealed", "sealing"],
+    "target": [21, 10],
+    "blocked": 63,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "sealing",
+    "turn": 48,
+    "phases": ["sealed", "sealed"],
+    "target": [21, 10],
+    "blocked": 64,
+    "reachableCells": 15,
+    "exitReachable": false,
+    "geometryReady": true
+  },
+  {
+    "label": "inner-edge-broken",
+    "turn": 48,
+    "phases": ["breached", "sealed"],
+    "target": [21, 10],
+    "blocked": 61,
+    "reachableCells": 82,
+    "exitReachable": false,
+    "geometryReady": false
+  },
+  {
+    "label": "outer-edge-broken",
+    "turn": 48,
+    "phases": ["breached", "breached"],
+    "target": [21, 10],
+    "blocked": 52,
+    "reachableCells": 342,
+    "exitReachable": false,
+    "geometryReady": false
+  }
+]

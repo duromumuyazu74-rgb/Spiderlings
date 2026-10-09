@@ -4,11 +4,16 @@
 // the derived lossless atlas while retaining the unchanged direct PNGs as a
 // compatibility fallback.
 (() => {
-    const api = globalThis.Spiderlings = globalThis.Spiderlings || {};
+    const api = (globalThis.Spiderlings = globalThis.Spiderlings || {});
     const REFRESH_EVENT = "SpiderlingsRefreshModels";
-    const MODEL_CATEGORIES = new Set(["SpiderlingsWebbingLv1", "SpiderlingsWebbingLv2", "SpiderlingsWebbingLv3", "SpiderlingsWebbingCocoon"]);
+    const MODEL_CATEGORIES = new Set([
+        "SpiderlingsWebbingLv1",
+        "SpiderlingsWebbingLv2",
+        "SpiderlingsWebbingLv3",
+        "SpiderlingsWebbingCocoon",
+        "SpiderlingsSpinnerLegbinder",
+    ]);
     const DISPLACEMENT_ASSETS = Object.freeze([
-
         "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
         "DisplacementMaps/SpiderlingsWebbingLv2BellySquish.png",
         "DisplacementMaps/SpiderlingsWebbingLv2LegsSquish.png",
@@ -43,9 +48,18 @@
         "Models/SpiderlingsWebbingCocoon/OuterWebs.png",
     ]);
     const ATLAS_DEFINITIONS = Object.freeze([
-        Object.freeze({path: "TextureAtlas/spiderlings-webbing-0.json", image: "TextureAtlas/spiderlings-webbing-0.png", frames: WEBBING_ATLAS_FRAMES}),
-        Object.freeze({path: "TextureAtlas/spiderlings-webbing-pink-0.json", image: "TextureAtlas/spiderlings-webbing-pink-0.png",
-            frames: Object.freeze(WEBBING_ATLAS_FRAMES.map((path) => path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/")))}),
+        Object.freeze({
+            path: "TextureAtlas/spiderlings-webbing-0.json",
+            image: "TextureAtlas/spiderlings-webbing-0.png",
+            frames: WEBBING_ATLAS_FRAMES,
+        }),
+        Object.freeze({
+            path: "TextureAtlas/spiderlings-webbing-pink-0.json",
+            image: "TextureAtlas/spiderlings-webbing-pink-0.png",
+            frames: Object.freeze(
+                WEBBING_ATLAS_FRAMES.map((path) => path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/")),
+            ),
+        }),
     ]);
     const TEXTURE_ATLASES = Object.freeze(ATLAS_DEFINITIONS.map((atlas) => atlas.path));
     const texturePreloads = new Map();
@@ -70,8 +84,11 @@
     }
 
     function isOwnedModel(model) {
-        return !!(model && Array.isArray(model.Categories)
-            && model.Categories.some((category) => MODEL_CATEGORIES.has(category)));
+        return !!(
+            model &&
+            Array.isArray(model.Categories) &&
+            model.Categories.some((category) => MODEL_CATEGORIES.has(category))
+        );
     }
 
     function texturePaths(modelName) {
@@ -95,8 +112,15 @@
 
     function addTextureAlias(texture, key) {
         try {
-            if (texture && key && typeof PIXI != "undefined" && PIXI && PIXI.Texture
-                && typeof PIXI.Texture.addToCache == "function") PIXI.Texture.addToCache(texture, key);
+            if (
+                texture &&
+                key &&
+                typeof PIXI != "undefined" &&
+                PIXI &&
+                PIXI.Texture &&
+                typeof PIXI.Texture.addToCache == "function"
+            )
+                PIXI.Texture.addToCache(texture, key);
         } catch (_error) {
             // Duplicate or unavailable Pixi aliases are harmless.
         }
@@ -119,16 +143,17 @@
     }
 
     function cacheAtlasResult(result) {
-        const sheets = [result, ...Object.values(result && result.linkedSheets || {})];
+        const sheets = [result, ...Object.values((result && result.linkedSheets) || {})];
         for (const sheet of sheets) {
-            for (const [name, texture] of Object.entries(sheet && sheet.textures || {})) cacheTexture(name, texture);
+            for (const [name, texture] of Object.entries((sheet && sheet.textures) || {})) cacheTexture(name, texture);
         }
         return result;
     }
 
     function modFileUrl(runtimePath) {
         try {
-            if (typeof KDModFiles != "undefined" && KDModFiles && KDModFiles[runtimePath]) return KDModFiles[runtimePath];
+            if (typeof KDModFiles != "undefined" && KDModFiles && KDModFiles[runtimePath])
+                return KDModFiles[runtimePath];
         } catch (_error) {
             // The logical path remains a valid fallback outside a loaded mod zip.
         }
@@ -138,13 +163,26 @@
     function validateAtlasData(atlasPath, atlasData) {
         const definition = ATLAS_DEFINITIONS.find((atlas) => atlas.path === atlasPath);
         const expectedImage = definition.image.slice(definition.image.lastIndexOf("/") + 1);
-        const frameNames = Object.keys(atlasData && atlasData.frames || {});
-        if (JSON.stringify(frameNames) != JSON.stringify(definition.frames)) throw new Error(`Unexpected Spiderlings atlas frames in ${atlasPath}`);
-        if (!atlasData.meta || atlasData.meta.image != expectedImage || atlasData.meta.scale != "1"
-            || atlasData.meta.related_multi_packs !== undefined) throw new Error(`Unexpected Spiderlings atlas metadata in ${atlasPath}`);
+        const frameNames = Object.keys((atlasData && atlasData.frames) || {});
+        if (JSON.stringify(frameNames) !== JSON.stringify(definition.frames))
+            throw new Error(`Unexpected Spiderlings atlas frames in ${atlasPath}`);
+        if (
+            !atlasData.meta ||
+            atlasData.meta.image !== expectedImage ||
+            ![1, "1"].includes(atlasData.meta.scale) ||
+            atlasData.meta.related_multi_packs !== undefined
+        )
+            throw new Error(`Unexpected Spiderlings atlas metadata in ${atlasPath}`);
         for (const frameName of definition.frames) {
             const entry = atlasData.frames[frameName];
-            if (!entry || entry.rotated !== false || entry.trimmed !== true || !entry.frame || !entry.sourceSize || !entry.spriteSourceSize) {
+            if (
+                !entry ||
+                entry.rotated !== false ||
+                entry.trimmed !== true ||
+                !entry.frame ||
+                !entry.sourceSize ||
+                !entry.spriteSourceSize
+            ) {
                 throw new Error(`Invalid Spiderlings atlas frame ${frameName}`);
             }
         }
@@ -154,26 +192,38 @@
         const definition = ATLAS_DEFINITIONS.find((atlas) => atlas.path === atlasPath);
         for (const frameName of definition.frames) {
             const texture = sheet && sheet.textures && sheet.textures[frameName];
-            if (!texture || !texture.baseTexture) throw new Error(`Parsed Spiderlings atlas ${atlasPath} is missing ${frameName}`);
+            if (!texture || !texture.baseTexture)
+                throw new Error(`Parsed Spiderlings atlas ${atlasPath} is missing ${frameName}`);
         }
     }
 
     async function parseAtlas(atlasPath) {
         const definition = ATLAS_DEFINITIONS.find((atlas) => atlas.path === atlasPath);
-        if (typeof PIXI == "undefined" || !PIXI || !PIXI.settings || !PIXI.settings.ADAPTER
-            || typeof PIXI.settings.ADAPTER.fetch != "function" || !PIXI.Assets || typeof PIXI.Assets.load != "function"
-            || typeof PIXI.Spritesheet != "function") return null;
-        if (typeof KDModFiles == "undefined" || !KDModFiles || !KDModFiles[atlasPath] || !KDModFiles[definition.image]) return null;
+        if (
+            typeof PIXI == "undefined" ||
+            !PIXI ||
+            !PIXI.settings ||
+            !PIXI.settings.ADAPTER ||
+            typeof PIXI.settings.ADAPTER.fetch != "function" ||
+            !PIXI.Assets ||
+            typeof PIXI.Assets.load != "function" ||
+            typeof PIXI.Spritesheet != "function"
+        )
+            return null;
+        if (typeof KDModFiles == "undefined" || !KDModFiles || !KDModFiles[atlasPath] || !KDModFiles[definition.image])
+            return null;
         const response = await PIXI.settings.ADAPTER.fetch(modFileUrl(atlasPath));
-        if (!response || typeof response.json != "function") throw new Error(`Unable to read Spiderlings atlas ${atlasPath}`);
-        if (response.ok === false) throw new Error(`Unable to fetch Spiderlings atlas ${atlasPath}: ${response.status}`);
+        if (!response || typeof response.json != "function")
+            throw new Error(`Unable to read Spiderlings atlas ${atlasPath}`);
+        if (response.ok === false)
+            throw new Error(`Unable to fetch Spiderlings atlas ${atlasPath}: ${response.status}`);
         const atlasData = await response.json();
         validateAtlasData(atlasPath, atlasData);
         const imageTexture = await PIXI.Assets.load({
             src: definition.image,
             format: "png",
             loadParser: "modTextureLoader",
-            data: {scaleMode: PIXI.SCALE_MODES && PIXI.SCALE_MODES.LINEAR},
+            data: { scaleMode: PIXI.SCALE_MODES && PIXI.SCALE_MODES.LINEAR },
         });
         const baseTexture = imageTexture && (imageTexture.baseTexture || imageTexture);
         if (!baseTexture) throw new Error(`Unable to load Spiderlings atlas image ${definition.image}`);
@@ -195,7 +245,10 @@
             promise = Promise.resolve(parseAtlas(atlasPath)).catch((error) => {
                 try {
                     if (typeof console != "undefined" && console && typeof console.warn == "function") {
-                        console.warn(`[Spiderlings] Webbing atlas failed; using direct PNG fallback: ${atlasPath}`, error);
+                        console.warn(
+                            `[Spiderlings] Webbing atlas failed; using direct PNG fallback: ${atlasPath}`,
+                            error,
+                        );
                     }
                 } catch (_warningError) {
                     // Diagnostics must never prevent direct fallback.
@@ -215,14 +268,25 @@
     }
 
     function hasTexture(texturePath) {
-        const ready = (texture) => !!(texture && texture.baseTexture
-            && texture.valid !== false && texture.baseTexture.valid !== false);
+        const ready = (texture) =>
+            !!(texture && texture.baseTexture && texture.valid !== false && texture.baseTexture.valid !== false);
         try {
-            if (typeof kdpixitex != "undefined" && kdpixitex && typeof kdpixitex.get == "function" && ready(kdpixitex.get(texturePath))) return true;
+            if (
+                typeof kdpixitex != "undefined" &&
+                kdpixitex &&
+                typeof kdpixitex.get == "function" &&
+                ready(kdpixitex.get(texturePath))
+            )
+                return true;
             if (typeof PIXI != "undefined" && PIXI && PIXI.utils && PIXI.utils.TextureCache) {
                 if (ready(PIXI.utils.TextureCache[texturePath])) return true;
-                if (typeof KDModFiles != "undefined" && KDModFiles && KDModFiles[texturePath]
-                    && ready(PIXI.utils.TextureCache[KDModFiles[texturePath]])) return true;
+                if (
+                    typeof KDModFiles != "undefined" &&
+                    KDModFiles &&
+                    KDModFiles[texturePath] &&
+                    ready(PIXI.utils.TextureCache[KDModFiles[texturePath]])
+                )
+                    return true;
             }
         } catch (_error) {
             // Cache lookup is an optimization only.
@@ -230,7 +294,7 @@
         return false;
     }
 
-    function loadTexture(texturePath, foreground) {
+    function loadTexture(texturePath, _foreground) {
         if (textureLoads.has(texturePath)) return textureLoads.get(texturePath);
         try {
             if (typeof KDTex == "function") KDTex(texturePath, false);
@@ -251,18 +315,26 @@
         try {
             // KD 5.4's resolver turns a logical PNG into an extensionless blob.
             // Select the parser explicitly, as for the atlas image above.
-            const asset = modFileUrl(texturePath) !== texturePath ? {
-                src: texturePath,
-                format: "png",
-                loadParser: "modTextureLoader",
-                data: {scaleMode: PIXI.SCALE_MODES && PIXI.SCALE_MODES.LINEAR},
-            } : texturePath;
-            promise = loader ? Promise.resolve(loader(asset)).then((texture) => {
-                // KDTex may have cached Texture.from(blob) before it was ready.
-                // Publish the decoded Assets texture before forcing a redraw.
-                if (texture && texture.baseTexture) cacheTexture(texturePath, texture);
-                return !!texture;
-            }, () => false) : Promise.resolve(false);
+            const asset =
+                modFileUrl(texturePath) !== texturePath
+                    ? {
+                          src: texturePath,
+                          format: "png",
+                          loadParser: "modTextureLoader",
+                          data: { scaleMode: PIXI.SCALE_MODES && PIXI.SCALE_MODES.LINEAR },
+                      }
+                    : texturePath;
+            promise = loader
+                ? Promise.resolve(loader(asset)).then(
+                      (texture) => {
+                          // KDTex may have cached Texture.from(blob) before it was ready.
+                          // Publish the decoded Assets texture before forcing a redraw.
+                          if (texture && texture.baseTexture) cacheTexture(texturePath, texture);
+                          return !!texture;
+                      },
+                      () => false,
+                  )
+                : Promise.resolve(false);
         } catch (_error) {
             promise = Promise.resolve(false);
         }
@@ -276,12 +348,13 @@
 
     function preloadDisplacementTextures(foreground = false) {
         if (!displacementPreload) {
-            displacementPreload = Promise.all(DISPLACEMENT_ASSETS.map((entry) => loadTexture(entry, foreground)))
-                .then((result) => {
+            displacementPreload = Promise.all(DISPLACEMENT_ASSETS.map((entry) => loadTexture(entry, foreground))).then(
+                (result) => {
                     displacementTexturesReady = result.every(Boolean);
                     if (!displacementTexturesReady) displacementPreload = undefined;
                     return result;
-                });
+                },
+            );
         }
         return displacementPreload;
     }
@@ -291,9 +364,18 @@
         const key = `${modelName}:${webbingColor()}:${foreground ? "foreground" : "background"}`;
         if (texturePreloads.has(key)) return texturePreloads.get(key);
         const paths = texturePaths(modelName);
-        const promise = loadTextureAtlases().then(() => Promise.all(paths
-            .filter((entry) => DISPLACEMENT_ASSETS.includes(entry) || textureLoads.has(entry) || !hasTexture(entry))
-            .map((entry) => loadTexture(entry, foreground)))).then((result) => {
+        const promise = loadTextureAtlases()
+            .then(() =>
+                Promise.all(
+                    paths
+                        .filter(
+                            (entry) =>
+                                DISPLACEMENT_ASSETS.includes(entry) || textureLoads.has(entry) || !hasTexture(entry),
+                        )
+                        .map((entry) => loadTexture(entry, foreground)),
+                ),
+            )
+            .then((result) => {
                 if (result.some((loaded) => !loaded)) texturePreloads.delete(key);
                 return result;
             });
@@ -305,19 +387,30 @@
         return api.getSetting && api.getSetting("spiderlingsPinkWebbing") === true ? "pink" : "original";
     }
 
-    // Native bullet drawing derives the texture from the gameplay bullet name.
-    // Select the delivered pink PNG at draw time, preserving spell/trail identity.
-    function registerBulletArtwork() {
-        if (typeof KDDraw != "function" || KDDraw.spiderlingsBulletArtwork) return;
+    // Select delivered colors at draw time so existing sprites follow the setting.
+    // Enemy and spell identities remain unchanged, including saved entities.
+    function registerColoredArtwork() {
+        if (typeof KDDraw != "function" || KDDraw.spiderlingsColoredArtwork) return;
         const nativeDraw = KDDraw;
         const root = typeof KinkyDungeonRootDirectory == "string" ? KinkyDungeonRootDirectory : "";
-        const paths = new Map(["SpiderWeb", "SpiderWebHit", "WebSpray", "WebSprayTrail"]
-            .map((name) => [`${root}Bullets/${name}.png`, `${root}Bullets/${name}Pink.png`]));
-        KDDraw = function(...args) {
+        const paths = new Map(
+            [
+                ...["SpiderWeb", "SpiderWebHit", "WebSpray", "WebSprayTrail"].map((name) => `Bullets/${name}`),
+                ...[
+                    "Spinner",
+                    "Tunneler",
+                    "WebCaster",
+                    "NestEntrance",
+                    "SpiderlingsSpinnerTrap",
+                    "SpiderlingsSilkAnchor",
+                ].map((name) => `Enemies/${name}`),
+            ].map((path) => [`${root}${path}.png`, `${root}${path}Pink.png`]),
+        );
+        KDDraw = function (...args) {
             if (paths.has(args[3]) && webbingColor() === "pink") args[3] = paths.get(args[3]);
             return nativeDraw.apply(this, args);
         };
-        KDDraw.spiderlingsBulletArtwork = true;
+        KDDraw.spiderlingsColoredArtwork = true;
     }
 
     // Both atlases are preloaded at startup into independent color aliases.
@@ -332,15 +425,24 @@
                 const base = entry.Folder.replace(/Pink$/, "");
                 if (MODEL_CATEGORIES.has(base)) {
                     const folder = base + (pink ? "Pink" : "");
-                    if (entry.Folder !== folder) { entry.Folder = folder; changed = true; }
+                    if (entry.Folder !== folder) {
+                        entry.Folder = folder;
+                        changed = true;
+                    }
                 }
             }
         };
         Object.values(modelDefs()).forEach(apply);
         const player = typeof KinkyDungeonPlayer != "undefined" ? KinkyDungeonPlayer : undefined;
-        for (const item of player && player.Appearance || []) apply(item.Model);
-        const container = player && typeof KDCurrentModels != "undefined" && KDCurrentModels.get(player);
-        if (container && container.Models) for (const model of container.Models.values()) apply(model);
+        const characters = typeof KDCurrentModels != "undefined" ? [...KDCurrentModels.keys()] : [];
+        if (player && !characters.includes(player)) characters.push(player);
+        for (const character of characters) {
+            for (const item of character.Appearance || []) apply(item.Model);
+            const container = typeof KDCurrentModels != "undefined" && KDCurrentModels.get(character);
+            if (container?.Models) for (const model of container.Models.values()) apply(model);
+            if (changed && character !== player && typeof ForceRefreshModels === "function")
+                ForceRefreshModels(character);
+        }
         return changed;
     }
 
@@ -349,17 +451,27 @@
         const player = typeof KinkyDungeonPlayer != "undefined" ? KinkyDungeonPlayer : undefined;
         if (refresh) {
             refreshPlayerModel(true);
-            const names = new Set((player && player.Appearance || []).filter((item) => isOwnedModel(item.Model))
-                .map((item) => item.Model.Name));
-            return Promise.all([...names].map((name) => preloadTextures(name, true)))
-                .then(() => refreshPlayerModel(false));
+            const names = new Set(
+                ((player && player.Appearance) || [])
+                    .filter((item) => isOwnedModel(item.Model))
+                    .map((item) => item.Model.Name),
+            );
+            return Promise.all([...names].map((name) => preloadTextures(name, true))).then(() =>
+                refreshPlayerModel(false),
+            );
         }
         return Promise.resolve();
     }
 
     function modelNameForItem(item) {
-        if (!item || !item.name || typeof KinkyDungeonRestraints == "undefined" || !Array.isArray(KinkyDungeonRestraints)) return undefined;
-        const restraint = KinkyDungeonRestraints.find((entry) => entry.name == item.name);
+        if (
+            !item ||
+            !item.name ||
+            typeof KinkyDungeonRestraints == "undefined" ||
+            !Array.isArray(KinkyDungeonRestraints)
+        )
+            return undefined;
+        const restraint = KinkyDungeonRestraints.find((entry) => entry.name === item.name);
         return restraint && restraint.Model;
     }
 
@@ -367,7 +479,11 @@
         const player = typeof KinkyDungeonPlayer != "undefined" ? KinkyDungeonPlayer : undefined;
         if (!player) return;
         if (typeof ForceRefreshModels == "function") ForceRefreshModels(player);
-        if (typeof KDRefreshCharacter != "undefined" && KDRefreshCharacter && typeof KDRefreshCharacter.set == "function") {
+        if (
+            typeof KDRefreshCharacter != "undefined" &&
+            KDRefreshCharacter &&
+            typeof KDRefreshCharacter.set == "function"
+        ) {
             KDRefreshCharacter.set(player, true);
         }
         if (typeof KDRefresh != "undefined") KDRefresh = true;
@@ -407,7 +523,7 @@
         if (typeof KDEventMapInventory == "undefined") return false;
         for (const trigger of ["postApply", "postRemoval", "afterDress"]) {
             addInventoryEvent(trigger, (event, item) => {
-                if (event && event.trigger == "afterDress") {
+                if (event && event.trigger === "afterDress") {
                     // Native dressing already refreshes its models. Invalidate only
                     // when a restored copy actually needed its color corrected.
                     if (syncWebbingColor()) refreshPlayerModel(false);
@@ -436,7 +552,7 @@
         DISPLACEMENT_ASSETS,
     });
 
-    registerBulletArtwork();
+    registerColoredArtwork();
     loadTextureAtlases();
     preloadDisplacementTextures();
     registerRefreshEvent();

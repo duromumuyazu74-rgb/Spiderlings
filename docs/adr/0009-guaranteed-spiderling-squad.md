@@ -1,6 +1,6 @@
 # 普通战斗地图采用保底四蛛小队
 
-- 状态：已采纳
+- 状态：已由 [0021](0021-squad-perk-and-explicit-nest-weights.md) 替代
 - 日期：2026-08-11
 
 Spiderlings 将原先“自然刷怪加无蜘蛛时随机补一只”的普通地图保证，改为默认开启、可由 `Spiderling squad` 设置关闭的固定小队：每张新生成、符合 KD 敌人/生成规则且存在合法完整位置的非 Boss 普通战斗地图，原子生成 Jumper、WebCaster、Tunneler、Spinner 各一只。小队是额外的最低遭遇保证，不替代或限制自然蜘蛛和 NestEntrance；旧单只 fallback 退出。

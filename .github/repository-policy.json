@@ -29,8 +29,8 @@
   "grandfatheredCommits": [
     "2ffaaacf0c98af6b04ebd05e0b47d97d83d2897d",
     "4aac8a8caad828c5bd402f6de243a1408234d636",
-    "a88a7818dc06eb4582dea2a36b37632912dc9466",
-    "f5257c060f1ed18b16b01640d790b8cc69b8100e"
+    "0e14220327903ca91b743529165797c3f616a8d4",
+    "d5311088d7a8d40d4c51079870c9cc71a935283a"
   ],
   "privateFiles": [
     "Spiderlings_0.91/Models/SpiderlingsSpinnerLegbinder/README.en.html",
@@ -49,5 +49,6 @@
     "KinkyDungeon-Spiderlings/tools/build-spinner-artist-kit.py",
     "KinkyDungeon-Spiderlings/tools/artist-kit/BUILD-PREVIEW.cmd",
     "KinkyDungeon-Spiderlings/tools/artist-kit/Build-Preview.ps1"
-  ]
+  ],
+  "historySanitized": true
 }

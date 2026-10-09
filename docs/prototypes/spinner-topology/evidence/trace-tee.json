@@ -1,0 +1,52 @@
+[
+  {
+    "label": "initial",
+    "turn": 0,
+    "phases": [],
+    "target": [2, 9],
+    "blocked": 0,
+    "reachableCells": 72,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 1,
+    "phases": ["preparing"],
+    "target": [2, 9],
+    "blocked": 0,
+    "reachableCells": 72,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 2,
+    "phases": ["preparing"],
+    "target": [2, 9],
+    "blocked": 0,
+    "reachableCells": 72,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 3,
+    "phases": ["preparing"],
+    "target": [2, 9],
+    "blocked": 0,
+    "reachableCells": 72,
+    "exitReachable": true,
+    "geometryReady": false
+  },
+  {
+    "label": "build",
+    "turn": 4,
+    "phases": ["barrier"],
+    "target": [2, 9],
+    "blocked": 2,
+    "reachableCells": 62,
+    "exitReachable": false,
+    "geometryReady": false
+  }
+]

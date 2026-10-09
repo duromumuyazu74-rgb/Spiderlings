@@ -4,6 +4,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const { spawnSync } = require("node:child_process");
+const { parseReleaseVersion } = require("./release-version.js");
+const { escapeTextKeys, inspectEscapeText } = require("./escape-text-contract.js");
+const { inspectTranslationPlaceholders } = require("./translation-contract.js");
 
 const modRoot = path.resolve(__dirname, "..");
 const workspaceRoot = path.resolve(modRoot, "..");
@@ -15,19 +18,62 @@ const watcherPath = path.join(modRoot, "tools", "watch-spiderlings-mod.ps1");
 const localeFiles = ["CN", "DE", "ES", "JP", "KR", "PL", "RU"].map((locale) => `Spiderlings${locale}.csv`);
 const runtimeScripts = [
     "SpiderlingsCore.js",
+    "SpiderlingsNativeActions.js",
+    "SpiderlingsPopulation.js",
+    "SpiderlingsEncounters.js",
+    "SpiderlingsSettings.js",
+    "SpiderlingsFloorSelection.js",
+    "SpiderlingsWebCaster.js",
     "SpiderlingsModelRuntime.js",
     "Spiderlings.js",
+    "SpiderlingsBestiary.js",
+    "SpiderlingsHuntingGroundsLayout.js",
     "SpiderlingsInfestation.js",
+    "SpiderlingsHuntingGrounds.js",
     "SpiderlingsCombat.js",
+    "SpiderlingsNPCAdhesion.js",
+    "SpiderlingsNPCWrapping.js",
+    "SpiderlingsMage.js",
+    "SpiderlingsMageRunes.js",
+    "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
     "SpiderlingsWebbingModels.js",
+    "SpiderlingsWebbingData.js",
+    "SpiderlingsWebbingRules.js",
     "SpiderlingsWebbing.js",
+    "SpiderlingsMageSpells.js",
+    "SpiderlingsWeapons.js",
+    "SpiderlingsWeaponWebbing.js",
+    "SpiderlingsSpinnerTopology.js",
+    "SpiderlingsSpinnerArt.js",
+    "SpiderlingsSpinnerCapture.js",
+    "SpiderlingsSpinnerRecoveryCore.js",
+    "SpiderlingsSpinnerNPCCapture.js",
+    "SpiderlingsSpinnerField.js",
+    "SpiderlingsSpinnerNativeField.js",
+    "SpiderlingsWebMobility.js",
+    "SpiderlingsSpinnerRecovery.js",
+    "SpiderlingsSpinnerNPCRecovery.js",
+    "SpiderlingsSpinnerPassagePlanner.js",
+    "SpiderlingsSpinnerAI.js",
+    "SpiderlingsFieldCommand.js",
+    "SpiderlingsFieldProjects.js",
+    "SpiderlingsFieldCustody.js",
+    "SpiderlingsSpinnerDuties.js",
+    "SpiderlingsSpinnerScenarios.js",
+    "SpiderlingsSpinnerRollout.js",
+    "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsSpellVisuals.js",
 ];
 const atlasAssets = [
     "TextureAtlas/spiderlings-webbing-0.png",
     "TextureAtlas/spiderlings-webbing-0.json",
     "TextureAtlas/spiderlings-webbing-pink-0.png",
     "TextureAtlas/spiderlings-webbing-pink-0.json",
+    "TextureAtlas/spiderlings-spinner-0.png",
+    "TextureAtlas/spiderlings-spinner-0.json",
+    "TextureAtlas/spiderlings-spinner-pink-0.png",
+    "TextureAtlas/spiderlings-spinner-pink-0.json",
 ];
 const displacementAssets = [
     "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
@@ -43,8 +89,16 @@ const soundAssets = [
     "Sounds/webs-sweep-away-by-hand-004_01.ogg",
 ];
 const runtimeAssets = [
+    "Items/SpiderlingTome.png",
+    "Items/SpiderlingStaff.png",
     "UI/MapMod/SpiderlingsInfestation.png",
+    "UI/MapMod/SpiderlingsHuntingGrounds.png",
     "Bullets/SpiderWeb.png",
+    "Bullets/SpiderlingsMageRune.png",
+    "Bullets/SpiderlingsMageRuneIcon.png",
+    "Bullets/SpiderlingsMageRuneHit.png",
+    "Bullets/SpiderlingsMageBoltHit.png",
+    "Bullets/SpiderlingsMageBolt.png",
     "Bullets/SpiderWebHit.png",
     "Bullets/WebSpray.png",
     "Bullets/WebSprayTrail.png",
@@ -52,11 +106,28 @@ const runtimeAssets = [
     "Bullets/SpiderWebHitPink.png",
     "Bullets/WebSprayPink.png",
     "Bullets/WebSprayTrailPink.png",
+    "Bullets/SpiderlingsSpinnerTrapSide.png",
+    "Bullets/SpiderlingsSpinnerTrapSidePink.png",
+    "Bullets/SpiderlingsSpinnerTrapCorner.png",
+    "Bullets/SpiderlingsSpinnerTrapCornerPink.png",
+    "Bullets/SpiderlingsSpinnerTrapTop.png",
+    "Bullets/SpiderlingsSpinnerTrapTopPink.png",
+    "Bullets/SpiderlingsPlayerTether.png",
+    "Bullets/SpiderlingsPlayerTetherPink.png",
     "Enemies/Jumper.png",
     "Enemies/NestEntrance.png",
     "Enemies/Spinner.png",
     "Enemies/Tunneler.png",
     "Enemies/WebCaster.png",
+    "Enemies/MageSpiderlings.png",
+    "Enemies/MageSpiderlingsRegular.png",
+    "Enemies/MageSpiderlingsSpellParticles.png",
+    "Enemies/MageSpiderlingsSubtleGlow.png",
+    "Enemies/MageSpiderlingsReallyGlowy.png",
+    "Enemies/NestEntrancePink.png",
+    "Enemies/SpinnerPink.png",
+    "Enemies/TunnelerPink.png",
+    "Enemies/WebCasterPink.png",
     "Models/SpiderlingsWebbingLv1/ArmWebbing.png",
     "Models/SpiderlingsWebbingLv1/MittenLeft.png",
     "Models/SpiderlingsWebbingLv1/MittenRight.png",
@@ -107,6 +178,22 @@ const runtimeAssets = [
     "Models/SpiderlingsWebbingLv3Pink/Hood.png",
     "Models/SpiderlingsWebbingCocoonPink/Cocoon.png",
     "Models/SpiderlingsWebbingCocoonPink/OuterWebs.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage1.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage2.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage3.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage4.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage5.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage6.png",
+    "Models/SpiderlingsSpinnerLegbinder/Stage7.png",
+    "Models/SpiderlingsSpinnerLegbinder/Tail.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage1.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage2.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage3.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage4.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage5.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage6.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Stage7.png",
+    "Models/SpiderlingsSpinnerLegbinderPink/Tail.png",
     ...displacementAssets,
     ...atlasAssets,
     ...soundAssets,
@@ -246,10 +333,6 @@ function fail(message) {
     errors.push(message);
     console.error(`[fail] ${message}`);
 }
-function _warn(message) {
-    warnings.push(message);
-    console.warn(`[warn] ${message}`);
-}
 function note(message) {
     notes.push(message);
     console.log(`[info] ${message}`);
@@ -292,45 +375,22 @@ function parseCsv(relativePath) {
     return result;
 }
 
-function checkProjectRules() {
-    if (!fs.existsSync(gameRoot) || path.resolve(gameRoot) === path.resolve(modRoot))
+function checkProjectInputs() {
+    if (!fs.existsSync(gameRoot) || fs.realpathSync(gameRoot) === fs.realpathSync(modRoot)) {
         fail("KinkiestDungeon-5.5 must remain a separate read-only reference package.");
-    else pass("KinkiestDungeon-5.5 and Spiderlings package boundaries are separate.");
-
-    const agents = fs.existsSync(agentsPath) ? readText(agentsPath) : "";
-    for (const token of ["KinkiestDungeon-5.5/", "read-only", "KinkyDungeon-Spiderlings/AGENTS.md"]) {
-        if (!agents.includes(token)) fail(`AGENTS.md is missing required rule text: ${token}`);
-    }
-    const modAgents = readText(modAgentsPath);
-    for (const token of ["watch-spiderlings-mod.ps1 -Once", "focused git commit"]) {
-        if (!modAgents.includes(token))
-            fail(`KinkyDungeon-Spiderlings/AGENTS.md is missing required rule text: ${token}`);
-    }
-    const maintenance = fs.existsSync(maintenancePath) ? readText(maintenancePath) : "";
-    for (const token of [
-        "KinkiestDungeon-5.5/",
-        "KinkyDungeon-Spiderlings/",
-        "watch-spiderlings-mod.ps1 -Once",
-        "atlas-first",
-        "direct fallback",
-        "shared resolver",
+    } else pass("KinkiestDungeon-5.5 and Spiderlings package boundaries are separate.");
+    for (const file of [
+        agentsPath,
+        modAgentsPath,
+        maintenancePath,
+        watcherPath,
+        path.join(workspaceRoot, "CONTRIBUTING.md"),
+        path.join(workspaceRoot, "docs/DEVELOPMENT.md"),
+        path.join(__dirname, "run-spiderlings-tests.js"),
+        path.join(__dirname, "test-suites.json"),
     ]) {
-        if (!maintenance.includes(token)) fail(`MAINTENANCE.md is missing current cutover guidance: ${token}`);
+        if (!fs.existsSync(file) || !fs.statSync(file).isFile()) fail(`Missing maintenance entry point: ${file}`);
     }
-    const watcher = fs.existsSync(watcherPath) ? readText(watcherPath) : "";
-    for (const token of [
-        "check-spiderlings-mod.js",
-        "spiderlings-webbing-cutover.test.js",
-        "spiderlings-webbing-atlas.test.js",
-        "spiderlings-new-save-smoke.test.js",
-        "spiderlings-maid-hostility.test.js",
-        "spiderlings-infestation.test.js",
-        "js|json|csv|png|wav|ogg|md",
-    ]) {
-        if (!watcher.includes(token)) fail(`watch-spiderlings-mod.ps1 is missing: ${token}`);
-    }
-    if (!errors.some((message) => /AGENTS|MAINTENANCE|watch-spiderlings/.test(message)))
-        pass("maintenance and watcher rules describe the cut-over package.");
 }
 
 function loadManifest() {
@@ -343,9 +403,21 @@ function loadManifest() {
     }
     if (manifest.modname !== "Spiderlings") fail("mod.json modname must be Spiderlings.");
     if (!manifest.moddesc || !manifest.modbuild) fail("mod.json must include moddesc and modbuild.");
-    if (manifest.modbuild !== "0.92.38") fail("mod.json modbuild must identify the 0.92.38 release baseline.");
-    if (manifest.gamemajor !== 5 || manifest.gameminor !== 4)
-        fail("mod.json must retain the 5.4/5.5 compatibility window.");
+    try {
+        const release = parseReleaseVersion(manifest.modbuild);
+        pass(`Release ${release.version}: ${release.channel} build, baseline ${release.baseline}.`);
+    } catch (error) {
+        fail(error.message);
+    }
+    if (
+        manifest.gamemajor !== 5 ||
+        manifest.gameminor !== -1 ||
+        manifest.gamepatch_min !== -1 ||
+        manifest.gamepatch_max !== -1
+    )
+        fail(
+            "mod.json must allow both KD 5.4.92 and GitHub 5.5; exact verified commits are recorded in compatibility evidence.",
+        );
     const expected = [...runtimeAssets, ...runtimeScripts];
     if (JSON.stringify(manifest.fileorder) !== JSON.stringify(expected))
         fail("mod.json fileorder is not the exact atlas-first/direct-fallback allowlist.");
@@ -364,6 +436,7 @@ function checkRuntimeTrees() {
         ...walkNames(path.join(modRoot, "DisplacementMaps"), "DisplacementMaps"),
         ...walkNames(path.join(modRoot, "TextureAtlas"), "TextureAtlas"),
         ...walkNames(path.join(modRoot, "Sounds"), "Sounds"),
+        ...walkNames(path.join(modRoot, "Items"), "Items"),
     ]
         .filter((entry) => /\.(png|json|wav|ogg)$/i.test(entry))
         .sort();
@@ -408,15 +481,21 @@ function checkOfficialSkirtBoundary() {
     } else pass("KD 5.5 places OverSkirt, SkirtOver, and Skirt above the Lv1 Legs WrappingLegsOver boundary.");
 }
 
-function checkTextureAtlas(pink = false) {
+function checkTextureAtlas(pink = false, spinner = false) {
+    const offset = spinner ? 4 : 0;
+    const size = spinner ? 2048 : 4096;
     const initialErrorCount = errors.length;
-    const atlasJsonPath = atlasAssets[pink ? 3 : 1];
-    const atlasPngPath = atlasAssets[pink ? 2 : 0];
+    const atlasJsonPath = atlasAssets[offset + (pink ? 3 : 1)];
+    const atlasPngPath = atlasAssets[offset + (pink ? 2 : 0)];
     const builderPath = "tools/build-spiderlings-atlas.py";
-    const expectedFrames = [...families, ...lv2Families, ...lv3Families]
-        .map((entry) => entry.path)
-        .concat(cocoon.path, "Models/SpiderlingsWebbingCocoon/OuterWebs.png")
-        .map((path) => (pink ? path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/") : path));
+    const expectedFrames = spinner
+        ? ["Stage1", "Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7", "Tail"].map(
+              (name) => `Models/SpiderlingsSpinnerLegbinder${pink ? "Pink" : ""}/${name}.png`,
+          )
+        : [...families, ...lv2Families, ...lv3Families]
+              .map((entry) => entry.path)
+              .concat(cocoon.path, "Models/SpiderlingsWebbingCocoon/OuterWebs.png")
+              .map((path) => (pink ? path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/") : path));
     let atlas;
     try {
         atlas = JSON.parse(readModText(atlasJsonPath));
@@ -428,7 +507,7 @@ function checkTextureAtlas(pink = false) {
     if (!exists(atlasPngPath)) fail(`${atlasPngPath} is missing.`);
     const frameNames = Object.keys(atlas.frames || {});
     if (JSON.stringify(frameNames) !== JSON.stringify(expectedFrames))
-        fail(`${atlasJsonPath} does not contain the exact twenty-five Webbing frame aliases.`);
+        fail(`${atlasJsonPath} does not contain the exact ${expectedFrames.length} frame aliases.`);
     if (
         !atlas.meta ||
         atlas.meta.image !== path.basename(atlasPngPath) ||
@@ -436,10 +515,10 @@ function checkTextureAtlas(pink = false) {
         atlas.meta.scale !== "1" ||
         atlas.meta.related_multi_packs !== undefined ||
         !atlas.meta.size ||
-        atlas.meta.size.w !== 4096 ||
-        atlas.meta.size.h !== 4096
+        atlas.meta.size.w !== size ||
+        atlas.meta.size.h !== size
     ) {
-        fail(`${atlasJsonPath} metadata is not the exact single-page 4096 contract.`);
+        fail(`${atlasJsonPath} metadata is not the exact single-page ${size} contract.`);
     }
 
     const rectangles = [];
@@ -476,8 +555,8 @@ function checkTextureAtlas(pink = false) {
             sprite.y < 0 ||
             sprite.w !== frame.w ||
             sprite.h !== frame.h ||
-            frame.x + frame.w > 4096 ||
-            frame.y + frame.h > 4096 ||
+            frame.x + frame.w > size ||
+            frame.y + frame.h > size ||
             sprite.x + sprite.w > source.w ||
             sprite.y + sprite.h > source.h
         ) {
@@ -516,7 +595,7 @@ function checkTextureAtlas(pink = false) {
 
     if (errors.length === initialErrorCount) {
         pass(
-            `${pink ? "pink" : "original"} Webbing atlas exposes twenty-five Lv1/Lv2/Lv3/Cocoon aliases; PNG payloads were not inspected by the checker.`,
+            `${pink ? "pink" : "original"} ${spinner ? "Spinner" : "Webbing"} atlas exposes ${expectedFrames.length} aliases; PNG payloads were not inspected by the checker.`,
         );
     }
 }
@@ -546,6 +625,8 @@ function createMockState() {
     let restraintCacheRefreshes = 0;
     const context = {
         console,
+        Map,
+        Weapon: "weapon",
         globalThis: null,
         window: null,
         ModelDefs: {},
@@ -553,6 +634,35 @@ function createMockState() {
         KDModelDefs: {},
         KinkyDungeonRestraints: restraints,
         KinkyDungeonEnemies: enemies,
+        KinkyDungeonWeapons: {},
+        KinkyDungeonInventory: new Map([["weapon", new Map()]]),
+        KinkyDungeonWeaponVariants: {},
+        KinkyDungeonWeaponChoices: [],
+        KinkyDungeonLostItems: [],
+        KinkyDungeonPlayerBuffs: {},
+        KinkyDungeonPlayerWeapon: "",
+        KinkyDungeonInventoryAddWeapon() {},
+        KinkyDungeonInventoryGetWeapon() {},
+        KinkyDungeonInventoryGet() {},
+        KinkyDungeonInventoryGetSafe() {},
+        KinkyDungeonFindWeapon() {},
+        KDSetWeapon() {},
+        KDPrereqs: {},
+        KinkyDungeonSpellSpecials: {},
+        KinkyDungeonCastSpell() {},
+        KinkyDungeonActivateWeaponSpell() {},
+        KinkyDungeonGetManaCost(spell) {
+            return spell.manacost || 0;
+        },
+        KDChangeMana() {},
+        KDChangeStamina() {},
+        KinkyDungeonDrawActionBar() {},
+        KDAddEntity(entity) {
+            return entity;
+        },
+        KDBulletCanHitEntity() {},
+        KDBulletAoECanHitEntity() {},
+        KDDropItems() {},
         KinkyDungeonSpellListEnemies: spells,
         KinkyDungeonStatsPresets: {},
         KDPerkStart: {},
@@ -561,8 +671,12 @@ function createMockState() {
         KDEventMapSpell: {},
         KDCastConditions: {},
         KDPlayerEffects: { TrapBindings: nativeTrapBindings },
-        KinkyDungeonSpellSpecials: {},
         KDModConfigs: {},
+        KDMapMods: {},
+        KinkyDungeonEscapeTypes: {},
+        KDCancelEvents: {},
+        KinkyDungeonPlaceEnemies() {},
+        KDRemoveEntity() {},
         KDModSettings: {},
         KDModFiles: {},
         KinkyDungeonPlayer: {},
@@ -576,6 +690,9 @@ function createMockState() {
             },
         },
         KDGameData: {},
+        KDMapData: {},
+        KDWorldMap: {},
+        KDPersistentNPCs: {},
         KDRefreshCharacter: new Map(),
         KDRefresh: false,
         KinkyDungeonPlayerNeedsRefresh: false,
@@ -722,21 +839,13 @@ function checkRuntime(state) {
     if (
         !populationCap ||
         populationCap.default !== "25" ||
-        JSON.stringify(cappedSpecies) !== JSON.stringify(["Jumper", "Spinner", "Tunneler", "WebCaster"])
+        JSON.stringify(cappedSpecies) !==
+            JSON.stringify(["Jumper", "MageSpiderlings", "Spinner", "Tunneler", "WebCaster"])
     ) {
-        fail("Map population cap must default to 25 and count only the four Spiderlings species, excluding nests.");
+        fail("Map population cap must default to 25 and count the five mobile Spiderlings species, excluding nests.");
     }
-    const modelRuntime = readModText("SpiderlingsModelRuntime.js");
-    if (
-        /Assets\.backgroundLoad\s*\(/.test(modelRuntime) ||
-        !modelRuntime.includes("cacheTexture(texturePath, texture)") ||
-        (modelRuntime.match(/loadParser: "modTextureLoader"/g) || []).length !== 2 ||
-        !modelRuntime.includes("texture.baseTexture.valid !== false")
-    ) {
-        fail(
-            "Webbing refresh must await explicit PNG parsing, reject pending textures and update KD's cache before redress.",
-        );
-    }
+    // Texture decoding, cache publication, and fallback are exercised by the
+    // public model-runtime suite before this checker runs in the local watcher.
     const color = state.context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsPinkWebbing");
     if (
         !color ||
@@ -748,11 +857,11 @@ function checkRuntime(state) {
     }
     const expectedIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id)
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash")
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)
-        .concat(cocoon.model)
+        .concat(cocoon.model, "SpiderlingsSpinnerLegbinderModel")
         .sort();
     const actualIds = state.restraints.map((entry) => entry.name).sort();
     const actualModels = state.models.map((entry) => entry.Name).sort();
@@ -782,7 +891,8 @@ function checkRuntime(state) {
         fail(`runtime atlas list is not exact: ${runtimeAtlases.join(", ")}`);
     if (JSON.stringify(runtimeDisplacements) !== JSON.stringify(displacementAssets))
         fail(`runtime displacement list is not exact: ${runtimeDisplacements.join(", ")}`);
-    if (state.restraintCacheRefreshes < 1) fail("restraint cache is not refreshed after the new catalog registers.");
+    if (state.restraintCacheRefreshes < 2)
+        fail("restraint cache is not refreshed after both Webbing and the late-loaded Silk leash register.");
     if (state.context.KDPlayerEffects.TrapBindings !== state.nativeTrapBindings)
         fail("Spiderlings replaced KD's native TrapBindings handler.");
     for (const apiName of [
@@ -805,12 +915,59 @@ function checkRuntime(state) {
         )
     ) {
         pass(
-            "mock runtime registers exactly ten Lv1 items, five Lv2 items, eight Lv3 items, Cocoon, two Webbing atlases, five displacement textures, and preserves native TrapBindings.",
+            "mock runtime registers the exact Webbing, Leg binder, and Silk leash catalog with two atlases and five displacement textures, and preserves native TrapBindings.",
         );
     }
 
     const byId = new Map(state.restraints.map((entry) => [entry.name, entry]));
     const byModel = new Map(state.models.map((entry) => [entry.Name, entry]));
+    const bag = byId.get("SpiderlingsSpinnerLegbinder");
+    const leash = byId.get("SpiderlingsSilkLeash");
+    const capture = state.context.Spiderlings.SpinnerCapture;
+    if (
+        !leash ||
+        leash.Group !== "ItemNeckRestraints" ||
+        leash.leash !== true ||
+        leash.tether !== 2.9 ||
+        leash.power !== 1 ||
+        JSON.stringify(leash.requireSingleTagToEquip) !== JSON.stringify(["Collars", "SpiderlingsLegbinderAnchor"]) ||
+        !bag?.addTag?.includes("SpiderlingsLegbinderAnchor")
+    )
+        fail("Spiderlings Silk leash does not preserve the BasicLeash carrier contract.");
+    if (
+        !bag ||
+        bag.Group !== "ItemLegs" ||
+        bag.hobble !== 2 ||
+        bag.bindarms ||
+        bag.bindhands ||
+        bag.immobile ||
+        !capture ||
+        capture.CONFIG.lineColor !== 0xffffff ||
+        capture.CONFIG.wrapTurns !== 5 ||
+        capture.CONFIG.minSpinners !== 2 ||
+        capture.CONFIG.weaveGoal !== 100
+    )
+        fail(
+            "Spinner leg bag must remain an independent mobile ItemLegs restraint with white tethers and five wrapping turns.",
+        );
+    let blockers = [];
+    let preflight;
+    state.context.KDGetBlockersToAddRestraint = () => blockers;
+    state.context.KDCanAddRestraint = (...args) => {
+        preflight = args;
+        return true;
+    };
+    const securityEnemy = { id: 1 };
+    if (
+        !capture.canEquip(securityEnemy) ||
+        preflight?.[4] !== undefined ||
+        preflight?.[5] !== true ||
+        preflight?.[6] !== true ||
+        preflight?.[7] !== securityEnemy
+    )
+        fail("Spinner leg bag must use native deep/no-overpower compatibility with the acting source.");
+    blockers = [{}];
+    if (capture.canEquip(securityEnemy)) fail("Spinner leg bag must reject native ItemLegs blockers before addition.");
     const forbiddenImageFields = ["MorphPoses"];
     const displacementContracts = new Map([
         [
@@ -1020,6 +1177,20 @@ function checkRuntime(state) {
     if (!blindfold || blindfold.Group !== "ItemHead" || blindfold.blindfold !== 1) {
         fail("Lv1 Blindfold must retain its light ItemHead blindfold effect.");
     }
+    for (const level of [1, 3]) {
+        const model = byModel.get(`SpiderlingsWebbingLv${level}BlindfoldModel`),
+            layer = layers(model)[0];
+        if (
+            layer?.Layer !== "Blindfold" ||
+            layer?.SwapLayerPose?.XrayFace !== "Blindfold" ||
+            Object.keys(layer?.SwapLayerPose || {})[0] !== "XrayFace" ||
+            layer?.SwapLayerPose?.[`SpiderlingsWebbingLv${level}`] !== "Brows" ||
+            layer?.NoErase === true
+        )
+            fail(
+                `Lv${level} Blindfold must retain native face X-ray eligibility and masking with ordinary foreground coverage.`,
+            );
+    }
     for (const [id, fields] of [
         ["SpiderlingsWebbingLv3Blindfold", { blindfold: 2 }],
         ["SpiderlingsWebbingLv1Stuffing", { gag: 0.1 }],
@@ -1113,8 +1284,8 @@ function checkRuntime(state) {
             .filter((event) => event.type === "SpiderlingsLv2Escape")
             .map((event) => event.trigger)
             .sort();
-        if (JSON.stringify(escapeTriggers) !== JSON.stringify(["beforeStruggleCalc", "struggle"])) {
-            fail(`${family.id} must require the shared two-action native escape lifecycle.`);
+        if (escapeTriggers.length !== 0) {
+            fail(`${family.id} must delegate progression to native escape parameters.`);
         }
         for (const suffix of ["", "Desc", "Desc2"]) {
             if (!String(state.texts[`Restraint${family.id}${suffix}`] || "").trim())
@@ -1148,7 +1319,7 @@ function checkRuntime(state) {
                     layer.Invariant !== true ||
                     layer.NoColorize !== true ||
                     layer.HideWhenOverridden !== true ||
-                    !!layer.NoOverride !== ["Legs", "Ankles"].includes(family.family) ||
+                    !!layer.NoOverride !== ["Legs", "Ankles", "Blindfold"].includes(family.family) ||
                     layer.Layer !== family.layer ||
                     layer.Pri !== family.priority,
             )
@@ -1205,8 +1376,8 @@ function checkRuntime(state) {
             .filter((event) => event.type === "SpiderlingsLv3Escape")
             .map((event) => event.trigger)
             .sort();
-        if (JSON.stringify(escapeTriggers) !== JSON.stringify(["beforeStruggleCalc", "struggle"])) {
-            fail(`${family.id} must use the shared two-action native escape lifecycle.`);
+        if (escapeTriggers.length !== 0) {
+            fail(`${family.id} must delegate progression to native escape parameters.`);
         }
         const escapeTarget = state.context.Spiderlings.Webbing.resolveWebbingAction({
             action: {
@@ -1217,8 +1388,8 @@ function checkRuntime(state) {
                 progress: 1,
             },
         }).outcome;
-        if (escapeTarget.requiredActions !== 2 || escapeTarget.completed !== true) {
-            fail(`${family.id} must complete its counted escape on the second effective action.`);
+        if (escapeTarget.reason !== "unsupported-action") {
+            fail(`${family.id} must not complete escape in the lifecycle resolver.`);
         }
         const refreshTriggers = ((restraint && restraint.events) || [])
             .filter((event) => event.type === "SpiderlingsRefreshModels")
@@ -1312,6 +1483,26 @@ function checkRuntime(state) {
     if (errors.length === cocoonGateErrors)
         pass("Cocoon blocks all twenty-three inner Webbing items across groups and restores their actions on removal.");
 
+    for (const definition of byId.values()) {
+        if (!definition.name.startsWith("SpiderlingsWebbing")) continue;
+        const stage =
+            definition.name === cocoon.id
+                ? "Cocoon"
+                : definition.name.includes("Lv3")
+                  ? "Lv3"
+                  : definition.name.includes("Lv2")
+                    ? "Lv2"
+                    : "Lv1";
+        const profiles = state.context.Spiderlings.WebbingData.ESCAPE_PROFILES;
+        const profile = profiles[stage + (definition.name.endsWith("Arm") ? "Arm" : "")] || profiles[stage];
+        if (
+            JSON.stringify(plain(definition.escapeChance)) !== JSON.stringify(plain(profile.escapeChance)) ||
+            JSON.stringify(plain(definition.speedMult)) !== JSON.stringify(plain(profile.speedMult)) ||
+            definition.struggleMinSpeed?.Cut !== 0.01 ||
+            definition.alwaysEscapable?.includes("Cut")
+        )
+            fail(definition.name + " must retain native escape parameters and native cutting access.");
+    }
     const cocoonRestraint = byId.get(cocoon.id);
     const cocoonModel = byModel.get(cocoon.model);
     const cocoonLayer = layers(cocoonModel)[0];
@@ -1321,7 +1512,7 @@ function checkRuntime(state) {
         cocoonRestraint.immobile === true ||
         cocoonRestraint.hobble !== 3 ||
         JSON.stringify(plain(cocoonRestraint.escapeChance)) !==
-            JSON.stringify({ Cut: 0.025, Struggle: 0.02, Remove: 0.02 })
+            JSON.stringify({ Cut: 0.5, Remove: 0.04, Struggle: 0.03 })
     ) {
         fail("Cocoon restraint contract changed.");
     }
@@ -1365,14 +1556,14 @@ function checkRuntime(state) {
     }
     const webbingSource = readModText("SpiderlingsWebbing.js");
     if (/Math\.max\(0,\s*Number\(data\.cost/.test(webbingSource))
-        fail("counted escape must preserve KD's negative stamina cost sign.");
+        fail("native escape must preserve KD's negative stamina cost sign.");
     const testModels = [...byModel.values()].filter((model) =>
         layers(model).some((layer) => layer.Sprite === "TestPlaceholder"),
     );
     if (testModels.length) fail("No model may retain TEST placeholder art.");
     if (!errors.some((message) => /Cocoon|Lv2|negative stamina|TEST placeholder/.test(message))) {
         pass(
-            "all five Lv2 items and Cocoon render delivered art and retain their counted escape contracts; no placeholder remains.",
+            "all five Lv2 items and Cocoon render delivered art and retain their native escape contracts; no placeholder remains.",
         );
     }
 }
@@ -1381,11 +1572,11 @@ function checkRouting(state) {
     const enemyByName = new Map(state.enemies.map((entry) => [entry.name, entry]));
     for (const name of ["Spinner", "Jumper"]) {
         const enemy = enemyByName.get(name);
-        const expectedAttack = name === "Jumper" ? "SpellMeleeEffectSuicide" : "MeleeEffectSuicide";
+        const expectedAttack = name === "Jumper" ? "SpellMeleeEffectSuicide" : "MeleeEffect";
         if (
             !enemy ||
             enemy.attack !== expectedAttack ||
-            enemy.suicideOnEffect !== true ||
+            enemy.suicideOnEffect !== (name === "Jumper") ||
             !enemy.effect ||
             !enemy.effect.effect ||
             enemy.effect.effect.name !== "SpiderlingsWebbingEnemyBind" ||
@@ -1408,9 +1599,10 @@ function checkRouting(state) {
     }
     const webbing = state.context.Spiderlings && state.context.Spiderlings.Webbing;
     const expectedProfiles = {
-        Spinner: [3, 3, 3, 3, 2, 1, 1, 3, 3, 3, 3],
+        Spinner: [0.25, 0.25, 0.25, 0.25, 2, 1, 1, 0.25, 0.25, 0.25, 0.25],
         Jumper: [1, 1, 1, 2, 3, 3, 3, 1, 1, 1, 1],
         WebCaster: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        MageSpiderlings: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     };
     if (!webbing || JSON.stringify(plain(webbing.ENEMY_PROFILES)) !== JSON.stringify(expectedProfiles))
         fail("shared enemy profiles changed or gained another route.");
@@ -1423,7 +1615,7 @@ function checkRouting(state) {
         const resolve = (items) =>
             webbing.resolveWebbingAction({
                 snapshot: { items, webSpray: { stacks: 5 } },
-                action: { type: "enemyBind", profile: "Spinner", random: () => 0 },
+                action: { type: "enemyBind", profile: "WebCaster", random: () => 0 },
             }).outcome;
         const full = state.restraints
             .filter((entry) => /^SpiderlingsWebbingLv[123]/.test(entry.name))
@@ -1444,6 +1636,16 @@ function checkRouting(state) {
     }
 
     const spellByName = new Map(state.spells.map((entry) => [entry.name, entry]));
+    for (const spellName of ["SpiderlingsMageRune", "SpiderlingsMageBolt"]) {
+        const spell = spellByName.get(spellName);
+        if (spell?.onhit !== "" || !exists(`Bullets/${spellName}Hit.png`))
+            fail(`${spellName} must package its native hit visual.`);
+    }
+    for (const spellName of ["SpiderlingsMageHex", "SpiderlingsMageCollapse"]) {
+        const spell = spellByName.get(spellName);
+        if (spell?.type !== "inert" || spell.noSprite !== true)
+            fail(`${spellName} must leave damage and drawing to the saved Mage spell lifecycle.`);
+    }
     const dash = spellByName.get("SpiderlingsJumperDash");
     const dashApi = state.context.Spiderlings && state.context.Spiderlings.JumperDash;
     const dashSource = readModText("SpiderlingsJumperDash.js");
@@ -1656,9 +1858,15 @@ function checkRouting(state) {
 
 function checkTranslations(state) {
     const initialErrorCount = errors.length;
-    const currentIds = [...families, ...lv2Families, ...lv3Families].map((entry) => entry.id).concat(cocoon.id);
+    const localeTexts = {};
+    for (const error of inspectEscapeText(state.context.KinkyDungeonRestraints, (key) => state.texts[key]).errors)
+        fail(`English fallback ${error}`);
+    const currentIds = [...families, ...lv2Families, ...lv3Families]
+        .map((entry) => entry.id)
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder");
     const runtimeMessageKeys = [
         "KDModButtonspiderlingsPinkWebbing",
+        "KDModButtonspiderlingsEnableHood",
         "KinkyDungeonSpellSpiderlingsJumperDash",
         "KinkyDungeonSpellCastSpiderlingsJumperDash",
         "KinkyDungeonSpiderlingsCocoonAnchored",
@@ -1671,7 +1879,29 @@ function checkTranslations(state) {
         ),
     );
     runtimeMessageKeys.push(...escapeMessageKeys);
+    escapeMessageKeys.push(
+        ...escapeTextKeys(state.context.KinkyDungeonRestraints).filter((key) => !escapeMessageKeys.includes(key)),
+    );
+    runtimeMessageKeys.push(...escapeMessageKeys.filter((key) => !runtimeMessageKeys.includes(key)));
     runtimeMessageKeys.push("KinkyDungeonStatSpiderlingsCocoonStart", "KinkyDungeonStatDescSpiderlingsCocoonStart");
+    runtimeMessageKeys.push(
+        ...["Pull", "Contest", "Start", "Win", "Interrupt", "Tired", "Wrap", "Done", "Weave", "Escape"].map(
+            (s) => "SpiderlingsSpinner" + s,
+        ),
+        "NameSpiderlingsSilkAnchor",
+        "KillSpiderlingsSilkAnchor",
+        "SpiderlingsFieldPreparing",
+        "SpiderlingsFieldReady",
+        "SpiderlingsFieldSprung",
+        "SpiderlingsFieldBroken",
+        "SpiderlingsFieldReset",
+        "SpiderlingsFieldJumper",
+        "SpiderlingsFieldStatus",
+        "SpiderlingsFieldRebuild",
+        "SpiderlingsFieldWaiting",
+        "SpiderlingsFieldAddSpinner",
+        ...["preparing", "ready", "sprung", "broken", "complete"].map((p) => "SpiderlingsFieldPhase" + p),
+    );
     const pairedGateKey = "KinkyDungeonSpiderlingsWebbingLv1Covered";
     for (const localeFile of localeFiles) {
         if (!exists(localeFile)) {
@@ -1679,6 +1909,7 @@ function checkTranslations(state) {
             continue;
         }
         const entries = parseCsv(localeFile);
+        localeTexts[localeFile] = entries;
         for (const id of currentIds) {
             for (const suffix of ["", "Desc", "Desc2"]) {
                 if (!String(entries.get(`Restraint${id}${suffix}`) || "").trim())
@@ -1699,6 +1930,7 @@ function checkTranslations(state) {
         }
         if (!String(entries.get(pairedGateKey) || "").trim()) fail(`${localeFile} is missing ${pairedGateKey}.`);
     }
+    for (const error of inspectTranslationPlaceholders(state.texts, localeTexts)) fail(error);
     const fallbackMissing = currentIds
         .flatMap((id) => ["", "Desc", "Desc2"].map((suffix) => `Restraint${id}${suffix}`))
         .concat(runtimeMessageKeys, pairedGateKey)
@@ -1706,14 +1938,20 @@ function checkTranslations(state) {
     if (fallbackMissing.length) fail(`English fallback keys are missing: ${fallbackMissing.join(", ")}`);
     if (errors.length === initialErrorCount) {
         pass(
-            "English fallbacks and all seven locales cover twenty-four restraint text triplets plus the paired outer-layer gate message.",
+            "English fallbacks and all seven locales cover twenty-five restraint text triplets, paired outer-layer gates, and the Spinner demo actions.",
         );
     }
 }
 
 function checkReleaseZip(manifest) {
     if (!manifest || !manifest.modbuild) return;
-    const zipName = `Spiderlings_${manifest.modbuild}.zip`;
+    let zipName;
+    try {
+        zipName = parseReleaseVersion(manifest.modbuild).packageName;
+    } catch {
+        return;
+    } // loadManifest already reports invalid versions.
+
     const zipPath = path.join(workspaceRoot, zipName);
     if (!fs.existsSync(zipPath)) {
         note(`${zipName} is absent; this run checks the source package without certifying an installable ZIP.`);
@@ -1744,12 +1982,14 @@ function checkReleaseZip(manifest) {
 function main() {
     console.log(`Spiderlings mod check: ${modRoot}`);
     console.log(`Reference game package: ${gameRoot} (read-only)`);
-    checkProjectRules();
+    checkProjectInputs();
     const manifest = loadManifest();
     checkRuntimeTrees();
     checkOfficialSkirtBoundary();
     checkTextureAtlas();
     checkTextureAtlas(true);
+    checkTextureAtlas(false, true);
+    checkTextureAtlas(true, true);
     checkSyntax();
     const state = loadRuntime();
     checkRuntime(state);

@@ -1,0 +1,39 @@
+{
+  "stateOwners": [
+    {
+      "id": "field-work",
+      "records": ["group", "crew"],
+      "collections": ["groups"],
+      "fields": ["planId", "selectionOrdinal", "assignments", "maintenance", "maintenanceOffer", "rally*"],
+      "owners": ["SpiderlingsFieldProjects.js"]
+    },
+    {
+      "id": "command-requests",
+      "records": ["request"],
+      "collections": ["requests"],
+      "fields": ["*"],
+      "owners": ["SpiderlingsFieldCommand.js"]
+    },
+    {
+      "id": "field-structure",
+      "records": ["composite"],
+      "collections": ["composites"],
+      "fields": ["constructionOrder", "layerIds", "closureArmed"],
+      "owners": ["SpiderlingsSpinnerTopology.js", "SpiderlingsSpinnerNativeField.js"]
+    }
+  ],
+  "nativeOwners": [
+    {
+      "root": "KDAIType",
+      "owners": ["SpiderlingsNativeActions.js"]
+    },
+    {
+      "root": "KDGetDir",
+      "owners": ["SpiderlingsNativeActions.js", "SpiderlingsWebMobility.js"]
+    },
+    {
+      "root": "KinkyDungeonEnemyLoop",
+      "owners": ["SpiderlingsNativeActions.js", "SpiderlingsCombat.js", "SpiderlingsNPCAdhesion.js"]
+    }
+  ]
+}

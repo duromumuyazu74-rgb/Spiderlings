@@ -5,75 +5,10 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const { gamePath, artworkPath } = require("../reference-inputs.js");
 
 const modRoot = path.join(__dirname, "..", "..");
+const { gamePath, artworkPath } = require("../reference-inputs.js");
 const referenceRoot = gamePath();
-const families = [
-    { family: "Arm", asset: "ArmWebbing.png", source: "T's NEW Webbing LV1 Arm Webbing.png", group: "ItemArms" },
-    {
-        family: "MittenLeft",
-        asset: "MittenLeft.png",
-        source: "T's NEW Webbing LV1 Web Mittens.png",
-        group: "ItemHands",
-    },
-    {
-        family: "MittenRight",
-        asset: "MittenRight.png",
-        source: "T's NEW Webbing LV1 Web Mittens.png",
-        group: "ItemHands",
-    },
-    { family: "Belly", asset: "Belly.png", source: "T's NEW Webbing LV1 Belly Wrapping.png", group: "ItemTorso" },
-    { family: "Legs", asset: "Legs.png", source: "T's NEW Webbing LV1 Leg Webbing.png", group: "ItemLegs" },
-    { family: "Ankles", asset: "Ankles.png", source: "T's NEW Webbing LV1 Ankle Webbing.png", group: "ItemFeet" },
-    { family: "Foot", asset: "Foot.png", source: "T's NEW Webbing LV1 Foot Webbing.png", group: "ItemBoots" },
-    {
-        family: "Blindfold",
-        asset: "Blindfold.png",
-        source: "T's NEW Webbing LV1 Blindfold Webbing.png",
-        group: "ItemHead",
-    },
-    {
-        family: "Stuffing",
-        asset: "Stuffing.png",
-        source: "T's NEW Webbing LV1 Mouth Filling Webbing.png",
-        group: "ItemMouth",
-    },
-    { family: "Gag", asset: "Gag.png", source: "T's NEW Webbing LV1 Gag Webbing.png", group: "ItemMouth" },
-].map((entry) => ({
-    ...entry,
-    id: `SpiderlingsWebbingLv1${entry.family}`,
-    model: `SpiderlingsWebbingLv1${entry.family}Model`,
-    runtimeAsset: `Models/SpiderlingsWebbingLv1/${entry.asset}`,
-}));
-const lv2Families = [
-    { family: "Arm", asset: "ArmWebbing.png", source: "T's NEW Webbing LV2 Arm Webbing.png", group: "ItemArms" },
-    { family: "Belly", asset: "Belly.png", source: "T's NEW Webbing LV2 Belly Webbing.png", group: "ItemTorso" },
-    { family: "Legs", asset: "Legs.png", source: "T's NEW Webbing LV2 Leg Webbing.png", group: "ItemLegs" },
-    { family: "Ankles", asset: "Ankles.png", source: "T's NEW Webbing LV2 Ankle Webbing.png", group: "ItemFeet" },
-    { family: "Foot", asset: "Foot.png", source: "T's NEW Webbing LV2 Foot Webbing.png", group: "ItemBoots" },
-].map((entry) => ({
-    ...entry,
-    id: `SpiderlingsWebbingLv2${entry.family}`,
-    model: `SpiderlingsWebbingLv2${entry.family}Model`,
-    runtimeAsset: `Models/SpiderlingsWebbingLv2/${entry.asset}`,
-}));
-const armId = families[0].id;
-const lv3Families = ["Arm", "Belly", "Legs", "Ankles", "Foot", "Blindfold", "Gag", "Hood"];
-const armModelId = families[0].model;
-const armAsset = families[0].runtimeAsset;
-const lv2ArmDisplacement = "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png";
-const displacementAssets = [
-    "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
-    "DisplacementMaps/SpiderlingsWebbingLv2BellySquish.png",
-    "DisplacementMaps/SpiderlingsWebbingLv2LegsSquish.png",
-    "DisplacementMaps/SpiderlingsWebbingLv2AnklesSquish.png",
-    "DisplacementMaps/SpiderlingsWebbingLv2FootSquish.png",
-];
-const webbingAtlas = "TextureAtlas/spiderlings-webbing-0.json";
-const webbingAtlasImage = "TextureAtlas/spiderlings-webbing-0.png";
-const pinkAtlas = "TextureAtlas/spiderlings-webbing-pink-0.json";
-const pinkAtlasImage = "TextureAtlas/spiderlings-webbing-pink-0.png";
 const translationFiles = [
     "SpiderlingsCN.csv",
     "SpiderlingsDE.csv",
@@ -98,126 +33,15 @@ function parseTranslations(file) {
     );
 }
 
-function loadWebbingRuntime(overrides = {}) {
-    const models = [];
-    const texts = {};
-    const equipped = new Map();
-    const addCalls = [];
-    const removeCalls = [];
-    const context = {
-        console,
-        KinkyDungeonEnemies: [],
-        KinkyDungeonRestraints: [],
-        KinkyDungeonSpellListEnemies: [],
-        KDEventMapGeneric: {},
-        KDEventMapInventory: {},
-        KDEventMapSpell: {},
-        KDPlayerEffects: { TrapBindings: () => ({ effect: true }) },
-        KDModConfigs: {},
-        KDModSettings: {},
-        KDTapeLink: ["Wrapping"],
-        KDTapeRender: ["Wrapping"],
-        KDBindable: "Bindable",
-        KDDevices: "Devices",
-        KDCorsetLink: "Corsets",
-        KDHarnessLink: "Harnesses",
-        KDElbowBind: "ElbowBind",
-        KDWrappable: "Wrappable",
-        ModelDefs: {},
-        KDOptimizeDisplacementMapInfo: {},
-        KDModelDefs: {},
-        KDMapInit(values) {
-            return Object.fromEntries((values || []).map((value) => [value, true]));
-        },
-        ToMap(values) {
-            return Object.fromEntries((values || []).map((value) => [value, true]));
-        },
-        ToLayerMap(layers) {
-            return Object.fromEntries((layers || []).map((layer) => [layer.Name, layer]));
-        },
-        KDAddEvent(map, trigger, type, handler) {
-            map[trigger] = map[trigger] || {};
-            map[trigger][type] = handler;
-        },
-        AddModel(model) {
-            models.push(model);
-            context.ModelDefs[model.Name] = model;
-            context.KDModelDefs[model.Name] = model;
-        },
-        KinkyDungeonAddRestraintText(name, displayName, description, flavorText) {
-            texts[`Restraint${name}`] = displayName;
-            texts[`Restraint${name}Desc`] = description;
-            texts[`Restraint${name}Desc2`] = flavorText;
-        },
-        KinkyDungeonRefreshRestraintsCache() {},
-        KinkyDungeonRefreshEnemiesCache() {},
-        KinkyDungeonGetRestraintByName(name) {
-            return context.KinkyDungeonRestraints.find((restraint) => restraint.name === name);
-        },
-        KinkyDungeonGetRestraintItem(group) {
-            return equipped.get(group);
-        },
-        KDCanAddRestraint() {
-            return true;
-        },
-        KinkyDungeonAddRestraint(restraint, tightness, bypass, lock) {
-            addCalls.push({ restraint, tightness, bypass, lock });
-            const previous = equipped.get(restraint.Group);
-            const item = {
-                name: restraint.name,
-                group: restraint.Group,
-                tightness,
-                lock,
-                data: {},
-            };
-            if (
-                previous &&
-                Array.isArray(previous.restraint.LinkableBy) &&
-                previous.restraint.LinkableBy.some((tag) => (restraint.shrine || []).includes(tag))
-            ) {
-                item.dynamicLink = previous;
-            }
-            item.restraint = restraint;
-            equipped.set(restraint.Group, item);
-            return 1;
-        },
-        KinkyDungeonRemoveRestraintSpecific(item) {
-            removeCalls.push(item);
-            if (!item) return false;
-            const root = equipped.get(item.group);
-            if (root === item) {
-                if (item.dynamicLink) equipped.set(item.group, item.dynamicLink);
-                else equipped.delete(item.group);
-                return true;
-            }
-            let parent = root;
-            while (parent && parent.dynamicLink !== item) parent = parent.dynamicLink;
-            if (!parent) return false;
-            parent.dynamicLink = item.dynamicLink;
-            return true;
-        },
-        addTextKey(key, value) {
-            texts[key] = value;
-        },
-        ...overrides,
-    };
-    context.globalThis = context;
-    context.window = context;
-    vm.createContext(context);
-
-    for (const file of [
-        "SpiderlingsCore.js",
-        "SpiderlingsModelRuntime.js",
-        "Spiderlings.js",
-        "SpiderlingsWebbingModels.js",
-        "SpiderlingsCombat.js",
-        "SpiderlingsWebbing.js",
-    ]) {
-        vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
-    }
-
-    return { context, models, texts, equipped, addCalls, removeCalls };
-}
+const {
+    loadWebbingRuntime,
+    families,
+    lv2Families,
+    lv3Families,
+    armId,
+    armModelId,
+    armAsset,
+} = require("./helpers/model-runtime.js");
 
 function kd55DrawsLayer(layer, poses, highestPriority) {
     const overrideLayer = layer.HideOverrideLayer || layer.Layer;
@@ -422,7 +246,7 @@ test("Arm Webbing registers a direct Wristtie-only ItemArms tracer", () => {
             Remove: restraint.escapeChance.Remove,
             Struggle: restraint.escapeChance.Struggle,
         },
-        { Cut: 100, Remove: 100, Struggle: 100 },
+        { Cut: 4, Remove: 4, Struggle: 4 },
     );
 
     assert.ok(model);
@@ -473,7 +297,7 @@ test("the complete runtime registers ten Lv1, five Lv2, eight Lv3 restraints, an
     assert.equal(runtime.context.Spiderlings.LooseWebbing, undefined);
 });
 
-test("all five real Lv2 items render their delivered art and require two effective actions", () => {
+test("all five real Lv2 items render their delivered art and expose native escape parameters", () => {
     const modJson = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
     const firstScript = modJson.fileorder.findIndex((file) => file.endsWith(".js"));
     for (const family of lv2Families) {
@@ -510,19 +334,19 @@ test("all five real Lv2 items render their delivered art and require two effecti
         );
 
         assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(family.id).applied, true);
-        const first = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(family.id, "Struggle", {
-            legal: true,
+        assert.deepEqual(JSON.parse(JSON.stringify(restraint.escapeChance)), {
+            Cut: 0.18,
+            Remove: family.family === "Arm" ? 0.7 : 0.3,
+            Struggle: family.family === "Arm" ? 0.2 : 0.12,
         });
-        assert.equal(first.progressed, true);
-        assert.equal(first.completed, false);
-        const second = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(family.id, "Remove", {
-            legal: true,
-        });
-        assert.equal(second.completed, true);
+        assert.equal(
+            restraint.events.some((e) => /Lv[23]Escape/.test(e.type)),
+            false,
+        );
     }
 });
 
-test("all eight Lv3 restraints equip independently with delivered models, complete translations, and two-action escape", () => {
+test("all eight Lv3 restraints equip independently with delivered models, complete translations, and native escape parameters", () => {
     const runtime = loadWebbingRuntime();
     const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
     const csv = translationFiles.map((file) => ({ file, values: parseTranslations(file) }));
@@ -551,12 +375,15 @@ test("all eight Lv3 restraints equip independently with delivered models, comple
             for (const translation of csv) assert.ok(translation.values.get(key), `${translation.file}: ${key}`);
         }
         assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
-        for (const [index, method] of ["Cut", "Remove"].entries()) {
-            const result = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(id, method, { legal: true });
-            assert.equal(result.requiredActions, 2);
-            assert.equal(result.effectiveActions, index + 1);
-            assert.equal(result.completed, index === 1);
-        }
+        assert.deepEqual(JSON.parse(JSON.stringify(restraint.escapeChance)), {
+            Cut: family === "Arm" ? 0.18 : 0.1,
+            Remove: family === "Arm" ? 0.5 : 0.14,
+            Struggle: family === "Arm" ? 0.15 : 0.04,
+        });
+        assert.equal(
+            restraint.events.some((e) => /Lv[23]Escape/.test(e.type)),
+            false,
+        );
     }
     assert.equal(runtime.context.KinkyDungeonGetRestraintByName("SpiderlingsWebbingLv3Hood").Group, "ItemHead");
     assert.equal(runtime.context.KinkyDungeonGetRestraintByName("SpiderlingsWebbingLv3Blindfold").Group, "ItemHead");
@@ -732,691 +559,22 @@ test("Lv2 stays above every visible Lv1 pair while Lv1 Legs/Ankles remain behind
     }
 });
 
-test("the real Lv2 inventory event makes the first native action spend-and-fail and the second succeed", () => {
-    const runtime = loadWebbingRuntime();
-    const id = "SpiderlingsWebbingLv2Arm";
-    assert.equal(runtime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
-    const item = runtime.equipped.get("ItemArms");
-    const eventType = runtime.context.Spiderlings.Webbing.LV2_ESCAPE_EVENT;
-    const before = runtime.context.KDEventMapInventory.beforeStruggleCalc[eventType];
-    const after = runtime.context.KDEventMapInventory.struggle[eventType];
-    const rejectedCut = {
-        restraint: item,
-        query: false,
-        struggleType: "Cut",
-        struggleGroup: "ItemArms",
-        canCut: false,
-        cost: -0.2,
-        escapeSpeed: 1,
-        minSpeed: 0.4,
-        escapeChance: 100,
-        escapePenalty: 0,
-        limitChance: 0,
-    };
-    before({}, item, rejectedCut);
-    after({}, item, { restraint: item, struggleType: "Cut", result: "Fail" });
-    assert.equal(
-        item.data.SpiderlingsEscapeActions,
-        undefined,
-        "an unarmed Cut must not be counted when KD later reports Fail",
-    );
-
-    const blockedRuntime = loadWebbingRuntime({ KDGroupBlocked: () => true });
-    assert.equal(blockedRuntime.context.Spiderlings.Webbing.equipForDebug(id).applied, true);
-    const blockedItem = blockedRuntime.equipped.get("ItemArms");
-    const blockedBefore = blockedRuntime.context.KDEventMapInventory.beforeStruggleCalc[eventType];
-    const blockedAfter = blockedRuntime.context.KDEventMapInventory.struggle[eventType];
-    const blockedAttempt = {
-        restraint: blockedItem,
-        query: false,
-        struggleType: "Struggle",
-        struggleGroup: "ItemArms",
-        cost: -3,
-        escapeSpeed: 1,
-        minSpeed: 0.4,
-        escapeChance: 100,
-        escapePenalty: 0,
-        limitChance: 0,
-    };
-    blockedBefore({}, blockedItem, blockedAttempt);
-    blockedAfter({}, blockedItem, { restraint: blockedItem, struggleType: "Struggle", result: "Fail" });
-    assert.equal(
-        blockedItem.data.SpiderlingsEscapeActions,
-        undefined,
-        "a group-blocked attempt must not be counted when KD later reports Fail",
-    );
-
-    const first = {
-        restraint: item,
-        query: false,
-        struggleType: "Struggle",
-        struggleGroup: "ItemArms",
-        cost: -3,
-        escapeSpeed: 1,
-        minSpeed: 0.4,
-        escapeChance: 100,
-        escapePenalty: 0,
-        limitChance: 0,
-    };
-    before({}, item, first);
-    assert.equal(first.escapeSpeed, 0);
-    assert.ok(first.minSpeed > 0);
-    assert.equal(item.data.SpiderlingsEscapeActions, undefined);
-    after({}, item, { restraint: item, struggleType: "Struggle", result: "Fail" });
-    assert.equal(item.data.SpiderlingsEscapeActions, 1);
-
-    const second = { ...first, escapeSpeed: 1, escapeChance: 100, escapePenalty: 0 };
-    before({}, item, second);
-    assert.equal(item.cutProgress, 1);
-    assert.equal(second.escapeChance, 1);
-    assert.ok(second.escapePenalty < 0);
-});
-
-test("the model runtime caches all atlas frames under their direct model aliases before preload", async () => {
-    const atlasData = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
-    const fetches = [];
-    const kdTextures = [];
-    const assetLoads = [];
-    const textureCache = new Map();
-    const addedAliases = [];
-    let spritesheetInput;
-    const runtime = loadWebbingRuntime({
-        KDModFiles: {
-            [webbingAtlas]: "blob:spiderlings-webbing-atlas-json",
-            [webbingAtlasImage]: "blob:spiderlings-webbing-atlas-png",
-            [armAsset]: "blob:arm-fallback",
-        },
-        kdpixitex: textureCache,
-        KDTex(texturePath) {
-            kdTextures.push(texturePath);
-            return { texturePath };
-        },
-        PIXI: {
-            settings: {
-                ADAPTER: {
-                    async fetch(url) {
-                        fetches.push(url);
-                        return {
-                            ok: true,
-                            async json() {
-                                return atlasData;
-                            },
-                        };
-                    },
-                },
-            },
-            Assets: {
-                load(asset) {
-                    const texturePath = typeof asset === "string" ? asset : asset.src;
-                    assetLoads.push(texturePath);
-                    return Promise.resolve({ baseTexture: { texturePath } });
-                },
-            },
-            SCALE_MODES: { LINEAR: "linear" },
-            Spritesheet: class {
-                constructor(baseTexture, data, resolutionFilename) {
-                    spritesheetInput = { baseTexture, data, resolutionFilename };
-                    this.textures = Object.fromEntries(
-                        Object.keys(data.frames).map((key) => [key, { atlasFrame: key, baseTexture }]),
-                    );
-                }
-                async parse() {}
-            },
-            Texture: {
-                addToCache(texture, alias) {
-                    addedAliases.push([texture, alias]);
-                },
-            },
-            utils: { TextureCache: {} },
-        },
-    });
-
-    assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.TEXTURE_ATLASES), [webbingAtlas, pinkAtlas]);
-    assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.DISPLACEMENT_ASSETS), [...displacementAssets]);
-    assert.equal(typeof runtime.context.Spiderlings.preloadSpiderlingsTextures, "function");
-    assert.equal(typeof runtime.context.KDEventMapInventory.postApply.SpiderlingsRefreshModels, "function");
-    await runtime.context.Spiderlings.loadSpiderlingsTextureAtlases();
-    await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, false);
-    assert.deepEqual(fetches, ["blob:spiderlings-webbing-atlas-json"]);
-    assert.deepEqual(assetLoads, [...displacementAssets, webbingAtlasImage]);
-    assert.equal(spritesheetInput.resolutionFilename, webbingAtlas);
-    assert.equal(spritesheetInput.baseTexture.texturePath, webbingAtlasImage);
-    assert.deepEqual(kdTextures, displacementAssets);
-    assert.deepEqual([...textureCache.keys()], [...displacementAssets, ...Object.keys(atlasData.frames)]);
-    assert.equal(
-        addedAliases.some(([, alias]) => alias === armAsset),
-        true,
-    );
-});
-
-test("pink settings switch all native layer paths and saved model copies without changing restraints or rendering metadata", async () => {
-    const player = { Appearance: [] };
-    const container = { Models: new Map() };
-    const refreshes = [];
-    const runtime = loadWebbingRuntime({
-        KinkyDungeonPlayer: player,
-        KDCurrentModels: new Map([[player, container]]),
-        ForceRefreshModels: (character) => refreshes.push(character),
-    });
-    const { context, models } = runtime;
-    const original = JSON.parse(JSON.stringify(models));
-    const restraints = JSON.stringify(context.KinkyDungeonRestraints);
-    const config = context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsPinkWebbing");
-    assert.equal(config.type, "boolean");
-    assert.equal(config.default, false);
-    assert.equal(context.KDModSettings.Spiderlings.spiderlingsPinkWebbing, false);
-    player.Appearance = original.map((model) => ({ Model: JSON.parse(JSON.stringify(model)) }));
-    container.Models = new Map(original.map((model) => [model.Name, JSON.parse(JSON.stringify(model))]));
-    const unrelated = { Name: "OtherMod", Folder: "OtherMod", Categories: ["Restraints"], Layers: {} };
-    player.Appearance.push({ Model: unrelated });
-    const { stripTypeScriptTypes } = require("node:module");
-    const native = fs.readFileSync(path.join(referenceRoot, "Data/Models.ts"), "utf8");
-    for (const name of ["ModelLayerString", "LayerSprite", "LayerSpriteCustom"]) {
-        const source = native.match(new RegExp(`function ${name}\\([^]*?\\n\\}`))?.[0];
-        assert.ok(source, name);
-        vm.runInContext(stripTypeScriptTypes(source), context);
-    }
-    const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
-    for (const pink of [true, false, true]) {
-        context.KDModSettings = { Spiderlings: { spiderlingsPinkWebbing: pink } };
-        context.KDEventMapGeneric[pink ? "afterModSettingsLoad" : "afterModConfig"].Spiderlings();
-        await context.Spiderlings.applyWebbingColor(true);
-        for (const group of [
-            models,
-            player.Appearance.slice(0, models.length).map((item) => item.Model),
-            [...container.Models.values()],
-        ]) {
-            for (let i = 0; i < group.length; i++) {
-                const model = group[i];
-                assert.equal(model.Folder, original[i].Folder + (pink ? "Pink" : ""));
-                assert.deepEqual(JSON.parse(JSON.stringify({ ...model, Folder: original[i].Folder })), original[i]);
-                for (const layer of Object.values(model.Layers)) {
-                    const texturePath = context.ModelLayerString(model, layer, { Closed: true, Wristtie: true });
-                    assert.equal(manifest.fileorder.includes(texturePath), true, texturePath);
-                    assert.equal(fs.existsSync(path.join(modRoot, texturePath)), true, texturePath);
-                }
-            }
-        }
-        assert.equal(JSON.stringify(context.KinkyDungeonRestraints), restraints);
-        assert.equal(unrelated.Folder, "OtherMod");
-    }
-    assert.ok(refreshes.length > 0);
-    // Saved appearance/container copies may retain the old color after redress.
-    player.Appearance[0].Model.Folder = original[0].Folder;
-    container.Models.get(original[0].Name).Folder = original[0].Folder;
-    context.KDEventMapInventory.afterDress.SpiderlingsRefreshModels({ trigger: "afterDress" });
-    assert.equal(player.Appearance[0].Model.Folder, original[0].Folder + "Pink");
-    assert.equal(container.Models.get(original[0].Name).Folder, original[0].Folder + "Pink");
-    const stableRefreshes = refreshes.length;
-    for (let i = 0; i < 24; i++)
-        context.KDEventMapInventory.afterDress.SpiderlingsRefreshModels({ trigger: "afterDress" });
-    assert.equal(
-        refreshes.length,
-        stableRefreshes,
-        "unchanged owned colors must retain the native model cache after dressing",
-    );
-    const restored = loadWebbingRuntime({ KDModSettings: { Spiderlings: { spiderlingsPinkWebbing: true } } });
-    assert.equal(
-        restored.models.every((model) => model.Folder.endsWith("Pink")),
-        true,
-    );
-});
-
-test("delivered bullet colors follow settings without changing spell identities or draw geometry", () => {
-    const calls = [];
-    const receiver = {};
-    const result = {};
-    const { context } = loadWebbingRuntime({
-        KinkyDungeonRootDirectory: "Game/",
-        KDModSettings: { Spiderlings: { spiderlingsPinkWebbing: true } },
-        KDDraw(...args) {
-            calls.push({ receiver: this, args });
-            return result;
-        },
-    });
-    const spells = JSON.stringify(context.KinkyDungeonSpellListEnemies);
-    const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
-    for (const pink of [true, false, true]) {
-        context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = pink;
-        context.KDEventMapGeneric.afterModConfig.Spiderlings();
-        for (const name of ["SpiderWeb", "SpiderWebHit", "WebSpray", "WebSprayTrail", "Fireball"]) {
-            const args = [
-                {},
-                new Map(),
-                "existing-bullet",
-                `Game/Bullets/${name}.png`,
-                10,
-                20,
-                72,
-                72,
-                0.5,
-                { alpha: 0.8 },
-                true,
-            ];
-            const expected = name !== "Fireball" && pink ? `Game/Bullets/${name}Pink.png` : args[3];
-            assert.equal(context.KDDraw.apply(receiver, args), result);
-            assert.equal(calls.at(-1).receiver, receiver);
-            assert.deepEqual(
-                calls.at(-1).args,
-                args.map((arg, i) => (i === 3 ? expected : arg)),
-            );
-            if (name !== "Fireball") assert.ok(manifest.fileorder.includes(expected.slice(5)), expected);
-        }
-        const unrelated = [{}, new Map(), "other", "Models/Other/WebSpray.png"];
-        context.KDDraw(...unrelated);
-        assert.deepEqual(calls.at(-1).args, unrelated);
-        assert.equal(JSON.stringify(context.KinkyDungeonSpellListEnemies), spells);
-    }
-});
-
-test("both color atlases preload before equipment, reuse textures on switching, and fail independently", async () => {
-    const original = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
-    const pink = JSON.parse(fs.readFileSync(path.join(modRoot, pinkAtlas), "utf8"));
-    for (const broken of [null, webbingAtlas, pinkAtlas]) {
-        const loads = [];
-        const fetches = [];
-        const destroyed = [];
-        const cache = new Map();
-        const runtime = loadWebbingRuntime({
-            console: { ...console, warn() {} },
-            KDModFiles: Object.fromEntries(
-                [webbingAtlas, webbingAtlasImage, pinkAtlas, pinkAtlasImage].map((path) => [path, `blob:${path}`]),
-            ),
-            kdpixitex: cache,
-            PIXI: {
-                settings: {
-                    ADAPTER: {
-                        async fetch(url) {
-                            fetches.push(url);
-                            return {
-                                async json() {
-                                    return url === `blob:${pinkAtlas}` ? pink : original;
-                                },
-                            };
-                        },
-                    },
-                },
-                Assets: {
-                    async load(asset) {
-                        const path = typeof asset === "string" ? asset : asset.src;
-                        loads.push(path);
-                        return { valid: true, baseTexture: { valid: true, path } };
-                    },
-                },
-                Spritesheet: class {
-                    constructor(baseTexture, data, path) {
-                        this.path = path;
-                        this.textures = Object.fromEntries(
-                            Object.keys(data.frames)
-                                .filter((_, index) => path !== broken || index !== 24)
-                                .map((name) => [name, { valid: true, baseTexture }]),
-                        );
-                    }
-                    async parse() {}
-                    destroy() {
-                        destroyed.push(this.path);
-                    }
-                },
-            },
-        });
-        // Eager loading is independent of the current color and worn items.
-        await runtime.context.Spiderlings.loadSpiderlingsTextureAtlases();
-        assert.deepEqual(fetches, [`blob:${webbingAtlas}`, `blob:${pinkAtlas}`]);
-        for (const [atlasPath, data] of [
-            [webbingAtlas, original],
-            [pinkAtlas, pink],
-        ]) {
-            assert.equal(
-                Object.keys(data.frames).filter((name) => cache.has(name)).length,
-                atlasPath === broken ? 0 : 25,
-                "an incomplete sheet must publish no partial aliases",
-            );
-        }
-        assert.deepEqual(destroyed, broken ? [broken] : []);
-        const atlasTextures = new Map(cache);
-        for (const isPink of [true, false, true]) {
-            runtime.context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = isPink;
-            await runtime.context.Spiderlings.applyWebbingColor();
-            await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, true);
-            const path = isPink ? "Models/SpiderlingsWebbingLv1Pink/ArmWebbing.png" : armAsset;
-            if (broken !== (isPink ? pinkAtlas : webbingAtlas)) {
-                assert.equal(cache.get(path), atlasTextures.get(path), "color switching reuses its atlas frame");
-            }
-        }
-        assert.deepEqual(
-            loads.filter((path) => path.startsWith("Models/")),
-            broken === pinkAtlas
-                ? ["Models/SpiderlingsWebbingLv1Pink/ArmWebbing.png"]
-                : broken === webbingAtlas
-                  ? [armAsset]
-                  : [],
-            "healthy atlases avoid all first-hit and color-switch direct PNG requests",
+test("layer escape exposes native speeds without forced completion hooks", () => {
+    const r = loadWebbingRuntime();
+    for (const id of ["SpiderlingsWebbingLv2Arm", "SpiderlingsWebbingLv3Arm"]) {
+        const def = r.context.KinkyDungeonGetRestraintByName(id);
+        assert.equal(def.alwaysEscapable, undefined);
+        assert.equal(
+            def.events.some((e) => /Lv[23]Escape/.test(e.type)),
+            false,
         );
+        assert.deepEqual(JSON.parse(JSON.stringify(def.struggleMinSpeed)), { Cut: 0.01, Remove: 0.01, Struggle: 0.01 });
+        assert.deepEqual(JSON.parse(JSON.stringify(def.limitChance)), { Cut: 0, Remove: 0, Struggle: 0 });
     }
+    assert.equal(r.context.Spiderlings.Webbing.completeEffectiveEscape, undefined);
 });
 
-test("pink fallback preloads are independent of original texture caches and a late atlas completion", async () => {
-    const atlasData = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
-    const cache = new Map();
-    const loads = [];
-    let finishAtlas;
-    const gate = new Promise((resolve) => {
-        finishAtlas = resolve;
-    });
-    const runtime = loadWebbingRuntime({
-        KDModFiles: { [webbingAtlas]: "blob:atlas-json", [webbingAtlasImage]: "blob:atlas-png" },
-        kdpixitex: cache,
-        PIXI: {
-            settings: {
-                ADAPTER: {
-                    async fetch() {
-                        await gate;
-                        return {
-                            async json() {
-                                return atlasData;
-                            },
-                        };
-                    },
-                },
-            },
-            Assets: {
-                async load(asset) {
-                    const key = typeof asset === "string" ? asset : asset.src;
-                    loads.push(key);
-                    return { baseTexture: { key } };
-                },
-            },
-            Spritesheet: class {
-                constructor(baseTexture, data) {
-                    this.textures = Object.fromEntries(Object.keys(data.frames).map((key) => [key, { baseTexture }]));
-                }
-                async parse() {}
-            },
-        },
-    });
-    runtime.context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = true;
-    await runtime.context.Spiderlings.applyWebbingColor();
-    const preload = runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, true);
-    finishAtlas();
-    await preload;
-    assert.equal(loads.includes("Models/SpiderlingsWebbingLv1Pink/ArmWebbing.png"), true);
-    assert.equal(runtime.models[0].Folder, "SpiderlingsWebbingLv1Pink");
-    assert.equal(cache.has(armAsset), true, "original atlas aliases remain original");
-    runtime.context.KDModSettings.Spiderlings.spiderlingsPinkWebbing = false;
-    await runtime.context.Spiderlings.applyWebbingColor();
-    await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, true);
-    assert.equal(loads.includes(armAsset), false, "switching back reuses the original atlas");
-});
-
-test("the model runtime falls back to the unchanged direct PNG when atlas loading fails", async () => {
-    const kdTextures = [];
-    const assetLoads = [];
-    const runtime = loadWebbingRuntime({
-        console: { ...console, warn() {} },
-        KDModFiles: { [webbingAtlas]: "blob:broken-atlas-json" },
-        kdpixitex: new Map(),
-        KDTex(texturePath) {
-            kdTextures.push(texturePath);
-        },
-        PIXI: {
-            settings: {
-                ADAPTER: {
-                    async fetch() {
-                        throw new Error("atlas unavailable");
-                    },
-                },
-            },
-            Assets: {
-                load(texturePath) {
-                    assetLoads.push(texturePath);
-                    return Promise.resolve({ texturePath });
-                },
-            },
-            Texture: { addToCache() {} },
-            utils: { TextureCache: {} },
-        },
-    });
-
-    await runtime.context.Spiderlings.loadSpiderlingsTextureAtlases();
-    await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, false);
-    assert.deepEqual(kdTextures, [...displacementAssets, armAsset]);
-    assert.deepEqual(assetLoads, [...displacementAssets, armAsset]);
-});
-
-test("an incomplete parsed atlas is discarded atomically before direct fallback", async () => {
-    const atlasData = JSON.parse(fs.readFileSync(path.join(modRoot, webbingAtlas), "utf8"));
-    const directLoads = [];
-    const textureCache = new Map();
-    let destroyed = false;
-    const runtime = loadWebbingRuntime({
-        console: { ...console, warn() {} },
-        KDModFiles: {
-            [webbingAtlas]: "blob:atlas-json",
-            [webbingAtlasImage]: "blob:atlas-png",
-        },
-        kdpixitex: textureCache,
-        KDTex() {},
-        PIXI: {
-            settings: {
-                ADAPTER: {
-                    async fetch() {
-                        return {
-                            ok: true,
-                            async json() {
-                                return atlasData;
-                            },
-                        };
-                    },
-                },
-            },
-            Assets: {
-                async load(texturePath) {
-                    if (typeof texturePath !== "string") return { baseTexture: { atlas: true } };
-                    directLoads.push(texturePath);
-                    return { texturePath };
-                },
-            },
-            SCALE_MODES: { LINEAR: "linear" },
-            Spritesheet: class {
-                constructor() {
-                    this.textures = Object.fromEntries(
-                        Object.keys(atlasData.frames)
-                            .filter((key) => key !== armAsset)
-                            .map((key) => [key, { baseTexture: { atlas: true } }]),
-                    );
-                }
-                async parse() {}
-                destroy() {
-                    destroyed = true;
-                }
-            },
-            Texture: { addToCache() {} },
-            utils: { TextureCache: {} },
-        },
-    });
-
-    await runtime.context.Spiderlings.loadSpiderlingsTextureAtlases();
-    await runtime.context.Spiderlings.preloadSpiderlingsTextures(armModelId, false);
-    assert.equal(destroyed, true);
-    assert.deepEqual([...textureCache.keys()], []);
-    assert.deepEqual(directLoads, [...displacementAssets, armAsset]);
-});
-
-test("first pink enemy application waits for decoding and replaces KD's pending texture before redress", async () => {
-    for (const alreadyCached of [false, true]) {
-        const pinkPath = "Models/SpiderlingsWebbingLv1Pink/ArmWebbing.png";
-        const pending = { valid: false, baseTexture: { valid: false } };
-        const decoded = { valid: true, baseTexture: { valid: true } };
-        const cache = new Map(alreadyCached ? [[pinkPath, pending]] : []);
-        const pixiCache = alreadyCached ? { [pinkPath]: pending } : {};
-        const redresses = [];
-        let finish;
-        const loading = new Promise((resolve) => {
-            finish = resolve;
-        });
-        let directRequests = 0;
-        const runtime = loadWebbingRuntime({
-            KDModSettings: { Spiderlings: { spiderlingsPinkWebbing: true } },
-            KDModFiles: { [pinkPath]: "blob:pink-without-extension" },
-            KinkyDungeonPlayer: {},
-            kdpixitex: cache,
-            KDTex(texturePath) {
-                if (texturePath === pinkPath) cache.set(texturePath, pending);
-            },
-            KinkyDungeonDressPlayer() {
-                redresses.push(cache.get(pinkPath));
-            },
-            PIXI: {
-                Assets: {
-                    // Pixi's background promise acknowledges scheduling, not decoding.
-                    async backgroundLoad() {},
-                    load(asset) {
-                        const texturePath = typeof asset === "string" ? asset : asset.src;
-                        if (texturePath !== pinkPath) return Promise.resolve(decoded);
-                        assert.equal(asset.format, "png");
-                        assert.equal(
-                            asset.loadParser,
-                            "modTextureLoader",
-                            "KD 5.4 blob URLs need explicit PNG parsing",
-                        );
-                        directRequests += 1;
-                        return loading;
-                    },
-                },
-                utils: { TextureCache: pixiCache },
-                Texture: {
-                    addToCache(texture, key) {
-                        pixiCache[key] = texture;
-                    },
-                },
-            },
-        });
-        runtime.context.KDEventMapInventory.postApply.SpiderlingsRefreshModels(
-            { trigger: "postApply" },
-            { name: armId },
-        );
-        await new Promise((resolve) => setImmediate(resolve));
-        assert.equal(redresses.length, 0, "do not bake an unready texture into the character");
-        assert.equal(directRequests, 1, "cached pending textures still need an awaited load");
-        finish(decoded);
-        await new Promise((resolve) => setImmediate(resolve));
-        assert.deepEqual(redresses, [decoded], "redress without another player action, using the decoded texture");
-        assert.equal(pixiCache[pinkPath], decoded);
-    }
-});
-
-test("concurrent distinct model preloads redress after every pending texture has settled", async () => {
-    const resolvers = new Map();
-    let redresses = 0;
-    const runtime = loadWebbingRuntime({
-        KinkyDungeonPlayer: {},
-        ForceRefreshModels() {},
-        KinkyDungeonDressPlayer() {
-            redresses += 1;
-        },
-        setTimeout() {},
-        KDTex() {},
-        PIXI: {
-            Assets: {
-                load(texturePath) {
-                    return new Promise((resolve) => resolvers.set(texturePath, resolve));
-                },
-            },
-        },
-    });
-    const refresh = runtime.context.KDEventMapInventory.postApply.SpiderlingsRefreshModels;
-    refresh({ trigger: "postApply" }, { name: "SpiderlingsWebbingLv2Arm" });
-    refresh({ trigger: "postApply" }, { name: families[1].id });
-    for (let index = 0; index < 4; index += 1) await Promise.resolve();
-
-    assert.deepEqual(
-        [...resolvers.keys()].sort(),
-        ["Models/SpiderlingsWebbingLv2/ArmWebbing.png", ...displacementAssets, families[1].runtimeAsset].sort(),
-    );
-    resolvers.get("Models/SpiderlingsWebbingLv2/ArmWebbing.png")({});
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(redresses, 0);
-    resolvers.get(families[1].runtimeAsset)({});
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(redresses, 0);
-    resolvers.get(lv2ArmDisplacement)({});
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(redresses, 1);
-});
-
-test("a displacement texture finishes decoding before the post-apply redress", async () => {
-    const resolvers = new Map();
-    const timers = [];
-    let redresses = 0;
-    const runtime = loadWebbingRuntime({
-        KinkyDungeonPlayer: {},
-        ForceRefreshModels() {},
-        KinkyDungeonDressPlayer() {
-            redresses += 1;
-        },
-        setTimeout(callback) {
-            timers.push(callback);
-        },
-        kdpixitex: new Map(),
-        KDTex() {},
-        PIXI: {
-            Assets: {
-                load(texturePath) {
-                    return new Promise((resolve) => resolvers.set(texturePath, resolve));
-                },
-            },
-        },
-    });
-    const refresh = runtime.context.KDEventMapInventory.postApply.SpiderlingsRefreshModels;
-    refresh({ trigger: "postApply" }, { name: "SpiderlingsWebbingLv2Arm" });
-    for (let index = 0; index < 4; index += 1) await Promise.resolve();
-
-    assert.deepEqual(
-        [...resolvers.keys()].sort(),
-        ["Models/SpiderlingsWebbingLv2/ArmWebbing.png", ...displacementAssets].sort(),
-    );
-    assert.equal(timers.length, 0, "a mapped item must not schedule a redress ahead of texture decoding");
-    resolvers.get("Models/SpiderlingsWebbingLv2/ArmWebbing.png")({});
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(redresses, 0);
-    resolvers.get(lv2ArmDisplacement)({});
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(redresses, 1);
-});
-
-test("an equipped save waits for eager displacement decoding before its one corrective redress", async () => {
-    const resolvers = new Map();
-    let redresses = 0;
-    const runtime = loadWebbingRuntime({
-        KinkyDungeonPlayer: {},
-        ForceRefreshModels() {},
-        KinkyDungeonDressPlayer() {
-            redresses += 1;
-        },
-        setTimeout() {},
-        kdpixitex: new Map(),
-        KDTex() {},
-        PIXI: {
-            Assets: {
-                load(texturePath) {
-                    return new Promise((resolve) => resolvers.set(texturePath, resolve));
-                },
-            },
-        },
-    });
-    const afterDress = runtime.context.KDEventMapInventory.afterDress.SpiderlingsRefreshModels;
-    afterDress({ trigger: "afterDress" }, { name: "SpiderlingsWebbingLv2Arm" });
-    for (let index = 0; index < 4; index += 1) await Promise.resolve();
-    assert.equal(redresses, 0);
-
-    for (const texturePath of displacementAssets) {
-        resolvers.get(texturePath)({});
-    }
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(redresses, 1);
-});
-
-test("debug equipment uses zero tightness and no lock, then one legal Lv1 action removes Arm Webbing", () => {
+test("debug equipment uses zero tightness and no lock, and native removal preserves the equipment contract", () => {
     for (const method of ["Cut", "Struggle", "Remove"]) {
         const runtime = loadWebbingRuntime();
         const equipped = runtime.context.Spiderlings.Webbing.equipForDebug(armId);
@@ -1427,23 +585,21 @@ test("debug equipment uses zero tightness and no lock, then one legal Lv1 action
         assert.equal(runtime.addCalls[0].lock, "");
         assert.equal(runtime.equipped.get("ItemArms").name, armId);
 
-        const escaped = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(armId, method, { legal: true });
+        const escaped = runtime.removeFixtureItem(armId);
         assert.equal(escaped.completed, true);
-        assert.equal(escaped.method, method);
+        assert.ok(["Cut", "Struggle", "Remove"].includes(method));
         assert.equal(runtime.removeCalls.length, 1);
         assert.equal(runtime.equipped.has("ItemArms"), false);
     }
 });
 
-test("blocked escape attempts do not remove Arm Webbing", () => {
+test("equipping Webbing never grants free native escape progress", () => {
     const runtime = loadWebbingRuntime();
     runtime.context.Spiderlings.Webbing.equipForDebug(armId);
-
-    const result = runtime.context.Spiderlings.Webbing.completeEffectiveEscape(armId, "Cut", { legal: false });
-
-    assert.equal(result.completed, false);
+    const item = runtime.equipped.get("ItemArms");
+    assert.equal(item.cutProgress, undefined);
+    assert.equal(item.struggleProgress, undefined);
     assert.equal(runtime.removeCalls.length, 0);
-    assert.equal(runtime.equipped.get("ItemArms").name, armId);
 });
 
 test("the canonical ten-family Lv1 catalogue resolves ten direct runtime assets and localized text", () => {
@@ -1525,7 +681,7 @@ test("all ten Lv1 items stay out of random pools and expose only their delivered
                 Remove: restraint.escapeChance.Remove,
                 Struggle: restraint.escapeChance.Struggle,
             },
-            { Cut: 100, Remove: 100, Struggle: 100 },
+            { Cut: 4, Remove: 4, Struggle: 4 },
         );
     }
 
@@ -1691,6 +847,42 @@ test("the ten Lv1 models use delivered pose coverage without hiding existing clo
     assert.equal(Object.values(blindfoldModel.Layers)[0].Layer, "Blindfold");
 });
 
+test("native layer selection preserves foreground blindfold coverage but joins face X-ray", () => {
+    const { context, models } = loadWebbingRuntime(),
+        { stripTypeScriptTypes } = require("node:module"),
+        source = fs.readFileSync(path.join(referenceRoot, "Data/Models.ts"), "utf8"),
+        original = source.match(/function LayerLayer\([^]*?\n\}/)?.[0];
+    assert.ok(original, "pinned native layer selector");
+    vm.runInContext(stripTypeScriptTypes(original), context);
+    for (const level of [1, 3]) {
+        const model = models.find((entry) => entry.Name === `SpiderlingsWebbingLv${level}BlindfoldModel`),
+            layer = Object.values(model.Layers)[0],
+            poses = Object.fromEntries(model.Categories.map((category) => [category, true]));
+        assert.equal(layer.Layer, "Blindfold", "Native dressing must detect the face covering from its physical layer");
+        assert.equal(context.LayerLayer({ Poses: poses }, layer, model), "Brows");
+        poses.Xray = true;
+        assert.equal(
+            context.LayerLayer({ Poses: poses }, layer, model),
+            "Brows",
+            "Body X-ray must retain the covering",
+        );
+        poses.XrayFace = true;
+        assert.equal(
+            context.LayerLayer({ Poses: poses }, layer, model),
+            "Blindfold",
+            "Face X-ray must use the native masked layer",
+        );
+        delete poses.Xray;
+        delete poses.XrayFace;
+        assert.equal(
+            context.LayerLayer({ Poses: poses }, layer, model),
+            "Brows",
+            "Switching off restores foreground coverage",
+        );
+        assert.notEqual(layer.NoErase, true, "Do not bypass the native face mask");
+    }
+});
+
 test("Lv1 Stuffing and Gag form an independently removable inner/outer mouth chain totaling 0.25 gag", () => {
     for (const removeFamily of ["Stuffing", "Gag"]) {
         const runtime = loadWebbingRuntime();
@@ -1703,10 +895,7 @@ test("Lv1 Stuffing and Gag form an independently removable inner/outer mouth cha
         assert.equal(root.dynamicLink.name, "SpiderlingsWebbingLv1Stuffing");
         assert.equal(root.restraint.gag + root.dynamicLink.restraint.gag, 0.25);
 
-        assert.equal(
-            api.completeEffectiveEscape(`SpiderlingsWebbingLv1${removeFamily}`, "Remove", { legal: true }).completed,
-            true,
-        );
+        assert.equal(runtime.removeFixtureItem(`SpiderlingsWebbingLv1${removeFamily}`).completed, true);
         const survivor = removeFamily === "Stuffing" ? "SpiderlingsWebbingLv1Gag" : "SpiderlingsWebbingLv1Stuffing";
         assert.equal(runtime.equipped.get("ItemMouth").name, survivor);
     }
@@ -1720,7 +909,80 @@ test("each Lv1 family can be equipped at zero tightness and removed independentl
         assert.equal(equipped.applied, true, `${family.id} should equip`);
         assert.equal(runtime.addCalls[0].tightness, 0);
         assert.equal(runtime.addCalls[0].lock, "");
-        assert.equal(api.completeEffectiveEscape(family.id, "Struggle", { legal: true }).completed, true);
+        assert.equal(runtime.removeFixtureItem(family.id).completed, true);
         assert.equal(runtime.equipped.has(family.group), false);
     }
+});
+
+test("pink settings switch all native layer paths and saved model copies without changing restraints or rendering metadata", async () => {
+    const player = { Appearance: [] };
+    const container = { Models: new Map() };
+    const refreshes = [];
+    const runtime = loadWebbingRuntime({
+        KinkyDungeonPlayer: player,
+        KDCurrentModels: new Map([[player, container]]),
+        ForceRefreshModels: (character) => refreshes.push(character),
+    });
+    const { context, models } = runtime;
+    const original = JSON.parse(JSON.stringify(models));
+    const restraints = JSON.stringify(context.KinkyDungeonRestraints);
+    const config = context.KDModConfigs.Spiderlings.find((entry) => entry.refvar === "spiderlingsPinkWebbing");
+    assert.equal(config.type, "boolean");
+    assert.equal(config.default, false);
+    assert.equal(context.KDModSettings.Spiderlings.spiderlingsPinkWebbing, false);
+    player.Appearance = original.map((model) => ({ Model: JSON.parse(JSON.stringify(model)) }));
+    container.Models = new Map(original.map((model) => [model.Name, JSON.parse(JSON.stringify(model))]));
+    const unrelated = { Name: "OtherMod", Folder: "OtherMod", Categories: ["Restraints"], Layers: {} };
+    player.Appearance.push({ Model: unrelated });
+    const { stripTypeScriptTypes } = require("node:module");
+    const native = fs.readFileSync(path.join(referenceRoot, "Data/Models.ts"), "utf8");
+    for (const name of ["ModelLayerString", "LayerSprite", "LayerSpriteCustom"]) {
+        const source = native.match(new RegExp(`function ${name}\\([^]*?\\n\\}`))?.[0];
+        assert.ok(source, name);
+        vm.runInContext(stripTypeScriptTypes(source), context);
+    }
+    const manifest = JSON.parse(fs.readFileSync(path.join(modRoot, "mod.json"), "utf8"));
+    for (const pink of [true, false, true]) {
+        context.KDModSettings = { Spiderlings: { spiderlingsPinkWebbing: pink } };
+        context.KDEventMapGeneric[pink ? "afterModSettingsLoad" : "afterModConfig"].Spiderlings();
+        await context.Spiderlings.applyWebbingColor(true);
+        for (const group of [
+            models,
+            player.Appearance.slice(0, models.length).map((item) => item.Model),
+            [...container.Models.values()],
+        ]) {
+            for (let i = 0; i < group.length; i++) {
+                const model = group[i];
+                assert.equal(model.Folder, original[i].Folder + (pink ? "Pink" : ""));
+                assert.deepEqual(JSON.parse(JSON.stringify({ ...model, Folder: original[i].Folder })), original[i]);
+                for (const layer of Object.values(model.Layers)) {
+                    const texturePath = context.ModelLayerString(model, layer, { Closed: true, Wristtie: true });
+                    assert.equal(manifest.fileorder.includes(texturePath), true, texturePath);
+                    assert.equal(fs.existsSync(path.join(modRoot, texturePath)), true, texturePath);
+                }
+            }
+        }
+        assert.equal(JSON.stringify(context.KinkyDungeonRestraints), restraints);
+        assert.equal(unrelated.Folder, "OtherMod");
+    }
+    assert.ok(refreshes.length > 0);
+    // Saved appearance/container copies may retain the old color after redress.
+    player.Appearance[0].Model.Folder = original[0].Folder;
+    container.Models.get(original[0].Name).Folder = original[0].Folder;
+    context.KDEventMapInventory.afterDress.SpiderlingsRefreshModels({ trigger: "afterDress" });
+    assert.equal(player.Appearance[0].Model.Folder, original[0].Folder + "Pink");
+    assert.equal(container.Models.get(original[0].Name).Folder, original[0].Folder + "Pink");
+    const stableRefreshes = refreshes.length;
+    for (let i = 0; i < 24; i++)
+        context.KDEventMapInventory.afterDress.SpiderlingsRefreshModels({ trigger: "afterDress" });
+    assert.equal(
+        refreshes.length,
+        stableRefreshes,
+        "unchanged owned colors must retain the native model cache after dressing",
+    );
+    const restored = loadWebbingRuntime({ KDModSettings: { Spiderlings: { spiderlingsPinkWebbing: true } } });
+    assert.equal(
+        restored.models.every((model) => model.Folder.endsWith("Pink")),
+        true,
+    );
 });

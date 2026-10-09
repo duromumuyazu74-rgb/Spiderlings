@@ -1,0 +1,5420 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+const { modRoot } = require("./helpers/lifecycle-runtime.js");
+
+const load = (context, file) =>
+    vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
+const plain = (value) => JSON.parse(JSON.stringify(value));
+
+function mapSnapshot(candidateLines) {
+    const cells = [];
+    for (let y = 1; y < 11; y++)
+        for (let x = 1; x < 17; x++) cells.push({ x, y, floor: true, protected: false, locked: false });
+    return {
+        width: 18,
+        height: 12,
+        cells,
+        entrances: [{ x: 1, y: 6 }],
+        exits: [{ x: 16, y: 6 }],
+        chokes: [{ x: 8, y: 6 }],
+        nests: [{ id: 90, x: 3, y: 3 }],
+        candidateLines: candidateLines || [
+            [
+                { x: 8, y: 4 },
+                { x: 8, y: 8 },
+            ],
+            [
+                { x: 13, y: 4 },
+                { x: 13, y: 8 },
+            ],
+            [
+                { x: 3, y: 2 },
+                { x: 3, y: 5 },
+            ],
+        ],
+    };
+}
+
+function spinner(id, x, y, extra = {}) {
+    return {
+        id,
+        x,
+        y,
+        hp: 2,
+        Enemy: { name: "Spinner", movePoints: 1.5, tags: { spiderlings: true } },
+        ...extra,
+    };
+}
+
+function runtime(entities = []) {
+    let nextId = 1000;
+    const tiles = new Map(),
+        movement = [],
+        nativeCalls = [],
+        phaseCalls = [],
+        context = {
+            console,
+            Spiderlings: {},
+            KinkyDungeonEnemies: [{ name: "IceWall", tags: {}, dropTable: [], events: [] }],
+            KDMapData: {
+                GridWidth: 18,
+                GridHeight: 12,
+                // These duty/geometry fixtures isolate the active crew. Dormant
+                // hostile residents provide permits without becoming builders.
+                Entities: [
+                    ...entities,
+                    ...Array.from({ length: 16 }, (_, index) =>
+                        spinner(90000 + index, 0, 0, { disabled: true, stun: 10000 }),
+                    ),
+                ],
+                StartPosition: { x: 1, y: 6 },
+                EndPosition: { x: 16, y: 6 },
+                ShortcutPositions: {},
+                RoomType: "SpinnerAITest",
+            },
+            KDGameData: { SleepTurns: 0, LastMapSeed: "ai-seed" },
+            KinkyDungeonPlayerEntity: { id: 0, player: true, x: 16, y: 10 },
+            KinkyDungeonMovableTilesEnemy: ".0",
+            KinkyDungeonMovableTilesSmartEnemy: ".0",
+            KinkyDungeonCurrentTick: 1,
+            KinkyDungeonRootDirectory: "Game/",
+            KinkyDungeonFlags: new Map(),
+            KDModFiles: { "Bullets/WebSprayTrail.png": {} },
+            KDPathConditions: {},
+            KDInputTypes: {},
+            KDEventMapGeneric: {},
+            KDPathCache: new Map(),
+            KDPathCacheIgnoreLocks: new Map(),
+            KDUpdateEnemyCache: false,
+            KDAIType: {
+                guard: {},
+                hunt: {
+                    beforemove: () => false,
+                    attack(enemy) {
+                        phaseCalls.push({ phase: "attack", id: enemy.id });
+                        return true;
+                    },
+                    spell(enemy) {
+                        phaseCalls.push({ phase: "spell", id: enemy.id });
+                        return true;
+                    },
+                },
+            },
+            KDMapInit: (values) => Object.fromEntries(values.map((value) => [value, true])),
+            KinkyDungeonMapGet: (x, y) => (x > 0 && y > 0 && x < 17 && y < 11 ? "." : "1"),
+            KinkyDungeonTilesGet: (key) => tiles.get(key),
+            KinkyDungeonEntityAt(x, y) {
+                if (context.KinkyDungeonPlayerEntity.x === x && context.KinkyDungeonPlayerEntity.y === y)
+                    return context.KinkyDungeonPlayerEntity;
+                return context.KDMapData.Entities.findLast(
+                    (entity) => entity.hp > 0 && entity.x === x && entity.y === y,
+                );
+            },
+            DialogueCreateEnemy(x, y, name) {
+                if (context.KinkyDungeonEntityAt(x, y)) return undefined;
+                const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
+                const entity = { id: nextId++, x, y, hp: definition.maxhp, Enemy: definition };
+                context.KDMapData.Entities.push(entity);
+                return entity;
+            },
+            DialogueGetEnemy(name) {
+                const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === name);
+                return { id: nextId++, x: 1, y: 1, hp: definition.maxhp, Enemy: definition };
+            },
+            KDAddNewEntity(entity) {
+                context.KDMapData.Entities.push(entity);
+                return entity;
+            },
+            KDHostile: (entity, target) =>
+                target ? target.hostileToSpinner !== false : !entity.allied && !entity.party && !entity.imprisoned,
+            KDAllied: (entity) => !!entity.allied,
+            KDIsInParty: (entity) => !!entity.party,
+            KDIsImprisoned: (entity) => !!entity.imprisoned,
+            KinkyDungeonIsDisabled: (entity) => !!entity.disabled,
+            KDHelpless: (entity) => !!entity.helpless,
+            KinkyDungeonCheckPath: () => true,
+            KinkyDungeonCheckLOS: () => true,
+            KinkyDungeonGetBuffedStat: () => 0,
+            KinkyDungeonTrackSneak: (enemy) => enemy.vp ?? (enemy.aware ? 1 : 0),
+            KinkyDungeonMultiplicativeStat: () => 1,
+            KDBoundEffects: () => 0,
+            KinkyDungeonApplyBuffToEntity() {},
+            KDMoveEntity(entity, x, y, _willing, _dash, _forceHitBullets, ignoreBlocked) {
+                if (!ignoreBlocked && context.KinkyDungeonEntityAt(x, y)) return false;
+                entity.x = x;
+                entity.y = y;
+                return true;
+            },
+            KinkyDungeonFindPath(fromX, fromY, toX, toY, blockEnemy) {
+                const blocked = new Set(
+                    blockEnemy
+                        ? context.KDMapData.Entities.filter(
+                              (entity) =>
+                                  entity.hp > 0 &&
+                                  !context.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) &&
+                                  (entity.x !== fromX || entity.y !== fromY),
+                          ).map((entity) => `${entity.x},${entity.y}`)
+                        : [],
+                );
+                return context.Spiderlings.SpinnerAI.routeOnSnapshot(
+                    mapSnapshot(),
+                    { x: fromX, y: fromY },
+                    { x: toX, y: toY },
+                    blocked,
+                ).slice(1);
+            },
+            KinkyDungeonEnemyTryMove(enemy, direction, _delta, x, y) {
+                if (!(_delta > 0)) return false;
+                const occupant = context.KinkyDungeonEntityAt(x, y);
+                if (occupant) {
+                    const condition = context.KDPathConditions[occupant.Enemy?.pathcondition];
+                    if (!condition?.query(enemy, occupant)) return false;
+                    return condition.doPassthrough(enemy, occupant, context.KDMapData) === 2;
+                }
+                movement.push({ id: enemy.id, direction: plain(direction), x, y });
+                enemy.x = x;
+                enemy.y = y;
+                return true;
+            },
+            KinkyDungeonEnemyLoop(enemy, target, _delta) {
+                nativeCalls.push(enemy.id);
+                context.lastNativeTarget = target;
+                const aiData = {
+                        canSensePlayer: !!enemy.testSense,
+                        canSeePlayer: !!enemy.testSense,
+                        hostile: true,
+                        aggressive: true,
+                        ...(enemy.testAIData || {}),
+                    },
+                    aiType = context.KDAIType[enemy.AI || enemy.Enemy.AI || "hunt"],
+                    handled = aiType.beforemove?.(enemy, target, aiData) || false,
+                    attacked = aiType.attack ? aiType.attack(enemy, target, aiData) : true,
+                    cast = aiType.spell ? aiType.spell(enemy, target, aiData) : true;
+                return { idle: !handled, attacked, cast, defeat: false, defeatEnemy: enemy };
+            },
+            KinkyDungeonSetEnemyFlag(enemy, flag, duration) {
+                (enemy.flags ||= {})[flag] = duration;
+            },
+            KDAddEvent(map, trigger, name, handler) {
+                map[trigger] ||= {};
+                map[trigger][name] = handler;
+            },
+        };
+    context.globalThis = context;
+    context.window = context;
+    vm.createContext(context);
+    load(context, "SpiderlingsCore.js");
+    load(context, "SpiderlingsNativeActions.js");
+    load(context, "SpiderlingsSpinnerTopology.js");
+    load(context, "SpiderlingsSpinnerNativeField.js");
+    load(context, "SpiderlingsSpinnerPassagePlanner.js");
+    load(context, "SpiderlingsSpinnerAI.js");
+    load(context, "SpiderlingsFieldCommand.js");
+    load(context, "SpiderlingsFieldProjects.js");
+    load(context, "SpiderlingsSpinnerDuties.js");
+    load(context, "SpiderlingsSpinnerScenarios.js");
+    context.Spiderlings.SpinnerField = { handleEnemyTurn: () => undefined };
+    context.Spiderlings.SpinnerCapture = { handleEnemyTurn: () => undefined };
+    load(context, "SpiderlingsSpinnerRuntime.js");
+    return { context, tiles, movement, nativeCalls, phaseCalls };
+}
+
+function start(r, snapshot = mapSnapshot()) {
+    return r.context.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+}
+
+test("a sole commanded builder keeps paid work under adjacent contact and requests support", () => {
+    const actor = spinner(1, 8, 6, { aware: true, testSense: true }),
+        r = runtime([actor]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    for (let turn = 0; turn < 20; turn++) {
+        c.KinkyDungeonPlayerEntity.x = actor.x + 1;
+        c.KinkyDungeonPlayerEntity.y = actor.y;
+        start(r, snapshot);
+        c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const encounter = c.Spiderlings.SpinnerNativeField.state();
+    assert.ok(encounter.topology.actionLog.length > 0, "Adjacent contact cannot replace the only builder with defense");
+    assert.equal(r.phaseCalls.length, 0, "Commanded paid construction cannot also attack or cast");
+    assert.ok(Object.values(encounter.command.requests).some((request) => request.kind === "build"));
+});
+
+test("a field recovery contact overrides native tied-up indifference only for its approved positive action", () => {
+    const actor = spinner(1, 5, 3),
+        r = runtime([actor, spinner(2, 5, 9)]),
+        c = r.context;
+    start(r, mapSnapshot());
+    const target = c.KinkyDungeonPlayerEntity;
+    target.x = actor.x + 1;
+    target.y = actor.y;
+    c.Spiderlings.SpinnerRecovery = { wantsPursuit: () => true };
+    c.Spiderlings.SpinnerAI.dutyFacts = () => ({
+        validPlan: true,
+        recoveryPursuit: true,
+        recoveryTarget: target,
+        perceivedRecovery: true,
+        perceivedThreat: true,
+    });
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.beginAction(actor, target, 1);
+    const data = { hostile: true, canSensePlayer: true, ignore: true, wantsToAttack: false };
+    c.KDAIType.hunt.beforemove(actor, target, data);
+    assert.equal(data.ignore, false, JSON.stringify(c.Spiderlings.SpinnerDuties.current(actor)));
+    assert.equal(data.wantsToAttack, true);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).category, "recovery-contact");
+    actor.SpiderlingsSpinnerRuntimeDelta = 0;
+    const refresh = { hostile: true, canSensePlayer: true, ignore: true, wantsToAttack: false };
+    c.Spiderlings.SpinnerDuties.admitNative(actor, target, refresh);
+    assert.equal(refresh.ignore, true);
+    assert.equal(refresh.wantsToAttack, false);
+});
+
+test("separate positive enemy operations in one tick do not reuse an executed construction duty", () => {
+    const actor = spinner(1, 2, 2),
+        r = runtime([actor]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0];
+    actor.x = group.assignments[actor.id].workCell.x;
+    actor.y = group.assignments[actor.id].workCell.y;
+    r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+    const first = group.metrics.travel + group.metrics.construction;
+    r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.ok(group.metrics.travel + group.metrics.construction > first, "Each positive operation owns its own duty");
+    r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(
+        r.context.Spiderlings.SpinnerDuties.current(actor).role,
+        "work",
+        "A paid job completion retains construction on the next operation",
+    );
+});
+
+test("Cocoon dispersal preempts field duties and selected guard movement", () => {
+    const actor = spinner(1, 8, 5, { AI: "guard" });
+    const r = runtime([actor]),
+        c = r.context,
+        api = c.Spiderlings;
+    const forbidden = () => {
+        throw Error("Field command overrode dispersal");
+    };
+    api.Webbing = {
+        isCocoonDispersing: () => true,
+        disperseCocoonEnemy: (enemy, target, aiData) => {
+            assert.equal(enemy, actor);
+            assert.equal(target, c.KinkyDungeonPlayerEntity);
+            aiData.ignore = true;
+            return false;
+        },
+    };
+    api.FieldCommand.handleMove = forbidden;
+    api.SpinnerCapture.handleEnemyTurn = forbidden;
+    api.SpinnerNativeField.handleEnemyTurn = forbidden;
+    api.SpinnerField.handleEnemyTurn = forbidden;
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(r.nativeCalls, [actor.id]);
+    assert.equal(api.SpinnerDuties.current(actor).role, "disperse");
+    assert.equal(api.SpinnerDuties.gate(actor), false);
+    api.Webbing.disperseCocoonEnemy = () => true;
+    assert.equal(c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1).idle, false);
+});
+
+function remotePlayerReporter(context) {
+    const player = context.KinkyDungeonPlayerEntity,
+        reporter = {
+            id: 90,
+            hp: 2,
+            x: player.x + 1,
+            y: player.y,
+            vp: 1,
+            buffs: {},
+            Enemy: { name: "Jumper", visionRadius: 9 },
+        };
+    context.KDMapData.Entities.push(reporter);
+    context.KinkyDungeonNearestPlayer = (observer) => (observer.id === reporter.id ? player : undefined);
+    context.KDEnemyVisionRadius = (observer) => observer.Enemy.visionRadius;
+    context.KinkyDungeonStatsChoice = new Map();
+    return reporter;
+}
+
+test("a remote player report leaves the sole enclosure builder doing paid construction", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    remotePlayerReporter(c);
+    for (let turn = 0; turn < 12; turn++) {
+        const ai = start(r, snapshot);
+        if (turn === 0) {
+            // Emulate a Test.75 save whose broadcast has no origin marker.
+            const group = Object.values(ai.groups)[0];
+            delete group.engagement.sharedOnly;
+            group.engagement.lureId = worker.id;
+            c.Spiderlings.SpinnerAI.restoreAfterLoad();
+        }
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const encounter = c.Spiderlings.SpinnerNativeField.state(),
+        group = Object.values(encounter.ai.groups)[0];
+    assert.equal(encounter.ai.plans[group.planId].kind, "enclosure");
+    assert.ok(c.Spiderlings.SpinnerAI.playerObservation(), "The remote contact must remain available");
+    assert.ok(encounter.topology.actionLog.length > 0, "Shared knowledge must not starve real paid work");
+    assert.equal(group.engagement.lureId, undefined, "The only builder remains available until the body is ready");
+    worker.aware = true;
+    worker.vp = 1;
+    worker.testSense = true;
+    c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(
+        group.engagement.lureId,
+        undefined,
+        "Personal contact does not replace the only commanded body worker before adjacent defense",
+    );
+});
+
+test("a remote player report still lets unpaid separated groups staff one passage", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+        r = largePassageRuntime(workers),
+        c = r.context;
+    remotePlayerReporter(c);
+    const ai = r.begin(),
+        groups = Object.values(ai.groups).filter((group) => group.planId);
+    assert.ok(c.Spiderlings.SpinnerAI.playerObservation());
+    assert.equal(groups.length, 1, "A shared report is knowledge, not a native engagement blocking recruitment");
+    assert.deepEqual(plain(groups[0].memberIds).sort(), [1, 2, 3, 4]);
+    assert.equal(ai.plans[groups[0].planId].kind, "passage");
+    assert.equal(Object.values(ai.plans).filter((plan) => !["invalid", "abandoned"].includes(plan.status)).length, 1);
+});
+
+test("native zero-time load refresh preserves partial work, position and saved construction credit", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    for (let turn = 0; turn < 20; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    const read = () =>
+        plain({
+            topology: r.context.Spiderlings.SpinnerNativeField.state().topology,
+            x: worker.x,
+            y: worker.y,
+            credit: worker.SpinnerConstructionPoints,
+        });
+    const before = read();
+    for (let n = 0; n < 3; n++) r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 0);
+    assert.deepEqual(read(), before);
+});
+
+test("a lone Spinner builds one-entry rings and pays to seal them after prey enters", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.ok(ai.plannerWorkLast.candidateCells <= snapshot.cells.length);
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 4);
+    assert.equal(plan.constructionOrder, "outer-first");
+    assert.equal(plan.fieldIds.length, 3, "All legal layers are declared before any paid work");
+    assert.equal(group.assignments[worker.id].fieldId, plan.fieldIds[2]);
+    assert.equal(
+        r.context.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].boundaryCells.length,
+        16,
+    );
+    assert.equal(r.context.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].phase, "preparing");
+    for (let turn = 0; turn < 240; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    assert.equal(ai.plannerWorkLast.candidateCells, 0);
+    assert.ok(
+        ai.plannerWorkPeak.expansionCells <= 24 * Object.keys(ai.plans).length,
+        "Each continuing field project checks at most one next ring per planning turn",
+    );
+    assert.equal(graph.fields[plan.fieldId].phase, "ready", JSON.stringify(group.metrics));
+    assert.equal(graph.composites[plan.compositeId].layerIds.length, 3, JSON.stringify(group.metrics));
+    assert.ok(graph.composites[plan.compositeId].layerIds.every((id) => graph.fields[id].phase === "ready"));
+    const bodyOrder = graph.actionLog
+        .filter((action) => plan.fieldIds.includes(action.fieldId))
+        .map((action) => graph.fields[action.fieldId].layer);
+    assert.deepEqual([...new Set(bodyOrder)], [2, 1, 0]);
+    assert.ok(
+        bodyOrder.every((layer, index) => !index || layer <= bodyOrder[index - 1]),
+        "Every body action is paid outer-to-inner",
+    );
+    const solids = new Set(r.context.Spiderlings.SpinnerTopology.solidCells(graph).map(cellKeyForTest));
+    for (const id of graph.composites[plan.compositeId].layerIds) {
+        const field = graph.fields[id];
+        assert.deepEqual(
+            plain(field.boundaryCells.filter((cell) => !solids.has(cellKeyForTest(cell)))),
+            plain([field.gateCell]),
+        );
+    }
+    const player = r.context.KinkyDungeonPlayerEntity;
+    player.x = plan.center.x;
+    player.y = plan.center.y;
+    worker.aware = true;
+    worker.testSense = true;
+    r.context.Spiderlings.SpinnerNativeField.onEntry(player, player.x, player.y);
+    r.context.Spiderlings.SpinnerNativeField.onEntry(worker, worker.x, worker.y);
+    assert.equal(
+        r.context.Spiderlings.SpinnerNativeField.state().topology.composites[plan.compositeId].closureArmed,
+        true,
+    );
+    for (let turn = 0; turn < 100; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const sealed = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    assert.ok(sealed.composites[plan.compositeId].layerIds.every((id) => sealed.fields[id].phase === "sealed"));
+    r.context.KinkyDungeonCurrentTick++;
+    r.phaseCalls.length = 0;
+    r.context.KinkyDungeonEnemyLoop(worker, player, 1);
+    assert.deepEqual(
+        plain(r.phaseCalls),
+        [
+            { phase: "attack", id: worker.id },
+            { phase: "spell", id: worker.id },
+        ],
+        "the Spinner must resume native pursuit and attacks after sealing prey inside",
+    );
+    player.x = 16;
+    player.y = 10;
+    r.context.Spiderlings.SpinnerNativeField.onEntry(player, player.x, player.y);
+    for (let turn = 0; turn < 80; turn++) {
+        start(r, snapshot);
+        r.context.KinkyDungeonEnemyLoop(worker, player, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const reopened = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    assert.ok(reopened.composites[plan.compositeId].layerIds.every((id) => reopened.fields[id].phase === "ready"));
+    assert.ok(reopened.actionLog.some((action) => action.type === "reopenGate"));
+});
+
+test("loaded autonomous roadblocks are replaced with a reachable enclosure without moving existing actors", () => {
+    const actors = [spinner(1, 5, 4), spinner(2, 5, 8)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        oldPlan = ai.plans[group.planId];
+    assert.equal(oldPlan.kind, "line");
+    const positions = actors.map((actor) => [actor.x, actor.y]);
+    delete snapshot.candidateLines;
+    start(r, snapshot);
+    assert.equal(ai.plans[group.planId].kind, "enclosure");
+    assert.equal(oldPlan.status, "invalid");
+    assert.deepEqual(
+        actors.map((actor) => [actor.x, actor.y]),
+        positions,
+    );
+});
+
+test("ordinary Spinner construction searches beyond the corridor instead of building an isolated roadblock", () => {
+    const actors = [spinner(1, 2, 6), spinner(2, 3, 6), spinner(3, 4, 6)],
+        r = runtime(actors),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    for (const cell of snapshot.cells)
+        cell.floor = cell.y === 6 || (cell.x >= 11 && cell.x <= 15 && cell.y >= 3 && cell.y <= 9);
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan?.kind, "enclosure");
+    assert.ok(plan.center.x >= 12);
+    assert.equal(Object.keys(r.context.Spiderlings.SpinnerNativeField.state().topology.lineFields).length, 0);
+});
+
+test("assigned builders route around a live coworker instead of waiting on its occupied cell", () => {
+    const actors = [spinner(1, 2, 4), spinner(2, 3, 4)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            plan.fieldId,
+        );
+    group.assignments[1] = {
+        type: "placeAnchor",
+        anchorId: field.anchors[0].id,
+        target: { x: field.anchors[0].x, y: field.anchors[0].y },
+        workCell: { x: 4, y: 4 },
+        fieldId: plan.fieldId,
+    };
+    r.context.KinkyDungeonEnemyLoop(actors[0], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 2, y: 4 });
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 3, y: 4 });
+    assert.equal(group.lastAction, "travel");
+});
+
+test("builders detour when native faction path returns a live occupied first step", () => {
+    const actors = [spinner(1, 2, 4), spinner(2, 3, 4)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            plan.fieldId,
+        );
+    group.assignments[1] = {
+        type: "placeAnchor",
+        anchorId: field.anchors[0].id,
+        target: { x: field.anchors[0].x, y: field.anchors[0].y },
+        workCell: { x: 4, y: 4 },
+        fieldId: plan.fieldId,
+    };
+    r.context.KinkyDungeonFindPath = () => [
+        { x: 3, y: 4 },
+        { x: 4, y: 4 },
+    ];
+    r.context.KinkyDungeonEnemyLoop(actors[0], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 2, y: 4 });
+    assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: 3, y: 4 });
+    assert.equal(group.lastAction, "travel");
+});
+
+test("builders do not oscillate along a free prefix whose later native step is occupied", () => {
+    const actors = [spinner(1, 5, 4), spinner(2, 6, 4)],
+        r = runtime(actors),
+        c = r.context,
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = native.fieldById(native.state(), plan.fieldId),
+        anchor = field.anchors[0],
+        goal = { x: anchor.x - 1, y: anchor.y };
+    Object.assign(actors[0], { x: goal.x - 2, y: goal.y });
+    Object.assign(actors[1], { x: goal.x - 1, y: goal.y });
+    const startCell = { x: actors[0].x, y: actors[0].y },
+        freeCell = { x: startCell.x, y: startCell.y + 1 };
+    group.assignments[1] = {
+        type: "placeAnchor",
+        anchorId: anchor.id,
+        target: { x: anchor.x, y: anchor.y },
+        workCell: goal,
+        fieldId: plan.fieldId,
+    };
+    // Each immediate native step is free; its later ally obstruction makes
+    // alternating between the two prefixes an invalid approach to the job.
+    c.KinkyDungeonFindPath = (x, y) => [
+        y === startCell.y ? freeCell : startCell,
+        { x: actors[1].x, y: actors[1].y },
+        goal,
+    ];
+    for (let turn = 0; turn < 6; turn++) {
+        c.KinkyDungeonEnemyLoop(actors[0], c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+        assert.notDeepEqual({ x: actors[0].x, y: actors[0].y }, { x: actors[1].x, y: actors[1].y });
+    }
+    assert.deepEqual({ x: actors[0].x, y: actors[0].y }, goal);
+    assert.ok(native.state().topology.actionLog.length > 0, "Detouring must reach real paid work");
+});
+
+test("separate Spinner groups perform paid work on their own enclosures", () => {
+    const workers = [
+            spinner(1, 3, 3),
+            spinner(2, 15, 8),
+            ...[
+                [2, 3],
+                [3, 2],
+                [4, 3],
+                [3, 4],
+                [4, 4],
+                [14, 8],
+                [15, 7],
+                [16, 8],
+                [15, 9],
+                [14, 9],
+            ].map(([x, y], i) => spinner(10 + i, x, y)),
+        ],
+        r = runtime([...workers, { id: 81, x: 2, y: 2, hp: 4, Enemy: { name: "Maidforce" } }]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        groups = Object.values(ai.groups);
+    assert.equal(groups.length, 2);
+    const fieldByWorker = new Map(groups.map((group) => [group.memberIds[0], ai.plans[group.planId].fieldId]));
+    const wrongAssignment = Object.values(groups[0].assignments)[0];
+    assert.ok(wrongAssignment);
+    groups[1].assignments[workers[1].id] = plain(wrongAssignment);
+    start(r, snapshot);
+    assert.ok(Object.keys(groups[1].assignments).length > 0);
+    assert.ok(
+        Object.values(groups[1].assignments).every((assignment) =>
+            ai.plans[groups[1].planId].fieldIds.includes(assignment.fieldId),
+        ),
+        "A foreign reservation must be replaced or withdrawn",
+    );
+    const payments = [],
+        native = r.context.Spiderlings.SpinnerNativeField,
+        apply = native.applyPaidAction;
+    native.applyPaidAction = function (actor, action) {
+        const member = r.context.Spiderlings.FieldCommand.inspect().members[actor.id],
+            group = ai.groups[member?.commander];
+        const owns = native.fieldOwners(action.fieldId).includes(actor.id);
+        const ownPlan = ai.plans[group?.planId]?.fieldIds.includes(action.fieldId);
+        const result = apply.apply(this, arguments);
+        if (result.paid && result.applied) payments.push({ owns, ownPlan, fieldId: action.fieldId });
+        return result;
+    };
+    for (let turn = 0; turn < 30; turn++) {
+        start(r, snapshot);
+        for (const group of groups)
+            for (const assignment of Object.values(group.assignments))
+                assert.ok(ai.plans[group.planId].fieldIds.includes(assignment.fieldId));
+        for (const worker of workers) r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    native.applyPaidAction = apply;
+    assert.ok(payments.length > 0);
+    assert.ok(
+        payments.every((payment) => payment.owns && payment.ownPlan),
+        "Each paid action must belong to its current field command at payment time",
+    );
+    const graph = r.context.Spiderlings.SpinnerNativeField.state().topology;
+    for (const [workerId, fieldId] of fieldByWorker) {
+        const ownedFields = ai.plans[groups.find((group) => group.memberIds.includes(workerId)).planId].fieldIds;
+        assert.ok(
+            graph.actionLog.some((action) => ownedFields.includes(action.fieldId)),
+            `${workerId}: ${fieldId}`,
+        );
+    }
+});
+
+test("an unavailable site is retried after geometry changes without idle rerolls", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    Object.assign(r.context.KinkyDungeonPlayerEntity, { x: 8, y: 8 });
+    for (const cell of snapshot.cells) cell.protected = true;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0];
+    assert.equal(group.planId, null);
+    assert.ok(ai.plannerWorkLast.candidateCells > 0 && ai.plannerWorkLast.candidateCells <= snapshot.cells.length);
+    start(r, snapshot);
+    assert.equal(ai.plannerWorkLast.candidateCells, 0);
+    for (const cell of snapshot.cells)
+        if (Math.max(Math.abs(cell.x - 8), Math.abs(cell.y - 6)) <= 1 || (cell.x === 6 && cell.y === 6))
+            cell.protected = false;
+    start(r, snapshot);
+    assert.equal(ai.plans[group.planId].kind, "enclosure");
+});
+
+test("groups require eligible hostile Spinners within ten path steps and keep stable identity", () => {
+    const actors = [
+            spinner(1, 1, 2, { SpiderlingsSquadProvenance: "guaranteed" }),
+            spinner(2, 11, 2, { SpiderlingsSquadProvenance: "natural" }),
+            spinner(3, 16, 10, { allied: true }),
+            spinner(4, 16, 9, { party: true }),
+            spinner(5, 16, 8, { imprisoned: true }),
+            spinner(6, 16, 7, { helpless: true }),
+            { id: 7, x: 2, y: 2, hp: 2, Enemy: { name: "Jumper" } },
+        ],
+        provenance = actors.slice(0, 2).map((actor) => actor.SpiderlingsSquadProvenance),
+        r = runtime(actors),
+        state = start(r);
+    assert.deepEqual(Object.keys(plain(state.groups)), ["spinner-group-1"]);
+    assert.deepEqual(plain(state.groups["spinner-group-1"].memberIds), [1, 2]);
+    assert.deepEqual(
+        actors.slice(0, 2).map((actor) => actor.SpiderlingsSquadProvenance),
+        provenance,
+    );
+
+    const savedId = state.groups["spinner-group-1"].id;
+    actors[0].x = 6;
+    const newcomer = spinner(8, 12, 3, { SpiderlingsNestParentID: 90 });
+    actors.push(newcomer);
+    r.context.KDMapData.Entities.push(newcomer);
+    start(r);
+    assert.equal(state.groups[savedId].id, savedId);
+    assert.deepEqual(plain(state.groups[savedId].memberIds), [1, 2]);
+    assert.equal(actors.at(-1).SpiderlingsNestParentID, 90);
+});
+
+test("nest guards form their own construction group and natural Spinners remain free", () => {
+    const actors = [
+            spinner(1, 4, 4, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 5, 4, { SpiderlingsNestParentID: 90 }),
+            spinner(3, 6, 4),
+        ],
+        r = runtime(actors),
+        ai = start(r);
+    assert.deepEqual(
+        Object.values(ai.groups).map((group) => plain(group.memberIds)),
+        [[1, 2]],
+    );
+    assert.deepEqual(plain(Object.values(ai.groups)[0].source), { type: "nest", nestId: 90 });
+    assert.equal(
+        r.context.Spiderlings.SpinnerAI.handleBeforeMove(actors[2], r.context.KinkyDungeonPlayerEntity),
+        false,
+    );
+});
+
+test("construction wait preserves native movement credit and field guards await explicit orders", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]),
+        aiData = { idle: true, hostile: true, canSensePlayer: false };
+    assert.equal(r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1).idle, false);
+    assert.equal(r.context.Spiderlings.SpinnerDuties.gate(worker), false);
+    group.assignments = {};
+    r.context.KinkyDungeonCurrentTick++;
+    worker.SpiderlingsSpinnerRuntimeDelta = 1;
+    r.context.Spiderlings.SpinnerDuties.prepare(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(
+        r.context.KDAIType.hunt.beforemove(worker, r.context.KinkyDungeonPlayerEntity, aiData),
+        true,
+        "a field guard without an order must not independently fight or roam",
+    );
+});
+
+test("a reported nest attacker interrupts Spinner construction and becomes the native target", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        maid = { id: 99, x: 6, y: 3, hp: 4, Enemy: { name: "Maidforce" } },
+        r = runtime([...actors, maid]),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]);
+    r.context.Spiderlings.HuntingGrounds = {
+        resolveNestDefenderTarget: () => maid,
+        isNestAttacker: (_enemy, target) => target === maid,
+    };
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(r.context.lastNativeTarget, maid);
+    assert.equal(group.lastAction, undefined, "defenders delegate the strike instead of recording construction");
+    assert.equal(r.phaseCalls.filter((entry) => entry.id === worker.id).length, 2);
+});
+
+test("nest guards keep building when a distant maid is sensed but has not hit the nest", () => {
+    const actors = [
+            spinner(1, 5, 3, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 5, 9, { SpiderlingsNestParentID: 90 }),
+        ],
+        maid = { id: 99, x: 8, y: 3, hp: 4, Enemy: { name: "Maidforce" } },
+        r = runtime([...actors, maid]),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]);
+    worker.aware = true;
+    worker.testSense = true;
+    r.context.KinkyDungeonEnemyLoop(worker, maid, 1);
+    assert.equal(group.engagement, undefined);
+    assert.ok(["travel", "wait", "construction"].includes(group.lastAction));
+});
+
+test("saved deterministic selection uses topology and provenance without target position", () => {
+    const r = runtime([spinner(1, 2, 2), spinner(2, 3, 2)]),
+        api = r.context.Spiderlings.SpinnerAI,
+        ordinary = { id: "g1", source: { type: "ordinary" }, members: [{ x: 2, y: 2 }] },
+        nest = { id: "g2", source: { type: "nest", nestId: 90 }, members: [{ x: 2, y: 2 }] },
+        firstSnapshot = { ...mapSnapshot(), hiddenTarget: { x: 2, y: 9 } },
+        secondSnapshot = { ...mapSnapshot(), hiddenTarget: { x: 15, y: 2 } },
+        first = api.analyzeLineCandidates(firstSnapshot, ordinary),
+        second = api.analyzeLineCandidates(secondSnapshot, ordinary),
+        nearNest = api.analyzeLineCandidates(firstSnapshot, nest);
+    assert.deepEqual(plain(first), plain(second));
+    assert.ok(first[0].anchors[0].x >= 8, "ordinary groups prefer route, choke, and exit lines");
+    assert.equal(nearNest[0].anchors[0].x, 3, "nest groups rank the nest-defense line first");
+
+    const encounter = r.context.Spiderlings.SpinnerNativeField.ensureMap(),
+        state = api.ensureAI(encounter, { mapSeed: "fixed", mapIdentity: "room" }),
+        group = { id: "saved", selectionOrdinal: 0, planId: null };
+    state.groups.saved = group;
+    const chosen = api.selectSavedPlan(state, group, first),
+        restored = plain(state),
+        again = api.selectSavedPlan(restored, restored.groups.saved, first);
+    assert.equal(again.id, chosen.id);
+    assert.equal(again.candidateId, chosen.candidateId);
+    assert.equal(restored.groups.saved.selectionOrdinal, 0);
+});
+
+test("nest groups shortlist buildable lines close to their own nest", () => {
+    const actors = [
+            spinner(1, 3, 3, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 4, 3, { SpiderlingsNestParentID: 90 }),
+        ],
+        r = runtime(actors),
+        snapshot = mapSnapshot([
+            [
+                { x: 3, y: 2 },
+                { x: 3, y: 5 },
+            ],
+            [
+                { x: 13, y: 4 },
+                { x: 13, y: 8 },
+            ],
+        ]),
+        group = { source: { type: "nest", nestId: 90 }, members: actors },
+        candidates = r.context.Spiderlings.SpinnerAI.analyzeLineCandidates(snapshot, group);
+    assert.ok(candidates.length > 0);
+    assert.ok(candidates.every((candidate) => candidate.anchors.every((anchor) => anchor.x < 8)));
+});
+
+test("candidate distances match independent routes through open, blocked, and disconnected maps", () => {
+    const api = runtime().context.Spiderlings.SpinnerAI,
+        origin = { x: 2, y: 2 },
+        layouts = [
+            [],
+            [
+                { x: 9, y: 2 },
+                { x: 9, y: 3 },
+                { x: 9, y: 4 },
+                { x: 9, y: 6 },
+            ],
+            Array.from({ length: 10 }, (_, index) => ({ x: 9, y: index + 1 })),
+        ];
+    for (const walls of layouts) {
+        const snapshot = { ...mapSnapshot(), candidateLines: [] },
+            wallKeys = new Set(walls.map(cellKeyForTest));
+        for (const cell of snapshot.cells) if (wallKeys.has(cellKeyForTest(cell))) cell.floor = false;
+        const candidates = api.analyzeLineCandidates(snapshot, {
+            source: { type: "ordinary" },
+            members: [origin],
+        });
+        assert.ok(candidates.length > 0);
+        for (const candidate of candidates) {
+            const center = candidate.cells[Math.floor(candidate.cells.length / 2)],
+                route = api.routeOnSnapshot(snapshot, origin, center);
+            assert.equal(candidate.travelDistance, route.length - 1, candidate.id);
+        }
+        if (walls.length === 10)
+            assert.ok(candidates.every((candidate) => candidate.cells.every((cell) => cell.x < 9)));
+    }
+});
+
+test("duplicate supplied lines keep the first candidate", () => {
+    const api = runtime().context.Spiderlings.SpinnerAI,
+        line = [
+            { x: 3, y: 2 },
+            { x: 3, y: 5 },
+        ],
+        snapshot = mapSnapshot([line, line]);
+    const candidates = api.analyzeLineCandidates(snapshot, { members: [{ x: 2, y: 2 }] });
+    assert.equal(candidates.length, 1);
+    assert.equal(candidates[0].id, "line:3,2;3,5");
+});
+
+test("corridor, T, cross, and exit fixtures use the same legal line analyzer", () => {
+    const r = runtime([spinner(1, 2, 2), spinner(2, 3, 2)]),
+        api = r.context.Spiderlings.SpinnerAI,
+        group = { id: "fixture", source: { type: "ordinary" }, members: [{ x: 2, y: 2 }] },
+        fixtures = [
+            { name: "corridor", chokes: [{ x: 8, y: 6 }], exits: [{ x: 16, y: 6 }], expectedX: 8 },
+            { name: "T", chokes: [{ x: 3, y: 4 }], exits: [{ x: 16, y: 6 }], expectedX: 3 },
+            { name: "cross", chokes: [{ x: 8, y: 6 }], exits: [{ x: 16, y: 6 }], expectedX: 8 },
+            { name: "exit", chokes: [], exits: [{ x: 16, y: 6 }], expectedX: 13 },
+        ];
+    for (const fixture of fixtures) {
+        const snapshot = { ...mapSnapshot(), chokes: fixture.chokes, exits: fixture.exits },
+            candidates = api.analyzeLineCandidates(snapshot, group);
+        assert.ok(candidates.length > 0, `${fixture.name} has a legal line`);
+        assert.equal(candidates[0].anchors[0].x, fixture.expectedX, `${fixture.name} priority`);
+        assert.ok(
+            candidates[0].cells.every(
+                (cell) => !snapshot.entrances.some((point) => cellKeyForTest(point) === cellKeyForTest(cell)),
+            ),
+            `${fixture.name} preserves entrances`,
+        );
+    }
+});
+
+test("separate groups activate separate saved lines and never merge after meeting", () => {
+    const actors = [spinner(1, 1, 2), spinner(2, 2, 2), spinner(3, 15, 9), spinner(4, 16, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        encounter = r.context.Spiderlings.SpinnerNativeField.state();
+    assert.equal(Object.keys(ai.groups).length, 2);
+    assert.equal(Object.keys(ai.plans).length, 2);
+    assert.equal(encounter.topology.version, 2);
+    assert.equal(
+        Object.values(encounter.topology.lineFields).filter((field) => !field.retired).length,
+        2,
+        "both plans share one schema-2 physical graph",
+    );
+    actors[2].x = 3;
+    actors[2].y = 2;
+    actors[3].x = 4;
+    actors[3].y = 2;
+    start(r);
+    assert.equal(Object.keys(ai.groups).length, 2, "saved groups do not merge when their members meet");
+});
+
+test("one positive turn scans candidate line geometry once for multiple groups", () => {
+    const r = runtime([spinner(1, 1, 2), spinner(2, 2, 2), spinner(3, 15, 9), spinner(4, 16, 9)]),
+        snapshot = mapSnapshot(),
+        lines = snapshot.candidateLines;
+    let scans = 0;
+    Object.defineProperty(snapshot, "candidateLines", {
+        get() {
+            scans++;
+            return lines;
+        },
+    });
+    const ai = start(r, snapshot);
+    assert.equal(Object.keys(ai.groups).length, 2);
+    assert.equal(scans, 1);
+});
+
+test("the schema-2 graph accepts independently owned lines without a global field cap", () => {
+    const r = runtime(),
+        nativeField = r.context.Spiderlings.SpinnerNativeField,
+        encounter = nativeField.ensureMap();
+    for (let index = 0; index < 6; index++)
+        nativeField.addLine({
+            fieldId: `uncapped-${index}`,
+            owners: [index * 2 + 1, index * 2 + 2],
+            anchors: [
+                { x: 2, y: index + 2 },
+                { x: 4, y: index + 2 },
+            ],
+        });
+    assert.equal(encounter.topology.version, 2);
+    assert.equal(Object.values(encounter.topology.lineFields).filter((field) => !field.retired).length, 6);
+    assert.equal(encounter.topology.anchors.length, 12);
+});
+
+test("dynamic occupancy waits without reroll while static invalidation saves one replacement", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        originalPlan = ai.plans[group.planId],
+        assignment = group.assignments[1] || group.assignments[2],
+        blocker = { id: 70, x: assignment.target.x, y: assignment.target.y, hp: 3, Enemy: { name: "Bandit" } };
+    r.context.KDMapData.Entities.push(blocker);
+    const worker = actors.find((actor) => group.assignments[actor.id]);
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.lastAction, "wait");
+    assert.equal(group.planId, originalPlan.id);
+    r.context.KDMapData.Entities.splice(r.context.KDMapData.Entities.indexOf(blocker), 1);
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.notEqual(group.lastAction, undefined);
+    assert.equal(group.planId, originalPlan.id);
+
+    const invalid = plain(snapshot),
+        invalidCell = invalid.cells.find((cell) => cellKeyForTest(cell) === originalPlan.cells[0]);
+    invalidCell.protected = true;
+    start(r, invalid);
+    assert.notEqual(group.planId, originalPlan.id);
+    assert.equal(group.selectionOrdinal, 1);
+    assert.equal(ai.plans[originalPlan.id].status, "invalid");
+});
+
+test("a statically blocked approach abandons instead of waiting forever", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        blocked = plain(snapshot);
+    for (const actor of actors)
+        for (const direction of [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 1 },
+            { x: 1, y: -1 },
+            { x: -1, y: 1 },
+            { x: -1, y: -1 },
+        ]) {
+            const cell = blocked.cells.find(
+                (candidate) => candidate.x === actor.x + direction.x && candidate.y === actor.y + direction.y,
+            );
+            if (cell) cell.floor = false;
+        }
+    start(r, blocked);
+    assert.equal(ai.plans[plan.id].status, "invalid");
+    assert.equal(ai.plans[plan.id].invalidReason, "approach");
+    assert.equal(group.planId, null);
+});
+
+test("a fighting group retains its field plan while construction approach is blocked", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        blocked = plain(snapshot);
+    group.engagement = {
+        target: { kind: "player", id: 0 },
+        lureId: actors[0].id,
+        mode: "lure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    for (const actor of actors)
+        for (const cell of blocked.cells)
+            if (Math.max(Math.abs(actor.x - cell.x), Math.abs(actor.y - cell.y)) <= 1) cell.floor = false;
+    start(r, blocked);
+    assert.equal(group.planId, plan.id);
+    assert.equal(plan.status, "traveling");
+});
+
+function cellKeyForTest(cell) {
+    return `${cell.x},${cell.y}`;
+}
+
+test("the nearest free enclosure worker takes the last body job instead of the lowest ID", () => {
+    const actors = [spinner(1, 5, 5), spinner(2, 6, 5)],
+        r = runtime(actors),
+        c = r.context;
+    const { SpinnerAI: ai, SpinnerNativeField: native, SpinnerTopology: topology } = c.Spiderlings;
+    const placed = ai.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] });
+    const encounter = native.state(),
+        group = encounter.ai.groups[placed.groupId],
+        plan = encounter.ai.plans[group.planId];
+    encounter.topology.composites[plan.compositeId].constructionOrder = "outer-first";
+    plan.constructionOrder = "outer-first";
+    let held;
+    for (let i = 0; i < 300; i++) {
+        const reserved = held ? [`${held.type}:${held.linkId || held.anchorId}:${cellKeyForTest(held.cell)}`] : [];
+        const action = topology.nextWorkAction(encounter.topology, actors[0].id, actors[0], reserved, plan.fieldIds);
+        if (!action) break;
+        if (!held && action.type === "extendLink") {
+            held = action;
+            continue;
+        }
+        const result = topology.applyAction(
+            encounter.topology,
+            { ...action, ownerId: actors[0].id },
+            native.snapshot(action.cell),
+        );
+        assert.ok(result.outcome.legal);
+        encounter.topology = result.state;
+    }
+    assert.ok(held);
+    Object.assign(actors[0], { x: 2, y: 2 });
+    Object.assign(actors[1], { x: held.cell.x, y: held.cell.y + 1 });
+    group.assignments = {};
+    ai.reserveActions(encounter, mapSnapshot());
+    assert.equal(group.assignments[actors[1].id]?.fieldId, held.fieldId);
+    assert.equal(group.assignments[actors[1].id]?.type, "extendLink");
+});
+
+test("a field engaged with the player plans from that current position instead of a closer unrelated NPC", () => {
+    const actors = [spinner(1, 5, 5), spinner(2, 6, 5)],
+        r = runtime(actors),
+        c = r.context;
+    start(r);
+    const group = Object.values(c.Spiderlings.SpinnerNativeField.state().ai.groups)[0];
+    c.KDMapData.Entities.push({ id: 50, x: 5, y: 6, hp: 20, Enemy: { name: "Bandit", tags: {} } });
+    actors[0].aware = actors[0].testSense = true;
+    c.KinkyDungeonEnemyLoop(actors[0], c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.engagement?.target.kind, "player");
+    c.KinkyDungeonCurrentTick++;
+    start(r);
+    assert.equal(group.planningFocus.target.kind, "player");
+    assert.equal(group.planningFocus.x, c.KinkyDungeonPlayerEntity.x);
+});
+
+for (const outside of [false, true])
+    test(`recognized prey ${outside ? "outside" : "inside"} an unfinished core leaves assigned builders paying for its enclosure`, () => {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+            r = runtime([...actors]),
+            c = r.context,
+            { SpinnerAI: planner, SpinnerNativeField: native } = c.Spiderlings,
+            placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+            encounter = native.state(),
+            group = encounter.ai.groups[placed.groupId],
+            originalMembers = [...group.memberIds],
+            composite = encounter.topology.composites[placed.compositeId],
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: outside ? 16 : composite.core.x + 1, y: composite.core.y });
+        native.onEntry(c.KinkyDungeonPlayerEntity, c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y);
+        for (const actor of actors) actor.aware = actor.testSense = true;
+        const constructionReady = () =>
+            outside
+                ? composite.layerIds.every((id) =>
+                      ["ready", "sealed"].includes(native.state().topology.fields[id].phase),
+                  )
+                : native.captureGeometryReady(composite.core);
+        for (let turn = 0; turn < 200 && !constructionReady(); turn++) {
+            start(r, snapshot);
+            for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+            planner.completePositiveTurn(1);
+            c.KinkyDungeonCurrentTick++;
+        }
+        assert.ok(constructionReady(), `Observed prey cannot starve paid inner work: ${JSON.stringify(group)}`);
+        assert.deepEqual(
+            plain(native.fieldOwners(encounter.ai.plans[group.planId].fieldId)).sort(),
+            originalMembers.slice().sort(),
+            "Temporary command loans preserve the original physical crew",
+        );
+        assert.ok(native.state().topology.actionLog.length > 20, "The inner rings must use real paid construction");
+        assert.ok(
+            r.phaseCalls.some((entry) => entry.phase === "attack"),
+            "The lure retains native melee pressure",
+        );
+    });
+
+test("unfinished-core role allocation hands body work away from an active lure without erasing progress", () => {
+    for (const variant of [
+        "available",
+        "single",
+        "disabled",
+        "off-map",
+        "separated-work",
+        "expired",
+        "unrecognized",
+        "changed-lure",
+    ]) {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+            r = runtime([...actors]),
+            c = r.context,
+            { SpinnerAI: planner, SpinnerNativeField: native, SpinnerTopology: topology } = c.Spiderlings,
+            placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+            encounter = native.state(),
+            group = encounter.ai.groups[placed.groupId],
+            composite = encounter.topology.composites[placed.compositeId],
+            snapshot = mapSnapshot(),
+            target = { x: composite.core.x + 1, y: composite.core.y };
+        Object.assign(c.KinkyDungeonPlayerEntity, target);
+        native.onEntry(c.KinkyDungeonPlayerEntity, target.x, target.y);
+        // Fixture setup closes the already authored outer gate. The pending
+        // body, paid graph and construction credit then survive role changes.
+        for (let n = 0; n < 8; n++) {
+            const action = topology.nextWorkAction(encounter.topology, actors[0].id, actors[0]);
+            if (action.role === "body") break;
+            const result = topology.applyAction(
+                encounter.topology,
+                { ...action, ownerId: actors[0].id },
+                native.snapshot(action.cell),
+            );
+            assert.ok(result.outcome.legal);
+            encounter.topology = result.state;
+        }
+        group.engagement = {
+            target: { kind: "player", id: 0 },
+            lureId: actors[0].id,
+            lastKnown: { ...target, source: "native", age: 4 },
+        };
+        planner.reserveActions(encounter, snapshot);
+        assert.equal(group.assignments[actors[0].id]?.role, "body", variant);
+        actors[0].SpinnerConstructionPoints = 0.75;
+        if (variant === "single") group.memberIds = [actors[0].id];
+        if (variant === "disabled") for (const actor of actors.slice(1)) actor.disabled = true;
+        if (variant === "off-map") for (const actor of actors.slice(1)) actor.x = 99;
+        if (variant === "separated-work") {
+            actors[1].x = 11;
+            for (const cell of snapshot.cells) if (cell.x === 7) cell.floor = false;
+            assert.ok(planner.routeOnSnapshot(snapshot, actors[1], target).length > 0);
+            assert.equal(
+                planner.routeOnSnapshot(snapshot, actors[1], group.assignments[actors[0].id].workCell).length,
+                0,
+            );
+        }
+        group.engagement.lastKnown.age = variant === "expired" ? 4 : 0;
+        if (variant === "unrecognized") group.engagement.lastKnown.source = "guessed";
+        if (variant === "changed-lure") group.engagement.lureId = actors[1].id;
+        const before = plain(encounter.topology);
+        planner.reserveActions(encounter, snapshot);
+        const lure = group.engagement.lureId;
+        if (["available", "changed-lure"].includes(variant)) {
+            assert.notEqual(group.assignments[lure]?.role, "body", variant);
+            assert.ok(
+                Object.entries(group.assignments).some(([id, action]) => Number(id) !== lure && action.role === "body"),
+            );
+        } else assert.equal(group.assignments[lure]?.role, "body", variant);
+        assert.deepEqual(plain(encounter.topology), before, variant);
+        assert.equal(actors[0].SpinnerConstructionPoints, 0.75, variant);
+    }
+});
+
+test("one mapgen outer body retains a real crew, leaves paid inner work and survives reload without replenishment", () => {
+    const actors = [
+            spinner(1, 5, 3, { SpiderlingsNestParentID: 90 }),
+            spinner(2, 5, 9, { SpiderlingsNestParentID: 90 }),
+        ],
+        r = runtime(actors),
+        { SpinnerAI: planner, SpinnerNativeField: native, SpinnerTopology: topology } = r.context.Spiderlings,
+        placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] });
+    assert.equal(placed.status, "placed");
+    const encounter = native.state(),
+        composite = encounter.topology.composites[placed.compositeId],
+        group = encounter.ai.groups[placed.groupId],
+        plan = encounter.ai.plans[group.planId],
+        outer = encounter.topology.fields[composite.layerIds.at(-1)];
+    assert.equal(plan.provenance, "mapgen");
+    assert.deepEqual([...group.memberIds].sort(), [1, 2]);
+    assert.equal(group.source.nestId, 90);
+    assert.equal(outer.bounds.right - outer.bounds.left, 8);
+    assert.equal(outer.phase, "ready");
+    assert.equal(composite.closureArmed, false);
+    assert.equal(encounter.topology.actionLog.length, 0, "Authored terrain grants no paid construction actions");
+    assert.equal(r.context.KDMapData.Entities.filter(native.isOwnedProxy).length, 31);
+    assert.equal(native.isSpiderlingsWebCell(outer.gateCell), false, "The original opening is navigable");
+    for (const fieldId of composite.layerIds.slice(0, -1)) {
+        const field = encounter.topology.fields[fieldId];
+        assert.equal(field.phase, "preparing");
+        assert.ok(
+            encounter.topology.anchors
+                .filter((anchor) => anchor.owners.includes(fieldId))
+                .every((anchor) => !anchor.built),
+        );
+        assert.ok(
+            encounter.topology.links
+                .filter((link) => link.owners.includes(fieldId))
+                .every((link) => !link.connected && link.builtCells.length === 0),
+        );
+    }
+    assert.equal(topology.nextWorkAction(encounter.topology, actors[0].id, actors[0]).fieldId, composite.layerIds[1]);
+    for (const fieldId of composite.layerIds)
+        assert.deepEqual([...encounter.topology.fieldOwners[fieldId]].sort(), [1, 2]);
+    const before = plain(encounter),
+        count = r.context.KDMapData.Entities.length;
+    assert.equal(planner.initializeMapgenField().reason, "existing-field");
+    r.context.KDMapData.SpiderlingsSpinnerEncounter = plain(encounter);
+    planner.restoreAfterLoad();
+    native.reconcile();
+    assert.deepEqual(plain(native.state()), before);
+    assert.equal(r.context.KDMapData.Entities.length, count);
+    assert.equal(
+        actors.some((actor) => actor.SpinnerConstructionPoints > 0),
+        false,
+    );
+});
+
+test("authored hunting sites receive their own fresh crews before nearby substitute enclosures", () => {
+    const sites = [
+            { x: 10, y: 10, radius: 4 },
+            { x: 26, y: 10, radius: 4 },
+        ],
+        actors = [
+            spinner(1, 2, 10, { SpiderlingsPresetFieldCenter: sites[0] }),
+            spinner(2, 3, 10, { SpiderlingsPresetFieldCenter: sites[0] }),
+            spinner(3, 25, 10, { SpiderlingsPresetFieldCenter: sites[1] }),
+            spinner(4, 27, 10, { SpiderlingsPresetFieldCenter: sites[1] }),
+            spinner(5, 5, 5, { SpiderlingsNestParentID: 90 }),
+            spinner(6, 6, 5, { SpiderlingsNestParentID: 90 }),
+        ],
+        r = runtime(actors),
+        c = r.context;
+    Object.assign(c.KDMapData, {
+        GridWidth: 38,
+        GridHeight: 24,
+        StartPosition: { x: 1, y: 12 },
+        EndPosition: { x: 36, y: 12 },
+    });
+    c.KinkyDungeonMapGet = (x, y) => (x > 0 && y > 0 && x < 37 && y < 23 ? "." : "1");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 1, y: 12 });
+    const before = actors.map(({ id, x, y }) => ({ id, x, y })),
+        result = c.Spiderlings.SpinnerAI.initializeMapgenField({ maxFields: 2, preferredSites: sites });
+    assert.equal(result.status, "placed");
+    const fields = [...result.fields].sort((a, b) => a.center.x - b.center.x);
+    assert.deepEqual(
+        plain(fields.map(({ center }) => center)),
+        sites.map(({ x, y }) => ({ x, y })),
+    );
+    assert.ok(result.fields.every((field) => field.radius === 4));
+    const encounter = c.Spiderlings.SpinnerNativeField.state();
+    for (let index = 0; index < sites.length; index++) {
+        const field = fields[index],
+            members = encounter.ai.groups[field.groupId].memberIds;
+        assert.deepEqual([...members].sort(), index === 0 ? [1, 2] : [3, 4]);
+    }
+    assert.deepEqual(
+        actors.filter((actor) => actor.id < 1000).map(({ id, x, y }) => ({ id, x, y })),
+        before,
+    );
+    assert.equal(encounter.topology.actionLog.length, 0);
+});
+
+test("mapgen field rejects solo crews and downgrades protected large sites without occupying protected terrain", () => {
+    for (const variant of ["solo", "protected"]) {
+        const r = runtime(variant === "solo" ? [spinner(1, 5, 3)] : [spinner(1, 5, 3), spinner(2, 5, 9)]);
+        if (variant === "protected")
+            for (let x = 1; x < 17; x++) r.tiles.set(`${x},6`, { Type: "Quest", Protected: true });
+        const result = r.context.Spiderlings.SpinnerAI.initializeMapgenField();
+        assert.equal(result.status, variant === "solo" ? "skipped" : "placed", variant);
+        const proxies = r.context.KDMapData.Entities.filter(r.context.Spiderlings.SpinnerNativeField.isOwnedProxy);
+        assert.equal(proxies.length > 0, variant === "protected");
+        assert.equal(
+            proxies.some((entity) => r.tiles.get(`${entity.x},${entity.y}`)?.Protected),
+            false,
+        );
+        if (variant === "protected") assert.equal(result.radius, 2);
+    }
+});
+
+test("field placement does not delay first-contact pursuit or adjacent combat, including old ambush saves", () => {
+    for (const savedMode of [undefined, "lure", "search", "pressure", "pursuit"]) {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+            r = runtime(actors),
+            ai = start(r),
+            group = Object.values(ai.groups)[0],
+            worker = actors[0],
+            target = r.context.KinkyDungeonPlayerEntity;
+        Object.assign(worker, { x: 5, y: 6, aware: true, testSense: true });
+        Object.assign(target, { x: 9, y: 6 });
+        group.assignments = {};
+        if (savedMode) {
+            group.engagement = {
+                target: { kind: "player", id: 0 },
+                lureId: worker.id,
+                mode: savedMode,
+                progress: { waits: 0, approach: 4, route: 0 },
+                lastKnown: { x: target.x, y: target.y, age: 0, source: "native" },
+            };
+            r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+        }
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), 3, savedMode);
+        assert.equal(r.phaseCalls.length, 0, "A paid approach cannot also attack");
+        assert.equal(group.engagement.progress, undefined, "Old ambush timers cannot postpone contact");
+        Object.assign(target, { x: worker.x + 1, y: worker.y });
+        const position = { x: worker.x, y: worker.y };
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        assert.deepEqual({ x: worker.x, y: worker.y }, position, "Do not retreat from adjacent prey");
+        assert.equal(r.phaseCalls.length, 2, "Native attack and spell phases open immediately");
+    }
+});
+
+test("pending recovery pursues native observations before gate work without discovering an unseen target", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]),
+        target = r.context.KinkyDungeonPlayerEntity;
+    target.x = worker.x + 3;
+    target.y = worker.y;
+    worker.aware = true;
+    worker.testSense = true;
+    r.context.Spiderlings.SpinnerRecovery = {
+        wantsPursuit: (source, prey) => source === worker && prey === target,
+        handleEnemyTurn: () => undefined,
+        sourceIds: () => [],
+    };
+    const construction = group.metrics.construction;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), 2);
+    assert.equal(group.metrics.construction, construction);
+    assert.equal(r.phaseCalls.length, 0);
+    worker.testSense = false;
+    delete r.context.Spiderlings.SpinnerNativeField.state().ai.playerObservation;
+    group.engagement = {
+        target: { kind: "player", id: 0 },
+        lureId: worker.id,
+        mode: "lure",
+        lastKnown: { x: worker.x + 2, y: worker.y, age: 0, source: "native" },
+    };
+    target.x = 16;
+    target.y = 10;
+    const known = plain(group.engagement.lastKnown);
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(Math.max(Math.abs(worker.x - known.x), Math.abs(worker.y - known.y)), 1);
+    assert.deepEqual(plain(group.engagement.lastKnown), known);
+    group.engagement.lastKnown.age = 4;
+    const moveCount = r.movement.length;
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(group.engagement.lastKnown, undefined);
+    assert.equal(r.movement.length, moveCount, "Expired knowledge cannot pursue the target's new coordinate");
+});
+
+test("approaching prey and remote construction never restart an ambush wait", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    Object.assign(worker, { x: 5, y: 6, aware: true, testSense: true });
+    Object.assign(target, { x: 10, y: 6 });
+    group.assignments = {};
+    for (let turn = 0; turn < 2; turn++) {
+        const before = Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y));
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        assert.equal(Math.max(Math.abs(worker.x - target.x), Math.abs(worker.y - target.y)), before - 1);
+        group.metrics.construction++;
+        target.x--;
+    }
+    r.context.KinkyDungeonCurrentTick++;
+    r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+    assert.equal(r.phaseCalls.length, 2);
+});
+
+test("contact pursuit routes around a wall to prey without returning to a field waiting point", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        worker = actors[0],
+        target = r.context.KinkyDungeonPlayerEntity,
+        snapshot = mapSnapshot();
+    plan.anchors = [
+        { x: 8, y: 6 },
+        { x: 8, y: 6 },
+    ];
+    for (const cell of snapshot.cells) if (cell.x === 10 && cell.y >= 3) cell.floor = false;
+    r.context.KinkyDungeonMapGet = (x, y) =>
+        snapshot.cells.find((cell) => cell.x === x && cell.y === y)?.floor ? "." : "1";
+    r.context.KinkyDungeonFindPath = (fromX, fromY, toX, toY) =>
+        r.context.Spiderlings.SpinnerAI.routeOnSnapshot(snapshot, { x: fromX, y: fromY }, { x: toX, y: toY }).slice(1);
+    Object.assign(worker, { x: 8, y: 6, aware: true, testSense: true });
+    Object.assign(target, { x: 12, y: 6 });
+    group.assignments = {};
+    for (let turn = 0; turn < 20 && !r.phaseCalls.length; turn++) {
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(worker, target, 1);
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        assert.equal(r.context.KinkyDungeonMapGet(worker.x, worker.y), ".");
+    }
+    assert.ok(
+        r.movement.some((step) => step.y <= 2),
+        "The route must go around the wall's end",
+    );
+    assert.equal(r.phaseCalls.length, 2, "Reaching prey opens native combat");
+});
+
+test("continuous remote hearing still guides investigation after personal sight has been absent for eight turns", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity,
+        reporter = { ...spinner(90, 12, 3), Enemy: { name: "Jumper" } };
+    target.x = 12;
+    target.y = 3;
+    for (let tick = 0; tick < 9; tick++) {
+        r.context.Spiderlings.SpinnerAI.reportPlayerContact(
+            reporter,
+            target,
+            { recognized: true, hostile: true, canSensePlayer: true },
+            1,
+        );
+        r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    }
+    assert.equal(group.engagement.mode, "pursuit");
+    const lure = actors.find((actor) => actor.id === group.engagement.lureId),
+        before = Math.max(Math.abs(lure.x - target.x), Math.abs(lure.y - target.y));
+    r.context.KinkyDungeonEnemyLoop(lure, target, 1);
+    assert.equal(Math.max(Math.abs(lure.x - target.x), Math.abs(lure.y - target.y)), before - 1);
+    assert.equal(lure.aware, undefined);
+    assert.equal(r.phaseCalls.length, 0, "investigation cannot spend the same turn on native attack");
+});
+
+test("a Spinner without a field plan leaves movement and attacks to native AI", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    group.planId = null;
+    group.assignments = {};
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    r.context.KinkyDungeonEnemyLoop(actors[0], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.engagement, undefined);
+    assert.equal(r.movement.length, 0, "no aimless custom lure step");
+    assert.equal(r.phaseCalls.length, 2);
+});
+
+test("live native perception establishes one lure without a construction action", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        worker = actors.find((actor) => group.assignments[actor.id]);
+    worker.testSense = true;
+    worker.aware = true;
+    const before = plain(group.metrics);
+    r.context.KinkyDungeonEnemyLoop(worker, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.equal(group.engagement.target.kind, "player");
+    assert.equal(group.engagement.lureId, worker.id);
+    assert.equal(group.metrics.construction, before.construction);
+    assert.equal(group.metrics.repair, before.repair);
+    assert.equal(
+        r.phaseCalls.some((entry) => entry.id === worker.id),
+        false,
+    );
+    assert.deepEqual(r.nativeCalls, [worker.id]);
+});
+
+test("native player and hostile NPC targets establish one stable target without player priority", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
+        npc = { id: 50, x: 6, y: 4, hp: 4, hostileToSpinner: true, Enemy: { name: "Escort" } },
+        r = runtime([...actors, npc]),
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    r.context.KinkyDungeonEnemyLoop(actors[0], npc, 1);
+    assert.deepEqual(plain(group.engagement.target), { kind: "npc", id: 50 });
+    assert.equal(group.engagement.lureId, actors[0].id);
+
+    actors[1].aware = true;
+    actors[1].testSense = true;
+    r.context.KinkyDungeonEnemyLoop(actors[1], r.context.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(
+        plain(group.engagement.target),
+        { kind: "npc", id: 50 },
+        "native retargeting does not rotate the saved target",
+    );
+
+    const unseen = runtime([spinner(3, 4, 4), spinner(4, 4, 8)]),
+        unseenAI = start(unseen),
+        unseenGroup = Object.values(unseenAI.groups)[0];
+    unseen.context.KDMapData.Entities[0].aware = true;
+    unseen.context.KinkyDungeonEnemyLoop(
+        unseen.context.KDMapData.Entities[0],
+        unseen.context.KinkyDungeonPlayerEntity,
+        1,
+    );
+    assert.equal(unseenGroup.engagement, undefined, "awareness without computed sensing is not an observation");
+});
+
+test("last-known data expires at age four and field orders do not follow hidden live positions", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    target.x = 10;
+    target.y = 5;
+    r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    assert.deepEqual(plain(group.engagement.lastKnown), { x: 10, y: 5, dx: 0, dy: 0, age: 0, source: "native" });
+    r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.lastKnown.age, 1);
+
+    actors[0].testSense = false;
+    target.x = 15;
+    target.y = 9;
+    for (let turn = 0; turn < 3; turn++) r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.lastKnown, undefined, "age four clears the saved coordinate and direction");
+    assert.equal(group.engagement.noSightTurns, 3);
+    for (let turn = 0; turn < 4; turn++) r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.noSightTurns, 7);
+    assert.equal(group.engagement.mode, "pressure");
+    r.context.Spiderlings.SpinnerAI.completePositiveTurn(1);
+    assert.equal(group.engagement.noSightTurns, 8);
+    assert.equal(group.engagement.mode, "pursuit");
+
+    r.context.KinkyDungeonCurrentTick++;
+    const phases = r.phaseCalls.length,
+        result = r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    assert.equal(result.idle, false, "the field holds the member after its usable observation expires");
+    assert.equal(r.phaseCalls.length, phases, "lost contact cannot reopen autonomous attack and spell decisions");
+});
+
+test("a builder uses native adjacent defense and resumes its retained assignment", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 6, 6)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    target.x = 10;
+    target.y = 4;
+    r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    const assignment = plain(group.assignments[actors[1].id]);
+    assert.ok(assignment);
+
+    actors[1].x = 9;
+    actors[1].y = 4;
+    actors[1].aware = true;
+    actors[1].testSense = true;
+    r.phaseCalls.length = 0;
+    const construction = group.metrics.construction;
+    r.context.KinkyDungeonEnemyLoop(actors[1], target, 1);
+    assert.deepEqual(plain(r.phaseCalls), [
+        { phase: "attack", id: actors[1].id },
+        { phase: "spell", id: actors[1].id },
+    ]);
+    assert.equal(group.metrics.construction, construction);
+    assert.deepEqual(plain(group.assignments[actors[1].id]), assignment, "defense retains the builder job");
+
+    r.context.KinkyDungeonCurrentTick++;
+    target.x = 15;
+    target.y = 9;
+    actors[1].testSense = false;
+    r.phaseCalls.length = 0;
+    r.context.KinkyDungeonEnemyLoop(actors[1], target, 1);
+    assert.equal(r.phaseCalls.length, 0, "resumed work gates later native attack and spell phases");
+});
+
+test("load audit replaces an invalid lure and removes stale or duplicate saved assignments", () => {
+    const actors = [spinner(1, 4, 4), spinner(2, 4, 8)],
+        r = runtime(actors),
+        ai = start(r),
+        group = Object.values(ai.groups)[0],
+        assignments = Object.values(group.assignments);
+    group.engagement = {
+        target: { kind: "player", id: 0 },
+        lureId: 999,
+        mode: "search",
+        lastKnown: { x: 12, y: 8, dx: 1, dy: 0, age: 4, source: "native" },
+        noSightTurns: 4,
+        lureNoContactTurns: 4,
+        compositeId: null,
+    };
+    if (assignments[0]) {
+        group.assignments[actors[0].id] = plain(assignments[0]);
+        group.assignments[actors[1].id] = plain(assignments[0]);
+    }
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    const once = plain(group);
+    assert.ok(group.memberIds.includes(group.engagement.lureId));
+    assert.equal(group.engagement.lastKnown, undefined);
+    assert.ok(Object.keys(group.assignments).length <= 1);
+    assert.equal(group.assignments[group.engagement.lureId], undefined);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.deepEqual(plain(group), once, "repeated audit is idempotent");
+    r.context.Spiderlings.SpinnerAI.completePositiveTurn(0);
+    assert.deepEqual(plain(group), once, "a zero-time load update advances no engagement state");
+
+    r.context.KDMapData.Entities.push({
+        id: 77,
+        x: 12,
+        y: 8,
+        hp: 2,
+        hostileToSpinner: false,
+        Enemy: { name: "FormerEnemy" },
+    });
+    group.engagement.target = { kind: "npc", id: 77 };
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.equal(group.engagement, undefined, "changed native hostility invalidates the saved target");
+});
+
+test("stable lure survives JSON restore and is replaced after death, incapacity, or lost contact", () => {
+    const actors = [spinner(1, 3, 3), spinner(2, 3, 6), spinner(3, 3, 9)],
+        r = runtime(actors),
+        ai = start(r),
+        initialGroup = Object.values(ai.groups)[0],
+        target = r.context.KinkyDungeonPlayerEntity;
+    actors[0].aware = true;
+    actors[0].testSense = true;
+    target.x = 10;
+    target.y = 5;
+    r.context.KinkyDungeonEnemyLoop(actors[0], target, 1);
+    const stableLure = initialGroup.engagement.lureId;
+
+    r.context.KDMapData = plain(r.context.KDMapData);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    let group = Object.values(r.context.KDMapData.SpiderlingsSpinnerEncounter.ai.groups)[0];
+    assert.equal(group.engagement.lureId, stableLure);
+
+    let entities = r.context.KDMapData.Entities;
+    entities.find((entity) => entity.id === stableLure).hp = 0;
+    start(r);
+    group = Object.values(r.context.KDMapData.SpiderlingsSpinnerEncounter.ai.groups)[0];
+    const deathReplacement = group.engagement.lureId;
+    assert.notEqual(deathReplacement, stableLure);
+
+    entities = r.context.KDMapData.Entities;
+    entities.find((entity) => entity.id === deathReplacement).disabled = true;
+    start(r);
+    const incapacityReplacement = group.engagement.lureId;
+    assert.notEqual(incapacityReplacement, deathReplacement);
+
+    const observingBuilder = entities.find((entity) => entity.id === deathReplacement);
+    if (observingBuilder) {
+        observingBuilder.disabled = false;
+        group.engagement.lureNoContactTurns = 8;
+        observingBuilder.aware = true;
+        observingBuilder.testSense = true;
+        r.context.KinkyDungeonCurrentTick++;
+        r.context.KinkyDungeonEnemyLoop(observingBuilder, target, 1);
+        assert.equal(group.engagement.lureId, observingBuilder.id);
+    }
+});
+
+test("cooperative enclosure reuses the saved group and topology work scheduler", () => {
+    const actors = [spinner(1, 5, 4), spinner(2, 5, 8)],
+        r = runtime(actors),
+        map = {
+            width: 18,
+            height: 12,
+            floor: mapSnapshot().cells.map(cellKeyForTest),
+            protected: [],
+            occupied: [],
+            exit: { x: 16, y: 6 },
+        },
+        setup = r.context.Spiderlings.SpinnerScenarios.setupCooperative({
+            ownerIds: actors.map((actor) => actor.id),
+            compositeId: "cooperative",
+            layers: [
+                {
+                    id: "inner",
+                    vertices: [
+                        { x: 8, y: 2 },
+                        { x: 12, y: 2 },
+                        { x: 12, y: 10 },
+                        { x: 8, y: 10 },
+                    ],
+                    core: { x: 10, y: 6 },
+                    gate: { x: 8, y: 6 },
+                },
+            ],
+            map,
+            mapSnapshot: mapSnapshot(),
+        }),
+        group = Object.values(setup.ai.groups)[0],
+        plan = setup.ai.plans[group.planId];
+    assert.equal(setup.started, true);
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.compositeId, "cooperative");
+    assert.equal(Object.keys(group.assignments).length, 2);
+    assert.ok(Object.values(group.assignments).every((assignment) => assignment.fieldId === "inner"));
+    const before = setup.encounter.topology.actionLog.length;
+    for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+    assert.ok(
+        setup.encounter.topology.actionLog.length >= before,
+        "the production paid-action path owns enclosure work",
+    );
+});
+
+test("a small nearby enclosure does not hide a larger connected field on the dungeon route", () => {
+    const worker = spinner(1, 3, 7),
+        r = runtime([worker]);
+    const snapshot = {
+        width: 36,
+        height: 20,
+        cells: [],
+        entrances: [{ x: 1, y: 7 }],
+        exits: [{ x: 33, y: 7 }],
+        nests: [],
+    };
+    for (let y = 1; y < 19; y++)
+        for (let x = 1; x < 35; x++) {
+            if ((x <= 7 && y >= 4 && y <= 10) || (x >= 18 && x <= 33 && y >= 2 && y <= 16) || y === 7)
+                snapshot.cells.push({ x, y, floor: true, protected: false, locked: false });
+        }
+    Object.assign(r.context.KDMapData, {
+        GridWidth: 36,
+        GridHeight: 20,
+        StartPosition: snapshot.entrances[0],
+        EndPosition: snapshot.exits[0],
+    });
+    Object.assign(r.context.KinkyDungeonPlayerEntity, { x: 4, y: 7 });
+    const cells = new Set(snapshot.cells.map(cellKeyForTest));
+    r.context.KinkyDungeonMapGet = (x, y) => (cells.has(`${x},${y}`) ? "." : "1");
+    const ai = start(r, snapshot),
+        plan = ai.plans[Object.values(ai.groups)[0].planId];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 4, "Consider larger reachable sites before committing to a nearby fallback");
+});
+
+test("a cramped map selects its largest reachable legal ring without inventing space", () => {
+    for (const side of [5, 7]) {
+        const worker = spinner(1, 7, 6),
+            r = runtime([worker]),
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        snapshot.cells = snapshot.cells.filter(
+            (cell) => cell.x >= 5 && cell.x < 5 + side && cell.y >= 2 && cell.y < 2 + side,
+        );
+        snapshot.entrances = [{ x: 5, y: 2 + Math.floor(side / 2) }];
+        snapshot.exits = [{ x: 4 + side, y: 2 + Math.floor(side / 2) }];
+        const ai = start(r, snapshot),
+            group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId];
+        assert.equal(plan.kind, "enclosure");
+        assert.equal(
+            plan.radius,
+            side === 5 ? 1 : 2,
+            "A usable outside approach is required as well as a fitting perimeter",
+        );
+        assert.equal(plan.fieldIds.length, Math.max(1, plan.radius - 1));
+        assert.ok(plan.cells.every((key) => snapshot.cells.some((cell) => cellKeyForTest(cell) === key)));
+    }
+});
+
+test("enclosure proposals keep mobile prey off every ring and stationary actors out of the usable core", () => {
+    for (const immobile of [false, true]) {
+        const worker = spinner(1, 7, 6),
+            obstacle = { id: 70, x: 9, y: 6, hp: 10, Enemy: { name: "FixturePrey", immobile } },
+            r = runtime([worker, obstacle]),
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        const ai = start(r, snapshot),
+            plan = ai.plans[Object.values(ai.groups)[0].planId],
+            fields = plan.fieldIds.map((id) => r.context.Spiderlings.SpinnerNativeField.state().topology.fields[id]);
+        assert.equal(plan.kind, "enclosure");
+        for (const field of fields) {
+            assert.ok(!field.boundaryCells.some((cell) => cell.x === obstacle.x && cell.y === obstacle.y));
+            if (immobile)
+                assert.ok(!field.interiorCells.some((cell) => cell.x === obstacle.x && cell.y === obstacle.y));
+        }
+    }
+});
+
+test("expanding a radius-two core adds the next geometric ring instead of duplicating the first", () => {
+    const worker = spinner(1, 7, 6),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    snapshot.cells = snapshot.cells.filter((cell) => cell.x >= 5 && cell.x < 12 && cell.y >= 2 && cell.y < 9);
+    snapshot.entrances = [{ x: 5, y: 5 }];
+    snapshot.exits = [{ x: 11, y: 5 }];
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan.radius, 2);
+    const larger = mapSnapshot();
+    delete larger.candidateLines;
+    r.context.KinkyDungeonCurrentTick++;
+    start(r, larger);
+    const graph = r.context.Spiderlings.SpinnerNativeField.state().topology,
+        fields = graph.composites[plan.compositeId].layerIds.map((id) => graph.fields[id]);
+    assert.ok(fields.length > 1);
+    assert.equal(fields[1].bounds.width, fields[0].bounds.width + 2);
+});
+
+test("an empty saved crew restores only actors proven by its field ownership", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        c = r.context,
+        ai = r.begin();
+    const group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    group.memberIds = [];
+    r.begin();
+    assert.deepEqual(plain(group.memberIds).sort(), [1, 2]);
+    assert.equal(group.planId, plan.id);
+    assert.deepEqual(plain(c.Spiderlings.SpinnerNativeField.fieldOwners(plan.fieldId)).sort(), [1, 2]);
+    assert.equal(Object.keys(ai.groups).length, 1);
+});
+
+test("groups meeting after paid passage work keep both maintenance fields owned", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 50, 9)],
+        r = passageRuntime([...workers, { id: 81, x: 50, y: 7, hp: 4, Enemy: { name: "Maidforce" } }], 1, 55),
+        c = r.context,
+        ai = r.begin();
+    const groups = Object.values(ai.groups),
+        native = c.Spiderlings.SpinnerNativeField;
+    assert.equal(groups.length, 2);
+    for (const group of groups) {
+        // Urgent work may borrow a background owner before these fixtures pay
+        // their first action. Physical home ownership must still survive.
+        const worker = workers.find((entry) => native.state().command.members[entry.id]?.home === group.id),
+            graph = native.state().topology,
+            action = c.Spiderlings.SpinnerTopology.nextWorkAction(
+                graph,
+                worker.id,
+                worker,
+                [],
+                ai.plans[group.planId].fieldIds,
+            );
+        assert.ok(action);
+        const paid = c.Spiderlings.SpinnerTopology.applyAction(
+            graph,
+            { ...action, ownerId: worker.id },
+            { inBounds: true, floor: true, cell: action.cell, protected: false, occupied: false },
+        );
+        assert.equal(paid.outcome.legal, true);
+        native.state().topology = paid.state;
+    }
+    // Stage a later native meeting; no plan or ownership changes accompany it.
+    workers[1].x = workers[0].x + 1;
+    workers[1].y = workers[0].y;
+    r.begin();
+    assert.equal(Object.keys(ai.groups).length, 2);
+    for (const group of groups) {
+        const plan = ai.plans[group.planId];
+        assert.notEqual(plan.status, "abandoned");
+        for (const fieldId of plan.fieldIds)
+            assert.deepEqual(
+                plain(native.fieldOwners(fieldId)),
+                plain(c.Spiderlings.FieldCommand.owners(native.state(), group.id)),
+            );
+    }
+});
+
+test("fresh native approach redirects an unpaid plan while hidden coordinates and paid fields stay stable", () => {
+    const worker = spinner(1, 4, 4),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        first = ai.plans[group.planId];
+    const player = c.KinkyDungeonPlayerEntity;
+    player.x = 2;
+    player.y = 7;
+    start(r, snapshot);
+    assert.equal(group.planId, first.id, "An unpaid approach gets time to make real progress");
+    ai.coordinationTurn = 20;
+    start(r, snapshot);
+    const redirected = ai.plans[group.planId];
+    assert.notEqual(redirected.id, first.id);
+    assert.equal(first.invalidReason, "position-demand");
+    assert.ok(Math.max(Math.abs(redirected.center.x - player.x), Math.abs(redirected.center.y - player.y)) <= 6);
+    start(r, snapshot);
+    assert.equal(group.planId, redirected.id, "The same position cannot repeatedly reroll an unpaid approach");
+    player.x = 15;
+    player.y = 7;
+    ai.coordinationTurn = 24;
+    start(r, snapshot);
+    assert.equal(group.planId, redirected.id, "Assigned workers retain their approach opportunity");
+    // Pay a real topology operation, then change both target location and approach.
+    const native = c.Spiderlings.SpinnerNativeField,
+        graph = native.state().topology;
+    const action = c.Spiderlings.SpinnerTopology.nextWorkAction(graph, worker.id, worker);
+    const paid = c.Spiderlings.SpinnerTopology.applyAction(
+        graph,
+        { ...action, ownerId: worker.id },
+        { inBounds: true, floor: true, cell: action.cell, protected: false, occupied: false },
+    );
+    assert.equal(paid.outcome.legal, true);
+    native.state().topology = paid.state;
+    player.x = 2;
+    player.y = 7;
+    ai.coordinationTurn = 40;
+    start(r, snapshot);
+    assert.equal(
+        group.planId,
+        redirected.id,
+        "Paid construction keeps its maintenance owners after prey changes sides",
+    );
+    assert.deepEqual(plain(native.fieldOwners(redirected.fieldIds[2])), [worker.id]);
+});
+
+test("an unpaid field holding attributed prey is not relocated when its recovery target moves", () => {
+    const r = runtime([spinner(1, 4, 4)]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    c.Spiderlings.FieldCustody = {
+        ownsField: (id) => id === plan.compositeId,
+        ownsGroup: () => false,
+        assigned: () => false,
+    };
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 2, y: 7 });
+    start(r, snapshot);
+    ai.coordinationTurn = 20;
+    start(r, snapshot);
+    assert.equal(group.planId, plan.id);
+    assert.notEqual(plan.status, "abandoned");
+    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId].retired, false);
+});
+
+test("an unpaid project retains newly reachable approach progress after an initially blocked assignment", () => {
+    const worker = spinner(1, 4, 4),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.ok(group.assignments[worker.id]?.workCell);
+    // An earlier blocked assessment has no finite distance. Its newly reachable
+    // workstation is progress even if the player has since moved far away.
+    plan.approachProgress = { distance: null, turn: 1 };
+    ai.coordinationTurn = 20;
+    r.context.KinkyDungeonPlayerEntity.x = 2;
+    r.context.KinkyDungeonPlayerEntity.y = 7;
+    start(r, snapshot);
+    assert.equal(group.planId, plan.id, "Do not abandon a newly reachable unpaid approach");
+    assert.ok(Number.isFinite(plan.approachProgress.distance));
+    assert.ok(plan.approachProgress.turn >= 20);
+});
+
+test("terrain replacement and a new native report in the same audit leave every active field attributed", () => {
+    const worker = spinner(1, 4, 4),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        original = ai.plans[group.planId];
+    const key = original.initialCells[0];
+    snapshot.cells.find((cell) => cellKeyForTest(cell) === key).protected = true;
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: worker.id,
+        lastKnown: { x: 15, y: 7, dx: -1, dy: 0, age: 0, source: "native" },
+    };
+    ai.coordinationTurn = 4;
+    start(r, snapshot);
+    const active = Object.values(ai.plans).filter((plan) => !["invalid", "abandoned"].includes(plan.status));
+    assert.equal(active.length, 1);
+    assert.equal(group.planId, active[0].id);
+    assert.notEqual(group.planId, original.id);
+    assert.equal(original.invalidReason, "terrain");
+    const native = c.Spiderlings.SpinnerNativeField;
+    for (const plan of Object.values(ai.plans))
+        for (const fieldId of plan.fieldIds) {
+            const field = native.state().topology.fields[fieldId];
+            assert.ok(
+                field.retired || fieldId === active[0].fieldId || active[0].fieldIds.includes(fieldId),
+                "An intermediate replacement cannot be left live without a group plan",
+            );
+        }
+});
+
+test("a spacious enclosure retains its entire maintenance crew without changing nest provenance", () => {
+    const actors = Array.from({ length: 12 }, (_, index) =>
+        spinner(index + 1, 2 + (index % 4), 3 + Math.floor(index / 4)),
+    );
+    for (const actor of actors) actor.SpiderlingsNestParentID = 90;
+    const r = runtime(actors),
+        map = {
+            width: 18,
+            height: 12,
+            floor: mapSnapshot().cells.map(cellKeyForTest),
+            protected: [],
+            occupied: [],
+            exit: { x: 16, y: 6 },
+        },
+        result = r.context.Spiderlings.SpinnerScenarios.setupCooperative({
+            ownerIds: actors.map((actor) => actor.id),
+            compositeId: "spacious",
+            layers: [
+                {
+                    id: "large",
+                    vertices: [
+                        { x: 7, y: 1 },
+                        { x: 15, y: 1 },
+                        { x: 15, y: 10 },
+                        { x: 7, y: 10 },
+                    ],
+                    gate: { x: 7, y: 6 },
+                },
+            ],
+            map,
+            mapSnapshot: mapSnapshot(),
+        }),
+        group = Object.values(result.ai.groups)[0];
+    assert.equal(result.started, true);
+    assert.equal(group.memberIds.length, 12);
+    assert.deepEqual(
+        plain(r.context.Spiderlings.SpinnerNativeField.fieldOwners("large")).sort((a, b) => a - b),
+        actors.map((actor) => actor.id),
+    );
+    assert.ok(actors.every((actor) => actor.SpiderlingsNestParentID === 90 && actor.hp > 0));
+    assert.deepEqual(plain(group.source), { type: "nest", nestId: 90 });
+});
+
+test("one survivor keeps repair work but receives no new construction or replacement plan", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            plan.fieldId,
+        );
+    field.anchors[0].built = true;
+    field.anchors[0].hp = 1;
+    actors[1].hp = 0;
+    start(r, snapshot);
+    assert.deepEqual(
+        Object.values(plain(group.assignments)).map((assignment) => assignment.type),
+        ["repairAnchor"],
+    );
+
+    const invalid = plain(snapshot),
+        invalidCell = invalid.cells.find((cell) => cellKeyForTest(cell) === plan.cells[0]);
+    invalidCell.locked = true;
+    start(r, invalid);
+    assert.equal(group.planId, null, "a lone survivor cannot select a replacement plan");
+});
+
+test("line and unbuilt crews retain native pressure without requiring an area graph", () => {
+    for (const built of [false, true]) {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+            r = runtime(actors),
+            c = r.context,
+            snapshot = mapSnapshot();
+        if (!built) for (const cell of snapshot.cells) cell.protected = true;
+        const ai = start(r, snapshot),
+            encounter = c.Spiderlings.SpinnerNativeField.state(),
+            group = Object.values(ai.groups)[0];
+        if (!built) assert.equal(encounter.topology, undefined);
+        else assert.equal(ai.plans[group.planId].kind, "line");
+        group.engagement = {
+            target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+            lureId: actors[0].id,
+            mode: "pressure",
+            noSightTurns: 0,
+            lureNoContactTurns: 0,
+        };
+        const originalPlan = group.planId;
+        assert.doesNotThrow(() => start(r, snapshot));
+        assert.equal(group.engagement.lureId, actors[0].id);
+        assert.equal(group.assignments[actors[0].id], undefined, "The lure retains its native pressure duty");
+        assert.equal(group.planId, originalPlan, "A pressure duty cannot create or replace a field");
+        assert.deepEqual(
+            plain(group.memberIds),
+            actors.map((actor) => actor.id),
+        );
+    }
+});
+
+test("an adjacent recognized player does not divert a line maintenance worker into melee", () => {
+    const actors = [spinner(1, 5, 3), spinner(2, 5, 9)],
+        r = runtime(actors),
+        c = r.context,
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = native.fieldById(native.state(), ai.plans[group.planId].fieldId);
+    field.anchors[0].built = true;
+    field.anchors[0].hp = 1;
+    start(r, snapshot);
+    const [id, assignment] = Object.entries(group.assignments).find(([, action]) => action.type === "repairAnchor"),
+        worker = actors.find((actor) => String(actor.id) === id);
+    Object.assign(worker, assignment.workCell, { aware: true, testSense: true });
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: worker.x - 1, y: worker.y });
+    const colleague = actors.find((actor) => actor !== worker);
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: [colleague.id] });
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: colleague.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    const hp = field.anchors[0].hp;
+    for (let operation = 0; operation < 3; operation++) {
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+        if (native.fieldById(native.state(), ai.plans[group.planId].fieldId).anchors[0].hp > hp) break;
+    }
+    assert.ok(
+        native.fieldById(native.state(), ai.plans[group.planId].fieldId).anchors[0].hp > hp,
+        "The reserved line repair must actually pay and restore durability",
+    );
+    assert.ok(!r.phaseCalls.some((entry) => entry.id === worker.id), "Repair cannot double as native attack or spell");
+});
+
+test("save/load and revisit retain groups, choices, progress, and unique proxies", () => {
+    const actors = [spinner(1, 7, 3), spinner(2, 9, 9)],
+        r = runtime(actors),
+        snapshot = mapSnapshot(),
+        ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        planId = group.planId;
+    for (let turn = 0; turn < 8; turn++) {
+        start(r, snapshot);
+        for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+        r.context.KinkyDungeonCurrentTick++;
+    }
+    const before = plain(r.context.KDMapData),
+        progress = {
+            lineFields: plain(r.context.Spiderlings.SpinnerNativeField.state().topology.lineFields),
+            solidCells: plain(
+                r.context.Spiderlings.SpinnerTopology.solidCells(
+                    r.context.Spiderlings.SpinnerNativeField.state().topology,
+                ),
+            ),
+        };
+    r.context.KDMapData = plain(before);
+    r.context.Spiderlings.SpinnerAI.restoreAfterLoad();
+    r.context.Spiderlings.SpinnerNativeField.reconcile();
+    start(r, snapshot);
+    const restored = r.context.Spiderlings.SpinnerAI.inspect(),
+        proxies = r.context.KDMapData.Entities.filter(r.context.Spiderlings.SpinnerNativeField.isOwnedProxy);
+    assert.equal(restored.groups[group.id].planId, planId);
+    assert.deepEqual(plain(r.context.Spiderlings.SpinnerNativeField.state().topology.lineFields), progress.lineFields);
+    assert.deepEqual(
+        plain(
+            r.context.Spiderlings.SpinnerTopology.solidCells(r.context.Spiderlings.SpinnerNativeField.state().topology),
+        ),
+        progress.solidCells,
+    );
+    assert.equal(
+        new Set(proxies.map((proxy) => `${proxy.SpiderlingsSpinnerProxy.fieldId}|${proxy.x},${proxy.y}`)).size,
+        proxies.length,
+    );
+});
+
+test("paired 2/4/8 traces separate travel, construction, wait, and repair accounting", () => {
+    const observations = [];
+    for (const count of [2, 4, 8]) {
+        const starts = [
+                { x: 2, y: 4 },
+                { x: 2, y: 8 },
+                { x: 1, y: 1 },
+                { x: 1, y: 10 },
+                { x: 3, y: 1 },
+                { x: 3, y: 10 },
+                { x: 4, y: 1 },
+                { x: 4, y: 10 },
+            ],
+            actors = starts.slice(0, count).map((position, index) => spinner(index + 1, position.x, position.y)),
+            r = runtime(actors),
+            snapshot = mapSnapshot([
+                [
+                    { x: 12, y: 4 },
+                    { x: 12, y: 8 },
+                ],
+            ]),
+            ai = start(r, snapshot),
+            group = Object.values(ai.groups)[0];
+        for (let turn = 0; turn < 30; turn++) {
+            start(r, snapshot);
+            for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+            r.context.KinkyDungeonCurrentTick++;
+        }
+        const field = r.context.Spiderlings.SpinnerNativeField.fieldById(
+            r.context.Spiderlings.SpinnerNativeField.state(),
+            ai.plans[group.planId].fieldId,
+        );
+        if (field.anchors[0].built) field.anchors[0].hp = Math.max(0.5, field.anchors[0].hp - 0.5);
+        for (let turn = 0; turn < 8; turn++) {
+            start(r, snapshot);
+            for (const actor of actors) r.context.KinkyDungeonEnemyLoop(actor, r.context.KinkyDungeonPlayerEntity, 1);
+            r.context.KinkyDungeonCurrentTick++;
+        }
+        observations.push({ count, ...plain(group.metrics) });
+    }
+    for (const observation of observations) {
+        assert.ok(observation.travel > 0);
+        assert.ok(observation.construction > 0, JSON.stringify(observations));
+        assert.ok(observation.wait >= 0);
+        assert.ok(observation.repair > 0, JSON.stringify(observations));
+    }
+    assert.deepEqual(
+        observations.map(({ count }) => count),
+        [2, 4, 8],
+    );
+    assert.deepEqual(observations, [
+        { count: 2, travel: 22, construction: 5, wait: 5, yield: 0, repair: 3 },
+        { count: 4, travel: 22, construction: 5, wait: 5, yield: 0, repair: 3 },
+        { count: 8, travel: 22, construction: 5, wait: 5, yield: 0, repair: 3 },
+    ]);
+});
+
+function passageRuntime(actors, corridorWidth = 1, mapWidth = 35) {
+    const r = runtime(actors),
+        c = r.context,
+        width = mapWidth,
+        height = 15;
+    const rows = Array.from({ length: height }, (_, y) =>
+        Array.from({ length: width }, (_, x) => {
+            const room = ((x >= 2 && x <= 7) || (x >= width - 8 && x <= width - 3)) && y >= 4 && y <= 10;
+            const corridor = x >= 7 && x <= width - 8 && y >= 7 && y < 7 + corridorWidth;
+            return room || corridor ? "0" : "1";
+        }),
+    );
+    c.KDMapData.GridWidth = width;
+    c.KDMapData.GridHeight = height;
+    c.KDMapData.StartPosition = { x: 3, y: 7 };
+    c.KDMapData.EndPosition = { x: width - 4, y: 7 };
+    c.KDMapData.Tiles = {};
+    c.KinkyDungeonPlayerEntity.x = 3;
+    c.KinkyDungeonPlayerEntity.y = 10;
+    c.KinkyDungeonWallTiles = "1";
+    const writeGrid = () => {
+        c.KDMapData.Grid = rows.map((row) => row.join("")).join("\n") + "\n";
+    };
+    writeGrid();
+    c.KinkyDungeonMapGet = (x, y) => rows[y]?.[x] || "1";
+    const snapshot = () => ({
+        width,
+        height,
+        cells: rows.flatMap((row, y) =>
+            row.map((tile, x) => ({
+                x,
+                y,
+                tile,
+                floor: tile === "0",
+                walkable: tile === "0",
+                wall: tile === "1",
+                locked: false,
+                protected: false,
+            })),
+        ),
+        entrances: [c.KDMapData.StartPosition],
+        exits: [c.KDMapData.EndPosition],
+        nests: [],
+    });
+    c.KinkyDungeonFindPath = (fromX, fromY, toX, toY, blockEnemy) => {
+        const blocked = new Set(
+            blockEnemy
+                ? c.KDMapData.Entities.filter(
+                      (entity) =>
+                          entity.hp > 0 &&
+                          !c.Spiderlings.SpinnerNativeField.isOwnedProxy(entity) &&
+                          (entity.x !== fromX || entity.y !== fromY),
+                  ).map(cellKeyForTest)
+                : [],
+        );
+        return c.Spiderlings.SpinnerAI.routeOnSnapshot(
+            snapshot(),
+            { x: fromX, y: fromY },
+            { x: toX, y: toY },
+            blocked,
+        ).slice(1);
+    };
+    return {
+        ...r,
+        snapshot,
+        begin: () => c.Spiderlings.SpinnerAI.beginTurn({ activate: true }),
+        setTile(x, y, tile) {
+            rows[y][x] = tile;
+            writeGrid();
+        },
+        setMetadata(x, y, value) {
+            r.tiles.set(`${x},${y}`, value);
+            c.KDMapData.Tiles[`${x},${y}`] = value;
+        },
+    };
+}
+
+function largePassageRuntime(workers) {
+    const r = passageRuntime(workers, 3, 25),
+        planner = r.context.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    // Keep this route/coordination fixture on an actually validated 3x3 interior.
+    planner.candidates = (index, options) => {
+        const candidate = candidates(index, { ...options, focus: undefined, maxCandidates: 24 }).find(
+            (entry) => entry.interiorCells.length === 9,
+        );
+        return candidate ? [candidate] : [];
+    };
+    return r;
+}
+
+test("passage AI selects a proved capture interior on one- and two-cell native corridors", () => {
+    for (const width of [1, 2]) {
+        const r = passageRuntime([spinner(1, 5, 5)], width),
+            c = r.context,
+            ai = r.begin();
+        const group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId];
+        assert.equal(plan.kind, "passage");
+        assert.equal(plan.proof.kind, "mandatory");
+        assert.equal(plan.proof.interiorBypassDistance, null);
+        assert.equal(plan.proof.blockedGateDistance, null);
+        const graph = c.Spiderlings.SpinnerNativeField.state().topology,
+            field = graph.fields[plan.fieldId];
+        assert.ok(field);
+        assert.equal(field.gates.length, 2);
+        assert.ok(field.gates.every((gate) => gate.cells.length === width));
+        assert.ok(field.nativeWallCells.every((cell) => c.KinkyDungeonMapGet(cell.x, cell.y) === "1"));
+        assert.ok(
+            field.gates.every((gate) => gate.cells.every((cell) => c.KinkyDungeonMapGet(cell.x, cell.y) === "0")),
+        );
+        assert.equal(
+            c.Spiderlings.SpinnerTopology.solidCells(graph).length,
+            0,
+            "Choosing a passage must not grant completed webs",
+        );
+    }
+});
+
+test("small passages retain their original crew and field ownership across audits", () => {
+    for (const width of [1, 2]) {
+        const workers = Array.from({ length: 12 }, (_, index) =>
+                spinner(index + 1, 3 + (index % 4), 4 + Math.floor(index / 4)),
+            ),
+            r = passageRuntime(workers, width),
+            before = workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y })),
+            ai = r.begin(),
+            staffed = Object.values(ai.groups).filter((group) => group.planId);
+        assert.ok(staffed.length > 0);
+        assert.equal(staffed.length, 1);
+        assert.equal(staffed[0].memberIds.length, 12);
+        assert.equal(workers.length, 12);
+        assert.deepEqual(
+            workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y })),
+            before,
+        );
+        for (let turn = 0; turn < 3; turn++) {
+            r.begin();
+            assert.ok(
+                Object.values(ai.groups)
+                    .filter((group) => group.planId)
+                    .every((group) => group.memberIds.length === 12),
+                "A small field retains its maintenance owners",
+            );
+            assert.deepEqual(
+                plain(r.context.Spiderlings.SpinnerNativeField.fieldOwners(ai.plans[staffed[0].planId].fieldId)).sort(
+                    (a, b) => a - b,
+                ),
+                workers.map((worker) => worker.id),
+            );
+        }
+    }
+});
+
+test("passage AI recruits initially separated worker groups into one planned field", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)];
+    const r = largePassageRuntime(workers),
+        c = r.context,
+        ai = r.begin(),
+        groups = Object.values(ai.groups).filter((group) => group.planId);
+    assert.ok(
+        Math.abs(workers[0].x - workers[2].x) > c.Spiderlings.SpinnerAI.GROUP_RADIUS,
+        "The fixture must start outside ordinary local grouping range",
+    );
+    assert.equal(
+        groups.length,
+        1,
+        "Only one construction project is needed; donor identity remains in the command ledger",
+    );
+    const group = groups[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan.kind, "passage");
+    assert.deepEqual(plain(group.memberIds).sort(), [1, 2, 3, 4]);
+    const graph = c.Spiderlings.SpinnerNativeField.state().topology;
+    assert.deepEqual(plain(graph.fieldOwners[plan.fieldId]).sort(), [1, 2, 3, 4]);
+    assert.equal(Object.values(ai.plans).filter((entry) => !["invalid", "abandoned"].includes(entry.status)).length, 1);
+    assert.equal(ai.passageMetrics.analysisBuilds, 1, "Both groups share a single map analysis");
+    assert.equal(
+        ai.passageMetrics.analysisBuilds,
+        1,
+        "Support requests reuse the existing route proof without proposing another field",
+    );
+});
+
+test("a saved oversized field retains idle maintenance owners and active Capture and Recovery sources", () => {
+    const workers = Array.from({ length: 8 }, (_, index) =>
+            spinner(index + 1, 3 + (index % 4), 4 + Math.floor(index / 4)),
+        ),
+        r = passageRuntime(workers),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups).find((entry) => entry.planId),
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField;
+    // Model a pre-capacity save with all actors attributed to the existing field.
+    group.memberIds = workers.map((worker) => worker.id);
+    native.setOwners(plan.fieldId, group.memberIds);
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: [6] });
+    c.Spiderlings.SpinnerRecovery = { sourceIds: () => [7] };
+    c.Spiderlings.SpinnerNPCRecovery = { usesEntity: (id) => id === 8 };
+    const fieldBefore = JSON.stringify(native.state().topology.fields[plan.fieldId]),
+        before = workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y, hp: worker.hp }));
+    c.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.equal(group.memberIds.length, 8, "A zero-time load audits state without dispatching excess workers");
+    r.begin();
+    assert.deepEqual(plain(group.memberIds), [1, 2, 3, 4, 5, 6, 7, 8]);
+    assert.deepEqual(plain(native.fieldOwners(plan.fieldId)), [1, 2, 3, 4, 5, 6, 7, 8]);
+    assert.equal(JSON.stringify(native.state().topology.fields[plan.fieldId]), fieldBefore);
+    assert.deepEqual(
+        workers.map((worker) => ({ id: worker.id, x: worker.x, y: worker.y, hp: worker.hp })),
+        before,
+    );
+    r.begin();
+    assert.ok([6, 7, 8].every((id) => group.memberIds.includes(id)));
+    assert.equal(group.memberIds.length, 8);
+    const otherPlans = Object.values(ai.plans).filter(
+        (entry) => entry !== plan && !["invalid", "abandoned"].includes(entry.status),
+    );
+    assert.ok(otherPlans.every((other) => !other.cells.some((key) => plan.cells.includes(key))));
+});
+
+test("protected waiting stations retain crew ownership and leave the narrow mouth free", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        gate = plan.gates.reduce((a, b) => (a.cells[0].x < b.cells[0].x ? a : b)),
+        mouth = { x: gate.cells[0].x - 1, y: gate.cells[0].y },
+        station = { x: mouth.x - 1, y: mouth.y };
+    r.setMetadata(station.x, station.y, { OL: true });
+    r.begin();
+    assert.equal(group.planId, plan.id, "Protecting an outer station does not erase the valid field");
+    assert.equal(group.memberIds.length, 2);
+    assert.ok(
+        Object.values(group.assignments)
+            .filter((entry) => entry.type === "rally")
+            .every(
+                (entry) => ![cellKeyForTest(mouth), cellKeyForTest(station)].includes(cellKeyForTest(entry.workCell)),
+            ),
+    );
+});
+
+test("passage AI gives distant support a movement assignment without paying construction on that move", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+        r = largePassageRuntime(workers),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0];
+    const entry = Object.entries(group.assignments).find(
+        ([id, assignment]) =>
+            assignment.type === "rally" &&
+            Math.max(
+                Math.abs(workers.find((worker) => String(worker.id) === id).x - assignment.workCell.x),
+                Math.abs(workers.find((worker) => String(worker.id) === id).y - assignment.workCell.y),
+            ) > 3,
+    );
+    assert.ok(entry, "A distant unassigned helper needs an explicit rally movement task");
+    const [id, assignment] = entry,
+        worker = workers.find((actor) => String(actor.id) === id),
+        before = { x: worker.x, y: worker.y, credit: worker.SpinnerConstructionPoints || 0 },
+        graphBefore = JSON.stringify(c.Spiderlings.SpinnerNativeField.state().topology);
+    const result = c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+    assert.ok(
+        r.movement.some((move) => move.id === worker.id),
+        "Rally work must call the native move entrance",
+    );
+    assert.equal(
+        Math.max(Math.abs(worker.x - before.x), Math.abs(worker.y - before.y)),
+        1,
+        "Rally does not teleport to its station",
+    );
+    assert.ok(
+        Math.max(Math.abs(worker.x - assignment.workCell.x), Math.abs(worker.y - assignment.workCell.y)) <
+            Math.max(Math.abs(before.x - assignment.workCell.x), Math.abs(before.y - assignment.workCell.y)),
+    );
+    assert.equal(worker.SpinnerConstructionPoints || 0, before.credit);
+    assert.equal(JSON.stringify(c.Spiderlings.SpinnerNativeField.state().topology), graphBefore);
+    assert.equal(result.attacked, false);
+    assert.equal(result.cast, false);
+});
+
+test("passage AI retains one static analysis through actor movement and invalidates changed wall geometry", () => {
+    const worker = spinner(1, 5, 5),
+        r = passageRuntime([worker]),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        oldPlan = ai.plans[group.planId],
+        initial = plain(ai.passageMetrics);
+    for (let tick = 0; tick < 20; tick++) {
+        worker.y = 5 + (tick % 2);
+        c.KinkyDungeonCurrentTick++;
+        r.begin();
+    }
+    assert.equal(ai.passageMetrics.analysisBuilds, initial.analysisBuilds);
+    assert.equal(ai.passageMetrics.visited, initial.visited, "Moving actors must not repeat the full graph analysis");
+    assert.equal(
+        ai.passageMetrics.routeChecks,
+        initial.routeChecks,
+        "A committed site reuses its proven traffic route",
+    );
+    const wall = oldPlan.nativeWallCells[0];
+    r.setTile(wall.x, wall.y, "0");
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.equal(ai.passageMetrics.analysisBuilds, initial.analysisBuilds + 1);
+    assert.equal(oldPlan.status, "invalid");
+    assert.equal(oldPlan.invalidReason, "terrain");
+    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.fields[oldPlan.fieldId].retired, true);
+    r.begin();
+    assert.equal(
+        ai.passageMetrics.analysisBuilds,
+        initial.analysisBuilds + 1,
+        "Unchanged edited terrain is then reused",
+    );
+});
+
+test("passage AI invalidates a reserved gate when native protected metadata changes", () => {
+    const r = passageRuntime([spinner(1, 5, 5)]),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        oldPlan = ai.plans[group.planId],
+        gate = oldPlan.gates[0].cells[0],
+        builds = ai.passageMetrics.analysisBuilds;
+    r.setMetadata(gate.x, gate.y, { Protected: true });
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.equal(ai.passageMetrics.analysisBuilds, builds + 1);
+    assert.equal(oldPlan.status, "invalid");
+    const replacement = ai.plans[group.planId];
+    if (replacement)
+        assert.ok(
+            replacement.gates.every((mouth) => mouth.cells.every((cell) => cell.x !== gate.x || cell.y !== gate.y)),
+        );
+});
+
+test("passage AI cancels an unpaid gate closure after its target leaves the capture interior", () => {
+    const worker = spinner(1, 5, 5),
+        r = passageRuntime([worker]),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = () => native.state().topology.fields[plan.fieldId];
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+        r.begin();
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(field().phase, "ready", "The fixture prepares both entrances through paid worker actions");
+    const player = c.KinkyDungeonPlayerEntity;
+    player.x = plan.center.x;
+    player.y = plan.center.y;
+    native.onEntry(player, player.x, player.y);
+    r.begin();
+    assert.ok(
+        Object.values(group.assignments).some((assignment) => assignment.type === "closeGate"),
+        "Entering the actual capture interior must reserve an unpaid closure",
+    );
+    const before = plain(native.state().topology.actionLog);
+    player.x = 3;
+    player.y = 10;
+    native.onEntry(player, player.x, player.y);
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.equal(native.state().topology.composites[plan.compositeId].closureArmed, false);
+    assert.ok(
+        Object.values(group.assignments).every((assignment) => assignment.type !== "closeGate"),
+        "An open entrance must not keep a stale closure assignment after the prey leaves",
+    );
+    c.KinkyDungeonEnemyLoop(worker, player, 1);
+    assert.deepEqual(
+        plain(native.state().topology.actionLog),
+        before,
+        "The canceled seal must not spend construction work",
+    );
+});
+
+test("passage AI excludes the player's occupied gate and never saves a field that was rejected", () => {
+    const reference = passageRuntime([spinner(1, 5, 5)]),
+        referenceAI = reference.begin(),
+        referenceGroup = Object.values(referenceAI.groups)[0],
+        gate = referenceAI.plans[referenceGroup.planId].gates[0].cells[0];
+    const r = passageRuntime([spinner(1, 5, 5)]),
+        c = r.context;
+    c.KinkyDungeonPlayerEntity.x = gate.x;
+    c.KinkyDungeonPlayerEntity.y = gate.y;
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    if (plan) {
+        assert.ok(
+            c.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId],
+            "A saved active passage must correspond to an accepted topology field",
+        );
+        assert.ok(
+            plan.gates.every((mouth) => mouth.cells.every((cell) => cell.x !== gate.x || cell.y !== gate.y)),
+            "The live player cannot occupy a newly reserved gate",
+        );
+    }
+});
+
+test("passage AI keeps remote workers independent even when their future candidate sites are nearby", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 100, 5)],
+        r = passageRuntime(workers, 1, 105),
+        c = r.context,
+        originalCandidates = c.Spiderlings.SpinnerPassagePlanner.candidates;
+    // Keep the authored nearby-site catalogue to reproduce the former false
+    // recruitment trigger; current production ranking uses each crew's local origin.
+    c.Spiderlings.SpinnerPassagePlanner.candidates = (index, options) =>
+        originalCandidates(index, { ...options, focus: undefined });
+    const ai = r.begin(),
+        command = c.Spiderlings.FieldCommand.inspect();
+    assert.equal(Object.keys(command.members).length, 2);
+    assert.notEqual(command.members[1].home, command.members[2].home);
+    const distant = command.members[2];
+    assert.equal(distant.phase, "travelling", "An agreed global loan uses the real long route");
+    assert.equal(workers[1].x, 100, "Dispatch planning cannot teleport a distant worker");
+    const plan = ai.plans[ai.groups[distant.commander].planId];
+    assert.equal(plan.kind, "passage");
+    assert.ok(c.Spiderlings.SpinnerNativeField.fieldOwners(plan.fieldId).includes(2));
+});
+
+test("passage AI discards a rejected activation and retries once the temporary failure clears", () => {
+    const r = passageRuntime([spinner(1, 5, 5)]),
+        c = r.context,
+        native = c.Spiderlings.SpinnerNativeField,
+        addPassage = native.addPassage;
+    native.addPassage = () => ({ added: false, reason: "occupied" });
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        rejected = Object.values(ai.plans)[0];
+    assert.equal(group.planId, null, "Rejected topology must not leave a permanently active empty plan");
+    assert.equal(rejected.status, "invalid");
+    assert.equal(Object.keys(native.state().topology?.fields || {}).length, 0);
+    native.addPassage = addPassage;
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    const accepted = ai.plans[group.planId];
+    assert.equal(accepted?.kind, "passage", "Temporary activation failure must not suppress a later retry");
+    assert.ok(native.state().topology.fields[accepted.fieldId]);
+});
+
+test("a planless saved crew pauses when its last worker disappears and resumes with its owner", () => {
+    const worker = spinner(1, 5, 5),
+        r = passageRuntime([worker]),
+        c = r.context,
+        native = c.Spiderlings.SpinnerNativeField,
+        addPassage = native.addPassage;
+    native.addPassage = () => ({ added: false, reason: "occupied" });
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0];
+    native.addPassage = addPassage;
+    c.KDMapData.Entities = [];
+    c.KinkyDungeonCurrentTick++;
+    assert.doesNotThrow(() => r.begin());
+    assert.equal(group.planId, null);
+    assert.deepEqual(plain(group.memberIds), []);
+    c.KDMapData.Entities = [
+        worker,
+        ...Array.from({ length: 3 }, (_, index) => spinner(91000 + index, 0, 0, { disabled: true, stun: 10000 })),
+    ];
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    const assigned = Object.values(ai.groups).find((entry) => entry.memberIds.includes(worker.id));
+    assert.equal(ai.plans[assigned.planId]?.kind, "passage");
+});
+
+test("terrain invalidation with only disabled owners pauses replanning until recovery", () => {
+    const worker = spinner(1, 5, 5),
+        r = passageRuntime([worker]),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    c.KinkyDungeonIsDisabled = () => true;
+    const cell = plan.interiorCells[0];
+    r.setTile(cell.x, cell.y, "1");
+    c.KinkyDungeonCurrentTick++;
+    assert.doesNotThrow(() => r.begin());
+    assert.equal(group.planId, null);
+    c.KinkyDungeonIsDisabled = () => false;
+    r.setTile(cell.x, cell.y, "0");
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.ok(ai.plans[group.planId]);
+});
+
+test("a native gate lock invalidates a plan after repeated cached-snapshot checks", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        gate = plan.gates[0].cells[0];
+    for (let turn = 0; turn < 3; turn++) {
+        c.KinkyDungeonCurrentTick++;
+        r.begin();
+    }
+    assert.equal(group.planId, plan.id);
+    r.setMetadata(gate.x, gate.y, { Lock: "Red" });
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.equal(plan.status, "invalid");
+    assert.equal(plan.invalidReason, "terrain");
+    assert.notEqual(group.planId, plan.id);
+    const replacement = ai.plans[group.planId];
+    if (replacement)
+        assert.ok(
+            !(replacement.initialCells || replacement.cells).includes(cellKeyForTest(gate)),
+            "The refreshed cell index must exclude the newly locked gate from replacement work",
+        );
+});
+
+test("passage AI keeps its analysis and active field when paid gate work creates native collision proxies", () => {
+    const worker = spinner(1, 5, 5),
+        r = passageRuntime([worker]),
+        c = r.context,
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    // A one-cell interior isolates collision-proxy caching from a lone worker's
+    // inability to cross a wider corridor occupied by prey.
+    planner.candidates = (index, options) => candidates(index, { ...options, focus: undefined, preferLarge: false });
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = () => native.state().topology.fields[plan.fieldId],
+        builds = ai.passageMetrics.analysisBuilds;
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+        r.begin();
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(field().phase, "ready");
+    const player = c.KinkyDungeonPlayerEntity;
+    player.x = plan.center.x;
+    player.y = plan.center.y;
+    native.onEntry(player, player.x, player.y);
+    for (let turn = 0; turn < 100 && field().phase !== "sealed"; turn++) {
+        r.begin();
+        c.KinkyDungeonEnemyLoop(worker, player, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(field().phase, "sealed", "Both mouths close through paid work while the prey stays in the core");
+    assert.ok(
+        c.KDMapData.Entities.some(native.isOwnedProxy),
+        "The completed gates must exercise real native proxy occupancy",
+    );
+    r.begin();
+    assert.equal(group.planId, plan.id);
+    assert.notEqual(plan.status, "invalid");
+    assert.equal(!!field().retired, false);
+    assert.equal(
+        ai.passageMetrics.analysisBuilds,
+        builds,
+        "The field's own collision proxies must not become protected static terrain or trigger graph rebuilds",
+    );
+});
+
+test("ready staffing keeps a core worker opposite a remote colleague instead of sending them through each other", () => {
+    const workers = [spinner(1, 10, 7), spinner(2, 19, 7)],
+        r = passageRuntime(workers),
+        c = r.context,
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    planner.candidates = (index, options) =>
+        candidates(index, { ...options, focus: undefined, preferLarge: false, maxCandidates: 24 }).filter(
+            (entry) => entry.id === "passage:10,7:1x1",
+        );
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        field = () => c.Spiderlings.SpinnerNativeField.state().topology.fields[plan.fieldId];
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(field().phase, "ready");
+    for (let turn = 0; turn < 30; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(
+        workers.every((worker) => cellKeyForTest(worker) === cellKeyForTest(group.assignments[worker.id].workCell)),
+    );
+    assert.ok(workers.some((worker) => worker.x < plan.center.x));
+    assert.ok(workers.some((worker) => worker.x > plan.center.x));
+    const stationed = plain(group.rallyGates);
+    for (let turn = 0; turn < 3; turn++) {
+        r.begin();
+        assert.deepEqual(plain(group.rallyGates), stationed, "A settled partition must remain stable");
+    }
+    // A legacy save can contain the crossed partition emitted by older code.
+    // Keep both physical actors present and let their ordinary movement recover it.
+    workers[0].x = 13;
+    workers[0].y = 7;
+    workers[1].x = 14;
+    workers[1].y = 7;
+    group.rallyGates[workers[0].id] = field().gates.find((gate) => gate.cells[0].x > plan.center.x).id;
+    group.rallyGates[workers[1].id] = field().gates.find((gate) => gate.cells[0].x < plan.center.x).id;
+    c.Spiderlings.SpinnerAI.restoreAfterLoad();
+    for (let turn = 0; turn < 30; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(
+        workers.every((worker) => cellKeyForTest(worker) === cellKeyForTest(group.assignments[worker.id].workCell)),
+    );
+    assert.ok(workers.some((worker) => worker.x < plan.center.x));
+    assert.ok(workers.some((worker) => worker.x > plan.center.x));
+});
+
+test("passage AI stations same-side helpers at both mouths after preparing a one-cell corridor", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers),
+        c = r.context,
+        originalCandidates = c.Spiderlings.SpinnerPassagePlanner.candidates;
+    c.Spiderlings.SpinnerPassagePlanner.candidates = (index, options) =>
+        originalCandidates(index, { ...options, focus: undefined });
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = () => native.state().topology.fields[plan.fieldId];
+    assert.ok(
+        workers.every(
+            (worker) => worker.x < Math.min(...plan.gates.flatMap((gate) => gate.cells.map((cell) => cell.x))),
+        ),
+    );
+    const initialMouths = plain(group.rallyGates);
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(field().phase, "ready");
+    const farMouth = field().gates.reduce((a, b) => (a.cells[0].x > b.cells[0].x ? a : b)),
+        formerFarWorker = workers.find((worker) => initialMouths[worker.id] === farMouth.id),
+        frontWorker = workers.find((worker) => worker !== formerFarWorker);
+    const walk = (worker, destination) => {
+        for (let step = 0; step < 80 && cellKeyForTest(worker) !== cellKeyForTest(destination); step++) {
+            const next = c.KinkyDungeonFindPath(worker.x, worker.y, destination.x, destination.y, true)[0];
+            assert.ok(next, "The controlled preparation-order change must follow an unoccupied floor route");
+            assert.equal(
+                c.KinkyDungeonEnemyTryMove(worker, { x: next.x - worker.x, y: next.y - worker.y }, 1, next.x, next.y),
+                true,
+            );
+        }
+        assert.equal(cellKeyForTest(worker), cellKeyForTest(destination));
+    };
+    // Model the changed arrival order at the preparation/ready transition with
+    // legal movement: the original far-mouth worker now stands behind its peer.
+    walk(frontWorker, { x: 5, y: 6 });
+    walk(formerFarWorker, { x: 4, y: 7 });
+    walk(frontWorker, { x: 6, y: 7 });
+    r.begin();
+    assert.equal(
+        group.rallyGates[frontWorker.id],
+        farMouth.id,
+        "The worker currently in front must pass through to the far mouth when preparation becomes ready",
+    );
+    assert.notEqual(group.rallyGates[formerFarWorker.id], farMouth.id);
+    const readyMouths = plain(group.rallyGates);
+    for (let turn = 0; turn < 80; turn++) {
+        r.begin();
+        assert.deepEqual(
+            plain(group.rallyGates),
+            readyMouths,
+            "Ready staffing must retain its chosen mouths instead of reordering every frame",
+        );
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.deepEqual(
+        [...new Set(Object.values(group.rallyGates))].sort(),
+        plain(field().gates.map((gate) => gate.id)).sort(),
+    );
+    const assignments = Object.values(group.assignments);
+    assert.equal(assignments.length, 2);
+    assert.ok(assignments.every((assignment) => assignment.type === "rally"));
+    assert.deepEqual(
+        assignments.map((assignment) => assignment.gateId).sort(),
+        plain(field().gates.map((gate) => gate.id)).sort(),
+        "The waiting workers must cover opposite mouths instead of parking together on their arrival side",
+    );
+    for (const worker of workers) {
+        const assignment = group.assignments[worker.id];
+        assert.equal(worker.x, assignment.workCell.x);
+        assert.equal(worker.y, assignment.workCell.y);
+    }
+    assert.ok(workers.some((worker) => worker.x < plan.center.x));
+    assert.ok(workers.some((worker) => worker.x > plan.center.x));
+});
+
+test("passage AI reuses a bounded distance working set while stable helpers wait for construction", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+        r = largePassageRuntime(workers),
+        c = r.context,
+        ai = r.begin();
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    const settled = plain(ai.passageMetrics);
+    assert.ok(
+        settled.distanceFieldBuilds > 0 && settled.distanceFieldBuilds <= 16,
+        "This fixed fixture must fit the documented origin cache bound",
+    );
+    assert.ok(
+        Object.values(ai.groups).some((group) =>
+            Object.values(group.assignments).some((assignment) => assignment.type === "rally"),
+        ),
+        "The fixture must actually evaluate support stations in addition to construction work",
+    );
+    for (let turn = 0; turn < 20; turn++) {
+        c.KinkyDungeonCurrentTick++;
+        r.begin();
+    }
+    assert.equal(ai.passageMetrics.analysisBuilds, settled.analysisBuilds);
+    assert.equal(
+        ai.passageMetrics.distanceFieldBuilds,
+        settled.distanceFieldBuilds,
+        "Unchanged members and work stations must reuse the same distances instead of rebuilding BFS fields each turn",
+    );
+    assert.equal(ai.passageMetrics.routeSearches, settled.routeSearches);
+});
+
+test("passage AI releases a lure after twelve turns without contact but retains native sensing", () => {
+    for (const keepSensing of [false, true]) {
+        const worker = spinner(1, 5, 5),
+            r = passageRuntime([worker]),
+            c = r.context,
+            ai = r.begin(),
+            group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId],
+            native = c.Spiderlings.SpinnerNativeField,
+            field = () => native.state().topology.fields[plan.fieldId],
+            target = c.KinkyDungeonPlayerEntity;
+        for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+            r.begin();
+            c.KinkyDungeonEnemyLoop(worker, target, 1);
+            c.KinkyDungeonCurrentTick++;
+        }
+        assert.equal(field().phase, "ready");
+        worker.aware = true;
+        worker.testSense = true;
+        c.KinkyDungeonEnemyLoop(worker, target, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        assert.equal(group.engagement.lureId, worker.id);
+        worker.testSense = false;
+        worker.testAIData = { canSensePlayer: keepSensing, canSeePlayer: false };
+        for (let turn = 1; turn <= 12; turn++) {
+            c.KinkyDungeonCurrentTick++;
+            r.begin();
+            c.KinkyDungeonEnemyLoop(worker, target, 1);
+            c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            if (turn === 8)
+                assert.equal(
+                    group.engagement.mode,
+                    "pursuit",
+                    "Native pursuit retains its existing eight-turn transition",
+                );
+            if (turn < 12) assert.ok(group.engagement, "The lure must not expire before twelve unseen turns");
+        }
+        if (keepSensing) {
+            assert.equal(
+                group.engagement.lureId,
+                worker.id,
+                "Native sensing must retain the engagement even without line of sight",
+            );
+            assert.equal(group.engagement.noSightTurns, 12);
+        } else {
+            assert.equal(
+                group.engagement,
+                undefined,
+                "A lost target must release the worker from permanent pursuit duty",
+            );
+            c.KinkyDungeonCurrentTick++;
+            r.begin();
+            assert.equal(
+                group.assignments[worker.id]?.type,
+                "rally",
+                "The released worker returns to field staffing on the next turn",
+            );
+        }
+    }
+});
+
+test("pressure keeps paid passage closure ahead of pursuit and brings the stationed lure beside sealed prey", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers, 3),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = () => native.state().topology.fields[plan.fieldId],
+        player = c.KinkyDungeonPlayerEntity;
+    const advance = () => {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, player, 1);
+        c.KinkyDungeonCurrentTick++;
+    };
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) advance();
+    assert.equal(field().phase, "ready");
+    Object.assign(player, plan.center);
+    native.onEntry(player, player.x, player.y);
+    const lure = workers[0];
+    lure.aware = lure.testSense = true;
+    r.begin();
+    c.KinkyDungeonEnemyLoop(lure, player, 1);
+    group.engagement.mode = "pressure";
+    group.engagement.lureId = lure.id;
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    const pending = plain(group.assignments[lure.id]);
+    assert.ok(["closeGate", "connectGate"].includes(pending.type));
+    lure.x = pending.workCell.x;
+    lure.y = pending.workCell.y;
+    lure.SpinnerConstructionPoints = 1.5;
+    lure.testSense = false;
+    const paid = native.state().topology.actionLog.length;
+    c.KinkyDungeonEnemyLoop(lure, player, 1);
+    assert.equal(
+        native.state().topology.actionLog.length,
+        paid + 1,
+        "Pressure must finish its reserved paid gate action",
+    );
+    assert.equal(group.lastAction, "construction");
+    for (let turn = 0; turn < 100 && field().phase !== "sealed"; turn++) advance();
+    assert.equal(field().phase, "sealed");
+    const gate = field().gates.find((mouth) => mouth.cells[0].x > plan.center.x);
+    Object.assign(lure, { x: gate.cells[0].x + 1, y: player.y, testSense: true, aware: true });
+    lure.flags = { CMDR_stationed: 999, dontChase: 999 };
+    lure.testAIData = { dontChase: true };
+    group.engagement.lureId = lure.id;
+    group.engagement.mode = "pressure";
+    const beforeDistance = Math.hypot(lure.x - player.x, lure.y - player.y);
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    const result = c.KinkyDungeonEnemyLoop(lure, player, 1);
+    assert.ok(Math.hypot(lure.x - player.x, lure.y - player.y) < beforeDistance);
+    assert.equal(
+        result.idle,
+        false,
+        "Stationed native commands must not leave the admitted prey without a second source",
+    );
+    assert.equal(result.attacked, false, "Approaching spends the movement turn before native melee");
+});
+
+test("passage AI moves support beside sealed prey using fresh observations before delegating adjacent melee", () => {
+    for (const mode of ["fresh", "expired", "moved-unseen", "sensed-stationary"]) {
+        const expireObservation = mode === "expired",
+            movedUnseen = mode === "moved-unseen",
+            sensedStationary = mode === "sensed-stationary",
+            workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+            r = passageRuntime(workers, movedUnseen ? 3 : 1),
+            c = r.context,
+            planner = c.Spiderlings.SpinnerPassagePlanner,
+            candidates = planner.candidates;
+        // Fix the horizontal interior at one cell so the post-closure support
+        // positions remain two steps from prey; the wide case allows an unseen y move.
+        planner.candidates = (index, options) =>
+            candidates(index, { ...options, focus: undefined, preferLarge: false });
+        const ai = r.begin(),
+            group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId],
+            native = c.Spiderlings.SpinnerNativeField,
+            field = () => native.state().topology.fields[plan.fieldId],
+            player = c.KinkyDungeonPlayerEntity;
+        const advanceWorkers = () => {
+            r.begin();
+            for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, player, 1);
+            c.KinkyDungeonCurrentTick++;
+        };
+        for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) advanceWorkers();
+        assert.equal(field().phase, "ready");
+        player.x = plan.center.x;
+        player.y = Math.min(...field().interiorCells.map((cell) => cell.y));
+        native.onEntry(player, player.x, player.y);
+        for (let turn = 0; turn < 100 && field().phase !== "sealed"; turn++) advanceWorkers();
+        assert.equal(field().phase, "sealed", "Preparation and closure must use actual paid worker actions");
+
+        const [lure, helper] = workers,
+            helperGate = field().gates.find((gate) => gate.id === group.rallyGates[helper.id]),
+            lureGate = field().gates.find((gate) => gate.id !== helperGate.id),
+            gateCell = helperGate.cells[0];
+        // Stage the reported post-closure positions: one source on the opposite
+        // mouth, the helper immediately outside its assigned mouth.
+        lure.x = lureGate.cells[0].x + Math.sign(lureGate.cells[0].x - plan.center.x);
+        lure.y = player.y;
+        helper.x = gateCell.x + Math.sign(gateCell.x - plan.center.x);
+        helper.y = player.y;
+        lure.aware = true;
+        lure.testSense = true;
+        helper.aware = sensedStationary;
+        helper.testSense = sensedStationary;
+        if (sensedStationary) {
+            helper.flags = { CMDR_stationed: 999 };
+            helper.testAIData = { canSensePlayer: true, canSeePlayer: true, dontChase: true };
+        }
+        c.KinkyDungeonCurrentTick++;
+        c.KinkyDungeonEnemyLoop(lure, player, 1);
+        assert.equal(group.engagement.lureId, lure.id);
+        lure.x = lureGate.cells[0].x;
+        lure.y = player.y;
+        const observed = plain(group.engagement.lastKnown);
+        assert.equal(observed.source, "native");
+        assert.equal(Math.max(Math.abs(helper.x - player.x), Math.abs(helper.y - player.y)), 2);
+        if (movedUnseen) {
+            const destination = field().interiorCells.find((cell) => Math.abs(cell.y - observed.y) >= 2);
+            assert.ok(destination, "The wide passage must allow an unobserved move within its sealed interior");
+            c.KDMoveEntity(player, destination.x, destination.y, true);
+            assert.equal(field().phase, "sealed");
+        }
+        if (expireObservation) for (let turn = 0; turn < 4; turn++) c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+        r.begin();
+        const assignment = group.assignments[helper.id],
+            moves = [],
+            originalMove = c.KinkyDungeonEnemyTryMove;
+        c.KinkyDungeonEnemyTryMove = (...args) => {
+            moves.push({ id: args[0].id, delta: args[2], x: args[3], y: args[4] });
+            return originalMove(...args);
+        };
+        const before = { x: helper.x, y: helper.y };
+        const result = c.KinkyDungeonEnemyLoop(helper, player, 1);
+        if (expireObservation) {
+            assert.equal(group.engagement.lastKnown, undefined);
+            assert.ok(
+                !field().gates.some((gate) =>
+                    gate.cells.some((cell) => cellKeyForTest(cell) === cellKeyForTest(assignment.workCell)),
+                ),
+                "Expired knowledge must not reserve a gate approach to the old target coordinate",
+            );
+            assert.ok(
+                Math.max(Math.abs(helper.x - observed.x), Math.abs(helper.y - observed.y)) >= 2,
+                "The helper must not approach the old coordinate using an expired team observation",
+            );
+        } else {
+            assert.equal(assignment.type, "rally");
+            assert.ok(
+                moves.some((move) => move.id === helper.id && move.delta > 0),
+                "Support must use the native movement entrance",
+            );
+            assert.equal(Math.max(Math.abs(helper.x - before.x), Math.abs(helper.y - before.y)), 1);
+            assert.equal(
+                Math.max(Math.abs(helper.x - observed.x), Math.abs(helper.y - observed.y)),
+                1,
+                "The helper crosses its own web mouth toward the team's last native observation",
+            );
+            if (movedUnseen)
+                assert.equal(
+                    Math.max(Math.abs(helper.x - player.x), Math.abs(helper.y - player.y)),
+                    2,
+                    "An unobserved target move must not grant the helper the target's new position",
+                );
+            else
+                assert.equal(
+                    Math.max(Math.abs(helper.x - player.x), Math.abs(helper.y - player.y)),
+                    1,
+                    "Fresh team sight lets the helper reach physical supporting range",
+                );
+            if (sensedStationary) {
+                assert.equal(
+                    result.idle,
+                    false,
+                    "A sensing but stationed helper must perform its support move at distance two",
+                );
+                assert.equal(result.attacked, false);
+                assert.equal(result.cast, false, "Moving support must not also use the native attack or spell phase");
+                c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+                c.KinkyDungeonCurrentTick++;
+                r.begin();
+                const moveCount = moves.length,
+                    adjacent = c.KinkyDungeonEnemyLoop(helper, player, 1);
+                assert.equal(
+                    adjacent.idle,
+                    false,
+                    "The field holds adjacent support in place while admitting native melee",
+                );
+                assert.equal(adjacent.attacked, true);
+                assert.equal(adjacent.cast, true);
+                assert.equal(
+                    moves.length,
+                    moveCount,
+                    "Adjacent support must not spend another rally move before native combat",
+                );
+            } else
+                assert.deepEqual(
+                    plain(group.engagement.lastKnown),
+                    observed,
+                    "A helper without individual sensing must not invent or refresh a target observation",
+                );
+        }
+    }
+});
+
+test("passage AI lets sealed-field support cross its waiting-mouth partition in a three-cell interior", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9)],
+        r = passageRuntime(workers, 1, 25),
+        c = r.context,
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        candidates = planner.candidates;
+    // Select one real, validated longer candidate to isolate support movement
+    // from the autonomous ranking preference for smaller passage interiors.
+    planner.candidates = (index, options) => {
+        const candidate = candidates(index, { ...options, maxCandidates: 24 }).find(
+            (entry) =>
+                entry.interiorCells.length === 3 && new Set(entry.interiorCells.map((cell) => cell.y)).size === 1,
+        );
+        assert.ok(candidate, "The corridor must offer a validated horizontal three-cell capture interior");
+        return [candidate];
+    };
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = () => native.state().topology.fields[plan.fieldId],
+        player = c.KinkyDungeonPlayerEntity;
+    planner.candidates = candidates;
+    const advanceWorkers = () => {
+        r.begin();
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, player, 1);
+        c.KinkyDungeonCurrentTick++;
+    };
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) advanceWorkers();
+    assert.equal(field().phase, "ready");
+    player.x = Math.max(...field().interiorCells.map((cell) => cell.x));
+    player.y = plan.center.y;
+    native.onEntry(player, player.x, player.y);
+    for (let turn = 0; turn < 100 && field().phase !== "sealed"; turn++) advanceWorkers();
+    assert.equal(field().phase, "sealed");
+    const west = field().gates.reduce((a, b) => (a.cells[0].x < b.cells[0].x ? a : b)),
+        helper = workers.find((worker) => group.rallyGates[worker.id] === west.id),
+        lure = workers.find((worker) => worker !== helper),
+        east = field().gates.find((gate) => gate !== west);
+    assert.ok(helper, "One worker must retain the original west-mouth waiting assignment");
+    helper.x = Math.min(...field().interiorCells.map((cell) => cell.x));
+    helper.y = player.y;
+    lure.x = east.cells[0].x + 1;
+    lure.y = player.y;
+    lure.aware = true;
+    lure.testSense = true;
+    c.KinkyDungeonCurrentTick++;
+    c.KinkyDungeonEnemyLoop(lure, player, 1);
+    assert.equal(group.engagement.lureId, lure.id);
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    const before = { x: helper.x, y: helper.y },
+        assignment = group.assignments[helper.id];
+    assert.equal(Math.max(Math.abs(before.x - player.x), Math.abs(before.y - player.y)), 2);
+    assert.equal(
+        assignment.workCell.x,
+        plan.center.x,
+        "A sealed-field helper may use the middle cell even when it belongs to the other mouth's waiting region",
+    );
+    c.KinkyDungeonEnemyLoop(helper, player, 1);
+    assert.ok(r.movement.some((move) => move.id === helper.id && move.x === assignment.workCell.x));
+    assert.equal(Math.max(Math.abs(helper.x - before.x), Math.abs(helper.y - before.y)), 1);
+    assert.equal(Math.max(Math.abs(helper.x - player.x), Math.abs(helper.y - player.y)), 1);
+});
+
+test("passage AI replaces a reserved gate connection after native damage and cooldown", () => {
+    const worker = spinner(1, 5, 5),
+        r = passageRuntime([worker]),
+        c = r.context,
+        ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField,
+        field = () => native.state().topology.fields[plan.fieldId],
+        player = c.KinkyDungeonPlayerEntity;
+    const advanceWorker = () => {
+        c.KinkyDungeonEnemyLoop(worker, player, 1);
+        c.KinkyDungeonCurrentTick++;
+    };
+    for (let turn = 0; turn < 100 && field().phase !== "ready"; turn++) {
+        r.begin();
+        advanceWorker();
+    }
+    assert.equal(field().phase, "ready");
+    player.x = plan.center.x;
+    player.y = plan.center.y;
+    native.onEntry(player, player.x, player.y);
+    let connection;
+    for (let turn = 0; turn < 100; turn++) {
+        r.begin();
+        connection = group.assignments[worker.id];
+        if (connection?.type === "connectGate") break;
+        advanceWorker();
+    }
+    assert.equal(
+        connection?.type,
+        "connectGate",
+        "The fixture must stop after paid web placement but before its reserved connection",
+    );
+    const proxy = c.KDMapData.Entities.find(
+        (entity) => native.isOwnedProxy(entity) && cellKeyForTest(entity) === cellKeyForTest(connection.target),
+    );
+    assert.ok(proxy);
+    assert.equal(native.onNativeDamage({ enemy: proxy, dmgDealt: 100 }), true);
+    const link = () => native.state().topology.links.find((entry) => entry.id === connection.linkId),
+        actionsBeforeRepair = native.state().topology.actionLog.length;
+    assert.equal(link().hp, 0);
+    c.KinkyDungeonCurrentTick++;
+    r.begin();
+    assert.ok(
+        group.assignments[worker.id]?.type !== "connectGate" ||
+            group.assignments[worker.id]?.linkId !== connection.linkId,
+        "A broken unprepared mouth must discard the old connection task immediately",
+    );
+    for (let turn = 0; turn < 100 && !(link().connected && link().hp > 0); turn++) {
+        native.tick(1);
+        r.begin();
+        advanceWorker();
+    }
+    assert.ok(
+        link().prepared && link().connected && link().hp > 0,
+        "After the normal cooldown, the worker must prepare, close and connect the broken mouth again",
+    );
+    assert.equal(link().builtCells.length, link().plannedCells.length);
+    const repairActions = native
+        .state()
+        .topology.actionLog.slice(actionsBeforeRepair)
+        .filter((action) => cellKeyForTest(action.cell) === cellKeyForTest(connection.target));
+    assert.ok(repairActions.some((action) => action.type === "prepareGate"));
+    assert.ok(repairActions.some((action) => action.type === "closeGate"));
+    assert.ok(repairActions.some((action) => action.type === "connectGate"));
+});
+
+test("a borrowed helper advances legally or waits around an occupied dispatch route", () => {
+    const workers = [spinner(1, 5, 5), spinner(2, 5, 9), spinner(3, 20, 5), spinner(4, 20, 9)],
+        r = largePassageRuntime(workers),
+        c = r.context;
+    r.begin();
+    const order = Object.values(c.Spiderlings.FieldCommand.inspect().members).find(
+        (member) => member.phase === "travelling",
+    );
+    assert.ok(order);
+    const helper = workers.find((worker) => worker.id === order.id),
+        route = c.Spiderlings.SpinnerAI.dispatchPath(helper, order.destination);
+    assert.ok(route.length > 1);
+    const next = route.find((cell) => cell.x !== helper.x || cell.y !== helper.y);
+    c.KDMapData.Entities.push({ id: 2000, ...next, hp: 3, Enemy: { name: "Bandit" } });
+    const before = { x: helper.x, y: helper.y },
+        log = plain(c.Spiderlings.SpinnerNativeField.state().topology.actionLog);
+    c.KinkyDungeonEnemyLoop(helper, c.KinkyDungeonPlayerEntity, 1);
+    assert.ok(Math.max(Math.abs(helper.x - before.x), Math.abs(helper.y - before.y)) <= 1);
+    assert.ok(helper.x !== next.x || helper.y !== next.y, "Occupied cells cannot be bypassed");
+    assert.deepEqual(
+        plain(c.Spiderlings.SpinnerNativeField.state().topology.actionLog),
+        log,
+        "A dispatch move is not paid construction",
+    );
+});
+
+test("occupied top-eight passages do not hide later legal route sites", () => {
+    const r = passageRuntime([spinner(1, 5, 5)], 2, 65),
+        c = r.context,
+        planner = c.Spiderlings.SpinnerPassagePlanner,
+        index = planner.buildIndex(r.snapshot()),
+        blocked = new Map(
+            planner
+                .candidates(index)
+                .flatMap((candidate) => candidate.gates.flatMap((gate) => gate.cells.filter((cell) => cell.y === 7)))
+                .map((cell) => [cellKeyForTest(cell), cell]),
+        );
+    c.KDMapData.Entities.push(
+        ...[...blocked.values()].map((cell, ordinal) => ({
+            id: 100 + ordinal,
+            ...cell,
+            hp: 10,
+            Enemy: { name: "Bandit", movePoints: 1, tags: {} },
+        })),
+    );
+    assert.ok(planner.candidates(index, { blockedKeys: [...blocked.keys()] }).length);
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan.kind, "passage", "A legal route site must be reconsidered before off-route enclosure fallback");
+    assert.ok(plan.gates.every((gate) => gate.cells.every((cell) => !blocked.has(cellKeyForTest(cell)))));
+    assert.equal(plan.proof.kind, "mandatory");
+});
+
+test("an occupied corridor is not a reachable approach to a new passage", () => {
+    const r = passageRuntime([spinner(1, 5, 5)], 1, 65),
+        c = r.context;
+    c.KDMapData.Entities.push({ id: 99, x: 8, y: 7, hp: 10, Enemy: { name: "Bandit", movePoints: 1, tags: {} } });
+    const ai = r.begin(),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId];
+    assert.equal(plan.kind, "enclosure", "Do not send builders through a currently impassable occupied mouth");
+});
+
+test("unreachable passages do not hide reachable sites beyond either shortlist limit", () => {
+    for (const blockerX of [20, 40]) {
+        const r = passageRuntime([spinner(1, 60, 7)], 1, 65),
+            c = r.context;
+        c.KDMapData.Entities.push({ id: 99, x: blockerX, y: 7, hp: 10, Enemy: { name: "Bandit", tags: {} } });
+        const ai = r.begin(),
+            group = Object.values(ai.groups)[0],
+            plan = ai.plans[group.planId];
+        assert.equal(plan.kind, "passage", `Reachable passages past the blocker at ${blockerX} must remain eligible`);
+        assert.equal(plan.proof.kind, "mandatory");
+        assert.ok(plan.gates.every((gate) => gate.cells.every((cell) => cell.x > blockerX)));
+    }
+});
+
+function adoptedFieldScene(gate = { x: 6, y: 6 }) {
+    const actors = [spinner(1, 5, 4), spinner(2, 5, 8)],
+        r = runtime(actors),
+        c = r.context,
+        native = c.Spiderlings.SpinnerNativeField,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 14, y: 6 });
+    native.initializeEnclosure({
+        compositeId: "adopted",
+        owners: actors.map((actor) => actor.id),
+        built: true,
+        layers: [
+            {
+                id: "adopted-inner",
+                vertices: [
+                    { x: 6, y: 4 },
+                    { x: 10, y: 4 },
+                    { x: 10, y: 8 },
+                    { x: 6, y: 8 },
+                ],
+                gate,
+            },
+        ],
+    });
+    native.state().builders = {};
+    c.Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true, mapSnapshot: snapshot });
+    return { actors, r, c, native, snapshot };
+}
+
+test("an adopted closed field retains its reopening worker and later reorients its paid entrance", () => {
+    const { actors, r, c, native, snapshot } = adoptedFieldScene();
+    for (let turn = 0; turn < 60; turn++) {
+        native.tick(1);
+        start(r, snapshot);
+        for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const encounter = native.state(),
+        field = encounter.topology.fields["adopted-inner"];
+    assert.equal(field.gateCell.x, 10, "Reopening must finish before the new demand's entrance is retried");
+    assert.equal(field.phase, "ready");
+    assert.ok(encounter.topology.actionLog.length > 0, "Reopening and reorientation require real paid work");
+    assert.equal(
+        Object.values(encounter.ai.plans).filter((plan) => !["abandoned", "invalid"].includes(plan.status)).length,
+        1,
+        "Compare existing coverage at its core rather than at a corner",
+    );
+});
+
+test("partially damaged unbreached fields retain their minimum repair crew during lending", () => {
+    const { c, native } = adoptedFieldScene(),
+        encounter = native.state(),
+        command = c.Spiderlings.FieldCommand,
+        home = Object.values(encounter.ai.groups)[0];
+    const field = encounter.topology.fields["adopted-inner"];
+    encounter.topology.composites.adopted.closureArmed = false;
+    encounter.topology.links[0].hp -= 0.5;
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    assert.notEqual(field.phase, "breached", "Partial damage does not require a physical breach");
+    assert.equal(command.pending(encounter, home), true);
+    const receiver = command.newGroup(encounter.ai),
+        request = command.request(encounter, receiver.id, "repair", 2, { x: 14, y: 7 });
+    command.allocate(encounter, (from, to) => Math.max(Math.abs(from.x - to.x), Math.abs(from.y - to.y)));
+    assert.equal(request.deployed, 1);
+    assert.equal(request.missing, 1);
+    assert.equal(request.reason, "necessary-duty");
+    assert.equal(home.memberIds.length, 1, "An unbreached damaged field still needs a real repair worker");
+});
+
+test("an unprotected lure occupying the remaining repair cell takes a maintenance duty to unblock paid repairs", () => {
+    const { actors, r, c, native, snapshot } = adoptedFieldScene({ x: 8, y: 8 }),
+        topology = c.Spiderlings.SpinnerTopology;
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 7, y: 7 });
+    Object.assign(actors[0], { x: 8, y: 7 });
+    Object.assign(actors[1], { x: 7, y: 8, aware: true, testSense: true });
+    let encounter = native.state();
+    encounter.topology = topology.damageAt(encounter.topology, { cell: { x: 8, y: 8 }, damage: 1000 }).state;
+    native.tick(topology.REBUILD_TURNS);
+    const link = encounter.topology.links.find((entry) => entry.hp <= 0),
+        rebuilt = topology.applyAction(
+            encounter.topology,
+            {
+                type: "rebuildLink",
+                linkId: link.id,
+                fieldId: "adopted-inner",
+                ownerId: actors[0].id,
+                cell: { x: 9, y: 8 },
+            },
+            native.snapshot({ x: 9, y: 8 }),
+        );
+    assert.equal(rebuilt.outcome.legal, true, JSON.stringify(rebuilt.outcome));
+    encounter.topology = rebuilt.state;
+    const group = Object.values(encounter.ai.groups)[0];
+    group.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: actors[1].id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 7, y: 7, age: 0 },
+    };
+    for (let turn = 0; turn < 3; turn++) {
+        start(r, snapshot);
+        if (turn === 0)
+            assert.ok(group.assignments[actors[1].id], "The occupying lure must accept the field's repair duty");
+        for (const actor of actors.slice(0, 2)) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    encounter = native.state();
+    assert.ok(
+        encounter.topology.links
+            .find((entry) => entry.id === link.id)
+            .builtCells.some((cell) => cell.x === 7 && cell.y === 8),
+    );
+    assert.ok(encounter.topology.actionLog.length > 1, "The occupying lure must pay for the resumed repair");
+});
+
+test("a sole unprotected lure travels to repair a damaged field instead of starving maintenance", () => {
+    const { actors, r, c, native, snapshot } = adoptedFieldScene({ x: 8, y: 8 }),
+        encounter = native.state(),
+        group = Object.values(encounter.ai.groups)[0],
+        actor = actors[1];
+    for (let turn = 0; turn < 60; turn++) {
+        native.tick(1);
+        start(r, snapshot);
+        for (const member of actors) c.KinkyDungeonEnemyLoop(member, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    actors[0].hp = 0;
+    Object.assign(actor, { x: 14, y: 8, aware: true, testSense: false });
+    encounter.topology.composites.adopted.closureArmed = false;
+    const link = encounter.topology.links.find(
+        (entry) => !entry.plannedCells.some((cell) => cell.x === 8 && cell.y === 8),
+    );
+    link.hp -= 0.5;
+    c.Spiderlings.SpinnerTopology.refresh(encounter.topology);
+    group.assignments = {};
+    group.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: actor.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 14, y: 6, age: 0 },
+    };
+    const before = plain(encounter.topology.actionLog || []);
+    start(r, snapshot);
+    assert.ok(
+        c.Spiderlings.SpinnerAI.hasMaintenanceAssignment(actor),
+        "A distant available lure must be assigned real maintenance",
+    );
+    assert.deepEqual(plain(encounter.topology.actionLog || []), before, "Planning cannot repair for free");
+    for (
+        let turn = 0;
+        turn < 40 && encounter.topology.links.find((entry) => entry.id === link.id).hp < link.maxHp;
+        turn++
+    ) {
+        c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+        start(r, snapshot);
+    }
+    assert.ok(
+        encounter.topology.actionLog.some((entry) => entry.type.startsWith("repair")),
+        "The lure must reach and pay for a repair",
+    );
+    assert.equal(encounter.topology.links.find((entry) => entry.id === link.id).hp, link.maxHp);
+});
+
+test("enclosure gates follow global planning positions through paid work without native recognition", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        plan = ai.plans[group.planId],
+        native = c.Spiderlings.SpinnerNativeField;
+    for (let tick = 0; tick < 240; tick++) {
+        start(r, snapshot);
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const player = c.KinkyDungeonPlayerEntity,
+        reporter = remotePlayerReporter(c);
+    for (const x of [16, 1]) {
+        Object.assign(player, { x, y: plan.center.y });
+        Object.assign(reporter, { x, y: plan.center.y + 1 });
+        group.engagement = { ...group.engagement, mode: "pressure", progress: { distance: 0, turn: -100 } };
+        const physical = JSON.stringify(c.Spiderlings.SpinnerTopology.solidCells(native.state().topology));
+        start(r, snapshot);
+        assert.equal(
+            JSON.stringify(c.Spiderlings.SpinnerTopology.solidCells(native.state().topology)),
+            physical,
+            "Choosing a new opening cannot cut silk for free",
+        );
+        const gates = plan.fieldIds.map((id) => plain(native.state().topology.fields[id].gateCell));
+        assert.ok(
+            gates.every((g) => (x > plan.center.x ? g.x > plan.center.x : g.x < plan.center.x)),
+            JSON.stringify(gates),
+        );
+        assert.notEqual(group.engagement?.mode, "lure", "Changing field entrances must not restart waiting");
+        assert.equal(group.engagement?.progress, undefined);
+        for (let tick = 0; tick < 120; tick++) {
+            start(r, snapshot);
+            c.KinkyDungeonEnemyLoop(worker, player, 1);
+            c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            c.KinkyDungeonCurrentTick++;
+        }
+        const graph = native.state().topology,
+            solid = new Set(c.Spiderlings.SpinnerTopology.solidCells(graph).map(cellKeyForTest));
+        for (const id of plan.fieldIds) {
+            const field = graph.fields[id];
+            assert.deepEqual(
+                plain(field.boundaryCells.filter((cell) => !solid.has(cellKeyForTest(cell)))),
+                plain([field.gateCell]),
+                "Paid work must open the new entrance and rebuild the former entrance",
+            );
+        }
+    }
+    reporter.hp = 0;
+    for (let i = 0; i < 9; i++) {
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+        start(r, snapshot);
+    }
+    const gates = plan.fieldIds.map((id) => plain(native.state().topology.fields[id].gateCell));
+    player.x = 16;
+    start(r, snapshot);
+    assert.notDeepEqual(
+        plan.fieldIds.map((id) => plain(native.state().topology.fields[id].gateCell)),
+        gates,
+        "Global planning can reorient openings without native recognition",
+    );
+});
+
+for (const obstruction of ["target", "workstations"])
+    test(`enclosure crew finds another same-layer paid job when its nearest ${obstruction} is occupied`, () => {
+        const actors = [spinner(1, 5, 3), spinner(2, 5, 9), spinner(3, 11, 6)],
+            r = runtime([...actors]),
+            c = r.context,
+            { SpinnerAI: planner, SpinnerNativeField: native } = c.Spiderlings,
+            placed = planner.initializeMapgenField({ preferredSites: [{ x: 8, y: 6 }] }),
+            encounter = native.state(),
+            group = encounter.ai.groups[placed.groupId],
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        start(r, snapshot);
+        const worker = actors.find((actor) => group.assignments[actor.id]?.role === "body"),
+            original = plain(group.assignments[worker.id]),
+            blockedCells =
+                obstruction === "target"
+                    ? [original.target]
+                    : [-1, 0, 1].flatMap((dy) =>
+                          [-1, 0, 1].flatMap((dx) =>
+                              dx || dy ? [{ x: original.target.x + dx, y: original.target.y + dy }] : [],
+                          ),
+                      );
+        // Keep the selected worker outside the occupied ring so none of its
+        // current cells can legitimately serve as a retained workstation.
+        if (blockedCells.some((cell) => cell.x === worker.x && cell.y === worker.y)) {
+            worker.x = 15;
+            worker.y = 9;
+        }
+        for (const [index, cell] of blockedCells.entries())
+            c.KDMapData.Entities.push({ id: 700 + index, ...cell, hp: 3, Enemy: { name: "Bandit" } });
+        const before = plain(encounter.topology.actionLog || []);
+        start(r, snapshot);
+        const replacement = group.assignments[worker.id];
+        assert.ok(replacement, "An occupied nearest job must not remove the worker's entire construction duty");
+        assert.notEqual(cellKeyForTest(replacement.target), cellKeyForTest(original.target));
+        assert.equal(replacement.fieldId, original.fieldId, "Do not skip the unfinished outer layer");
+        assert.deepEqual(plain(encounter.topology.actionLog || []), before, "Assignment itself cannot build");
+        // Execute the assigned alternative through the same movement and paid-work interface.
+        worker.x = replacement.workCell.x;
+        worker.y = replacement.workCell.y;
+        worker.SpinnerConstructionPoints = 0;
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        assert.deepEqual(plain(encounter.topology.actionLog || []), before, "The first credit is not free work");
+        c.KinkyDungeonCurrentTick++;
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        assert.ok(encounter.topology.actionLog.length > before.length);
+        assert.equal(encounter.ai.plans[group.planId].compositeId, placed.compositeId);
+    });
+
+for (const damage of [0.5, 100]) {
+    test(`real Runtime preserves Capture while paid maintenance heals ${damage} damage`, () => {
+        const actors = [spinner(1, 7, 6), spinner(2, 9, 6)],
+            r = runtime(actors),
+            c = r.context,
+            native = c.Spiderlings.SpinnerNativeField;
+        load(c, "SpiderlingsWebbingData.js");
+        c.Spiderlings.Webbing = { COCOON_ID: "SpiderlingsWebbingCocoon", FINAL_ESCAPE_EVENT: "finalEscape" };
+        c.KinkyDungeonAllRestraintDynamic = () => [];
+        c.KinkyDungeonRestraints = [];
+        c.KinkyDungeonEnemyAt = (x, y) =>
+            c.KDMapData.Entities.findLast((actor) => actor.hp > 0 && actor.x === x && actor.y === y);
+        c.KinkyDungeonEnemyCanMove = (actor, direction) =>
+            !c.KinkyDungeonEntityAt(actor.x + direction.x, actor.y + direction.y);
+        for (const actor of actors) {
+            actor.Enemy = { ...actor.Enemy, attack: "Melee", attackRange: 1 };
+        }
+        // The fixture supplies native equipment queries, never a Capture handler.
+        load(c, "SpiderlingsSpinnerCapture.js");
+        const capture = c.Spiderlings.SpinnerCapture;
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: 8, y: 6 });
+        native.initializeEnclosure({
+            compositeId: "maintenance-runtime",
+            owners: actors.map((actor) => actor.id),
+            built: true,
+            autoSeal: true,
+            layers: [
+                {
+                    id: "runtime-ring",
+                    vertices: [
+                        { x: 4, y: 2 },
+                        { x: 12, y: 2 },
+                        { x: 12, y: 10 },
+                        { x: 4, y: 10 },
+                    ],
+                    gate: { x: 12, y: 6 },
+                },
+            ],
+        });
+        native.state().builders = {};
+        c.Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
+        assert.equal(capture.hit(actors[0]), true);
+        c.KinkyDungeonEnemyLoop(actors[1], c.KinkyDungeonPlayerEntity, 1);
+        assert.deepEqual(plain(capture.state().sourceIds), [1, 2]);
+        capture.state().weaveProgress = 10;
+        capture.state().escapeProgress = 7;
+        const proxy = c.KDMapData.Entities.find(
+            (actor) => native.isOwnedProxy(actor) && actor.x === 12 && actor.y === 5,
+        );
+        assert.ok(proxy);
+        native.onNativeDamage({ enemy: proxy, dmgDealt: damage });
+        const damagedId = native.state().topology.links.find((link) => link.hp < link.maxHp).id,
+            apply = native.applyPaidAction,
+            operations = [];
+        native.applyPaidAction = function (actor, action) {
+            const result = apply.apply(this, arguments);
+            if (result.applied)
+                operations.push({ type: action.type, sources: plain(capture.state()?.sourceIds || []) });
+            return result;
+        };
+        for (let tick = 0; tick < 100; tick++) {
+            c.Spiderlings.SpinnerAI.beginTurn({ activate: true });
+            for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+            c.KDEventMapGeneric.tickAfter.SpiderlingsSpinnerRuntime({}, { delta: 1 });
+            c.KinkyDungeonCurrentTick++;
+            const link = native.state().topology.links.find((entry) => entry.id === damagedId);
+            if (link.hp === link.maxHp && native.captureGeometryReady(c.KinkyDungeonPlayerEntity)) break;
+        }
+        const link = native.state().topology.links.find((entry) => entry.id === damagedId);
+        assert.equal(link.hp, link.maxHp, JSON.stringify(operations));
+        assert.equal(native.captureGeometryReady(c.KinkyDungeonPlayerEntity), true);
+        assert.ok(operations.length > 0);
+        assert.ok(operations.every((operation) => operation.sources.length >= 1));
+        if (damage === 100) assert.ok(operations.some((operation) => operation.type === "extendLink"));
+        assert.equal(capture.state().weaveProgress, 10);
+        assert.equal(capture.state().escapeProgress, 7);
+        native.applyPaidAction = apply;
+        capture.cancel();
+    });
+}
+
+test("a retained leg bag with no field makes the real dispatcher build around a fresh player observation", () => {
+    const actors = [spinner(1, 7, 6), spinner(2, 9, 6)],
+        r = runtime(actors),
+        c = r.context,
+        snapshot = mapSnapshot(),
+        bag = { id: 1001, name: "SpiderlingsSpinnerLegbinder", data: { wrapProgress: 1 } };
+    delete snapshot.candidateLines;
+    c.KinkyDungeonAllRestraintDynamic = () => [{ item: bag }];
+    c.KinkyDungeonRestraints = [];
+    load(c, "SpiderlingsSpinnerRecoveryCore.js");
+    load(c, "SpiderlingsSpinnerRecovery.js");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 8, y: 6 });
+    const native = c.Spiderlings.SpinnerNativeField;
+    native.ensureMap({ scenario: "recovery-around" });
+    c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+    const initial = native.state().ai,
+        group = Object.values(initial.groups)[0];
+    // Remove its old field, then deliver a fresh native observation of the bag wearer.
+    for (const id of initial.plans[group.planId].fieldIds) native.retireField(id);
+    group.engagement = {
+        target: { kind: "player" },
+        lureId: actors[0].id,
+        lastKnown: { x: 8, y: 6, age: 0, source: "native" },
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    assert.equal(c.Spiderlings.SpinnerRecovery.needsField(), true);
+    c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+    const plan = native.state().ai.plans[group.planId];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(
+        c.Spiderlings.SpinnerTopology.isInsideCommonCore(
+            native.state().topology,
+            plan.compositeId,
+            c.KinkyDungeonPlayerEntity,
+        ),
+        true,
+    );
+    assert.equal(native.state().topology.actionLog.length, 0, "Planning must not grant free construction");
+    for (let turn = 0; turn < 15; turn++) {
+        c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: snapshot });
+        for (const actor of actors) c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+        c.KDEventMapGeneric.tickAfter.SpiderlingsSpinnerRuntime({}, { delta: 1 });
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(native.state().topology.actionLog.length > 0, "Replacement needs actual paid construction");
+});
+
+test("personal NPC contact preserves the sole paid enclosure builder even under adjacent contact", () => {
+    const worker = spinner(1, 8, 6, { aware: true, vp: 1, testSense: true }),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const prey = { id: 99, x: 14, y: 6, hp: 30, Enemy: { name: "MaidKnightHeavy" } };
+    c.KDMapData.Entities.push(prey);
+    for (let turn = 0; turn < 15; turn++) {
+        start(r, snapshot);
+        c.KinkyDungeonEnemyLoop(worker, prey, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    const encounter = c.Spiderlings.SpinnerNativeField.state(),
+        group = Object.values(encounter.ai.groups)[0];
+    assert.ok(encounter.topology.actionLog.length > 0, "Seen NPC prey must not starve all paid construction");
+    assert.equal(group.engagement.lureId, undefined);
+    Object.assign(prey, { x: worker.x + 1, y: worker.y });
+    const before = encounter.topology.actionLog.length;
+    const result = c.KinkyDungeonEnemyLoop(worker, prey, 1);
+    assert.equal(result.attacked, false);
+    assert.ok(encounter.topology.actionLog.length >= before);
+    assert.equal(c.Spiderlings.SpinnerAI.gateNativePhase(worker), false);
+});
+
+function replacementScene() {
+    const worker = spinner(1, 5, 8),
+        r = runtime([worker]),
+        c = r.context;
+    // Isolate enclosure replacement; passage generation has its own native/public fixtures.
+    c.Spiderlings.SpinnerPassagePlanner = undefined;
+    c.Spiderlings.getSetting = (key) => (key === "spiderlingsCaptureFieldLimit" ? "1" : undefined);
+    const snapshot = {
+        width: 40,
+        height: 20,
+        cells: [],
+        entrances: [{ x: 1, y: 9 }],
+        exits: [{ x: 38, y: 9 }],
+        nests: [],
+    };
+    for (let y = 1; y < 19; y++)
+        for (let x = 1; x < 39; x++) {
+            const floor =
+                (x >= 3 && x <= 7 && y >= 7 && y <= 11) || (x >= 23 && x <= 35 && y >= 3 && y <= 15) || y === 9;
+            snapshot.cells.push({ x, y, floor, walkable: floor, wall: !floor, protected: x >= 23, locked: false });
+        }
+    Object.assign(c.KDMapData, {
+        GridWidth: 40,
+        GridHeight: 20,
+        StartPosition: snapshot.entrances[0],
+        EndPosition: snapshot.exits[0],
+    });
+    const floor = new Set(snapshot.cells.filter((cell) => cell.floor).map(cellKeyForTest));
+    c.KinkyDungeonMapGet = (x, y) => (floor.has(`${x},${y}`) ? "." : "1");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 5, y: 9 });
+    const advance = () => {
+        start(r, snapshot);
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    };
+    for (let n = 0; n < 12; n++) advance();
+    const encounter = c.Spiderlings.SpinnerNativeField.state(),
+        group = Object.values(encounter.ai.groups)[0],
+        original = encounter.ai.plans[group.planId];
+    assert.equal(original.kind, "enclosure");
+    assert.ok(original.radius < 3);
+    assert.ok(encounter.topology.actionLog.length);
+    for (const cell of snapshot.cells) cell.protected = false;
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 29, y: 9 });
+    return { r, c, worker, snapshot, advance, encounter, group, original };
+}
+
+test("a stable better site replaces a paid small field at the cap and leaves passive residuals", () => {
+    const scene = replacementScene();
+    for (let n = 0; n < 40 && scene.group.planId === scene.original.id; n++) scene.advance();
+    assert.notEqual(scene.group.planId, scene.original.id);
+    assert.equal(scene.original.status, "retired");
+    assert.ok(scene.encounter.topology.links.some((link) => link.residual && link.hp > 0));
+    assert.equal(
+        scene.c.Spiderlings.SpinnerTopology.isInsideCommonCore(
+            scene.encounter.topology,
+            scene.original.compositeId,
+            scene.original.center,
+        ),
+        false,
+    );
+    assert.equal(
+        Object.values(scene.encounter.ai.groups).filter(
+            (group) => group.planId && scene.encounter.ai.plans[group.planId].status !== "retired",
+        ).length,
+        1,
+    );
+});
+
+test("a replacement cannot retire paid work while its only worker channels or teleports", () => {
+    for (const status of ["channel", "teleporting"]) {
+        const scene = replacementScene();
+        scene.worker[status] = 100;
+        for (let n = 0; n < 24; n++) {
+            start(scene.r, scene.snapshot);
+            scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            scene.c.KinkyDungeonCurrentTick++;
+        }
+        assert.equal(scene.group.planId, scene.original.id, status);
+        assert.notEqual(scene.original.status, "retired", status);
+    }
+});
+
+test("returning to the old site between candidate scans resets replacement stability", () => {
+    const scene = replacementScene();
+    for (let n = 0; n < 24; n++) {
+        const clock = scene.encounter.ai.worldTime;
+        Object.assign(scene.c.KinkyDungeonPlayerEntity, clock % 4 === 0 ? { x: 29, y: 9 } : { x: 5, y: 9 });
+        start(scene.r, scene.snapshot);
+        scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        scene.c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(scene.group.planId, scene.original.id);
+    assert.notEqual(scene.original.status, "retired");
+});
+
+test("replacement observation restarts after its only worker recovers eligibility", () => {
+    for (const status of ["disabled", "channel"]) {
+        const scene = replacementScene();
+        const evaluate = () => {
+            start(scene.r, scene.snapshot);
+            scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+            scene.c.KinkyDungeonCurrentTick++;
+        };
+        evaluate();
+        assert.ok(scene.original.lifecycle.replacement);
+        scene.worker[status] = status === "disabled" ? true : 100;
+        for (let n = 0; n < 20; n++) evaluate();
+        assert.equal(scene.original.lifecycle.replacement, undefined);
+        scene.worker[status] = status === "disabled" ? false : 0;
+        for (let n = 0; n < 8; n++) evaluate();
+        assert.equal(scene.group.planId, scene.original.id, "Recovery must not inherit a stale stable window");
+    }
+});
+
+test("a geometrically legal candidate with occupied work targets cannot retire the old field", () => {
+    const scene = replacementScene();
+    let id = 20000;
+    for (let y = 3; y <= 15; y++)
+        for (let x = 23; x <= 35; x++) scene.c.KDMapData.Entities.push(spinner(id++, x, y, { allied: true }));
+    for (let n = 0; n < 28; n++) {
+        start(scene.r, scene.snapshot);
+        scene.c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        scene.c.KinkyDungeonCurrentTick++;
+    }
+    assert.equal(scene.group.planId, scene.original.id);
+    assert.notEqual(scene.original.status, "retired");
+});
+
+test("replacement activation failure preserves the old paid field and its command", () => {
+    const scene = replacementScene(),
+        nativeAdd = scene.c.Spiderlings.SpinnerNativeField.addEnclosure;
+    scene.c.Spiderlings.SpinnerNativeField.addEnclosure = () => ({ added: false, reason: "occupied" });
+    for (let n = 0; n < 36; n++) scene.advance();
+    scene.c.Spiderlings.SpinnerNativeField.addEnclosure = nativeAdd;
+    assert.equal(scene.group.planId, scene.original.id);
+    assert.notEqual(scene.original.status, "retired");
+    assert.ok(scene.original.fieldIds.every((id) => !scene.encounter.topology.fields[id].retired));
+    assert.equal(scene.encounter.command.members[scene.worker.id].commander, scene.group.id);
+});
+
+test("a real capture source and zero deployment limit each prevent small-field replacement", () => {
+    for (const variant of ["source", "zero"]) {
+        const scene = replacementScene();
+        if (variant === "source")
+            scene.c.Spiderlings.SpinnerCapture.state = () => ({
+                sourceIds: [scene.worker.id],
+                admittedCompositeId: scene.original.compositeId,
+            });
+        else scene.c.Spiderlings.getSetting = () => "0";
+        for (let n = 0; n < 32; n++) scene.advance();
+        assert.equal(scene.group.planId, scene.original.id, variant);
+        assert.notEqual(scene.original.status, "retired", variant);
+    }
+});
+
+function loanScene() {
+    const actors = [spinner(1, 3, 3), spinner(2, 3, 4), spinner(3, 4, 4)];
+    const r = runtime(actors),
+        c = r.context,
+        ai = start(r),
+        native = c.Spiderlings.SpinnerNativeField;
+    const command = c.Spiderlings.FieldCommand,
+        encounter = native.state(),
+        home = Object.values(ai.groups)[0];
+    const receiver = command.newGroup(ai);
+    const fieldId = "support-field";
+    const resident = spinner(4, 15, 6);
+    c.KDMapData.Entities.push(resident);
+    native.addLine({
+        fieldId,
+        owners: [4],
+        anchors: [
+            { x: 13, y: 4 },
+            { x: 13, y: 8 },
+        ],
+        scenario: "support-test",
+    });
+    ai.plans["support-plan"] = {
+        id: "support-plan",
+        groupId: receiver.id,
+        fieldId,
+        status: "traveling",
+        kind: "line",
+        anchors: [
+            { x: 13, y: 4 },
+            { x: 13, y: 8 },
+        ],
+    };
+    receiver.planId = "support-plan";
+    const distances = (a, b) => {
+        const path = c.Spiderlings.SpinnerAI.routeOnSnapshot(mapSnapshot(), a, b);
+        return path.length ? path.length - 1 : Infinity;
+    };
+    command.reconcile(encounter, c.KDMapData.Entities, { routeDistances: distances });
+    return { r, c, command, encounter, ai, actors, home, receiver, distances };
+}
+
+test("nearby custody crews receive one field commander while retaining their home and active sources", () => {
+    const { c, command, encounter, home, receiver, actors } = loanScene();
+    let claimed = true;
+    c.Spiderlings.FieldCustody = { ownsGroup: (id) => claimed && id === receiver.id, assigned: () => false };
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: [actors[2].id] });
+    home.planId = null;
+    for (const actor of actors) Object.assign(actor, { x: 13, y: 6 });
+    command.adoptCustodyCrew(encounter, receiver.id);
+    const members = command.inspect().members;
+    assert.equal(members[actors[0].id].commander, receiver.id);
+    assert.equal(members[actors[0].id].home, home.id);
+    assert.equal(members[actors[2].id].commander, home.id, "A live capture source cannot be adopted by another field");
+    const loan = members[actors[0].id].loan;
+    command.adoptCustodyCrew(encounter, receiver.id);
+    assert.equal(command.inspect().members[actors[0].id].loan, loan);
+    claimed = false;
+    command.reviseDemands(encounter, receiver.id, new Map(), { x: 13, y: 6 });
+    assert.equal(command.inspect().requests[`${receiver.id}:custody`].closed, true);
+});
+
+test("field clearance cannot commandeer allied, disabled or committed actors", () => {
+    const { c, command, actors } = loanScene();
+    const actor = actors[0];
+    assert.equal(command.canYield(actor), true);
+    actor.allied = true;
+    assert.equal(command.canYield(actor), false);
+    actor.allied = false;
+    actor.stun = 2;
+    assert.equal(command.canYield(actor), false);
+    actor.stun = 0;
+    c.Spiderlings.JumperDash = { runtimeController: { snapshot: () => [{ sourceId: actor.id }] } };
+    assert.equal(command.canYield(actor), false);
+});
+
+test("field interception overrides guard movement without adding attacks to a paid approach", () => {
+    const actor = spinner(1, 5, 3, { AI: "guard" }),
+        intruder = { id: 99, x: 9, y: 3, hp: 4, Enemy: { name: "Maidforce" } },
+        r = runtime([actor, spinner(2, 5, 9), intruder]),
+        c = r.context,
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    actor.aware = true;
+    actor.testSense = true;
+    let active = true;
+    c.Spiderlings.FieldCustody = {
+        state: () => ({ groupId: group.id }),
+        targetFor: (enemy) => (active && enemy === actor ? intruder : undefined),
+        assigned: (enemy) => active && enemy === actor,
+    };
+    const before = { x: actor.x, y: actor.y };
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(c.lastNativeTarget, intruder);
+    assert.notDeepEqual({ x: actor.x, y: actor.y }, before);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "intercept");
+    assert.equal(r.phaseCalls.filter((entry) => entry.id === actor.id).length, 0);
+    actor.x = intruder.x - 1;
+    actor.y = intruder.y;
+    c.KinkyDungeonCurrentTick++;
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.beginAction(actor, intruder, 1);
+    const castData = { hostile: true, canSensePlayer: true, harmless: true, ignoreRanged: true, wantsToCast: false };
+    c.KDAIType.guard.beforemove(actor, intruder, castData);
+    assert.equal(castData.harmless, false);
+    assert.equal(castData.ignoreRanged, false);
+    assert.equal(castData.wantsToCast, true);
+    active = false;
+    assert.equal(c.Spiderlings.SpinnerDuties.gate(actor), false);
+});
+
+test("global loans prevent double promises and preserve original physical ownership", () => {
+    const { c, command, encounter, home, receiver, distances } = loanScene();
+    const second = command.newGroup(encounter.ai);
+    const first = command.request(encounter, receiver.id, "repair", 2, { x: 13, y: 6 });
+    const next = command.request(encounter, second.id, "repair", 2, { x: 14, y: 6 });
+    command.allocate(encounter, distances);
+    const state = command.inspect(),
+        loans = Object.values(state.members).filter((member) => member.loan);
+    assert.equal(loans.length, 2);
+    assert.equal(new Set(loans.map((member) => member.id)).size, 2);
+    assert.equal(first.deployed, 2);
+    assert.equal(next.status, "rejected");
+    assert.ok(next.reason);
+    assert.ok(loans.every((member) => member.home === home.id && member.commander === receiver.id));
+    const plan = encounter.ai.plans[home.planId];
+    assert.deepEqual(plain(c.Spiderlings.SpinnerNativeField.fieldOwners(plan.fieldId)).sort(), [1, 2, 3]);
+});
+
+test("ongoing loans and region orders follow a replanned request without a second promise", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan);
+    const jumper = spinner(77, 2, 8);
+    jumper.Enemy.name = "Jumper";
+    c.KDMapData.Entities.push(jumper);
+    command.dispatchRegions(encounter, distances);
+    command.request(encounter, receiver.id, "capture", 1, { x: 15, y: 9 });
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    command.allocate(encounter, distances);
+    const current = command.inspect();
+    assert.equal(current.members[member.id].loan, member.loan);
+    assert.deepEqual(plain(current.members[member.id].destination), { x: 15, y: 9 });
+    assert.deepEqual(plain(current.regions[77].destination), { x: 15, y: 9 });
+    assert.equal(current.requests[request.id].deployed, 1);
+    assert.equal(Object.values(current.members).filter((entry) => entry.loan).length, 1);
+});
+
+test("protected NPC capture sources request a separate paid repair worker", () => {
+    const { c, native, actors } = adoptedFieldScene();
+    const api = c.Spiderlings,
+        encounter = native.state(),
+        command = api.FieldCommand;
+    const home = Object.values(encounter.ai.groups)[0];
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 16, y: 10 });
+    encounter.topology.links[0].hp -= 0.5;
+    api.SpinnerTopology.refresh(encounter.topology);
+    c.KDMapData.Entities.push({ id: 99, x: 8, y: 6, hp: 30, Enemy: { name: "MaidKnightHeavy" } });
+    const sourceIds = actors.map((actor) => actor.id).filter((id) => id === 1 || id === 2);
+    load(c, "SpiderlingsSpinnerNPCCapture.js");
+    c.KDGameData[api.SpinnerNPCCapture.STATE] = {
+        version: 1,
+        records: { 99: { targetId: 99, admittedCompositeId: encounter.ai.plans[home.planId].compositeId, sourceIds } },
+    };
+    const donor = command.newGroup(encounter.ai);
+    for (const [id, x] of [
+        [101, 14],
+        [102, 15],
+    ]) {
+        c.KDMapData.Entities.push(spinner(id, x, 3));
+        encounter.command.members[id] = { id, home: donor.id, commander: donor.id, phase: "home" };
+        donor.memberIds.push(id);
+    }
+    const distances = (a, b) => {
+        const route = api.SpinnerAI.routeOnSnapshot(mapSnapshot(), a, b);
+        return route.length ? route.length - 1 : Infinity;
+    };
+    const paid = encounter.topology.actionLog.length;
+    api.FieldProjects.update(encounter, {
+        distances,
+        members: (group) => group.memberIds.map((id) => c.KDMapData.Entities.find((actor) => actor.id === id)),
+        legal: () => true,
+        paid: () => true,
+        prepareApproach: () => {},
+        intercepts: () => false,
+        start: () => {},
+        lineFixture: true,
+    });
+    const state = command.inspect(),
+        request = state.requests[`${home.id}:repair`];
+    assert.equal(request.count, 1);
+    assert.equal(request.status, "travelling");
+    assert.equal(request.usable, 0);
+    assert.equal(encounter.topology.actionLog.length, paid, "requesting workers cannot grant free repairs");
+    assert.ok(sourceIds.every((id) => state.members[id].commander === home.id && !state.members[id].loan));
+    assert.equal(Object.values(state.members).filter((member) => member.requestId === request.id).length, 1);
+    const loan = Object.values(encounter.command.members).find((member) => member.requestId === request.id);
+    loan.phase = "support";
+    home.engagement = { lureId: loan.id };
+    api.SpinnerAI.reserveActions(encounter, mapSnapshot(), distances);
+    assert.ok(home.assignments[loan.id], "A repair loan must retain work even when selected as the lure");
+    assert.ok(api.SpinnerAI.hasMaintenanceAssignment(c.KDMapData.Entities.find((actor) => actor.id === loan.id)));
+});
+
+test("donor approval is rechecked if a candidate enters actual capture before dispatch", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const supply = command.offers(encounter, { x: 13, y: 6 }, distances, receiver.id);
+    const ids = supply.members.map((member) => member.id);
+    c.Spiderlings.SpinnerCapture.state = () => ({ sourceIds: ids });
+    const request = command.request(encounter, receiver.id, "repair", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(request.deployed, 0);
+    assert.equal(request.status, "rejected");
+    assert.equal(Object.values(command.inspect().members).filter((member) => member.loan).length, 0);
+    assert.deepEqual(
+        ids,
+        supply.members.map((member) => member.id),
+    );
+});
+
+test("cancelled support returns under global movement control through save and load", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const before = Object.values(command.inspect().members).find((member) => member.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === before.id);
+    Object.assign(actor, { x: 13, y: 6, aware: true, testSense: true });
+    command.handleMove(actor, 1);
+    receiver.cancelled = true;
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    assert.equal(command.inspect().members[actor.id].phase, "returning");
+    const persisted = plain(command.inspect());
+    encounter.command = plain(persisted);
+    c.Spiderlings.SpinnerAI.restoreAfterLoad();
+    c.Spiderlings.SpinnerDuties.restore();
+    assert.deepEqual(plain(command.inspect()), persisted);
+    const oldPosition = { x: actor.x, y: actor.y };
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 0);
+    assert.deepEqual({ x: actor.x, y: actor.y }, oldPosition);
+    c.KinkyDungeonCurrentTick++;
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "dispatch");
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+});
+
+test("a completed request cannot invalidate the global return duty in native phases", () => {
+    const { r, c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan),
+        actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    Object.assign(actor, { x: 13, y: 6, aware: true, testSense: true });
+    command.handleMove(actor, 1);
+    request.closed = true;
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    c.KinkyDungeonCurrentTick++;
+    c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "dispatch");
+    const aiData = { idle: true };
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, aiData);
+    assert.ok(r.movement.some((entry) => entry.id === actor.id));
+    assert.equal(aiData.idle, false);
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+});
+
+test("command migration imports old groups once and physical owners cannot seize a loan", () => {
+    const { c, command, encounter, home, receiver, distances } = loanScene();
+    delete encounter.command;
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan);
+    home.memberIds = [];
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    assert.equal(command.inspect().members[member.id].commander, receiver.id);
+    assert.ok(!home.memberIds.includes(member.id));
+    const saved = plain(command.inspect());
+    c.Spiderlings.SpinnerAI.restoreAfterLoad();
+    assert.deepEqual(plain(command.inspect()), saved);
+});
+
+test("one field work duty blocks recruitment and native phases and cannot pay twice", () => {
+    const worker = spinner(1, 8, 6),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        group = Object.values(ai.groups)[0],
+        assignment = group.assignments[worker.id];
+    Object.assign(worker, assignment.workCell);
+    c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+    const log = plain(c.Spiderlings.SpinnerNativeField.state().topology.actionLog);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(worker).role, "work");
+    assert.equal(c.KDAIType.hunt.attack(worker), false);
+    assert.equal(c.KDAIType.hunt.spell(worker), false);
+    worker.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.KDAIType.hunt.beforemove(worker, c.KinkyDungeonPlayerEntity, {});
+    delete worker.SpiderlingsSpinnerRuntimeDelta;
+    assert.deepEqual(plain(c.Spiderlings.SpinnerNativeField.state().topology.actionLog), log);
+});
+
+test("global planning knows unsensed positions without granting native contact", () => {
+    const worker = spinner(1, 5, 5),
+        r = runtime([worker]),
+        c = r.context,
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    const ai = start(r, snapshot),
+        plan = ai.plans[Object.values(ai.groups)[0].planId];
+    assert.equal(ai.projects.positions[0].x, c.KinkyDungeonPlayerEntity.x);
+    assert.equal(c.Spiderlings.SpinnerAI.playerObservation(), undefined);
+    const id = plan.id;
+    c.KinkyDungeonPlayerEntity.x--;
+    start(r, snapshot);
+    assert.equal(ai.projects.positions[0].x, c.KinkyDungeonPlayerEntity.x);
+    assert.equal(Object.values(ai.groups)[0].planId, id);
+    assert.equal(c.Spiderlings.SpinnerAI.playerObservation(), undefined);
+});
+
+test("non-Spinner destination dispatch does not create local command or clear committed spells", () => {
+    const { r, c, command, encounter, receiver, distances } = loanScene();
+    const mage = {
+        id: 80,
+        x: 4,
+        y: 6,
+        hp: 10,
+        Enemy: { name: "MageSpiderlings", tags: { spiderlings: true } },
+        pendingHex: { turns: 2 },
+    };
+    c.KDMapData.Entities.push(mage);
+    command.request(encounter, receiver.id, "capture", 2, { x: 13, y: 6 });
+    command.dispatchRegions(encounter, distances);
+    assert.ok(command.inspect().regions[mage.id]);
+    assert.equal(command.inspect().members[mage.id], undefined);
+    const before = { x: mage.x, y: mage.y };
+    command.handleMove(mage, 0);
+    assert.deepEqual({ x: mage.x, y: mage.y }, before);
+    c.KinkyDungeonEnemyLoop(mage, c.KinkyDungeonPlayerEntity, 1);
+    assert.deepEqual(mage.pendingHex, { turns: 2 });
+    assert.ok(r.movement.some((move) => move.id === mage.id));
+    assert.equal(receiver.memberIds.includes(mage.id), false);
+});
+
+test("support completion drops temporary receiver owners but retains the donor through return", () => {
+    const { c, command, encounter, home, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan);
+    assert.ok(command.owners(encounter, receiver.id).includes(member.id));
+    request.closed = true;
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    command.projectOwners(encounter);
+    assert.equal(command.inspect().members[member.id].phase, "returning");
+    assert.ok(!command.owners(encounter, receiver.id).includes(member.id));
+    assert.ok(command.owners(encounter, home.id).includes(member.id));
+    const resident = c.KDMapData.Entities.find((entity) => entity.id === 4);
+    resident.hp = 0;
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    command.projectOwners(encounter);
+    assert.deepEqual(plain(command.owners(encounter, receiver.id)), []);
+    assert.ok(encounter.ai.groups[receiver.id], "An ownerless legal project retains its logical controller");
+});
+
+test("an unreachable continuing request preserves waiting age and retries when a route opens", () => {
+    const { command, encounter, receiver, distances } = loanScene();
+    encounter.ai.coordinationTurn = 7;
+    const request = command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, () => Infinity);
+    assert.equal(request.status, "rejected");
+    assert.equal(request.reason, "unreachable");
+    encounter.ai.coordinationTurn = 12;
+    const sameRequest = command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    assert.equal(sameRequest.since, 7);
+    command.allocate(encounter, distances);
+    assert.equal(sameRequest.status, "travelling");
+    assert.equal(sameRequest.usable, 0);
+    assert.equal(Object.values(encounter.command.requests).filter((entry) => !entry.closed).length, 1);
+});
+
+test("pending NPC recovery pursuit cannot be borrowed across fields", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const prey = { id: 91, x: 7, y: 6, hp: 20, Enemy: { name: "MaidKnightHeavy" } };
+    c.KDMapData.Entities.push(prey);
+    c.Spiderlings.SpinnerNPCRecovery = { wantsPursuit: (source, target) => source.id !== 4 && target === prey };
+    const request = command.request(encounter, receiver.id, "recovery", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(request.deployed, 0);
+    assert.equal(request.reason, "necessary-duty");
+});
+
+test("a stale action decision cannot execute or attack after command changes", () => {
+    const { c, command, encounter, receiver, distances, actors } = loanScene();
+    const actor = actors[0];
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    command.request(encounter, receiver.id, "repair", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(command.inspect().members[actor.id].commander, receiver.id);
+    const log = plain(encounter.topology.actionLog);
+    c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, {});
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "wait");
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+    assert.deepEqual(plain(encounter.topology.actionLog), log);
+});
+
+test("non-Spinner units regain native behavior at their destination region", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const mage = { id: 81, x: 13, y: 6, hp: 10, Enemy: { name: "MageSpiderlings" } };
+    c.KDMapData.Entities.push(mage);
+    command.request(encounter, receiver.id, "capture", 2, { x: 13, y: 6 });
+    command.dispatchRegions(encounter, distances);
+    assert.equal(command.inspect().regions[mage.id], undefined);
+    assert.equal(command.handleMove(mage, 1), false);
+});
+
+test("adjacent player defense never calls enemy-only incapacitation helpers with the player", () => {
+    const actor = spinner(1, 8, 6, { aware: true, testSense: true }),
+        r = runtime([actor]),
+        c = r.context;
+    const snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    start(r, snapshot);
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: actor.x + 1, y: actor.y });
+    const disabled = c.KinkyDungeonIsDisabled,
+        helpless = c.KDHelpless;
+    c.KinkyDungeonIsDisabled = (entity) => {
+        assert.ok(entity.Enemy, "Native enemy-only disabled check received a player");
+        return disabled(entity);
+    };
+    c.KDHelpless = (entity) => {
+        assert.ok(entity.Enemy, "Native enemy-only helpless check received a player");
+        return helpless(entity);
+    };
+    assert.doesNotThrow(() => c.KinkyDungeonEnemyLoop(actor, c.KinkyDungeonPlayerEntity, 1));
+});
+
+test("delegated native pursuit retains movement credit instead of being finalized as idle", () => {
+    const actor = spinner(1, 5, 5, { aware: true, testSense: true }),
+        r = runtime([actor, spinner(2, 5, 9)]),
+        c = r.context;
+    const ai = start(r),
+        group = Object.values(ai.groups)[0];
+    group.assignments[actor.id] = { type: "rally", workCell: { x: 5, y: 5 } };
+    group.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: actor.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+    };
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    const duty = c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(duty.role, "native");
+    const aiData = { idle: true, canSensePlayer: true, canSeePlayer: true, hostile: true };
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, aiData), true);
+    assert.ok(r.movement.some((entry) => entry.id === actor.id));
+    assert.equal(aiData.idle, false, "Native idle finalization would erase the paid pursuit credit");
+});
+
+test("final lure duty can replace a provisional construction task using only historical recognition", () => {
+    const actor = spinner(1, 5, 5, { aware: true, testSense: false }),
+        r = runtime([actor, spinner(2, 5, 9)]),
+        c = r.context;
+    const ai = start(r),
+        group = Object.values(ai.groups)[0],
+        native = c.Spiderlings.SpinnerNativeField;
+    assert.ok(group.assignments[actor.id] && group.assignments[actor.id].type !== "rally");
+    group.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: actor.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 14, y: 9, age: 0, source: "native" },
+    };
+    const destinations = [],
+        findPath = c.KinkyDungeonFindPath,
+        before = plain(native.state().topology.actionLog);
+    c.KinkyDungeonFindPath = (...args) => {
+        destinations.push({ x: args[2], y: args[3] });
+        return findPath(...args);
+    };
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    const duty = c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(duty.role, "work");
+    assert.equal(duty.resolved, false);
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, { hostile: true }), true);
+    assert.equal(duty.category, "pursuit");
+    assert.deepEqual(destinations, [{ x: 14, y: 9 }]);
+    assert.deepEqual(plain(native.state().topology.actionLog), before);
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+});
+
+test("reduced support returns only surplus members and keeps protected sources", () => {
+    const { c, command, encounter, receiver, home, distances } = loanScene();
+    const target = { kind: "npc", id: 91 };
+    encounter.ai.plans[receiver.planId].compositeId = "support-composite";
+    const request = command.request(encounter, receiver.id, "capture", 2, { x: 13, y: 6 }, { target });
+    command.allocate(encounter, distances);
+    const deployed = Object.values(encounter.command.members).filter((member) => member.loan);
+    const sourceId = deployed[0].id;
+    load(c, "SpiderlingsSpinnerNPCCapture.js");
+    c.KDGameData[c.Spiderlings.SpinnerNPCCapture.STATE] = {
+        version: 1,
+        records: { 91: { targetId: 91, admittedCompositeId: "support-composite", sourceIds: [sourceId] } },
+    };
+    const log = plain(encounter.topology.actionLog);
+    command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 }, { target });
+    command.allocate(encounter, distances);
+    assert.equal(encounter.command.requests[request.id].deployed, 1);
+    assert.equal(encounter.command.members[sourceId].commander, receiver.id);
+    assert.equal(Object.values(encounter.command.members).filter((member) => member.phase === "returning").length, 1);
+    assert.deepEqual(plain(encounter.topology.actionLog), log);
+    assert.ok(deployed.every((member) => command.owners(encounter, home.id).includes(member.id)));
+});
+
+test("home emergency recalls a construction surplus under paid global return control", () => {
+    const { c, command, encounter, receiver, home, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    command.request(encounter, home.id, "defense", 1, { x: 3, y: 3 });
+    command.allocate(encounter, distances);
+    const returning = Object.values(encounter.command.members).filter((member) => member.phase === "returning");
+    assert.equal(returning.length, 1, "Only the actual unmet emergency needs one recalled member");
+    assert.equal(returning[0].reason, "home-emergency");
+    assert.equal(returning[0].commander, null);
+    assert.ok(receiver.memberIds.length >= 1);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === returning[0].id);
+    const before = { x: actor.x, y: actor.y };
+    command.handleMove(actor, 0);
+    assert.deepEqual({ x: actor.x, y: actor.y }, before);
+});
+
+test("a new loan clears the previous blocked journey after paid return", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    Object.assign(member, { blocked: true, blockedTurns: 8 });
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "returning");
+    assert.equal(member.reason, "route-blocked");
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    for (let step = 0; step < 30 && member.phase === "returning"; step++) command.handleMove(actor, 1);
+    assert.equal(member.phase, "home");
+    encounter.ai.coordinationTurn = (encounter.ai.coordinationTurn || 0) + 9;
+    command.request(encounter, receiver.id, "build", 1, { x: actor.x, y: actor.y });
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "travelling");
+    assert.equal(member.blocked, false);
+    assert.equal(member.blockedTurns, 0);
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "travelling", "New legal travel cannot inherit the old rejection");
+});
+
+test("blocked support can return to its saved origin when its donor has no active members", () => {
+    const { command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    encounter.ai.groups[member.home].planId = null;
+    for (const other of Object.values(encounter.command.members))
+        if (other !== member) Object.assign(other, { home: null, commander: null, phase: "free" });
+    Object.assign(member, { blocked: true, blockedTurns: 8 });
+    command.allocate(encounter, (source, target) => {
+        assert.ok(target, "A return route must have an actual destination");
+        return distances(source, target);
+    });
+    assert.equal(member.phase, "returning");
+    assert.deepEqual(plain(member.destination), plain(member.origin));
+    assert.equal(member.reason, "route-blocked");
+});
+
+test("urgent repair may borrow construction workers while independent expansion retains the crew", () => {
+    const { command, encounter, receiver, home, distances } = loanScene();
+    encounter.ai.plans[home.planId].workforceTarget = 4;
+    const build = command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(build.deployed, 0, "Independent expansion must retain the construction workforce");
+    build.closed = true;
+    const repair = command.request(encounter, receiver.id, "repair", 3, { x: 13, y: 6 });
+    const before = plain(encounter.topology.actionLog);
+    command.allocate(encounter, distances);
+    assert.equal(repair.deployed, 2, "Higher-priority repair can borrow only the construction surplus");
+    assert.equal(home.memberIds.length, 1, "The donor keeps its minimum construction worker");
+    assert.ok([1, 2, 3].every((id) => command.owners(encounter, home.id).includes(id)));
+    assert.deepEqual(plain(encounter.topology.actionLog), before);
+});
+
+test("a field approaching contact borrows background builders without changing its work kind", () => {
+    const { command, encounter, receiver, home, distances } = loanScene();
+    encounter.ai.plans[home.planId].workforceTarget = 4;
+    const background = command.request(encounter, receiver.id, "build", 2, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    assert.equal(background.deployed, 0);
+    const urgent = command.request(encounter, receiver.id, "build", 2, { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    assert.equal(urgent.kind, "build");
+    assert.equal(urgent.urgency, 1);
+    assert.equal(urgent.deployed, 2);
+    assert.equal(home.memberIds.length, 1);
+    assert.ok([1, 2, 3].every((id) => command.owners(encounter, home.id).includes(id)));
+});
+
+for (const phase of ["travelling", "support", "returning"])
+    test(`urgent field construction directly redirects a safe ${phase} helper`, () => {
+        const { c, command, encounter, receiver, home, distances } = loanScene();
+        const oldRequest = command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+        command.allocate(encounter, distances);
+        const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+        const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+        Object.assign(actor, { x: 12, y: 6 });
+        if (phase === "support") command.handleMove(actor, 1);
+        if (phase === "returning") {
+            oldRequest.urgency = 2;
+            oldRequest.closed = true;
+            command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+        }
+        assert.equal(member.phase, phase);
+        const original = plain(member);
+        const urgentField = command.newGroup(encounter.ai);
+        const urgent = command.request(encounter, urgentField.id, "build", 1, { x: 11, y: 6 }, { urgency: 1 });
+        command.allocate(encounter, distances);
+        assert.equal(member.commander, urgentField.id);
+        assert.equal(member.phase, "travelling");
+        assert.equal(member.home, home.id);
+        assert.deepEqual(plain(member.origin), original.origin);
+        assert.notEqual(member.loan, original.loan);
+        assert.equal(member.requestId, urgent.id);
+        assert.equal(urgent.deployed, 1);
+        assert.ok(command.owners(encounter, home.id).includes(member.id));
+        assert.ok(!command.owners(encounter, receiver.id).includes(member.id));
+        assert.ok(command.owners(encounter, urgentField.id).includes(member.id));
+        assert.deepEqual({ x: actor.x, y: actor.y }, { x: 12, y: 6 });
+        command.allocate(encounter, distances);
+        assert.equal(member.commander, urgentField.id);
+        assert.equal(
+            Object.values(encounter.command.members).filter((entry) => entry.requestId === urgent.id).length,
+            1,
+        );
+    });
+
+test("an urgent field may pause the only available background builder while its paid work stays", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    for (const entity of c.KDMapData.Entities.filter((entity) => entity.Enemy.name === "Spinner" && entity !== actor))
+        entity.stun = 2;
+    const paid = plain(encounter.topology.actionLog);
+    const urgentField = command.newGroup(encounter.ai);
+    const urgent = command.request(encounter, urgentField.id, "build", 1, { x: 11, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    assert.equal(member.commander, urgentField.id);
+    assert.equal(urgent.deployed, 1);
+    assert.equal(encounter.ai.plans[receiver.planId].status, "traveling");
+    assert.deepEqual(plain(encounter.topology.actionLog), paid);
+});
+
+test("support reports arrival separately and replaces sustained blocked travel without double promises", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    const originalPosition = { x: actor.x, y: actor.y };
+    assert.equal(request.deployed, 1);
+    assert.equal(request.arrived, 0);
+    assert.equal(request.usable, 0);
+    assert.equal(request.incoming, 1);
+    assert.equal(request.status, "travelling");
+    for (let turn = 0; turn < 3; turn++) command.allocate(encounter, distances);
+    assert.equal(Object.values(encounter.command.members).filter((entry) => entry.requestId === request.id).length, 1);
+    Object.assign(member, { blocked: true, blockedTurns: 8 });
+    command.allocate(encounter, distances);
+    assert.equal(member.phase, "returning");
+    assert.equal(request.deployed, 1);
+    assert.equal(request.usable, 0);
+    const replacement = Object.values(encounter.command.members).find(
+        (entry) => entry.requestId === request.id && entry.phase === "travelling",
+    );
+    assert.notEqual(replacement.id, member.id);
+    const replacementActor = c.KDMapData.Entities.find((entity) => entity.id === replacement.id);
+    Object.assign(replacementActor, { x: 13, y: 6 });
+    command.handleMove(replacementActor, 1);
+    command.allocate(encounter, distances);
+    assert.equal(request.arrived, 1);
+    assert.equal(request.usable, 1);
+    assert.equal(request.incoming, 0);
+    assert.equal(request.status, "satisfied");
+    assert.deepEqual({ x: actor.x, y: actor.y }, originalPosition);
+});
+
+for (const phase of ["travelling", "support", "returning"])
+    test(`a field retains its ${phase} helper when readiness changes to capture`, () => {
+        const { c, command, encounter, receiver, home, distances } = loanScene();
+        const readiness = command.request(encounter, receiver.id, "readiness", 1, { x: 13, y: 6 }, { urgency: 1 });
+        command.allocate(encounter, distances);
+        const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+        const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+        if (phase === "support") {
+            Object.assign(actor, { x: 13, y: 6 });
+            command.handleMove(actor, 1);
+        }
+        readiness.closed = true;
+        if (phase === "returning") command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+        assert.equal(member.phase, phase);
+        const loan = member.loan;
+        const capture = command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 }, { urgency: 2 });
+        command.allocate(encounter, distances);
+        assert.equal(member.commander, receiver.id);
+        assert.equal(member.requestId, capture.id);
+        assert.equal(member.loan, loan);
+        assert.equal(member.home, home.id);
+        assert.notEqual(member.phase, "returning");
+        assert.equal(capture.deployed, 1);
+        assert.equal(
+            Object.values(encounter.command.members).filter((entry) => entry.requestId === capture.id).length,
+            1,
+        );
+    });
+
+for (const mismatch of ["target", "field"])
+    test(`a protected NPC source does not satisfy another ${mismatch}'s capture request`, () => {
+        const { c, command, encounter, receiver, distances } = loanScene();
+        const target = { kind: "npc", id: 91 };
+        encounter.ai.plans[receiver.planId].compositeId = "support-composite";
+        const request = command.request(encounter, receiver.id, "capture", 1, { x: 13, y: 6 }, { target });
+        command.allocate(encounter, distances);
+        const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+        const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+        Object.assign(actor, { x: 13, y: 6 });
+        command.handleMove(actor, 1);
+        load(c, "SpiderlingsSpinnerNPCCapture.js");
+        const record = {
+            targetId: mismatch === "target" ? 92 : 91,
+            admittedCompositeId: mismatch === "field" ? "another-composite" : "support-composite",
+            sourceIds: [actor.id],
+        };
+        c.KDGameData[c.Spiderlings.SpinnerNPCCapture.STATE] = { version: 1, records: { 91: record } };
+        command.allocate(encounter, distances);
+        assert.equal(request.usable, 0);
+        assert.notEqual(request.status, "satisfied");
+        assert.equal(member.commander, receiver.id);
+        assert.equal(command.servesRequest(actor, request, encounter), false);
+        Object.assign(record, { targetId: 91, admittedCompositeId: "support-composite" });
+        command.allocate(encounter, distances);
+        assert.equal(request.usable, 1);
+        assert.equal(request.status, "satisfied");
+        assert.equal(command.servesRequest(actor, request, encounter), true);
+        assert.deepEqual(record.sourceIds, [actor.id]);
+    });
+
+test("support waiting for native movement credit does not become a blocked loan", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "build", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    actor.movePoints = 0;
+    c.KinkyDungeonEnemyTryMove = (entity) => {
+        entity.movePoints += 0.1;
+        return false;
+    };
+    const before = { x: actor.x, y: actor.y };
+    for (let turn = 0; turn < 9; turn++) {
+        assert.equal(command.handleMove(actor, 1), true);
+        command.allocate(encounter, distances);
+    }
+    assert.equal(member.phase, "travelling");
+    assert.equal(member.blocked, false);
+    assert.equal(member.blockedTurns, 0);
+    assert.deepEqual({ x: actor.x, y: actor.y }, before);
+    assert.ok(actor.movePoints > 0, "Native credit accumulates without extra movement");
+});
+
+test("a field guard remains gated when its field is cancelled", () => {
+    const { c, encounter, actors, home } = loanScene();
+    const actor = actors[0];
+    home.assignments = {};
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, {}), true);
+    home.cancelled = true;
+    const before = plain(encounter.topology.actionLog),
+        aiData = { idle: true };
+    assert.equal(c.KDAIType.hunt.beforemove(actor, c.KinkyDungeonPlayerEntity, aiData), true);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(actor).role, "wait");
+    assert.equal(c.KDAIType.hunt.attack(actor), false);
+    assert.equal(c.KDAIType.hunt.spell(actor), false);
+    assert.deepEqual(plain(encounter.topology.actionLog), before);
+});
+
+test("a breached field with only protected sources cannot claim recoverable coverage", () => {
+    const { c, native, actors } = adoptedFieldScene();
+    const encounter = native.state(),
+        api = c.Spiderlings;
+    const home = Object.values(encounter.ai.groups)[0];
+    const link = encounter.topology.links.find((entry) => entry.owners.includes("adopted-inner"));
+    link.hp = 0;
+    link.builtCells = [];
+    link.connected = false;
+    api.SpinnerTopology.refresh(encounter.topology);
+    api.SpinnerNPCCapture = { usesSource: (id) => actors.some((actor) => actor.id === id) };
+    api.FieldProjects.update(encounter, {
+        members: (group) => group.memberIds.map((id) => c.KDMapData.Entities.find((actor) => actor.id === id)),
+        distances: (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)),
+        legal: () => true,
+        paid: () => true,
+        prepareApproach: () => {},
+        intercepts: () => false,
+        start: () => {},
+        lineFixture: true,
+    });
+    const plan = encounter.ai.plans[home.planId];
+    assert.equal(plan.projectState, "waiting");
+    assert.equal(plan.availableWorkers, 0);
+    assert.equal(plan.coverageAvailable, false);
+    assert.ok(encounter.ai.projects.unmet.length > 0);
+    assert.equal(encounter.command.requests[`${home.id}:repair`].status, "rejected");
+    assert.ok(
+        actors
+            .filter((actor) => actor.Enemy.name === "Spinner")
+            .every((actor) => encounter.command.members[actor.id].commander === home.id),
+    );
+});
+
+test("maintenance source release rechecks recovery protection at the final duty entrance", () => {
+    const { c, native, actors } = adoptedFieldScene();
+    const api = c.Spiderlings,
+        encounter = native.state(),
+        group = Object.values(encounter.ai.groups)[0];
+    const actor = actors[0];
+    let releases = 0;
+    api.SpinnerCapture.state = () => ({
+        sourceIds: actors.filter((member) => member.Enemy.name === "Spinner").map((member) => member.id),
+        admittedCompositeId: "adopted",
+    });
+    api.SpinnerCapture.releaseMaintenanceSource = () => {
+        releases++;
+        return true;
+    };
+    api.SpinnerRecovery = { sourceIds: () => [actor.id] };
+    group.maintenanceOffer = { memberId: actor.id, assignment: { fieldId: "adopted-inner", type: "repair" } };
+    const duty = api.SpinnerDuties.prepare(actor, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(duty.role, "recovery");
+    assert.equal(releases, 0);
+    assert.equal(group.maintenance, undefined);
+    assert.equal(api.SpinnerCapture.state().sourceIds.length, 2);
+});
+
+test("large project crews finish staffing before independent expansion borrows surplus", () => {
+    for (const count of [4, 8]) {
+        const actors = Array.from({ length: count }, (_, index) =>
+            spinner(index + 1, 7 + (index % 3), 7 + Math.floor(index / 3)),
+        );
+        const r = runtime(actors),
+            c = r.context;
+        c.KDMapData.GridWidth = 36;
+        c.KDMapData.GridHeight = 25;
+        c.KinkyDungeonMapGet = (x, y) => (x > 0 && y > 0 && x < 35 && y < 24 ? "0" : "1");
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: 33, y: 22 });
+        c.KDMapData.Entities.push({ id: 99, x: 2, y: 2, hp: 20, Enemy: { name: "MaidKnightHeavy" } });
+        const snapshot = { width: 36, height: 25, cells: [], entrances: [], exits: [], nests: [] };
+        for (let y = 1; y < 24; y++)
+            for (let x = 1; x < 35; x++)
+                snapshot.cells.push({ x, y, floor: true, walkable: true, protected: false, locked: false });
+        const ai = start(r, snapshot),
+            encounter = c.Spiderlings.SpinnerNativeField.state();
+        const projects = Object.values(ai.groups).filter((group) => group.planId);
+        assert.equal(projects.length, count === 4 ? 1 : 2);
+        assert.deepEqual(
+            projects.map((group) => group.memberIds.length).sort((a, b) => b - a),
+            count === 4 ? [4] : [6, 2],
+        );
+        assert.ok(projects.every((group) => c.Spiderlings.FieldCommand.residency(encounter, group.id).minimum === 6));
+        assert.ok(projects.every((group) => ai.plans[group.planId].radius === 4));
+        assert.equal(encounter.topology.actionLog.length, 0, "Staffing cannot build for free");
+    }
+});
+
+test("a large layered enclosure outranks a small legal passage on the same route", () => {
+    const r = runtime([spinner(1, 3, 7)]),
+        c = r.context;
+    c.KDMapData.GridWidth = 36;
+    c.KDMapData.GridHeight = 20;
+    c.KinkyDungeonMapGet = (x, y) =>
+        (x >= 1 && x <= 7 && y >= 4 && y <= 10) ||
+        (x >= 18 && x <= 33 && y >= 2 && y <= 16) ||
+        (y === 7 && x >= 1 && x <= 33)
+            ? "0"
+            : "1";
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 4, y: 7 });
+    const snapshot = {
+        width: 36,
+        height: 20,
+        cells: [],
+        entrances: [{ x: 1, y: 7 }],
+        exits: [{ x: 33, y: 7 }],
+        nests: [],
+    };
+    for (let y = 1; y < 19; y++)
+        for (let x = 1; x < 35; x++)
+            snapshot.cells.push({
+                x,
+                y,
+                floor: c.KinkyDungeonMapGet(x, y) === "0",
+                walkable: c.KinkyDungeonMapGet(x, y) === "0",
+                wall: c.KinkyDungeonMapGet(x, y) === "1",
+                protected: false,
+                locked: false,
+            });
+    const ai = start(r, snapshot),
+        plan = Object.values(ai.plans)[0];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 4);
+    assert.equal(plan.fieldIds.length, 3);
+});
+
+test("independent fields are limited without counting their individual rings", () => {
+    for (const maximum of [0, 1, 3, 4]) {
+        const actors = Array.from({ length: 5 }, (_, group) =>
+            Array.from({ length: 6 }, (_, index) =>
+                spinner(group * 6 + index + 1, 10 + group * 24 + (index % 3), 10 + Math.floor(index / 3), {
+                    SpiderlingsNestParentID: 100 + group,
+                }),
+            ),
+        ).flat();
+        const r = runtime(actors),
+            c = r.context;
+        c.Spiderlings.getSetting = () => String(maximum);
+        c.KDMapData.GridWidth = 136;
+        c.KDMapData.GridHeight = 24;
+        c.KinkyDungeonMapGet = (x, y) => (x > 0 && x < 135 && y > 0 && y < 23 ? "0" : "1");
+        Object.assign(c.KinkyDungeonPlayerEntity, { x: 10, y: 17 });
+        for (let i = 1; i < 5; i++)
+            c.KDMapData.Entities.push({ id: 200 + i, x: 10 + i * 24, y: 17, hp: 20, Enemy: { name: "Bandit" } });
+        const snapshot = { width: 136, height: 24, cells: [], entrances: [], exits: [], nests: [] };
+        for (let y = 1; y < 23; y++)
+            for (let x = 1; x < 135; x++)
+                snapshot.cells.push({ x, y, floor: true, walkable: true, protected: false, locked: false });
+        const ai = start(r, snapshot),
+            active = Object.values(ai.plans).filter((p) => !["abandoned", "invalid"].includes(p.status));
+        assert.equal(active.length, maximum);
+        assert.ok(active.every((p) => p.fieldIds.length === 3));
+        assert.equal(c.Spiderlings.SpinnerNativeField.state().topology?.actionLog.length || 0, 0);
+    }
+});
+
+test("region dispatch uses the shortest legal approach around occupied destinations", () => {
+    const actor = spinner(1, 3, 6),
+        r = runtime([actor]),
+        c = r.context,
+        api = c.Spiderlings.SpinnerAI;
+    c.KDMapData.Entities.push({ id: 50, x: 10, y: 6, hp: 20, Enemy: { name: "Bandit" } });
+    const route = api.dispatchPath(actor, { x: 10, y: 6 });
+    assert.ok(route.length);
+    assert.equal(route.length, 7);
+    assert.notDeepEqual(route.at(-1), { x: 10, y: 6 });
+    for (const point of route) assert.notEqual(cellKeyForTest(point), "10,6");
+    const goals = [
+        { x: 13, y: 6 },
+        { x: 6, y: 6 },
+        { x: 12, y: 6 },
+    ];
+    assert.equal(api.routeOnSnapshot(mapSnapshot(), actor, goals).length, 4);
+});
+
+test("capture field limit accepts zero and custom counts, retaining invested fields", () => {
+    for (const value of ["0", "1", "4", "-1", "bad"]) {
+        const r = runtime([spinner(1, 5, 5), spinner(2, 6, 5)]),
+            c = r.context;
+        c.Spiderlings.getSetting = () => value;
+        const ai = start(r, { ...mapSnapshot(), candidateLines: undefined });
+        const expected = ["-1", "bad"].includes(value) ? 3 : Number(value);
+        assert.equal(c.Spiderlings.FieldProjects.limit(), expected);
+        if (expected === 0) {
+            assert.equal(Object.keys(ai.plans).length, 0);
+            assert.equal(c.Spiderlings.SpinnerAI.initializeMapgenField().reason, "deployment-disabled");
+        } else {
+            assert.ok(Object.keys(ai.plans).length);
+            c.Spiderlings.getSetting = () => "0";
+            c.Spiderlings.SpinnerAI.beginTurn({ activate: true, mapSnapshot: mapSnapshot() });
+            assert.ok(Object.keys(ai.plans).length, "Setting zero must preserve existing field investments");
+        }
+    }
+});
+
+test("guard AI Spinners execute paid construction and obey final phase gates", () => {
+    const worker = spinner(1, 5, 3, { AI: "guard" }),
+        helper = spinner(2, 5, 9, { AI: "guard" }),
+        r = runtime([worker, helper]),
+        c = r.context;
+    start(r);
+    const before = c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length;
+    c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 0);
+    assert.equal(c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length, before);
+    let blocked = false;
+    for (let turn = 0; turn < 20; turn++) {
+        start(r);
+        const result = c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        blocked ||= !result.attacked && !result.cast;
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+    }
+    assert.ok(blocked, "Commanded work must gate guard's default attack/spell permission");
+    assert.ok(
+        c.Spiderlings.SpinnerNativeField.state().topology.actionLog.length > before,
+        "A native guard AI must not reserve construction indefinitely without executing it",
+    );
+    const outsider = spinner(999, 1, 1, { AI: "guard" });
+    outsider.Enemy.name = "Bandit";
+    const native = c.KinkyDungeonEnemyLoop(outsider, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(native.attacked, true);
+    assert.equal(native.cast, true);
+});
+
+test("a borrowed nest guard cannot erase its commander's shared field engagement", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    command.request(encounter, receiver.id, "repair", 1, { x: 13, y: 6 });
+    command.allocate(encounter, distances);
+    const member = Object.values(command.inspect().members).find((entry) => entry.loan);
+    member.phase = "support";
+    command.projectOwners(encounter);
+    receiver.source = { type: "nest", nestId: 909 };
+    const worker = c.KDMapData.Entities.find((e) => e.id === member.id);
+    delete worker.SpiderlingsHuntRole;
+    receiver.engagement = {
+        target: { kind: "player", id: c.KinkyDungeonPlayerEntity.id },
+        lureId: worker.id,
+        mode: "pressure",
+        noSightTurns: 0,
+        lureNoContactTurns: 0,
+        lastKnown: { x: 16, y: 10, age: 0, source: "native" },
+    };
+    const facts = c.Spiderlings.SpinnerAI.dutyFacts(worker, c.KinkyDungeonPlayerEntity, {});
+    assert.equal(facts.validPlan, true);
+    assert.ok(receiver.engagement, "An individual guard decision must not clear group-owned contact");
+    assert.equal(receiver.engagement.lastKnown.source, "native");
+});
+
+test("support that leaves its field stops satisfying readiness and returns under its existing promise", () => {
+    const { c, command, encounter, receiver, distances } = loanScene();
+    const request = command.request(encounter, receiver.id, "readiness", 1, { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.requestId === request.id);
+    const actor = c.KDMapData.Entities.find((entity) => entity.id === member.id);
+    Object.assign(actor, { x: 13, y: 6 });
+    command.handleMove(actor, 1);
+    command.allocate(encounter, distances);
+    assert.equal(request.status, "satisfied");
+    const loan = member.loan;
+    Object.assign(actor, { x: 2, y: 9 });
+    command.allocate(encounter, distances);
+    assert.equal(request.arrived, 0);
+    assert.equal(request.usable, 0);
+    assert.equal(request.incoming, 1);
+    assert.equal(request.status, "travelling");
+    assert.equal(member.phase, "travelling");
+    assert.equal(member.loan, loan);
+    assert.equal(member.commander, receiver.id);
+    command.allocate(encounter, distances);
+    assert.equal(Object.values(encounter.command.members).filter((entry) => entry.requestId === request.id).length, 1);
+});
+
+test("a field demand revision closes obsolete work while retaining the same support commitment", () => {
+    const { command, encounter, receiver, distances } = loanScene();
+    command.reviseDemands(encounter, receiver.id, new Map([["readiness", 1]]), { x: 13, y: 6 }, { urgency: 1 });
+    command.allocate(encounter, distances);
+    const member = Object.values(encounter.command.members).find((entry) => entry.loan);
+    const loan = member.loan;
+    command.reviseDemands(encounter, receiver.id, new Map([["capture", 1]]), { x: 13, y: 6 }, { urgency: 2 });
+    command.allocate(encounter, distances);
+    assert.equal(encounter.command.requests[`${receiver.id}:readiness`].closed, true);
+    assert.equal(member.requestId, `${receiver.id}:capture`);
+    assert.equal(member.loan, loan);
+    assert.equal(member.commander, receiver.id);
+    command.endProjectSupport(encounter, receiver.id);
+    assert.ok(
+        Object.values(encounter.command.requests)
+            .filter((entry) => entry.fieldId === receiver.id)
+            .every((entry) => entry.closed),
+    );
+});
+
+test("ranged interception uses firing range even when all melee-adjacent cells are occupied", () => {
+    const caster = spinner(1, 5, 3, {
+            Enemy: {
+                name: "WebCaster",
+                attack: "Spell",
+                followRange: 3,
+                spells: ["WebSpray"],
+                tags: { spiderlings: true },
+            },
+        }),
+        target = { id: 99, x: 9, y: 3, hp: 8, Enemy: { name: "ElementalIce" } },
+        r = runtime([spinner(2, 5, 9), spinner(3, 5, 8), caster, target]),
+        c = r.context,
+        ai = start(r),
+        group = Object.values(ai.groups)[0];
+    c.KinkyDungeonFindSpell = () => ({ castRange: 6, minRange: 0 });
+    c.KinkyDungeonCheckProjectileClearance = () => true;
+    let id = 700;
+    for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++)
+            if (dx || dy) c.KDMapData.Entities.push(spinner(id++, target.x + dx, target.y + dy, { stun: 100 }));
+    c.Spiderlings.FieldCustody = {
+        state: () => ({ groupId: group.id }),
+        targetFor: (actor) => (actor === caster ? target : undefined),
+        assigned: (actor) => actor === caster,
+    };
+    caster.SpiderlingsSpinnerRuntimeDelta = 1;
+    c.Spiderlings.SpinnerDuties.beginAction(caster, target, 1);
+    c.Spiderlings.SpinnerDuties.beforeMove(caster, target, {});
+    assert.equal(c.Spiderlings.SpinnerDuties.gate(caster), true);
+    assert.deepEqual([caster.x, caster.y], [5, 3]);
+    c.KinkyDungeonCheckProjectileClearance = (x, y) => x === 6 && y === 3;
+    const approach = c.Spiderlings.SpinnerAI.attackApproach(caster, target);
+    assert.equal(approach.ready, false);
+    assert.deepEqual(plain(approach.path.at(-1)), { x: 6, y: 3 });
+});
+
+function residentScene(layers = 2) {
+    const scene = loanScene(),
+        { c, ai, home, receiver } = scene;
+    home.planId = null;
+    const definitions = Array.from({ length: layers }, (_, index) => {
+        const radius = index + 1;
+        return {
+            id: "resident-ring-" + index,
+            vertices: [
+                { x: 12 - radius, y: 6 - radius },
+                { x: 12 + radius, y: 6 - radius },
+                { x: 12 + radius, y: 6 + radius },
+                { x: 12 - radius, y: 6 + radius },
+            ],
+            gate: { x: 12 + radius, y: 6 },
+        };
+    });
+    const added = c.Spiderlings.SpinnerNativeField.addEnclosure({
+        compositeId: "resident-field",
+        owners: [4],
+        built: true,
+        layers: definitions,
+    });
+    assert.equal(added.added, true);
+    // The geometry fixture clips edge-constrained layers. The quota formula
+    // also accepts a saved fourth layer independently of map-generation limits.
+    if (layers === 4 && scene.encounter.topology.composites["resident-field"].layerIds.length === 3) {
+        const graph = scene.encounter.topology;
+        graph.fields["resident-ring-3"] = { ...graph.fields["resident-ring-2"], id: "resident-ring-3" };
+        graph.composites["resident-field"].layerIds.push("resident-ring-3");
+    }
+    Object.assign(ai.plans[receiver.planId], {
+        kind: "enclosure",
+        compositeId: "resident-field",
+        fieldIds: definitions.map((x) => x.id),
+        center: { x: 12, y: 6 },
+        status: "ready",
+    });
+    return scene;
+}
+
+test("resident floors follow the cumulative layer rule and ignore retired layers", () => {
+    for (const [layers, minimum] of [
+        [1, 1],
+        [2, 3],
+        [3, 6],
+        [4, 10],
+    ]) {
+        const { command, encounter, receiver } = residentScene(layers);
+        assert.equal(command.residency(encounter, receiver.id).minimum, minimum);
+        encounter.topology.fields["resident-ring-" + (layers - 1)].retired = true;
+        assert.equal(command.residency(encounter, receiver.id).minimum, ((layers - 1) * layers) / 2);
+    }
+});
+
+test("minimum residents are assigned before urgent optional loans and incoming stays distinct from arrived", () => {
+    const { command, encounter, receiver, ai, distances } = residentScene(2);
+    const other = command.newGroup(ai);
+    command.request(encounter, other.id, "defense", 2, { x: 5, y: 5 }, { urgency: 2 });
+    command.allocate(encounter, distances);
+    const facts = command.residency(encounter, receiver.id);
+    assert.equal(facts.minimum, 3);
+    assert.equal(facts.usable, 1);
+    assert.equal(facts.incoming, 2);
+    assert.equal(facts.committed, 3);
+    assert.equal(facts.missing, 2);
+    assert.equal(ai.groups[other.id].memberIds.length, 1);
+    command.allocate(encounter, distances);
+    assert.equal(command.residency(encounter, receiver.id).committed, 3);
+    command.reviseDemands(encounter, receiver.id, new Map(), { x: 12, y: 6 });
+    assert.equal(command.inspect().requests[receiver.id + ":residency"].closed, false);
+});
+
+test("an incoming permanent resident keeps field command when selected for protected contact", () => {
+    const { c, command, encounter, receiver, distances } = residentScene(2);
+    command.allocate(encounter, distances);
+    const member = Object.values(command.ensure(encounter).members).find(
+        (entry) => entry.commander === receiver.id && entry.phase === "travelling",
+    );
+    c.Spiderlings.FieldCustody = { assigned: (actor) => actor?.id === member.id };
+    command.reconcile(encounter, c.KDMapData.Entities, {}, false);
+    assert.equal(member.commander, receiver.id);
+    assert.equal(member.home, receiver.id);
+    assert.equal(member.phase, "home");
+    assert.equal(member.loan, undefined);
+    assert.equal(member.requestId, undefined);
+    assert.equal(command.residency(encounter, receiver.id).committed, 3);
+});
+
+test("arrived permanent residents cannot be borrowed below the floor and dead residents create a new gap", () => {
+    const { c, command, encounter, receiver, distances } = residentScene(2);
+    command.allocate(encounter, distances);
+    const members = Object.values(command.inspect().members).filter((m) => m.commander === receiver.id);
+    for (const [i, member] of members.entries()) {
+        const actor = c.KDMapData.Entities.find((a) => a.id === member.id);
+        actor.x = 11 + i;
+        actor.y = 6;
+        command.handleMove(actor, 1);
+    }
+    assert.equal(command.residency(encounter, receiver.id).usable, 3);
+    const state = command.inspect();
+    assert.ok(members.every((m) => state.members[m.id].home === receiver.id && !state.members[m.id].loan));
+    assert.equal(
+        command
+            .offers(encounter, { x: 3, y: 3 }, distances, undefined, "defense", { urgency: 2 })
+            .members.filter((m) => m.donor === receiver.id).length,
+        0,
+    );
+    c.KDMapData.Entities.find((a) => a.id === members[0].id).hp = 0;
+    command.allocate(encounter, distances);
+    assert.equal(command.residency(encounter, receiver.id).minimum, 3);
+    assert.equal(command.residency(encounter, receiver.id).missing, 1);
+});
+
+test("existing topology adoption registers each independent field with its own command", () => {
+    const actors = [spinner(1, 3, 3), spinner(2, 14, 8)],
+        r = runtime(actors),
+        c = r.context,
+        native = c.Spiderlings.SpinnerNativeField;
+    const enclosure = (id, x, y, owner) => ({
+        compositeId: id,
+        owners: [owner],
+        built: true,
+        layers: [
+            {
+                id: id + "-ring",
+                vertices: [
+                    { x: x - 2, y: y - 2 },
+                    { x: x + 2, y: y - 2 },
+                    { x: x + 2, y: y + 2 },
+                    { x: x - 2, y: y + 2 },
+                ],
+                gate: { x: x + 2, y },
+            },
+        ],
+    });
+    native.initializeEnclosure(enclosure("adopt-a", 4, 4, 1));
+    assert.equal(native.addEnclosure(enclosure("adopt-b", 13, 7, 2)).added, true);
+    const ai = c.Spiderlings.SpinnerAI.beginTurn({ activate: true, adoptExisting: true });
+    const plans = Object.values(ai.plans).filter((p) => !["invalid", "abandoned", "retired"].includes(p.status));
+    assert.equal(plans.filter((p) => p.compositeId === "adopt-a").length, 1);
+    assert.equal(plans.filter((p) => p.compositeId === "adopt-b").length, 1);
+    for (const p of plans)
+        if (["adopt-a", "adopt-b"].includes(p.compositeId))
+            assert.equal(c.Spiderlings.FieldCommand.residency(native.state(), p.groupId).minimum, 1);
+});

@@ -12,3 +12,5 @@ Read relevant package rules and the available user request, ticket or spec. Miss
 Trace changed behavior through its real callers and tests. Report actionable defects and requirement gaps with file/line, trigger, impact and a concrete correction. Treat style preferences as optional and omit them unless requested. Prioritize findings by practical impact.
 
 Use separate reviewers only when authorized and independently useful; a small diff can be reviewed directly. Keep reviews read-only unless the user also requested fixes. Finish with findings and verification limits, or state that no actionable defect was found.
+
+For Spiderlings field, native-action or compatibility-harness changes, apply the state-owner and scenario contracts in the active checkout's `docs/MODULES.md`. Review domain transitions, exported callers, native fallback and true state continuations. The executable module check handles its recorded syntactic rules; review the behavior across those seams.

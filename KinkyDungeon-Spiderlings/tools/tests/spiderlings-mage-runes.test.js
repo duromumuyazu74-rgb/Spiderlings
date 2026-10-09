@@ -1,0 +1,363 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+const root = path.join(__dirname, "../..");
+const source = fs.readFileSync(path.join(root, "SpiderlingsMageRunes.js"), "utf8");
+
+function fixture() {
+    const events = {};
+    const calls = { casts: [], binds: [], npcHits: [], visuals: [] };
+    const mage = { id: 10, x: 5, y: 5, hp: 3, faction: "Enemy", Enemy: { name: "MageSpiderlings" } };
+    const player = { player: true, faction: "Player", x: 9, y: 5 };
+    const map = { Entities: [mage], Bullets: [] };
+    let random = 0;
+    const c = {
+        KinkyDungeonSlowLevel: 0,
+        Spiderlings: { Webbing: { applyEnemyProgression: (...args) => calls.binds.push(args) } },
+        KDMapData: map,
+        KDCastConditions: {},
+        KinkyDungeonSpellListEnemies: [{ name: "SpiderlingsMageRune" }],
+        KinkyDungeonPlayerEntity: player,
+        KinkyDungeonMovableTilesEnemy: ["0"],
+        KinkyDungeonMapGet: (x, y) => (x >= 3 && x <= 8 && y >= 3 && y <= 8 ? "0" : "1"),
+        KinkyDungeonCheckLOS: () => true,
+        KDRandom: () => random,
+        KDPlayerEffects: {},
+        KinkyDungeonUpdateSingleBulletVisual: (bullet, end) => calls.visuals.push({ name: bullet.bullet.name, end }),
+        KDEventMapGeneric: {},
+        KDAddEvent: (_map, name, _id, callback) => (events[name] = callback),
+        KDGetFaction: (entity) => entity.faction,
+        KDHostile: (a, b) => a.faction !== b.faction && !b.allied,
+        KDBulletCanHitEntity: (bullet, target) =>
+            bullet.x === target.x &&
+            bullet.y === target.y &&
+            (target.player || bullet.bullet.spell.friendlyfire || target.faction !== "Maidforce"),
+        KDCheckCollideableBullets: (target, force) => {
+            for (const bullet of [...map.Bullets]) {
+                if (bullet.x !== target.x || bullet.y !== target.y || !bullet.bullet.damage) continue;
+                if (force || c.KDBulletCanHitEntity(bullet, target)) map.Bullets.splice(map.Bullets.indexOf(bullet), 1);
+            }
+        },
+        KDBulletHitEnemy: (bullet, target) => {
+            calls.npcHits.push({ bullet, target, playerEffect: bullet.bullet.spell.playerEffect });
+            const amount = bullet.bullet.damage.bind;
+            if (!target.shield && !target.immune)
+                target.slime = (target.slime || 0) + amount * (target.resistance ?? 1);
+            return amount;
+        },
+        KinkyDungeonCastSpell: (x, y, spell, owner) => {
+            calls.casts.push({ x, y, spell, owner });
+            map.Bullets.push({
+                x,
+                y,
+                time: spell.delay,
+                bullet: {
+                    source: owner.id,
+                    faction: owner.faction,
+                    spell,
+                    damage: { damage: spell.power, bind: spell.bind, bindType: spell.bindType, type: spell.damage },
+                },
+            });
+            return { result: "Cast" };
+        },
+    };
+    c.Spiderlings.Rivalry = {
+        isMaid: (target) =>
+            target.faction === "Maidforce" ||
+            (["MaidKnightHeavy", "MaidKnightLight"].includes(target.Enemy?.name) && target.faction === "Adventurer"),
+    };
+    vm.createContext(c);
+    vm.runInContext(source, c);
+    const spell = {
+        name: "SpiderlingsMageRune",
+        tags: ["rune", "trap"],
+        delay: 300,
+        power: 0,
+        bind: 6,
+        bindType: "Slime",
+        damage: "glue",
+    };
+    const choose = () => {
+        const data = { enemy: mage, spellOptions: ["SpiderlingsMageBolt", spell.name], spellPriority: [] };
+        events.enumerateSpellOpts(null, data);
+        return data.spellOptions[0];
+    };
+    const cast = () => c.KinkyDungeonCastSpell(player.x, player.y, spell, mage);
+    const tick = () => events.tickAfter(null, { delta: 1 });
+    return { c, mage, player, map, calls, spell, choose, cast, tick, random: (value) => (random = value) };
+}
+
+test("Mage runes reject non-Mage and ownerless casts while preserving other spells", () => {
+    const r = fixture();
+    const webCaster = { id: 11, x: 5, y: 5, hp: 3, faction: "Enemy", Enemy: { name: "WebCaster" } };
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, r.spell, webCaster).result, "Fail");
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, r.spell, undefined, r.player).result, "Fail");
+    assert.equal(r.calls.casts.length, 0);
+    assert.equal(r.map.Bullets.length, 0);
+    const spray = { name: "WebSpray" };
+    assert.equal(r.c.KinkyDungeonCastSpell(6, 5, spray, webCaster).result, "Cast");
+    assert.equal(r.calls.casts[0].spell.name, "WebSpray");
+});
+
+test("native candidate condition excludes Rune owner limits and maps without legal placement", () => {
+    const r = fixture();
+    const available = r.c.KDCastConditions.SpiderlingsMageRune;
+    assert.equal(typeof available, "function");
+    assert.equal(r.c.KinkyDungeonSpellListEnemies[0].castCondition, r.spell.name);
+    assert.equal(available(r.mage), true);
+    for (let count = 0; count < 3; count++) assert.equal(r.cast().result, "Cast");
+    assert.equal(available(r.mage), false);
+    assert.equal(r.cast().result, "Fail", "direct entry retains the three-rune limit");
+    r.map.Bullets[0].time = 0;
+    assert.equal(available(r.mage), true);
+    r.c.KinkyDungeonMapGet = () => "1";
+    const before = JSON.stringify(r.map.Bullets);
+    assert.equal(available(r.mage), false);
+    assert.equal(JSON.stringify(r.map.Bullets), before, "candidate queries leave placed runes unchanged");
+    assert.equal(r.cast().result, "Fail");
+});
+
+test("friendly runes ignore the player but still trigger on hostile NPCs after caster removal", () => {
+    for (const remove of [false, true]) {
+        const r = fixture();
+        r.mage.faction = "Player";
+        r.cast();
+        r.map.Bullets = JSON.parse(JSON.stringify(r.map.Bullets));
+        const bullet = r.map.Bullets[0];
+        if (remove) r.map.Entities = [];
+        r.tick();
+        r.tick();
+        Object.assign(r.player, { x: bullet.x, y: bullet.y });
+        r.tick();
+        assert.equal(bullet.SpiderlingsRunePhase, "armed", "friendly player cannot trigger the rune");
+        r.player.x++;
+        const maid = { id: 11, hp: 8, x: bullet.x, y: bullet.y, faction: "Maidforce", Enemy: { name: "Maidforce" } };
+        r.map.Entities.push(maid);
+        r.tick();
+        assert.equal(bullet.SpiderlingsRunePhase, "triggered");
+        r.tick();
+        r.tick();
+        assert.equal(maid.slime, 6);
+        assert.equal(r.calls.binds.length, 0, "the friendly player within the blast is unaffected");
+    }
+});
+
+test("rune replaces one native Mage cast, chooses an empty nearby tile and stops at three active runes", () => {
+    const r = fixture();
+    r.random(0.2);
+    assert.equal(r.choose(), r.spell.name);
+    assert.equal(r.cast().result, "Cast");
+    assert.equal(r.calls.casts.length, 1);
+    assert.notDeepEqual([r.calls.casts[0].x, r.calls.casts[0].y], [r.player.x, r.player.y]);
+    assert.ok(Math.max(Math.abs(r.calls.casts[0].x - r.mage.x), Math.abs(r.calls.casts[0].y - r.mage.y)) <= 3);
+    assert.equal(r.map.Bullets[0].time, 300);
+    assert.equal(r.map.Bullets[0].bullet.source, r.mage.id);
+    assert.equal(r.map.Bullets[0].bullet.spell.tags.includes("rune"), true);
+    r.random(0.25);
+    assert.equal(r.choose(), "SpiderlingsMageBolt", "one quarter is an exclusive probability bound");
+    r.random(0);
+    r.cast();
+    r.cast();
+    assert.equal(r.map.Bullets.length, 3);
+    assert.equal(r.choose(), "SpiderlingsMageBolt");
+    assert.equal(r.cast().result, "Fail");
+    assert.equal(r.calls.casts.length, 3);
+    r.map.Bullets[0].time = 0;
+    assert.equal(r.choose(), r.spell.name, "expired runes free capacity");
+});
+
+test("Mage runes trigger and bind shared Maid identities and approved interceptors", () => {
+    for (const name of ["MaidKnightHeavy", "MaidKnightLight", "ElementalIce"]) {
+        const r = fixture();
+        r.cast();
+        const bullet = r.map.Bullets[0];
+        r.tick();
+        r.tick();
+        const target = { id: 11, x: bullet.x, y: bullet.y, hp: 8, faction: "Adventurer", Enemy: { name } };
+        if (name === "ElementalIce") {
+            target.faction = "Enemy";
+            r.c.Spiderlings.FieldCustody = { interceptionPair: (a, b) => a === r.mage && b === target };
+            r.c.KDHostile = (a, b) => r.c.Spiderlings.FieldCustody.interceptionPair(a, b);
+        }
+        r.map.Entities.push(target);
+        r.tick();
+        assert.equal(bullet.SpiderlingsRunePhase, "triggered", name);
+        r.tick();
+        r.tick();
+        assert.equal(target.slime, 6, name);
+    }
+});
+
+test("Hunting Grounds rune can trigger on allied neutral NPC prey", () => {
+    const r = fixture();
+    r.c.Spiderlings.HuntingGrounds = { isPrey: (_source, target) => target.Enemy?.name === "Neutral" };
+    r.c.KDHostile = () => true;
+    r.cast();
+    const bullet = r.map.Bullets[0];
+    r.tick();
+    r.tick();
+    const neutral = {
+        id: 11,
+        x: bullet.x,
+        y: bullet.y,
+        hp: 8,
+        faction: "Enemy",
+        allied: true,
+        Enemy: { name: "Neutral" },
+    };
+    r.map.Entities.push(neutral);
+    r.tick();
+    assert.equal(bullet.SpiderlingsRunePhase, "triggered");
+    r.tick();
+    r.tick();
+    assert.equal(neutral.slime, 6);
+});
+
+test("rune icon places for one turn, then the triggered rune warns 3x3 and binds after two warning turns", () => {
+    const r = fixture();
+    r.cast();
+    const bullet = r.map.Bullets[0];
+    assert.equal(bullet.bullet.name, "SpiderlingsMageRuneIcon");
+    assert.equal(bullet.bullet.bulletLight, 4);
+    r.tick();
+    assert.equal(bullet.bullet.name, "SpiderlingsMageRuneIcon");
+    r.tick();
+    assert.equal(bullet.bullet.name, "SpiderlingsMageRune");
+    const maid = { x: bullet.x, y: bullet.y, hp: 8, faction: "Maidforce", Enemy: { name: "Maid" } };
+    const ally = { ...maid, allied: true };
+    const spider = { ...maid, faction: "Enemy", Enemy: { name: "Spinner" } };
+    assert.equal(r.c.KDBulletCanHitEntity(bullet, ally), false);
+    assert.equal(r.c.KDBulletCanHitEntity(bullet, spider), false);
+    assert.equal(r.c.KDBulletCanHitEntity(bullet, { ...maid, x: bullet.x + 1 }), false);
+    r.map.Entities.push(ally, spider);
+    r.tick();
+    assert.equal(bullet.SpiderlingsRunePhase, "armed");
+    r.map.Entities.push(maid);
+    r.tick();
+    assert.equal(bullet.SpiderlingsRunePhase, "triggered");
+    assert.equal(bullet.bullet.aoe, 1);
+    assert.equal(bullet.bullet.aoetype, "box");
+    assert.equal(bullet.bullet.bulletLight, 6);
+    assert.equal(maid.slime, undefined);
+    maid.x += 1;
+    r.tick();
+    r.tick();
+    assert.equal(maid.slime, 6);
+    assert.equal(r.calls.npcHits.length, 1);
+    assert.equal(r.calls.npcHits[0].playerEffect, undefined);
+    assert.equal(r.map.Bullets.length, 0);
+    const protectedMaid = { ...maid, slime: 0, shield: 1 };
+    r.cast();
+    protectedMaid.x = r.map.Bullets[0].x;
+    protectedMaid.y = r.map.Bullets[0].y;
+    r.map.Entities.push(protectedMaid);
+    r.tick();
+    r.tick();
+    r.tick();
+    r.tick();
+    assert.equal(protectedMaid.slime, 0, "native shield still controls binding");
+});
+
+test("saved delayed rune survives caster death, player receives normal Webbing, and dispel frees capacity", () => {
+    const r = fixture();
+    r.cast();
+    r.tick();
+    r.tick();
+    const saved = JSON.parse(JSON.stringify(r.map.Bullets));
+    r.map.Entities.length = 0;
+    r.map.Bullets = saved;
+    const maid = { x: saved[0].x, y: saved[0].y, hp: 8, faction: "Maidforce", Enemy: { name: "Maid" } };
+    r.map.Entities.push(maid);
+    r.tick();
+    r.tick();
+    r.tick();
+    assert.equal(maid.slime, 6, "the saved rune outlives its caster");
+    r.map.Entities.push(r.mage);
+    r.cast();
+    const bullet = r.map.Bullets[0];
+    r.player.x = bullet.x;
+    r.player.y = bullet.y;
+    r.tick();
+    r.tick();
+    r.tick();
+    r.player.x += 1;
+    r.tick();
+    r.tick();
+    assert.equal(r.calls.binds.length, 1);
+    assert.equal(r.calls.binds[0][0], "MageSpiderlings");
+    assert.equal(r.map.Bullets.length, 0);
+    r.cast();
+    const dispelled = r.map.Bullets[0];
+    if (dispelled.bullet.spell.tags.includes("rune")) dispelled.time = 0;
+    assert.equal(r.choose(), r.spell.name, "dispelled runes no longer consume an active slot");
+});
+
+test("forced movement onto the center leaves the rune for its delayed trigger", () => {
+    const r = fixture();
+    r.cast();
+    r.tick();
+    r.tick();
+    const bullet = r.map.Bullets[0];
+    r.player.x = bullet.x;
+    r.player.y = bullet.y;
+    r.c.KDCheckCollideableBullets(r.player, true);
+    assert.equal(r.map.Bullets.includes(bullet), true);
+    r.tick();
+    assert.equal(bullet.SpiderlingsRunePhase, "triggered");
+});
+
+test("Rune placement scans actor occupancy once per query instead of once per candidate", () => {
+    const r = fixture();
+    let reads = 0;
+    for (let id = 100; id < 120; id++)
+        r.map.Entities.push({
+            id,
+            hp: 10,
+            y: 100,
+            get x() {
+                reads++;
+                return 100;
+            },
+        });
+    assert.equal(r.choose(), r.spell.name);
+    assert.ok(reads <= 20, `A query should inspect each far actor once, saw ${reads} position reads`);
+});
+
+test("Rune cast rebuilds occupancy and checks changed terrain and LOS after spell selection", () => {
+    const r = fixture();
+    assert.equal(r.choose(), r.spell.name);
+    r.map.Bullets.push({ x: 3, y: 3, time: 1, bullet: {} });
+    r.map.Entities.push({ id: 99, hp: 5, x: 4, y: 3 });
+    const mapGet = r.c.KinkyDungeonMapGet;
+    r.c.KinkyDungeonMapGet = (x, y) => (x === 5 && y === 3 ? "1" : mapGet(x, y));
+    r.c.KinkyDungeonCheckLOS = (_source, target) => !(target.x === 6 && target.y === 3);
+    assert.equal(r.cast().result, "Cast");
+    assert.deepEqual([r.calls.casts.at(-1).x, r.calls.casts.at(-1).y], [7, 3]);
+});
+
+test("Rune warning snapshots native Slow and never extends while the player waits", () => {
+    for (const slow of [0, 1, 3, 5]) {
+        const r = fixture();
+        r.cast();
+        r.tick();
+        r.tick();
+        const b = r.map.Bullets[0];
+        r.c.KinkyDungeonSlowLevel = slow;
+        Object.assign(r.player, { x: b.x, y: b.y });
+        r.tick();
+        const warning = 2 + Math.ceil(slow / 2);
+        assert.equal(b.SpiderlingsRuneTurns, warning);
+        r.c.KinkyDungeonSlowLevel = 99;
+        for (let i = 1; i < warning; i++) {
+            r.tick();
+            assert.equal(r.calls.binds.length, 0);
+        }
+        r.tick();
+        assert.equal(r.calls.binds.length, 1);
+    }
+});

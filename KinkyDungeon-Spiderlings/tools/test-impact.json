@@ -1,0 +1,837 @@
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "foundation": {
+      "tests": [
+        "spiderlings-feedback.test.js",
+        "spiderlings-webbing-cutover.test.js",
+        "spiderlings-webbing-cocoon.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-spinner-art.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js",
+        "spiderlings-spinner-rollout.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-enclosure.test.js",
+        "spiderlings-spinner-native-field.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-field-permits.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-perception.test.js",
+        "spiderlings-spinner-passage-planner.test.js",
+        "spiderlings-spinner-passage.test.js",
+        "spiderlings-web-mobility.test.js",
+        "spiderlings-model-runtime.test.js",
+        "spiderlings-mage-combat.test.js",
+        "spiderlings-mage-visuals.test.js",
+        "spiderlings-spell-visuals.test.js",
+        "spiderlings-mage-runes.test.js",
+        "spiderlings-mage-spells.test.js",
+        "spiderlings-npc-adhesion.test.js",
+        "spiderlings-npc-wrapping.test.js",
+        "spiderlings-hunting-grounds-layout.test.js",
+        "spiderlings-population.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-native-actions.test.js",
+        "spiderlings-weapons.test.js",
+        "spiderlings-weapon-webbing.test.js",
+        "spiderlings-debug-stairs.test.js",
+        "spiderlings-floor-upgrade.test.js"
+      ],
+      "localTests": "*",
+      "scenarios": "*",
+      "reason": "Shared namespace, registration and hooks are used across runtime domains."
+    },
+    "catalogue": {
+      "tests": [
+        "spiderlings-feedback.test.js",
+        "spiderlings-webbing-cutover.test.js",
+        "spiderlings-webbing-cocoon.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-spinner-art.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js",
+        "spiderlings-spinner-rollout.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-enclosure.test.js",
+        "spiderlings-spinner-native-field.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-field-permits.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-perception.test.js",
+        "spiderlings-spinner-passage-planner.test.js",
+        "spiderlings-spinner-passage.test.js",
+        "spiderlings-web-mobility.test.js",
+        "spiderlings-model-runtime.test.js",
+        "spiderlings-mage-combat.test.js",
+        "spiderlings-mage-visuals.test.js",
+        "spiderlings-spell-visuals.test.js",
+        "spiderlings-mage-runes.test.js",
+        "spiderlings-mage-spells.test.js",
+        "spiderlings-npc-adhesion.test.js",
+        "spiderlings-npc-wrapping.test.js",
+        "spiderlings-hunting-grounds-layout.test.js",
+        "spiderlings-population.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-native-actions.test.js",
+        "spiderlings-weapons.test.js",
+        "spiderlings-weapon-webbing.test.js",
+        "spiderlings-debug-stairs.test.js",
+        "spiderlings-floor-upgrade.test.js"
+      ],
+      "localTests": [
+        "spiderlings-encounters.test.js",
+        "spiderlings-combat.test.js",
+        "spiderlings-maid-hostility.test.js",
+        "spiderlings-new-save-smoke.test.js"
+      ],
+      "scenarios": "*",
+      "reason": "The shared enemy/spell catalogue registers multiple species and native callbacks."
+    },
+    "native-actions": {
+      "tests": [
+        "spiderlings-native-actions.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-perception.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js",
+        "spiderlings-webbing-cocoon.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-web-mobility.test.js"
+      ],
+      "localTests": [
+        "spiderlings-encounters.test.js",
+        "spiderlings-maid-hostility.test.js",
+        "spiderlings-hunting-grounds.test.js",
+        "spiderlings-jumper-dash.test.js",
+        "spiderlings-webbing-webspray.test.js",
+        "spiderlings-spinner-native-contract.test.js"
+      ],
+      "scenarios": [
+        "webcaster",
+        "web-mobility",
+        "crew-native-duties",
+        "field-command",
+        "spinner-crowded-control",
+        "cocoon-vigil",
+        "action-cadence",
+        "player-recovery",
+        "persistent-recovery"
+      ],
+      "reason": "Shared action admission affects registered behaviors and control delegates."
+    },
+    "population": {
+      "tests": [
+        "spiderlings-population.test.js",
+        "spiderlings-hunting-grounds-layout.test.js",
+        "spiderlings-floor-upgrade.test.js"
+      ],
+      "localTests": [
+        "spiderlings-encounters.test.js",
+        "spiderlings-infestation.test.js",
+        "spiderlings-hunting-grounds.test.js"
+      ],
+      "scenarios": ["nest-weights", "squad-perk", "hunting-grounds", "population-failure", "normal-integration"],
+      "reason": "Population admission, initial crews and floor generation consume this budget."
+    },
+    "encounters": {
+      "tests": ["spiderlings-population.test.js", "spiderlings-webbing-enemy.test.js", "spiderlings-feedback.test.js"],
+      "localTests": [
+        "spiderlings-encounters.test.js",
+        "spiderlings-infestation.test.js",
+        "spiderlings-hunting-grounds.test.js",
+        "spiderlings-maid-hostility.test.js"
+      ],
+      "scenarios": ["nest-weights", "squad-perk", "hunting-grounds", "floor-weights"],
+      "reason": "Encounter registration controls native species admission and reinforcement."
+    },
+    "settings": {
+      "tests": [
+        "spiderlings-feedback.test.js",
+        "spiderlings-field-permits.test.js",
+        "spiderlings-floor-upgrade.test.js"
+      ],
+      "localTests": [
+        "spiderlings-encounters.test.js",
+        "spiderlings-infestation.test.js",
+        "spiderlings-hunting-grounds.test.js"
+      ],
+      "scenarios": ["feedback-ui", "field-permits", "floor-weights"],
+      "reason": "Settings consumers include field permits and floor/population configuration."
+    },
+    "floors": {
+      "tests": [
+        "spiderlings-floor-upgrade.test.js",
+        "spiderlings-debug-stairs.test.js",
+        "spiderlings-hunting-grounds-layout.test.js",
+        "spiderlings-population.test.js"
+      ],
+      "localTests": ["spiderlings-infestation.test.js", "spiderlings-hunting-grounds.test.js"],
+      "scenarios": ["hunting-grounds", "floor-objective-hints", "debug-stairs", "floor-weights"],
+      "reason": "Floor selection and saved objective transitions share native entry behavior."
+    },
+    "infestation": {
+      "tests": [
+        "spiderlings-population.test.js",
+        "spiderlings-floor-upgrade.test.js",
+        "spiderlings-debug-stairs.test.js"
+      ],
+      "localTests": ["spiderlings-infestation.test.js", "spiderlings-encounters.test.js"],
+      "scenarios": ["nest-weights", "floor-weights", "normal-integration"],
+      "reason": "Infestation placement, population and objective entry."
+    },
+    "hunting": {
+      "tests": [
+        "spiderlings-hunting-grounds-layout.test.js",
+        "spiderlings-population.test.js",
+        "spiderlings-floor-upgrade.test.js",
+        "spiderlings-debug-stairs.test.js"
+      ],
+      "localTests": ["spiderlings-hunting-grounds.test.js", "spiderlings-maid-hostility.test.js"],
+      "scenarios": [
+        "hunting-grounds",
+        "hunting-objective-entry",
+        "crew-native-duties",
+        "population-failure",
+        "floor-objective-hints",
+        "debug-stairs"
+      ],
+      "reason": "Hunting geometry, native faction crews and objective persistence."
+    },
+    "bestiary": {
+      "tests": ["spiderlings-feedback.test.js"],
+      "localTests": ["spiderlings-new-save-smoke.test.js"],
+      "scenarios": ["feedback-ui", "native-locales"],
+      "reason": "Discovery, journal portraits and localized entries."
+    },
+    "webcaster": {
+      "tests": [
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-webbing-webspray.test.js"],
+      "scenarios": ["webcaster", "orphan-spray", "npc-cooperation"],
+      "reason": "WebCaster cooperation and registered movement policy."
+    },
+    "combat": {
+      "tests": [
+        "spiderlings-mage-combat.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-npc-adhesion.test.js",
+        "spiderlings-npc-wrapping.test.js",
+        "spiderlings-spinner-npc-capture.test.js"
+      ],
+      "localTests": [
+        "spiderlings-combat.test.js",
+        "spiderlings-maid-hostility.test.js",
+        "spiderlings-webbing-webspray.test.js",
+        "spiderlings-npc-adhesion-native.test.js",
+        "spiderlings-npc-wrapping-native.test.js"
+      ],
+      "scenarios": ["npc-cooperation", "friendly-mage", "orphan-spray", "adhesion-offense", "wrapping-lifecycle"],
+      "reason": "Owned hit processing feeds silk, NPC control and species effects."
+    },
+    "adhesion": {
+      "tests": ["spiderlings-npc-adhesion.test.js", "spiderlings-mage-combat.test.js"],
+      "localTests": ["spiderlings-npc-adhesion-native.test.js", "spiderlings-combat.test.js"],
+      "scenarios": ["adhesion-offense", "adhesion-recovery", "npc-cooperation"],
+      "reason": "NPC silk accumulation and recovery through native damage."
+    },
+    "wrapping": {
+      "tests": [
+        "spiderlings-npc-wrapping.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js"
+      ],
+      "localTests": ["spiderlings-npc-wrapping-native.test.js", "spiderlings-combat.test.js"],
+      "scenarios": ["npc-cocoon-visuals", "wrapping-lifecycle", "hidden-wrapping", "persistent-recovery"],
+      "reason": "NPC wrapping admission, lifecycle and saved source transfer."
+    },
+    "mage-combat": {
+      "tests": [
+        "spiderlings-mage-combat.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-mage-spells.test.js"
+      ],
+      "localTests": ["spiderlings-mage-spells-native.test.js", "spiderlings-combat.test.js"],
+      "scenarios": ["friendly-mage", "npc-cooperation", "mage-timing", "mage-rivalry"],
+      "reason": "Mage hit/hostility behavior is consumed by player and NPC spell resolution."
+    },
+    "mage-runes": {
+      "tests": ["spiderlings-mage-runes.test.js", "spiderlings-spell-visuals.test.js"],
+      "localTests": ["spiderlings-mage-runes-native.test.js"],
+      "scenarios": ["rune-hit", "target-overlay", "owned-effects", "mage-timing", "mage-rivalry"],
+      "reason": "Rune placement, impacts, source ownership and delayed phases."
+    },
+    "mage-spells": {
+      "tests": [
+        "spiderlings-mage-spells.test.js",
+        "spiderlings-spell-visuals.test.js",
+        "spiderlings-webbing-enemy.test.js"
+      ],
+      "localTests": ["spiderlings-mage-spells-native.test.js"],
+      "scenarios": ["friendly-mage", "owned-effects", "mage-timing", "mage-rivalry"],
+      "reason": "Mage area spells and their delayed visual/control lifecycle."
+    },
+    "mage-visuals": {
+      "tests": ["spiderlings-mage-visuals.test.js", "spiderlings-feedback.test.js"],
+      "localTests": [],
+      "scenarios": ["mage-body", "mage-timing", "feedback-ui"],
+      "reason": "Mage model layering, casting phases and journal visibility."
+    },
+    "jumper": {
+      "tests": [
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-jumper-dash.test.js", "spiderlings-combat.test.js"],
+      "scenarios": ["normal-integration", "action-cadence", "spinner-crowded-control"],
+      "reason": "Native dash commitment, payment and interaction with shared yielding."
+    },
+    "models": {
+      "tests": [
+        "spiderlings-model-runtime.test.js",
+        "spiderlings-webbing-cutover.test.js",
+        "spiderlings-webbing-cocoon.test.js"
+      ],
+      "localTests": [
+        "spiderlings-webbing-lv1.test.js",
+        "spiderlings-webbing-lifecycle.test.js",
+        "spiderlings-webbing-atlas.test.js"
+      ],
+      "scenarios": ["basic", "normal-visuals", "feedback-blindfolds"],
+      "reason": "Equipment model registration, texture readiness and pose layers."
+    },
+    "webbing": {
+      "tests": [
+        "spiderlings-webbing-cutover.test.js",
+        "spiderlings-webbing-cocoon.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-weapons.test.js",
+        "spiderlings-weapon-webbing.test.js"
+      ],
+      "localTests": [
+        "spiderlings-webbing-lifecycle.test.js",
+        "spiderlings-webbing-lv1.test.js",
+        "spiderlings-webbing-webspray.test.js"
+      ],
+      "scenarios": [
+        "basic",
+        "escape-text-contract",
+        "native-escape",
+        "weapon-webbing",
+        "cocoon-vigil",
+        "feedback-blindfolds"
+      ],
+      "reason": "Shared silk rules are consumed by equipment, weapons and enemy effects."
+    },
+    "weapons": {
+      "tests": [
+        "spiderlings-weapons.test.js",
+        "spiderlings-weapon-webbing.test.js",
+        "spiderlings-webbing-enemy.test.js",
+        "spiderlings-spell-visuals.test.js"
+      ],
+      "localTests": ["spiderlings-combat.test.js"],
+      "scenarios": ["weapons", "weapon-webbing", "weapon-charge"],
+      "reason": "Weapon charge, conjured restraints, hit rewards and retained silk."
+    },
+    "field-layout": {
+      "tests": [
+        "spiderlings-spinner-passage-planner.test.js",
+        "spiderlings-spinner-passage.test.js",
+        "spiderlings-spinner-enclosure.test.js",
+        "spiderlings-spinner-ai.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": ["passage-sites", "field-project-lifecycle", "field-command"],
+      "reason": "Candidate topology and reachable worker/site selection."
+    },
+    "field-structure": {
+      "tests": [
+        "spiderlings-spinner-native-field.test.js",
+        "spiderlings-spinner-enclosure.test.js",
+        "spiderlings-spinner-passage.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-passage-planner.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js", "spiderlings-web-mobility-native.test.js"],
+      "scenarios": [
+        "wall",
+        "field-command",
+        "field-project-lifecycle",
+        "feedback-walls",
+        "web-breach",
+        "passage-sites",
+        "player-recovery",
+        "persistent-recovery"
+      ],
+      "reason": "Physical structure and payment are shared by construction, traversal and control."
+    },
+    "field-command": {
+      "tests": [
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-field-permits.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-perception.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": [
+        "field-command",
+        "field-reinforcement",
+        "saved-field-guard",
+        "spinner-crowded-control",
+        "spinner-maintenance",
+        "action-cadence",
+        "field-residency"
+      ],
+      "reason": "Unique command, support loans and protected-source staffing."
+    },
+    "field-observation": {
+      "tests": [
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-perception.test.js",
+        "spiderlings-field-permits.test.js",
+        "spiderlings-spinner-passage-planner.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-recovery.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": [
+        "spinner-perception",
+        "spinner-regressions",
+        "field-command",
+        "field-reinforcement",
+        "passage-sites",
+        "field-project-lifecycle"
+      ],
+      "reason": "Observation, candidate and tactical facts feed project and duty consumers."
+    },
+    "field-duties": {
+      "tests": [
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-native-actions.test.js",
+        "spiderlings-spinner-perception.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": [
+        "crew-native-duties",
+        "action-cadence",
+        "spinner-maintenance",
+        "spinner-crowded-control",
+        "cocoon-vigil"
+      ],
+      "reason": "One duty must govern every native phase and source transition."
+    },
+    "field-permits": {
+      "tests": ["spiderlings-field-permits.test.js", "spiderlings-spinner-ai.test.js"],
+      "localTests": [],
+      "scenarios": ["field-permits"],
+      "reason": "Permit and configured-limit decisions preserve invested fields and gate new deployments."
+    },
+    "field-staffing": {
+      "tests": [
+        "spiderlings-field-permits.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-perception.test.js"
+      ],
+      "localTests": [],
+      "scenarios": ["field-reinforcement", "field-command", "spinner-maintenance", "field-residency"],
+      "reason": "Readiness/workforce demand affects support requests and source accounting."
+    },
+    "field-work": {
+      "tests": [
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-spinner-native-field.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-npc-recovery.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": [
+        "spinner-work",
+        "spinner-maintenance",
+        "spinner-crowded-control",
+        "action-cadence",
+        "unfinished-field-entry"
+      ],
+      "reason": "Reservations, maintenance admission, work obstruction and native payment."
+    },
+    "field-lifecycle": {
+      "tests": [
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-field-permits.test.js",
+        "spiderlings-spinner-native-field.test.js",
+        "spiderlings-spinner-enclosure.test.js",
+        "spiderlings-spinner-rollout.test.js",
+        "spiderlings-field-custody.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": [
+        "field-project-lifecycle",
+        "field-permits",
+        "saved-field-guard",
+        "passage-sites",
+        "field-custody",
+        "field-residency"
+      ],
+      "reason": "Planning investment, replacement rollback, restoration and residual retirement."
+    },
+    "field-rollout": {
+      "tests": [
+        "spiderlings-spinner-rollout.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-enclosure.test.js",
+        "spiderlings-field-permits.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": ["spinner-outside", "spinner-inside", "field-permits", "normal-integration"],
+      "reason": "Map-generation adoption and authored scene controls use real field deployment."
+    },
+    "field-art": {
+      "tests": ["spiderlings-spinner-art.test.js", "spiderlings-spinner-native-field.test.js"],
+      "localTests": ["spiderlings-webbing-atlas.test.js"],
+      "scenarios": ["spinner-art", "feedback-walls", "normal-visuals"],
+      "reason": "Directional field/capture artwork and native projection."
+    },
+    "field-legacy": {
+      "tests": [
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-spinner-rollout.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": ["spinner-outside", "spinner-inside", "capture-reload"],
+      "reason": "Legacy training fields retain their native compatibility route."
+    },
+    "capture": {
+      "tests": [
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-spinner-work-obstruction.test.js",
+        "spiderlings-npc-wrapping.test.js",
+        "spiderlings-spinner-npc-recovery.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js", "spiderlings-npc-wrapping-native.test.js"],
+      "scenarios": ["spinner-inside", "capture-reload", "spinner-maintenance", "npc-cooperation", "wrapping-lifecycle"],
+      "reason": "Capture admission, sources, paid wrapping and maintenance release."
+    },
+    "recovery": {
+      "tests": [
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-npc-recovery.test.js",
+        "spiderlings-spinner-capture.test.js",
+        "spiderlings-spinner-npc-capture.test.js",
+        "spiderlings-spinner-ai.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": ["player-recovery", "persistent-recovery", "web-breach"],
+      "reason": "Player/NPC relay, movement debt and native source/destination transitions."
+    },
+    "mobility": {
+      "tests": [
+        "spiderlings-web-mobility.test.js",
+        "spiderlings-spinner-native-field.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-web-mobility-native.test.js", "spiderlings-spinner-native-contract.test.js"],
+      "scenarios": ["web-mobility", "web-breach", "action-cadence", "passage-sites"],
+      "reason": "Shared native web routing affects species movement and paid crossings."
+    },
+    "spell-visuals": {
+      "tests": [
+        "spiderlings-spell-visuals.test.js",
+        "spiderlings-mage-runes.test.js",
+        "spiderlings-mage-spells.test.js",
+        "spiderlings-weapon-webbing.test.js"
+      ],
+      "localTests": [],
+      "scenarios": ["rune-hit", "target-overlay", "owned-effects", "npc-cocoon-visuals", "normal-visuals"],
+      "reason": "Shared visual consumers cover spell, weapon and NPC owned effects."
+    },
+    "translations": {
+      "tests": [
+        "spiderlings-translation-contract.test.js",
+        "spiderlings-text-audit.test.js",
+        "spiderlings-feedback.test.js"
+      ],
+      "localTests": [],
+      "scenarios": ["escape-text-contract", "native-locales"],
+      "reason": "Localized text and native placeholder consumers."
+    },
+    "packaging": {
+      "tests": [
+        "spiderlings-release-package.test.js",
+        "spiderlings-release-version.test.js",
+        "spiderlings-model-runtime.test.js",
+        "spiderlings-runtime-boundaries.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-webbing-atlas.test.js", "spiderlings-new-save-smoke.test.js"],
+      "scenarios": ["basic", "native-locales"],
+      "reason": "Manifest/assets must retain loader order and the explicit package allowlist."
+    },
+    "dependency-config": {
+      "tests": "*",
+      "localTests": "*",
+      "scenarios": [],
+      "reason": "Node dependencies and test infrastructure can affect every maintenance test."
+    },
+    "impact-tools": {
+      "tests": ["spiderlings-test-impact.test.js", "spiderlings-module-contracts.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Affected-test selection and ownership checker contracts."
+    },
+    "compatibility-tools": {
+      "tests": ["spiderlings-kd-compatibility.test.js", "spiderlings-delivery-evidence.test.js"],
+      "localTests": [],
+      "scenarios": "*",
+      "reason": "Native environment/runner changes can affect every state group."
+    },
+    "delivery-tools": {
+      "tests": ["spiderlings-delivery-evidence.test.js", "spiderlings-diagnostics.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Maintenance consumers exercise delivery-tools behavior."
+    },
+    "diagnostics": {
+      "tests": ["spiderlings-diagnostics.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Maintenance consumers exercise diagnostics behavior."
+    },
+    "closeout": {
+      "tests": ["spiderlings-delivery-closeout.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Maintenance consumers exercise closeout behavior."
+    },
+    "publication": {
+      "tests": ["spiderlings-publication.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Maintenance consumers exercise publication behavior."
+    },
+    "worktree-safety": {
+      "tests": ["spiderlings-worktree-safety.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Maintenance consumers exercise worktree-safety behavior."
+    },
+    "repository-policy": {
+      "tests": [
+        "spiderlings-test-impact.test.js",
+        "spiderlings-module-contracts.test.js",
+        "spiderlings-release-package.test.js",
+        "spiderlings-release-version.test.js",
+        "spiderlings-worktree-safety.test.js"
+      ],
+      "localTests": [],
+      "scenarios": [],
+      "policyTests": true,
+      "reason": "Repository policy and workflow consumers need policy, package and Windows safety contracts."
+    },
+    "field-custody": {
+      "tests": [
+        "spiderlings-field-custody.test.js",
+        "spiderlings-spinner-recovery.test.js",
+        "spiderlings-spinner-ai.test.js",
+        "spiderlings-native-actions.test.js"
+      ],
+      "localTests": ["spiderlings-spinner-native-contract.test.js"],
+      "scenarios": [
+        "player-recovery",
+        "persistent-recovery",
+        "field-command",
+        "field-custody",
+        "field-commitments",
+        "mage-rivalry"
+      ],
+      "reason": "Field prey ownership, explicit contact/defense duties and native recovery execution."
+    },
+    "historical-design": {
+      "tests": [],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Retired offline planning/demo sources have no runtime, package, or registered-test consumers. Preserve the historical HTML and review documentation links; repository checks still apply."
+    }
+  },
+  "files": {
+    "SpiderlingsCore.js": ["foundation"],
+    "Spiderlings.js": ["catalogue", "field-custody"],
+    "SpiderlingsNativeActions.js": ["native-actions", "field-custody"],
+    "SpiderlingsSpinnerRuntime.js": ["native-actions", "field-custody"],
+    "SpiderlingsPopulation.js": ["population"],
+    "SpiderlingsEncounters.js": ["encounters"],
+    "SpiderlingsSettings.js": ["settings"],
+    "SpiderlingsFloorSelection.js": ["floors"],
+    "SpiderlingsInfestation.js": ["infestation"],
+    "SpiderlingsHuntingGrounds.js": ["hunting"],
+    "SpiderlingsHuntingGroundsLayout.js": ["hunting"],
+    "SpiderlingsBestiary.js": ["bestiary"],
+    "SpiderlingsWebCaster.js": ["webcaster"],
+    "SpiderlingsCombat.js": ["combat"],
+    "SpiderlingsNPCAdhesion.js": ["adhesion"],
+    "SpiderlingsNPCWrapping.js": ["wrapping"],
+    "SpiderlingsMage.js": ["mage-combat"],
+    "SpiderlingsMageRunes.js": ["mage-runes"],
+    "SpiderlingsMageSpells.js": ["mage-spells"],
+    "SpiderlingsMageVisuals.js": ["mage-visuals"],
+    "SpiderlingsJumperDash.js": ["jumper", "field-custody"],
+    "SpiderlingsModelRuntime.js": ["models"],
+    "SpiderlingsWebbingModels.js": ["models"],
+    "SpiderlingsWebbingData.js": ["webbing"],
+    "SpiderlingsWebbingRules.js": ["webbing"],
+    "SpiderlingsWebbing.js": ["webbing"],
+    "SpiderlingsWeapons.js": ["weapons"],
+    "SpiderlingsWeaponWebbing.js": ["weapons"],
+    "SpiderlingsSpinnerPassagePlanner.js": ["field-layout"],
+    "SpiderlingsSpinnerTopology.js": ["field-structure"],
+    "SpiderlingsSpinnerNativeField.js": ["field-structure"],
+    "SpiderlingsFieldCommand.js": ["field-command", "field-custody"],
+    "SpiderlingsSpinnerAI.js": ["field-observation", "field-custody"],
+    "SpiderlingsSpinnerDuties.js": ["field-duties", "field-custody"],
+    "SpiderlingsFieldProjects.js": [
+      "field-permits",
+      "field-staffing",
+      "field-work",
+      "field-lifecycle",
+      "field-custody"
+    ],
+    "SpiderlingsSpinnerRollout.js": ["field-rollout"],
+    "SpiderlingsSpinnerScenarios.js": ["field-rollout"],
+    "SpiderlingsSpinnerArt.js": ["field-art"],
+    "SpiderlingsSpinnerField.js": ["field-legacy"],
+    "SpiderlingsSpinnerCapture.js": ["capture", "field-custody"],
+    "SpiderlingsSpinnerNPCCapture.js": ["capture"],
+    "SpiderlingsSpinnerRecoveryCore.js": ["recovery"],
+    "SpiderlingsSpinnerRecovery.js": ["recovery", "field-custody"],
+    "SpiderlingsSpinnerNPCRecovery.js": ["recovery"],
+    "SpiderlingsWebMobility.js": ["mobility"],
+    "SpiderlingsSpellVisuals.js": ["spell-visuals"],
+    "mod.json": ["foundation", "packaging"],
+    "tools/run-spiderlings-tests.js": ["impact-tools"],
+    "tools/test-suites.json": ["impact-tools"],
+    "tools/test-impact.json": ["impact-tools"],
+    "tools/test-impact.js": ["impact-tools"],
+    "tools/module-contracts.json": ["impact-tools"],
+    "tools/check-spiderlings-modules.js": ["impact-tools"],
+    "package-lock.json": ["dependency-config"],
+    "package.json": ["dependency-config"],
+    "tools/report-spiderlings-delivery.js": ["delivery-tools"],
+    "tools/delivery-commands.js": ["delivery-tools"],
+    "tools/save-diagnostics.js": ["diagnostics"],
+    "tools/replay-spiderlings-save.js": ["diagnostics"],
+    "tools/evidence-summary.js": ["diagnostics"],
+    "tools/task-runner.js": ["diagnostics"],
+    "tools/audit-delivery-closeout.js": ["closeout"],
+    "tools/verify-spiderlings-publication.js": ["publication"],
+    "tools/remove-safe-worktree.ps1": ["worktree-safety"],
+    "tools/build-spiderlings-release.ps1": ["packaging"],
+    "tools/build-spiderlings-atlas.py": ["packaging"],
+    "tools/check-spiderlings-mod.js": ["packaging"],
+    "tools/release-version.js": ["packaging"],
+    "tools/requirements-atlas.txt": ["packaging"],
+    "tools/translation-contract.js": ["translations"],
+    "tools/escape-text-contract.js": ["translations"],
+    "tools/audit-spiderlings-text.js": ["translations"],
+    "tools/reference-inputs.js": ["dependency-config"],
+    "tools/watch-spiderlings-mod.ps1": ["dependency-config"],
+    "tools/measure-spinner-rollout.js": ["field-rollout"],
+    "tools/verify-kd-compatibility.js": ["compatibility-tools"],
+    "eslint.config.mjs": ["repository-policy"],
+    "SpiderlingsFieldCustody.js": ["field-custody"],
+    "docs/spiderlings-spinner-capture/build-plan.mjs": ["historical-design"],
+    "docs/spiderlings-spinner-capture/verify-plan.mjs": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/content.mjs": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/plan.css": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/plan.js": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/simulator.html": ["historical-design"],
+    ".prettierignore": ["repository-policy"],
+    "docs/spiderlings-spinner-capture/production-plan.zh-CN.html": ["historical-design"]
+  },
+  "symbols": {
+    "SpiderlingsFieldProjects.js": {
+      "field-permits": ["MAX_PROJECTS", "limit", "permits", "capacity"],
+      "field-staffing": ["readiness", "workforce"],
+      "field-work": [
+        "beginWork",
+        "workFor",
+        "proposeCaptureMaintenance",
+        "reserveActions",
+        "reserveRallyPositions",
+        "performAssignment",
+        "executeDuty",
+        "refreshWork",
+        "prepareWork",
+        "reserveWork"
+      ],
+      "field-lifecycle": [
+        "replaceProject",
+        "replacementSignature",
+        "betterReplacement",
+        "selectSavedPlan",
+        "activatePlan",
+        "deployPrebuilt",
+        "prepareTurn",
+        "invalidate",
+        "abandon",
+        "expandPlan",
+        "adoptExistingTopology",
+        "performAssignment",
+        "executeDuty",
+        "refreshWork",
+        "prepareWork"
+      ]
+    }
+  },
+  "prefixes": {
+    "Models/": ["models"],
+    "DisplacementMaps/": ["models"],
+    "TextureAtlas/": ["models", "field-art"],
+    "Enemies/": ["field-art", "mage-visuals", "bestiary"],
+    "Bullets/": ["webcaster", "spell-visuals", "field-art"],
+    "Items/": ["weapons"],
+    "UI/": ["floors", "bestiary"],
+    "Sounds/": ["webbing"],
+    "tools/compatibility/": ["compatibility-tools"],
+    ".github/": ["repository-policy"],
+    "docs/prototypes/spinner-topology/": ["historical-design"]
+  },
+  "patterns": [
+    {
+      "pattern": "^Spiderlings(CN|DE|ES|JP|KR|PL|RU)\\.csv$",
+      "profiles": ["translations"]
+    }
+  ],
+  "runtimeCommon": {
+    "tests": ["spiderlings-module-contracts.test.js", "spiderlings-webbing-cutover.test.js"],
+    "localTests": ["spiderlings-new-save-smoke.test.js"]
+  }
+}

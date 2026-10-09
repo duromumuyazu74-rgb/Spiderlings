@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Spinner web fields · Topology prototype</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #111b18;
+            --panel: #192822;
+            --line: #3c5146;
+            --ink: #e7e4d3;
+            --muted: #a7b7aa;
+            --accent: #d7d78a;
+            --red: #eaaa8d;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font:
+                15px/1.6 "Segoe UI",
+                "Microsoft YaHei",
+                sans-serif;
+        }
+        header {
+            padding: 26px 32px 20px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            gap: 32px;
+            align-items: start;
+            justify-content: space-between;
+        }
+        h1 {
+            font-family: Georgia, "Microsoft YaHei", serif;
+            font-size: 30px;
+            font-weight: 400;
+            line-height: 1.2;
+            margin: 7px 0 12px;
+        }
+        p {
+            margin: 8px 0;
+        }
+        small,
+        .muted {
+            color: var(--muted);
+        }
+        .eyebrow {
+            letter-spacing: 0.18em;
+            font:
+                12px Consolas,
+                monospace;
+            color: var(--accent);
+        }
+        .badge {
+            border: 1px solid var(--line);
+            padding: 8px 12px;
+            white-space: nowrap;
+        }
+        main {
+            display: grid;
+            grid-template-columns: 280px minmax(420px, 1fr) 300px;
+            gap: 20px;
+            padding: 22px 24px;
+            align-items: start;
+        }
+        section,
+        aside {
+            min-width: 0;
+        }
+        h2 {
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.07em;
+            margin: 0 0 12px;
+            color: var(--accent);
+        }
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .scene-list {
+            display: grid;
+            gap: 4px;
+        }
+        .scene-list button {
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+        }
+        .scene-list button.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: #303d2e;
+        }
+        button,
+        select,
+        input {
+            font: inherit;
+            color: var(--ink);
+            background: #1e3028;
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            padding: 8px 10px;
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover {
+            background: #34493b;
+            border-color: var(--muted);
+        }
+        button:focus-visible,
+        select:focus-visible,
+        input:focus-visible,
+        canvas:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+        }
+        button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+        .primary {
+            background: var(--accent);
+            color: #1d281b;
+            border-color: var(--accent);
+        }
+        .primary:hover {
+            background: #ebecad;
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+        }
+        label {
+            display: block;
+            color: var(--muted);
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        label input,
+        label select {
+            width: 100%;
+            display: block;
+            margin-top: 3px;
+        }
+        label.inline {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            margin: 0;
+        }
+        label.inline input {
+            width: auto;
+            margin: 0;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+        .turn {
+            font:
+                26px Consolas,
+                monospace;
+            color: var(--accent);
+        }
+        #map {
+            width: 100%;
+            display: block;
+            border: 1px solid var(--line);
+            background: #0b120e;
+            touch-action: manipulation;
+            cursor: crosshair;
+            image-rendering: pixelated;
+        }
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--muted);
+            margin: 9px 0 17px;
+        }
+        .legend span:before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: var(--c);
+            margin-right: 5px;
+        }
+        dl {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 6px;
+            font-size: 13px;
+        }
+        dt {
+            color: var(--muted);
+        }
+        dd {
+            margin: 0;
+            overflow-wrap: anywhere;
+            max-width: 170px;
+        }
+        .callout {
+            border-left: 3px solid var(--accent);
+            padding: 9px 12px;
+            background: #26382d;
+            font-size: 13px;
+        }
+        .warning {
+            color: var(--red);
+        }
+        .scroll {
+            max-height: 285px;
+            overflow: auto;
+        }
+        table {
+            width: 100%;
+            font-size: 12px;
+            border-collapse: collapse;
+        }
+        th,
+        td {
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+        }
+        th {
+            color: var(--muted);
+            font-weight: 400;
+        }
+        tr.chosen {
+            color: var(--accent);
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        .steps button {
+            font-size: 12px;
+            padding: 9px 6px;
+        }
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .tabs button {
+            font-size: 12px;
+        }
+        .tabs button.active {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        #log {
+            font-size: 12px;
+            max-height: 250px;
+            overflow: auto;
+            padding: 0;
+            list-style: none;
+        }
+        #log li {
+            border-bottom: 1px solid var(--line);
+            padding: 7px 0;
+        }
+        #log time {
+            color: var(--accent);
+            font-family: Consolas, monospace;
+            margin-right: 8px;
+        }
+        details {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        summary {
+            cursor: pointer;
+        }
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 11px;
+            max-height: 230px;
+            overflow: auto;
+        }
+        footer {
+            padding: 14px 32px 26px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        #candidateSelect {
+            width: 100%;
+            font-size: 12px;
+        }
+        #notice {
+            min-height: 26px;
+            font-size: 13px;
+            color: var(--red);
+        }
+        .check {
+            border: 1px solid var(--line);
+            padding: 6px;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        .check.ok {
+            color: #bddda8;
+        }
+        .file {
+            display: none;
+        }
+        @media (max-width: 1150px) {
+            main {
+                grid-template-columns: 235px minmax(350px, 1fr);
+            }
+            .right {
+                grid-column: 1/-1;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+        }
+        @media (max-width: 680px) {
+            header {
+                padding: 20px;
+                display: block;
+            }
+            header .badge {
+                display: inline-block;
+                margin-top: 10px;
+            }
+            main {
+                display: flex;
+                flex-direction: column;
+                padding: 12px;
+                gap: 10px;
+            }
+            main > aside,
+            main > section {
+                width: 100%;
+            }
+            .scene-list {
+                grid-template-columns: 1fr 1fr;
+            }
+            .scene-list button {
+                font-size: 12px;
+                padding: 6px;
+            }
+            .right {
+                display: block;
+            }
+            .steps {
+                grid-template-columns: 1fr 1fr;
+            }
+            h1 {
+                font-size: 25px;
+            }
+            .panel {
+                padding: 12px;
+            }
+            .toolbar {
+                align-items: start;
+            }
+            #map {
+                min-height: 200px;
+            }
+        }
+    </style>
+    <header>
+        <div>
+            <div class="eyebrow">SPINNER / FIELD STUDIES / 01</div>
+            <h1>Web field laboratory</h1>
+            <p>
+                Choose sites at doors, junctions and rooms. Inspect construction, shared physical segments, closure and
+                breach paths.
+            </p>
+            <small
+                >Disposable topology prototype. Native capture combat, recovery dragging and final balance are not
+                integrated.</small
+            >
+            <p class="callout" lang="en">
+                Model limits: fixed lure, supplied groups, static original occupants, simplified eight-way movement,
+                conservative protected cells and injected debug damage. No native combat or multi-source leash
+                simulation.
+            </p>
+        </div>
+        <div class="badge">Offline single file · 2026.09.21</div>
+    </header>
+    <main>
+        <aside>
+            <div class="panel">
+                <h2>01 / Scenarios</h2>
+                <div id="scenes" class="scene-list"></div>
+                <details>
+                    <summary>Native KD snapshots</summary>
+                    <div id="nativeScenes" class="scene-list"></div>
+                </details>
+                <label>Planning seed<input id="seed" value="spinner-01" /></label
+                ><label>Spinner count<input id="count" type="number" value="4" min="2" max="8" /></label>
+                <div class="controls">
+                    <button id="reset">Reanalyze</button><button id="importMap">Import map snapshot</button>
+                </div>
+                <input class="file" id="mapFile" type="file" accept=".json" /><small
+                    >Debug actors occupy legal cells. Original native actors remain static obstacles.</small
+                >
+            </div>
+            <div class="panel">
+                <h2>02 / Candidate sites</h2>
+                <p id="candidateSummary"></p>
+                <select id="candidateSelect" aria-label="Preview candidate"></select>
+                <div class="controls"><button class="primary" id="plan">Adopt candidate</button></div>
+                <div id="score" class="muted"></div>
+                <div class="scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Shape</th>
+                                <th>Core</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidates"></tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
+        <section>
+            <div class="toolbar">
+                <div>
+                    <h2 id="sceneTitle"></h2>
+                    <p id="sceneDesc" class="muted"></p>
+                </div>
+                <div class="turn" id="turn">T 000</div>
+            </div>
+            <canvas
+                id="map"
+                width="930"
+                height="630"
+                tabindex="0"
+                aria-label="Field map. Select a cell, walk a step, or inject single-cell or area damage."
+            ></canvas>
+            <div class="legend">
+                <span style="--c: #43584b">Floor</span><span style="--c: #d7d78a">Anchors / candidates</span
+                ><span style="--c: #f0eddf">Built links</span><span style="--c: #7dbaa0">Spinner</span
+                ><span style="--c: #eda585">Target</span><span style="--c: #b48191">Protected cells</span
+                ><span style="--c: #efb995">Non-anchor graph junction</span><span style="--c: #61a4a8">Exit route</span>
+            </div>
+            <div class="controls">
+                <button class="primary" id="step">Advance one turn</button
+                ><button id="settle">Advance to ready / sealed</button><button id="enter">Place target in core</button
+                ><button id="overlap">Add shared plan</button><button id="removeActor">Remove one builder</button
+                ><button id="vacateLure">Vacate lure (debug)</button>
+            </div>
+            <div class="controls">
+                <select id="mode" aria-label="Map action">
+                    <option value="inspect">Inspect cell</option>
+                    <option value="move">Walk one step</option>
+                    <option value="attack">Inject single-cell damage</option>
+                    <option value="aoe">Inject 3×3 area damage</option>
+                    <option value="obstacle">Toggle wall</option></select
+                ><label class="inline"
+                    >Damage<input id="damage" type="number" min="0.1" step="0.5" value="1" style="width: 66px" /></label
+                ><label class="inline"><input id="showReach" type="checkbox" checked />Reachable area</label
+                ><label class="inline"><input id="showPaths" type="checkbox" checked />Builder routes</label>
+                <label class="inline"><input id="aware" type="checkbox" />Alerted (debug)</label>
+            </div>
+            <div id="notice" role="status" aria-live="polite"></div>
+            <div class="panel">
+                <h2>03 / Guided walkthroughs</h2>
+                <div class="callout">
+                    <strong>Reference room timing</strong>
+                    <div id="timingComparison"></div>
+                    <small
+                        >Same layout. On-site runs start workers at legal work positions; arrival-inclusive runs retain
+                        the original spawns.</small
+                    >
+                </div>
+                <div class="tabs" id="guideTabs"></div>
+                <p id="guideDesc"></p>
+                <div class="steps" id="guideSteps"></div>
+            </div>
+            <div class="panel">
+                <h2>Builders</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Group / role</th>
+                            <th>Position</th>
+                            <th>Action this turn</th>
+                            <th>Work target</th>
+                        </tr>
+                    </thead>
+                    <tbody id="actors"></tbody>
+                </table>
+                <small
+                    >All unaware actors build. Once alerted, one actor waits as the lure. Construction costs 1 budget
+                    point; movement and repair retain 1.5. At most one operation occurs per actor per turn. Perception,
+                    self-defense, native combat and bait movement remain outside this experiment.</small
+                >
+            </div>
+        </section>
+        <aside class="right">
+            <div class="panel">
+                <h2>Field state</h2>
+                <div id="status"></div>
+                <div id="checks"></div>
+                <div class="callout" id="admission"></div>
+                <h2 style="margin-top: 18px">Selected cell</h2>
+                <div id="selection">Select a cell to inspect link HP and ownership.</div>
+                <div class="controls">
+                    <button id="export">Export state</button><button id="restore">Restore state</button>
+                </div>
+                <input class="file" id="stateFile" type="file" accept=".json" />
+                <details>
+                    <summary>Full state / provenance</summary>
+                    <pre id="raw"></pre>
+                </details>
+            </div>
+            <div class="panel">
+                <h2>Action log</h2>
+                <ol id="log"></ol>
+            </div>
+        </aside>
+    </main>
+    <footer>
+        Geometry only grants admission. Capture contests, independent leg bags, multi-source leashes and NPC
+        reinforcement require a later native KD stage. Damage controls bypass native range, tools and stamina checks.
+    </footer>
+    <script id="native-data" type="application/json">
+        __SNAPSHOTS__
+    </script>
+    <script id="topology-engine">
+        __ENGINE__;
+    </script>
+    <script id="pacing-data" type="application/json">
+        __PACING__
+    </script>
+    <script>
+        __UI__;
+    </script>
+</html>

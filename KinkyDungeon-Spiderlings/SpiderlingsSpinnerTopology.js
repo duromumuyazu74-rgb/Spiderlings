@@ -1,0 +1,1802 @@
+"use strict";
+
+// JSON-only field geometry and shared durability. Native entities are projections owned by the adapter.
+(() => {
+    const api = globalThis.Spiderlings,
+        VERSION = 2,
+        ANCHOR_HP = 2,
+        OWNERLESS_TURNS = 20,
+        REBUILD_TURNS = 4;
+    const clone = (value) => JSON.parse(JSON.stringify(value));
+    const key = (cell) => `${cell.x},${cell.y}`;
+    const point = (value) => {
+        if (typeof value === "string") {
+            const [x, y] = value.split(",").map(Number);
+            return { x, y };
+        }
+        return { x: value.x, y: value.y };
+    };
+    const sameCell = (a, b) => a.x === b.x && a.y === b.y;
+    const unique = (values) => Array.from(new Set(values));
+    const ownerKey = (owners) => [...owners].sort().join("+");
+    const edgeKey = (a, b) => [a, b].sort().join("|");
+    const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+    const directions = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 },
+        { x: 1, y: 1 },
+        { x: 1, y: -1 },
+        { x: -1, y: 1 },
+        { x: -1, y: -1 },
+    ];
+
+    function cellsBetween(a, b, includeEnds = false) {
+        if (a.x !== b.x && a.y !== b.y) throw new Error("Spinner boundaries must be axis-aligned.");
+        const cells = [],
+            dx = Math.sign(b.x - a.x),
+            dy = Math.sign(b.y - a.y),
+            length = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)),
+            start = includeEnds ? 0 : 1,
+            end = includeEnds ? length : length - 1;
+        for (let index = start; index <= end; index++) cells.push({ x: a.x + dx * index, y: a.y + dy * index });
+        return cells;
+    }
+
+    function boundaryCells(vertices, closed = true) {
+        const cells = [];
+        for (let index = 0; index < (closed ? vertices.length : vertices.length - 1); index++)
+            cells.push(...cellsBetween(vertices[index], vertices[(index + 1) % vertices.length], true));
+        return unique(cells.map(key)).map(point);
+    }
+
+    function segmentsIntersect(a, b, c, d) {
+        const verticalAB = a.x === b.x,
+            verticalCD = c.x === d.x;
+        if (verticalAB !== verticalCD) {
+            const verticalA = verticalAB ? a : c,
+                verticalB = verticalAB ? b : d,
+                horizontalA = verticalAB ? c : a,
+                horizontalB = verticalAB ? d : b;
+            return (
+                verticalA.x >= Math.min(horizontalA.x, horizontalB.x) &&
+                verticalA.x <= Math.max(horizontalA.x, horizontalB.x) &&
+                horizontalA.y >= Math.min(verticalA.y, verticalB.y) &&
+                horizontalA.y <= Math.max(verticalA.y, verticalB.y)
+            );
+        }
+        if (verticalAB && a.x === c.x)
+            return Math.max(Math.min(a.y, b.y), Math.min(c.y, d.y)) <= Math.min(Math.max(a.y, b.y), Math.max(c.y, d.y));
+        if (!verticalAB && a.y === c.y)
+            return Math.max(Math.min(a.x, b.x), Math.min(c.x, d.x)) <= Math.min(Math.max(a.x, b.x), Math.max(c.x, d.x));
+        return false;
+    }
+
+    function polygonInterior(vertices) {
+        const xs = vertices.map((cell) => cell.x),
+            ys = vertices.map((cell) => cell.y),
+            boundary = new Set(boundaryCells(vertices).map(key)),
+            cells = [];
+        for (let y = Math.min(...ys) + 1; y < Math.max(...ys); y++)
+            for (let x = Math.min(...xs) + 1; x < Math.max(...xs); x++) {
+                let inside = false;
+                for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                    const a = vertices[i],
+                        b = vertices[j];
+                    if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+                }
+                if (inside && !boundary.has(`${x},${y}`)) cells.push({ x, y });
+            }
+        return cells;
+    }
+
+    function connected(cells) {
+        if (!cells.length) return false;
+        const remaining = new Set(cells.map(key)),
+            queue = [cells[0]];
+        remaining.delete(key(cells[0]));
+        for (let index = 0; index < queue.length; index++)
+            for (const direction of directions.slice(0, 4)) {
+                const next = { x: queue[index].x + direction.x, y: queue[index].y + direction.y };
+                if (remaining.delete(key(next))) queue.push(next);
+            }
+        return remaining.size === 0;
+    }
+
+    function mapHas(map, collection, cell) {
+        return (map?.[collection] || []).includes(key(cell));
+    }
+
+    function validatePolygon(input) {
+        const vertices = (input.vertices || []).map(point),
+            map = input.map;
+        if (vertices.length < 4) return { valid: false, reason: "vertices" };
+        for (let index = 0; index < vertices.length; index++) {
+            const a = vertices[index],
+                b = vertices[(index + 1) % vertices.length];
+            if (sameCell(a, b) || (a.x !== b.x && a.y !== b.y)) return { valid: false, reason: "orthogonal" };
+            for (let other = index + 1; other < vertices.length; other++) {
+                if (other === index || other === index + 1 || (index === 0 && other === vertices.length - 1)) continue;
+                if (segmentsIntersect(a, b, vertices[other], vertices[(other + 1) % vertices.length]))
+                    return { valid: false, reason: "simple" };
+            }
+        }
+        const boundary = boundaryCells(vertices),
+            interior = polygonInterior(vertices),
+            xs = vertices.map((cell) => cell.x),
+            ys = vertices.map((cell) => cell.y),
+            bounds = {
+                left: Math.min(...xs),
+                top: Math.min(...ys),
+                right: Math.max(...xs),
+                bottom: Math.max(...ys),
+            };
+        bounds.width = bounds.right - bounds.left + 1;
+        bounds.height = bounds.bottom - bounds.top + 1;
+        const interiorWidth = bounds.right - bounds.left - 1,
+            interiorHeight = bounds.bottom - bounds.top - 1;
+        if (interiorWidth < 1 || interiorHeight < 1 || bounds.width > 13 || bounds.height > 13)
+            return { valid: false, reason: "dimensions" };
+        if (!connected(interior)) return { valid: false, reason: "interior" };
+        if (
+            map &&
+            [...boundary, ...interior].some((cell) => !mapHas(map, "floor", cell) || mapHas(map, "locked", cell))
+        )
+            return { valid: false, reason: "terrain" };
+        if (map && [...boundary, ...interior].some((cell) => mapHas(map, "protected", cell)))
+            return { valid: false, reason: "protected" };
+        if (map && boundary.some((cell) => mapHas(map, "occupied", cell))) return { valid: false, reason: "occupied" };
+        const coreFree = (center) =>
+            interior.some((cell) => sameCell(cell, center)) && !mapHas(map, "protected", center);
+        const preferred = input.core && point(input.core),
+            candidates = interior.filter(coreFree).sort((a, b) => {
+                const center = { x: (bounds.left + bounds.right) / 2, y: (bounds.top + bounds.bottom) / 2 };
+                return distance(a, center) - distance(b, center) || a.y - b.y || a.x - b.x;
+            }),
+            core = preferred && coreFree(preferred) ? preferred : candidates[0],
+            gate = point(input.gate || {}),
+            gateKey = key(gate),
+            vertexKeys = new Set(vertices.map(key));
+        if (!core) return { valid: false, reason: "core" };
+        if (!boundary.some((cell) => sameCell(cell, gate)) || vertexKeys.has(gateKey))
+            return { valid: false, reason: "gate" };
+        const edge = vertices.findIndex((vertex, index) =>
+            cellsBetween(vertex, vertices[(index + 1) % vertices.length], true).some((cell) => sameCell(cell, gate)),
+        );
+        if (edge < 0 || cellsBetween(vertices[edge], vertices[(edge + 1) % vertices.length], true).length < 3)
+            return { valid: false, reason: "gate-edge" };
+        return { valid: true, vertices, boundary, interior, bounds, core, gate };
+    }
+
+    function validatePassage(input) {
+        const interior = unique((input.interiorCells || []).map(key)).map(point),
+            walls = unique((input.nativeWallCells || []).map(key)).map(point),
+            gates = (input.gates || []).map((gate, index) => ({
+                id: gate.id || `${input.fieldId}:gate:${index}`,
+                cells: unique((gate.cells || []).map(key)).map(point),
+            })),
+            map = input.map,
+            gateCells = gates.flatMap((gate) => gate.cells),
+            all = [...interior, ...walls, ...gateCells],
+            within = (cell) =>
+                Number.isInteger(cell.x) &&
+                Number.isInteger(cell.y) &&
+                cell.x > 0 &&
+                cell.y > 0 &&
+                cell.x < map?.width - 1 &&
+                cell.y < map?.height - 1;
+        if (!interior.length || !connected(interior)) return { valid: false, reason: "interior" };
+        if (!map || all.some((cell) => !within(cell))) return { valid: false, reason: "terrain" };
+        if (gates.length < 2 || new Set(gates.map((gate) => gate.id)).size !== gates.length)
+            return { valid: false, reason: "gates" };
+        if (unique(all.map(key)).length !== all.length) return { valid: false, reason: "overlap" };
+        if ([...interior, ...gateCells].some((cell) => !mapHas(map, "floor", cell) || mapHas(map, "locked", cell)))
+            return { valid: false, reason: "terrain" };
+        if ([...interior, ...gateCells].some((cell) => mapHas(map, "protected", cell)))
+            return { valid: false, reason: "protected" };
+        if (gateCells.some((cell) => mapHas(map, "occupied", cell))) return { valid: false, reason: "occupied" };
+        if (walls.some((cell) => !mapHas(map, "walls", cell))) return { valid: false, reason: "native-wall" };
+        const inside = new Set(interior.map(key)),
+            boundary = new Set([...walls, ...gateCells].map(key)),
+            touches = (cell, collection) =>
+                directions.some((direction) =>
+                    collection.has(key({ x: cell.x + direction.x, y: cell.y + direction.y })),
+                ),
+            edge = new Set(
+                interior
+                    .flatMap((cell) =>
+                        directions.map((direction) => key({ x: cell.x + direction.x, y: cell.y + direction.y })),
+                    )
+                    .filter((cell) => !inside.has(cell)),
+            );
+        if ([...edge].some((cell) => !boundary.has(cell)) || [...boundary].some((cell) => !edge.has(cell)))
+            return { valid: false, reason: "open-boundary" };
+        for (const gate of gates) {
+            if (
+                !gate.cells.length ||
+                !connected(gate.cells) ||
+                !(
+                    gate.cells.every((cell) => cell.x === gate.cells[0].x) ||
+                    gate.cells.every((cell) => cell.y === gate.cells[0].y)
+                ) ||
+                gate.cells.some((cell) => !touches(cell, inside))
+            )
+                return { valid: false, reason: "gate" };
+            if (
+                !gate.cells.some((cell) =>
+                    directions.slice(0, 4).some((direction) => {
+                        const outside = { x: cell.x + direction.x, y: cell.y + direction.y };
+                        return (
+                            !inside.has(key(outside)) &&
+                            !boundary.has(key(outside)) &&
+                            mapHas(map, "floor", outside) &&
+                            !mapHas(map, "locked", outside)
+                        );
+                    }),
+                )
+            )
+                return { valid: false, reason: "gate-exit" };
+        }
+        const xs = all.map((cell) => cell.x),
+            ys = all.map((cell) => cell.y),
+            bounds = { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+        bounds.width = bounds.right - bounds.left + 1;
+        bounds.height = bounds.bottom - bounds.top + 1;
+        if (bounds.width > 13 || bounds.height > 13) return { valid: false, reason: "dimensions" };
+        const core =
+            input.core && inside.has(key(input.core)) ? point(input.core) : interior[Math.floor(interior.length / 2)];
+        return { valid: true, interior, walls, gates, boundary: [...boundary].map(point), bounds, core };
+    }
+
+    function normalizeGraph(fieldSpecs, built = false) {
+        const unitEdges = new Map(),
+            adjacency = new Map(),
+            originalAnchors = new Map();
+        const addAdjacent = (cell, edge) => {
+            if (!adjacency.has(cell)) adjacency.set(cell, []);
+            adjacency.get(cell).push(edge);
+        };
+        for (const field of fieldSpecs) {
+            for (const vertex of field.vertices) {
+                const cell = key(vertex);
+                if (!originalAnchors.has(cell)) originalAnchors.set(cell, new Set());
+                originalAnchors.get(cell).add(field.id);
+            }
+            const closed = field.type !== "line";
+            for (let index = 0; index < (closed ? field.vertices.length : field.vertices.length - 1); index++) {
+                const cells = cellsBetween(
+                    field.vertices[index],
+                    field.vertices[(index + 1) % field.vertices.length],
+                    true,
+                );
+                for (let cellIndex = 1; cellIndex < cells.length; cellIndex++) {
+                    const a = key(cells[cellIndex - 1]),
+                        b = key(cells[cellIndex]),
+                        id = edgeKey(a, b);
+                    if (!unitEdges.has(id)) unitEdges.set(id, { id, nodes: [a, b], owners: new Set() });
+                    unitEdges.get(id).owners.add(field.id);
+                }
+            }
+        }
+        for (const edge of unitEdges.values()) {
+            addAdjacent(edge.nodes[0], edge);
+            addAdjacent(edge.nodes[1], edge);
+        }
+        const breakpoints = new Set(originalAnchors.keys());
+        for (const [cell, edges] of adjacency) {
+            const here = point(cell),
+                axes = edges.map((edge) => {
+                    const other = point(edge.nodes.find((candidate) => candidate !== cell));
+                    return `${Math.abs(other.x - here.x)},${Math.abs(other.y - here.y)}`;
+                });
+            if (
+                edges.length !== 2 ||
+                new Set(axes).size !== 1 ||
+                new Set(edges.map((edge) => ownerKey(edge.owners))).size !== 1
+            )
+                breakpoints.add(cell);
+        }
+        const visited = new Set(),
+            links = [];
+        for (const first of unitEdges.values()) {
+            if (visited.has(first.id)) continue;
+            let current = breakpoints.has(first.nodes[0]) ? first.nodes[0] : first.nodes[1],
+                edge = first;
+            const cellKeys = [current],
+                owners = [...first.owners].sort();
+            while (edge) {
+                visited.add(edge.id);
+                const next = edge.nodes[0] === current ? edge.nodes[1] : edge.nodes[0];
+                cellKeys.push(next);
+                if (breakpoints.has(next)) break;
+                edge = adjacency
+                    .get(next)
+                    .find((candidate) => !visited.has(candidate.id) && ownerKey(candidate.owners) === owners.join("+"));
+                current = next;
+            }
+            const maxHp = 2 + 0.5 * (cellKeys.length - 1),
+                plannedCells = cellKeys.filter((cell) => !originalAnchors.has(cell)).map(point);
+            links.push({
+                id: `${edgeKey(cellKeys[0], cellKeys.at(-1))}#${owners.join("+")}`,
+                a: cellKeys[0],
+                b: cellKeys.at(-1),
+                owners,
+                cells: cellKeys.map(point),
+                plannedCells,
+                builtCells: built ? clone(plannedCells) : [],
+                connected: built,
+                hp: maxHp,
+                maxHp,
+                cooldown: 0,
+                ownerlessAge: 0,
+                collapsed: false,
+            });
+        }
+        const anchors = [];
+        for (const [cell, initialOwners] of originalAnchors) {
+            const owners = new Set(initialOwners);
+            for (const link of links)
+                if (link.a === cell || link.b === cell) for (const owner of link.owners) owners.add(owner);
+            const position = point(cell);
+            anchors.push({
+                id: cell,
+                ...position,
+                owners: [...owners].sort(),
+                built,
+                hp: ANCHOR_HP,
+                maxHp: ANCHOR_HP,
+                cooldown: 0,
+                ownerlessAge: 0,
+                collapsed: false,
+            });
+        }
+        const junctions = [];
+        for (const cell of breakpoints) {
+            if (originalAnchors.has(cell)) continue;
+            const incident = links.filter((link) => link.a === cell || link.b === cell);
+            const position = point(cell);
+            junctions.push({
+                ...position,
+                kind: incident.length >= 4 ? "crossing" : "junction",
+                linkIds: incident.map((link) => link.id),
+                owners: unique(incident.flatMap((link) => link.owners)).sort(),
+            });
+        }
+        return { anchors, links, junctions };
+    }
+
+    function baseState(input, graph) {
+        const owners = unique(input.owners || []);
+        return {
+            version: VERSION,
+            fieldId: input.fieldId || input.compositeId || "spinner-field",
+            kind: input.kind || "line",
+            owners,
+            ownerlessAge: 0,
+            collapsed: false,
+            fieldOwners: Object.fromEntries((input.fieldSpecs || []).map((field) => [field.id, owners])),
+            fields: {},
+            lineFields: Object.fromEntries(
+                (input.fieldSpecs || [])
+                    .filter((field) => field.type === "line")
+                    .map((field) => [
+                        field.id,
+                        { id: field.id, kind: "line", vertices: clone(field.vertices), retired: false },
+                    ]),
+            ),
+            composites: {},
+            workCreditByMember: {},
+            assignmentByMember: {},
+            actionLog: [],
+            ...graph,
+        };
+    }
+
+    function createPhysicalGraph(input) {
+        const fieldSpecs = (input.fields || []).map((field) => ({
+                ...field,
+                vertices: field.vertices.map(point),
+                type: field.type || "line",
+            })),
+            state = baseState(
+                { ...input, fieldSpecs, fieldId: input.fieldId || fieldSpecs[0]?.id, kind: "graph" },
+                normalizeGraph(fieldSpecs, !!input.built),
+            );
+        return state;
+    }
+
+    function createLine(input) {
+        if (!input?.fieldId || !Array.isArray(input.owners) || input.owners.length === 0)
+            throw new Error("A Spinner line needs a field ID and at least one owner.");
+        if (!Array.isArray(input.anchors) || input.anchors.length !== 2)
+            throw new Error("A Spinner interception line needs exactly two anchors.");
+        const state = createPhysicalGraph({
+            fieldId: input.fieldId,
+            owners: input.owners,
+            fields: [{ id: input.fieldId, type: "line", vertices: input.anchors }],
+        });
+        state.kind = "line";
+        state.anchors.forEach((anchor, index) => {
+            anchor.id = input.anchors[index].id || `${input.fieldId}:anchor:${index}`;
+        });
+        const link = state.links[0];
+        link.id = `${input.fieldId}:link:0`;
+        link.a = state.anchors[0].id;
+        link.b = state.anchors[1].id;
+        link.maxHp = 2 + 0.5 * (link.cells.length - 1);
+        link.hp = link.maxHp;
+        state.fieldOwners = { [input.fieldId]: clone(input.owners) };
+        return state;
+    }
+
+    function addLine(state, input) {
+        if (state?.lineFields?.[input?.fieldId] && !state.lineFields[input.fieldId].retired) return clone(state);
+        const next = clone(state),
+            line = createLine(input);
+        next.version = VERSION;
+        next.kind = "graph";
+        next.lineFields = next.lineFields || {};
+        next.lineFields[input.fieldId] = line.lineFields[input.fieldId];
+        next.fieldOwners = next.fieldOwners || {};
+        next.fieldOwners[input.fieldId] = clone(line.fieldOwners[input.fieldId]);
+        next.owners = unique([...next.owners, ...line.owners]);
+        next.anchors.push(...line.anchors);
+        next.links.push(...line.links);
+        next.junctions.push(...line.junctions);
+        next.collapsed = false;
+        return next;
+    }
+
+    function fieldRetired(state, fieldId) {
+        return !!(state.fields?.[fieldId]?.retired || state.lineFields?.[fieldId]?.retired);
+    }
+
+    function retireField(state, fieldId, options = {}) {
+        const next = clone(state);
+        if (!next.lineFields?.[fieldId] && !next.fields?.[fieldId]) return next;
+        if (next.lineFields?.[fieldId]) next.lineFields[fieldId].retired = true;
+        if (next.fields?.[fieldId]) next.fields[fieldId].retired = true;
+        const retiredOnly = (structure) => structure.owners.every((owner) => fieldRetired(next, owner));
+        if (options.residual) {
+            for (const structure of [...next.anchors, ...next.links])
+                if (retiredOnly(structure) && !structure.residual) {
+                    structure.residual = { age: 0, initialHp: structure.hp };
+                    structure.ownerlessAge = 0;
+                }
+        } else {
+            next.anchors = next.anchors.filter((anchor) => !retiredOnly(anchor));
+            next.links = next.links.filter((link) => !retiredOnly(link));
+        }
+        const linkIds = new Set(next.links.map((link) => link.id));
+        next.junctions = next.junctions
+            .map((junction) => ({ ...junction, linkIds: junction.linkIds.filter((id) => linkIds.has(id)) }))
+            .filter((junction) => junction.linkIds.length > 1);
+        next.assignmentByMember = Object.fromEntries(
+            Object.entries(next.assignmentByMember || {}).filter(([, action]) => action.fieldId !== fieldId),
+        );
+        next.owners = unique(
+            Object.entries(next.fieldOwners || {})
+                .filter(([id]) => !fieldRetired(next, id))
+                .flatMap(([, owners]) => owners),
+        );
+        refresh(next);
+        return next;
+    }
+
+    function setFieldOwners(state, fieldId, ownerIds) {
+        const next = clone(state);
+        if (!next.fieldOwners?.[fieldId]) return next;
+        next.fieldOwners[fieldId] = unique(ownerIds || []);
+        next.owners = unique(
+            Object.entries(next.fieldOwners)
+                .filter(([id]) => !fieldRetired(next, id))
+                .flatMap(([, owners]) => owners),
+        );
+        return next;
+    }
+
+    function abandonedState(input, owners, reason) {
+        return {
+            ...baseState(
+                { ...input, owners, fieldSpecs: [], fieldId: input.compositeId, kind: "abandoned" },
+                { anchors: [], links: [], junctions: [] },
+            ),
+            reason,
+        };
+    }
+
+    function createEnclosure(input) {
+        const owners = unique(input.owners || []),
+            requested = input.layers || [];
+        if (owners.length < 1) return abandonedState(input, owners, "owners");
+        const accepted = [];
+        for (let index = 0; index < requested.length; index++) {
+            const checked = validatePolygon({ ...requested[index], map: input.map });
+            if (!checked.valid) {
+                if (index === 0 && input.fallbackLine)
+                    return {
+                        ...createLine({ ...input.fallbackLine, owners }),
+                        kind: "line",
+                        fallbackReason: checked.reason,
+                    };
+                if (index === 0) return abandonedState(input, owners, checked.reason);
+                break;
+            }
+            if (index > 0) {
+                const inner = accepted[index - 1],
+                    spacing = Math.min(
+                        ...checked.boundary.map((outer) =>
+                            Math.min(...inner.boundary.map((cell) => distance(outer, cell))),
+                        ),
+                    );
+                if (
+                    spacing !== 1 ||
+                    checked.bounds.width !== inner.bounds.width + 2 ||
+                    checked.bounds.height !== inner.bounds.height + 2 ||
+                    !checked.interior.some((cell) => sameCell(cell, inner.core)) ||
+                    checked.bounds.width > 13 ||
+                    checked.bounds.height > 13
+                )
+                    break;
+            }
+            accepted.push({
+                ...checked,
+                id: requested[index].id || `${input.compositeId}:layer:${index}`,
+                layer: index,
+            });
+        }
+        if (!accepted.length) return abandonedState(input, owners, "vertices");
+        const fieldSpecs = accepted.map((layer) => ({ id: layer.id, type: "enclosure", vertices: layer.vertices })),
+            state = baseState(
+                { ...input, fieldSpecs, fieldId: input.compositeId, kind: "enclosure" },
+                normalizeGraph(fieldSpecs, !!input.built),
+            ),
+            core = accepted[0].core;
+        state.composites[input.compositeId] = {
+            id: input.compositeId,
+            groupId: input.groupId,
+            layerIds: accepted.map((layer) => layer.id),
+            core,
+            targetId: null,
+            closureArmed: !!(input.built || input.autoSeal),
+            autoSeal: !!input.autoSeal,
+            ...(input.constructionOrder === "outer-first" ? { constructionOrder: "outer-first" } : {}),
+        };
+        for (const layer of accepted)
+            state.fields[layer.id] = {
+                id: layer.id,
+                compositeId: input.compositeId,
+                groupId: input.groupId,
+                layer: layer.layer,
+                kind: "enclosure",
+                vertices: layer.vertices,
+                boundaryCells: layer.boundary,
+                interiorCells: layer.interior,
+                bounds: layer.bounds,
+                core,
+                gateCell: layer.gate,
+                spacing: layer.layer ? 1 : 0,
+                phase: input.built ? "sealed" : "preparing",
+                silkActivated: !!input.built,
+                retired: false,
+                reopenPending: false,
+            };
+        refresh(state);
+        return state;
+    }
+
+    function createPassage(input) {
+        const owners = unique(input.owners || []),
+            checked = validatePassage(input);
+        if (!owners.length || !checked.valid)
+            return abandonedState(input, owners, owners.length ? checked.reason : "owners");
+        const fieldId = input.fieldId || `${input.compositeId}:passage`,
+            gates = checked.gates.map((gate) => ({ ...gate, linkId: `${fieldId}:${gate.id}` })),
+            links = gates.map((gate) => ({
+                id: gate.linkId,
+                owners: [fieldId],
+                cells: clone(gate.cells),
+                plannedCells: clone(gate.cells),
+                builtCells: [],
+                connected: false,
+                prepared: false,
+                passageGate: gate.id,
+                hp: 2 + 0.5 * gate.cells.length,
+                maxHp: 2 + 0.5 * gate.cells.length,
+                cooldown: 0,
+                ownerlessAge: 0,
+                collapsed: false,
+            })),
+            state = baseState(
+                { ...input, kind: "passage", fieldSpecs: [{ id: fieldId, type: "passage" }] },
+                { anchors: [], links, junctions: [] },
+            );
+        state.composites[input.compositeId] = {
+            id: input.compositeId,
+            groupId: input.groupId,
+            layerIds: [fieldId],
+            core: checked.core,
+            targetId: null,
+            closureArmed: false,
+            autoSeal: false,
+        };
+        state.fields[fieldId] = {
+            id: fieldId,
+            compositeId: input.compositeId,
+            groupId: input.groupId,
+            layer: 0,
+            kind: "passage",
+            vertices: [],
+            boundaryCells: checked.boundary,
+            interiorCells: checked.interior,
+            nativeWallCells: checked.walls,
+            nativeTerrainValid: true,
+            bounds: checked.bounds,
+            core: checked.core,
+            gates,
+            openGateIds: gates.map((gate) => gate.id),
+            gateCell: clone(gates[0].cells[0]),
+            phase: "preparing",
+            silkActivated: false,
+            retired: false,
+            reopenPending: false,
+        };
+        return state;
+    }
+
+    function addPassage(state, input) {
+        const addition = createPassage(input);
+        if (addition.kind !== "passage") return { state: state && clone(state), added: false, reason: addition.reason };
+        if (!state) return { state: addition, added: true };
+        const next = clone(state);
+        if (next.composites?.[input.compositeId] || next.fields?.[input.fieldId])
+            return { state: next, added: false, reason: "duplicate" };
+        next.kind = "graph";
+        next.collapsed = false;
+        next.owners = unique([...next.owners, ...addition.owners]);
+        next.links.push(...addition.links);
+        Object.assign(next.fields, addition.fields);
+        Object.assign(next.fieldOwners, addition.fieldOwners);
+        Object.assign(next.composites, addition.composites);
+        refresh(next);
+        return { state: next, added: true };
+    }
+
+    function setEnclosureGate(state, fieldId, cell) {
+        const field = state.fields?.[fieldId];
+        if (!field || field.kind !== "enclosure" || field.retired || state.composites[field.compositeId]?.closureArmed)
+            return { state, changed: false };
+        if (sameCell(field.gateCell, cell) || !field.boundaryCells.some((candidate) => sameCell(candidate, cell)))
+            return { state, changed: false };
+        if (state.anchors.some((anchor) => sameCell(anchor, cell))) return { state, changed: false };
+        const link = state.links.find(
+            (candidate) =>
+                candidate.owners.includes(fieldId) && candidate.plannedCells.some((point) => sameCell(point, cell)),
+        );
+        if (!link) return { state, changed: false };
+        const next = clone(state),
+            nextField = next.fields[fieldId];
+        nextField.gateCell = point(cell);
+        // Changing the plan does not remove silk. A worker must open the new
+        // entrance; the former entrance then becomes ordinary paid body work.
+        nextField.reopenPending = link.builtCells.some((built) => sameCell(built, cell));
+        nextField.phase = "preparing";
+        next.assignmentByMember = Object.fromEntries(
+            Object.entries(next.assignmentByMember || {}).filter(([, action]) => action.fieldId !== fieldId),
+        );
+        refresh(next);
+        return { state: next, changed: true };
+    }
+
+    function setPassageOpenGates(state, fieldId, gateIds) {
+        const next = clone(state),
+            field = next.fields?.[fieldId],
+            ids = unique(gateIds || []);
+        if (field?.kind !== "passage" || field.retired) return { state: next, changed: false, reason: "field" };
+        if (next.composites[field.compositeId]?.closureArmed) return { state: next, changed: false, reason: "engaged" };
+        if (ids.length < 2 || ids.some((id) => !field.gates.some((gate) => gate.id === id)))
+            return { state: next, changed: false, reason: "gates" };
+        if (ids.length === field.openGateIds.length && ids.every((id) => field.openGateIds.includes(id)))
+            return { state: next, changed: false, reason: "unchanged" };
+        field.openGateIds = ids;
+        refresh(next);
+        return { state: next, changed: true, reason: "" };
+    }
+
+    function addEnclosure(state, input) {
+        const addition = createEnclosure(input);
+        if (addition.kind !== "enclosure")
+            return { state: state && clone(state), added: false, reason: addition.reason };
+        if (!state) return { state: addition, added: true };
+        const next = clone(state);
+        if (next.composites?.[input.compositeId]) return { state: next, added: false, reason: "duplicate" };
+        next.kind = "graph";
+        next.owners = unique([...next.owners, ...addition.owners]);
+        next.anchors.push(...addition.anchors);
+        const anchorsById = new Map();
+        for (const anchor of next.anchors) {
+            const existing = anchorsById.get(anchor.id);
+            if (!existing) anchorsById.set(anchor.id, anchor);
+            else {
+                const owners = unique([...existing.owners, ...anchor.owners]);
+                if (!existing.built && anchor.built) Object.assign(existing, anchor);
+                existing.owners = owners;
+                if (owners.some((id) => !fieldRetired(next, id))) delete existing.residual;
+            }
+        }
+        next.anchors = [...anchorsById.values()];
+        next.links.push(...addition.links);
+        next.junctions.push(...addition.junctions);
+        Object.assign(next.fields, addition.fields);
+        Object.assign(next.fieldOwners, addition.fieldOwners);
+        Object.assign(next.composites, addition.composites);
+        next.collapsed = false;
+        refresh(next);
+        return { state: next, added: true };
+    }
+
+    function prepareEnclosureProject(state, compositeId, groupId) {
+        const composite = state?.composites?.[compositeId];
+        if (!composite || !groupId || composite.layerIds.some((id) => state.fields[id]?.retired))
+            return { state, changed: false };
+        if (composite.groupId === groupId && composite.constructionOrder === "outer-first")
+            return { state, changed: false };
+        const next = clone(state);
+        next.composites[compositeId].groupId = groupId;
+        next.composites[compositeId].constructionOrder = "outer-first";
+        return { state: next, changed: true };
+    }
+
+    function addEnclosureLayer(state, input) {
+        const composite = state?.composites?.[input.compositeId],
+            inner = composite && state.fields[composite.layerIds.at(-1)],
+            checked = validatePolygon({ ...input.layer, map: input.map });
+        if (
+            !inner ||
+            (composite.constructionOrder !== "outer-first" &&
+                !isLayerClosed(state, inner.id) &&
+                (composite.autoSeal || inner.phase !== "ready"))
+        )
+            return { state: clone(state), added: false, reason: "inner" };
+        if (!checked.valid) return { state: clone(state), added: false, reason: checked.reason };
+        if (
+            checked.bounds.left !== inner.bounds.left - 1 ||
+            checked.bounds.top !== inner.bounds.top - 1 ||
+            checked.bounds.right !== inner.bounds.right + 1 ||
+            checked.bounds.bottom !== inner.bounds.bottom + 1 ||
+            !checked.interior.some((cell) => sameCell(cell, composite.core))
+        )
+            return { state: clone(state), added: false, reason: "spacing" };
+        const fieldId = input.layer.id,
+            owners = input.owners || state.fieldOwners[inner.id],
+            addition = createEnclosure({
+                compositeId: `${input.compositeId}:new`,
+                owners,
+                layers: [input.layer],
+                map: input.map,
+                autoSeal: composite.autoSeal,
+            });
+        if (addition.kind !== "enclosure") return { state: clone(state), added: false, reason: addition.reason };
+        const next = clone(state),
+            field = addition.fields[fieldId];
+        next.anchors.push(...addition.anchors);
+        next.links.push(...addition.links);
+        next.junctions.push(...addition.junctions);
+        next.owners = unique([...next.owners, ...owners]);
+        next.fieldOwners[fieldId] = clone(owners);
+        next.fields[fieldId] = {
+            ...field,
+            compositeId: input.compositeId,
+            groupId: composite.groupId,
+            layer: composite.layerIds.length,
+            core: clone(composite.core),
+            spacing: 1,
+        };
+        next.composites[input.compositeId].layerIds.push(fieldId);
+        refresh(next);
+        return { state: next, added: true };
+    }
+
+    function solidCells(state) {
+        if (!state || state.collapsed) return [];
+        const cells = new Map();
+        for (const anchor of state.anchors || [])
+            if (anchor.built && anchor.hp > 0 && !anchor.collapsed)
+                cells.set(key(anchor), { x: anchor.x, y: anchor.y, anchorIds: [anchor.id], linkIds: [] });
+        for (const link of state.links || []) {
+            if (!(link.hp > 0) || link.collapsed) continue;
+            for (const cell of link.builtCells || []) {
+                const current = cells.get(key(cell)) || { x: cell.x, y: cell.y, anchorIds: [], linkIds: [] };
+                current.linkIds = unique([...current.linkIds, link.id]);
+                cells.set(key(cell), current);
+            }
+            if (link.connected)
+                for (const anchorId of [link.a, link.b]) {
+                    const anchor = state.anchors.find(
+                        (candidate) => candidate.id === anchorId || key(candidate) === anchorId,
+                    );
+                    if (!anchor?.built || !(anchor.hp > 0)) continue;
+                    const current = cells.get(key(anchor));
+                    if (current) current.linkIds = unique([...current.linkIds, link.id]);
+                }
+        }
+        return Array.from(cells.values()).sort((a, b) => a.y - b.y || a.x - b.x);
+    }
+
+    function validateCell(snapshot, cell) {
+        if (!snapshot?.inBounds || !snapshot?.floor) return "terrain";
+        if (snapshot.protected) return "protected";
+        if (snapshot.occupied) return "occupied";
+        if (snapshot.cell && !sameCell(snapshot.cell, cell)) return "snapshot";
+        return "";
+    }
+
+    function fieldBodyComplete(state, field, solidKeys) {
+        if (field.kind === "passage")
+            return (
+                field.nativeTerrainValid !== false &&
+                field.gates.every((gate) => {
+                    const link = state.links.find((candidate) => candidate.id === gate.linkId);
+                    return link?.prepared && link.hp > 0 && !link.collapsed;
+                })
+            );
+        const solids = solidKeys || new Set(solidCells(state).map(key)),
+            gate = key(field.gateCell);
+        if (!field.boundaryCells.every((cell) => key(cell) === gate || solids.has(key(cell)))) return false;
+        return state.links
+            .filter((link) => link.owners.includes(field.id) && !link.cells.some((cell) => key(cell) === gate))
+            .every((link) => link.connected);
+    }
+
+    function isLayerClosed(state, fieldId, solidKeys) {
+        const field = state.fields?.[fieldId];
+        if (!field) return false;
+        if (field.kind === "passage")
+            return (
+                fieldBodyComplete(state, field, solidKeys) &&
+                field.gates.every((gate) => {
+                    const link = state.links.find((candidate) => candidate.id === gate.linkId);
+                    return (
+                        link.connected &&
+                        gate.cells.every((cell) => link.builtCells.some((built) => sameCell(cell, built)))
+                    );
+                })
+            );
+        const solids = solidKeys || new Set(solidCells(state).map(key));
+        return (
+            field.boundaryCells.every((cell) => solids.has(key(cell))) &&
+            state.links.filter((link) => link.owners.includes(field.id)).every((link) => link.connected && link.hp > 0)
+        );
+    }
+
+    function refresh(state) {
+        const solidKeys = new Set(solidCells(state).map(key));
+        for (const field of Object.values(state.fields || {}).sort((a, b) => a.layer - b.layer)) {
+            if (field.retired) {
+                field.phase = "retired";
+                continue;
+            }
+            const closed = isLayerClosed(state, field.id, solidKeys),
+                body = fieldBodyComplete(state, field, solidKeys),
+                wasComplete = ["sealed", "breached"].includes(field.phase);
+            if (field.kind === "passage") {
+                const armed = state.composites[field.compositeId]?.closureArmed,
+                    broken =
+                        field.nativeTerrainValid === false ||
+                        field.gates.some((gate) => {
+                            const link = state.links.find((candidate) => candidate.id === gate.linkId);
+                            return link?.prepared && (!(link.hp > 0) || link.collapsed);
+                        }),
+                    ready =
+                        body &&
+                        !armed &&
+                        field.gates.every((gate) => {
+                            const link = state.links.find((candidate) => candidate.id === gate.linkId);
+                            return field.openGateIds.includes(gate.id) ? !link.builtCells.length : link.connected;
+                        });
+                field.phase = closed
+                    ? "sealed"
+                    : broken
+                      ? "breached"
+                      : ready
+                        ? "ready"
+                        : body
+                          ? "sealing"
+                          : "preparing";
+                continue;
+            }
+            if (closed) field.phase = "sealed";
+            else if (wasComplete) field.phase = "breached";
+            else if (field.reopenPending) field.phase = "sealing";
+            else if (body) field.phase = state.composites[field.compositeId]?.closureArmed ? "sealing" : "ready";
+            else field.phase = "preparing";
+        }
+        return state;
+    }
+
+    function actionCell(state, action) {
+        if (action.cell) return point(action.cell);
+        if (["placeAnchor", "rebuildAnchor", "repairAnchor"].includes(action.type)) {
+            const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
+            return anchor && point(anchor);
+        }
+        const link = state.links.find((candidate) => candidate.id === action.linkId);
+        if (["repair", "repairLink"].includes(action.type))
+            return link?.builtCells[0] || state.anchors.find((candidate) => candidate.id === link?.a);
+        return link?.plannedCells.find((cell) => !(link.builtCells || []).some((built) => sameCell(built, cell)));
+    }
+
+    // Reservation checks ignore transient map occupancy. Execution still passes
+    // the native snapshot through legalAction when applying paid work.
+    function inspectWorkAction(state, action) {
+        const type = action?.type,
+            repair = ["repair", "repairAnchor", "repairLink"].includes(type),
+            link = state?.links.find((candidate) => candidate.id === action?.linkId),
+            cell =
+                state &&
+                action &&
+                (actionCell(state, action) ||
+                    state.anchors.find((candidate) => candidate.id === link?.b) ||
+                    link?.cells?.[0]),
+            field = state?.fields?.[action?.fieldId] || state?.lineFields?.[action?.fieldId],
+            pending =
+                !!action &&
+                legalAction(state, action, {
+                    cell,
+                    inBounds: true,
+                    floor: true,
+                    protected: false,
+                    occupied: false,
+                }).legal;
+        return {
+            cell,
+            pending: pending && !field?.retired,
+            maintenance:
+                repair ||
+                ["rebuildAnchor", "rebuildLink"].includes(type) ||
+                (type === "prepareGate" && link?.hp <= 0) ||
+                (!!link?.rebuilding && ["extendLink", "closeGate", "connectGate"].includes(type)),
+            allowsOccupiedTarget: repair,
+            gateWork: ["prepareGate", "closeGate", "connectGate", "reopenGate"].includes(type),
+            opensGate: type === "reopenGate",
+            metric: repair ? "repair" : "construction",
+        };
+    }
+
+    function lineWorkActions(field, canConstruct) {
+        const tasks = [];
+        for (const anchor of field.anchors)
+            if (anchor.built && anchor.hp > 0 && anchor.hp < anchor.maxHp)
+                tasks.push({ key: `repair-anchor:${anchor.id}`, type: "repairAnchor", anchorId: anchor.id });
+        for (const link of field.links)
+            if (link.hp > 0 && link.hp < link.maxHp && (link.builtCells.length || link.connected))
+                tasks.push({
+                    key: `repair-link:${link.id}`,
+                    type: "repairLink",
+                    linkId: link.id,
+                    cell: clone(link.builtCells[0] || field.anchors.find((anchor) => anchor.id === link.a)),
+                });
+        if (!canConstruct) return tasks;
+        for (const anchor of field.anchors)
+            if (!anchor.built && anchor.hp > 0)
+                tasks.push({ key: `anchor:${anchor.id}`, type: "placeAnchor", anchorId: anchor.id });
+        for (const link of field.links) {
+            const endpointsBuilt = [link.a, link.b].every(
+                (id) => field.anchors.find((anchor) => anchor.id === id)?.built,
+            );
+            if (!link.connected && link.hp > 0 && endpointsBuilt)
+                tasks.push({
+                    key: `link:${link.id}:${link.builtCells.length}`,
+                    type: "extendLink",
+                    linkId: link.id,
+                    ...(link.plannedCells[link.builtCells.length]
+                        ? { cell: clone(link.plannedCells[link.builtCells.length]) }
+                        : {}),
+                });
+        }
+        return tasks;
+    }
+
+    function legalAction(state, action, snapshot) {
+        if (!state || state.collapsed) return { legal: false, reason: "collapsed" };
+        const fieldOwners = state.fieldOwners?.[action?.fieldId] || state.owners;
+        if (!fieldOwners.includes(action?.ownerId)) return { legal: false, reason: "owner" };
+        const field = state.fields?.[action.fieldId];
+        if (
+            field?.kind === "passage" &&
+            ["prepareGate", "closeGate", "connectGate", "reopenGate", "rebuildLink", "extendLink"].includes(action.type)
+        ) {
+            const gate = field.gates.find((candidate) => candidate.linkId === action.linkId),
+                link = gate && state.links.find((candidate) => candidate.id === gate.linkId),
+                cell = actionCell(state, action),
+                armed = state.composites[field.compositeId]?.closureArmed;
+            if (
+                field.retired ||
+                !link ||
+                link.collapsed ||
+                !cell ||
+                !gate.cells.some((candidate) => sameCell(candidate, cell))
+            )
+                return { legal: false, reason: "gate" };
+            if (action.type === "reopenGate")
+                return {
+                    legal:
+                        !armed &&
+                        field.openGateIds.includes(gate.id) &&
+                        link.builtCells.some((built) => sameCell(built, cell)),
+                    reason: "gate",
+                };
+            if (field.nativeTerrainValid === false) return { legal: false, reason: "terrain" };
+            const reason = validateCell(snapshot, cell);
+            if (reason) return { legal: false, reason };
+            if (action.type === "prepareGate") {
+                const legal = (!link.prepared && link.hp > 0) || (link.hp <= 0 && link.cooldown >= REBUILD_TURNS);
+                return { legal, reason: legal ? "" : "cooldown" };
+            }
+            if (action.type === "rebuildLink" || action.type === "extendLink")
+                return { legal: false, reason: "gate-prepare" };
+            if (!link.prepared || !(link.hp > 0)) return { legal: false, reason: "unprepared" };
+            if (
+                !armed &&
+                (field.openGateIds.includes(gate.id) ||
+                    field.gates.some(
+                        (opening) =>
+                            field.openGateIds.includes(opening.id) &&
+                            state.links.find((candidate) => candidate.id === opening.linkId)?.builtCells.length,
+                    ))
+            )
+                return { legal: false, reason: "opening" };
+            const complete = gate.cells.every((candidate) =>
+                    link.builtCells.some((built) => sameCell(candidate, built)),
+                ),
+                legal =
+                    action.type === "connectGate"
+                        ? complete && !link.connected
+                        : !link.builtCells.some((built) => sameCell(built, cell));
+            return { legal, reason: legal ? "" : "built" };
+        }
+        if (action.type === "placeAnchor") {
+            const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
+            if (!anchor || anchor.built || anchor.hp <= 0) return { legal: false, reason: "anchor" };
+            const reason = validateCell(snapshot, anchor);
+            return { legal: !reason, reason };
+        }
+        if (action.type === "rebuildAnchor") {
+            const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
+            if (!anchor?.built || anchor.hp > 0 || anchor.cooldown < REBUILD_TURNS)
+                return { legal: false, reason: "cooldown" };
+            const reason = validateCell(snapshot, anchor);
+            return { legal: !reason, reason };
+        }
+        if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
+            const link = state.links.find((candidate) => candidate.id === action.linkId),
+                cell = actionCell(state, action);
+            if (!link || link.collapsed) return { legal: false, reason: "link" };
+            if (action.type === "connectGate")
+                return { legal: !link.connected && !!action.fieldId, reason: link.connected ? "link" : "" };
+            if (action.type === "rebuildLink" && (!(link.cooldown >= REBUILD_TURNS) || link.hp > 0))
+                return { legal: false, reason: "cooldown" };
+            if (!cell) return { legal: !link.connected, reason: link.connected ? "link" : "" };
+            if (!link.plannedCells.some((candidate) => sameCell(candidate, cell)))
+                return { legal: false, reason: "cell" };
+            if (action.type !== "rebuildLink" && link.builtCells.some((candidate) => sameCell(candidate, cell)))
+                return { legal: false, reason: "built" };
+            const reason = validateCell(snapshot, cell);
+            return { legal: !reason, reason };
+        }
+        if (action.type === "reopenGate") {
+            const link = state.links.find((candidate) => candidate.id === action.linkId),
+                cell = actionCell(state, action);
+            return {
+                legal: !!link?.builtCells.some((candidate) => sameCell(candidate, cell)),
+                reason: link ? "" : "link",
+            };
+        }
+        if (action.type === "repair") {
+            const structure =
+                state.links.find((candidate) => candidate.id === action.linkId) ||
+                state.anchors.find((candidate) => candidate.id === action.anchorId);
+            return {
+                legal: !!structure && structure.hp > 0 && structure.hp < structure.maxHp && !structure.collapsed,
+                reason: structure ? "health" : "structure",
+            };
+        }
+        if (action.type === "repairAnchor") {
+            const anchor = state.anchors.find((candidate) => candidate.id === action.anchorId);
+            return {
+                legal: !!anchor?.built && anchor.hp > 0 && anchor.hp < anchor.maxHp,
+                reason: !anchor?.built || anchor.hp <= 0 || anchor.hp >= anchor.maxHp ? "anchor" : "",
+            };
+        }
+        if (action.type === "repairLink") {
+            const link = state.links.find((candidate) => candidate.id === action.linkId);
+            return {
+                legal: !!link && link.hp > 0 && link.hp < link.maxHp && (link.builtCells.length > 0 || link.connected),
+                reason:
+                    !link || link.hp <= 0 || link.hp >= link.maxHp || (!link.builtCells.length && !link.connected)
+                        ? "link"
+                        : "",
+            };
+        }
+        return { legal: false, reason: "action" };
+    }
+
+    function applyAction(state, action, snapshot) {
+        const verdict = legalAction(state, action, snapshot);
+        if (!verdict.legal) return { state: clone(state), effects: [], outcome: verdict };
+        const next = clone(state),
+            effects = [],
+            cell = actionCell(next, action);
+        if (action.type === "prepareGate") {
+            const link = next.links.find((candidate) => candidate.id === action.linkId);
+            link.prepared = true;
+            if (link.hp <= 0) {
+                link.hp = Math.max(link.maxHp * 0.1, 0.1);
+                link.cooldown = 0;
+                link.builtCells = [];
+                link.connected = false;
+            }
+        } else if (action.type === "placeAnchor") {
+            next.anchors.find((candidate) => candidate.id === action.anchorId).built = true;
+            effects.push({ type: "placeProxy", cell });
+        } else if (action.type === "rebuildAnchor") {
+            const anchor = next.anchors.find((candidate) => candidate.id === action.anchorId);
+            anchor.hp = Math.max(anchor.maxHp * 0.1, 0.1);
+            anchor.cooldown = 0;
+            anchor.collapsed = false;
+            effects.push({ type: "placeProxy", cell });
+        } else if (["extendLink", "closeGate", "connectGate", "rebuildLink"].includes(action.type)) {
+            const link = next.links.find((candidate) => candidate.id === action.linkId);
+            if (
+                ["closeGate", "connectGate"].includes(action.type) &&
+                next.fields[action.fieldId] &&
+                (next.composites[next.fields[action.fieldId].compositeId]?.closureArmed ||
+                    next.composites[next.fields[action.fieldId].compositeId]?.autoSeal)
+            )
+                next.fields[action.fieldId].silkActivated = true;
+            if (action.type === "rebuildLink") {
+                link.hp = Math.max(link.maxHp * 0.1, 0.1);
+                link.cooldown = 0;
+                link.builtCells = [];
+                link.rebuilding = true;
+            }
+            if (cell && action.type !== "connectGate") {
+                link.builtCells.push(cell);
+                effects.push({ type: "placeProxy", cell });
+            }
+            if (action.type === "connectGate") link.connected = true;
+            else if (
+                action.type !== "closeGate" &&
+                !(action.type === "rebuildLink" && sameCell(next.fields[action.fieldId]?.gateCell || {}, cell)) &&
+                link.builtCells.length === link.plannedCells.length
+            )
+                link.connected = true;
+            if (link.connected) delete link.rebuilding;
+        } else if (action.type === "reopenGate") {
+            const link = next.links.find((candidate) => candidate.id === action.linkId);
+            link.builtCells = link.builtCells.filter((candidate) => !sameCell(candidate, cell));
+            link.connected = false;
+            const field = next.fields[action.fieldId];
+            if (field) {
+                field.reopenPending = false;
+                field.phase = "preparing";
+            }
+            effects.push({ type: "removeProxy", cell });
+        } else if (["repair", "repairAnchor", "repairLink"].includes(action.type)) {
+            const structure =
+                next.links.find((candidate) => candidate.id === action.linkId) ||
+                next.anchors.find((candidate) => candidate.id === action.anchorId);
+            structure.hp = Math.min(structure.maxHp, Math.round((structure.hp + structure.maxHp * 0.1) * 1000) / 1000);
+            effects.push({ type: "synchronizeProxies" });
+        }
+        next.actionLog = next.actionLog || [];
+        next.actionLog.push({
+            type: action.type,
+            fieldId: action.fieldId,
+            role: action.role || (action.type === "closeGate" ? "gate" : "body"),
+            ...(cell ? { cell } : {}),
+        });
+        refresh(next);
+        if (action.type === "reopenGate" && next.fields[action.fieldId]?.phase === "ready")
+            next.fields[action.fieldId].silkActivated = false;
+        effects.push({ type: "invalidateNavigation" });
+        return { state: next, effects, outcome: { legal: true, reason: "" } };
+    }
+
+    function candidateActions(state, field, actorCell) {
+        const gate = key(field.gateCell),
+            actions = [];
+        for (const anchor of state.anchors)
+            if (
+                anchor.owners.includes(field.id) &&
+                (!anchor.built || (anchor.hp <= 0 && anchor.cooldown >= REBUILD_TURNS))
+            )
+                actions.push({
+                    type: anchor.built ? "rebuildAnchor" : "placeAnchor",
+                    anchorId: anchor.id,
+                    fieldId: field.id,
+                    role: "body",
+                    cell: point(anchor),
+                });
+        for (const link of state.links.filter((candidate) => candidate.owners.includes(field.id))) {
+            const pending = link.plannedCells.filter(
+                (cell) => key(cell) !== gate && !link.builtCells.some((built) => sameCell(built, cell)),
+            );
+            for (const cell of pending)
+                if (link.hp > 0 || link.cooldown >= REBUILD_TURNS)
+                    actions.push({
+                        type: link.hp > 0 ? "extendLink" : "rebuildLink",
+                        linkId: link.id,
+                        fieldId: field.id,
+                        role: "body",
+                        cell,
+                    });
+            if (!pending.length && !link.connected && !link.cells.some((cell) => key(cell) === gate))
+                actions.push({
+                    type: "extendLink",
+                    linkId: link.id,
+                    fieldId: field.id,
+                    role: "body",
+                    cell: point(link.cells[0]),
+                });
+        }
+        return actions.sort(
+            (a, b) =>
+                distance(a.cell, actorCell) - distance(b.cell, actorCell) || key(a.cell).localeCompare(key(b.cell)),
+        );
+    }
+
+    function workKey(action) {
+        return [action.type, action.anchorId || action.linkId || "", action.cell ? key(action.cell) : ""].join(":");
+    }
+
+    function nextPassageWorkAction(state, field, here, reserved) {
+        if (field.retired) return undefined;
+        const gates = [...field.gates].sort(
+                (a, b) => distance(a.cells[0], here) - distance(b.cells[0], here) || a.id.localeCompare(b.id),
+            ),
+            armed = state.composites[field.compositeId]?.closureArmed,
+            linkFor = (gate) => state.links.find((link) => link.id === gate.linkId),
+            make = (type, gate, cell = gate.cells[0]) => ({
+                type,
+                fieldId: field.id,
+                linkId: gate.linkId,
+                gateId: gate.id,
+                role: type === "prepareGate" ? "body" : "gate",
+                cell,
+            }),
+            available = (action) => !reserved.has(workKey(action)),
+            opening = armed
+                ? []
+                : gates.filter((gate) => field.openGateIds.includes(gate.id) && linkFor(gate)?.builtCells.length);
+        // A newly requested route must actually be open before workers close an old one.
+        for (const gate of opening)
+            for (const cell of linkFor(gate).builtCells) {
+                const action = make("reopenGate", gate, cell);
+                if (available(action)) return action;
+            }
+        if (opening.length || field.nativeTerrainValid === false) return undefined;
+        const unprepared = gates.filter((gate) => !linkFor(gate)?.prepared || !(linkFor(gate)?.hp > 0));
+        for (const gate of unprepared) {
+            const link = linkFor(gate),
+                action = make("prepareGate", gate);
+            if (link && !link.collapsed && (link.hp > 0 || link.cooldown >= REBUILD_TURNS) && available(action))
+                return action;
+        }
+        if (unprepared.length) return undefined;
+        for (const gate of gates.filter((candidate) => armed || !field.openGateIds.includes(candidate.id))) {
+            const link = linkFor(gate),
+                missing = gate.cells.filter((cell) => !link.builtCells.some((built) => sameCell(built, cell)));
+            for (const cell of missing) {
+                const action = make("closeGate", gate, cell);
+                if (available(action)) return action;
+            }
+            if (!missing.length && !link.connected) {
+                const action = make("connectGate", gate);
+                if (available(action)) return action;
+            }
+        }
+        for (const gate of gates) {
+            const link = linkFor(gate),
+                action = { ...make("repair", gate), role: "repair" };
+            if (link.hp > 0 && link.hp < link.maxHp && available(action)) return action;
+        }
+        return undefined;
+    }
+
+    function fieldWorkNeeds(state, fieldIds) {
+        const ids = new Set(fieldIds),
+            fields = Object.values(state.fields || {}).filter((field) => ids.has(field.id) && !field.retired),
+            active = new Set(fields.map((field) => field.id));
+        return {
+            remainingActions:
+                state.anchors.filter((anchor) => anchor.owners.some((id) => active.has(id)) && !anchor.built).length +
+                state.links
+                    .filter((link) => link.owners.some((id) => active.has(id)))
+                    .reduce(
+                        (total, link) =>
+                            total +
+                            Math.max(0, link.plannedCells.length - link.builtCells.length) +
+                            Number(!link.connected) +
+                            Number(link.hp < link.maxHp),
+                        0,
+                    ),
+            construction: fields.some((field) => field.reopenPending || ["preparing", "sealing"].includes(field.phase)),
+            repair:
+                fields.some((field) => field.phase === "breached") ||
+                [...state.anchors, ...state.links].some(
+                    (structure) => structure.hp < structure.maxHp && structure.owners.some((id) => active.has(id)),
+                ),
+        };
+    }
+
+    function workProgress(state, fieldIds) {
+        const ids = new Set(fieldIds),
+            planned = new Set(),
+            completed = new Set();
+        for (const anchor of state.anchors.filter((item) => item.owners.some((id) => ids.has(id)))) {
+            const key = `anchor:${anchor.id}`;
+            planned.add(key);
+            if (anchor.built) completed.add(key);
+        }
+        for (const link of state.links.filter((item) => item.owners.some((id) => ids.has(id)))) {
+            const connection = `connection:${link.id}`;
+            planned.add(connection);
+            if (link.connected) completed.add(connection);
+            for (const cell of link.plannedCells) {
+                const entry = `cell:${link.id}:${key(cell)}`;
+                planned.add(entry);
+                if (link.builtCells.some((built) => sameCell(built, cell))) completed.add(entry);
+            }
+        }
+        return { planned: [...planned], completed: [...completed] };
+    }
+
+    function nextWorkAction(state, ownerId, actorCell, reservedKeys = [], fieldIds) {
+        if (!state.owners.includes(ownerId)) return undefined;
+        const allFields = Object.values(state.fields || {}),
+            ownedFields = allFields.filter(
+                (field) =>
+                    (!fieldIds || fieldIds.includes(field.id)) &&
+                    (state.fieldOwners?.[field.id] || state.owners).includes(ownerId),
+            ),
+            fields = ownedFields.filter((field) => field.kind !== "passage").sort((a, b) => a.layer - b.layer),
+            constructionFields = [...fields].sort(
+                (a, b) =>
+                    (state.composites[a.compositeId]?.constructionOrder === "outer-first" ? -a.layer : a.layer) -
+                    (state.composites[b.compositeId]?.constructionOrder === "outer-first" ? -b.layer : b.layer),
+            ),
+            ownedIds = new Set(fields.map((field) => field.id)),
+            here = point(actorCell),
+            reserved = new Set(reservedKeys);
+        for (const field of ownedFields.filter((candidate) => candidate.kind === "passage")) {
+            const action = nextPassageWorkAction(state, field, here, reserved);
+            if (action) return action;
+        }
+        for (const field of fields)
+            if (field.reopenPending) {
+                const link = state.links.find(
+                    (candidate) =>
+                        candidate.owners.includes(field.id) &&
+                        candidate.builtCells.some((cell) => sameCell(cell, field.gateCell)),
+                );
+                if (link) {
+                    const action = {
+                        type: "reopenGate",
+                        linkId: link.id,
+                        fieldId: field.id,
+                        role: "gate",
+                        cell: field.gateCell,
+                    };
+                    if (!reserved.has(workKey(action))) return action;
+                    continue;
+                }
+                field.reopenPending = false;
+            }
+        for (const field of constructionFields) {
+            if (field.retired) continue;
+            if (state.composites[field.compositeId]?.constructionOrder === "outer-first") {
+                const outer = allFields.find(
+                    (candidate) => candidate.compositeId === field.compositeId && candidate.layer === field.layer + 1,
+                );
+                if (outer && !fieldBodyComplete(state, outer)) continue;
+            } else if (field.layer > 0) {
+                const inner = allFields.find(
+                    (candidate) => candidate.compositeId === field.compositeId && candidate.layer === field.layer - 1,
+                );
+                if (
+                    !inner ||
+                    (!isLayerClosed(state, inner.id) &&
+                        (state.composites[field.compositeId]?.autoSeal || !fieldBodyComplete(state, inner)))
+                )
+                    continue;
+            }
+            const actions = candidateActions(state, field, here).filter((action) => !reserved.has(workKey(action)));
+            if (actions.length) return actions[0];
+            if (!fieldBodyComplete(state, field)) return undefined;
+            const composite = state.composites[field.compositeId];
+            if (composite?.autoSeal && !isLayerClosed(state, field.id)) {
+                const link = state.links.find((candidate) =>
+                    candidate.plannedCells.some((cell) => sameCell(cell, field.gateCell)),
+                );
+                if (link && !link.connected) {
+                    const action = {
+                        type: link.builtCells.some((cell) => sameCell(cell, field.gateCell))
+                            ? "connectGate"
+                            : "closeGate",
+                        linkId: link.id,
+                        fieldId: field.id,
+                        role: "gate",
+                        cell: field.gateCell,
+                    };
+                    if (!reserved.has(workKey(action))) return action;
+                }
+                if (!link?.connected) return undefined;
+            }
+        }
+        for (const field of fields) {
+            if (state.composites[field.compositeId]?.closureArmed) {
+                if (field.retired) continue;
+                if (isLayerClosed(state, field.id)) continue;
+                const link = state.links.find((candidate) =>
+                    candidate.plannedCells.some((cell) => sameCell(cell, field.gateCell)),
+                );
+                if (!link?.connected && link?.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
+                    const action = {
+                        type: "connectGate",
+                        linkId: link.id,
+                        fieldId: field.id,
+                        role: "gate",
+                        cell: field.gateCell,
+                    };
+                    if (!reserved.has(workKey(action))) return action;
+                }
+                if (link && !link.connected && !link.builtCells.some((cell) => sameCell(cell, field.gateCell))) {
+                    const action = {
+                        type: "closeGate",
+                        linkId: link.id,
+                        fieldId: field.id,
+                        role: "gate",
+                        cell: field.gateCell,
+                    };
+                    if (!reserved.has(workKey(action))) return action;
+                }
+            }
+        }
+        for (const link of state.links) {
+            const fieldId = link.owners.find((id) => ownedIds.has(id) && !state.fields[id]?.retired);
+            if (!fieldId) continue;
+            if (link.hp > 0 && link.hp < link.maxHp) {
+                const action = {
+                    type: "repair",
+                    linkId: link.id,
+                    fieldId,
+                    role: "repair",
+                    cell: point(link.cells[0]),
+                };
+                if (!reserved.has(workKey(action))) return action;
+            }
+            if (link.hp <= 0 && link.cooldown >= REBUILD_TURNS) {
+                const cell = link.plannedCells[0] || point(link.cells[0]);
+                const action = { type: "rebuildLink", linkId: link.id, fieldId, role: "rebuild", cell };
+                if (!reserved.has(workKey(action))) return action;
+            }
+        }
+        return undefined;
+    }
+
+    function updateTarget(state, target, compositeId) {
+        let changed = false;
+        for (const composite of Object.values(state.composites || {})) {
+            if (compositeId && composite.id !== compositeId) continue;
+            if (composite.autoSeal) continue;
+            const inside = isInsideCommonCore(state, composite.id, target);
+            composite.targetId = target?.id;
+            if (inside && !composite.closureArmed) {
+                composite.closureArmed = true;
+                changed = true;
+            } else if (composite.closureArmed) {
+                if (inside) continue;
+                composite.closureArmed = false;
+                changed = true;
+                for (const fieldId of composite.layerIds) {
+                    const field = state.fields[fieldId];
+                    if (field.phase === "sealed" || (field.phase === "sealing" && !isLayerClosed(state, fieldId)))
+                        field.reopenPending = true;
+                }
+            }
+        }
+        if (changed) refresh(state);
+        return state;
+    }
+
+    function distanceToAnchor(state, cell) {
+        // Passage gates are mounted directly to the adjacent native wall, without
+        // turning that wall into a damageable Mod anchor.
+        if (state.links.some((link) => link.passageGate && link.builtCells.some((built) => sameCell(built, cell))))
+            return 1;
+        const anchorKeys = new Set(
+                state.anchors.filter((anchor) => anchor.built && anchor.hp > 0 && !anchor.collapsed).map(key),
+            ),
+            adjacency = new Map(),
+            add = (from, to) => {
+                if (!adjacency.has(from)) adjacency.set(from, new Set());
+                adjacency.get(from).add(to);
+            };
+        for (const link of state.links.filter((candidate) => candidate.hp > 0 && !candidate.collapsed)) {
+            const live = new Set(link.builtCells.map(key));
+            for (const endpoint of [link.a, link.b]) {
+                const anchor = state.anchors.find(
+                        (candidate) => candidate.id === endpoint || key(candidate) === endpoint,
+                    ),
+                    anchorKey = anchor && key(anchor);
+                if (anchorKey && anchorKeys.has(anchorKey)) live.add(anchorKey);
+            }
+            for (let index = 1; index < link.cells.length; index++) {
+                const a = key(link.cells[index - 1]),
+                    b = key(link.cells[index]);
+                if (live.has(a) && live.has(b)) {
+                    add(a, b);
+                    add(b, a);
+                }
+            }
+        }
+        const start = key(cell),
+            queue = [{ cell: start, distance: 0 }],
+            seen = new Set([start]);
+        for (let index = 0; index < queue.length; index++) {
+            const current = queue[index];
+            if (anchorKeys.has(current.cell)) return current.distance;
+            for (const next of adjacency.get(current.cell) || [])
+                if (!seen.has(next)) {
+                    seen.add(next);
+                    queue.push({ cell: next, distance: current.distance + 1 });
+                }
+        }
+        return Infinity;
+    }
+
+    function damageAt(state, hit) {
+        const next = clone(state),
+            amount = Math.max(0, Number(hit?.damage) || 0),
+            cell = hit?.cell && point(hit.cell),
+            effects = [];
+        if (!cell || amount <= 0 || next.collapsed) return { state: next, effects, outcome: { damage: 0 } };
+        const anchor = next.anchors.find(
+                (candidate) => candidate.built && candidate.hp > 0 && sameCell(candidate, cell),
+            ),
+            damagedLinks = new Set();
+        let applied = 0;
+        if (anchor) {
+            applied += Math.min(anchor.hp, amount);
+            anchor.hp = Math.max(0, anchor.hp - amount);
+            for (const link of next.links.filter(
+                (candidate) => candidate.hp > 0 && [candidate.a, candidate.b].includes(anchor.id),
+            )) {
+                applied += Math.min(link.hp, amount);
+                link.hp = Math.max(0, link.hp - amount);
+                damagedLinks.add(link.id);
+            }
+            if (anchor.hp <= 0) anchor.cooldown = 0;
+            if (anchor.hp <= 0)
+                for (const link of next.links.filter((candidate) => [candidate.a, candidate.b].includes(anchor.id))) {
+                    link.hp = 0;
+                    link.cooldown = 0;
+                    link.builtCells = [];
+                    link.connected = false;
+                }
+        } else {
+            for (const link of next.links.filter(
+                (candidate) => candidate.hp > 0 && candidate.builtCells.some((built) => sameCell(built, cell)),
+            )) {
+                const multiplier = Math.max(0.25, 1 - 0.15 * distanceToAnchor(next, cell)),
+                    dealt = amount * multiplier;
+                applied += Math.min(link.hp, dealt);
+                link.hp = Math.max(0, link.hp - dealt);
+                if (link.hp <= 0) {
+                    link.cooldown = 0;
+                    link.builtCells = [];
+                    link.connected = false;
+                }
+                damagedLinks.add(link.id);
+            }
+        }
+        refresh(next);
+        if (anchor || damagedLinks.size) effects.push({ type: "synchronizeProxies" }, { type: "invalidateNavigation" });
+        return { state: next, effects, outcome: { damage: applied, anchorId: anchor?.id, linkIds: [...damagedLinks] } };
+    }
+
+    function structureHasOwner(state, structure, active) {
+        return structure.owners.some(
+            (fieldId) =>
+                !fieldRetired(state, fieldId) &&
+                (state.fieldOwners[fieldId] || []).some((ownerId) => active.has(ownerId)),
+        );
+    }
+
+    function tickOwnerless(state, input) {
+        const next = clone(state),
+            active = new Set(input?.activeOwnerIds || []),
+            delta = Math.max(0, Number(input?.delta) || 0),
+            structures = [...next.anchors, ...next.links];
+        for (const structure of structures) {
+            const retiredOnly = structure.owners.every((id) => fieldRetired(next, id));
+            if (structure.residual && retiredOnly) {
+                const occupied = (input?.occupiedCells || []).some((cell) =>
+                    structure.plannedCells
+                        ? structure.builtCells.some((built) => sameCell(built, cell))
+                        : sameCell(structure, cell),
+                );
+                if (!occupied && delta > 0) {
+                    structure.residual.age += delta;
+                    structure.hp = Math.min(
+                        structure.hp,
+                        structure.residual.initialHp * Math.max(0, 1 - structure.residual.age / OWNERLESS_TURNS),
+                    );
+                    if (structure.residual.age >= OWNERLESS_TURNS) structure.collapsed = true;
+                }
+                continue;
+            }
+            if (structureHasOwner(next, structure, active)) structure.ownerlessAge = 0;
+            else if (delta > 0) structure.ownerlessAge = (structure.ownerlessAge || 0) + delta;
+            if (structure.hp <= 0 && delta > 0) structure.cooldown = (structure.cooldown || 0) + delta;
+            if (structure.ownerlessAge >= OWNERLESS_TURNS) {
+                structure.collapsed = true;
+                structure.hp = 0;
+            }
+        }
+        const hasOwner = next.owners.some((ownerId) => active.has(ownerId));
+        next.ownerlessAge = hasOwner ? 0 : next.ownerlessAge + delta;
+        next.collapsed = structures.length > 0 && structures.every((structure) => structure.collapsed);
+        refresh(next);
+        const effects = next.collapsed ? [{ type: "fieldRetired" }, { type: "invalidateNavigation" }] : [];
+        return { state: next, effects, outcome: { collapsed: next.collapsed, ownerlessAge: next.ownerlessAge } };
+    }
+
+    function containsDeclaredField(state, fieldId, target) {
+        const field = state.fields?.[fieldId];
+        return (
+            !!field &&
+            !field.retired &&
+            field.phase !== "retired" &&
+            field.interiorCells.some((cell) => sameCell(cell, target))
+        );
+    }
+
+    function isInsideCommonCore(state, compositeId, target) {
+        const inner = state.composites?.[compositeId]?.layerIds?.[0];
+        return !!inner && containsDeclaredField(state, inner, target);
+    }
+
+    function flood(state, start, map, goal) {
+        const floors = new Set(map.floor || []),
+            blocked = new Set(solidCells(state).map(key)),
+            initial = key(start),
+            queue = [point(start)],
+            seen = new Set([initial]);
+        if (!floors.has(initial) || blocked.has(initial)) return [];
+        for (let index = 0; index < queue.length; index++) {
+            const current = queue[index];
+            if (goal(current)) return queue.slice(0, index + 1);
+            for (const direction of directions) {
+                const next = { x: current.x + direction.x, y: current.y + direction.y },
+                    nextKey = key(next);
+                if (direction.x && direction.y) {
+                    const sideX = { x: current.x + direction.x, y: current.y },
+                        sideY = { x: current.x, y: current.y + direction.y };
+                    if (blocked.has(key(sideX)) || blocked.has(key(sideY))) continue;
+                }
+                if (floors.has(nextKey) && !blocked.has(nextKey) && !seen.has(nextKey)) {
+                    seen.add(nextKey);
+                    queue.push(next);
+                }
+            }
+        }
+        return [];
+    }
+
+    function pathOutsideField(state, fieldId, start, map) {
+        return flood(state, start, map, (cell) => !containsDeclaredField(state, fieldId, cell));
+    }
+
+    function inspectReachability(state, compositeId, target, map) {
+        const composite = state.composites[compositeId],
+            declared = {},
+            outsideFields = {};
+        for (const fieldId of composite.layerIds) {
+            declared[fieldId] = containsDeclaredField(state, fieldId, target);
+            outsideFields[fieldId] = pathOutsideField(state, fieldId, target, map).length > 0;
+        }
+        const outer = composite.layerIds.at(-1),
+            exit = point(map.exit);
+        return {
+            declared,
+            outsideFields,
+            outsideComposite: pathOutsideField(state, outer, target, map).length > 0,
+            floorExit: flood(state, target, map, (cell) => sameCell(cell, exit)).length > 0,
+        };
+    }
+
+    function captureGeometryReady(state, compositeId, target) {
+        const composite = state.composites?.[compositeId];
+        return (
+            !!composite &&
+            containsDeclaredField(state, composite.layerIds[0], target) &&
+            isLayerClosed(state, composite.layerIds[0])
+        );
+    }
+
+    function restore(saved) {
+        const restored = clone(saved);
+        for (const anchor of restored.anchors) {
+            delete anchor.snaredTargetIds;
+            // Test.132 could save a paid rebuilt corner with its obsolete collapse flag.
+            if (
+                anchor.collapsed &&
+                anchor.built &&
+                anchor.hp > 0 &&
+                !anchor.residual &&
+                anchor.owners.some((id) => !fieldRetired(restored, id)) &&
+                restored.actionLog?.some(
+                    (action) =>
+                        action.type === "rebuildAnchor" &&
+                        anchor.owners.includes(action.fieldId) &&
+                        action.cell &&
+                        sameCell(anchor, action.cell),
+                )
+            )
+                anchor.collapsed = false;
+        }
+        return restored;
+    }
+
+    function inspect(state) {
+        const snapshot = clone(state);
+        snapshot.solidCells = solidCells(snapshot);
+        return snapshot;
+    }
+
+    api.SpinnerTopology = {
+        VERSION,
+        ANCHOR_HP,
+        OWNERLESS_TURNS,
+        REBUILD_TURNS,
+        createLine,
+        addLine,
+        retireField,
+        setFieldOwners,
+        createPhysicalGraph,
+        createEnclosure,
+        addEnclosure,
+        validatePassage,
+        createPassage,
+        addPassage,
+        setPassageOpenGates,
+        setEnclosureGate,
+        addEnclosureLayer,
+        prepareEnclosureProject,
+        validatePolygon,
+        inspectWorkAction,
+        lineWorkActions,
+        legalAction,
+        applyAction,
+        nextWorkAction,
+        fieldWorkNeeds,
+        workProgress,
+        workKey,
+        updateTarget,
+        refresh,
+        damageAt,
+        tickOwnerless,
+        containsDeclaredField,
+        isLayerClosed,
+        isInsideCommonCore,
+        pathOutsideField,
+        inspectReachability,
+        captureGeometryReady,
+        restore,
+        inspect,
+        solidCells,
+    };
+})();

@@ -1,0 +1,769 @@
+{
+  "scope": "Abstract geometry and paid construction actions only. No native combat, lure AI, capture, NPC binding or leash simulation.",
+  "baselineCommit": "27dca6dce33310c016a4f36037ee3a47936233fe",
+  "engineSHA256": "89ad72dc46fcafdf35b591f4e4d94a281c149671d695c1233b4499a29f2f30c3",
+  "assumptions": {
+    "seed": "spinner-01",
+    "budgetPerWorldTurn": 1,
+    "costPerPaidAction": 1.5,
+    "membership": "fixture",
+    "movement": "eight-way prototype flood",
+    "target": "explicit debug placement",
+    "damage": "injected, no hit/range/tool checks",
+    "boundedRuns": "Unfinished and stalled runs are retained"
+  },
+  "cases": [
+    {
+      "id": "baseline-room",
+      "note": "Original fixture actor count and selected geometry; 1.5 budget per paid action.",
+      "outcome": {
+        "completed": true,
+        "turns": 50,
+        "limit": 450
+      },
+      "costs": {
+        "budget-delay": 51,
+        "lure": 33,
+        "movement": 33,
+        "placement": 4,
+        "extension": 27,
+        "idle": 2
+      },
+      "replay": "baseline-room.json",
+      "finalHash": "8f33b3d771165c5a802bf677b147ff7b13fc8bc9fdf2f6904b73f6fb872ba0e6"
+    },
+    {
+      "id": "baseline-nested",
+      "note": "Original fixture actor count and selected geometry; 1.5 budget per paid action.",
+      "outcome": {
+        "completed": true,
+        "turns": 113,
+        "limit": 450
+      },
+      "costs": {
+        "budget-delay": 152,
+        "lure": 75,
+        "movement": 130,
+        "placement": 8,
+        "extension": 70,
+        "idle": 17
+      },
+      "replay": "baseline-nested.json",
+      "finalHash": "f4132fe82459bf59030d252eb5e1d469d133de053e865e26fd65cfb8b3b2899c"
+    },
+    {
+      "id": "room-2-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 98,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 66,
+        "lure": 65,
+        "movement": 34,
+        "placement": 4,
+        "extension": 27
+      },
+      "replay": "room-2-prebuild.json",
+      "finalHash": "b642c0e89dadabdfc7498bc2ef245fa4f61fb88fd29a9e6c01db459376641231"
+    },
+    {
+      "id": "room-4-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 42,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 56,
+        "lure": 28,
+        "movement": 47,
+        "placement": 4,
+        "extension": 27,
+        "idle": 6
+      },
+      "replay": "room-4-prebuild.json",
+      "finalHash": "f1c31a5e86706bf147adc953189e6d2ce9a1fb96698d6ae74fc339cbeb683524"
+    },
+    {
+      "id": "room-8-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 42,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 112,
+        "lure": 28,
+        "movement": 99,
+        "idle": 66,
+        "placement": 4,
+        "extension": 27
+      },
+      "replay": "room-8-prebuild.json",
+      "finalHash": "d6db667c420304f046f6a6a43822672cfed5d37c12dc9460a97e278166c7b985"
+    },
+    {
+      "id": "nested-2-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 87,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 58,
+        "lure": 58,
+        "movement": 31,
+        "placement": 4,
+        "extension": 23
+      },
+      "replay": "nested-2-prebuild.json",
+      "finalHash": "68fd2fad7946b8d5fc4da3dbec6fde812dc90c6a65d68624c4e6b63ac7ad7026"
+    },
+    {
+      "id": "nested-4-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 113,
+        "limit": 450,
+        "layers": 2
+      },
+      "costs": {
+        "budget-delay": 152,
+        "lure": 75,
+        "movement": 130,
+        "placement": 8,
+        "extension": 70,
+        "idle": 17
+      },
+      "replay": "nested-4-prebuild.json",
+      "finalHash": "f4132fe82459bf59030d252eb5e1d469d133de053e865e26fd65cfb8b3b2899c"
+    },
+    {
+      "id": "nested-8-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 81,
+        "limit": 450,
+        "layers": 2
+      },
+      "costs": {
+        "budget-delay": 216,
+        "lure": 54,
+        "movement": 169,
+        "idle": 131,
+        "placement": 8,
+        "extension": 70
+      },
+      "replay": "nested-8-prebuild.json",
+      "finalHash": "a60518c0d1011dfebc79a1e190399f3d6767c8036f9a625fc75e36d8b3eb324b"
+    },
+    {
+      "id": "corridor-2-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 24,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 16,
+        "lure": 16,
+        "movement": 12,
+        "placement": 2,
+        "extension": 2
+      },
+      "replay": "corridor-2-prebuild.json",
+      "finalHash": "ff214f6218d6dc8dcef85c19f8650dc0589733baf59e3428d4a6fb8ec802bf5a"
+    },
+    {
+      "id": "corridor-4-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 24,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 32,
+        "lure": 16,
+        "movement": 27,
+        "idle": 17,
+        "placement": 2,
+        "extension": 2
+      },
+      "replay": "corridor-4-prebuild.json",
+      "finalHash": "241d2261c801d8e2acac21711c7e40e2bfde3cff9d6944ce0941e805dc402f01"
+    },
+    {
+      "id": "corridor-8-prebuild",
+      "note": "Fixed candidate across counts; supplied actor membership, stable first actor idle lure. Two actors cannot add the outer layer.",
+      "outcome": {
+        "completed": true,
+        "turns": 21,
+        "limit": 450,
+        "layers": 1
+      },
+      "costs": {
+        "budget-delay": 56,
+        "lure": 14,
+        "movement": 23,
+        "occupancy-delay": 65,
+        "placement": 2,
+        "extension": 2,
+        "idle": 6
+      },
+      "replay": "corridor-8-prebuild.json",
+      "finalHash": "300b4ec98184e6ab4ae0b454ad0a7349d1a3993b20211ed4725d299891e7eaf5"
+    },
+    {
+      "id": "room-early",
+      "note": "Debug target placement, not lure AI. Withdrawal returns target to map start after one closure tick.",
+      "outcome": {
+        "completed": true,
+        "turns": 37,
+        "limit": 450,
+        "prep": null,
+        "entryTurn": 5,
+        "firstInnerAction": 11
+      },
+      "costs": {
+        "budget-delay": 56,
+        "lure": 28,
+        "movement": 47,
+        "placement": 4,
+        "extension": 28,
+        "idle": 5
+      },
+      "replay": "room-early.json",
+      "finalHash": "b1de844dd3fb04248d6d77540fd785406b923e09eace3b2cf999784f5e5d01be"
+    },
+    {
+      "id": "room-late",
+      "note": "Debug target placement, not lure AI. Withdrawal returns target to map start after one closure tick.",
+      "outcome": {
+        "completed": true,
+        "turns": 5,
+        "limit": 450,
+        "prep": {
+          "completed": true,
+          "turns": 42,
+          "limit": 450
+        },
+        "entryTurn": 42,
+        "firstInnerAction": 11
+      },
+      "costs": {
+        "budget-delay": 64,
+        "lure": 31,
+        "movement": 49,
+        "placement": 4,
+        "extension": 28,
+        "idle": 12
+      },
+      "replay": "room-late.json",
+      "finalHash": "12e38e344b291be82f591b761d7cc686fb9ad5f90a7b36c841981202079fe01d"
+    },
+    {
+      "id": "room-withdraw",
+      "note": "Debug target placement, not lure AI. Withdrawal returns target to map start after one closure tick.",
+      "outcome": {
+        "completed": true,
+        "turns": 1,
+        "limit": 450,
+        "prep": {
+          "completed": true,
+          "turns": 42,
+          "limit": 450
+        },
+        "entryTurn": 42,
+        "firstInnerAction": 11
+      },
+      "costs": {
+        "budget-delay": 60,
+        "lure": 29,
+        "movement": 47,
+        "placement": 4,
+        "extension": 27,
+        "idle": 8,
+        "reopen": 1
+      },
+      "replay": "room-withdraw.json",
+      "finalHash": "8ed096cef2277daee414cef8929bfe321f131b1ba681b9817d42d2e5f6c3d8ec"
+    },
+    {
+      "id": "nested-early",
+      "note": "Debug target placement, not lure AI. Withdrawal returns target to map start after one closure tick.",
+      "outcome": {
+        "completed": true,
+        "turns": 91,
+        "limit": 450,
+        "prep": null,
+        "entryTurn": 5,
+        "firstInnerAction": 11,
+        "firstOuterAction": 11
+      },
+      "costs": {
+        "budget-delay": 128,
+        "lure": 64,
+        "movement": 111,
+        "placement": 8,
+        "extension": 72,
+        "idle": 1
+      },
+      "replay": "nested-early.json",
+      "finalHash": "07ba8651e33b7a76dde159344573e7d261e238151ab982072ad6f5f04cead2f3"
+    },
+    {
+      "id": "nested-late",
+      "note": "Debug target placement, not lure AI. Withdrawal returns target to map start after one closure tick.",
+      "outcome": {
+        "completed": true,
+        "turns": 6,
+        "limit": 450,
+        "prep": {
+          "completed": true,
+          "turns": 113,
+          "limit": 450
+        },
+        "entryTurn": 113,
+        "firstInnerAction": 11,
+        "firstOuterAction": 53
+      },
+      "costs": {
+        "budget-delay": 160,
+        "lure": 79,
+        "movement": 132,
+        "placement": 8,
+        "extension": 72,
+        "idle": 25
+      },
+      "replay": "nested-late.json",
+      "finalHash": "df3eeef1d3b3fc1af5608ce21e9d7777723977c7b4093eeb25b014fd8a61191f"
+    },
+    {
+      "id": "nested-withdraw",
+      "note": "Debug target placement, not lure AI. Withdrawal returns target to map start after one closure tick.",
+      "outcome": {
+        "completed": true,
+        "turns": 1,
+        "limit": 450,
+        "prep": {
+          "completed": true,
+          "turns": 113,
+          "limit": 450
+        },
+        "entryTurn": 113,
+        "firstInnerAction": 11,
+        "firstOuterAction": 53
+      },
+      "costs": {
+        "budget-delay": 156,
+        "lure": 76,
+        "movement": 131,
+        "placement": 8,
+        "extension": 70,
+        "idle": 19
+      },
+      "replay": "nested-withdraw.json",
+      "finalHash": "f73a2a46dee8bb6318bd6278c014c567b891cdb7c66f6eee8486399fe96fe572"
+    },
+    {
+      "id": "shared-3-single",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 4,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 0.85
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-3-single.json",
+      "finalHash": "212808c13a626334d2f28a812f8010332a58fd7ad62143eefe5f48d57a3bb7a3"
+    },
+    {
+      "id": "shared-3-anchor",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 2,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 1
+          },
+          {
+            "id": "vertical",
+            "damage": 1
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-3-anchor.json",
+      "finalHash": "2f6d9aeba0d63bacb17c36feb0af1125d7c5a97a47adef51153a80ab8896e527"
+    },
+    {
+      "id": "shared-3-aoe",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 2,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 2.85
+          },
+          {
+            "id": "vertical",
+            "damage": 1.85
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-3-aoe.json",
+      "finalHash": "e842d05de476a8c2f0a55b96bb5dd6e1774060df5fb685ead79880845039104f"
+    },
+    {
+      "id": "shared-3-anchor-aoe",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 2,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 1.85
+          },
+          {
+            "id": "vertical",
+            "damage": 1.85
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-3-anchor-aoe.json",
+      "finalHash": "98aad8991bde68cd82c8f2332ef9620269e96c949fbd1c08d145a0b88ff2adab"
+    },
+    {
+      "id": "shared-9-single",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 15,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 0.4
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-9-single.json",
+      "finalHash": "e1722acdaf65f83eedec74f9651c6bd4efc75085b75c5f8076920f6668c649bb"
+    },
+    {
+      "id": "shared-9-anchor",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 2,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 1
+          },
+          {
+            "id": "vertical",
+            "damage": 1
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-9-anchor.json",
+      "finalHash": "aec9c72ce3963b3761a72fd44cd96876fc63155268dfdc5aaba5eceac8c5fada"
+    },
+    {
+      "id": "shared-9-aoe",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 4,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 1.5
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-9-aoe.json",
+      "finalHash": "0bf7b4a5725ae8dd67e2f4ff118211c4d54e0634ac7b034bf75b2bf02a2f1576"
+    },
+    {
+      "id": "shared-9-anchor-aoe",
+      "note": "Injected one damage unit per attack; attacks do not advance world turns.",
+      "outcome": {
+        "completed": true,
+        "attacks": 2,
+        "firstHit": [
+          {
+            "id": "horizontal",
+            "damage": 1.85
+          },
+          {
+            "id": "vertical",
+            "damage": 1.85
+          }
+        ],
+        "owners": ["f1", "f2"]
+      },
+      "costs": {},
+      "replay": "shared-9-anchor-aoe.json",
+      "finalHash": "374b6f2a8636849bc1c70f173d6893d0c0bf526cdaa82c142bf34e8ab6319be1"
+    },
+    {
+      "id": "repair-pressure-false",
+      "note": "One debug damage unit each world turn. Only one survivor remains; lure duties cease with one actor.",
+      "outcome": {
+        "completed": true,
+        "attacks": 6,
+        "worldTurns": 5
+      },
+      "costs": {
+        "inactive": 15
+      },
+      "replay": "repair-pressure-false.json",
+      "finalHash": "582f75bcc04bd17b51f65e161547761d1b5debe0aae771749a6cedd5b7c164ee"
+    },
+    {
+      "id": "repair-pressure-true",
+      "note": "One debug damage unit each world turn. Only one survivor remains; lure duties cease with one actor.",
+      "outcome": {
+        "completed": true,
+        "attacks": 9,
+        "worldTurns": 8
+      },
+      "costs": {
+        "inactive": 16,
+        "repair-link": 5,
+        "budget-delay": 3
+      },
+      "replay": "repair-pressure-true.json",
+      "finalHash": "042880a4858b779ac0275249c6318da6d203eea19b5f53f51e5c35580b6f1c85"
+    },
+    {
+      "id": "broken-link-rebuild",
+      "note": "Four-turn link cooldown is construction recovery, not capture cooldown.",
+      "outcome": {
+        "completed": true,
+        "turns": 15,
+        "limit": 120,
+        "brokenAt": 50,
+        "firstRebuildAfter": 7
+      },
+      "costs": {
+        "lure": 10,
+        "idle": 7,
+        "budget-delay": 15,
+        "movement": 8,
+        "extension": 5
+      },
+      "replay": "broken-link-rebuild.json",
+      "finalHash": "f67d16c4f5d3acbb6d89845dc13c6d058a11e10fbf05642080b08553743f88b3"
+    },
+    {
+      "id": "occupied-target-cell-stall",
+      "note": "Target occupies an unbuilt anchor. Static target never evades workers; keep this stall in comparisons.",
+      "outcome": {
+        "blocked": {
+          "completed": false,
+          "turns": 120,
+          "limit": 120
+        },
+        "recovered": {
+          "completed": true,
+          "turns": 44,
+          "limit": 150
+        }
+      },
+      "costs": {
+        "budget-delay": 110,
+        "lure": 109,
+        "movement": 40,
+        "placement": 4,
+        "extension": 27,
+        "occupancy-delay": 38
+      },
+      "replay": "occupied-target-cell-stall.json",
+      "finalHash": "6fb29e2818c6c91314ee22eceb6f21842e0fa13efba54469d0abb81beb92c35b"
+    },
+    {
+      "id": "external-occupant-replan",
+      "note": "Static obstacle injected on an unbuilt construction cell; engine must revalidate before building.",
+      "outcome": {
+        "completed": true,
+        "turns": 21,
+        "limit": 150
+      },
+      "costs": {
+        "budget-delay": 36,
+        "lure": 17,
+        "movement": 28,
+        "idle": 11,
+        "occupancy-delay": 8,
+        "placement": 2,
+        "extension": 2
+      },
+      "replay": "external-occupant-replan.json",
+      "finalHash": "f856180d07a104dcad1b4dab7810ac772bae661e4df45727d55d13ba0d92ae8b"
+    },
+    {
+      "id": "participant-removal-stall",
+      "note": "One surviving Spinner may repair but cannot extend an unfinished structure.",
+      "outcome": {
+        "completed": false,
+        "turns": 120,
+        "limit": 120
+      },
+      "costs": {
+        "budget-delay": 56,
+        "lure": 8,
+        "movement": 21,
+        "placement": 2,
+        "extension": 1,
+        "inactive": 360,
+        "idle": 80
+      },
+      "replay": "participant-removal-stall.json",
+      "finalHash": "865c1c44a8390fa8241b7d6e91b106d3610750eec8c7b4e783234018923549a5"
+    },
+    {
+      "id": "retired-roadblock",
+      "note": "Explicit retirement fixture, no capture simulation. Surviving owners remain on map.",
+      "outcome": {
+        "retained": true,
+        "damagedHP": 3.65,
+        "finalHP": 4
+      },
+      "costs": {
+        "inactive": 40,
+        "repair-link": 1,
+        "budget-delay": 7,
+        "idle": 12
+      },
+      "replay": "retired-roadblock.json",
+      "finalHash": "51d35a3a87c816527829957e9140a8cbf1530a27f8c85568c61167248b260290"
+    },
+    {
+      "id": "ownerless-single",
+      "note": "Observe 19/20 active-map turns; stagger shared-owner loss by ten turns.",
+      "outcome": {
+        "lastOwnerLostAt": 50,
+        "cellsAt19": 23,
+        "cellsAt20": 0
+      },
+      "costs": {
+        "inactive": 60
+      },
+      "replay": "ownerless-single.json",
+      "finalHash": "c8f81f2a015c3e7575bfae912c92f22f4bfa9f17af1f07c686cd43e7d880bfd0"
+    },
+    {
+      "id": "ownerless-shared",
+      "note": "Observe 19/20 active-map turns; stagger shared-owner loss by ten turns.",
+      "outcome": {
+        "lastOwnerLostAt": 60,
+        "cellsAt19": 0,
+        "cellsAt20": 0
+      },
+      "costs": {
+        "inactive": 130,
+        "budget-delay": 8,
+        "lure": 6,
+        "idle": 6
+      },
+      "replay": "ownerless-shared.json",
+      "finalHash": "db80a730e42e5570e9890979066b74190c1502bf737a9fd052da75ac36fc5f58"
+    }
+  ],
+  "contractChecks": [
+    {
+      "id": "baseline-room-50",
+      "passed": true
+    },
+    {
+      "id": "baseline-nested-113",
+      "passed": true
+    },
+    {
+      "id": "early-inner-before-outer",
+      "passed": false,
+      "actual": {
+        "firstInnerReady": 53,
+        "firstOuterAction": 11
+      }
+    },
+    {
+      "id": "common-core",
+      "passed": true
+    },
+    {
+      "id": "two-layer-spacing",
+      "passed": true
+    },
+    {
+      "id": "two-actors-single-layer",
+      "passed": true
+    },
+    {
+      "id": "retired-only-no-repair",
+      "passed": false
+    },
+    {
+      "id": "single-ownerless-19-20",
+      "passed": true,
+      "actual": {
+        "lastOwnerLostAt": 50,
+        "cellsAt19": 23,
+        "cellsAt20": 0
+      }
+    },
+    {
+      "id": "shared-ownerless-19-20",
+      "passed": false,
+      "actual": {
+        "lastOwnerLostAt": 60,
+        "cellsAt19": 0,
+        "cellsAt20": 0
+      }
+    },
+    {
+      "id": "broken-link-four-turn-minimum",
+      "passed": true
+    }
+  ]
+}
