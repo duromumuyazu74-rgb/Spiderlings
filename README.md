@@ -9,7 +9,7 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 | Channel                       | Version            | Availability                                                                                                                         |
 | ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Formal release                | `0.92.38`          | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) |
-| Current development candidate | `0.92.36-test.151` | Source candidate in [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149), targeting `test`; not a formal Release    |
+| Current development candidate | `0.92.36-test.152` | Source candidate in [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149), targeting `test`; not a formal Release    |
 | Nest prison experiment        | `prison.alpha.N`   | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package              |
 
 1. Download the ZIP attached to the [formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest), or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).

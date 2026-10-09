@@ -261,13 +261,13 @@
         "spiderlings-mage-spells.test.js"
       ],
       "localTests": ["spiderlings-mage-spells-native.test.js", "spiderlings-combat.test.js"],
-      "scenarios": ["friendly-mage", "npc-cooperation", "mage-timing"],
+      "scenarios": ["friendly-mage", "npc-cooperation", "mage-timing", "mage-rivalry"],
       "reason": "Mage hit/hostility behavior is consumed by player and NPC spell resolution."
     },
     "mage-runes": {
       "tests": ["spiderlings-mage-runes.test.js", "spiderlings-spell-visuals.test.js"],
       "localTests": ["spiderlings-mage-runes-native.test.js"],
-      "scenarios": ["rune-hit", "target-overlay", "owned-effects", "mage-timing"],
+      "scenarios": ["rune-hit", "target-overlay", "owned-effects", "mage-timing", "mage-rivalry"],
       "reason": "Rune placement, impacts, source ownership and delayed phases."
     },
     "mage-spells": {
@@ -277,7 +277,7 @@
         "spiderlings-webbing-enemy.test.js"
       ],
       "localTests": ["spiderlings-mage-spells-native.test.js"],
-      "scenarios": ["friendly-mage", "owned-effects", "mage-timing"],
+      "scenarios": ["friendly-mage", "owned-effects", "mage-timing", "mage-rivalry"],
       "reason": "Mage area spells and their delayed visual/control lifecycle."
     },
     "mage-visuals": {
@@ -665,8 +665,21 @@
         "spiderlings-native-actions.test.js"
       ],
       "localTests": ["spiderlings-spinner-native-contract.test.js"],
-      "scenarios": ["player-recovery", "persistent-recovery", "field-command", "field-custody", "field-commitments"],
+      "scenarios": [
+        "player-recovery",
+        "persistent-recovery",
+        "field-command",
+        "field-custody",
+        "field-commitments",
+        "mage-rivalry"
+      ],
       "reason": "Field prey ownership, explicit contact/defense duties and native recovery execution."
+    },
+    "historical-design": {
+      "tests": [],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Retired offline planning/demo sources have no runtime, package, or registered-test consumers. Preserve the historical HTML and review documentation links; repository checks still apply."
     }
   },
   "files": {
@@ -753,7 +766,13 @@
     "tools/measure-spinner-rollout.js": ["field-rollout"],
     "tools/verify-kd-compatibility.js": ["compatibility-tools"],
     "eslint.config.mjs": ["repository-policy"],
-    "SpiderlingsFieldCustody.js": ["field-custody"]
+    "SpiderlingsFieldCustody.js": ["field-custody"],
+    "docs/spiderlings-spinner-capture/build-plan.mjs": ["historical-design"],
+    "docs/spiderlings-spinner-capture/verify-plan.mjs": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/content.mjs": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/plan.css": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/plan.js": ["historical-design"],
+    "docs/spiderlings-spinner-capture/source/simulator.html": ["historical-design"]
   },
   "symbols": {
     "SpiderlingsFieldProjects.js": {

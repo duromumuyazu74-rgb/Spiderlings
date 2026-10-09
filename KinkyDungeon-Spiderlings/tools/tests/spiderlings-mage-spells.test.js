@@ -20,6 +20,12 @@ function fixture() {
     let pink = false;
     const c = {
         Spiderlings: {
+            Rivalry: {
+                isMaid: (target) =>
+                    target.faction === "Maidforce" ||
+                    (["MaidKnightHeavy", "MaidKnightLight"].includes(target.Enemy?.name) &&
+                        target.faction === "Adventurer"),
+            },
             Webbing: { applyEnemyProgression: (...args) => calls.playerWeb.push(args) },
             Combat: { applySilkBinding: (source, target, amount) => calls.npcWeb.push({ source, target, amount }) },
             getSetting: () => pink,
@@ -75,6 +81,29 @@ function fixture() {
         pink: (value) => (pink = value),
     };
 }
+
+test("Hex and Collapse include shared Maid identities and approved interception targets", () => {
+    for (const name of ["MaidKnightHeavy", "MaidKnightLight", "ElementalIce"]) {
+        for (const spell of ["SpiderlingsMageHex", "SpiderlingsMageCollapse"]) {
+            const r = fixture();
+            r.maid.Enemy.name = name;
+            r.maid.faction = name === "ElementalIce" ? "Enemy" : "Adventurer";
+            if (name === "ElementalIce") {
+                r.c.Spiderlings.FieldCustody = { interceptionPair: (a, b) => a === r.mage && b === r.maid };
+                r.c.KDHostile = (a, b) => r.c.Spiderlings.FieldCustody.interceptionPair(a, b);
+            }
+            r.cast(spell);
+            for (let i = 0; i < 5; i++) r.tick();
+            if (spell === "SpiderlingsMageHex")
+                assert.equal(r.c.Spiderlings.MageSpells.markFor(r.maid)?.stacks, 3, name);
+            else
+                assert.ok(
+                    r.calls.npcWeb.some((hit) => hit.target === r.maid),
+                    name,
+                );
+        }
+    }
+});
 
 test("friendly Collapse attacks hostile NPCs without damaging or binding the nearby player", () => {
     const r = fixture();

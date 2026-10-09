@@ -66,6 +66,11 @@ function fixture() {
             return { result: "Cast" };
         },
     };
+    c.Spiderlings.Rivalry = {
+        isMaid: (target) =>
+            target.faction === "Maidforce" ||
+            (["MaidKnightHeavy", "MaidKnightLight"].includes(target.Enemy?.name) && target.faction === "Adventurer"),
+    };
     vm.createContext(c);
     vm.runInContext(source, c);
     const spell = {
@@ -164,6 +169,28 @@ test("rune replaces one native Mage cast, chooses an empty nearby tile and stops
     assert.equal(r.calls.casts.length, 3);
     r.map.Bullets[0].time = 0;
     assert.equal(r.choose(), r.spell.name, "expired runes free capacity");
+});
+
+test("Mage runes trigger and bind shared Maid identities and approved interceptors", () => {
+    for (const name of ["MaidKnightHeavy", "MaidKnightLight", "ElementalIce"]) {
+        const r = fixture();
+        r.cast();
+        const bullet = r.map.Bullets[0];
+        r.tick();
+        r.tick();
+        const target = { id: 11, x: bullet.x, y: bullet.y, hp: 8, faction: "Adventurer", Enemy: { name } };
+        if (name === "ElementalIce") {
+            target.faction = "Enemy";
+            r.c.Spiderlings.FieldCustody = { interceptionPair: (a, b) => a === r.mage && b === target };
+            r.c.KDHostile = (a, b) => r.c.Spiderlings.FieldCustody.interceptionPair(a, b);
+        }
+        r.map.Entities.push(target);
+        r.tick();
+        assert.equal(bullet.SpiderlingsRunePhase, "triggered", name);
+        r.tick();
+        r.tick();
+        assert.equal(target.slime, 6, name);
+    }
 });
 
 test("Hunting Grounds rune can trigger on allied neutral NPC prey", () => {

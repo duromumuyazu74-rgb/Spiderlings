@@ -25,19 +25,19 @@
         return mageById(id) || { id, hp: 1, faction, Enemy: { name: MAGE } };
     }
 
-    function hostileMaid(source, target) {
+    function hostileNPC(source, target) {
         const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
         return !!(
             target?.hp > 0 &&
             target.Enemy &&
             (huntingPrey ||
+                api.FieldCustody?.interceptionPair(source, target) ||
                 (!target.allied &&
                     !target.Enemy.allied &&
                     !(target.ceasefire > 0) &&
                     !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
                     !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
-                    typeof KDGetFaction === "function" &&
-                    KDGetFaction(target) === "Maidforce")) &&
+                    api.Rivalry?.isMaid(target))) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
@@ -161,7 +161,7 @@
 
     function eligibleTargets(source) {
         const targets = KDHostile(source, KinkyDungeonPlayerEntity) ? [KinkyDungeonPlayerEntity] : [];
-        for (const entity of KDMapData.Entities) if (hostileMaid(source, entity)) targets.push(entity);
+        for (const entity of KDMapData.Entities) if (hostileNPC(source, entity)) targets.push(entity);
         return targets;
     }
 

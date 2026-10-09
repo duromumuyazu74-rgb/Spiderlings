@@ -40,6 +40,8 @@ Recovery shares player-to-field route queries within a navigation snapshot. Map/
 
 WebCaster registers its hunt movement/direction preference, Webbing registers Cocoon movement, and the enemy catalogue registers rivalry after-movement. Domain modules own behavior; NativeActions owns ordering, native fallback, call context and phase admission. Re-registering an owner replaces that strategy without nesting another hook.
 
+The enemy catalogue exposes the read-only `Rivalry.isMaid(entity)` query for Maidforce and the two native Adventurer-faction Maid Knights, including its existing protection checks. Mage bolts, runes and area spells consume that identity instead of maintaining their own faction lists. Hunting Grounds prey and the current FieldCustody interception pair remain separate admission sources; native hostility, shields, resistance and hit bookkeeping still control execution.
+
 SpinnerRuntime retains field/map and Capture/Recovery lifecycle events and invokes the late installer. Capture, Recovery and NPCWrapping retain their own state and transitions. Combat and NPCAdhesion retain existing enemy-loop observation adapters; WebMobility retains the outer native direction adapter. They do not become alternate action commanders.
 
 Adding a species policy uses the shared registration seam. A shared action-admission change also exercises registered behaviors and native fallback. A species-policy change starts with that species' focused checks.

@@ -85,7 +85,7 @@
         KDCastConditions[RUNE] = canPlaceRune;
     }
 
-    function hostileMaid(bullet, target) {
+    function hostileNPC(bullet, target) {
         const source = mageRuneSource(bullet);
         const huntingPrey = api.HuntingGrounds?.isPrey(source, target);
         return !!(
@@ -93,13 +93,13 @@
             target?.hp > 0 &&
             target.Enemy &&
             (huntingPrey ||
+                api.FieldCustody?.interceptionPair(source, target) ||
                 (!target.allied &&
                     !target.Enemy.allied &&
                     !(target.ceasefire > 0) &&
                     !(typeof KDIsInParty === "function" && KDIsInParty(target)) &&
                     !(typeof KDIsServant === "function" && KDIsServant(KDGameData.Collection?.[target.id + ""])) &&
-                    typeof KDGetFaction === "function" &&
-                    KDGetFaction(target) === "Maidforce")) &&
+                    api.Rivalry?.isMaid(target))) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
@@ -175,7 +175,7 @@
     if (typeof KDBulletHitEnemy === "function") {
         const nativeHit = KDBulletHitEnemy;
         KDBulletHitEnemy = function (bullet, target) {
-            if (!isRune(bullet) || !hostileMaid(bullet, target)) return nativeHit.apply(this, arguments);
+            if (!isRune(bullet) || !hostileNPC(bullet, target)) return nativeHit.apply(this, arguments);
             const original = bullet.bullet;
             // The native NPC damage path applies bindType Slime once. Its
             // generic player-effect conversion must not add a second bind.
@@ -220,7 +220,7 @@
         }
         if (typeof KDBulletHitEnemy === "function") {
             for (const target of KDMapData.Entities) {
-                if (inBlast(bullet, target) && hostileMaid(bullet, target)) {
+                if (inBlast(bullet, target) && hostileNPC(bullet, target)) {
                     api.Combat?.pressureNPCShield(target);
                     KDBulletHitEnemy(bullet, target, 0, false);
                 }
@@ -251,7 +251,7 @@
                     KinkyDungeonPlayerEntity.x === bullet.x &&
                     KinkyDungeonPlayerEntity.y === bullet.y;
                 const maidOnRune = KDMapData.Entities.some(
-                    (target) => target.x === bullet.x && target.y === bullet.y && hostileMaid(bullet, target),
+                    (target) => target.x === bullet.x && target.y === bullet.y && hostileNPC(bullet, target),
                 );
                 if (playerOnRune || maidOnRune) {
                     // Snapshot the player's native movement impairment at contact.

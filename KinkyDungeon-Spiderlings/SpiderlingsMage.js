@@ -56,7 +56,7 @@
         };
     }
 
-    function hostileMaid(source, target) {
+    function hostileNPC(source, target) {
         return !!(
             source?.hp > 0 &&
             !(source.ceasefire > 0) &&
@@ -66,8 +66,9 @@
             !target.allied &&
             !target.Enemy.allied &&
             !(target.ceasefire > 0) &&
-            typeof KDGetFaction === "function" &&
-            (KDGetFaction(target) === "Maidforce" || globalThis.Spiderlings?.HuntingGrounds?.isPrey(source, target)) &&
+            (globalThis.Spiderlings?.Rivalry?.isMaid(target) ||
+                globalThis.Spiderlings?.FieldCustody?.interceptionPair(source, target) ||
+                globalThis.Spiderlings?.HuntingGrounds?.isPrey(source, target)) &&
             typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
@@ -76,7 +77,7 @@
     function collision(native) {
         return function (bullet, target) {
             const source = mageShot(bullet, true);
-            if (!source || !hostileMaid(source, target)) return native.apply(this, arguments);
+            if (!source || !hostileNPC(source, target)) return native.apply(this, arguments);
             const original = bullet.bullet;
             bullet.bullet = { ...original, spell: { ...original.spell, friendlyfire: true } };
             try {
@@ -99,7 +100,7 @@
             // player damage effect so KD does not convert it into NPC tags.
             bullet.bullet = {
                 ...original,
-                damage: hostileMaid(source, target)
+                damage: hostileNPC(source, target)
                     ? globalThis.Spiderlings.Combat.nativeSilkDamage(
                           source,
                           { ...original.damage, damage: 4 },

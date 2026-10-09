@@ -142,7 +142,10 @@ test("KD 5.5 NPC bullet hit runs the native Slime bind path once without player-
     let converted = 0;
     const hitFlashes = [];
     const context = {
-        Spiderlings: { SpellVisuals: { hit: (target) => hitFlashes.push(target.id) } },
+        Spiderlings: {
+            SpellVisuals: { hit: (target) => hitFlashes.push(target.id) },
+            Rivalry: { isMaid: (target) => target.faction === "Maidforce" },
+        },
         KDMapData: { Entities: [], Bullets: [] },
         KinkyDungeonPlayerEntity: { player: true },
         KDCastConditions: {},

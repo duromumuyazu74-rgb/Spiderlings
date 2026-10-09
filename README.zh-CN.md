@@ -9,7 +9,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 | 通道         | 版本               | 获取方式                                                                                                               |
 | ------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | 正式版       | `0.92.38`          | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) |
-| 当前开发候选 | `0.92.36-test.151` | 源码候选见 [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149)，目标为 `test`；尚非正式 Release      |
+| 当前开发候选 | `0.92.36-test.152` | 源码候选见 [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149)，目标为 `test`；尚非正式 Release      |
 | 巢穴监狱实验 | `prison.alpha.N`   | 独立 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77)，不包含在普通测试包中                         |
 
 1. 下载[正式版 Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest) 的 ZIP 附件，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。

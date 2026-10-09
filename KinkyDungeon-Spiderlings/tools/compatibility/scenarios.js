@@ -36,6 +36,7 @@ const scenarios = [
         "field-custody",
         "field-commitments",
         "field-residency",
+        "mage-rivalry",
         "field-reinforcement",
         "field-permits",
         "saved-field-guard",
