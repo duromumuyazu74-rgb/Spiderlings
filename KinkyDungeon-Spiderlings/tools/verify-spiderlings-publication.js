@@ -3,7 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
-const { run, repository, packageVerificationCommand } = require("./delivery-commands.js");
+const { run, repository, packageVerificationCommand, verifyPackageCommit } = require("./delivery-commands.js");
 const { parseReleaseVersion } = require("./release-version.js");
 
 function identity(file) {
@@ -36,6 +36,8 @@ function verifyPublication(options, execute = run) {
         !notes.slice(chinese + chineseHeading.length).trim()
     )
         throw new Error("Notes need complete English then Simplified Chinese sections.");
+    const source = verifyPackageCommit(root, options.commit, execute);
+    if (source.version !== version.version) throw new Error("Source manifest version differs from the tag.");
     const verify = packageVerificationCommand(root, packagePath);
     execute(root, verify[0], verify.slice(1));
     const repo = repository(root, execute);
@@ -86,11 +88,13 @@ function verifyPublication(options, execute = run) {
     const downloaded = identity(path.join(output, expected.name));
     if (downloaded.size !== expected.size || downloaded.sha256 !== expected.sha256)
         throw new Error("Downloaded attachment differs from the accepted ZIP.");
+    verifyPackageCommit(root, options.commit, execute);
     const result = {
         status: "passed",
         repository: repo,
         tag: options.tag,
         commit,
+        source,
         latest,
         url: release.html_url,
         package: downloaded,

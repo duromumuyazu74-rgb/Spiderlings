@@ -155,11 +155,24 @@ Record the release source and integration endpoint before writing: an integrated
 
 For a formal release, identify the successful `Repository checks` run for that exact `main` commit and download its `spiderlings-<commit SHA>` artifact. Verify the contained ZIP against the same checkout, run the required package and in-game acceptance on that file, and record its SHA-256. For an unchanged accepted test package, reuse matching verification and native evidence rather than rebuilding it under the same version.
 
+Download the matching `spiderlings-evidence-<commit SHA>` artifact as well. Use a new local directory for each download and retain both artifacts beyond GitHub's 14-day expiry when a candidate is awaiting acceptance:
+
+```powershell
+gh run view <run-id> --repo duromumuyazu74-rgb/Spiderlings
+gh run download <run-id> --repo duromumuyazu74-rgb/Spiderlings --name spiderlings-<commit-sha> --dir .scratch/candidate-<run-id>/package
+gh run download <run-id> --repo duromumuyazu74-rgb/Spiderlings --name spiderlings-evidence-<commit-sha> --dir .scratch/candidate-<run-id>/evidence
+npm run verify:candidate -- --commit <full-commit-sha> --report .scratch/candidate-<run-id>/evidence/<report-directory>/report.json --package .scratch/candidate-<run-id>/package/Spiderlings_<version>.zip
+```
+
+Confirm the run belongs to this repository, completed successfully and built the reviewed source. For PR artifacts, use the report's checked-out commit, not the PR head. `verify:candidate` checks the downloaded build report, ZIP name/size/SHA-256, manifest version, and every packaged source file against that commit's Git blobs, without clean filters or newline normalization. It then calls the existing archive verifier, including image bytes. It is a local artifact check, not a GitHub run-status or gameplay check. Unrelated documentation edits do not invalidate the runtime payload comparison.
+
+Use that same `--package` path for `npm run test:compatibility`, `npm run report:delivery -- --base origin/main --package <ZIP> --evidence <acceptance.json>`, release upload and publication verification. Full delivery reports run public regressions within the complete watcher, once. Keep the required dual-version and applicable manual game/visual acceptance. If an expired candidate must be rebuilt, obtain a new build report and repeat package verification and acceptance for its new hash; an older package's acceptance does not certify the rebuilt ZIP.
+
 Push `v<modbuild>` to the reviewed commit and read the remote tag back. Create the Release with `gh release create v<modbuild> Spiderlings_<modbuild>.zip --verify-tag --notes-file <file>`, attaching the exact ZIP that passed acceptance. Add `--prerelease --latest=false` for explicitly authorized test publication. Verify the configured GitHub account before each remote write, and confirm each write by readback before continuing.
 
 Prepare the notes file in UTF-8 with complete `## English` then `## 简体中文` sections, following the [bilingual Release requirements](../CONTRIBUTING.md#formal-promotion-and-releases). Compare the two sections against the delivered changes and verified compatibility evidence. Pass that reviewed file to `--notes-file`.
 
-Use the existing collector for source/package verification and the publication verifier after upload. The latter reads the configured `origin`, verifies the remote tag, channel, notes and Latest, and waits for a successful download before comparing size and SHA-256. Each download uses a new `.scratch/publication/` directory and preserves previous files. It does not publish or modify GitHub state.
+Use the existing collector for source/package verification and the publication verifier after upload. The latter binds all packaged source bytes and the manifest version to the supplied reviewed commit, reads the configured `origin`, verifies the remote tag, channel, notes and Latest, and waits for a successful download before comparing size and SHA-256. Each download uses a new `.scratch/publication/` directory and preserves previous files. It does not publish or modify GitHub state.
 
 ```powershell
 npm run verify:publication -- --tag v0.92.36-test.113 --commit fdeed648ab0f918fc9a0b537eaed1a58451975a4 --notes .scratch/release-test113-notes.md --latest v0.92.38

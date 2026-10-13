@@ -6,7 +6,7 @@ Both modes require Node.js 24, Git and PowerShell. An explicit build also needs 
 npm run report:delivery -- --base origin/test
 ```
 
-The default full mode runs repository checks, policy tests, public regressions, the complete local watcher, and byte-for-byte verification of the existing versioned ZIP. It needs the local game and original artwork inputs described in [development setup](DEVELOPMENT.md#setup). Use `--base origin/main` for a formal-target change.
+The default full mode runs repository checks, policy tests, the complete local watcher, and byte-for-byte verification of the existing versioned ZIP. The watcher runs every public and local regression once; the separate `public-tests` step is marked `not-run` with this reason. A failing watcher fails the report. It needs the local game and original artwork inputs described in [development setup](DEVELOPMENT.md#setup). Use `--base origin/main` for a formal-target change.
 
 Each invocation creates a new directory under `.scratch/delivery/` containing `REPORT.md`, `report.json` and per-check logs. The JSON includes the exact commands, timestamps, exit codes, tool versions, source commit, comparison commit, staged/unstaged/untracked paths, package size and SHA-256. A dirty tree is labelled as a worktree candidate. The collector compares source/index fingerprints before and after checks and fails if the source or selected ZIP changes during verification. Earlier reports and packages are preserved.
 
@@ -27,6 +27,8 @@ Public mode marks the private watcher as `not-run`. `--build` calls the establis
 CI uses `--mode public --build`, also requiring generated atlases to match the committed files. It keeps the required `Repository checks` name, uploads the installable ZIP as `spiderlings-<commit SHA>`, and retains a separate `spiderlings-evidence-<commit SHA>` artifact for 14 days. Evidence is retained on verification failure when checkout/setup allow the collector to run. JSON records identify the CI run and, for a PR, both its checked-out commit and PR head.
 
 The final `Repository checks` job always evaluates the Windows safety and delivery jobs and succeeds only when both succeeded. A failed, cancelled or skipped prerequisite cannot satisfy the required gate.
+
+Before accepting a downloaded candidate, use `npm run verify:candidate -- --commit <full-SHA> --report <downloaded-report.json> --package <downloaded-ZIP>`. It binds the clean successful public build report, final ZIP identity and current payload bytes to the reviewed commit, then runs the archive verifier. This command does not run gameplay or query GitHub status. The [release procedure](DEVELOPMENT.md#releases) covers selecting a successful run, downloading both artifacts and retaining the same ZIP through acceptance and publication.
 
 ## Game acceptance records
 
