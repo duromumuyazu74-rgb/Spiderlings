@@ -255,6 +255,8 @@
     }
 
     function movePatrol(enemy, aiData) {
+        const delta = enemy?.SpiderlingsSpinnerRuntimeDelta;
+        if (!(delta > 0)) return false;
         const prison = state();
         const patrol = prison?.patrols?.[enemy?.id];
         if (
@@ -312,7 +314,7 @@
             KinkyDungeonEnemyTryMove(
                 enemy,
                 { x: next.x - enemy.x, y: next.y - enemy.y },
-                enemy.SpiderlingsSpinnerRuntimeDelta || 1,
+                delta,
                 next.x,
                 next.y,
                 false,

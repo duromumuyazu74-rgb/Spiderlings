@@ -216,7 +216,13 @@
             mapX: KDMapData.mapX,
             mapY: KDMapData.mapY,
         };
-        const lairId = KDAddLair(slot, room, ROOM, 0, false, ENTRANCE, undefined, undefined, undefined, true);
+        // Native lair IDs include the world slot but not the source room. Keep
+        // saved prisons (including the original ID 0) and allocate per room.
+        // Nonpositive IDs avoid claiming a living NPC's personal lair.
+        let id = 0;
+        while (slot.lairs?.[`${id}_${ROOM},${slot.x},${slot.y}`] !== undefined) id -= 1;
+        const lairId =
+            existing || KDAddLair(slot, room, ROOM, id, false, ENTRANCE, undefined, undefined, undefined, true);
         if (!lairId || !KDPersonalAlt[lairId]) return false;
         KDPersonalAlt[lairId].data ||= {};
         KDPersonalAlt[lairId].data.SpiderlingsPrisonSource ||= source;

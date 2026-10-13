@@ -263,6 +263,7 @@
             if (!site) return false;
             record.builderId = builder.id;
             record.buildSite = site;
+            delete record.buildCastTick;
             record.phase = "building";
             return true;
         }
@@ -419,7 +420,10 @@
             if (selectEntrance()) record.phase = "pending";
             else {
                 const builder = entities().find((actor) => sameId(actor.id, record.builderId) && actor.hp > 0);
-                if (!builder && (!record.buildCastTick || tick() - record.buildCastTick > 3)) {
+                // KD resets its world tick to zero after 100000. A saved cast at
+                // the boundary still gets only the normal delayed-summon grace.
+                const sinceCast = tick() - record.buildCastTick + (tick() < record.buildCastTick ? 100001 : 0);
+                if (!builder && (record.buildCastTick === undefined || sinceCast > 3)) {
                     record.phase = "pending";
                     delete record.builderId;
                 }

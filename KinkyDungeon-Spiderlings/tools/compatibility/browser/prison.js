@@ -528,6 +528,7 @@
             mage.failedAt = "native-cocoon-escape";
             mage.final = snapshot();
         }
+
         return { passed: true, scenarios: rows.length, rows };
     } finally {
         Object.assign(settings, previous);

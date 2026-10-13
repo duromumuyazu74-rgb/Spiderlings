@@ -26,6 +26,10 @@ escape progress and backpack contents remain under native inventory ownership.
 Both modes use one native persistent lair per source room and world slot. The outer stairs return to
 that room without advancing the journey. The exit hook clears this capture's identity and stops new
 chamber dispatch. Earlier destroyed nests and paid construction remain on the saved map.
+Distinct source rooms within one world slot have separate lair IDs; existing saved IDs are retained.
+Patrols spend only positive world-time movement credit. A failed delayed Tunneler summon can retry
+after the normal grace period even when the native tick counter wraps through zero.
+The Cocoon vigil leaves a dispatched Tunneler's native building spell available at its work site.
 
 ## Construction and intelligence
 
@@ -50,6 +54,8 @@ adopt and command that same composite.
 The native scenario registry includes `prison`, `prison-regions`, `prison-rivals` and `prison-escape`.
 Final delivery requires all registered scenarios and languages with the same ZIP on KD 5.4.92 and
 a freshly fetched official GitHub 5.5 commit, followed by the full delivery collector.
+The independent `prison-review` scene checks zero-time crouching, separate same-slot source rooms with saved
+destruction and native returns, and interrupted Tunneler summons across tick wrap and reload.
 
 Keep mature failed breach attempts and prepared-Mage outcomes in the evidence. The historical
 three-layer failure and controlled Mage success remain scoped to their old package and game.

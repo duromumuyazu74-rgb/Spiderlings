@@ -91,12 +91,30 @@ function scenario() {
 
 test("prison patrols continue after 25 idle Cocoon turns without attacking the player", () => {
     const { c, patrol, moves } = scenario();
+    patrol.SpiderlingsSpinnerRuntimeDelta = 1;
     const data = { idle: true, canSensePlayer: true, hostile: true, wantsToAttack: true };
     assert.equal(c.KDAIType.hunt.beforemove(patrol, c.KinkyDungeonPlayerEntity, data), true);
     assert.equal(moves.length, 1);
     assert.equal(moves[0].id, patrol.id);
     assert.equal(data.idle, false);
     assert.equal(data.wantsToAttack, false);
+});
+
+test("zero-time native phases cannot move a prison patrol or advance its waypoint", () => {
+    const { c, patrol, moves } = scenario();
+    const before = { x: patrol.x, y: patrol.y, tick: c.KinkyDungeonCurrentTick };
+    const patrolState = JSON.stringify(c.KDMapData.SpiderlingsPrison.patrols);
+    for (const delta of [0, undefined]) {
+        patrol.SpiderlingsSpinnerRuntimeDelta = delta;
+        c.KDAIType.hunt.beforemove(patrol, c.KinkyDungeonPlayerEntity, { canSensePlayer: false });
+    }
+    assert.equal(moves.length, 0);
+    assert.deepEqual({ x: patrol.x, y: patrol.y, tick: c.KinkyDungeonCurrentTick }, before);
+    assert.equal(JSON.stringify(c.KDMapData.SpiderlingsPrison.patrols), patrolState);
+    patrol.SpiderlingsSpinnerRuntimeDelta = 0.5;
+    c.KDAIType.hunt.beforemove(patrol, c.KinkyDungeonPlayerEntity, { canSensePlayer: false });
+    assert.equal(moves.length, 1);
+    assert.equal(moves[0].delta, 0.5);
 });
 
 test("prison spiders without patrol or builder work still disperse from a quiet Cocoon", () => {
@@ -108,6 +126,17 @@ test("prison spiders without patrol or builder work still disperse from a quiet 
     assert.equal(data.wantsToAttack, false);
     Object.assign(enemy, { x: 17, y: 22 });
     assert.equal(c.KDAIType.hunt.beforemove(enemy, c.KinkyDungeonPlayerEntity, data), true);
+});
+
+test("Cocoon vigil cannot take the native spell phase from a dispatched Tunneler", () => {
+    const { c } = scenario();
+    const builder = { id: 4, x: 14, y: 7, hp: 1, Enemy: { name: "Tunneler", tags: { spiderlings: true } } };
+    c.KDMapData.Entities.push(builder);
+    c.Spiderlings.Prison.isPrison = () => false;
+    c.Spiderlings.PrisonEscort = { ownsActor: (enemy) => enemy === builder };
+    assert.equal(c.Spiderlings.Webbing.isCocoonDispersing(builder, c.KinkyDungeonPlayerEntity), true);
+    assert.equal(c.Spiderlings.SpinnerDuties.beginAction(builder, c.KinkyDungeonPlayerEntity, 1), undefined);
+    assert.equal(c.Spiderlings.SpinnerDuties.gate(builder), true);
 });
 
 test("ordinary prison builders resume paid work after the Cocoon vigil ends a player engagement", () => {

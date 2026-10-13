@@ -688,7 +688,7 @@
         "spiderlings-prison-vigil.test.js"
       ],
       "localTests": ["spiderlings-prison.test.js"],
-      "scenarios": ["prison"],
+      "scenarios": ["prison", "prison-review"],
       "reason": "Persistent prison, regional orders, paid transport and chamber construction."
     }
   },

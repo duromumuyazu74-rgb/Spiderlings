@@ -108,9 +108,7 @@ function runtime() {
                 context.KDMapData = JSON.parse(JSON.stringify(slot.data[target]));
                 context.KDGameData.RoomType = target;
             }
-            const start = target
-                ? context.KDMapData.StartPosition
-                : slot.data[""].ShortcutPositions[context.lastPrison];
+            const start = context.KDMapData.ShortcutPositions[context.lastPrison] || context.KDMapData.StartPosition;
             context.KinkyDungeonPlayerEntity.x = start.x;
             context.KinkyDungeonPlayerEntity.y = start.y;
             context.KDEventMapGeneric.AfterAdvance.SpiderlingsNestPrison();
@@ -296,6 +294,7 @@ test("nest losses, extra nest vacancies and patrol routes persist across exit an
     assert.equal(kd.Spiderlings.PrisonNest.allowEntranceSummon(), true);
     const patrolId = Number(Object.keys(state.patrols)[0]);
     const patrol = first.Entities.find((enemy) => enemy.id === patrolId);
+    patrol.SpiderlingsSpinnerRuntimeDelta = 1;
     const oldPosition = [patrol.x, patrol.y];
     kd.KDAIType.hunt.beforemove(patrol, {}, { canSensePlayer: false });
     assert.notDeepEqual([patrol.x, patrol.y], oldPosition);
@@ -327,6 +326,7 @@ test("both patrol routes keep moving through their shared central crossing befor
     for (let turn = 0; turn < 180; turn += 1) {
         for (const id of patrolIds) {
             const actor = kd.KDMapData.Entities.find((enemy) => enemy.id === id);
+            actor.SpiderlingsSpinnerRuntimeDelta = 1;
             kd.KDAIType.hunt.beforemove(actor, {}, { canSensePlayer: false });
             if (actor.x === 24 && actor.y === 22) reached.add(id);
         }
@@ -342,6 +342,7 @@ test("a native Jumper carries paid movement points across idle-loop turns", () =
     const actor = kd.KDMapData.Entities.find((enemy) => enemy.id === id);
     actor.Enemy.movePoints = 1.25;
     actor.movePoints = 0;
+    actor.SpiderlingsSpinnerRuntimeDelta = 1;
     const start = [actor.x, actor.y];
     kd.KinkyDungeonEnemyTryMove = (enemy, direction, delta) => {
         enemy.movePoints += delta;
@@ -442,6 +443,48 @@ test("admission does not create a lair for a missing or blocked nest", () => {
     assert.equal(r.context.Spiderlings.Prison.enter({ entrance: nest }), false);
     assert.deepEqual(Object.keys(r.slot.lairs || {}), []);
     assert.equal(r.source.PotentialEntrances.length, 0);
+});
+
+test("source rooms in the same world slot retain separate prisons and return connections", () => {
+    const { context: c, source, slot } = runtime();
+    const nest = { id: 14, x: 15, y: 15, hp: 5, Enemy: { name: "NestEntrance" } };
+    source.Entities.push(nest);
+    assert.equal(c.Spiderlings.Prison.enter({ entrance: nest, mode: "voluntary" }), true);
+    const mainPrison = c.KDGameData.RoomType;
+    c.KDMapData.SpiderlingsPrison.retainedDamage = 3;
+    c.lastPrison = mainPrison;
+    c.KDGoThruTile(51, 22);
+    const side = floor("SideRoom");
+    const sideNest = { ...nest, id: 15 };
+    side.Entities.push(sideNest);
+    slot.data.SideRoom = side;
+    c.KDMapData = side;
+    c.KDGameData.RoomType = "SideRoom";
+    assert.equal(c.Spiderlings.Prison.enter({ entrance: sideNest }), true);
+    const sidePrison = c.KDGameData.RoomType;
+    assert.notEqual(sidePrison, mainPrison);
+    assert.equal(vm.runInContext("KDGetLairs(KDGetWorldMapLocation({ x: 0, y: 3 }), 1).length", c), 0);
+    assert.equal(c.KDMapData.SpiderlingsPrison.source.room, "SideRoom");
+    assert.equal(c.KDMapData.Tiles["51,22"].RoomType, "SideRoom");
+    c.KDMapData.SpiderlingsPrison.retainedDamage = 7;
+    c.lastPrison = sidePrison;
+    c.KDGoThruTile(51, 22);
+    assert.equal(c.KDGameData.RoomType, "SideRoom");
+    assert.equal(c.KDGameData.SpiderlingsPrisonIdentity, undefined);
+    for (const [sourceRoom, prisonRoom, damage] of [
+        ["", mainPrison, 3],
+        ["SideRoom", sidePrison, 7],
+    ]) {
+        c.KDMapData = JSON.parse(JSON.stringify(slot.data[sourceRoom]));
+        c.KDGameData.RoomType = sourceRoom;
+        assert.equal(c.Spiderlings.Prison.enter({ entrance: c.KDMapData.Entities[0], mode: "voluntary" }), true);
+        assert.equal(c.KDGameData.RoomType, prisonRoom);
+        assert.equal(c.KDMapData.SpiderlingsPrison.retainedDamage, damage);
+        c.lastPrison = prisonRoom;
+        c.KDGoThruTile(51, 22);
+        assert.equal(c.KDGameData.RoomType, sourceRoom);
+    }
+    assert.equal(Object.keys(slot.lairs).length, 2);
 });
 test("voluntary admission preserves prior identity and avoids Intro across a first visit and recapture", () => {
     const { context: c, source, slot } = runtime();

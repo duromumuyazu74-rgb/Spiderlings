@@ -305,6 +305,38 @@ test("destroying the selected entrance makes the escort choose a new physical de
     assert.equal(current.entryCount(), 0);
 });
 
+test("lost Tunneler construction expires across native tick wrap and save/load, including a tick-zero cast", () => {
+    for (const castTick of [99999, 0]) {
+        const current = scenario();
+        current.map.Entities.splice(current.map.Entities.indexOf(current.nest), 1);
+        current.spinner.Enemy.name = "Tunneler";
+        current.escort.onAnchored(current.cocoon);
+        current.turn(31);
+        const builderId = current.escort.state().builderId;
+        current.context.KinkyDungeonCurrentTick = castTick;
+        current.escort.state().lastTick = castTick;
+        current.events["enemyCast:SpiderlingsPrisonEscort"](null, {
+            enemy: current.spinner,
+            spell: { name: "SummonNestEntrance" },
+        });
+        current.spinner.hp = 0;
+        current.context.KDGameData = JSON.parse(JSON.stringify(current.context.KDGameData));
+        current.events["afterLoadGame:SpiderlingsPrisonEscort"]();
+        for (let elapsed = 1; elapsed <= 4; elapsed++) {
+            current.context.KinkyDungeonCurrentTick = (castTick + elapsed) % 100001;
+            current.escort.tickAfter(null, { delta: 1 });
+            if (elapsed <= 3) assert.equal(current.escort.state().builderId, builderId, "delayed summon still pending");
+        }
+        assert.equal(current.escort.state().phase, "building");
+        assert.notEqual(current.escort.state().builderId, builderId, "must dispatch a replacement after timeout");
+        assert.equal(current.escort.state().buildCastTick, undefined, "replacement has not cast yet");
+        assert.equal(
+            current.map.Entities.some((actor) => actor.Enemy.name === "NestEntrance"),
+            false,
+        );
+    }
+});
+
 test("the escort pays native movement points on its route to the entrance", () => {
     const current = scenario();
     current.escort.onAnchored(current.cocoon);

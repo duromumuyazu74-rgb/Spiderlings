@@ -57,7 +57,11 @@
         const prisonWork =
             api.Prison?.isPrison?.() &&
             (enemy.Enemy?.name === "Spinner" || KDMapData.SpiderlingsPrison?.patrols?.[enemy.id]);
-        const dispersing = !source && !prisonWork && api.Webbing?.isCocoonDispersing?.(enemy, target);
+        const dispersing =
+            !source &&
+            !prisonWork &&
+            !api.PrisonEscort?.ownsActor?.(enemy) &&
+            api.Webbing?.isCocoonDispersing?.(enemy, target);
         const yieldWork =
             !source &&
             !dispersing &&
