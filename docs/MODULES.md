@@ -26,6 +26,12 @@ When a travelling permanent resident receives a protected field contact, Command
 
 ## Shared native actions
 
+Prison owns saved dispatch, admission, prisoner identity cleanup, regional reports, patrols and its
+chamber teams. It registers action handlers and per-action definition policies with NativeActions.
+Its dedicated chamber composite uses SpinnerNativeField and Topology's current paid-work interfaces;
+PrisonConstruction identifies that composite so ordinary Projects cannot adopt the same work.
+FieldCommand retains ordinary crews and avoids actors committed to transport or chamber work.
+
 FieldCustody owns the optional map-local `encounter.custody` record and field defense/contact assignments. Capture records actual admission and the resulting bag ID; recovery records a completed return. Legacy attribution is restored only from an existing compatible control/departure record. FieldCommand adopts eligible nearby idle Spinners through `adoptCustodyCrew`, retaining original homes and one current commander; active control sources and another project's needed builders are retained.
 
 At each positive turn, FieldCustody selects at most two visible, actionable defenders for a competing native escort, or up to two visible, reachable recovery contacts after Recovery reports a qualified boundary departure. Existing live recovery sources are not truncated. Potential eligibility alone does not protect every Spinner from command. The selected defenders attack the actual NPC with their native abilities. NPC interception scopes the native player-leash casting policy to that one action and clears player-derived harmless/ranged-ignore flags in its action data; the original enemy definition and native `modified` marker are restored afterward, including on failure. Their movement is a field action, including for native guard AI; their target is revalidated before native attack/spell admission. Unassigned field guards hold position. An approved recovery contact overrides native tied-up indifference while retaining native attack credit, warnings, detection, hit and disability checks.

@@ -280,3 +280,11 @@ KDLoreLabelspiderlings.NestEntrance,巣穴の入口
 SpiderlingsRecoveryPlayerPull,糸を張り、幼蛛の糸紡ぎを近くへ引き寄せた。
 SpiderlingsRecoveryPull,張った糸に引かれ、幼蛛の糸紡ぎへ近づく。
 KDModButtonspiderlingsCaptureFieldLimit,捕獲エリア上限（0：新規設置なし）
+KDRoomType_SpiderlingsNestPrison,幼グモの巣の牢獄
+SpiderlingsPrisonArrival,繭の部屋は蛛糸に覆われている。三つの通路が巣を抜けて東へ続く。
+SpiderlingsPrisonTrail,涼しい風が淡い蛛糸に沿って外壁へ流れている。
+SpiderlingsPrisonExit,外側の網の裂け目から日光が差す。帰り道はここだ。
+DSpiderlingsNestVisit,穴は幼蛛の巣に通じている。淡い糸が帰り道を示している。
+dSpiderlingsNestVisit_Enter,巣に入る
+dSpiderlingsNestVisit_EnterGag,巣に入る
+KinkyDungeonSpiderlingsNestEscort,幼蛛があなたの繭を巣の入口へ運ぼうと近づいてくる。

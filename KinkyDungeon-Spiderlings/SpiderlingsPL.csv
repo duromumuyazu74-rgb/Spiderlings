@@ -280,3 +280,11 @@ KDLoreLabelspiderlings.NestEntrance,Wejście do gniazda
 SpiderlingsRecoveryPlayerPull,Napinasz jedwab i przyciągasz młodego pająka prządkę bliżej.
 SpiderlingsRecoveryPull,Napięty jedwab przyciąga cię do młodego pająka prządki.
 KDModButtonspiderlingsCaptureFieldLimit,Limit pól przechwytywania (0: bez nowych pól)
+KDRoomType_SpiderlingsNestPrison,Więzienie w gnieździe pająków
+SpiderlingsPrisonArrival,Jedwab pokrywa komnatę kokonu. Trzy przejścia prowadzą przez gniazdo na wschód.
+SpiderlingsPrisonTrail,Chłodny powiew biegnie wzdłuż bladego jedwabiu ku zewnętrznej ścianie.
+SpiderlingsPrisonExit,Światło wpada przez szczelinę w zewnętrznej sieci. Tędy prowadzi droga powrotna.
+DSpiderlingsNestVisit,Otwór prowadzi do pajęczego gniazda. Jasny jedwab wskazuje drogę powrotną.
+dSpiderlingsNestVisit_Enter,Wejdź do gniazda
+dSpiderlingsNestVisit_EnterGag,Wejdź do gniazda
+KinkyDungeonSpiderlingsNestEscort,Pajączek zbliża się aby zabrać twój kokon do wejścia gniazda.

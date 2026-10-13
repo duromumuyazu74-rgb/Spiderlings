@@ -418,6 +418,7 @@
                     COCOON_STRUGGLE_THRESHOLD);
         if (anchored) {
             state.anchored = true;
+            api.PrisonEscort?.onAnchored(item);
             delete state.reinforcementPending;
             state.attemptAges = [];
             syncCocoonOuterPose();
@@ -465,6 +466,10 @@
     function needsCocoonReinforcement() {
         const state = equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE];
         return !!state?.reinforcementPending && !state.anchored;
+    }
+
+    function hasAnchoredCocoon() {
+        return equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored === true;
     }
 
     // Garrison peace counts waiting in a Cocoon independently of the 25-turn
@@ -604,7 +609,16 @@
         }
         api.NativeActions.registerBehavior("Cocoon", {
             beforeNativeMove(enemy, player, aiData) {
+                if (api.PrisonEscort?.ownsActor(enemy)) return undefined;
                 if (api.SpinnerDuties?.current(enemy)) return undefined;
+                if (
+                    api.Prison?.isPrison() &&
+                    isCocoonDispersing(enemy, player) &&
+                    (KDMapData.SpiderlingsPrison?.patrols?.[enemy.id] || api.SpinnerAI?.eligibleSpinner(enemy))
+                ) {
+                    disperseCocoonEnemy(enemy, player, aiData);
+                    return undefined;
+                }
                 return disperseCocoonEnemy(enemy, player, aiData);
             },
         });
@@ -1283,6 +1297,7 @@
         COCOON_ESCAPE_EVENT,
         COCOON_ID,
         isCocoonPassive,
+        hasAnchoredCocoon,
         isCocoonDispersing,
         disperseCocoonEnemy,
         needsCocoonReinforcement,

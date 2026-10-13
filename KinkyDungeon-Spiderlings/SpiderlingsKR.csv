@@ -280,3 +280,11 @@ KDLoreLabelspiderlings.NestEntrance,둥지 입구
 SpiderlingsRecoveryPlayerPull,거미줄을 팽팽히 당겨 새끼 거미 방적자를 가까이 끌어당깁니다.
 SpiderlingsRecoveryPull,팽팽한 거미줄에 끌려 새끼 거미 방적자 쪽으로 다가갑니다.
 KDModButtonspiderlingsCaptureFieldLimit,포획 구역 제한 (0: 신규 설치 안 함)
+KDRoomType_SpiderlingsNestPrison,새끼 거미 둥지 감옥
+SpiderlingsPrisonArrival,고치 방이 거미줄로 덮여 있다. 세 갈래 길이 둥지를 지나 동쪽으로 이어진다.
+SpiderlingsPrisonTrail,서늘한 바람이 옅은 거미줄을 따라 바깥벽으로 흐른다.
+SpiderlingsPrisonExit,바깥 거미줄의 틈으로 햇빛이 스민다. 돌아가는 길은 여기다.
+DSpiderlingsNestVisit,입구는 아기 거미의 둥지로 이어진다. 옅은 거미줄이 돌아갈 길을 표시한다.
+dSpiderlingsNestVisit_Enter,둥지로 들어가기
+dSpiderlingsNestVisit_EnterGag,둥지로 들어가기
+KinkyDungeonSpiderlingsNestEscort,아기 거미가 고치를 둥지 입구로 옮기려고 다가온다.

@@ -17,7 +17,8 @@
         const outcome = native.apply(receiver, args);
         for (const behavior of behaviors.values()) {
             if (behavior.aiTypes && !behavior.aiTypes.includes(aiType)) continue;
-            behavior.afterNativeMove?.(enemy, target, data, outcome);
+            const handled = behavior.afterNativeMove?.(enemy, target, data, outcome);
+            if (handled !== undefined) return handled;
         }
         return outcome;
     }
@@ -148,6 +149,10 @@
                     arguments[1] = target;
                     if (api.SpinnerNativeField?.isOwnedProxy(enemy))
                         return { idle: true, defeat: false, defeatEnemy: enemy };
+                    for (const behavior of behaviors.values()) {
+                        const handled = behavior.handleEnemyTurn?.(enemy, target, delta);
+                        if (handled !== undefined) return handled;
+                    }
                     const duty = api.SpinnerDuties?.beginAction(enemy, target, delta);
                     const playerControl = handleControl(enemy, target, delta, duty, [
                         ["recovery", api.SpinnerRecovery],
@@ -170,10 +175,13 @@
                     // KD checks the player's leash even for spells targeting an
                     // NPC. Override that autonomous policy only for this order.
                     const definition = enemy.Enemy;
-                    const actionDefinition =
+                    let actionDefinition =
                         duty?.role === "intercept" && !target.player
                             ? { ...definition, followLeashedOnly: false }
                             : definition;
+                    for (const behavior of behaviors.values())
+                        actionDefinition =
+                            behavior.actionDefinition?.(enemy, target, delta, actionDefinition) || actionDefinition;
                     const hadModified = Object.hasOwn(enemy, "modified"),
                         modified = enemy.modified;
                     enemy.Enemy = actionDefinition;

@@ -64,6 +64,10 @@ const scenarios = [
         "passage-sites",
         "debug-stairs",
         "floor-weights",
+        "prison",
+        "prison-regions",
+        "prison-rivals",
+        "prison-escape",
     ].map((name) => [name, `${name}.js`, null, [], "browser", ["normal-helpers.js"]]),
     ["native-locales", null, null, [], "locales"],
 ].map(([name, file, variant, continues = [], kind = "browser", helpers = []]) => ({

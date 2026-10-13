@@ -916,6 +916,7 @@
         const graph = encounter.topology;
         if (!graph?.composites) return;
         for (const composite of Object.values(graph.composites || {})) {
+            if (api.PrisonConstruction?.ownsComposite?.(composite.id)) continue;
             const fields = composite.layerIds.map((id) => graph.fields[id]);
             if (
                 !fields.length ||
@@ -1776,6 +1777,7 @@
                         Math.min(...members.map((member) => planner.distances(member, a))) -
                             Math.min(...members.map((member) => planner.distances(member, b))),
                 )[0];
+            if (group.homeRegion) group.planningFocus = api.PrisonAlerts?.planningPoint(group.homeRegion);
             if (
                 plan &&
                 (!planner.legal(plan) ||

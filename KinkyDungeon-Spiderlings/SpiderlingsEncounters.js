@@ -598,6 +598,11 @@
         const nativeSummonEnemy = KinkyDungeonSummonEnemy;
         KinkyDungeonSummonEnemy = function (x, y, summonType, count, ...rest) {
             const name = typeof summonType == "string" ? summonType : summonType?.name;
+            if (name === "NestEntrance" && api.Prison?.isPrison?.()) {
+                const slots = api.PrisonNest?.entranceSlots?.() ?? 0;
+                if (slots === 0) return [];
+                if (count > slots) return nativeSummonEnemy.call(this, x, y, summonType, slots, ...rest);
+            }
             if (MOBILE_SPIDERLINGS.has(name)) {
                 const slots = api.availableSpiderlingSlots();
                 if (slots === 0) return [];
@@ -957,6 +962,7 @@
             return 0;
 
         const cap = api.getNestReinforcementCap();
+        const prison = api.Prison?.isPrison?.() === true;
         const infestation = KDMapData.SpiderlingsHuntingGrounds;
         const tunnelerCap = api.getNestTunnelerCap();
         const interval = api.getNestReinforcementInterval();
@@ -968,10 +974,13 @@
         for (const nest of index.nests) {
             // Native entity saves retain this counter. Existing nests seed it
             // once from attributable children still present in the loaded map.
-            if (!Number.isSafeInteger(nest[NEST_TUNNELER_COUNT_FIELD]) || nest[NEST_TUNNELER_COUNT_FIELD] < 0)
+            if (
+                !prison &&
+                (!Number.isSafeInteger(nest[NEST_TUNNELER_COUNT_FIELD]) || nest[NEST_TUNNELER_COUNT_FIELD] < 0)
+            )
                 nest[NEST_TUNNELER_COUNT_FIELD] = index.knownTunnelersByParent.get(nest.id) || 0;
             let eligibleWeights =
-                nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
+                !prison && nest[NEST_TUNNELER_COUNT_FIELD] >= tunnelerCap ? { ...weights, Tunneler: 0 } : weights;
             const missingRoles = api.Population.missingRoles(nest);
             if (missingRoles) {
                 const missing = new Set(missingRoles.map((slot) => slot.name));
@@ -981,7 +990,7 @@
             }
             const totalWeight = Object.values(eligibleWeights).reduce((sum, weight) => sum + weight, 0);
             const livingOffspring = index.livingOffspringByParent.get(nest.id) || 0;
-            const eligible = nestCanReinforce(nest, index.hostileNests);
+            const eligible = prison ? index.hostileNests.has(nest) : nestCanReinforce(nest, index.hostileNests);
             const decision = advanceNestTimer({
                 timer: nest[NEST_TIMER_FIELD],
                 delta,
@@ -1065,7 +1074,7 @@
             created[0][NEST_PARENT_ID_FIELD] = nest.id;
             if (missingRoles)
                 created[0].SpiderlingsHuntRole = missingRoles.find((slot) => slot.name === enemyName)?.role || "hunter";
-            if (enemyName === "Tunneler") nest[NEST_TUNNELER_COUNT_FIELD] += 1;
+            if (enemyName === "Tunneler" && !prison) nest[NEST_TUNNELER_COUNT_FIELD] += 1;
             successfulSummons += 1;
         }
         return successfulSummons;

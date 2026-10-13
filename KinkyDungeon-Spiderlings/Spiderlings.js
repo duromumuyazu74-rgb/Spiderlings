@@ -109,6 +109,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return isHostileSpiderlingTarget(entity) || isHostileWebTarget(entity);
     }
     function isRivalPair(enemy, other) {
+        if (SPIDERLINGS.PrisonEscort?.rivalPair?.(enemy, other)) return true;
         if (SPIDERLINGS.FieldCustody?.interceptionPair(enemy, other)) return true;
         return (
             other?.hp > 0 &&
@@ -550,6 +551,7 @@ SPIDERLINGS.addEnemies([
     // 巢穴入口：固定不动的召唤点，会持续召唤各种幼蛛，死亡时额外爆出幼蛛。
     {
         name: "NestEntrance",
+        specialdialogue: "SpiderlingsNestVisit",
         clusterWith: "spiderlings",
         color: "#FF00FF",
         tags: KDMapInit([

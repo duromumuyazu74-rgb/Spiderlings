@@ -280,3 +280,11 @@ KDLoreLabelspiderlings.NestEntrance,Nesteingang
 SpiderlingsRecoveryPlayerPull,Du spannst die Seide und ziehst das Spinnenjunge Spinner näher heran.
 SpiderlingsRecoveryPull,Die gespannte Seide zieht dich zum Spinnenjungen Spinner.
 KDModButtonspiderlingsCaptureFieldLimit,Fangfeldlimit (0: keine neuen Felder)
+KDRoomType_SpiderlingsNestPrison,Spinnenbrut-Gefängnis
+SpiderlingsPrisonArrival,Seide bedeckt die Kokonkammer. Drei Wege führen durch das Nest nach Osten.
+SpiderlingsPrisonTrail,Ein kühler Luftzug folgt der hellen Seide zur Außenwand.
+SpiderlingsPrisonExit,Tageslicht fällt durch einen Riss im äußeren Netz. Hier geht es zurück.
+DSpiderlingsNestVisit,Die Öffnung führt in das Spinnennest. Helle Seide markiert den Rückweg.
+dSpiderlingsNestVisit_Enter,Das Nest betreten
+dSpiderlingsNestVisit_EnterGag,Das Nest betreten
+KinkyDungeonSpiderlingsNestEscort,Ein Spinnchen nähert sich um deinen Kokon zu einem Nesteingang zu bringen.

@@ -63,6 +63,11 @@ const runtimeScripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsPrison.js",
+    "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonAlerts.js",
+    "SpiderlingsPrisonConstruction.js",
+    "SpiderlingsPrisonEscort.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const atlasAssets = [

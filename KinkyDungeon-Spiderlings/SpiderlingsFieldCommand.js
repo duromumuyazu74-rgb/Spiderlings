@@ -181,6 +181,7 @@
         ai.groups[id] = {
             id,
             memberIds: [],
+            ...(api.Prison?.isPrison?.() ? { homeRegion: api.PrisonAlerts.regionAt(members[0]) } : {}),
             source:
                 nestIds.length && nestIds[0] !== undefined && nestIds.every((nest) => same(nest, nestIds[0]))
                     ? { type: "nest", nestId: nestIds[0] }
@@ -202,6 +203,8 @@
     function protectedMember(entity) {
         return !!(
             sourceRole(entity) ||
+            api.PrisonEscort?.ownsActor?.(entity) ||
+            entity?.SpiderlingsChamberBuilder ||
             entity?.SpiderlingsTaskNestDefenderTarget !== undefined ||
             api.FieldCustody?.assigned(entity) ||
             KDMapData.Entities.some((target) => api.SpinnerNPCRecovery?.wantsPursuit?.(entity, target))
@@ -449,6 +452,7 @@
                     .filter(
                         (group) =>
                             validGroup(ai, group.id) &&
+                            (!group.homeRegion || group.homeRegion === api.PrisonAlerts?.regionAt(entity)) &&
                             (group.source.type === "nest"
                                 ? same(group.source.nestId, entity.SpiderlingsNestParentID)
                                 : entity.SpiderlingsNestParentID === undefined),
@@ -482,6 +486,18 @@
     }
 
     function positions(_encounter) {
+        if (api.Prison?.isPrison?.()) {
+            const report = api.PrisonAlerts.currentReport();
+            return report
+                ? [
+                      {
+                          ...report,
+                          target: { kind: "player", id: KinkyDungeonPlayerEntity.id ?? "player" },
+                          source: "prison-report",
+                      },
+                  ]
+                : [];
+        }
         const actors = KDMapData.Entities.filter((entity) => eligible(entity) && entity.Enemy.name === "Spinner");
         return [
             KinkyDungeonPlayerEntity,
@@ -511,6 +527,7 @@
         for (const group of Object.values(encounter.ai.groups).filter(
             (entry) => entry.id !== excludeGroup && validGroup(encounter.ai, entry.id),
         )) {
+            if (group.homeRegion && group.homeRegion !== api.PrisonAlerts?.regionAt(target)) continue;
             // This is the donor's release judgment. The global controller may not bypass its reserve.
             const residents = group.memberIds.map((id) => byId.get(String(id))).filter(Boolean);
             const members = residents.filter(actionable);
