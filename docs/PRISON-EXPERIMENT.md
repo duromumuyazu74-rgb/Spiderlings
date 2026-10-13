@@ -51,6 +51,22 @@ adopt and command that same composite.
 
 ## Acceptance
 
+Current package: `Spiderlings_0.92.39-prison.alpha.15.zip`, runtime source
+`29fa5f98ac8dcc00dabd62e933fbcfd315fbacc0`. Its [compatibility record](COMPATIBILITY.md#prison-alpha15-2026-10-13)
+binds the exact ZIP hash, both game inputs and the check results. The complete 1,158-test watcher and
+all 68 native scenarios plus seven locales passed on KD 5.4.92 and freshly fetched official KD 5.5.4.
+Both targets completed four paid physical layers and exceeded 60 living actors at cap=0.
+
+#69–75 are closed for experimental implementation and runtime acceptance. [#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68)
+and [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) remain open and `ready-for-human`.
+[PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) remains open against `test`; the ordinary test
+package and formal release do not contain this experiment.
+
+Both targets completed a prepared early escape route back to the source floor. Mature four-layer
+scenes retained 50 failed paid Cut attempts and prepared Mage attempts that failed to remove Cocoon.
+The remaining decisions are whether the recorded escape/population pressure meets the intended balance
+and whether to integrate the experiment into ordinary `test`.
+
 The native scenario registry includes `prison`, `prison-regions`, `prison-rivals` and `prison-escape`.
 Final delivery requires all registered scenarios and languages with the same ZIP on KD 5.4.92 and
 a freshly fetched official GitHub 5.5 commit, followed by the full delivery collector.

@@ -6,11 +6,11 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 
 ## Versions and installation
 
-| Channel                       | Version            | Availability                                                                                                                                 |
-| ----------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Formal release                | `0.92.39fix1`      | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip) |
-| Current development candidate | `0.92.36-test.152` | Source candidate in [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149), targeting `test`; not a formal Release            |
-| Nest prison experiment        | `prison.alpha.N`   | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package                      |
+| Channel                   | Version                   | Availability                                                                                                                                                                                             |
+| ------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formal release            | `0.92.39fix1`             | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)                                                             |
+| Ordinary test development | `0.92.36-test.152`        | [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149) is merged into `test`; source is on the [test branch](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test)                 |
+| Nest prison experiment    | `0.92.39-prison.alpha.15` | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); [verified scope and remaining acceptance](docs/PRISON-EXPERIMENT.md#acceptance); not included in the ordinary test package |
 
 1. Download the ZIP attached to the [formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest), or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).
 2. Load that ZIP through the game's Mod manager.
@@ -18,7 +18,7 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 
 GitHub's automatic Source code archives are repository downloads, not loadable Mod packages. A PR's CI artifact is a candidate tied to its commit; its verification scope is recorded separately.
 
-The development package is verified on KD 5.4.92 and the specific official `5.5` commit recorded in [COMPATIBILITY.md](docs/COMPATIBILITY.md). Every new runtime delivery fetches and tests the latest official `5.5` commit again. The manifest's broad 5.x hint does not certify untested versions. See [current progress](docs/STATUS.md) for source, package and integration status.
+The ordinary test and Prison packages have separate KD 5.4.92 and official `5.5` verification records in [COMPATIBILITY.md](docs/COMPATIBILITY.md). Prison alpha.15 passed on KD 5.4.92 and official KD 5.5.4; escape/balance acceptance and integration remain pending. Every new runtime delivery fetches and tests the latest official `5.5` commit again. The manifest's broad 5.x hint does not certify untested versions. See [current progress](docs/STATUS.md) for source, package and integration status.
 
 ## Current development gameplay
 
