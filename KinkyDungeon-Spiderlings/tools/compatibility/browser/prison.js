@@ -362,15 +362,32 @@
         const cocoon2 = equip();
         settings.spiderlingsMapPopulationCap = "1";
         const stranded = spawn("Spinner", 12, 10, "Enemy");
+        const lostDestination = spawn("NestEntrance", 18, 10, "Enemy");
         escort.onAnchored(cocoon2);
         const deadline2 = escort.state().deadline;
         for (let n = 0; n <= deadline2; n++) await healthyTurn();
+        expect(
+            escort.state().entranceId === lostDestination.id && escort.state().phase === "approach",
+            "Native destination-loss fixture did not dispatch a real escort",
+        );
+        lostDestination.hp = 0;
+        await healthyTurn();
+        selection.destroyedDestination = {
+            id: lostDestination.id,
+            deadline: escort.state().deadline,
+            phase: escort.state().phase,
+            liveNests: KDMapData.Entities.filter((actor) => actor.hp > 0 && actor.Enemy.name === "NestEntrance").length,
+        };
+        expect(
+            escort.state().deadline === deadline2 && selection.destroyedDestination.liveNests === 0,
+            "Destination destruction rerolled dispatch or directly spawned a replacement nest",
+        );
         expect(
             escort.state().phase === "pending" && mobiles().length === 1,
             "Full source capacity without Tunneler did not wait",
         );
         expect(
-            !KDMapData.Entities.some((actor) => actor.Enemy.name === "NestEntrance"),
+            !KDMapData.Entities.some((actor) => actor.hp > 0 && actor.Enemy.name === "NestEntrance"),
             "Full-cap wait created a nest",
         );
         KDRemoveEntity(stranded, false, false, true);
@@ -390,7 +407,7 @@
         await healthyTurn();
         expect(escort.state().deadline === deadline2, "Builder loss rerolled capture deadline");
         expect(
-            !KDMapData.Entities.some((actor) => actor.Enemy.name === "NestEntrance"),
+            !KDMapData.Entities.some((actor) => actor.hp > 0 && actor.Enemy.name === "NestEntrance"),
             "Builder death created a nest",
         );
         item().data.SpiderlingsCocoonOuterWebs.anchored = false;
