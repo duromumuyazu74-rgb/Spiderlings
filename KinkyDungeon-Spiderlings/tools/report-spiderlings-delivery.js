@@ -85,7 +85,12 @@ function checkPlan(root, options, base, packagePath) {
             command: [process.execPath, "--test", path.join(root, ".github/scripts/check-repository.test.mjs")],
             run: true,
         },
-        { id: "public-tests", command: [process.execPath, tool("run-spiderlings-tests.js"), "public"], run: true },
+        {
+            id: "public-tests",
+            command: [process.execPath, tool("run-spiderlings-tests.js"), "public"],
+            run: options.mode === "public",
+            reason: "Full mode runs the public group once inside local-watcher's complete suite.",
+        },
         {
             id: "local-watcher",
             command: ps("watch-spiderlings-mod.ps1", "-Once"),

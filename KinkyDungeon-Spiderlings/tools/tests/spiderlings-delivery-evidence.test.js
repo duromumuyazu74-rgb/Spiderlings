@@ -42,10 +42,17 @@ console.log('fixture repository check passed');
         ".github/scripts/check-repository.test.mjs",
         "import test from 'node:test'; test('fixture policy', () => {});\n",
     );
-    write("KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js", "console.log('fixture public suite passed');\n");
+    write(
+        "KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js",
+        `const fs = require('node:fs');
+fs.mkdirSync('.scratch', { recursive: true });
+fs.appendFileSync('.scratch/public-invocations', 'run\\n');
+if (fs.existsSync('fail-public')) process.exit(7);
+console.log('fixture public suite passed');\n`,
+    );
     write(
         "KinkyDungeon-Spiderlings/tools/watch-spiderlings-mod.ps1",
-        "Write-Output 'fixture local watcher passed'\nexit 0\n",
+        "& node (Join-Path $PSScriptRoot 'run-spiderlings-tests.js') all\nexit $LASTEXITCODE\n",
     );
     write(
         "KinkyDungeon-Spiderlings/tools/build-spiderlings-release.ps1",
@@ -95,9 +102,21 @@ test("public reports bind to the clean commit and existing ZIP while marking omi
     const full = f.collect({ mode: "full" });
     assert.equal(full.exitCode, 0);
     assert.equal(full.report.checks.find((c) => c.id === "local-watcher").status, "passed");
+    assert.equal(full.report.checks.find((c) => c.id === "public-tests").run, false);
+    assert.match(full.report.checks.find((c) => c.id === "public-tests").reason, /once inside local-watcher/);
+    assert.equal(fs.readFileSync(path.join(f.root, ".scratch/public-invocations"), "utf8"), "run\nrun\n");
     assert.notEqual(full.output, result.output);
     assert.deepEqual(fs.readFileSync(reportFile), before);
     assert.equal(JSON.parse(fs.readFileSync(path.join(result.output, "report.json"))).status, "passed");
+});
+
+test("a public failure inside the complete watcher fails full delivery without a duplicate run", (t) => {
+    const f = fixture(t);
+    f.write("fail-public", "yes");
+    const result = f.collect({ mode: "full" });
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.report.checks.find((c) => c.id === "local-watcher").exitCode, 7);
+    assert.equal(fs.readFileSync(path.join(f.root, ".scratch/public-invocations"), "utf8"), "run\n");
 });
 
 test("failed checks and wrong ZIP bytes preserve logs and fail the report", (t) => {
