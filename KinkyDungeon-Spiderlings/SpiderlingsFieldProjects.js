@@ -916,6 +916,7 @@
         const graph = encounter.topology;
         if (!graph?.composites) return;
         for (const composite of Object.values(graph.composites || {})) {
+            if (api.PrisonConstruction?.ownsComposite?.(composite.id)) continue;
             const fields = composite.layerIds.map((id) => graph.fields[id]);
             if (
                 !fields.length ||
@@ -1759,8 +1760,9 @@
         ai.projects.positions = positions;
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             let plan = ai.plans[group.planId];
-            if (group.cancelled) continue;
+            if (group.cancelled || group.managedComposite) continue;
             const members = planner.members(group);
+            if (!members.length && !plan) continue;
             group.planningFocus = positions
                 .filter((target) => members.some((member) => Number.isFinite(planner.distances(member, target))))
                 .sort(
@@ -1776,6 +1778,7 @@
                         Math.min(...members.map((member) => planner.distances(member, a))) -
                             Math.min(...members.map((member) => planner.distances(member, b))),
                 )[0];
+            if (group.homeRegion) group.planningFocus = api.PrisonAlerts?.planningPoint(group.homeRegion);
             if (
                 plan &&
                 (!planner.legal(plan) ||

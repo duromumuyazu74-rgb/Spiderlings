@@ -902,7 +902,7 @@ test("physical inspection includes all eight Lv3 items required by enemy Cocoon 
     const priorStages = items.filter((entry) => /^SpiderlingsWebbingLv[12]/.test(entry.name));
     const resolve = (stacks, equipped = priorStages) =>
         api.resolveWebbingAction({
-            snapshot: { items: equipped, webSpray: { stacks } },
+            snapshot: { items: equipped, webSpray: { stacks }, silkDensity: 100 },
             action: { type: "enemyBind", profile: "WebCaster", random: () => 0 },
         }).outcome;
     assert.equal(resolve(0).selectedId, "SpiderlingsWebbingLv3Arm");

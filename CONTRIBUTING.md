@@ -69,6 +69,10 @@ For final package verification, use `npm run report:delivery` to collect these c
 
 ## Formal promotion and releases
 
+Prison alpha packages use an increasing `major.minor.patch-prison.alpha.N` channel.
+The integration into `test` retains the verified alpha.19 version and ZIP bytes without advancing the formal version.
+Later ordinary test deliveries follow the `-test.N` rule below; retained alpha packages keep their original names and evidence.
+
 Formal versions use `major.minor.patch`, normally incrementing the latest formal patch number. An already prepared formal source version without a ZIP may be packaged as that version. Test deliveries use their formal baseline plus an increasing `-test.N`, starting at 1; each delivery gets a new ZIP and leaves the formal sequence unchanged. Keep the manifest's `modbuild` and `Spiderlings_<modbuild>.zip` consistent. Preserve previous formal and test ZIPs. Source edits alone do not complete a runtime delivery.
 
 Promote accepted gameplay through a PR to `main` with the next version after the latest formal release and complete local delivery evidence. The test baseline can be older than current `main`; removing the test suffix is not a promotion rule. Shared maintenance or hotfix changes can be carried between branches through focused PRs without promoting unrelated test gameplay.

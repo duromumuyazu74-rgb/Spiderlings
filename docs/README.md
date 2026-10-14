@@ -15,6 +15,7 @@
 | 场地领域词汇 / 其他玩法背景    | [GLOSSARY.md](../KinkyDungeon-Spiderlings/GLOSSARY.md) / [CONTEXT.md](../KinkyDungeon-Spiderlings/CONTEXT.md) |
 | 原生接入约束与美术来源         | [官方 Mod 接入](spiderlings-official-modding-guidance.md) / [Spinner 美术](spinner-stage-art.md)              |
 | 游戏兼容证据 / 交付报告        | [COMPATIBILITY.md](COMPATIBILITY.md) / [DELIVERY-EVIDENCE.md](DELIVERY-EVIDENCE.md)                           |
+| 独立巢穴监狱实验 / 剩余验收    | [PRISON-EXPERIMENT.md](PRISON-EXPERIMENT.md) / [当前进度](STATUS.md#巢穴监狱实验)                             |
 | 后续任务 / 依赖维护            | [GitHub Issues](agents/issue-tracker.md) / [DEPENDENCIES.md](DEPENDENCIES.md)                                 |
 
 当前文档描述生效行为，不追加逐版开发日志。修改职责时维护 RUNTIME 与 MODULES；修改数值时维护参数说明；修改交付门槛时维护 CONTRIBUTING。进度只在 STATUS 汇总。

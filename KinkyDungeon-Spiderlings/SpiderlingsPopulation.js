@@ -122,6 +122,7 @@
         const value = String(api.getSetting?.("spiderlingsMapPopulationCap") ?? 25).trim();
         const numeric = Number(value);
         const settingCap = /^\d+$/.test(value) && Number.isSafeInteger(numeric) ? numeric : 25;
+        if (api.Prison?.isPrison?.()) return settingCap > 0 ? Math.max(40, settingCap) : 0;
         const map = typeof KDMapData !== "undefined" ? KDMapData : undefined;
         const plan = map?.SpiderlingsPopulationPlan;
         if (map?.MapMod === HUNTING || (plan?.kind === HUNTING && plan.layoutFallback)) return settingCap + 20;

@@ -307,8 +307,18 @@
                     gear: gear(),
                 });
                 if (mode === "impact" && tick === 5) {
-                    images[`${color}-collapse-burst`] = await photo();
-                    collapse.burst = rendered("burst_");
+                    // Sample the short-lived burst before photo's 200 ms wait
+                    // and extra frames can outlast it, as for bolt impacts above.
+                    collapse.burst = [];
+                    for (let sample = 0; sample < 3; sample++) {
+                        if (sample) await frame();
+                        const sprites = rendered("burst_");
+                        if (hasArt(sprites, "SpiderlingsMageRuneHit")) {
+                            collapse.burst = sprites;
+                            images[`${color}-collapse-burst`] = document.querySelector("canvas").toDataURL("image/png");
+                            break;
+                        }
+                    }
                     expect(hasArt(collapse.burst, "SpiderlingsMageRuneHit"), "Collapse resolved without burst artwork");
                 }
             }

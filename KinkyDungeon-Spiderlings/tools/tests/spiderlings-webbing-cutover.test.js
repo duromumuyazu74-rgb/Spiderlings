@@ -31,6 +31,7 @@ const scripts = [
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
+    "SpiderlingsSilkDensity.js",
     "SpiderlingsWebbing.js",
     "SpiderlingsMageSpells.js",
     "SpiderlingsWeapons.js",
@@ -54,6 +55,12 @@ const scripts = [
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsPrison.js",
+    "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonAlerts.js",
+    "SpiderlingsPrisonConstruction.js",
+    "SpiderlingsPrisonEscort.js",
+    "SpiderlingsPrisonActivity.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const assets = [
@@ -391,10 +398,12 @@ test("seven locale files contain the current restraint and Mage text", () => {
         const entries = csvMap(csv);
         assert.equal(
             entries.size,
-            282,
+            292,
             `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping and weapons`,
         );
         for (const key of [
+            "KDBuffName_SpiderlingsSilkDensity",
+            "KDBuffDesc_SpiderlingsSilkDensity",
             "KDMapMod_SpiderlingsInfestation",
             "KDMapMod_SpiderlingsHuntingGrounds",
             "SpiderlingsInfestationProgress",

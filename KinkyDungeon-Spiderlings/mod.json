@@ -2,7 +2,7 @@
   "modname": "Spiderlings",
   "moddesc": "Nimble spiderlings weave soft silk around you, layer by layer, until a cocoon takes shape. Their nests and web fields await deeper in the dungeon.",
   "author": "Art assets: T_Swizzle; Original mod author: anthropocentricity; Reset author: Chlorlne",
-  "modbuild": "0.92.36-test.152",
+  "modbuild": "0.92.39-prison.alpha.19",
   "gamemajor": 5,
   "gameminor": -1,
   "gamepatch_min": -1,
@@ -154,6 +154,7 @@
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
+    "SpiderlingsSilkDensity.js",
     "SpiderlingsWebbing.js",
     "SpiderlingsMageSpells.js",
     "SpiderlingsWeapons.js",
@@ -177,6 +178,12 @@
     "SpiderlingsSpinnerScenarios.js",
     "SpiderlingsSpinnerRollout.js",
     "SpiderlingsSpinnerRuntime.js",
+    "SpiderlingsPrison.js",
+    "SpiderlingsPrisonNest.js",
+    "SpiderlingsPrisonAlerts.js",
+    "SpiderlingsPrisonConstruction.js",
+    "SpiderlingsPrisonEscort.js",
+    "SpiderlingsPrisonActivity.js",
     "SpiderlingsSpellVisuals.js"
   ]
 }

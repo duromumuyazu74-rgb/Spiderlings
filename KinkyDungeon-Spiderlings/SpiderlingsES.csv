@@ -280,3 +280,13 @@ KDLoreLabelspiderlings.NestEntrance,Entrada del nido
 SpiderlingsRecoveryPlayerPull,Tensas la seda y acercas a la Hiladora.
 SpiderlingsRecoveryPull,La seda tensa te acerca a la Hiladora.
 KDModButtonspiderlingsCaptureFieldLimit,Límite de zonas de captura (0: ninguna zona nueva)
+KDRoomType_SpiderlingsNestPrison,Prisión del nido de arañas
+SpiderlingsPrisonArrival,La seda cubre la cámara del capullo. Tres pasajes llevan al este a través del nido.
+SpiderlingsPrisonTrail,Una corriente fresca sigue la seda pálida hacia el muro exterior.
+SpiderlingsPrisonExit,La luz entra por una abertura en la red exterior. El camino de regreso está aquí.
+DSpiderlingsNestVisit,La abertura conduce al nido. La seda pálida señala el camino de regreso.
+dSpiderlingsNestVisit_Enter,Entrar en el nido
+dSpiderlingsNestVisit_EnterGag,Entrar en el nido
+KinkyDungeonSpiderlingsNestEscort,Una arañita se acerca para llevar tu capullo a la entrada de un nido.
+KDBuffName_SpiderlingsSilkDensity,Densidad de seda
+KDBuffDesc_SpiderlingsSilkDensity,La seda acumulada aumenta el esfuerzo para liberarte. Solo disminuye tras diez turnos del mundo sin ninguna atadura de Spiderlings.

@@ -151,7 +151,10 @@
 
     function sourceAllowsDirectCocoon(source) {
         if (!source) return false;
-        if (source.kind === "enemy") return ["Spinner", "Jumper", "WebCaster", "MageSpiderlings"].includes(source.name);
+        if (source.kind === "enemy")
+            return ["Spinner", "Jumper", "WebCaster", "MageSpiderlings", "Tunneler", "NestEntrance"].includes(
+                source.name,
+            );
         return (
             source.kind === "webSpray" && source.provenance === WEBSPRAY_PROVENANCE && source.triggerSource === "direct"
         );
@@ -180,10 +183,6 @@
         const profileName = typeof action.profile == "string" ? action.profile : action.source && action.source.name;
         const weights = Array.isArray(action.profile) ? action.profile : ENEMY_PROFILES[profileName];
         const source = action.source || { kind: "enemy", name: profileName };
-        if (!weights || weights.length !== PROFILE_FAMILIES.length) {
-            return { progressed: false, reason: "unknown-profile", profile: profileName, source };
-        }
-
         const completion = physicalCompletion(descriptors, snapshot);
         const names = completion.names;
         const cocoonItem = (snapshot.items || []).find((item) => item && item.name === COCOON_ID);
@@ -195,7 +194,6 @@
         }
 
         const cocoonDescriptor = descriptors.get(COCOON_ID);
-        const preHitSlow = normalizedWebSprayState(snapshot.webSpray).stacks;
         const cocoonGroup = (snapshot.groups && snapshot.groups.ItemDevices) || [];
         const cocoonCompatible =
             cocoonDescriptor &&
@@ -205,10 +203,9 @@
             snapshotFlag(snapshot.poseCompatible, COCOON_ID) &&
             snapshotFlag(snapshot.addCompatible, COCOON_ID);
         if (
-            profileName !== "Spinner" &&
             sourceAllowsDirectCocoon(source) &&
             completion.lv3Complete &&
-            preHitSlow >= WEBSPRAY_MAX_STACKS &&
+            Number(snapshot.silkDensity || 0) >= 100 &&
             cocoonCompatible
         ) {
             return {
@@ -222,6 +219,10 @@
                 stage: "Cocoon",
                 clearSlowOnApply: true,
             };
+        }
+
+        if (!weights || weights.length !== PROFILE_FAMILIES.length) {
+            return { progressed: false, reason: "unknown-profile", profile: profileName, source };
         }
 
         const lv1Catalog = completeStageCatalog(descriptors, 1);
