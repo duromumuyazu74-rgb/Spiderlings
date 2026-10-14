@@ -6,10 +6,10 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 ## 版本与安装
 
-| 通道                 | 版本                      | 获取方式                                                                                                                                                                                                                                                                                                          |
-| -------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 正式版               | `0.92.39fix1`             | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)                                                                                                                                                                                    |
-| 含巢穴监狱的测试开发 | `0.92.39-prison.alpha.19` | [下载 Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-prison.alpha.19/Spiderlings_0.92.39-prison.alpha.19.zip)；通过 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 整合进 [test](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) |
+| 通道                 | 版本                      | 获取方式                                                                                                                                                                                                                                                                                                            |
+| -------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 正式版               | `0.92.39fix1`             | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)                                                                                                                                                                                      |
+| 含巢穴监狱的测试开发 | `0.92.39-prison.alpha.19` | [下载 Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-prison.alpha.19/Spiderlings_0.92.39-prison.alpha.19.zip)；通过 [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164) 整合进 [test](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) |
 
 1. 下载上表所需通道的 ZIP，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
 2. 在游戏 Mod 管理器中载入该 ZIP。

@@ -1,6 +1,6 @@
 # Spiderlings Prison experiment
 
-Nest Prison is integrated into `test` through [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77),
+Nest Prison is integrated into `test` through [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164),
 following [#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) and its children #69–76.
 The integrated preview retains the verified `0.92.39-prison.alpha.19` version and installable ZIP.
 It uses current shared modules and the behavior baseline of formal release `v0.92.39fix1`.

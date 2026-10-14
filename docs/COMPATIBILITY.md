@@ -17,7 +17,7 @@ The native Mod manager compares enabled major/minor fields for equality and uses
 
 ## Prison alpha.19 (2026-10-14)
 
-The [#163 implementation in PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77), integrated into `test`, repairs chamber crew custody, adds task/player-sound-driven prison rest and saves uncapped Silk Density. Density qualifies Cocoon at 100 with the existing physical prerequisites and scales owned escape work by `1 + density/100`. Any equipped or linked Spiderlings restraint prevents decay; ten consecutive bare-body world turns precede accelerating decay. Population, reinforcement and admission/escort/chamber timing are unchanged.
+The [#163 implementation in PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77), integrated into `test` through [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164), repairs chamber crew custody, adds task/player-sound-driven prison rest and saves uncapped Silk Density. Density qualifies Cocoon at 100 with the existing physical prerequisites and scales owned escape work by `1 + density/100`. Any equipped or linked Spiderlings restraint prevents decay; ten consecutive bare-body world turns precede accelerating decay. Population, reinforcement and admission/escort/chamber timing are unchanged.
 
 Runtime source: `644fd76c616665041f1a48b594f9f101ef4554dc`. Package: `Spiderlings_0.92.39-prison.alpha.19.zip`, 24,963,730 bytes and 184 allowlisted entries; SHA-256 `38ecdbc488485b54662b905222bf7d9fbfaacb9144f691454a2113ae35c826a5`.
 

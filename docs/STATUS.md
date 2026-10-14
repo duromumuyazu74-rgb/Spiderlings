@@ -8,7 +8,7 @@
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                                                                                                     |
 | 当前测试包   | [Prison alpha.19 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-prison.alpha.19)，沿用同包双版本完整原生验收；[#163](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/163) 已完成 |
-| 监狱集成     | [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 将监狱玩法整合进 `test`；正式版仍为 v0.92.39fix1                                                                                                            |
+| 监狱集成     | [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164) 将监狱玩法整合进 `test`；正式版仍为 v0.92.39fix1                                                                                                          |
 
 `test` 包含监狱玩法，集成预览保留已验收的 alpha.19 版本和安装包字节。历史 test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
 
