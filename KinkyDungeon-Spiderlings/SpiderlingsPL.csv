@@ -288,3 +288,5 @@ DSpiderlingsNestVisit,Otwór prowadzi do pajęczego gniazda. Jasny jedwab wskazu
 dSpiderlingsNestVisit_Enter,Wejdź do gniazda
 dSpiderlingsNestVisit_EnterGag,Wejdź do gniazda
 KinkyDungeonSpiderlingsNestEscort,Pajączek zbliża się aby zabrać twój kokon do wejścia gniazda.
+KDBuffName_SpiderlingsSilkDensity,Gęstość pajęczyny
+KDBuffDesc_SpiderlingsSilkDensity,Gęstsza pajęczyna zwiększa wysiłek potrzebny do uwolnienia. Spada dopiero po dziesięciu turach świata bez żadnych więzów Spiderlings.

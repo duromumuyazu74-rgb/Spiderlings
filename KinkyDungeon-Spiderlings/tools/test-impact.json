@@ -683,12 +683,13 @@
     },
     "prison": {
       "tests": [
+        "spiderlings-density-activity.test.js",
         "spiderlings-prison-escort.test.js",
         "spiderlings-prison-construction.test.js",
         "spiderlings-prison-vigil.test.js"
       ],
       "localTests": ["spiderlings-prison.test.js"],
-      "scenarios": ["prison", "prison-review"],
+      "scenarios": ["prison", "prison-review", "silk-density"],
       "reason": "Persistent prison, regional orders, paid transport and chamber construction."
     }
   },
@@ -787,7 +788,9 @@
     "SpiderlingsPrisonNest.js": ["prison"],
     "SpiderlingsPrisonEscort.js": ["prison"],
     "SpiderlingsPrisonAlerts.js": ["prison"],
-    "SpiderlingsPrisonConstruction.js": ["prison"]
+    "SpiderlingsPrisonConstruction.js": ["prison"],
+    "SpiderlingsSilkDensity.js": ["webbing", "prison"],
+    "SpiderlingsPrisonActivity.js": ["prison", "native-actions"]
   },
   "symbols": {
     "SpiderlingsFieldProjects.js": {

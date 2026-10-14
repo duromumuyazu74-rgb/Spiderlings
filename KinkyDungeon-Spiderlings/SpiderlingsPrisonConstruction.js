@@ -198,6 +198,7 @@
 
     function syncOwners(saved) {
         const ids = livingOwners(saved).map((enemy) => enemy.id);
+        api.FieldCommand?.syncManagedCrew?.(COMPOSITE, ids);
         const composite = api.SpinnerNativeField.compositeById(COMPOSITE);
         if (composite)
             for (const fieldId of composite.layerIds) {
@@ -382,6 +383,7 @@
         const saved = state();
         const marker = enemy?.SpiderlingsChamberBuilder;
         if (!saved || !marker || !saved.ownerIds.includes(enemy.id) || !(enemy.hp > 0)) return undefined;
+        if (api.FieldCommand?.sourceRole?.(enemy) || api.FieldCustody?.assigned?.(enemy)) return undefined;
         if (KinkyDungeonIsDisabled(enemy) || KDHelpless(enemy)) return result(enemy);
         if (
             enemy.aware &&

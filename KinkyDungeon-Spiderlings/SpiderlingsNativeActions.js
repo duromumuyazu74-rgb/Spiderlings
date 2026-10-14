@@ -141,6 +141,10 @@
             KinkyDungeonEnemyLoop,
             (native) =>
                 function (enemy, target, delta) {
+                    for (const behavior of behaviors.values()) {
+                        const admission = behavior.admitAction?.(enemy, target, delta);
+                        if (admission !== undefined) return admission;
+                    }
                     target = api.SpinnerScenarios?.resolveTarget?.(enemy, target) || target;
                     target = api.HuntingGrounds?.resolveNestDefenderTarget?.(enemy, target, delta) || target;
                     target = api.SpinnerAI?.recoveryTarget?.(enemy, target, delta) || target;

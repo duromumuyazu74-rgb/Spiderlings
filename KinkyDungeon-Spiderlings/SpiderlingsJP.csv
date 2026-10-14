@@ -288,3 +288,5 @@ DSpiderlingsNestVisit,穴は幼蛛の巣に通じている。淡い糸が帰り�
 dSpiderlingsNestVisit_Enter,巣に入る
 dSpiderlingsNestVisit_EnterGag,巣に入る
 KinkyDungeonSpiderlingsNestEscort,幼蛛があなたの繭を巣の入口へ運ぼうと近づいてくる。
+KDBuffName_SpiderlingsSilkDensity,蛛糸密度
+KDBuffDesc_SpiderlingsSilkDensity,糸が密になるほど幼グモの拘束からの脱出に手間がかかる。すべての幼グモの拘束を外して10ワールドターン経過すると減少し始める。

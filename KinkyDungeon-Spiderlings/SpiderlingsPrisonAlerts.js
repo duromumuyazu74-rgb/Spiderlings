@@ -149,6 +149,60 @@
         saved.lastAgedTick = tick;
         if (saved.report) saved.report.age++;
         for (const report of Object.values(saved.regions)) report.age++;
+        for (const order of Object.values(saved.workerOrders || {})) order.age += delta;
+    }
+
+    function assignedWorkers() {
+        const saved = alerts();
+        const report = currentReport();
+        if (!saved || !report) return [];
+        saved.workerOrders ||= {};
+        const encounter = api.SpinnerNativeField.state();
+        const active = Object.values(encounter?.ai?.groups || {}).filter((group) => {
+            const plan = encounter.ai.plans[group.planId];
+            return !group.managedComposite && plan && !["invalid", "abandoned", "retired"].includes(plan.status);
+        });
+        const activeRegions = new Set(active.map((group) => group.homeRegion));
+        let slots = Math.max(0, (encounter?.ai?.projects?.maximum ?? 0) - active.length);
+        const regions = new Map();
+        for (const actor of KDMapData.Entities) {
+            if (
+                actor.Enemy?.name !== "Spinner" ||
+                !(actor.hp > 0) ||
+                !KDHostile(actor, KinkyDungeonPlayerEntity) ||
+                KDAllied(actor) ||
+                KDIsInParty(actor) ||
+                KDHelpless(actor) ||
+                KinkyDungeonIsDisabled(actor) ||
+                api.FieldCommand.protectedMember(actor) ||
+                !api.PrisonNest.ordinaryConstructionAllowed(actor)
+            )
+                continue;
+            const region = regionAt(actor);
+            if (!regions.has(region)) regions.set(region, []);
+            regions.get(region).push(actor);
+        }
+        const assigned = [];
+        for (const [region, actors] of regions) {
+            if (activeRegions.has(region)) continue;
+            let order = saved.workerOrders[region];
+            if ((!order || order.serial !== report.serial) && slots > 0 && actors.length >= 2) {
+                const ids = actors
+                    .sort(
+                        (a, b) =>
+                            Math.hypot(a.x - report.x, a.y - report.y) - Math.hypot(b.x - report.x, b.y - report.y) ||
+                            a.id - b.id,
+                    )
+                    .slice(0, 4)
+                    .map((actor) => actor.id);
+                order = saved.workerOrders[region] = { serial: report.serial, age: 0, ids };
+            }
+            if (order?.age < REPORT_AGE && slots > 0) {
+                slots--;
+                assigned.push(...order.ids.filter((id) => actors.some((actor) => actor.id === id)));
+            }
+        }
+        return assigned;
     }
 
     function audit() {
@@ -217,5 +271,6 @@
         advance,
         audit,
         planningPoint,
+        assignedWorkers,
     };
 })();

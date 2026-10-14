@@ -1760,8 +1760,9 @@
         ai.projects.positions = positions;
         for (const group of Object.values(ai.groups).sort((a, b) => a.id.localeCompare(b.id))) {
             let plan = ai.plans[group.planId];
-            if (group.cancelled) continue;
+            if (group.cancelled || group.managedComposite) continue;
             const members = planner.members(group);
+            if (!members.length && !plan) continue;
             group.planningFocus = positions
                 .filter((target) => members.some((member) => Number.isFinite(planner.distances(member, target))))
                 .sort(

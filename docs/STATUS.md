@@ -1,21 +1,29 @@
 # 当前开发进度
 
-核对日期：2026-10-13。本页汇总普通测试开发与独立监狱实验，任务状态以 GitHub Issues 和 PR 为准。
+核对日期：2026-10-14。本页汇总普通测试开发与独立监狱实验，任务状态以 GitHub Issues 和 PR 为准。
 
 ## 源码、安装包与合并
 
-| 项目         | 当前状态                                                                                                                                              |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                           |
-| 普通测试包   | `Spiderlings_0.92.36-test.152.zip`，双版本原生与完整交付验收通过；[PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149) 已合入 `test` |
-| 监狱实验包   | `Spiderlings_0.92.39-prison.alpha.15.zip`，源码 `29fa5f98ac8dcc00dabd62e933fbcfd315fbacc0`，实验安装包已验证                                          |
-| 监狱集成     | [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 开放，目标 `test`；尚未合入 `test` 或 `main`                                      |
+| 项目         | 当前状态                                                                                                                                                         |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                                      |
+| 普通测试包   | `Spiderlings_0.92.36-test.152.zip`，双版本原生与完整交付验收通过；[PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149) 已合入 `test`            |
+| 监狱实验包   | `Spiderlings_0.92.39-prison.alpha.19.zip`，同包双版本完整原生验收通过；[密度、休眠与回收任务 #163](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/163) |
+| 监狱集成     | [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 开放，目标 `test`；尚未合入 `test` 或 `main`                                                 |
 
 普通测试包与正式版不包含监狱实验。监狱实验沿用 v0.92.39fix1 的行为基线和当前共享模块；代码完成、安装包验收和目标分支集成分别记录。
 
 ## 巢穴监狱实验
 
 #69–75 七张实现票已关闭，完成持久监狱与返回、实体外层扩建、竞争押送战斗、Cocoon 运输、主巢巡逻增援、区域警报和 50 回合囚室扩建。[#68 总任务](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76 最终验收](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 保持开放，均为 `ready-for-human`。
+
+alpha.19 新增无上限蛛丝密度，按密度增加幼蛛拘束的摆脱工作量，并替代结茧对减速层数的依赖。穿着任何幼蛛拘束时不衰减，全部脱下十个世界回合后才逐渐加快消散。监狱闲置移动蜘蛛休眠，玩家声响和实际巡逻、施工、维修、回收任务可唤醒限定成员；修复囚室施工队与共同回收逻辑的衔接。入狱、押送期限、50 回合扩建、人口和增援参数不变。
+
+完整 1,172 项本地回归通过；同一 ZIP 在 KD 5.4.92 与当次新拉取的官方 KD 5.5.4 各通过全部 69 项原生检查及七种语言加载。最新存档副本在 16 回合内由原生动作拖回囚室中心，原存档未改写。受控短回放平均回合处理时间由 218.66 ms 降至 143.70 ms，约减少 34.28%；这是同一位置的短时对照，不是桌面帧率。详见 [alpha.19 兼容证据](COMPATIBILITY.md#prison-alpha19-2026-10-14)。
+
+成熟四层场地的 50 次 Cut 尝试在两版均未脱茧。准备后的 Mage 路线在 5.4.92 未脱茧，在 5.5.4 脱茧后未找到穿越场地的路线；两版早期准备路线均成功返回原楼层。继续保留逃脱与平衡验收，以及是否整合进普通 `test` 的决定。
+
+### alpha.15 历史验收
 
 alpha.15 已通过 1,158 项完整回归、仓库与策略检查、安装包与源码一致性核对；[源码 CI](https://github.com/duromumuyazu74-rgb/Spiderlings/actions/runs/38409860165) 通过。同一 ZIP 在 KD 5.4.92 与当次新拉取的官方 KD 5.5.4 各通过全部 68 个原生场景及七种语言检查。两版完成四层实体施工，cap=0 分别达到 66、64 个存活演员，准备后的早期逃脱路线均返回原楼层。
 

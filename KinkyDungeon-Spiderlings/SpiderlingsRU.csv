@@ -288,3 +288,5 @@ DSpiderlingsNestVisit,Проём ведёт в паучье гнездо. Све
 dSpiderlingsNestVisit_Enter,Войти в гнездо
 dSpiderlingsNestVisit_EnterGag,Войти в гнездо
 KinkyDungeonSpiderlingsNestEscort,Паучок приближается чтобы отнести твой кокон ко входу в гнездо.
+KDBuffName_SpiderlingsSilkDensity,Плотность паутины
+KDBuffDesc_SpiderlingsSilkDensity,Плотная паутина требует больше усилий для освобождения. Спадает только через десять мировых ходов после снятия всех пут паучат.

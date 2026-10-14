@@ -320,7 +320,7 @@ test("Mage bolt selection honors live blockers and does not retry native add fai
     assert.equal(bolt.damageCalls(), 3);
 });
 
-test("Mage bolts repair an existing Cocoon without WebCaster anchoring", () => {
+test("Mage bolts repair and reinforce a pending Cocoon without needing WebCaster", () => {
     const runtime = loadRuntime();
     const bolt = mageBoltHit(runtime);
     const cocoon = {
@@ -332,8 +332,8 @@ test("Mage bolts repair an existing Cocoon without WebCaster anchoring", () => {
     runtime.equipment.set("ItemDevices", cocoon);
     assert.equal(bolt.hit(), bolt.nativeResult);
     assert.equal(cocoon.cutProgress, 0.1);
-    assert.equal(cocoon.data.SpiderlingsCocoonOuterWebs.anchored, false);
-    assert.equal(cocoon.data.SpiderlingsCocoonOuterWebs.reinforcementPending, true);
+    assert.equal(cocoon.data.SpiderlingsCocoonOuterWebs.anchored, true);
+    assert.equal(cocoon.data.SpiderlingsCocoonOuterWebs.reinforcementPending, undefined);
     assert.equal(runtime.addCalls.length, 0);
 });
 
@@ -562,7 +562,8 @@ test("Hood preference excludes Hood while seven Lv3 layers still permit Cocoon",
     ];
     const webSpray = { stacks: 5 };
     assert.equal(
-        select(runtime, { catalog, snapshot: snapshotFor(inner, { allowHood: false, webSpray }) }).selectedId,
+        select(runtime, { catalog, snapshot: snapshotFor(inner, { allowHood: false, webSpray, silkDensity: 100 }) })
+            .selectedId,
         "SpiderlingsWebbingCocoon",
     );
     assert.equal(
@@ -947,6 +948,7 @@ test("native-compatible ordinary and mixed external chains permit every inner gr
     }
     const original = foreign.map(plain);
     const api = runtime.context.Spiderlings.Webbing;
+    runtime.context.Spiderlings.SilkDensity = { state: () => ({ value: 100 }), contact() {} };
     for (let n = 0; n < 24; n++) {
         const before = runtime.context.KinkyDungeonAllRestraintDynamic().length;
         runtime.context.KDPlayerEffects[api.WEBSPRAY_EFFECT](

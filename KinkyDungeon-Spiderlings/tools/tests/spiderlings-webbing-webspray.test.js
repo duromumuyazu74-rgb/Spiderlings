@@ -154,8 +154,8 @@ test("crossfire expires, breaks on lost partners, ignores trails and cannot skip
     full.hit(0);
     full.hit(1);
     full.hit(0);
-    assert.equal(full.equipment.has("ItemDevices"), false, "five pre-existing slow stacks required");
-    full.hit(1);
+    assert.equal(full.equipment.has("ItemDevices"), false, "density is independent of capped slow stacks");
+    for (let n = 0; n < 5 && !full.equipment.has("ItemDevices"); n++) full.hit(1);
     assert.equal(full.worn(), 24);
 });
 
@@ -428,6 +428,7 @@ function loadRuntime(options = {}) {
         "SpiderlingsCombat.js",
         "SpiderlingsWebbingData.js",
         "SpiderlingsWebbingRules.js",
+        "SpiderlingsSilkDensity.js",
         "SpiderlingsWebbing.js",
     ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });

@@ -185,8 +185,11 @@
     }
 
     function bindPlayer(source, attempts) {
+        api.SilkDensity?.contact(source);
         for (let i = 0; i < attempts; i++) {
-            const result = api.Webbing?.applyEnemyProgression("MageSpiderlings", source, KDGetFaction(source));
+            const result = api.Webbing?.applyEnemyProgression("MageSpiderlings", source, KDGetFaction(source), {
+                contact: false,
+            });
             if (result?.progressed) api.SpellVisuals?.hit(KinkyDungeonPlayerEntity);
         }
     }

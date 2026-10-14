@@ -40,6 +40,7 @@ const runtimeScripts = [
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
+    "SpiderlingsSilkDensity.js",
     "SpiderlingsWebbing.js",
     "SpiderlingsMageSpells.js",
     "SpiderlingsWeapons.js",
@@ -68,6 +69,7 @@ const runtimeScripts = [
     "SpiderlingsPrisonAlerts.js",
     "SpiderlingsPrisonConstruction.js",
     "SpiderlingsPrisonEscort.js",
+    "SpiderlingsPrisonActivity.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const atlasAssets = [
@@ -1617,9 +1619,9 @@ function checkRouting(state) {
         const inner = state.restraints
             .filter((entry) => /^SpiderlingsWebbingLv[12]/.test(entry.name))
             .map((entry) => ({ name: entry.name }));
-        const resolve = (items) =>
+        const resolve = (items, silkDensity = 100) =>
             webbing.resolveWebbingAction({
-                snapshot: { items, webSpray: { stacks: 5 } },
+                snapshot: { items, silkDensity, webSpray: { stacks: 5 } },
                 action: { type: "enemyBind", profile: "WebCaster", random: () => 0 },
             }).outcome;
         const full = state.restraints
@@ -1630,12 +1632,13 @@ function checkRouting(state) {
             resolve(inner).selectedId !== "SpiderlingsWebbingLv3Arm" ||
             resolve(full).selectedId !== webbing.COCOON_ID ||
             resolve(lv3Only).selectedId !== webbing.COCOON_ID ||
+            resolve(lv3Only, 99).selectedId === webbing.COCOON_ID ||
             lv3Only.some(
                 (missing) => resolve(lv3Only.filter((entry) => entry !== missing)).selectedId === webbing.COCOON_ID,
             )
         ) {
             fail(
-                "enemy progression must enter Lv3 after the corresponding lower layers; Cocoon requires all eight physical Lv3 items, without requiring Lv1/Lv2 completeness.",
+                "enemy progression must enter Lv3 after the corresponding lower layers; Cocoon requires density 100 and all eight physical Lv3 items, without requiring Lv1/Lv2 completeness or accepting full slow alone.",
             );
         }
     }

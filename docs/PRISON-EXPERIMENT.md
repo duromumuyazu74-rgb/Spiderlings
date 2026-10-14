@@ -33,6 +33,10 @@ The Cocoon vigil leaves a dispatched Tunneler's native building spell available 
 
 ## Construction and intelligence
 
+Idle wild mobile prison spiders rest until a real task, player-origin audible sound or direct damage wakes them. Existing patrols, paid chamber work, capture/recovery and transport retain their owners and timing. Rest skips tactical AI, while statuses, damage, death, occupancy and population accounting continue. Ordinary movement already emits native player sound; awakening investigates the last sound location instead of granting live player tracking. Allies, static nests and web projections keep their own behavior.
+
+The chamber composite has a managed crew registered by FieldCommand. FieldCustody selects shared recovery contacts after a real leg-bag-bearing boundary exit, and dedicated construction yields to those contacts and active control sources. Ordinary Projects does not adopt the same expansion work. The enclosure planner rejects out-of-region candidate geometry before path analysis and reuses gate connectivity only while map geometry and endpoints match.
+
 The original ten main entrances share the existing proximity reinforcement formula. The living
 Spiderling cap is at least 40 for positive settings, accepts higher values, and keeps 0 unlimited.
 Per-nest living offspring bounds remain. Prison reinforcement has no lifetime Tunneler budget;
@@ -50,6 +54,18 @@ The Prison module owns these dispatched teams and its chamber composite; ordinar
 adopt and command that same composite.
 
 ## Acceptance
+
+### Silk Density and alpha.19 scope
+
+Hostile Spiderling direct contacts add 10 density; attributed lingering spray adds 2 with a per-source world-turn limit. There is no density maximum. Crossfire bonus restraints and multiple internal binding attempts in one Mage burst do not add extra contacts. Density replaces the five-stack WebSpray slow condition: at 100 or more, a qualifying direct attack can apply Cocoon when its physical Lv3 and native compatibility prerequisites already hold. Spinner is eligible. Direct Spiderling silk can also reinforce an existing Cocoon with pending outer-web reinforcement; the existing resistance window and escort timing remain.
+
+Density is saved on the player and is not consumed by Cocoon or map changes. Any equipped or linked Spiderlings restraint, including the leg bag and silk leash, resets its bare-body timer and prevents decay. Ten consecutive positive world turns without any such restraint are a grace period. Afterward, successive quiet time applies `2^(-(afterAge²-beforeAge²)/144)`, where age excludes that ten-turn grace. A new accepted contact restarts the grace; load does not restart or erase saved time. Values below 0.5 clear to zero.
+
+Each native delayed escape-work increment for an owned restraint is divided by `1 + density/100`, after native minimum-progress calculation. Tool checks, accessibility, cost, previously earned progress and native final-success rules remain. Density 100/200/300 therefore multiplies incremental work requirements by 2/3/4, although total button counts also depend on the native final-success threshold. The HUD displays the saved density without adding a SlowLevel or curse lock.
+
+Alpha.19 is the candidate for [#163](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/163), including the prison custody, dormancy, planning and density changes. Regional construction and existing repair tasks wake a bounded crew; pending orders consume project capacity on every planning pass. Its final evidence is recorded separately from the alpha.15 evidence below. Population, reinforcement settings, the 30–50 turn escort deadline and the 50-turn chamber dispatch are unchanged.
+
+### Alpha.15 retained acceptance
 
 Current package: `Spiderlings_0.92.39-prison.alpha.15.zip`, runtime source
 `29fa5f98ac8dcc00dabd62e933fbcfd315fbacc0`. Its [compatibility record](COMPATIBILITY.md#prison-alpha15-2026-10-13)

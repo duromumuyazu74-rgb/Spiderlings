@@ -212,6 +212,7 @@
     }
 
     function location(encounter, group) {
+        if (group?.managedComposite) return api.SpinnerNativeField.commonCore(group.managedComposite);
         const plan = encounter.ai.plans[group?.planId];
         if (plan?.center) return plan.center;
         if (plan?.anchors?.length) return plan.anchors[0];
@@ -223,7 +224,7 @@
         const group = encounter.ai.groups[groupId];
         const plan = encounter.ai.plans[group?.planId];
         const graph = encounter.topology;
-        const outerId = graph?.composites?.[plan?.compositeId]?.layerIds.at(-1);
+        const outerId = graph?.composites?.[group?.managedComposite || plan?.compositeId]?.layerIds.at(-1);
         const outer = graph?.fields?.[outerId];
         const distance = (point) => Math.max(Math.abs(point.x - entity.x), Math.abs(point.y - entity.y));
         if (outer)
@@ -262,6 +263,7 @@
     }
 
     function minimumResidents(encounter, group) {
+        if (group?.managedComposite) return 0;
         if (!group || !validGroup(encounter.ai, group.id)) return 0;
         const plan = encounter.ai.plans[group.planId];
         const layers = encounter.topology?.composites?.[plan?.compositeId]?.layerIds || [];
@@ -452,6 +454,7 @@
                     .filter(
                         (group) =>
                             validGroup(ai, group.id) &&
+                            !group.managedComposite &&
                             (!group.homeRegion || group.homeRegion === api.PrisonAlerts?.regionAt(entity)) &&
                             (group.source.type === "nest"
                                 ? same(group.source.nestId, entity.SpiderlingsNestParentID)
@@ -681,6 +684,37 @@
                 urgency: 2,
                 target: { kind: "player", id: KinkyDungeonPlayerEntity.id },
             });
+        sync(encounter);
+    }
+
+    function syncManagedCrew(compositeId, memberIds) {
+        const encounter = api.SpinnerNativeField.state();
+        const state = ensure(encounter);
+        if (!state) return;
+        const group = (encounter.ai.groups[compositeId] ||= {
+            id: compositeId,
+            source: { type: "managed" },
+            memberIds: [],
+            managedComposite: compositeId,
+        });
+        const ids = new Set(memberIds.map(String));
+        for (const member of Object.values(state.members))
+            if (member.commander === group.id && !ids.has(String(member.id)))
+                returnMember(encounter, member, "managed-work-ended");
+        for (const id of memberIds) {
+            const actor = KDMapData.Entities.find((entry) => same(entry.id, id));
+            if (!actor || actor.Enemy.name !== "Spinner") continue;
+            const member = (state.members[id] ||= { id, home: group.id, phase: "home" });
+            if (member.commander === group.id) continue;
+            Object.assign(member, {
+                commander: group.id,
+                phase: "support",
+                loan: member.loan || state.nextLoan++,
+                origin: member.origin || { x: actor.x, y: actor.y },
+            });
+            delete member.requestId;
+            delete member.destination;
+        }
         sync(encounter);
     }
 
@@ -1027,6 +1061,7 @@
         residencyPending,
         canYield,
         adoptCustodyCrew,
+        syncManagedCrew,
         reconcile,
         ensure,
         newGroup,

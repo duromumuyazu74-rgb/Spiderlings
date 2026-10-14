@@ -288,3 +288,5 @@ DSpiderlingsNestVisit,Die Öffnung führt in das Spinnennest. Helle Seide markie
 dSpiderlingsNestVisit_Enter,Das Nest betreten
 dSpiderlingsNestVisit_EnterGag,Das Nest betreten
 KinkyDungeonSpiderlingsNestEscort,Ein Spinnchen nähert sich um deinen Kokon zu einem Nesteingang zu bringen.
+KDBuffName_SpiderlingsSilkDensity,Seidendichte
+KDBuffDesc_SpiderlingsSilkDensity,Dichtere Seide erhöht den Befreiungsaufwand. Der Abbau beginnt erst zehn Weltzüge nach dem Ablegen aller Spiderlings-Fesseln.

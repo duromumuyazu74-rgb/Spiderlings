@@ -59,6 +59,7 @@ const scripts = [
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
+    "SpiderlingsSilkDensity.js",
     "SpiderlingsWebbing.js",
     "SpiderlingsMageSpells.js",
     "SpiderlingsWeapons.js",
@@ -87,6 +88,7 @@ const scripts = [
     "SpiderlingsPrisonAlerts.js",
     "SpiderlingsPrisonConstruction.js",
     "SpiderlingsPrisonEscort.js",
+    "SpiderlingsPrisonActivity.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const lv1Id = (family) => `SpiderlingsWebbingLv1${family}`;
@@ -621,15 +623,16 @@ test("developer Cocoon scenario keeps gates, twenty-fourth layer, repair, escape
     assert.notEqual(resolve(runtime, snapshot(lv1, 5), bind("Spinner")).outcome.selectedId, cocoonId);
     assert.notEqual(resolve(runtime, snapshot(lv1, 5), bind("Spinner", true)).outcome.selectedId, cocoonId);
     assert.notEqual(resolve(runtime, snapshot(allPhysical, 4), bind("Spinner")).outcome.selectedId, cocoonId);
-    assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("Spinner")).outcome.selectedId, cocoonId);
-    assert.equal(resolve(runtime, snapshot(allPhysical, 5), bind("Jumper")).outcome.selectedId, cocoonId);
+    const qualified = { ...snapshot(allPhysical, 0), silkDensity: 100 };
+    assert.equal(resolve(runtime, qualified, bind("Spinner")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, qualified, bind("Jumper")).outcome.selectedId, cocoonId);
     assert.equal(
         allPhysical.length + 1,
         24,
         "Cocoon is the twenty-fourth outer restraint after the twenty-three physical layers",
     );
-    assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("Tunneler")).outcome.selectedId, cocoonId);
-    assert.notEqual(resolve(runtime, snapshot(allPhysical, 5), bind("NestEntrance")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, qualified, bind("Tunneler")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, qualified, bind("NestEntrance")).outcome.selectedId, cocoonId);
 
     const fifth = resolve(runtime, snapshot(allPhysical, 4), {
         type: "webSprayTrigger",

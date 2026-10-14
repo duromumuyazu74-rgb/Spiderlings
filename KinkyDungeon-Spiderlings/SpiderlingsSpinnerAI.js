@@ -24,6 +24,7 @@
     let observedGroups = new Map();
     let mapCache;
     let passageCache;
+    let enclosureGates;
 
     function seededRandom(seed) {
         let value = 2166136261;
@@ -56,7 +57,12 @@
     function eligibleSpinner(entity, options = {}) {
         const disabled = options.disabled || ((candidate) => KinkyDungeonIsDisabled(candidate)),
             helpless = options.helpless || ((candidate) => KDHelpless(candidate));
-        return baseEligibility(entity, options) && !disabled(entity) && !helpless(entity);
+        return (
+            baseEligibility(entity, options) &&
+            !disabled(entity) &&
+            !helpless(entity) &&
+            !api.PrisonActivity?.isResting?.(entity)
+        );
     }
 
     function targetReference(target) {
@@ -492,6 +498,12 @@
         // not hide a larger reachable enclosure from the global planner.
         for (const nearby of geometry?.candidateCenters ? [null] : [true, false]) {
             for (const center of geometry?.candidateCenters || snapshot.cells || []) {
+                if (
+                    group.homeRegion &&
+                    (api.PrisonAlerts.regionAt(center) !== group.homeRegion ||
+                        !api.PrisonNest.ordinaryConstructionAllowed(center))
+                )
+                    continue;
                 if (group.recoveryAround && distance(group.recoveryAround, center) > 1) continue;
                 if (nearby !== null && distance(focus, center) <= 6 !== nearby) continue;
                 if (work) {
@@ -517,6 +529,10 @@
                                         !tile.locked &&
                                         !tile.protected &&
                                         !reserved.has(cellKey(cell)) &&
+                                        (!group.homeRegion ||
+                                            (distance(cell, center) !== size && distance(cell, center) !== 0) ||
+                                            (api.PrisonAlerts.regionAt(cell) === group.homeRegion &&
+                                                api.PrisonNest.ordinaryConstructionAllowed(cell))) &&
                                         (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
                                     );
                                 }) &&
@@ -1000,7 +1016,7 @@
             entities = input.entities || KDMapData.Entities;
         let lines, enclosureGeometry;
         const interceptionRoutes = new Map();
-        // Share static geometry only within this turn; construction may change the next map snapshot.
+        // Occupancy is refreshed every turn; gate connectivity depends only on geometry and endpoints.
         const signature = geometrySignature(snapshot),
             currentLines = () => {
                 if (!lines) {
@@ -1012,6 +1028,10 @@
             currentEnclosureGeometry = () => {
                 if (!enclosureGeometry) {
                     enclosureGeometry = enclosureGeometryFor(snapshot);
+                    const key = signature + ":" + JSON.stringify([snapshot.entrances, snapshot.exits]);
+                    if (enclosureGates?.map !== KDMapData || enclosureGates.key !== key)
+                        enclosureGates = { map: KDMapData, key, values: new Map() };
+                    enclosureGeometry.gateCache = enclosureGates.values;
                 }
                 return enclosureGeometry;
             };

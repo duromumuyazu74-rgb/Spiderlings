@@ -8,9 +8,11 @@
 
     if (typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "tick", KEY, (_event, data) => {
+            api.PrisonActivity?.prepare(data?.delta);
             api.FieldCustody?.observe();
             api.SpinnerAI?.preparePositiveTurn(data?.delta);
             if (data?.delta > 0) api.FieldCustody?.prepare();
+            if (data?.delta > 0) api.PrisonActivity?.wakeAssigned();
             if (data?.delta > 0) api.SpinnerRollout?.preparePositiveTurn();
             api.SpinnerNPCCapture?.prepareTurn(data?.delta);
             if (data?.delta > 0) api.NPCWrapping?.preemptNativeCapture();

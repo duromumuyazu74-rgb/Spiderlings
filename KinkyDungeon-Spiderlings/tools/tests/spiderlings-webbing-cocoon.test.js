@@ -62,7 +62,7 @@ function snapshot(items, stacks = 0) {
         grouped[entry.group] = grouped[entry.group] || [];
         grouped[entry.group].push(entry);
     }
-    return { items, groups: grouped, webSpray: slow(stacks) };
+    return { items, groups: grouped, webSpray: slow(stacks), silkDensity: 100 };
 }
 
 function loadRuntime(options = {}) {
@@ -255,6 +255,7 @@ function loadRuntime(options = {}) {
         "SpiderlingsCombat.js",
         "SpiderlingsWebbingData.js",
         "SpiderlingsWebbingRules.js",
+        "SpiderlingsSilkDensity.js",
         "SpiderlingsWebbing.js",
     ]) {
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context, { filename: file });
@@ -641,7 +642,7 @@ function directHit(runtime, name = "WebCaster") {
     );
 }
 
-test("escape and attack intents share a window and only WebCaster direct hits anchor", () => {
+test("escape and attack intents share a window and a Spinner can reinforce pending outer webs", () => {
     const runtime = loadRuntime();
     runtime.manualEquipCocoon();
     const item = runtime.equipment.get("ItemDevices");
@@ -656,16 +657,16 @@ test("escape and attack intents share a window and only WebCaster direct hits an
     assert.equal(item.data[outerStateKey].reinforcementPending, true);
     directHit(runtime, "Spinner");
     directHit(runtime, "Jumper");
-    assert.equal(item.data[outerStateKey].anchored, false);
-    assert.equal(runtime.context.Spiderlings.Webbing.needsCocoonReinforcement(), true);
+    assert.equal(item.data[outerStateKey].anchored, true);
+    assert.equal(runtime.context.Spiderlings.Webbing.needsCocoonReinforcement(), false);
     runtime.context.KinkyDungeonLastAction = "Wait";
     runtime.event("tick", { delta: 25 });
     const caster = { Enemy: { name: "WebCaster" }, hp: 1 };
     assert.equal(
         runtime.context.Spiderlings.Webbing.isCocoonDispersing(caster, runtime.context.KinkyDungeonPlayerEntity),
-        false,
+        true,
     );
-    assert.equal(runtime.context.KDOverrideIgnore(caster, runtime.context.KinkyDungeonPlayerEntity), true);
+    assert.equal(runtime.context.KDOverrideIgnore(caster, runtime.context.KinkyDungeonPlayerEntity), false);
     directHit(runtime);
     assert.equal(item.data[outerStateKey].anchored, true);
     assert.equal(runtime.context.Spiderlings.Webbing.needsCocoonReinforcement(), false);
@@ -828,15 +829,14 @@ test("once frequent struggles arm reinforcement it survives the wait for an actu
     assert.equal(restored.data[outerStateKey].reinforcementPending, undefined);
 });
 
-test("trail and unrelated spider profiles never anchor; direct WebSpray anchors even an intact cocoon", () => {
+test("trails and foreign profiles never anchor; direct WebSpray anchors even an intact cocoon", () => {
     const runtime = loadRuntime();
     runtime.manualEquipCocoon();
     const item = runtime.equipment.get("ItemDevices");
     for (let n = 0; n < 3; n++) runtime.nativeEscapeCocoon("Struggle");
     item.cutProgress = 0;
     item.struggleProgress = 0;
-    directHit(runtime, "Tunneler");
-    directHit(runtime, "NestEntrance");
+    directHit(runtime, "Maidforce");
     const spell = runtime.context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "WebSpray");
     const spray = (effect) =>
         runtime.context.KDPlayerEffects.SpiderlingsWebSprayHit(
@@ -904,7 +904,7 @@ test("Cocoon uses the delivered standing art and retains its escape mechanics", 
     assert.ok(manifest.fileorder.indexOf(runtimeAsset) < manifest.fileorder.indexOf("SpiderlingsCore.js"));
 });
 
-test("Cocoon eligibility requires all eight physical Lv3 items, pre-hit five slow, and a later direct allowlisted bind", () => {
+test("Cocoon eligibility uses density and all physical Lv3 items independently of spray slow", () => {
     const runtime = loadRuntime();
     const lv1 = families.map((family) => owned(1, family));
     const lv2 = lv2Families.map((family) => owned(2, family));
@@ -918,13 +918,20 @@ test("Cocoon eligibility requires all eight physical Lv3 items, pre-hit five slo
         ...extra,
     });
 
-    assert.notEqual(resolve(runtime, all, 4, direct("Jumper")).outcome.selectedId, cocoonId);
+    const below = snapshot(all, 5);
+    below.silkDensity = 99;
+    assert.notEqual(
+        runtime.context.Spiderlings.Webbing.resolveWebbingAction({ snapshot: below, action: direct("Jumper") }).outcome
+            .selectedId,
+        cocoonId,
+    );
+    assert.equal(resolve(runtime, all, 0, direct("Spinner")).outcome.selectedId, cocoonId);
     assert.notEqual(resolve(runtime, lv1, 5, direct("Jumper")).outcome.selectedId, cocoonId);
     assert.equal(resolve(runtime, all, 5, direct("Jumper")).outcome.selectedId, cocoonId);
     assert.equal(resolve(runtime, all, 5, direct("Jumper")).outcome.selectedId, cocoonId);
     assert.equal(resolve(runtime, all, 5, direct("WebCaster")).outcome.selectedId, cocoonId);
-    assert.notEqual(resolve(runtime, all, 5, direct("Tunneler")).outcome.selectedId, cocoonId);
-    assert.notEqual(resolve(runtime, all, 5, direct("NestEntrance")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, all, 5, direct("Tunneler")).outcome.selectedId, cocoonId);
+    assert.equal(resolve(runtime, all, 5, direct("NestEntrance")).outcome.selectedId, cocoonId);
 
     assert.notEqual(
         resolve(runtime, lv1, 5, direct("Spinner", { testOnlyLv2Complete: false })).outcome.selectedId,
@@ -956,7 +963,7 @@ test("Cocoon eligibility requires all eight physical Lv3 items, pre-hit five slo
     }
     for (const source of ["Jumper", "WebCaster"]) {
         assert.equal(resolve(runtime, lv3, 5, direct(source)).outcome.selectedId, cocoonId);
-        assert.notEqual(resolve(runtime, lv3, 4, direct(source)).outcome.selectedId, cocoonId);
+        assert.equal(resolve(runtime, lv3, 0, direct(source)).outcome.selectedId, cocoonId);
     }
     for (const missing of [...lv1, ...lv2]) {
         assert.equal(
@@ -986,7 +993,7 @@ test("runtime direct spray can cocoon Lv3-only equipment without adding missing 
             { x: 1, y: 1 },
             caster,
         );
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 9; i++) {
         hit();
         runtime.event("tickAfter", { delta: 1 });
     }
@@ -1001,7 +1008,7 @@ test("runtime direct spray can cocoon Lv3-only equipment without adding missing 
     assert.equal(runtime.buffs.SpiderlingsWebSpraySlow, undefined);
 });
 
-test("the fourth-to-fifth WebSpray hit only establishes the gate and trail never applies Cocoon", () => {
+test("density qualifies a direct hit without a pre-existing slow gate; trails cannot finish Cocoon", () => {
     const runtime = loadRuntime();
     const all = [
         ...families.map((family) => owned(1, family)),
@@ -1017,8 +1024,8 @@ test("the fourth-to-fifth WebSpray hit only establishes the gate and trail never
         random: () => 0,
     });
     const fifth = resolve(runtime, all, 4, action("direct", 4));
-    assert.equal(fifth.nextSnapshot.webSpray.stacks, 5);
-    assert.notEqual(fifth.outcome.selectedId, cocoonId);
+    assert.equal(fifth.nextSnapshot.webSpray.stacks, 4);
+    assert.equal(fifth.outcome.selectedId, cocoonId);
     const later = runtime.context.Spiderlings.Webbing.resolveWebbingAction({
         snapshot: { ...snapshot(all, 5), webSpray: fifth.nextSnapshot.webSpray },
         action: action("direct", 5),
@@ -1033,7 +1040,7 @@ test("runtime enemy Cocoon application is the twenty-fourth layer and clears slo
     const spell = runtime.context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "WebSpray");
     const hit = runtime.context.KDPlayerEffects.SpiderlingsWebSprayHit;
     const caster = { Enemy: { name: "WebCaster" }, id: 60 };
-    for (let turn = 0; turn < 5; turn += 1) {
+    for (let turn = 0; turn < 9; turn += 1) {
         assert.equal(
             hit(
                 runtime.context.KinkyDungeonPlayerEntity,
@@ -1146,19 +1153,22 @@ test("direct and trail WebSpray each add all eight Lv3 items before a later dire
             ).effect,
             true,
         );
+        for (let n = 0; n < 10 && !runtime.equipment.has("ItemDevices"); n++) {
+            spray(runtime.context.KinkyDungeonPlayerEntity, "inert", spell.playerEffect, spell, "Enemy", {}, caster);
+        }
         assert.equal(runtime.equipment.get("ItemDevices").name, cocoonId);
         assert.equal(equipped().length, 24);
         for (const item of original) assert.ok(equipped().includes(item));
     }
 });
 
-test("a later Jumper hit consumes the same physical and pre-hit slow gates", () => {
+test("a Jumper hit reaching density threshold finishes Cocoon with the same physical prerequisites", () => {
     const runtime = loadRuntime();
     runtime.seedPhysical();
     const spell = runtime.context.KinkyDungeonSpellListEnemies.find((entry) => entry.name === "WebSpray");
     const spray = runtime.context.KDPlayerEffects.SpiderlingsWebSprayHit;
     const caster = { Enemy: { name: "WebCaster" }, id: 65 };
-    for (let turn = 0; turn < 5; turn += 1) {
+    for (let turn = 0; turn < 9; turn += 1) {
         spray(
             runtime.context.KinkyDungeonPlayerEntity,
             "inert",

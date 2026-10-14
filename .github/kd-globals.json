@@ -1,4 +1,7 @@
 [
+  "KDAddDelayedAction",
+  "KDCanHearEnemy",
+  "KDCanHearSound",
   "AIData",
   "AddModel",
   "AudioPlayInstantSoundKD",
