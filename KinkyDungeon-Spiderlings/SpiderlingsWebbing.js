@@ -412,12 +412,12 @@
         const anchored =
             !state?.anchored &&
             sourceAllowsDirectCocoon(outcome.source) &&
-            (outcome.source.kind === "webSpray" || outcome.source.name === "WebCaster") &&
             (state?.reinforcementPending ||
                 (state?.attemptAges || []).filter((age) => age >= 0 && age < COCOON_STRUGGLE_WINDOW).length >=
                     COCOON_STRUGGLE_THRESHOLD);
         if (anchored) {
             state.anchored = true;
+            api.PrisonEscort?.onAnchored(item);
             delete state.reinforcementPending;
             state.attemptAges = [];
             syncCocoonOuterPose();
@@ -465,6 +465,10 @@
     function needsCocoonReinforcement() {
         const state = equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE];
         return !!state?.reinforcementPending && !state.anchored;
+    }
+
+    function hasAnchoredCocoon() {
+        return equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored === true;
     }
 
     // Garrison peace counts waiting in a Cocoon independently of the 25-turn
@@ -604,7 +608,16 @@
         }
         api.NativeActions.registerBehavior("Cocoon", {
             beforeNativeMove(enemy, player, aiData) {
+                if (api.PrisonEscort?.ownsActor(enemy)) return undefined;
                 if (api.SpinnerDuties?.current(enemy)) return undefined;
+                if (
+                    api.Prison?.isPrison() &&
+                    isCocoonDispersing(enemy, player) &&
+                    (KDMapData.SpiderlingsPrison?.patrols?.[enemy.id] || api.SpinnerAI?.eligibleSpinner(enemy))
+                ) {
+                    disperseCocoonEnemy(enemy, player, aiData);
+                    return undefined;
+                }
                 return disperseCocoonEnemy(enemy, player, aiData);
             },
         });
@@ -636,10 +649,12 @@
         return true;
     }
 
-    function applyEnemyProgression(profile, entity, faction) {
+    function applyEnemyProgression(profile, entity, faction, options = {}) {
+        if (options.contact !== false) api.SilkDensity?.contact(entity || { Enemy: { name: profile }, faction });
         const catalog = runtimeEnemyCatalog();
         const snapshot = runtimeEnemySnapshot(catalog, entity);
         snapshot.webSpray = runtimeWebSprayState;
+        snapshot.silkDensity = api.SilkDensity?.state()?.value || 0;
         const resolution = resolveWebbingAction({
             catalog,
             snapshot,
@@ -683,6 +698,7 @@
         if (typeof KDPlayerEffects == "undefined" || !KDPlayerEffects) return false;
         KDPlayerEffects[ENEMY_BIND_EFFECT] = (_target, _damage, playerEffect, _spell, faction, _bullet, entity) => {
             const profile = playerEffect && playerEffect.profile;
+            api.SilkDensity?.contact(entity || { Enemy: { name: profile }, faction });
             const captureWasControlling = profile === "Spinner" && api.SpinnerCapture?.isControllingPlayer?.();
             if (
                 profile === "Spinner" &&
@@ -693,7 +709,7 @@
             )
                 return { effect: false };
             if (_target?.player && api.SpinnerCapture?.state()) return { effect: false };
-            const outcome = applyEnemyProgression(profile, entity, faction);
+            const outcome = applyEnemyProgression(profile, entity, faction, { contact: false });
             if (outcome.progressed && entity && profile !== "Spinner" && playerEffect?.consumeOnProgress === true)
                 entity.hp = 0;
             return { effect: outcome.progressed === true };
@@ -806,11 +822,19 @@
         if (typeof addTextKey == "function") addTextKey(CROSS_FIRE_MESSAGE, CROSS_FIRE_FALLBACK);
         if (typeof KDPlayerEffects != "undefined" && KDPlayerEffects) {
             KDPlayerEffects[WEBSPRAY_EFFECT] = (_target, _damage, playerEffect, _spell, faction, bullet, entity) => {
+                if (
+                    playerEffect?.provenance === WEBSPRAY_PROVENANCE &&
+                    ["direct", "trail"].includes(playerEffect.triggerSource)
+                ) {
+                    const source = entity || { id: bullet?.bullet?.source, faction, Enemy: { name: "WebCaster" } };
+                    api.SilkDensity?.contact(source, playerEffect.triggerSource);
+                }
                 // Already airborne Spiderlings spray also waits out the capture; NPC routes are separate.
                 if (_target?.player && api.SpinnerCapture?.state()) return { sfx: "Null", effect: false };
                 const catalog = runtimeEnemyCatalog();
                 const snapshot = runtimeEnemySnapshot(catalog, entity);
                 snapshot.webSpray = runtimeWebSprayState;
+                snapshot.silkDensity = api.SilkDensity?.state()?.value || 0;
                 const resolution = resolveWebbingAction({
                     catalog,
                     snapshot,
@@ -1283,6 +1307,7 @@
         COCOON_ESCAPE_EVENT,
         COCOON_ID,
         isCocoonPassive,
+        hasAnchoredCocoon,
         isCocoonDispersing,
         disperseCocoonEnemy,
         needsCocoonReinforcement,

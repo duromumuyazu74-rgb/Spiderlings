@@ -14,10 +14,10 @@ function identity(file) {
 function verifyPublication(options, execute = run) {
     const root = path.resolve(options.root || path.join(__dirname, "../.."));
     const version = parseReleaseVersion(options.tag?.replace(/^v/, ""));
+    const prerelease = version.channel !== "formal";
     if (options.tag !== `v${version.version}` || !/^[a-f0-9]{40}$/.test(options.commit || ""))
         throw new Error("Publication verification needs a version tag and full reviewed commit.");
-    if (version.channel === "test" && !options.latest)
-        throw new Error("Test publication needs the expected formal Latest tag.");
+    if (prerelease && !options.latest) throw new Error("Test publication needs the expected formal Latest tag.");
     const packagePath = path.resolve(root, options.packagePath || version.packageName);
     const expected = identity(packagePath);
     if (expected.name !== version.packageName) throw new Error("Installable package filename differs from the tag.");
@@ -43,7 +43,7 @@ function verifyPublication(options, execute = run) {
     const repo = repository(root, execute);
     const gh = (endpoint) => JSON.parse(execute(root, "gh", ["api", `repos/${repo}/${endpoint}`, "--method", "GET"]));
     const release = gh(`releases/tags/${options.tag}`);
-    if (release.draft || release.prerelease !== (version.channel === "test"))
+    if (release.draft || release.prerelease !== prerelease)
         throw new Error("Published Release channel differs from the version.");
     if (
         release.tag_name !== options.tag ||
@@ -63,7 +63,7 @@ function verifyPublication(options, execute = run) {
     )?.split(/\s+/)[0];
     if (commit !== options.commit) throw new Error("Remote release tag does not point to the reviewed commit.");
     const latest = gh("releases/latest").tag_name;
-    if (latest !== (version.channel === "test" ? options.latest : options.tag))
+    if (latest !== (prerelease ? options.latest : options.tag))
         throw new Error("Formal Latest tag differs from expectation.");
     if (version.channel === "formal" && !["ahead", "identical"].includes(gh(`compare/${commit}...main`).status))
         throw new Error("Formal release commit is not integrated into main.");

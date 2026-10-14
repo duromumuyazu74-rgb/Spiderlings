@@ -54,7 +54,14 @@
         if (!(delta > 0)) return undefined;
         const source = api.FieldCommand.sourceRole(enemy);
         const interception = !source && api.FieldCustody?.targetFor(enemy);
-        const dispersing = !source && api.Webbing?.isCocoonDispersing?.(enemy, target);
+        const prisonWork =
+            api.Prison?.isPrison?.() &&
+            (enemy.Enemy?.name === "Spinner" || KDMapData.SpiderlingsPrison?.patrols?.[enemy.id]);
+        const dispersing =
+            !source &&
+            !prisonWork &&
+            !api.PrisonEscort?.ownsActor?.(enemy) &&
+            api.Webbing?.isCocoonDispersing?.(enemy, target);
         const yieldWork =
             !source &&
             !dispersing &&

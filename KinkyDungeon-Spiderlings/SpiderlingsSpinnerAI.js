@@ -24,6 +24,7 @@
     let observedGroups = new Map();
     let mapCache;
     let passageCache;
+    let enclosureGates;
 
     function seededRandom(seed) {
         let value = 2166136261;
@@ -44,6 +45,8 @@
         return (
             entity?.hp > 0 &&
             entity.Enemy?.name === "Spinner" &&
+            !entity.SpiderlingsChamberBuilder &&
+            !api.PrisonEscort?.ownsActor?.(entity) &&
             hostile(entity) &&
             !allied(entity) &&
             !inParty(entity) &&
@@ -54,7 +57,12 @@
     function eligibleSpinner(entity, options = {}) {
         const disabled = options.disabled || ((candidate) => KinkyDungeonIsDisabled(candidate)),
             helpless = options.helpless || ((candidate) => KDHelpless(candidate));
-        return baseEligibility(entity, options) && !disabled(entity) && !helpless(entity);
+        return (
+            baseEligibility(entity, options) &&
+            !disabled(entity) &&
+            !helpless(entity) &&
+            !api.PrisonActivity?.isResting?.(entity)
+        );
     }
 
     function targetReference(target) {
@@ -490,6 +498,12 @@
         // not hide a larger reachable enclosure from the global planner.
         for (const nearby of geometry?.candidateCenters ? [null] : [true, false]) {
             for (const center of geometry?.candidateCenters || snapshot.cells || []) {
+                if (
+                    group.homeRegion &&
+                    (api.PrisonAlerts.regionAt(center) !== group.homeRegion ||
+                        !api.PrisonNest.ordinaryConstructionAllowed(center))
+                )
+                    continue;
                 if (group.recoveryAround && distance(group.recoveryAround, center) > 1) continue;
                 if (nearby !== null && distance(focus, center) <= 6 !== nearby) continue;
                 if (work) {
@@ -515,6 +529,10 @@
                                         !tile.locked &&
                                         !tile.protected &&
                                         !reserved.has(cellKey(cell)) &&
+                                        (!group.homeRegion ||
+                                            (distance(cell, center) !== size && distance(cell, center) !== 0) ||
+                                            (api.PrisonAlerts.regionAt(cell) === group.homeRegion &&
+                                                api.PrisonNest.ordinaryConstructionAllowed(cell))) &&
                                         (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
                                     );
                                 }) &&
@@ -998,7 +1016,7 @@
             entities = input.entities || KDMapData.Entities;
         let lines, enclosureGeometry;
         const interceptionRoutes = new Map();
-        // Share static geometry only within this turn; construction may change the next map snapshot.
+        // Occupancy is refreshed every turn; gate connectivity depends only on geometry and endpoints.
         const signature = geometrySignature(snapshot),
             currentLines = () => {
                 if (!lines) {
@@ -1010,6 +1028,10 @@
             currentEnclosureGeometry = () => {
                 if (!enclosureGeometry) {
                     enclosureGeometry = enclosureGeometryFor(snapshot);
+                    const key = signature + ":" + JSON.stringify([snapshot.entrances, snapshot.exits]);
+                    if (enclosureGates?.map !== KDMapData || enclosureGates.key !== key)
+                        enclosureGates = { map: KDMapData, key, values: new Map() };
+                    enclosureGeometry.gateCache = enclosureGates.values;
                 }
                 return enclosureGeometry;
             };
@@ -1038,10 +1060,21 @@
                     currentEnclosureGeometry(),
                 ),
             ].sort(compareSites);
-            const candidates =
+            let candidates =
                 enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
                     ? enclosures
                     : analyzeLineCandidates(snapshot, { ...group, members }, distances, currentLines(), work);
+            if (group.homeRegion)
+                candidates = candidates.filter((candidate) => {
+                    const points = [...(candidate.cells || []), ...(candidate.anchors || []), candidate.center].filter(
+                        Boolean,
+                    );
+                    return points.every(
+                        (cell) =>
+                            api.PrisonAlerts.regionAt(cell) === group.homeRegion &&
+                            api.PrisonNest.ordinaryConstructionAllowed(cell),
+                    );
+                });
             const occupied = new Set(
                 Object.values(ai.plans)
                     .filter(
@@ -1250,6 +1283,7 @@
     }
 
     function sharePlayerObservation(encounter, enemy, target, aiData, delta) {
+        if (api.Prison?.isPrison?.() && api.Webbing?.isCocoonDispersing?.(enemy, target)) return false;
         if (
             !(delta > 0) ||
             !encounter?.ai ||
@@ -1280,6 +1314,7 @@
             aiData.canShootPlayer
         );
         for (const group of Object.values(encounter.ai.groups || {})) {
+            if (group.homeRegion && group.homeRegion !== api.PrisonAlerts?.regionAt(target)) continue;
             if (!targetIsHostile(group, target)) continue;
             if (changed) delete group.noPlanSignature;
             // Knowledge does not replace an ongoing native NPC engagement.
@@ -1341,6 +1376,12 @@
     }
 
     function groupObservation(group) {
+        if (group.homeRegion) {
+            const report = api.PrisonAlerts?.currentReport();
+            return report
+                ? { ...report, target: targetReference(KinkyDungeonPlayerEntity), source: "prison-report" }
+                : undefined;
+        }
         const shared = playerObservation();
         if (
             shared &&
@@ -1452,6 +1493,18 @@
         const engagement = group.engagement;
         if (!engagement) return;
         const target = resolveTarget(engagement.target);
+        if (
+            api.Prison?.isPrison?.() &&
+            group.memberIds.some((id) =>
+                api.Webbing?.isCocoonDispersing?.(
+                    KDMapData.Entities.find((actor) => actor.id === id),
+                    target,
+                ),
+            )
+        ) {
+            clearEngagement(group);
+            return;
+        }
         if (!targetIsLiving(target) || !targetIsHostile(group, target)) {
             clearEngagement(group);
             return;
@@ -1475,6 +1528,10 @@
     }
 
     function observeTarget(encounter, group, enemy, target, aiData) {
+        if (api.Prison?.isPrison?.() && api.Webbing?.isCocoonDispersing?.(enemy, target)) {
+            if (group.engagement?.target?.kind === "player") clearEngagement(group);
+            return false;
+        }
         if (target === KinkyDungeonPlayerEntity)
             sharePlayerObservation(encounter, enemy, target, aiData, enemy.SpiderlingsSpinnerRuntimeDelta ?? 1);
         const sensed =
@@ -1673,6 +1730,7 @@
             ? playerObservation(encounter) || groupObservation(group)
             : groupObservation(group);
         const perceivedThreat = !!(
+            !(api.Prison?.isPrison?.() && api.Webbing?.isCocoonDispersing?.(enemy, target)) &&
             enemy.aware &&
             aiData.canSensePlayer &&
             aiData.hostile === true &&

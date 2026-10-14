@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local package is `Spiderlings_0.92.36-test.152.zip`. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current `test` preview includes Nest Prison as `Spiderlings_0.92.39-prison.alpha.19.zip`. Integration preserves the verified runtime and ZIP bytes; test.152 and earlier independent Prison evidence remain historical records. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,46 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Prison alpha.19 (2026-10-14)
+
+The [#163 implementation in PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77), integrated into `test`, repairs chamber crew custody, adds task/player-sound-driven prison rest and saves uncapped Silk Density. Density qualifies Cocoon at 100 with the existing physical prerequisites and scales owned escape work by `1 + density/100`. Any equipped or linked Spiderlings restraint prevents decay; ten consecutive bare-body world turns precede accelerating decay. Population, reinforcement and admission/escort/chamber timing are unchanged.
+
+Runtime source: `644fd76c616665041f1a48b594f9f101ef4554dc`. Package: `Spiderlings_0.92.39-prison.alpha.19.zip`, 24,963,730 bytes and 184 allowlisted entries; SHA-256 `38ecdbc488485b54662b905222bf7d9fbfaacb9144f691454a2113ae35c826a5`.
+
+| Game input                                                                                  | Verified result                               |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92; main SHA-256 `2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4`  | All 69 native checks and seven locales passed |
+| Freshly fetched official GitHub KD 5.5.4; commit `67deb56fcf50e34d5ea7b62742f8a8640e157ffc` | All 69 native checks and seven locales passed |
+
+Full same-ZIP acceptance: `<cache>/runs/2026-10-14T04-07-18-722Z-0.92.39-prison.alpha.19/acceptance.json`. Neither game needed a browser-startup retry. The new native density scene covers non-WebCaster Cocoon qualification without slow, density above the threshold, native save/load, owned-item retention, real Cut effort, bare-body grace/decay and native sleeping-actor/player-shout behavior. Existing regional tests verify paid distant work with dormant reserves.
+
+Both independent Standards and Spec reviews cleared their findings. Repository/module checks, 12 policy tests, the 1,172-test complete watcher and exact ZIP/source verification passed. Full collector `.scratch/delivery/2026-10-14T04-37-20-841Z-bYxkBu/REPORT.md` binds the stable candidate source and same-ZIP native reports; committed runtime bytes were then preserved. Full alpha.17 testing exposed dormant regional builders; alpha.19 wakes bounded actual work teams and counts pending orders against capacity on every planning pass. Earlier failed runs and intermediate packages remain retained. Separate runner maintenance permits one fresh-runtime retry only for an exact pre-scene closed-browser package load with no native/asset, diagnostic or teardown failure, retaining the original evidence; no scene assertion is retried.
+
+The latest 5.4.92 save copy starts native recovery at `(13,30)` and returns to chamber center `(11,22)` within 16 world turns, with 34 of 40 mobile spiders resting afterward and no page errors. The original save is untouched. A controlled same-save comparison holds player position/resources and disables custody contact selection in both packages, with two warm-up and twelve measured turns. Alpha.15 mean/P95: 218.66/334.2 ms; alpha.19: 143.70/205.3 ms, mean 34.28% lower. Maximum examined candidates decrease from 2,279 to 242 and route checks from 1,067 to 14; 33 mobiles rest at the end. This short action-time comparison does not measure desktop FPS or a full playthrough.
+
+Both prepared early routes return to the source floor. Fifty mature four-layer Cut attempts fail to remove Cocoon on both versions. The prepared Mage route fails native Cocoon escape on 5.4.92; on 5.5.4 it removes Cocoon but then fails to find a field-breach route. These outcomes remain explicit balance evidence. The maintainer approved `test` integration and Pre-release publication; #68 and #76 remain open for wider escape/balance playtesting.
+
+The locked checkout retains `.scratch/prison-alpha16/REVIEW19.md`, the final native audit, replay and benchmark records. The parent KD workspace delivery folder is `.scratch/spiderlings-prison-delivery-20261014-alpha19/`. These native Chrome checks do not cover other Mods or an entire desktop playthrough. Official upstream compilation uses TypeScript transpilation and makes no upstream type-check claim.
+
+Integration into `test` reuses this exact accepted ZIP. Official `5.5` was fetched again and remains at `67deb56fcf50e34d5ea7b62742f8a8640e157ffc`. Publication verification now includes the existing `prison-alpha` channel as a Pre-release and requires the expected formal Latest. Its two new regressions raise the complete local watcher to 1,174 passing tests without changing runtime payloads; both Standards and Spec reviewers cleared the maintenance change.
+
+## Prison alpha.15 (2026-10-13)
+
+Runtime source: `29fa5f98ac8dcc00dabd62e933fbcfd315fbacc0` in [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77). Package: `Spiderlings_0.92.39-prison.alpha.15.zip`, 24,957,539 bytes and 182 allowlisted entries; SHA-256 `b86bb91ff0e020ddc056ae7decc5884979df45c5b70d00d2039359ee11fda259`.
+
+| Game input                                                                                                                 | Verified result                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| KD 5.4.92; main script SHA-256 `2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4`                          | All 68 native scenarios and seven locales passed; four paid physical layers; cap=0 reached 66 living actors |
+| Official GitHub KD 5.5.4; commit `de37222a42deccc97e9632ea25b0b074f6ae8e6b`, freshly fetched at `2026-10-13T13:25:48.168Z` | All 68 native scenarios and seven locales passed; four paid physical layers; cap=0 reached 64 living actors |
+
+Repository and policy checks, the complete 1,158-test watcher and exact ZIP/source verification passed. The collector checked the candidate worktree; after committing those verified files, the clean committed source was checked against the same ZIP. [Source CI](https://github.com/duromumuyazu74-rgb/Spiderlings/actions/runs/38409860165) and [the same-source PR update run](https://github.com/duromumuyazu74-rgb/Spiderlings/actions/runs/38410663099) passed.
+
+Native coverage includes captured and voluntary admission, item/backpack preservation, physical Tunneler construction and escort, rival escort combat, saved deadlines, destroyed destinations, persistence and recapture, source-room return, regional construction and chamber escalation. The separate prison-review group verifies zero-time crouching, distinct source rooms at one world slot, and interrupted Tunneler summons across tick wrap and reload.
+
+Both games completed the prepared early escape route and returned to the source without advancing the journey. In the mature four-layer scene, 50 paid Cut attempts failed, and the prepared Mage attempt failed to remove Cocoon on both targets. These failures remain part of the escape/balance assessment. Historical controlled Mage success and mature three-layer failure retain their original package scope. [#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) and [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) remain open for that assessment and the integration decision; #69–75 are closed for their experimental implementation/runtime criteria.
+
+Local native evidence is retained under `<cache>/runs/2026-10-13T13-25-48-183Z-0.92.39-prison.alpha.15/`. The locked experiment worktree retains `.scratch/delivery/2026-10-13T13-55-35-767Z-yxFXO9/REPORT.md`; the parent KD workspace also retains the package and evidence in `.scratch/spiderlings-prison-delivery-20261013-alpha15/`. These controlled Chrome scenarios do not cover the online deployment, desktop shell, user saves, other Mods or a complete playthrough. The upstream build used TypeScript transpilation, not an upstream type-check claim.
 
 ## Test.152 formal review corrections (2026-10-09)
 

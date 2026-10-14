@@ -69,6 +69,12 @@ export default [
         },
     },
     {
+        files: ["KinkyDungeon-Spiderlings/SpiderlingsHuntingGroundsLayout.js"],
+        // The existing inline declaration owns this registry in the layout
+        // module; Prison now also needs it in the shared native-global list.
+        languageOptions: { globals: { KinkyDungeonCreateMapGenType: "off" } },
+    },
+    {
         files: ["docs/**/*.js"],
         languageOptions: { globals: globals.browser },
     },

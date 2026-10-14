@@ -6,19 +6,20 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 
 ## Versions and installation
 
-| Channel                       | Version            | Availability                                                                                                                         |
-| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Formal release                | `0.92.38`          | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.38/Spiderlings_0.92.38.zip) |
-| Current development candidate | `0.92.36-test.152` | Source candidate in [PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149), targeting `test`; not a formal Release    |
-| Nest prison experiment        | `prison.alpha.N`   | Separate [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77); not included in the ordinary test package              |
+| Channel                           | Version                   | Availability                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formal release                    | `0.92.39fix1`             | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)                                                                                                                                                                                          |
+| Test development with Nest Prison | `0.92.39-prison.alpha.19` | [Download the Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-prison.alpha.19/Spiderlings_0.92.39-prison.alpha.19.zip); integrated through [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) into [test](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/test) |
 
-1. Download the ZIP attached to the [formal Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest), or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).
+1. Download the ZIP for the desired channel above, or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).
 2. Load that ZIP through the game's Mod manager.
 3. Enable only one Spiderlings package at a time. Back up saves before changing versions.
 
 GitHub's automatic Source code archives are repository downloads, not loadable Mod packages. A PR's CI artifact is a candidate tied to its commit; its verification scope is recorded separately.
 
-The development package is verified on KD 5.4.92 and the specific official `5.5` commit recorded in [COMPATIBILITY.md](docs/COMPATIBILITY.md). Every new runtime delivery fetches and tests the latest official `5.5` commit again. The manifest's broad 5.x hint does not certify untested versions. See [current progress](docs/STATUS.md) for source, package and integration status.
+Nest Prison is included in `test`; the integrated preview retains its verified alpha.19 version and package bytes. KD 5.4.92 and official `5.5` results are recorded in [COMPATIBILITY.md](docs/COMPATIBILITY.md). Escape/balance playtesting continues in [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76). New runtime deliveries fetch and test the latest official `5.5` commit. The manifest's broad 5.x hint does not certify untested versions. See [current progress](docs/STATUS.md) for delivery status.
+
+Prison alpha.19 adds task/player-sound-driven rest for idle spiders and repairs chamber crew recovery. Hostile silk contacts accumulate uncapped Silk Density, qualifying Cocoon at 100 after the existing equipment prerequisites. Density increases escape work and persists while any Spiderlings restraint is equipped; it starts to disperse after ten unrestrained world turns. See [the experiment rules](docs/PRISON-EXPERIMENT.md).
 
 ## Current development gameplay
 
