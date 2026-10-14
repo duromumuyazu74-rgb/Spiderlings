@@ -10,7 +10,7 @@ const { verifyPublication } = require("../verify-spiderlings-publication.js");
 const { verifyCandidate } = require("../verify-spiderlings-candidate.js");
 const { verifyPackageCommit } = require("../delivery-commands.js");
 
-function fixture(t) {
+function fixture(t, version = "1.2.3-test.1") {
     const parent = path.resolve(__dirname, "../../../.scratch/publication-tests");
     fs.mkdirSync(parent, { recursive: true });
     const root = fs.mkdtempSync(path.join(parent, "case-"));
@@ -20,11 +20,12 @@ function fixture(t) {
     });
     const notes = "## English\n\nTest update.\n\n## 简体中文\n\n测试更新。\n";
     fs.writeFileSync(path.join(root, "notes.md"), notes);
-    fs.writeFileSync(path.join(root, "Spiderlings_1.2.3-test.1.zip"), "accepted ZIP");
-    const options = { root, tag: "v1.2.3-test.1", commit: "a".repeat(40), latest: "v1.2.4", notesPath: "notes.md" };
+    const packageName = `Spiderlings_${version}.zip`;
+    fs.writeFileSync(path.join(root, packageName), "accepted ZIP");
+    const options = { root, tag: `v${version}`, commit: "a".repeat(40), latest: "v1.2.4", notesPath: "notes.md" };
     const mod = path.join(root, "KinkyDungeon-Spiderlings");
     fs.mkdirSync(mod);
-    const manifest = { modbuild: "1.2.3-test.1", fileorder: ["Example.js", "Example.png"] };
+    const manifest = { modbuild: version, fileorder: ["Example.js", "Example.png"] };
     const saveManifest = () => fs.writeFileSync(path.join(mod, "mod.json"), JSON.stringify(manifest));
     saveManifest();
     fs.writeFileSync(path.join(mod, "Example.js"), "// runtime\n");
@@ -45,8 +46,8 @@ function fixture(t) {
         body: notes,
         draft: false,
         prerelease: true,
-        html_url: "https://github.com/owner/mod/releases/tag/v1.2.3-test.1",
-        assets: [{ name: "Spiderlings_1.2.3-test.1.zip", size: 12 }],
+        html_url: `https://github.com/owner/mod/releases/tag/v${version}`,
+        assets: [{ name: packageName, size: 12 }],
     };
     let latest = options.latest,
         tagCommit = options.commit,
@@ -95,6 +96,25 @@ function fixture(t) {
         },
     };
 }
+
+test("prison alpha publication verifies as a prerelease and preserves formal Latest", (t) => {
+    const f = fixture(t, "1.2.3-prison.alpha.1");
+    const result = verifyPublication(f.options, f.execute);
+    assert.equal(result.status, "passed");
+    assert.equal(result.latest, "v1.2.4");
+    f.release.prerelease = false;
+    assert.throws(() => verifyPublication(f.options, f.execute), /Release channel/);
+    f.release.prerelease = true;
+    f.set({ latest: f.options.tag });
+    assert.throws(() => verifyPublication(f.options, f.execute), /Formal Latest/);
+});
+
+test("prison alpha publication requires the expected formal Latest before reading GitHub", (t) => {
+    const f = fixture(t, "1.2.3-prison.alpha.1");
+    delete f.options.latest;
+    assert.throws(() => verifyPublication(f.options, f.execute), /formal Latest/);
+    assert.equal(f.calls.length, 0);
+});
 
 test("publication verification derives the repository and awaits download before comparing exact bytes", (t) => {
     const f = fixture(t),

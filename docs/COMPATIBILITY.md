@@ -36,6 +36,8 @@ Both prepared early routes return to the source floor. Fifty mature four-layer C
 
 The locked checkout retains `.scratch/prison-alpha16/REVIEW19.md`, the final native audit, replay and benchmark records. The parent KD workspace delivery folder is `.scratch/spiderlings-prison-delivery-20261014-alpha19/`. These native Chrome checks do not cover other Mods or an entire desktop playthrough. Official upstream compilation uses TypeScript transpilation and makes no upstream type-check claim.
 
+Integration into `test` reuses this exact accepted ZIP. Official `5.5` was fetched again and remains at `67deb56fcf50e34d5ea7b62742f8a8640e157ffc`. Publication verification now includes the existing `prison-alpha` channel as a Pre-release and requires the expected formal Latest. Its two new regressions raise the complete local watcher to 1,174 passing tests without changing runtime payloads; both Standards and Spec reviewers cleared the maintenance change.
+
 ## Prison alpha.15 (2026-10-13)
 
 Runtime source: `29fa5f98ac8dcc00dabd62e933fbcfd315fbacc0` in [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77). Package: `Spiderlings_0.92.39-prison.alpha.15.zip`, 24,957,539 bytes and 182 allowlisted entries; SHA-256 `b86bb91ff0e020ddc056ae7decc5884979df45c5b70d00d2039359ee11fda259`.
