@@ -119,9 +119,11 @@ async function verifyLocales(game, packagePath, output, packageSha256, runtimeFa
     return { status: records.every((record) => record.status === "passed") ? "passed" : "failed", records };
 }
 
-async function verifyGroup(game, packagePath, output, group, packageSha256, runtimeFactory, report) {
+async function verifyGroup(game, packagePath, output, group, packageSha256, runtimeFactory, report, retry = false) {
     const record = { id: group.id, scenarios: group.checks.map((check) => check.name), helpers: group.helpers };
-    const folder = path.join(output, "groups", group.id);
+    const folder = retry
+        ? path.join(output, "groups", group.id, "startup-retry")
+        : path.join(output, "groups", group.id);
     fs.mkdirSync(folder, { recursive: true });
     let runtime,
         currentCheck = "package-loading";
@@ -227,8 +229,39 @@ async function verifyGame(game, packagePath, output, selection = selectScenarios
                 record.failedCheck = group.id;
                 record.error = "Native locale verification failed; see per-language evidence.";
             }
-        } else
+        } else {
             record = await verifyGroup(game, packagePath, output, group, report.packageSha256, runtimeFactory, report);
+            if (
+                record.status === "failed" &&
+                record.failedCheck === "package-loading" &&
+                record.error?.includes("Target page, context or browser has been closed") &&
+                !(record.errors?.length || record.rejections?.length) &&
+                !record.diagnosticError &&
+                !record.teardownError &&
+                !record.missing?.some((url) => /Spiderlings|SpiderWeb|WebSpray/.test(url)) &&
+                !report.checks.some((check) => check.group === group.id)
+            ) {
+                const failed = record;
+                const folder = path.join(output, "groups", group.id);
+                fs.writeFileSync(path.join(folder, "startup-failure.json"), JSON.stringify(failed, null, 2) + "\n");
+                record = await verifyGroup(
+                    game,
+                    packagePath,
+                    output,
+                    group,
+                    report.packageSha256,
+                    runtimeFactory,
+                    report,
+                    true,
+                );
+                record.startupRetry = {
+                    failedCheck: failed.failedCheck,
+                    error: failed.error,
+                    evidence: "startup-failure.json",
+                };
+                fs.writeFileSync(path.join(folder, "result.json"), JSON.stringify(record, null, 2) + "\n");
+            }
+        }
         report.groups.push(record);
         if (record.status !== "passed") {
             report.status = "failed";

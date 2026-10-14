@@ -544,6 +544,12 @@ function scenarioRuntimes(actions, behavior = {}) {
             },
         });
         page.evaluate = async (fn, argument) => {
+            if (fn === "KDExecuted = false;" && behavior.loadFailures > 0) {
+                behavior.loadFailures--;
+                if (behavior.loadNativeError) runtime.errors.push("native startup error");
+                if (behavior.loadMissing) runtime.missing.push("/SpiderlingsMissing.png");
+                throw Error(behavior.loadError || "Target page, context or browser has been closed");
+            }
             if (fn === helper) {
                 runtime.helperLoads = (runtime.helperLoads || 0) + 1;
                 if (behavior.helperFailure) throw Error("helper preparation failed");
@@ -698,6 +704,41 @@ test("scene, helper, native diagnostic and teardown failures retain group attrib
         if (label === "scene-and-diagnostics") {
             assert.match(report.error, /primary scene failed/);
             assert.match(report.groups[0].diagnosticError, /diagnostic collection failed/);
+        }
+    }
+});
+
+test("only a pre-scene closed-browser load is retried once with failure evidence retained", async (t) => {
+    const { verifyGame } = require("../verify-kd-compatibility.js");
+    const { file, output } = localePackage(t);
+    for (const [label, behavior, expected, count] of [
+        ["transient", { loadFailures: 1 }, "passed", 2],
+        ["repeated", { loadFailures: 2 }, "failed", 2],
+        ["other-load-error", { loadFailures: 1, loadError: "ZIP parsing failed" }, "failed", 1],
+        ["load-and-teardown", { loadFailures: 1, teardownFailure: true }, "failed", 1],
+        ["load-and-diagnostics", { loadFailures: 1, diagnosticFailure: true }, "failed", 1],
+        ["load-and-native-error", { loadFailures: 1, loadNativeError: true }, "failed", 1],
+        ["load-and-missing-asset", { loadFailures: 1, loadMissing: true }, "failed", 1],
+    ]) {
+        const runs = scenarioRuntimes({}, behavior);
+        const folder = path.join(output, label);
+        const report = await verifyGame(
+            { version: "5.4.92" },
+            file,
+            folder,
+            selectScenarios(["native-escape"]),
+            runs.factory,
+        );
+        assert.equal(report.status, expected);
+        assert.equal(runs.instances.length, count);
+        assert.ok(runs.instances.every((runtime) => runtime.closed));
+        if (count === 2) {
+            const first = JSON.parse(
+                fs.readFileSync(path.join(folder, "groups/native-escape/startup-failure.json"), "utf8"),
+            );
+            assert.equal(first.status, "failed");
+            assert.equal(first.failedCheck, "package-loading");
+            assert.equal(report.groups[0].startupRetry.evidence, "startup-failure.json");
         }
     }
 });
