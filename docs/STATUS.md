@@ -1,17 +1,16 @@
 # 当前开发进度
 
-核对日期：2026-10-14。本页汇总普通测试开发与独立监狱实验，任务状态以 GitHub Issues 和 PR 为准。
+核对日期：2026-10-14。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
 ## 源码、安装包与合并
 
-| 项目         | 当前状态                                                                                                                                                         |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                                      |
-| 普通测试包   | `Spiderlings_0.92.36-test.152.zip`，双版本原生与完整交付验收通过；[PR #149](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/149) 已合入 `test`            |
-| 监狱实验包   | `Spiderlings_0.92.39-prison.alpha.19.zip`，同包双版本完整原生验收通过；[密度、休眠与回收任务 #163](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/163) |
-| 监狱集成     | [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 开放，目标 `test`；尚未合入 `test` 或 `main`                                                 |
+| 项目         | 当前状态                                                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                                                                                                     |
+| 当前测试包   | [Prison alpha.19 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-prison.alpha.19)，沿用同包双版本完整原生验收；[#163](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/163) 已完成 |
+| 监狱集成     | [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 将监狱玩法整合进 `test`；正式版仍为 v0.92.39fix1                                                                                                            |
 
-普通测试包与正式版不包含监狱实验。监狱实验沿用 v0.92.39fix1 的行为基线和当前共享模块；代码完成、安装包验收和目标分支集成分别记录。
+`test` 包含监狱玩法，集成预览保留已验收的 alpha.19 版本和安装包字节。历史 test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
 
 ## 巢穴监狱实验
 
@@ -21,7 +20,7 @@ alpha.19 新增无上限蛛丝密度，按密度增加幼蛛拘束的摆脱工�
 
 完整 1,172 项本地回归通过；同一 ZIP 在 KD 5.4.92 与当次新拉取的官方 KD 5.5.4 各通过全部 69 项原生检查及七种语言加载。最新存档副本在 16 回合内由原生动作拖回囚室中心，原存档未改写。受控短回放平均回合处理时间由 218.66 ms 降至 143.70 ms，约减少 34.28%；这是同一位置的短时对照，不是桌面帧率。详见 [alpha.19 兼容证据](COMPATIBILITY.md#prison-alpha19-2026-10-14)。
 
-成熟四层场地的 50 次 Cut 尝试在两版均未脱茧。准备后的 Mage 路线在 5.4.92 未脱茧，在 5.5.4 脱茧后未找到穿越场地的路线；两版早期准备路线均成功返回原楼层。继续保留逃脱与平衡验收，以及是否整合进普通 `test` 的决定。
+成熟四层场地的 50 次 Cut 尝试在两版均未脱茧。准备后的 Mage 路线在 5.4.92 未脱茧，在 5.5.4 脱茧后未找到穿越场地的路线；两版早期准备路线均成功返回原楼层。维护者已批准集成进 `test` 并发布预发布版，后续逃脱与平衡试玩继续由 #76 跟踪。
 
 ### alpha.15 历史验收
 
@@ -43,7 +42,7 @@ alpha.15 已通过 1,158 项完整回归、仓库与策略检查、安装包与�
 
 ## 正式发布
 
-[Issue #150](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/150) 的 0.92.39 发布已完成，后续场地角点及坍塌连接修复由 [Issue #154](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/154) 交付为 v0.92.39fix1。test.152 的原始审查与验证范围保留在[审查记录](archive/validation/spiderlings-0.92.39-review.zh-CN.md)。监狱实验没有正式晋升或 Release。
+[Issue #150](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/150) 的 0.92.39 发布已完成，后续场地角点及坍塌连接修复由 [Issue #154](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/154) 交付为 v0.92.39fix1。test.152 的原始审查与验证范围保留在[审查记录](archive/validation/spiderlings-0.92.39-review.zh-CN.md)。监狱以 alpha.19 预发布版提供，尚未晋升正式版。
 
 ## 场地修正
 
@@ -73,6 +72,6 @@ test.135 包的 SHA-256 为 `0ce796dd5e7a8a1213f10fd41f948155d405c5655334eb9a4dd
 
 ## 尚未完成
 
-- [巢穴监狱 #68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 等待逃脱与平衡验收、实验集成决定。[PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) 仍开放。
+- [巢穴监狱 #68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 继续跟踪成熟场地逃脱与平衡试玩；`test` 集成决定已完成。
 
 Archify 3.0.1 已作为维护者全局 skill 安装，并生成基于 `a5a17d6` 的本地运行时、场地职责和测试选择图。源码引用与产物检查通过，但其 Windows Chrome 管道连接失败，浏览器及视觉验收未完成。这些本地 HTML 不进入 Mod 包，仓库维护入口仍是上面的 Markdown 契约。

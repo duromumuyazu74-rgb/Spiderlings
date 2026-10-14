@@ -1,9 +1,9 @@
 # Spiderlings Prison experiment
 
-The independent Prison candidate follows [#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68)
-and its children #69–76. It starts from the current shared modules on test commit
-`73d630d` and retains the behavior of formal release `v0.92.39fix1`.
-The old #77 alpha provides Prison-specific implementations, not replacement shared modules.
+Nest Prison is integrated into `test` through [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77),
+following [#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) and its children #69–76.
+The integrated preview retains the verified `0.92.39-prison.alpha.19` version and installable ZIP.
+It uses current shared modules and the behavior baseline of formal release `v0.92.39fix1`.
 
 ## Admission and transport
 
@@ -55,6 +55,10 @@ adopt and command that same composite.
 
 ## Acceptance
 
+The maintainer approved integration into `test` and publication as a Pre-release. #69–75 and #163
+are complete for implementation/runtime delivery. #68/#76 retain mature-field escape and balance
+playtesting; the recorded failed routes remain visible and are not accepted as successful escapes.
+
 ### Silk Density and alpha.19 scope
 
 Hostile Spiderling direct contacts add 10 density; attributed lingering spray adds 2 with a per-source world-turn limit. There is no density maximum. Crossfire bonus restraints and multiple internal binding attempts in one Mage burst do not add extra contacts. Density replaces the five-stack WebSpray slow condition: at 100 or more, a qualifying direct attack can apply Cocoon when its physical Lv3 and native compatibility prerequisites already hold. Spinner is eligible. Direct Spiderling silk can also reinforce an existing Cocoon with pending outer-web reinforcement; the existing resistance window and escort timing remain.
@@ -67,21 +71,15 @@ Alpha.19 is the candidate for [#163](https://github.com/duromumuyazu74-rgb/Spide
 
 ### Alpha.15 retained acceptance
 
-Current package: `Spiderlings_0.92.39-prison.alpha.15.zip`, runtime source
+Historical package: `Spiderlings_0.92.39-prison.alpha.15.zip`, runtime source
 `29fa5f98ac8dcc00dabd62e933fbcfd315fbacc0`. Its [compatibility record](COMPATIBILITY.md#prison-alpha15-2026-10-13)
 binds the exact ZIP hash, both game inputs and the check results. The complete 1,158-test watcher and
 all 68 native scenarios plus seven locales passed on KD 5.4.92 and freshly fetched official KD 5.5.4.
 Both targets completed four paid physical layers and exceeded 60 living actors at cap=0.
 
-#69–75 are closed for experimental implementation and runtime acceptance. [#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68)
-and [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) remain open and `ready-for-human`.
-[PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77) remains open against `test`; the ordinary test
-package and formal release do not contain this experiment.
-
 Both targets completed a prepared early escape route back to the source floor. Mature four-layer
 scenes retained 50 failed paid Cut attempts and prepared Mage attempts that failed to remove Cocoon.
-The remaining decisions are whether the recorded escape/population pressure meets the intended balance
-and whether to integrate the experiment into ordinary `test`.
+At alpha.15 acceptance, escape/population balance and integration into `test` were still pending.
 
 The native scenario registry includes `prison`, `prison-regions`, `prison-rivals` and `prison-escape`.
 Final delivery requires all registered scenarios and languages with the same ZIP on KD 5.4.92 and
@@ -92,5 +90,5 @@ destruction and native returns, and interrupted Tunneler summons across tick wra
 Keep mature failed breach attempts and prepared-Mage outcomes in the evidence. The historical
 three-layer failure and controlled Mage success remain scoped to their old package and game.
 Current failed attempts do not become successful acceptance merely because another route works.
-The intended escape/balance acceptance and #68's experiment integration condition remain explicit
-decisions before closing #76/#68 or integrating into test.
+The intended escape/balance acceptance remains explicit before closing #76/#68 or promoting the preview
+into a formal release.
