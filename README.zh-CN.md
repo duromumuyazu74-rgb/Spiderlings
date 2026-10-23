@@ -6,18 +6,20 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 ## 版本与安装
 
-| 通道         | 版本             | 获取方式                                                                                                                       |
-| ------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 正式版       | `0.92.39fix1`    | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip) |
-| 巢穴监狱实验 | `prison.alpha.N` | 独立 [PR #77](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/77)，不包含在普通测试包中                                 |
+| 通道           | 版本             | 获取方式                                                                                                                           |
+| -------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 正式版         | `0.92.39fix1`    | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)     |
+| 巢穴监狱预发布 | `0.92.39-test.3` | [下载预览 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.3/Spiderlings_0.92.39-test.3.zip) |
 
-1. 下载[正式版 Release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/latest) 的 ZIP 附件，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
+1. 从上表下载所需正式版或预览版 ZIP，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
 2. 在游戏 Mod 管理器中载入该 ZIP。
 3. 同时只启用一个 Spiderlings 包；切换版本前备份存档。
 
 GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入为 Mod。PR 的 CI artifact 对应具体提交，属于候选包，其验收范围另行记录。
 
 安装包已在 KD 5.4.92 和 [COMPATIBILITY.md](docs/COMPATIBILITY.md) 记录的官方 `5.5` 提交上验证。每次新运行时交付都重新拉取并测试最新官方 `5.5`。Manifest 的宽泛 5.x 提示不代表未测试版本也已兼容。源码、安装包和合并状态见[当前进度](docs/STATUS.md)。
+
+巢穴监牢已整合进 `test`。test.3 预览加入安静密度衰减和共享敌我查询优化，并通过 KD 5.4.92 与官方 5.5.6 验收。预览详情及尚未实现的多格织巢主母草案由 [test 分支进度](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)维护。正式安装包仍为 v0.92.39fix1。
 
 ## 当前玩法
 
