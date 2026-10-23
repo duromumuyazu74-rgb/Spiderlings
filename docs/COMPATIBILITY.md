@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current `test` preview includes Nest Prison as `Spiderlings_0.92.39-prison.alpha.19.zip`. Integration preserves the verified runtime and ZIP bytes; test.152 and earlier independent Prison evidence remain historical records. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current development candidate is `Spiderlings_0.92.39-test.3.zip`. The published Nest Prison preview remains alpha.19; its integration and test.152 evidence are historical records. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,36 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.3 quiet density and prison turn performance (2026-10-23)
+
+This candidate permits density decay while Spiderlings restraints remain equipped or linked. Ten quiet world turns precede the existing accelerating curve. Accepted silk contacts restart the grace period; equipment changes and the player's own escape attempts do not. Saved density, quiet time, earned escape progress and native action costs retain their existing representation. English and seven locale descriptions match this rule.
+
+FieldCustody and PrisonEscort reject faction pairs unrelated to the player's actual carrier before reading equipment and field geometry. Real escort competition, committed Jumper interception, population, reinforcement and paid actions retain their rules. The targeted regressions first reproduced 1,632 unnecessary custody equipment reads and 200 escort reads; those unrelated query batches now perform zero. Existing valid-carrier and equipment-removal checks still pass.
+
+Package: `Spiderlings_0.92.39-test.3.zip`, 24,964,505 bytes and 184 allowlisted entries. SHA-256: `67fa70a09373a27403a594b6c0149d9e6888159d73b963a78dc2fcdfe909b864`. The source starts at integrated `test` commit `c1e33c1688254676df436ca72ac6689dc999dc04`.
+
+| Game input                                                                                 | Verified result                               |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| KD 5.4.92; main SHA-256 `2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4` | All 69 native checks and seven locales passed |
+| Freshly fetched official KD 5.5.6; commit `1b5af79c17d91868232f4bdbf197e822ee21269f`       | All 69 native checks and seven locales passed |
+
+Full same-ZIP acceptance: `<cache>/runs/2026-10-23T08-27-04-761Z-0.92.39-test.3/acceptance.json`. The official branch head was checked again after acceptance and was unchanged. The native density scene retains Cocoon while ten quiet turns elapse, saves/reloads that timer, then measures density falling from 400 to 200 over the next twelve world turns. Actual native Cut still earns less work at higher density. These controlled native Chrome checks do not cover the desktop shell, other Mods or every player save.
+
+The retained test.1 run passed all 69 native checks and seven languages on 5.4.92, then exposed a native forced-birth collision on freshly fetched 5.5.6. The same Hunting Grounds sequence failed identically on the published alpha.19 ZIP, excluding the density and rivalry changes as its cause. A deferred `ForceSpawn` created scenery on a Nurse's birth cell; `DialogueCreateEnemy` then kicked her within five cells of a Nest. Test.2 corrected Nest clearance but exposed the existing six-cell prey-spacing requirement. The final correction includes shop NPCs in placement spacing while preserving their exclusion from ordinary combat selection, and invalidates the native position cache. The failing traces and focused reproductions remain in `.scratch/performance/hunting-*`; the population regression covers displacement, shop spacing, cache invalidation and ordinary-map fallback. No scene assertion was relaxed.
+
+### Same-save turn comparison
+
+The retained 2026-10-14 KD 5.4.92 prison save was replayed in isolated native Chrome environments with the same random seed and forty Wait actions. The initial scene contains fifty living nest/mobile actors and 165 web proxies. No actors are removed and no population, reinforcement or custody setting is changed for measurement. The original save is read-only.
+
+| Installable package | Mean logic time |   Median |   Maximum |
+| ------------------- | --------------: | -------: | --------: |
+| alpha.19            |       100.34 ms | 98.30 ms | 142.80 ms |
+| test.3              |        59.30 ms | 58.20 ms | 125.70 ms |
+
+Mean turn computation falls by 40.90%. Per-turn player positions and entity counts, plus the final species counts, match exactly. Timings include CPU profiling and exclude waiting for the following render frame. The shared rivalry checks apply on ordinary, Infestation, Hunting Grounds and prison maps; this forty-turn prison comparison does not measure desktop FPS or establish latency on every map or population. The newer 2026-10-23 save also retains a prison with 51 nest/mobile actors; its calm entrance replay averaged 50.00 ms on alpha.19 and did not reproduce a large stall.
+
+Local evidence is retained in `.scratch/performance/comparison-final.json`, with the baseline, optimized-module investigation and final-package profiles beside it. `profile-turns.cjs` records the game setup, seed, package hash, per-turn times and CPU profile; the comparison also binds the input save's SHA-256. The final package comparison uses no runtime overlay.
 
 ## Prison alpha.19 (2026-10-14)
 

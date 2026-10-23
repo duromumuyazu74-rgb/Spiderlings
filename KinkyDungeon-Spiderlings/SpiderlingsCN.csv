@@ -1,5 +1,5 @@
 KDBuffName_SpiderlingsSilkDensity,蛛丝密度
-KDBuffDesc_SpiderlingsSilkDensity,蛛丝越密越难摆脱幼蛛拘束。穿着任意幼蛛拘束时密度不降；全部脱下十个世界回合后开始消散。
+KDBuffDesc_SpiderlingsSilkDensity,蛛丝越密越难摆脱幼蛛拘束。连续十个世界回合未被幼蛛蛛丝命中后开始消散，仍被拘束时也会衰减。
 NameSpinner,织网幼蛛
 AttackSpinner,织网幼蛛沿着你的身体爬过，细足扫过皮肤，带起一阵微痒。
 AttackSpinnerBind,织网幼蛛牵起蛛丝，将你缠住一处，随后移开细足。(+RestraintAdded)

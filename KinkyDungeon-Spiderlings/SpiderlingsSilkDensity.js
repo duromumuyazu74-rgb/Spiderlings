@@ -14,12 +14,6 @@
 
     const owns = (item) => typeof item?.name === "string" && item.name.startsWith("Spiderlings");
 
-    function equipped() {
-        return typeof KinkyDungeonAllRestraintDynamic === "function"
-            ? KinkyDungeonAllRestraintDynamic().some(({ item }) => owns(item))
-            : false;
-    }
-
     function syncHud() {
         const current = state();
         if (!(current?.value > 0) || typeof KinkyDungeonApplyBuffToEntity !== "function") {
@@ -63,7 +57,8 @@
     function advance(delta) {
         const current = state();
         if (!current || !(delta > 0)) return;
-        if (equipped() || current.contacted) current.bareTurns = 0;
+        // Retain the saved field name; it now counts quiet turns with or without restraints.
+        if (current.contacted) current.bareTurns = 0;
         else {
             const before = Math.max(0, current.bareTurns - 10);
             current.bareTurns += delta;
@@ -113,7 +108,7 @@
         addTextKey("KDBuffName_" + KEY, "Silk density");
         addTextKey(
             "KDBuffDesc_" + KEY,
-            "Accumulated spider silk increases the escape work of Spiderlings restraints. It begins to disperse after ten unrestrained world turns.",
+            "Accumulated spider silk increases the escape work of Spiderlings restraints. It begins to disperse after ten world turns without a qualifying silk hit, even while restrained.",
         );
     }
     api.SilkDensity = Object.freeze({ state, contact, advance, escapeMultiplier });

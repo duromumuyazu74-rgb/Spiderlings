@@ -31,9 +31,26 @@
     await frame();
     restore(save());
     expect(density.state().value === 400, "Native load lost density");
-    density.advance(100);
-    expect(density.state().value === 400, "Equipped Cocoon allowed decay");
     rows.push({ name: "spinner-cocoon-and-persistence", density: density.state().value, count: worn().length });
+
+    setup("silk-density-equipped-quiet");
+    KDMovePlayer(10, 10, false);
+    equip("SpiderlingsWebbingCocoon");
+    expect(
+        worn().some((item) => item.name === "SpiderlingsWebbingCocoon"),
+        "Quiet fixture lacks Cocoon",
+    );
+    density.state().value = 400;
+    for (let i = 0; i < 10; i++) await turn();
+    expect(density.state().value === 400, "Quiet grace ended early while restrained");
+    restore(save());
+    for (let i = 0; i < 12; i++) await turn();
+    expect(Math.abs(density.state().value - 200) < 1e-6, "Quiet equipped decay or saved grace mismatch");
+    expect(
+        worn().some((item) => item.name === "SpiderlingsWebbingCocoon"),
+        "Decay removed the equipped Cocoon",
+    );
+    rows.push({ name: "native-equipped-quiet-decay", before: 400, after: density.state().value });
 
     const progress = [];
     for (const value of [0, 300]) {
@@ -57,17 +74,19 @@
     rows.push({ name: "native-escape-work", progress });
 
     const retained = density.state().value;
-    density.advance(100);
-    expect(density.state().value === retained, "Owned arm allowed decay");
+    const quiet = density.state().bareTurns;
     while (worn().length) {
         const item = worn()[0];
         KinkyDungeonRemoveRestraint(KDRestraint(item).Group, false);
     }
-    density.advance(10);
-    expect(density.state().value === retained, "Bare-body grace ended early");
+    expect(density.state().bareTurns === quiet, "Removing equipment reset quiet time");
+    density.advance(Math.max(0, 10 - quiet));
+    expect(density.state().value === retained, "Quiet grace ended early");
+    const age = Math.max(0, quiet - 10);
     density.advance(12);
-    expect(Math.abs(density.state().value - retained / 2) < 1e-6, "Post-grace decay mismatch");
-    rows.push({ name: "bare-body-decay", before: retained, after: density.state().value });
+    const expected = retained * 2 ** (-((age + 12) ** 2 - age ** 2) / 144);
+    expect(Math.abs(density.state().value - expected) < 1e-6, "Post-grace decay mismatch");
+    rows.push({ name: "equipment-independent-decay", before: retained, after: density.state().value });
 
     setup("prison-native-resting");
     KDMapData.GridWidth = 40;
@@ -112,9 +131,9 @@
             "non-WebCaster Cocoon",
             "uncapped density",
             "native save/load",
-            "equipped retention",
+            "native equipped quiet decay",
             "native escape effort",
-            "ten-turn bare grace",
+            "ten-turn quiet grace",
             "accelerating decay",
             "native prison dormancy and shout",
         ],

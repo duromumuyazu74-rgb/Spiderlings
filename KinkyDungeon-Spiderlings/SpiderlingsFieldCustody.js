@@ -209,6 +209,17 @@
         );
     }
 
+    function interceptionPair(left, right) {
+        const leash = player()?.leash;
+        if (!left || !right || !leash || leash.reason === "SpiderlingsRecovery") return false;
+        // Native faction queries compare every nearby pair. Only the actual
+        // carrier can be a custody rival; unrelated pairs need no inventory or field scan.
+        const carrier = same(left.id, leash.entity) ? left : same(right.id, leash.entity) ? right : undefined;
+        const source = carrier === left ? right : carrier === right ? left : undefined;
+        if (!mobile.has(source?.Enemy?.name)) return false;
+        return targetFor(source) === carrier || committedTarget(source) === carrier;
+    }
+
     api.FieldCustody = Object.freeze({
         capture,
         observe,
@@ -224,11 +235,6 @@
         assigned: (actor) =>
             !!record() &&
             (record().contacts?.some((id) => same(id, actor?.id)) || !!targetFor(actor) || !!committedTarget(actor)),
-        interceptionPair: (left, right) =>
-            !!right &&
-            (targetFor(left) === right ||
-                targetFor(right) === left ||
-                committedTarget(left) === right ||
-                committedTarget(right) === left),
+        interceptionPair,
     });
 })();

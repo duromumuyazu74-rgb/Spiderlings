@@ -59,11 +59,11 @@ The maintainer approved integration into `test` and publication as a Pre-release
 are complete for implementation/runtime delivery. #68/#76 retain mature-field escape and balance
 playtesting; the recorded failed routes remain visible and are not accepted as successful escapes.
 
-### Silk Density and alpha.19 scope
+### Silk Density
 
 Hostile Spiderling direct contacts add 10 density; attributed lingering spray adds 2 with a per-source world-turn limit. There is no density maximum. Crossfire bonus restraints and multiple internal binding attempts in one Mage burst do not add extra contacts. Density replaces the five-stack WebSpray slow condition: at 100 or more, a qualifying direct attack can apply Cocoon when its physical Lv3 and native compatibility prerequisites already hold. Spinner is eligible. Direct Spiderling silk can also reinforce an existing Cocoon with pending outer-web reinforcement; the existing resistance window and escort timing remain.
 
-Density is saved on the player and is not consumed by Cocoon or map changes. Any equipped or linked Spiderlings restraint, including the leg bag and silk leash, resets its bare-body timer and prevents decay. Ten consecutive positive world turns without any such restraint are a grace period. Afterward, successive quiet time applies `2^(-(afterAge²-beforeAge²)/144)`, where age excludes that ten-turn grace. A new accepted contact restarts the grace; load does not restart or erase saved time. Values below 0.5 clear to zero.
+Density is saved on the player and is not consumed by Cocoon or map changes. The current development candidate permits decay while any restraint remains equipped or linked, including Cocoon, leg bags and silk leashes. Ten positive world turns without an accepted silk contact are a grace period. Afterward, successive quiet time applies `2^(-(afterAge²-beforeAge²)/144)`, where age excludes that ten-turn grace. A new accepted contact restarts the grace; struggling, changing equipment and loading do not. The existing saved `bareTurns` field now tracks this quiet time, preserving prior save data. Values below 0.5 clear to zero. The published alpha.19 package retains its earlier equipment-dependent decay rule.
 
 Each native delayed escape-work increment for an owned restraint is divided by `1 + density/100`, after native minimum-progress calculation. Tool checks, accessibility, cost, previously earned progress and native final-success rules remain. Density 100/200/300 therefore multiplies incremental work requirements by 2/3/4, although total button counts also depend on the native final-success threshold. The HUD displays the saved density without adding a SlowLevel or curse lock.
 

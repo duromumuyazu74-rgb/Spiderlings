@@ -145,6 +145,19 @@ function scenario(roll = 0, leashTurns = 1) {
     };
 }
 
+test("unrelated faction pairs skip Cocoon inventory scans even when a rival holds the leash", () => {
+    const r = scenario();
+    let reads = 0;
+    r.context.KinkyDungeonAllRestraintDynamic = () => {
+        reads++;
+        return [{ item: r.cocoon }];
+    };
+    for (let i = 0; i < 100; i++) assert.equal(r.escort.rivalPair(r.spinner, r.nest), false);
+    r.player.leash = { entity: 99 };
+    for (let i = 0; i < 100; i++) assert.equal(r.escort.rivalPair(r.spinner, r.nest), false);
+    assert.equal(reads, 0);
+});
+
 test("only anchored Cocoon starts one saved 30–50 turn dispatch", () => {
     const ordinary = scenario();
     ordinary.cocoon.data.SpiderlingsCocoonOuterWebs.anchored = false;

@@ -106,26 +106,27 @@ test("foreign, allied and duplicate same-source trail contacts do not add densit
     assert.equal(r.density.state().value, 4);
 });
 
-test("any equipped owned restraint pauses decay and resets the ten-turn bare window", () => {
-    const r = runtime();
-    r.density.state().value = 300;
+test("quiet decay continues while ordinary restraints, Cocoon, leg bags and leashes stay equipped", () => {
     for (const name of [
+        "SpiderlingsWebbingLv1Arm",
         "SpiderlingsWebbingCocoon",
         "SpiderlingsSpinnerLegbinder",
         "SpiderlingsSilkLeash",
         "SpiderlingsMageRuneArms",
     ]) {
+        const r = runtime();
+        r.density.state().value = 300;
         r.inventory.push({ name });
-        r.density.advance(100);
+        r.density.advance(10);
         assert.equal(r.density.state().value, 300);
-        assert.equal(r.density.state().bareTurns, 0);
-        r.inventory.pop();
-        r.density.advance(9);
-        assert.equal(r.density.state().value, 300);
+        r.density.advance(12);
+        assert.equal(r.density.state().value, 150);
+        assert.equal(r.density.state().bareTurns, 22);
+        assert.equal(r.inventory[0].name, name);
     }
 });
 
-test("bare-body grace is ten world turns, then accelerated decay is delta-invariant", () => {
+test("quiet grace is ten world turns, then accelerated decay is delta-invariant", () => {
     const a = runtime(),
         b = runtime();
     a.density.state().value = b.density.state().value = 200;
@@ -149,7 +150,28 @@ test("save/load and re-equipping retain density without converting it to a slow 
     assert.equal(r.buffs.SpiderlingsSilkDensity.text, String(Math.floor(r.density.state().value)));
     r.inventory.push({ name: "SpiderlingsWebbingLv1Arm" });
     r.density.advance(1);
+    assert.equal(r.density.state().bareTurns, 14);
+});
+
+test("a fresh hostile hit restarts quiet grace, while player effort and equipment changes do not", () => {
+    const r = runtime();
+    r.density.state().value = 300;
+    r.inventory.push({ name: "SpiderlingsWebbingCocoon" });
+    r.density.advance(22);
+    assert.equal(r.density.state().value, 150);
+    r.density.contact(spider());
+    r.density.advance(1);
+    assert.equal(r.density.state().value, 160);
     assert.equal(r.density.state().bareTurns, 0);
+    r.c.KinkyDungeonStruggle();
+    r.inventory.push({ name: "SpiderlingsSilkLeash" });
+    r.density.advance(10);
+    assert.equal(r.density.state().value, 160);
+    r.density.advance(12);
+    assert.equal(r.density.state().value, 80);
+    r.density.advance(100);
+    assert.equal(r.density.state().value, 0);
+    assert.equal(r.density.escapeMultiplier(), 1);
 });
 
 test("density scales native queued escape work after its minimum and preserves prior progress", () => {
@@ -166,7 +188,7 @@ test("density scales native queued escape work after its minimum and preserves p
     assert.equal(r.queued[2].data.amount, 0.0004);
 });
 
-test("saving a bare-body hit retains the same grace origin as uninterrupted play", () => {
+test("saving a hit retains the same quiet grace origin as uninterrupted play", () => {
     const a = runtime(),
         b = runtime();
     a.density.contact(spider());
