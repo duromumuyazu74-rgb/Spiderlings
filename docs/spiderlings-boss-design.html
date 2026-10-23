@@ -1,0 +1,1738 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="dark" />
+        <title>缚丝织庭 · 织巢主母设计案</title>
+        <style>
+            :root {
+                --bg: #131b1b;
+                --panel: #1a2524;
+                --ink: #eee9da;
+                --muted: #a8b5ae;
+                --line: #354642;
+                --silk: #d8d1b7;
+                --orange: #e8a17c;
+                --green: #a2c9b4;
+                --blue: #8dbac9;
+                --violet: #c9afd0;
+                --red: #dd8272;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--ink);
+                font:
+                    16px/1.85 "Microsoft YaHei",
+                    "PingFang SC",
+                    sans-serif;
+            }
+            button,
+            input {
+                font: inherit;
+            }
+            button,
+            a,
+            input {
+                -webkit-tap-highlight-color: transparent;
+            }
+            button {
+                cursor: pointer;
+            }
+            button:focus-visible,
+            a:focus-visible,
+            input:focus-visible {
+                outline: 2px solid var(--orange);
+                outline-offset: 5px;
+            }
+            a {
+                color: var(--green);
+                text-underline-offset: 5px;
+            }
+            button {
+                color: var(--ink);
+                background: none;
+                border: 1px solid var(--line);
+                padding: 9px 15px;
+            }
+            button:hover:not(:disabled) {
+                border-color: var(--silk);
+                background: #283531;
+            }
+            button:disabled {
+                cursor: default;
+                opacity: 0.4;
+            }
+            button[aria-pressed="true"],
+            button[aria-selected="true"] {
+                color: var(--bg);
+                background: var(--silk);
+                border-color: var(--silk);
+            }
+            p {
+                margin: 0 0 18px;
+            }
+            h1,
+            h2,
+            h3 {
+                font-family: Georgia, "Noto Serif CJK SC", "SimSun", serif;
+                font-weight: 400;
+                line-height: 1.25;
+            }
+            h2 {
+                margin: 0 0 22px;
+                font-size: 34px;
+            }
+            h3 {
+                font-size: 23px;
+                margin: 0 0 14px;
+            }
+            .wrap {
+                width: min(1320px, calc(100% - 80px));
+                margin: auto;
+            }
+            .top {
+                border-bottom: 1px solid var(--line);
+            }
+            .top .wrap {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: 74px;
+                gap: 18px;
+            }
+            .brand {
+                letter-spacing: 3px;
+                font-size: 13px;
+            }
+            .top nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 24px;
+                font-size: 13px;
+            }
+            .top nav a {
+                color: var(--muted);
+                text-decoration: none;
+            }
+            .hero {
+                display: grid;
+                grid-template-columns: 1.35fr 1fr;
+                gap: 70px;
+                padding: 70px 0 50px;
+                align-items: end;
+            }
+            .eyebrow {
+                color: var(--orange);
+                font:
+                    12px/1.5 Consolas,
+                    monospace;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                margin-bottom: 20px;
+            }
+            h1 {
+                font-size: clamp(58px, 6.4vw, 92px);
+                letter-spacing: 4px;
+                margin: 0 0 17px;
+            }
+            .en-title {
+                color: var(--muted);
+                font:
+                    18px Georgia,
+                    serif;
+                letter-spacing: 5px;
+            }
+            .hero-note {
+                color: var(--muted);
+                padding-left: 25px;
+                border-left: 1px solid var(--orange);
+            }
+            .hero-note strong {
+                display: block;
+                color: var(--ink);
+                font-weight: 500;
+                margin-bottom: 12px;
+                font-size: 20px;
+            }
+            .meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px 28px;
+                padding: 0 0 34px;
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .meta span::before {
+                content: "";
+                display: inline-block;
+                width: 5px;
+                height: 5px;
+                margin: 0 9px 2px 0;
+                background: var(--green);
+            }
+            .figure-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 0;
+                border-top: 1px solid var(--line);
+            }
+            .figure-head h2 {
+                margin: 0;
+                font-size: 20px;
+            }
+            .figure-head small {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .scene-tabs {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                border-top: 1px solid var(--line);
+                border-left: 1px solid var(--line);
+            }
+            .scene-tabs button {
+                border-width: 0 1px 1px 0;
+                padding: 14px 6px;
+                font-size: 14px;
+            }
+            .explorer {
+                display: grid;
+                grid-template-columns: 1.5fr 1fr;
+                border: 1px solid var(--line);
+                border-top: 0;
+                background: var(--panel);
+            }
+            .arena-wrap {
+                position: relative;
+                padding: 22px;
+                border-right: 1px solid var(--line);
+                min-width: 0;
+            }
+            .arena-top {
+                display: flex;
+                justify-content: space-between;
+                color: var(--muted);
+                font:
+                    11px Consolas,
+                    monospace;
+                letter-spacing: 1px;
+            }
+            .arena-top .lock {
+                color: var(--orange);
+            }
+            #arena {
+                display: block;
+                width: 100%;
+                height: auto;
+                max-height: 660px;
+            }
+            #arena text {
+                font-family: "Microsoft YaHei", sans-serif;
+            }
+            .legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 7px 20px;
+                color: var(--muted);
+                font-size: 11px;
+                justify-content: center;
+                padding-bottom: 10px;
+            }
+            .legend i {
+                display: inline-block;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                margin-right: 6px;
+                background: var(--silk);
+            }
+            .legend .p {
+                background: var(--green);
+            }
+            .legend .w {
+                background: var(--blue);
+            }
+            .legend .j {
+                background: var(--orange);
+            }
+            .legend .m {
+                background: var(--violet);
+            }
+            .scene-copy {
+                padding: 32px;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+            }
+            .scene-copy .index {
+                color: var(--orange);
+                font:
+                    12px Consolas,
+                    monospace;
+                margin-bottom: 15px;
+                letter-spacing: 2px;
+            }
+            #scene-title {
+                font-size: 30px;
+            }
+            #scene-body {
+                color: var(--muted);
+                font-size: 14px;
+            }
+            .scene-controls {
+                margin-top: 12px;
+                border-top: 1px solid var(--line);
+                padding-top: 20px;
+            }
+            .control-label {
+                display: block;
+                font-size: 12px;
+                color: var(--muted);
+                margin-bottom: 10px;
+            }
+            input[type="range"] {
+                width: 100%;
+                accent-color: var(--silk);
+                cursor: pointer;
+            }
+            .range-labels {
+                display: flex;
+                justify-content: space-between;
+                font-size: 10px;
+                color: var(--muted);
+            }
+            .skill-buttons {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .skill-buttons button {
+                font-size: 12px;
+                padding: 8px 11px;
+            }
+            #skill-caption {
+                min-height: 60px;
+                font-size: 12px;
+                color: var(--muted);
+                margin: 12px 0 0;
+            }
+            .nest-buttons {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .nest-buttons button {
+                font-size: 12px;
+            }
+            .nest-buttons button[aria-pressed="true"] {
+                text-decoration: line-through;
+                background: #283531;
+                color: var(--muted);
+                border-color: var(--line);
+            }
+            .hp-label {
+                display: flex;
+                justify-content: space-between;
+                font-size: 12px;
+                color: var(--muted);
+                margin-top: 16px;
+            }
+            .hp-track {
+                background: #0e1515;
+                height: 6px;
+                margin: 8px 0 12px;
+            }
+            #hp-fill {
+                background: var(--green);
+                height: 100%;
+                width: 0;
+                transition: width 0.25s;
+            }
+            .small {
+                font-size: 12px;
+                color: var(--muted);
+            }
+            .notice {
+                margin-top: auto;
+                padding-top: 25px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+            .chapter {
+                padding: 65px 0;
+                display: grid;
+                grid-template-columns: 110px 1fr;
+                border-bottom: 1px solid var(--line);
+                gap: 25px;
+            }
+            .chapter-number {
+                color: #6d8177;
+                font:
+                    48px/1 Georgia,
+                    serif;
+            }
+            .lede {
+                color: var(--muted);
+                max-width: 850px;
+            }
+            .two-col {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 44px;
+                margin-top: 30px;
+            }
+            .rule {
+                border-top: 1px solid var(--line);
+                padding-top: 22px;
+            }
+            .rule p {
+                font-size: 14px;
+                color: var(--muted);
+            }
+            .rule b {
+                font-weight: 500;
+                color: var(--ink);
+            }
+            .sequence {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0;
+                margin: 32px 0 15px;
+            }
+            .sequence div {
+                border-top: 2px solid var(--line);
+                padding: 18px 22px 5px 0;
+            }
+            .sequence div:nth-child(3) {
+                border-color: var(--orange);
+            }
+            .sequence small {
+                color: var(--orange);
+                font:
+                    11px Consolas,
+                    monospace;
+            }
+            .sequence strong {
+                display: block;
+                margin: 9px 0;
+                font-size: 17px;
+                font-weight: 500;
+            }
+            .sequence p {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .table-scroll {
+                overflow-x: auto;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin-top: 28px;
+                font-size: 14px;
+            }
+            th {
+                text-align: left;
+                color: var(--muted);
+                font-size: 11px;
+                font-weight: 400;
+                letter-spacing: 1px;
+                padding: 12px 16px 12px 0;
+            }
+            td {
+                border-top: 1px solid var(--line);
+                padding: 22px 22px 22px 0;
+                vertical-align: top;
+            }
+            td:first-child {
+                white-space: nowrap;
+            }
+            td .count {
+                font:
+                    38px/1 Georgia,
+                    serif;
+                color: var(--silk);
+                display: block;
+                margin-bottom: 10px;
+            }
+            td p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 13px;
+            }
+            .cocoon-block {
+                display: grid;
+                grid-template-columns: 230px 1fr;
+                gap: 40px;
+                align-items: center;
+                margin-top: 25px;
+            }
+            #cocoon-svg {
+                width: 100%;
+                height: 265px;
+            }
+            .cocoon-stages {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin: 18px 0;
+            }
+            .cocoon-stages button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            .formula {
+                background: #0e1615;
+                padding: 18px 22px;
+                margin: 20px 0;
+                color: var(--green);
+                font:
+                    13px/1.9 Consolas,
+                    "Microsoft YaHei",
+                    monospace;
+                border-left: 2px solid var(--green);
+            }
+            details {
+                border-top: 1px solid var(--line);
+                padding: 18px 0;
+            }
+            summary {
+                cursor: pointer;
+                font-size: 16px;
+            }
+            details p,
+            details ul {
+                font-size: 14px;
+                color: var(--muted);
+                margin-top: 16px;
+            }
+            ul {
+                padding-left: 20px;
+            }
+            .status {
+                color: var(--orange);
+                font-size: 11px;
+                border: 1px solid #765c47;
+                padding: 3px 7px;
+                margin-left: 8px;
+                vertical-align: middle;
+                white-space: nowrap;
+            }
+            footer {
+                padding: 35px 0 60px;
+                color: var(--muted);
+                font-size: 12px;
+                display: flex;
+                justify-content: space-between;
+                gap: 25px;
+                flex-wrap: wrap;
+            }
+            [hidden] {
+                display: none !important;
+            }
+            @media (max-width: 950px) {
+                .wrap {
+                    width: calc(100% - 40px);
+                }
+                .hero {
+                    gap: 30px;
+                }
+                .explorer {
+                    grid-template-columns: 1.2fr 1fr;
+                }
+                .scene-copy {
+                    padding: 23px;
+                }
+                .chapter {
+                    grid-template-columns: 65px 1fr;
+                }
+                .two-col {
+                    gap: 25px;
+                }
+            }
+            @media (max-width: 700px) {
+                .top .wrap {
+                    align-items: flex-start;
+                    padding: 18px 0;
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .top nav {
+                    gap: 18px;
+                }
+                .hero {
+                    grid-template-columns: 1fr;
+                    padding: 38px 0 25px;
+                    gap: 25px;
+                }
+                .hero-note {
+                    font-size: 14px;
+                }
+                .en-title {
+                    font-size: 13px;
+                    letter-spacing: 3px;
+                }
+                .figure-head {
+                    align-items: flex-start;
+                    gap: 15px;
+                    flex-direction: column;
+                }
+                .scene-tabs {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+                .explorer {
+                    grid-template-columns: 1fr;
+                }
+                .arena-wrap {
+                    border-right: 0;
+                    border-bottom: 1px solid var(--line);
+                    padding: 15px;
+                }
+                .scene-copy {
+                    padding: 25px;
+                }
+                .chapter {
+                    grid-template-columns: 1fr;
+                    gap: 15px;
+                    padding: 42px 0;
+                }
+                .chapter-number {
+                    font-size: 28px;
+                }
+                .two-col {
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                }
+                .sequence {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .cocoon-block {
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                }
+                #cocoon-svg {
+                    height: 200px;
+                }
+                .scene-tabs button {
+                    font-size: 12px;
+                }
+                h2 {
+                    font-size: 28px;
+                }
+                .meta {
+                    gap: 10px 16px;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+                * {
+                    transition: none !important;
+                }
+            }
+            @media print {
+                body {
+                    background: white;
+                    color: #222;
+                }
+                .top,
+                .scene-tabs,
+                .scene-controls,
+                .cocoon-stages {
+                    display: none;
+                }
+                .wrap {
+                    width: 100%;
+                }
+                .explorer {
+                    background: #eee;
+                }
+                .scene-copy,
+                .chapter,
+                .hero {
+                    break-inside: avoid;
+                }
+                p,
+                .lede,
+                .small,
+                td p {
+                    color: #444;
+                }
+                a {
+                    color: #333;
+                }
+                .chapter {
+                    padding: 25px 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="top">
+            <div class="wrap">
+                <div class="brand">SPIDERLINGS / ENCOUNTER DESIGN</div>
+                <nav aria-label="页面导航">
+                    <a href="#arena-section">场地示意</a><a href="#support">召唤轮转</a
+                    ><a href="#boss-skills">本体技能</a><a href="#rebirth">四巢转场</a><a href="#cocoon">魔织丝茧</a>
+                </nav>
+            </div>
+        </header>
+        <main class="wrap">
+            <section class="hero">
+                <div>
+                    <div class="eyebrow">Boss room / name proposal</div>
+                    <h1>缚丝织庭</h1>
+                    <div class="en-title">SILKBOUND COURT</div>
+                </div>
+                <div class="hero-note">
+                    <strong>围场逐圈收紧，四巢维系主母再生。</strong>织巢主母从场地边缘登场，八只 Spinner
+                    沿外围向内织出围场。玩家需要在交替到来的支援攻击中保持移动，并两次击败主母。
+                </div>
+            </section>
+            <div class="meta">
+                <span>织巢主母 / 暂名</span><span>独立 Boss 房</span><span>两阶段 + 四巢转场</span
+                ><span>2026.10.16 · 设计草案</span>
+            </div>
+            <section id="arena-section">
+                <div class="figure-head">
+                    <h2>场地与机制示意</h2>
+                    <small>切换阶段、支援类型，查看站位关系。图中距离与范围仅为示意。</small>
+                </div>
+                <div class="scene-tabs" role="tablist" aria-label="战斗阶段">
+                    <button
+                        role="tab"
+                        id="tab-entry"
+                        data-phase="entry"
+                        aria-selected="true"
+                        aria-controls="scene-panel"
+                    >
+                        入场
+                    </button>
+                    <button
+                        role="tab"
+                        id="tab-weave"
+                        data-phase="weave"
+                        aria-selected="false"
+                        aria-controls="scene-panel"
+                    >
+                        逐圈施工
+                    </button>
+                    <button role="tab" id="tab-p1" data-phase="p1" aria-selected="false" aria-controls="scene-panel">
+                        一阶段
+                    </button>
+                    <button
+                        role="tab"
+                        id="tab-interlude"
+                        data-phase="interlude"
+                        aria-selected="false"
+                        aria-controls="scene-panel"
+                    >
+                        四巢再生
+                    </button>
+                    <button role="tab" id="tab-p2" data-phase="p2" aria-selected="false" aria-controls="scene-panel">
+                        二阶段
+                    </button>
+                    <button
+                        role="tab"
+                        id="tab-victory"
+                        data-phase="victory"
+                        aria-selected="false"
+                        aria-controls="scene-panel"
+                    >
+                        胜利
+                    </button>
+                </div>
+                <div class="explorer" id="scene-panel" role="tabpanel" aria-labelledby="tab-entry">
+                    <div class="arena-wrap">
+                        <div class="arena-top">
+                            <span>PLAN VIEW / 俯视布局</span><span class="lock" id="exit-state">出口封闭</span>
+                        </div>
+                        <svg id="arena" viewBox="0 0 640 640" role="img" aria-labelledby="arena-title arena-desc">
+                            <title id="arena-title">缚丝织庭俯视示意</title>
+                            <desc id="arena-desc">玩家位于中央，Boss 在场地边缘，八只 Spinner 沿最外圈排列。</desc>
+                        </svg>
+                        <div class="legend">
+                            <span><i class="p"></i>玩家</span><span><i></i>Spinner</span
+                            ><span><i class="w"></i>WebCaster</span><span><i class="j"></i>Jumper</span
+                            ><span><i class="m"></i>Mage</span>
+                        </div>
+                    </div>
+                    <div class="scene-copy" aria-live="polite">
+                        <div class="index" id="scene-index">00 / ENTRY</div>
+                        <h3 id="scene-title">从中央开始</h3>
+                        <p id="scene-body"></p>
+                        <div class="scene-controls" id="weave-controls" hidden>
+                            <label class="control-label" for="ring-step"
+                                >施工进度：<span id="ring-label">最外圈</span></label
+                            ><input id="ring-step" type="range" min="0" max="3" step="1" value="0" />
+                            <div class="range-labels">
+                                <span>最外圈</span><span>向内施工</span><span>最小围场</span>
+                            </div>
+                            <p class="small" style="margin-top: 15px">
+                                拖动查看逐圈施工。四圈为页面示意，正式环数与最小范围待定。
+                            </p>
+                        </div>
+                        <div class="scene-controls" id="support-controls" hidden>
+                            <span class="control-label">瞬发召唤 · 组内共享冷却 · 与本体技能并行</span>
+                            <div class="skill-buttons">
+                                <button data-skill="web" aria-pressed="true">4 × 喷网</button
+                                ><button data-skill="jump" aria-pressed="false">6 × 跃袭</button
+                                ><button data-skill="mage" aria-pressed="false">4 × 坠牢</button>
+                            </div>
+                            <p id="skill-caption"></p>
+                            <p class="small">切换按钮只展示单组布局，不模拟冷却、伤害或法术结算。</p>
+                        </div>
+                        <div class="scene-controls" id="nest-controls" hidden>
+                            <span class="control-label">点击巢穴按钮，模拟摧毁四个阶段目标</span>
+                            <div class="nest-buttons">
+                                <button data-nest="0" aria-pressed="false">西北 Nest</button
+                                ><button data-nest="1" aria-pressed="false">东北 Nest</button
+                                ><button data-nest="2" aria-pressed="false">西南 Nest</button
+                                ><button data-nest="3" aria-pressed="false">东南 Nest</button>
+                            </div>
+                            <div class="hp-label">
+                                <span id="nest-count">剩余 4 / 4 巢</span><span id="hp-text">恢复生命 15%</span>
+                            </div>
+                            <div class="hp-track"><div id="hp-fill"></div></div>
+                            <button id="heal-step">推进一次恢复</button><button id="reset-nests">重置示意</button>
+                            <p id="recovery-note" class="small" style="margin-top: 14px">
+                                已示意结算入场回血 15%，每次点击再恢复 15%。比例仅为示意，回满也不解除无敌。
+                            </p>
+                            <p class="small">
+                                十二只为初始守军，普通 Nest 仍可正常增援。只需摧毁最初四巢，毁巢不清除守军。
+                            </p>
+                        </div>
+                        <p class="notice">本页展示设计关系，游戏机制尚未实现。具体参数与未定规则见文末。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="chapter" id="room">
+                <div class="chapter-number">01</div>
+                <div>
+                    <div class="eyebrow">The room</div>
+                    <h2>击败主母，才能离开</h2>
+                    <p class="lede">
+                        玩家出现在独立房间的中心，主母以参照原生龙体量的多格大型单位从边缘登场，立刻开始本体攻击与瞬发召唤轮转，各招保留正常预告。八只织网幼蛛同时从最外围逐圈施工，围成最小场地后开始捕获。
+                    </p>
+                    <p>
+                        主母具有实际多格占位，具体格数与外形待原型确定。通路、最小围场、碰撞、攻击与预告均需适配完整体型；身前终击将玩家拉到占位外的可达邻格。大型绘制与多格移动、碰撞分别验收。
+                    </p>
+                    <div class="two-col">
+                        <div class="rule">
+                            <h3>逐步收紧的场地</h3>
+                            <p>
+                                每一圈都要实际施工并显示闭合过程。玩家可破网或击杀施工者；存活者先修复当前环再向内推进，全部击杀可阻止继续收圈，不补员。最小围场保留可移动空间。
+                            </p>
+                        </div>
+                        <div class="rule">
+                            <h3>两次生命归零</h3>
+                            <p>
+                                一阶段归零触发四巢转场。二阶段最终归零才结算胜利、清理威胁并开放正常出口。战败押送通往监牢，脱困后回房外，再入场从一阶段重开，玩家拘束、密度和资源保留实际状态。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sequence">
+                        <div>
+                            <small>01</small><strong>外围登场</strong>
+                            <p>中央玩家，边缘主母，八只 Spinner。</p>
+                        </div>
+                        <div>
+                            <small>02</small><strong>逐圈施工</strong>
+                            <p>从最外圈向内建立围场。</p>
+                        </div>
+                        <div>
+                            <small>03</small><strong>最小围场</strong>
+                            <p>施工者切换捕获职责，支援轮转压迫走位。</p>
+                        </div>
+                        <div>
+                            <small>04</small><strong>阶段推进</strong>
+                            <p>一阶段归零后进入四巢再生。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="chapter" id="support">
+                <div class="chapter-number">02</div>
+                <div>
+                    <div class="eyebrow">Shared cooldown</div>
+                    <h2>瞬发召唤与本体技能并行</h2>
+                    <p class="lede">
+                        三种支援由主母瞬发召来，只在召唤组内共享冷却。主母可以同时释放其他技能，召唤不占用本体施法机会、不打断读条，也不延后本体冷却。候选召唤顺序为四角喷网、双侧跃袭、四隅坠牢。
+                    </p>
+                    <div class="two-col">
+                        <div class="rule">
+                            <h3>本体技能轴</h3>
+                            <p>
+                                五种常规拘束攻击包含牵丝缠缚、扇网缚身、环丝收缚、连缀缠丝和生成多个法阵脱手连射的织弹连珠。魔织结茧通过追踪符文、捕获对抗和身前终击捕获玩家，织纹共鸣维持密度。
+                            </p>
+                        </div>
+                        <div class="rule">
+                            <h3>瞬发召唤轴</h3>
+                            <p>
+                                成功召唤开始共享冷却，上一组存活不阻止下一组入场。主母被禁止施法时暂停触发，恢复后不补发积压组。幼蛛进场后的攻击和法术仍有各自的预告与结算。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>数量 / 单位</th>
+                                    <th>落点</th>
+                                    <th>行动与结束</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="count">04</span>WebCaster</td>
+                                    <td>距玩家一定距离的四个对角位置</td>
+                                    <td><p>每只朝玩家释放一次喷网，随后退场。已有弹丸保留正常命中结算。</p></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="count">06</span>Jumper</td>
+                                    <td>玩家左右两侧，每组三只</td>
+                                    <td><p>从两侧向玩家进攻。攻击、存续与结束沿用普通 Jumper 逻辑，不额外适配。</p></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="count">04</span>Mage Spiderlings</td>
+                                    <td>距玩家一定距离的四个对角位置</td>
+                                    <td>
+                                        <p>
+                                            四个千丝坠牢的中心彼此错开，均不落在玩家位置，但范围都覆盖玩家。伤害、拘束、密度与重叠均按正常逻辑结算，之后退场。
+                                        </p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="two-col">
+                        <div class="rule">
+                            <h3>千丝坠牢</h3>
+                            <p>
+                                敌方法师技能的正式名称，内部标识为
+                                SpiderlingsMageCollapse。现有实现会延迟结算并检查施法者存在，因此 Mage
+                                不能刚开始读条就退场。
+                            </p>
+                        </div>
+                        <div class="rule">
+                            <h3>持续维持密度</h3>
+                            <p>
+                                主母在正常战斗中另有织纹共鸣，只刷新密度衰减计时。它按本体技能安排执行，可与瞬发召唤同时发生。四巢转场期间两条技能轴都暂停。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="chapter" id="boss-skills">
+                <div class="chapter-number">03</div>
+                <div>
+                    <div class="eyebrow">Boss actions / proposal</div>
+                    <h2>主母亲自封锁走位</h2>
+                    <p class="lede">
+                        本体技能独立释放，瞬发召唤可以同时进场。五种常规攻击全部以拘束玩家为目的。织弹连珠生成多个法阵，由法阵脱手连续、大量发射
+                        Mage 蛛丝球。魔织结茧包含追踪、连线后的 Spinner
+                        式捕获对抗及身前终击。拘束强度、范围与回合数待校准。
+                    </p>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>本体技能</th>
+                                    <th>一阶段</th>
+                                    <th>二阶段</th>
+                                    <th>玩家应对</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>牵丝缠缚</td>
+                                    <td>近身牵丝缠住玩家，命中推进常规蛛丝拘束。</td>
+                                    <td>间隔缩短，可衔接下一项有预告的本体技能。</td>
+                                    <td>避开近身格，利用收招输出。</td>
+                                </tr>
+                                <tr>
+                                    <td>扇网缚身</td>
+                                    <td>锁定朝向，预告后扇形施网，缠缚命中的玩家。</td>
+                                    <td>首扇后接有独立预告的反向第二扇。</td>
+                                    <td>绕到侧后方，躲开后继续判断第二次横扫。</td>
+                                </tr>
+                                <tr>
+                                    <td>环丝收缚</td>
+                                    <td>预告内圆或外环，随后收拢蛛丝缠缚区内玩家。</td>
+                                    <td>内圆接外环，或外环接内圆，提前显示顺序。</td>
+                                    <td>连续切换内外位置，安全区要位于当前可达围场内。</td>
+                                </tr>
+                                <tr>
+                                    <td>连缀缠丝</td>
+                                    <td>候选三波，依次锁定玩家旧位置，落丝缠缚命中者。</td>
+                                    <td>候选五波，与支援预告更紧密衔接。</td>
+                                    <td>持续离开锁定点，把落丝诱导到一侧。落点锁定后不追踪。</td>
+                                </tr>
+                                <tr>
+                                    <td>织弹连珠</td>
+                                    <td>生成两个法阵，由法阵脱手连射 Mage 蛛丝球，命中推进拘束。</td>
+                                    <td>法阵数量增加到五个。</td>
+                                    <td>法阵围绕施放时的主母展开后位置固定，每发瞄准玩家当时位置，射完自然消失。</td>
+                                </tr>
+                                <tr>
+                                    <td>魔织结茧</td>
+                                    <td>
+                                        强力预告后发射追踪蜘蛛符文；命中后连线并进入 Spinner
+                                        式捕获对抗，逐步拉近后终击。
+                                    </td>
+                                    <td>保留完整的符文、对抗、牵引和终击过程。</td>
+                                    <td>通过对抗争取脱离；无普通茧或密度前置，终击命中才结茧。</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="two-col">
+                        <div class="rule">
+                            <h3>维持与捕获</h3>
+                            <p>
+                                织纹共鸣维持密度。符文命中后进入捕获对抗，主母暂停前四种常规拘束招式，但仍可生成法阵，已有法阵也继续连射。身前终击命中后进入魔织丝茧的成长与限时脱困。
+                            </p>
+                        </div>
+                        <div class="rule">
+                            <h3>完成组合后有窗口</h3>
+                            <p>
+                                连续机制之间保留输出、恢复或解缚时间。落丝留下的短暂减速丝迹需要及时消退，不能无限占满场地。
+                            </p>
+                        </div>
+                    </div>
+                    <h3 style="margin-top: 32px">与瞬发召唤组合</h3>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>本体 + 支援</th>
+                                    <th>候选处理顺序</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>扇网缚身 + 四角喷网</td>
+                                    <td>
+                                        扇形读条时召来
+                                        WebCaster，玩家绕向侧后方，再处理喷网。扇外路线不能同时被四道喷网封死。
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>环丝收缚 + 双侧跃袭</td>
+                                    <td>
+                                        Jumper
+                                        按正常逻辑进攻；候选是在跃袭预告后结算内圆，二阶段再接外环，要求连续换位。
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>连缀缠丝 + 四隅坠牢</td>
+                                    <td>
+                                        先将落丝诱导到一侧，偏移法阵锁定后转向撤出共同覆盖区；剩余落丝在法阵结算后接上。
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small">
+                        入场立即开始本体攻击与召唤轮转，不设置单独教学轮。织弹连珠一阶段两个法阵、二阶段五个，参考绳子女巫与史莱姆女巫的发射体验，法阵成形后固定位置独立射击，完成本轮射击后自然消失。
+                    </p>
+                </div>
+            </section>
+
+            <section class="chapter" id="rebirth">
+                <div class="chapter-number">04</div>
+                <div>
+                    <div class="eyebrow">Intermission / rebirth</div>
+                    <h2>四巢未破，主母不醒</h2>
+                    <p class="lede">
+                        一阶段被打至零血后，主母进入转场，立即结算第一次正常回血，之后每世界回合按固定比例恢复。她免疫一切攻击，全程不移动、不攻击、不施法。玩家此时必须摧毁四角的巢穴。
+                    </p>
+                    <div class="sequence">
+                        <div>
+                            <small>TRIGGER</small><strong>一阶段归零</strong>
+                            <p>拦截死亡，不掉落、不开放出口。</p>
+                        </div>
+                        <div>
+                            <small>IMMUNE</small><strong>四巢出现</strong>
+                            <p>四角各一个普通 Nest，另各附三只 Spinner；巢穴沿用普通增援与死亡行为。</p>
+                        </div>
+                        <div>
+                            <small>OBJECTIVE</small><strong>摧毁四巢</strong>
+                            <p>主母持续回血，即使回满仍等待最初四巢被摧毁，不要求清完守军或后续增援。</p>
+                        </div>
+                        <div>
+                            <small>PHASE II</small><strong>解除无敌</strong>
+                            <p>最后一巢摧毁后立即停回血，保留当时血量，正式进入二阶段。</p>
+                        </div>
+                    </div>
+                    <div class="two-col">
+                        <div class="rule">
+                            <h3>清巢速度影响后半场</h3>
+                            <p>
+                                越快完成四巢，主母恢复的生命越少。每回合恢复二阶段最大生命的固定比例，与活巢数量无关。进入转场立即回复一次，清巢后保留实际血量，不另加保底。具体比例与二阶段最大生命待定。
+                            </p>
+                        </div>
+                        <div class="rule">
+                            <h3>转场保留已有场面</h3>
+                            <p>
+                                旧网、在途喷网、未结算法阵、旧支援和存活 Spinner
+                                均按原规则继续，不因转场清除。玩家自行破坏结点，为通往四角的路线打开缺口，不必拆掉整圈；存活施工者仍会修补，可先击杀再开路。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="chapter" id="phase-two">
+                <div class="chapter-number">05</div>
+                <div>
+                    <div class="eyebrow">Phase II / frenzy</div>
+                    <h2>正式二阶段：狂织</h2>
+                    <p class="lede">
+                        四巢全部摧毁后，主母恢复正常可攻击状态，本体招式与瞬发召唤继续并行，进攻变得更密集。召唤数量仍是四只喷网、六只跃袭、四只法师。
+                    </p>
+                    <div class="two-col">
+                        <div class="rule">
+                            <h3>连续逼迫换位</h3>
+                            <p>
+                                候选调整为扇网缚身反向第二扇、环丝收缚内外二连和增加缠丝波次，同时缩短召唤组间冷却。站在危险区等待会连续受击，正常走位仍要有可执行路线。
+                            </p>
+                        </div>
+                        <div class="rule">
+                            <h3>最终击败才开门</h3>
+                            <p>
+                                二阶段生命降至零后结束战斗，开放房间出口。五种常规拘束攻击和魔织结茧保留，具体强度、范围、冷却与奖励尚未定稿。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="chapter" id="cocoon">
+                <div class="chapter-number">06</div>
+                <div>
+                    <div class="eyebrow">Spellwoven cocoon</div>
+                    <h2>魔织丝茧</h2>
+                    <p class="lede">
+                        主母通过「魔织结茧」完成捕获：强力预告后发射追踪蜘蛛符文，命中后以 Spinner 风格的 tether
+                        将玩家连到主母并进入捕获对抗，逐步拉到身前；玩家未能通过对抗脱离且被身前终击命中，才开始动态结茧。不要求普通茧或高密度前置。
+                    </p>
+                    <div class="sequence">
+                        <div>
+                            <small>WARNING</small><strong>强力预告</strong>
+                            <p>展开蜘蛛符文，丝线聚拢，显示明显的捕获蓄力。</p>
+                        </div>
+                        <div>
+                            <small>RUNE</small><strong>追踪命中</strong>
+                            <p>蜘蛛符文可被攻击消灭，未击毁或命中前一直追踪；命中后建立连线。</p>
+                        </div>
+                        <div>
+                            <small>CONTEST</small><strong>捕获对抗</strong>
+                            <p>沿用 Spinner 的拘束进度、挣脱进度与挣开蛛丝操作，主母逐步拉近，法阵仍可连射。</p>
+                        </div>
+                        <div>
+                            <small>FINISHER</small><strong>stun 与终击</strong>
+                            <p>
+                                拘束进度满立即 stun 五个世界回合，期间完成身前终击与初始结茧，恢复操作后开始限时脱茧。
+                            </p>
+                        </div>
+                    </div>
+                    <p>
+                        初次结茧采用 Spinner 式动态缠绕。初始记为第 1
+                        层，之后每次有效脱困尝试未成功便新增一层，层数只用编号表示，每次保留此前丝层并继续增厚与鼓起。成长过程采用较多层，最终上限待定。对抗按钮沿用「挣开蛛丝
+                        · 精力 10 · 1 回合」，挣脱完成则断线，同回合完成时挣脱优先。拘束满后立即 stun
+                        并结束对抗，不再提供终击前挣开的机会。stun
+                        固定五个世界回合，主母在此期间完成身前终击与初始结茧；五回合结束、恢复操作后开始限时脱困。
+                    </p>
+                    <div class="cocoon-block">
+                        <svg id="cocoon-svg" viewBox="0 0 230 280" role="img" aria-label="魔织丝茧有限成长示意"></svg>
+                        <div>
+                            <label class="control-label" for="cocoon-layer"
+                                >魔织层数：第 <output id="cocoon-layer-value">1</output> 层</label
+                            >
+                            <input id="cocoon-layer" type="range" min="1" max="50" step="1" value="1" />
+                            <div class="cocoon-stages" aria-label="魔织丝茧叠层预览">
+                                <button id="growth-step">模拟一次未脱困尝试</button>
+                                <button id="growth-reset">重置为第 1 层</button>
+                            </div>
+                            <p id="growth-copy" class="small"></p>
+                            <div class="formula">
+                                正常收益 = 基础进度 ÷ (1 + 密度 / 100)<br />额外扣减 = 密度函数 × 魔织层数系数<br />最终进度
+                                = max(0, 原进度 + 正常收益 − 额外扣减)
+                            </div>
+                            <p class="small">
+                                预览可逐层查看第 1 至 50 层，50
+                                仅为展示范围，正式层数上限与系数待定。押送与入牢保留层数，监牢中的有效尝试也会继续叠层。
+                            </p>
+                        </div>
+                    </div>
+                    <p class="lede">
+                        包裹完成后开始限时脱困。超时仍未脱茧，由幼蛛押送至监牢。入牢保留茧、密度和进度，Boss
+                        维持停止。玩家等待密度自然下降，再自行挣脱；巡逻不负责拆茧。
+                    </p>
+                </div>
+            </section>
+
+            <section class="chapter" id="decisions">
+                <div class="chapter-number">07</div>
+                <div>
+                    <div class="eyebrow">Open decisions</div>
+                    <h2>留给原型确认的部分</h2>
+                    <details open>
+                        <summary>场地尺寸、收圈与转场通路</summary>
+                        <p>
+                            已建外圈保留；可破网、可击杀、不补员，存活施工者先修当前环再收圈。转场由玩家自行破开沿途各层蛛网去拆四巢，仍需确定环数、施工与修补速度、最小围场和地图尺寸。场地示意不决定实际格子大小。
+                        </p>
+                    </details>
+                    <details open>
+                        <summary>共享冷却、落点与四重法术</summary>
+                        <p>
+                            已确定成功召唤起算共享冷却、可跨组重叠、禁施法时暂停且不补发，并与本体并行。Jumper
+                            沿用正常逻辑；千丝坠牢的伤害、拘束、密度与重叠也沿用正常逻辑。仍需确定冷却长度、召唤距离、法阵偏移与锁定时机。
+                        </p>
+                    </details>
+                    <details open>
+                        <summary>回血与正式二阶段</summary>
+                        <p>
+                            需确定每世界回合恢复比例与二阶段最大生命。进入转场立即结算第一次回血，之后固定比例恢复，与活巢数量无关。旧场面保留，四巢沿用普通
+                            Nest，不额外适配；摧毁最初四巢即结束转场，其余敌人不清除。魔织丝茧与转场各自推进，不另设优先级或冻结回血。
+                        </p>
+                    </details>
+                    <details>
+                        <summary>密度衰减与监牢恢复</summary>
+                        <p>
+                            当前 Prison alpha.19 会因穿着 Spiderlings
+                            拘束而阻止衰减。本设计需要取消该条件，改为无有效受击或 Boss
+                            维持后自然下降。自己的挣扎不会刷新计时，茧仍穿着也能衰减。这项改动需要覆盖普通遭遇的回归验证。
+                        </p>
+                    </details>
+                    <details>
+                        <summary>完整规格与源码依据</summary>
+                        <p>
+                            <a href="spiderlings-boss-design.zh-CN.md">完整 Markdown 设计案</a
+                            >保留结算规则、状态转换、未决参数和实施验收。<a
+                                href="https://github.com/duromumuyazu74-rgb/Spiderlings/blob/c1e33c1688254676df436ca72ac6689dc999dc04/KinkyDungeon-Spiderlings/SpiderlingsMageSpells.js"
+                                >千丝坠牢源码</a
+                            >与<a
+                                href="https://github.com/duromumuyazu74-rgb/Spiderlings/blob/c1e33c1688254676df436ca72ac6689dc999dc04/KinkyDungeon-Spiderlings/SpiderlingsCN.csv#L201"
+                                >正式中文名</a
+                            >固定在 Prison alpha.19 提交。
+                        </p>
+                    </details>
+                </div>
+            </section>
+            <footer>
+                <span>缚丝织庭 / 织巢主母 · 设计草案，尚未实现</span
+                ><span
+                    >可离线打开 · <a href="spiderlings-boss-design.zh-CN.md">完整设计案</a> ·
+                    <button id="print-page" style="padding: 3px 10px; font-size: 12px">打印 / 保存 PDF</button></span
+                >
+            </footer>
+        </main>
+        <script>
+            "use strict";
+            (() => {
+                const ns = "http://www.w3.org/2000/svg";
+                const arena = document.getElementById("arena");
+                const phases = {
+                    entry: [
+                        "00 / ENTRY",
+                        "从中央开始",
+                        "玩家位于地图中心，主母从场地边缘登场，立刻开始本体攻击与瞬发召唤轮转。八只 Spinner 同时从最外围施工。正常出口封闭。",
+                    ],
+                    weave: [
+                        "01 / ENCLOSURE",
+                        "八只 Spinner，逐圈向内",
+                        "主母持续进攻。施工者沿场地外缘建立环形围场，再推进到下一圈，达到最小围场后开始捕获。拖动下方进度查看施工关系。",
+                    ],
+                    p1: [
+                        "02 / PHASE I",
+                        "本体施法，支援同时进场",
+                        "主母持续释放本体技能，同时瞬发召来四角 WebCaster、双侧 Jumper 或四角 Mage。三种召唤只在组内共享冷却，不占用、打断或延后其他技能。",
+                    ],
+                    interlude: [
+                        "03 / REBIRTH",
+                        "四巢再生",
+                        "一阶段归零后，主母进入转场即回复一次，之后每世界回合固定比例回血，全程无敌、不进行主动行动。四角各一个普通 Nest，另各附三只 Spinner。旧场面保留，只需摧毁最初四巢。",
+                    ],
+                    p2: [
+                        "04 / PHASE II",
+                        "正式二阶段：狂织",
+                        "主母停止回血，保留已恢复的生命并恢复可攻击。本体招式与瞬发召唤继续并行，候选方向是更短的召唤冷却与更密集的本体追击。",
+                    ],
+                    victory: [
+                        "05 / VICTORY",
+                        "织庭出口开放",
+                        "正式二阶段生命归零后，主母才最终被击败。清理本场威胁、结算奖励，打开正常出口。",
+                    ],
+                };
+                const skills = {
+                    web: "四只 WebCaster 位于玩家四个对角方向，各释放一次喷网后退场。蓝色连线表示喷网方向。",
+                    jump: "六只 Jumper 分为左右两组，每组三只，从两侧向玩家进攻，攻击、存续与结束均沿用正常逻辑。",
+                    mage: "四只 Mage 位于玩家四个对角方向。四个法阵中心彼此错开，均不落在玩家位置，但范围都覆盖玩家。小十字标记法阵中心，连线指向各自落点；范围与偏移仅为示意。",
+                };
+                const state = { phase: "entry", ring: 0, skill: "web", dead: new Set(), hp: 15 };
+                const corners = [
+                    [125, 125],
+                    [515, 125],
+                    [125, 515],
+                    [515, 515],
+                ];
+                const rings = [263, 218, 172, 125];
+                function node(tag, attrs, text) {
+                    const element = document.createElementNS(ns, tag);
+                    for (const [key, value] of Object.entries(attrs || {})) element.setAttribute(key, String(value));
+                    if (text !== undefined) element.textContent = text;
+                    return element;
+                }
+                function add(parent, tag, attrs, text) {
+                    const element = node(tag, attrs, text);
+                    parent.appendChild(element);
+                    return element;
+                }
+                function line(parent, x1, y1, x2, y2, color, dash) {
+                    return add(parent, "line", {
+                        x1,
+                        y1,
+                        x2,
+                        y2,
+                        stroke: color,
+                        "stroke-width": 1.6,
+                        ...(dash ? { "stroke-dasharray": dash } : {}),
+                    });
+                }
+                function spider(parent, x, y, color, label, type) {
+                    const g = add(parent, "g", {
+                        "data-unit": type || label,
+                        transform: "translate(" + x + " " + y + ")",
+                    });
+                    for (const side of [-1, 1])
+                        for (const dy of [-6, -2, 2, 6]) line(g, side * 5, dy * 0.5, side * 13, dy * 1.3, color);
+                    add(g, "ellipse", {
+                        cx: 0,
+                        cy: -3,
+                        rx: 5,
+                        ry: 7,
+                        fill: color,
+                        stroke: "#131b1b",
+                        "stroke-width": 1,
+                    });
+                    add(g, "circle", { cx: 0, cy: 5, r: 3.2, fill: color });
+                    if (label)
+                        add(g, "text", { x: 0, y: 27, "text-anchor": "middle", fill: color, "font-size": 10 }, label);
+                    return g;
+                }
+                function player(parent) {
+                    const g = add(parent, "g", { "data-unit": "player" });
+                    add(g, "circle", {
+                        cx: 320,
+                        cy: 320,
+                        r: 20,
+                        fill: "#a2c9b4",
+                        "fill-opacity": 0.1,
+                        stroke: "#a2c9b4",
+                        "stroke-opacity": 0.35,
+                    });
+                    add(g, "path", { d: "M320 309 L328 320 L320 331 L312 320 Z", fill: "#a2c9b4" });
+                    add(
+                        g,
+                        "text",
+                        { x: 320, y: 354, "text-anchor": "middle", fill: "#cce2d5", "font-size": 12 },
+                        "玩家",
+                    );
+                }
+                function boss(parent, immune) {
+                    const g = spider(parent, 320, 82, "#e8a17c", "", "boss");
+                    g.setAttribute("transform", "translate(320 82) scale(1.8)");
+                    if (immune)
+                        add(parent, "circle", {
+                            cx: 320,
+                            cy: 82,
+                            r: 31,
+                            fill: "none",
+                            stroke: "#e8a17c",
+                            "stroke-width": 1.4,
+                            "stroke-dasharray": "4 4",
+                        });
+                    add(
+                        parent,
+                        "text",
+                        { x: 320, y: 125, "text-anchor": "middle", fill: "#e8a17c", "font-size": 11 },
+                        immune ? "主母 · 无敌恢复" : "织巢主母",
+                    );
+                }
+                function supports(parent) {
+                    if (state.skill === "jump") {
+                        for (const side of [-1, 1])
+                            for (const offset of [-1, 0, 1]) {
+                                const x = 320 + side * 102,
+                                    y = 320 + offset * 48;
+                                spider(parent, x, y, "#e8a17c", "", "jumper");
+                                line(parent, x - side * 16, y, 320 + side * 25, 320 + offset * 8, "#b87655", "4 5");
+                            }
+                    } else {
+                        const mage = state.skill === "mage";
+                        for (const sideX of [-1, 1])
+                            for (const sideY of [-1, 1]) {
+                                const x = 320 + sideX * 86,
+                                    y = 320 + sideY * 86;
+                                const targetX = mage ? 320 + sideX * 42 : 320,
+                                    targetY = mage ? 320 + sideY * 42 : 320;
+                                spider(parent, x, y, mage ? "#c9afd0" : "#8dbac9", "", mage ? "mage" : "webcaster");
+                                line(
+                                    parent,
+                                    x - sideX * 14,
+                                    y - sideY * 14,
+                                    targetX,
+                                    targetY,
+                                    mage ? "#9b7eaa" : "#6c9ba9",
+                                    "5 5",
+                                );
+                                if (mage) {
+                                    add(parent, "circle", {
+                                        cx: targetX,
+                                        cy: targetY,
+                                        r: 73,
+                                        "data-effect": "mage-collapse",
+                                        fill: "#c9afd0",
+                                        "fill-opacity": 0.045,
+                                        stroke: "#c9afd0",
+                                        "stroke-opacity": 0.65,
+                                        "stroke-dasharray": "3 6",
+                                    });
+                                    line(parent, targetX - 5, targetY, targetX + 5, targetY, "#e8a17c");
+                                    line(parent, targetX, targetY - 5, targetX, targetY + 5, "#e8a17c");
+                                }
+                            }
+                        if (mage)
+                            add(
+                                parent,
+                                "text",
+                                { x: 320, y: 456, "text-anchor": "middle", fill: "#c9afd0", "font-size": 11 },
+                                "四个偏移中心 · 玩家位于共同覆盖区",
+                            );
+                    }
+                }
+                function render() {
+                    arena.replaceChildren();
+                    add(arena, "title", { id: "arena-title" }, "缚丝织庭 · " + phases[state.phase][1]);
+                    add(arena, "desc", { id: "arena-desc" }, phases[state.phase][2]);
+                    const defs = add(arena, "defs");
+                    const pattern = add(defs, "pattern", {
+                        id: "floor",
+                        width: 32,
+                        height: 32,
+                        patternUnits: "userSpaceOnUse",
+                    });
+                    add(pattern, "path", { d: "M32 0 H0 V32", fill: "none", stroke: "#2b3a35", "stroke-width": 0.6 });
+                    add(arena, "rect", {
+                        x: 31,
+                        y: 31,
+                        width: 578,
+                        height: 578,
+                        rx: 3,
+                        fill: "url(#floor)",
+                        stroke: "#50635a",
+                        "stroke-width": 1.2,
+                    });
+                    add(arena, "circle", {
+                        cx: 320,
+                        cy: 320,
+                        r: 277,
+                        fill: "none",
+                        stroke: "#44574d",
+                        "stroke-width": 1,
+                    });
+                    for (let i = 0; i < 16; i++) {
+                        const a = (i * Math.PI) / 8;
+                        line(
+                            arena,
+                            320 + Math.cos(a) * 275,
+                            320 + Math.sin(a) * 275,
+                            320 + Math.cos(a) * 284,
+                            320 + Math.sin(a) * 284,
+                            "#50635a",
+                        );
+                    }
+                    add(
+                        arena,
+                        "text",
+                        { x: 320, y: 20, "text-anchor": "middle", fill: "#7c9184", "font-size": 10 },
+                        "北 / N",
+                    );
+                    const victory = state.phase === "victory";
+                    add(arena, "rect", {
+                        x: 292,
+                        y: 599,
+                        width: 56,
+                        height: 14,
+                        fill: victory ? "#a2c9b4" : "#744b3d",
+                        stroke: victory ? "#cce2d5" : "#e8a17c",
+                    });
+                    add(
+                        arena,
+                        "text",
+                        {
+                            x: 320,
+                            y: 633,
+                            "text-anchor": "middle",
+                            fill: victory ? "#a2c9b4" : "#c89273",
+                            "font-size": 11,
+                        },
+                        victory ? "出口开放" : "出口封闭",
+                    );
+                    const battle = state.phase === "p1" || state.phase === "p2";
+                    const retainedScene = battle || state.phase === "interlude";
+                    const woven = state.phase === "weave" ? state.ring : retainedScene ? 3 : -1;
+                    for (let i = 0; i <= woven; i++)
+                        add(arena, "circle", {
+                            cx: 320,
+                            cy: 320,
+                            r: rings[i],
+                            fill: "none",
+                            stroke: "#d8d1b7",
+                            "stroke-width": i === woven ? 2 : 1,
+                            "stroke-opacity": i === woven ? 0.65 : 0.2,
+                            "stroke-dasharray": i === woven ? "3 4" : "1 5",
+                        });
+                    if (state.phase === "entry" || state.phase === "weave" || retainedScene) {
+                        const r = state.phase === "entry" ? 268 : rings[Math.max(0, woven)] + 9;
+                        for (let i = 0; i < 8; i++) {
+                            const a = (i * Math.PI) / 4 + Math.PI / 8;
+                            spider(arena, 320 + Math.cos(a) * r, 320 + Math.sin(a) * r, "#d8d1b7", "", "spinner");
+                        }
+                    }
+                    if (!victory) boss(arena, state.phase === "interlude" && state.dead.size < 4);
+                    if (retainedScene) supports(arena);
+                    if (state.phase === "interlude" || state.phase === "p2") {
+                        for (let i = 0; i < 4; i++) {
+                            const [x, y] = corners[i],
+                                dead = state.phase === "p2" || state.dead.has(i);
+                            add(arena, "circle", {
+                                cx: x,
+                                cy: y,
+                                r: 24,
+                                fill: dead ? "#1a2524" : "#3e392c",
+                                stroke: dead ? "#4b5a50" : "#d8d1b7",
+                                "stroke-width": 1.5,
+                                "data-nest-id": i,
+                            });
+                            if (dead) {
+                                line(arena, x - 10, y - 10, x + 10, y + 10, "#738074");
+                                line(arena, x + 10, y - 10, x - 10, y + 10, "#738074");
+                            } else {
+                                add(arena, "path", {
+                                    d:
+                                        "M" +
+                                        (x - 13) +
+                                        " " +
+                                        (y + 6) +
+                                        " Q" +
+                                        x +
+                                        " " +
+                                        (y - 19) +
+                                        " " +
+                                        (x + 13) +
+                                        " " +
+                                        (y + 6) +
+                                        " Z",
+                                    fill: "#d8d1b7",
+                                });
+                            }
+                            for (let j = 0; j < 3; j++) {
+                                const a = Math.atan2(320 - y, 320 - x) + (j - 1) * 0.55;
+                                const sx = x + Math.cos(a) * 48,
+                                    sy = y + Math.sin(a) * 48;
+                                spider(arena, sx, sy, "#d8d1b7", "", "guard-spinner");
+                                line(
+                                    arena,
+                                    sx + Math.cos(a) * 15,
+                                    sy + Math.sin(a) * 15,
+                                    sx + Math.cos(a) * 45,
+                                    sy + Math.sin(a) * 45,
+                                    "#60745f",
+                                    "3 5",
+                                );
+                            }
+                            add(
+                                arena,
+                                "text",
+                                {
+                                    x,
+                                    y: y - 36,
+                                    "text-anchor": "middle",
+                                    fill: dead ? "#738074" : "#d8d1b7",
+                                    "font-size": 11,
+                                },
+                                dead ? "已摧毁" : "Nest · 3 Spinner",
+                            );
+                        }
+                    }
+                    player(arena);
+                    document.getElementById("exit-state").textContent = victory ? "出口开放" : "出口封闭";
+                    document.getElementById("scene-index").textContent = phases[state.phase][0];
+                    document.getElementById("scene-title").textContent =
+                        state.phase === "interlude" && state.dead.size === 4
+                            ? "四巢已破，进入二阶段"
+                            : phases[state.phase][1];
+                    document.getElementById("scene-body").textContent =
+                        state.phase === "interlude" && state.dead.size === 4
+                            ? "最后一巢已摧毁。主母立刻停止回血并解除无敌，以示意中已恢复的 " +
+                              state.hp +
+                              "% 生命进入正式二阶段。示意中每次恢复 15%，正式比例仍待调试。"
+                            : phases[state.phase][2];
+                    document.getElementById("weave-controls").hidden = state.phase !== "weave";
+                    document.getElementById("support-controls").hidden = !battle;
+                    document.getElementById("nest-controls").hidden = state.phase !== "interlude";
+                    document.getElementById("ring-label").textContent = [
+                        "最外圈",
+                        "第二圈",
+                        "第三圈",
+                        "最小围场 · 开始捕获",
+                    ][state.ring];
+                    document.getElementById("skill-caption").textContent = skills[state.skill];
+                    document.getElementById("nest-count").textContent = "剩余 " + (4 - state.dead.size) + " / 4 巢";
+                    document.getElementById("hp-text").textContent = "恢复生命 " + state.hp + "%";
+                    document.getElementById("hp-fill").style.width = state.hp + "%";
+                    document.getElementById("heal-step").disabled = state.dead.size === 4 || state.hp === 100;
+                    document.getElementById("recovery-note").textContent =
+                        state.dead.size === 4
+                            ? "恢复已经停止。点击“二阶段”查看正式战斗示意。"
+                            : "已示意结算入场回血 15%，每次点击再恢复 15%。比例仅为示意，回满也不解除无敌。";
+                    for (const button of document.querySelectorAll("[data-phase]"))
+                        button.setAttribute("aria-selected", String(button.dataset.phase === state.phase));
+                    for (const button of document.querySelectorAll("[data-skill]"))
+                        button.setAttribute("aria-pressed", String(button.dataset.skill === state.skill));
+                    for (const button of document.querySelectorAll("[data-nest]"))
+                        button.setAttribute("aria-pressed", String(state.dead.has(Number(button.dataset.nest))));
+                    document.getElementById("scene-panel").setAttribute("aria-labelledby", "tab-" + state.phase);
+                }
+                for (const button of document.querySelectorAll("[data-phase]"))
+                    button.addEventListener("click", () => {
+                        state.phase = button.dataset.phase;
+                        render();
+                    });
+                document.querySelector(".scene-tabs").addEventListener("keydown", (event) => {
+                    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                    const buttons = Array.from(document.querySelectorAll("[data-phase]"));
+                    let index = buttons.indexOf(document.activeElement);
+                    if (index < 0) return;
+                    event.preventDefault();
+                    index =
+                        event.key === "Home"
+                            ? 0
+                            : event.key === "End"
+                              ? buttons.length - 1
+                              : (index + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+                    buttons[index].focus();
+                    buttons[index].click();
+                });
+                document.getElementById("ring-step").addEventListener("input", (event) => {
+                    state.ring = Number(event.target.value);
+                    render();
+                });
+                for (const button of document.querySelectorAll("[data-skill]"))
+                    button.addEventListener("click", () => {
+                        state.skill = button.dataset.skill;
+                        render();
+                    });
+                for (const button of document.querySelectorAll("[data-nest]"))
+                    button.addEventListener("click", () => {
+                        const id = Number(button.dataset.nest);
+                        if (!state.dead.has(id)) state.dead.add(id);
+                        render();
+                    });
+                document.getElementById("heal-step").addEventListener("click", () => {
+                    if (state.dead.size < 4) state.hp = Math.min(100, state.hp + 15);
+                    render();
+                });
+                document.getElementById("reset-nests").addEventListener("click", () => {
+                    state.dead.clear();
+                    state.hp = 15;
+                    render();
+                });
+                document.getElementById("print-page").addEventListener("click", () => window.print());
+                function growth(layer) {
+                    const amount = (layer - 1) / 49;
+                    const svg = document.getElementById("cocoon-svg");
+                    svg.replaceChildren();
+                    add(svg, "path", {
+                        d: "M115 32 C89 31 86 64 91 99 L79 215 Q115 254 151 215 L139 99 C144 64 141 31 115 32Z",
+                        fill: "#23332e",
+                        stroke: "#627465",
+                        "stroke-width": 1.1,
+                    });
+                    const width = 26 + amount * 28;
+                    add(svg, "ellipse", {
+                        cx: 115,
+                        cy: 145,
+                        rx: width,
+                        ry: 96,
+                        fill: "#d8d1b7",
+                        "fill-opacity": 0.04 + amount * 0.18,
+                    });
+                    for (let i = 0; i < 3 + layer; i++) {
+                        const y = 223 - i * 3;
+                        const xwidth = width * Math.sqrt(Math.max(0.15, 1 - ((y - 145) / 102) ** 2));
+                        add(svg, "path", {
+                            d:
+                                "M" +
+                                (115 - xwidth) +
+                                " " +
+                                y +
+                                " Q115 " +
+                                (y + 21) +
+                                " " +
+                                (115 + xwidth) +
+                                " " +
+                                (y + 9),
+                            fill: "none",
+                            stroke: "#d8d1b7",
+                            "stroke-width": 3 + amount * 3,
+                            "stroke-opacity": 0.45 + amount * 0.4,
+                        });
+                    }
+                    add(
+                        svg,
+                        "text",
+                        { x: 115, y: 276, "text-anchor": "middle", fill: "#a8b5ae", "font-size": 11 },
+                        "第 " + layer + " 层 / 增厚示意",
+                    );
+                    document.getElementById("growth-copy").textContent =
+                        layer === 1
+                            ? "第 1 层：初次魔织丝层，仍有少量覆盖与明显空隙。"
+                            : "第 " +
+                              layer +
+                              " 层：保留前 " +
+                              (layer - 1) +
+                              " 层，本次未脱困尝试新增一层，逐步增厚并鼓起。";
+                    document.getElementById("cocoon-layer").value = String(layer);
+                    document.getElementById("cocoon-layer-value").textContent = String(layer);
+                    document.getElementById("growth-step").disabled = layer === 50;
+                }
+                document
+                    .getElementById("cocoon-layer")
+                    .addEventListener("input", (event) => growth(Number(event.target.value)));
+                document
+                    .getElementById("growth-step")
+                    .addEventListener("click", () => growth(Number(document.getElementById("cocoon-layer").value) + 1));
+                document.getElementById("growth-reset").addEventListener("click", () => growth(1));
+                render();
+                growth(1);
+            })();
+        </script>
+    </body>
+</html>
