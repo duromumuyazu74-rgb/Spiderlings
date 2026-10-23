@@ -53,6 +53,32 @@
         );
     }
     const clearsNests = (point, nests) => nests.every((nest) => distance(point, nest) >= NPC_NEST_CLEARANCE);
+    const themedMap = (map) =>
+        [HUNTING, INFESTATION].includes(map.MapMod) || map.SpiderlingsPopulationPlan?.layoutFallback;
+
+    function npcBirthPoint(entity, map, nests, otherPrey = []) {
+        const occupied = new Set([KinkyDungeonPlayerEntity, ...map.Entities].filter(Boolean).map(key));
+        const accessible = reachableCells(map.StartPosition, terrain(map.MapMod));
+        return [...accessible]
+            .map((cell) => {
+                const [x, y] = cell.split(",").map(Number);
+                return { x, y };
+            })
+            .filter((cell) => {
+                const meta = KinkyDungeonTilesGet(key(cell));
+                return (
+                    clearsNests(cell, nests) &&
+                    otherPrey.every((other) => distance(cell, other) >= 6) &&
+                    !occupied.has(key(cell)) &&
+                    KinkyDungeonMapGet(cell.x, cell.y) === "0" &&
+                    !meta?.Lock &&
+                    !meta?.OL &&
+                    !meta?.Type &&
+                    !api.HuntingGroundsLayout?.isPopulationReserved?.(map, cell)
+                );
+            })
+            .sort((a, b) => distance(a, entity) - distance(b, entity) || a.y - b.y || a.x - b.x)[0];
+    }
 
     // Native initial population, wandering arrivals and dialogue births all enter here.
     // Correct the new actor's birth coordinates before native loadout/spawn scripts run.
@@ -61,37 +87,16 @@
             function (entity, ...args) {
                 const mapData = args[3];
                 const map = mapData || KDMapData;
-                const themed =
-                    [HUNTING, INFESTATION].includes(map.MapMod) || map.SpiderlingsPopulationPlan?.layoutFallback;
                 if (
                     map === KDMapData &&
-                    themed &&
+                    themedMap(map) &&
                     entity &&
                     !map.Entities.some((saved) => saved.id === entity.id) &&
                     isNonSpiderNPC(entity)
                 ) {
                     const nests = nestsOn(map);
                     if (!clearsNests(entity, nests)) {
-                        const occupied = new Set([KinkyDungeonPlayerEntity, ...map.Entities].filter(Boolean).map(key));
-                        const accessible = reachableCells(map.StartPosition, terrain(map.MapMod));
-                        const point = [...accessible]
-                            .map((cell) => {
-                                const [x, y] = cell.split(",").map(Number);
-                                return { x, y };
-                            })
-                            .filter((cell) => {
-                                const meta = KinkyDungeonTilesGet(key(cell));
-                                return (
-                                    clearsNests(cell, nests) &&
-                                    !occupied.has(key(cell)) &&
-                                    KinkyDungeonMapGet(cell.x, cell.y) === "0" &&
-                                    !meta?.Lock &&
-                                    !meta?.OL &&
-                                    !meta?.Type &&
-                                    !api.HuntingGroundsLayout?.isPopulationReserved?.(map, cell)
-                                );
-                            })
-                            .sort((a, b) => distance(a, entity) - distance(b, entity) || a.y - b.y || a.x - b.x)[0];
+                        const point = npcBirthPoint(entity, map, nests);
                         // Native summon callers dereference the returned actor. Refuse the
                         // insertion without a null return when this map has no legal birth cell.
                         if (!point) return entity;
@@ -112,6 +117,49 @@
             KDAddNewEntity = api.Hooks
                 ? api.Hooks.wrap("SpiderlingsNPCNestClearance.New", KDAddNewEntity, install)
                 : install(KDAddNewEntity);
+    }
+
+    if (typeof DialogueCreateEnemy === "function" && typeof KinkyDungeonEnemyAt === "function") {
+        const install = (native) =>
+            function (x, y) {
+                const map = KDMapData;
+                const displaced = themedMap(map) && KinkyDungeonEnemyAt(x, y);
+                const clearBefore =
+                    displaced?.hp > 0 && isNonSpiderNPC(displaced) && clearsNests(displaced, nestsOn(map));
+                const born = native.apply(this, arguments);
+                // Deferred native ForceSpawn can kick an already placed NPC after
+                // its birth check. Preserve that native action, then correct only its displaced position.
+                if (
+                    clearBefore &&
+                    KDMapData === map &&
+                    map.Entities.includes(displaced) &&
+                    (displaced.x !== x || displaced.y !== y)
+                ) {
+                    const nests = nestsOn(map);
+                    if (!clearsNests(displaced, nests)) {
+                        const otherPrey = displaced.SpiderlingsHuntingPrey
+                            ? map.Entities.filter(
+                                  (actor) =>
+                                      actor !== displaced &&
+                                      api.HuntingGrounds?.independentCombatant?.(actor, true) &&
+                                      ["Maid", "Dressmaker", "Nurse"].includes(
+                                          api.HuntingGrounds.populationGroup(actor.Enemy),
+                                      ),
+                              )
+                            : [];
+                        const point = npcBirthPoint(displaced, map, nests, otherPrey);
+                        if (point) {
+                            displaced.x = displaced.gx = point.x;
+                            displaced.y = displaced.gy = point.y;
+                            if (typeof KDUpdateEnemyCache !== "undefined") KDUpdateEnemyCache = true;
+                        }
+                    }
+                }
+                return born;
+            };
+        DialogueCreateEnemy = api.Hooks
+            ? api.Hooks.wrap("SpiderlingsNPCNestClearance.Dialogue", DialogueCreateEnemy, install)
+            : install(DialogueCreateEnemy);
     }
 
     // prepareFloor publishes the existing save plan at the theme's original hook point.
