@@ -12,6 +12,8 @@ KD 5.5.6 的兼容验收还发现原生延迟布置会挤走已出生的 Nurse�
 
 最终 test.3 同包在 KD 5.4.92 与新拉取的官方 KD 5.5.6 提交 `1b5af79c17d91868232f4bdbf197e822ee21269f` 各通过全部 69 项原生检查和七种语言加载。保留的监牢存档进行同种子、四十回合对照，回合计算均值由 100.34 ms 降至 59.30 ms，约减少 40.90%；逐回合位置与单位数量一致。共享敌我判断的优化在各类地图生效，该耗时结果只对应这次监牢样本。
 
+[PR #166](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/166) 已合入 `test`，发布源为 `cc2db9c1c1e8a5b17fcf313b74ab9de7a318bb8f`。[test.3 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.3) 的实际下载附件已核对，与本地验收包的大小和 SHA-256 一致；正式 Latest 保持 v0.92.39fix1。
+
 ## 源码、安装包与合并
 
 | 项目         | 当前状态                                                                                                                                           |
@@ -24,7 +26,7 @@ KD 5.5.6 的兼容验收还发现原生延迟布置会挤走已出生的 Nurse�
 
 ## 织巢主母设计
 
-[织巢主母草案](spiderlings-boss-design.zh-CN.md)及其 [HTML 展示页](spiderlings-boss-design.html)记录两阶段战斗、四巢转场、魔织丝茧与实际多格占位要求。主母应以类似原生龙的体量参与移动、碰撞和攻击判定，具体占格尺寸待原型确认。Boss 本体尚未实现，当前安装包只包含已完成的基础密度规则。
+[织巢主母草案](spiderlings-boss-design.zh-CN.md)及其 [HTML 展示页](spiderlings-boss-design.html)记录两阶段战斗、四巢转场、魔织丝茧与实际多格占位要求，后续工作由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。主母应以类似原生龙的体量参与移动、碰撞和攻击判定，具体占格尺寸待原型确认。Boss 本体尚未实现，当前安装包只包含已完成的基础密度规则。
 
 ## 巢穴监狱实验
 
@@ -86,6 +88,6 @@ test.135 包的 SHA-256 为 `0ce796dd5e7a8a1213f10fd41f948155d405c5655334eb9a4dd
 
 ## 尚未完成
 
-- [巢穴监狱 #68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 保持开放。2026-10-23 的试玩反馈认可整体体验和大量幼蛛的难度，当前跟进为行动后的处理停顿与安静衰减规则；新候选尚未整合。旧版成熟场地的失败路线继续保留在兼容记录中。
+- [巢穴监狱 #68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 保持开放。2026-10-23 的试玩反馈认可整体体验和大量幼蛛的难度；回合计算优化与安静衰减规则已随 test.3 整合并发布。剩余为新规则下成熟四层围场的脱困试玩记录，需包含构筑、资源和实际路线结果。旧版失败路线继续保留在兼容记录中。
 
 Archify 3.0.1 已作为维护者全局 skill 安装，并生成基于 `a5a17d6` 的本地运行时、场地职责和测试选择图。源码引用与产物检查通过，但其 Windows Chrome 管道连接失败，浏览器及视觉验收未完成。这些本地 HTML 不进入 Mod 包，仓库维护入口仍是上面的 Markdown 契约。
