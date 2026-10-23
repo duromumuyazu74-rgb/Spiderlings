@@ -490,7 +490,10 @@
     }
 
     function rivalPair(enemy, other) {
-        if (!anchoredItem() || !player()?.leash?.entity) return false;
+        const carrierId = player()?.leash?.entity;
+        // Reject unrelated faction pairs before enumerating the player's linked restraints.
+        if (!carrierId || (!sameId(enemy?.id, carrierId) && !sameId(other?.id, carrierId))) return false;
+        if (!anchoredItem()) return false;
         const rival = entities().find(
             (actor) =>
                 sameId(actor.id, player().leash.entity) &&

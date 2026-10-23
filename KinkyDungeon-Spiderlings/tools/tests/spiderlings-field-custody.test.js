@@ -93,6 +93,40 @@ test("the field assigns a bounded attack team to a competing escort without stea
     assert.ok(r.actors.filter((a) => r.api.permitsRecovery(a)).length <= 2);
 });
 
+test("ordinary faction pairs do not scan player equipment or field geometry", () => {
+    const r = fixture();
+    r.api.capture("field", 77);
+    let equipmentReads = 0,
+        fieldReads = 0;
+    r.c.KinkyDungeonAllRestraintDynamic = () => {
+        equipmentReads++;
+        return [{ item: r.bag }];
+    };
+    r.c.Spiderlings.SpinnerNativeField.compositeById = () => {
+        fieldReads++;
+        return { id: "field", groupId: "crew" };
+    };
+    for (let i = 0; i < 100; i++) {
+        assert.equal(r.api.interceptionPair(r.actors[0], r.actors[1]), false);
+        assert.equal(r.api.interceptionPair(r.actors[0], r.player), false);
+    }
+    r.player.leash = { entity: r.intruder.id, reason: "Default" };
+    for (const actor of r.actors) assert.equal(r.api.interceptionPair(actor, r.actors[0]), false);
+    assert.equal(equipmentReads, 0);
+    assert.equal(fieldReads, 0);
+    r.api.prepare();
+    const defender = r.actors.find((actor) => r.api.targetFor(actor) === r.intruder);
+    assert.ok(defender);
+    assert.equal(r.api.interceptionPair(defender, r.intruder), true);
+    r.gear.length = 0;
+    r.c.KinkyDungeonAllRestraintDynamic = () => [];
+    assert.equal(
+        r.api.interceptionPair(defender, r.intruder),
+        false,
+        "Equipment changes still invalidate live custody",
+    );
+});
+
 test("invisible escorts and disabled or allied spiders do not receive attack admission", () => {
     const r = fixture();
     r.api.capture("field", 77);

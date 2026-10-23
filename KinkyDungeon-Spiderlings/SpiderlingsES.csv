@@ -289,4 +289,4 @@ dSpiderlingsNestVisit_Enter,Entrar en el nido
 dSpiderlingsNestVisit_EnterGag,Entrar en el nido
 KinkyDungeonSpiderlingsNestEscort,Una arañita se acerca para llevar tu capullo a la entrada de un nido.
 KDBuffName_SpiderlingsSilkDensity,Densidad de seda
-KDBuffDesc_SpiderlingsSilkDensity,La seda acumulada aumenta el esfuerzo para liberarte. Solo disminuye tras diez turnos del mundo sin ninguna atadura de Spiderlings.
+KDBuffDesc_SpiderlingsSilkDensity,La seda acumulada aumenta el esfuerzo para liberarte. Empieza a disminuir tras diez turnos del mundo sin recibir impactos de seda de Spiderlings, incluso si sigues atado.
