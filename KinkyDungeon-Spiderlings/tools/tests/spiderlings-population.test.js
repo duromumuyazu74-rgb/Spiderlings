@@ -345,3 +345,43 @@ test("5.5 new and persistent arrivals share clearance while forwarding creation 
     c.KDAddEntity(saved, true, false, true, c.KDMapData);
     assert.deepEqual({ x: saved.x, y: saved.y }, { x: 10, y: 11 });
 });
+
+test("a deferred native scenery birth keeps its displaced NPC clear of nests", () => {
+    const { c, nests } = runtime("SpiderlingsHuntingGrounds");
+    const npc = { id: 980, x: 35, y: 35, hp: 10, hostile: 10, SpiderlingsHuntingPrey: true, Enemy: { name: "Nurse" } };
+    const otherPrey = { id: 982, x: 10, y: 17, hp: 10, Enemy: { name: "MaidforceMafia", faction: "Maidforce" } };
+    c.KDMapData.Entities.push(npc, otherPrey);
+    c.KDUpdateEnemyCache = false;
+    c.Spiderlings.HuntingGrounds = {
+        independentCombatant: (actor, includeShops) => {
+            assert.equal(includeShops, true, "Placement must include shop NPCs");
+            return actor.hp > 0 && !actor.Enemy.immobile;
+        },
+        populationGroup: (enemy) =>
+            enemy.faction === "Maidforce" ? "Maid" : enemy.name === "Nurse" ? "Nurse" : undefined,
+    };
+    c.KinkyDungeonEnemyAt = (x, y) => c.KDMapData.Entities.find((actor) => actor.x === x && actor.y === y);
+    let calls = 0;
+    c.DialogueCreateEnemy = (x, y, name) => {
+        calls++;
+        Object.assign(npc, { x: 10, y: 11, gx: 10, gy: 11, hostile: 0 });
+        const scenery = { id: 981, x, y, hp: 10, Enemy: { name, tags: { scenery: true } } };
+        c.KDMapData.Entities.push(scenery);
+        return scenery;
+    };
+    vm.runInContext(source, c);
+    const born = c.DialogueCreateEnemy(35, 35, "SteelDoor");
+    assert.equal(calls, 1);
+    assert.equal(born.Enemy.name, "SteelDoor");
+    assert.equal(npc.hostile, 0, "Native displacement side effects remain");
+    assert.ok(nests.every((nest) => Math.max(Math.abs(nest.x - npc.x), Math.abs(nest.y - npc.y)) >= 6));
+    assert.ok(Math.max(Math.abs(otherPrey.x - npc.x), Math.abs(otherPrey.y - npc.y)) >= 6);
+    assert.equal(npc.gx, npc.x);
+    assert.equal(npc.gy, npc.y);
+    assert.equal(c.KDUpdateEnemyCache, true);
+    assert.equal(c.KDMapData.Entities.filter((actor) => actor === npc).length, 1);
+    c.KDMapData.MapMod = "ordinary";
+    c.DialogueCreateEnemy(npc.x, npc.y, "SteelDoor");
+    assert.equal(npc.x, 10);
+    assert.equal(npc.y, 11);
+});

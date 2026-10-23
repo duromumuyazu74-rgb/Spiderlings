@@ -296,8 +296,8 @@
         );
     }
 
-    function independentCombatant(entity) {
-        return mobileCombatant(entity) && !entity.Enemy.master;
+    function independentCombatant(entity, includeShops = false) {
+        return mobileCombatant(entity, includeShops === true) && !entity.Enemy.master;
     }
 
     function populationCounts() {
