@@ -20,6 +20,10 @@
 
 当前文档描述生效行为，不追加逐版开发日志。修改职责时维护 RUNTIME 与 MODULES；修改数值时维护参数说明；修改交付门槛时维护 CONTRIBUTING。进度只在 STATUS 汇总。
 
+## 设计草案
+
+当前未实现的 Boss 设计见[织巢主母草案](spiderlings-boss-design.zh-CN.md)及其[离线 HTML 展示页](spiderlings-boss-design.html)。
+
 ## 历史资料
 
 [历史索引](archive/README.md) 收录逐版修复、验收和已替代设计。它们按当时版本冻结，不作为当前规则，也不持续同步。

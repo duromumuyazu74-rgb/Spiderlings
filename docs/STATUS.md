@@ -6,7 +6,7 @@
 
 `0.92.39-test.3` 允许仍被拘束的玩家在连续十个世界回合无合格蛛丝命中后恢复密度衰减。普通拘束、链接内层、腿袋、丝绳与丝茧不再重置计时；自己的挣扎和换装也不重置。现有衰减曲线、命中增长、结茧门槛与存读档数值保留。
 
-监牢试玩反馈认可当前人口压力，待改善的是移动或等待后的处理停顿。此候选让普通敌我关系查询先排除与实际牵引者无关的单位对，再检查争夺资格，保留真实押送争夺与人口、增援规则。新的回归覆盖无关单位不扫描装备或场地、真实牵引切换、装备解除和已承诺 Jumper 冲刺。候选尚未合并或发布；验收证据记录在 [COMPATIBILITY.md](COMPATIBILITY.md)。
+监牢试玩反馈认可当前人口压力，待改善的是移动或等待后的处理停顿。此候选让普通敌我关系查询先排除与实际牵引者无关的单位对，再检查争夺资格，保留真实押送争夺与人口、增援规则。新的回归覆盖无关单位不扫描装备或场地、真实牵引切换、装备解除和已承诺 Jumper 冲刺。预发布入口为 [test.3](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.3)，验收证据记录在 [COMPATIBILITY.md](COMPATIBILITY.md)。
 
 KD 5.5.6 的兼容验收还发现原生延迟布置会挤走已出生的 Nurse，使其落在巢穴五格内；旧 alpha.19 同样复现。Population 保留原生创建和移位副作用，并为这类出生冲突恢复六格巢穴间距，同时保留与其他猎物的六格距离，计入商店 NPC。普通移动保持原规则。
 
@@ -14,13 +14,17 @@ KD 5.5.6 的兼容验收还发现原生延迟布置会挤走已出生的 Nurse�
 
 ## 源码、安装包与合并
 
-| 项目         | 当前状态                                                                                                                                                                                                                        |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                                                                                                     |
-| 当前测试包   | [Prison alpha.19 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-prison.alpha.19)，沿用同包双版本完整原生验收；[#163](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/163) 已完成 |
-| 监狱集成     | [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164) 将监狱玩法整合进 `test`；正式版仍为 v0.92.39fix1                                                                                                          |
+| 项目         | 当前状态                                                                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                        |
+| 当前测试包   | [test.3 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.3)，含巢穴监牢、安静密度衰减及全地图共享判断优化 |
+| 监狱集成     | [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164) 将监狱玩法整合进 `test`；正式版仍为 v0.92.39fix1                             |
 
-`test` 包含监狱玩法，集成预览保留已验收的 alpha.19 版本和安装包字节。历史 test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
+`test` 包含监狱玩法，当前安装包为 `Spiderlings_0.92.39-test.3.zip`。alpha.19 的历史 Release 和安装包保留，test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
+
+## 织巢主母设计
+
+[织巢主母草案](spiderlings-boss-design.zh-CN.md)及其 [HTML 展示页](spiderlings-boss-design.html)记录两阶段战斗、四巢转场、魔织丝茧与实际多格占位要求。主母应以类似原生龙的体量参与移动、碰撞和攻击判定，具体占格尺寸待原型确认。Boss 本体尚未实现，当前安装包只包含已完成的基础密度规则。
 
 ## 巢穴监狱实验
 
