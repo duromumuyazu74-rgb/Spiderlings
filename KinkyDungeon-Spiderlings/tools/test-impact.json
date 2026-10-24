@@ -681,6 +681,12 @@
       "scenarios": [],
       "reason": "Retired offline planning/demo sources have no runtime, package, or registered-test consumers. Preserve the historical HTML and review documentation links; repository checks still apply."
     },
+    "escape-analysis": {
+      "tests": ["spiderlings-escape-analysis.test.js"],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "Native experiment plans and archived inputs are maintenance data; their plan and preservation contracts are checked without changing delivery scenarios."
+    },
     "prison": {
       "tests": [
         "spiderlings-density-activity.test.js",
@@ -777,6 +783,11 @@
     "tools/measure-spinner-rollout.js": ["field-rollout"],
     "tools/verify-kd-compatibility.js": ["compatibility-tools"],
     "eslint.config.mjs": ["repository-policy"],
+    ".prettierignore": ["repository-policy"],
+    ".gitattributes": ["repository-policy"],
+    "docs/research/escape-model/quiet-cocoon.json": ["escape-analysis"],
+    "docs/research/escape-model/original/escape-model-5.5.4.ipynb": ["escape-analysis"],
+    "docs/research/escape-model/original/escape-model-5.5.4.html": ["escape-analysis"],
     "SpiderlingsFieldCustody.js": ["field-custody"],
     "docs/spiderlings-spinner-capture/build-plan.mjs": ["historical-design"],
     "docs/spiderlings-spinner-capture/verify-plan.mjs": ["historical-design"],

@@ -7,3 +7,5 @@ docs/prototypes/spinner-topology/index.html
 KinkiestDungeon-5.5/
 node_modules/
 .scratch/
+# Preserve the maintainer-supplied historical export byte for byte.
+docs/research/escape-model/original/

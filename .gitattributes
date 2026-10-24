@@ -1,3 +1,5 @@
 * text=auto eol=lf
 # Preserve published runtime bytes across clones and branch switches.
 KinkyDungeon-Spiderlings/** -text
+# Keep the supplied historical notebook and export identical in Git and the worktree.
+docs/research/escape-model/original/** -text
