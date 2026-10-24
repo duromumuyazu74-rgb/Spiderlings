@@ -65,6 +65,7 @@ const scenarios = [
         "debug-stairs",
         "floor-weights",
         "prison",
+        "prison-homefield",
         "prison-review",
         "prison-regions",
         "prison-rivals",

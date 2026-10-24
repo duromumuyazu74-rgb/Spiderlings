@@ -619,6 +619,58 @@
         return candidates.sort(compareSites);
     }
 
+    function analyzePrisonSites(snapshot, group, members, distances, sites) {
+        const origin = members[0];
+        if (!origin) return [];
+        const nestCells = new Set(
+            (KDMapData.Entities || [])
+                .filter((entity) => entity.hp > 0 && entity.Enemy?.name === "NestEntrance")
+                .map(cellKey),
+        );
+        const focus = group.recoveryAround || group.planningFocus || api.SpinnerAI.groupObservation?.(group) || origin;
+        return sites
+            .flatMap((site) => {
+                const { left, top, right, bottom } = site.bounds;
+                const gate = { x: right, y: site.center.y };
+                const checked = api.SpinnerTopology.validatePolygon({
+                    vertices: [
+                        { x: left, y: top },
+                        { x: right, y: top },
+                        { x: right, y: bottom },
+                        { x: left, y: bottom },
+                    ],
+                    core: site.center,
+                    gate,
+                    map: snapshot,
+                });
+                const travelDistance = distances(origin, gate);
+                if (!checked.valid || !Number.isFinite(travelDistance)) return [];
+                // Native map facts admit the prison's own immobile nest bodies inside a
+                // field. Its boundary and every actual protected tile still stay clear.
+                const cells = [
+                    ...checked.boundary,
+                    ...checked.interior.filter((cell) => !nestCells.has(cellKey(cell))),
+                ];
+                return [
+                    {
+                        id: `prison-enclosure:${site.id}`,
+                        type: "enclosure",
+                        center: { ...site.center },
+                        anchors: checked.vertices,
+                        radius: Math.max(right - left, bottom - top) / 2,
+                        area: checked.interior.length,
+                        gate,
+                        layers: [{ vertices: checked.vertices, core: site.center, gate }],
+                        cells,
+                        score: 1000 - travelDistance * 2 - distance(focus, site.center) * 4,
+                        travelDistance,
+                        reasons: { authoredPrisonSite: site.id },
+                    },
+                ];
+            })
+            .sort(compareSites);
+    }
+
     function compareSites(a, b) {
         return (
             (b.area || b.interiorCells?.length || 1) - (a.area || a.interiorCells?.length || 1) ||
@@ -1014,7 +1066,7 @@
                 ? (from, to) => api.SpinnerPassagePlanner.distance(index, from, to)
                 : routeDistances(snapshot, work),
             entities = input.entities || KDMapData.Entities;
-        let lines, enclosureGeometry;
+        let lines, enclosureGeometry, prisonSnapshot;
         const interceptionRoutes = new Map();
         // Occupancy is refreshed every turn; gate connectivity depends only on geometry and endpoints.
         const signature = geometrySignature(snapshot),
@@ -1049,17 +1101,26 @@
         refreshObservations(encounter);
         if (input.adoptExisting) api.FieldProjects.adoptExistingTopology(encounter, ai);
         const candidatesFor = (group, members, replacingPlanId) => {
-            const passages = passageCandidates(snapshot, { ...group, members }, ai, distances);
-            const enclosures = [
-                ...passages,
-                ...analyzeEnclosureCandidates(
-                    snapshot,
-                    { ...group, members },
-                    distances,
-                    work,
-                    currentEnclosureGeometry(),
-                ),
-            ].sort(compareSites);
+            const sites = api.Prison?.constructionSites?.(group.homeRegion) || [];
+            const passages = sites.length ? [] : passageCandidates(snapshot, { ...group, members }, ai, distances);
+            const enclosures = sites.length
+                ? analyzePrisonSites(
+                      (prisonSnapshot ||= api.SpinnerNativeField.mapSnapshot()),
+                      group,
+                      members,
+                      distances,
+                      sites,
+                  )
+                : [
+                      ...passages,
+                      ...analyzeEnclosureCandidates(
+                          snapshot,
+                          { ...group, members },
+                          distances,
+                          work,
+                          currentEnclosureGeometry(),
+                      ),
+                  ].sort(compareSites);
             let candidates =
                 enclosures.length || !Object.hasOwn(snapshot, "candidateLines")
                     ? enclosures

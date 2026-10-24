@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current development candidate is `Spiderlings_0.92.39-test.3.zip`. The published Nest Prison preview remains alpha.19; its integration and test.152 evidence are historical records. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current local development candidate is `Spiderlings_0.92.39-test.4.zip`. Earlier test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,23 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.4 V6 prison layout (2026-10-24)
+
+Newly generated prisons use the approved fixed 81×63 scene, with six authored paid-work sites, native barrels and storage chests, regional residents and a mandatory exit cross. The western chamber retains its four-layer work reserve. Authored candidates use existing Topology, Projects and Command rather than prebuilt completed walls. The maintainer scoped acceptance to new V6 prisons and their own save/load behavior.
+
+Package: `Spiderlings_0.92.39-test.4.zip`, 24,967,186 bytes and 185 allowlisted entries. SHA-256: `a49b7656b3574fb717f796cb95dee1b7a2eb228675055069c94fb118f98b4088`. Development base: `729294c81e2a97952cf5ec6a0d88972893c95ba2`; implementation is tracked in [#170](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/170).
+
+| Game input                                                                                        | Verified result                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92; main SHA-256 `2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4`        | All 70 native checks and seven locales passed |
+| Official KD 5.5.6; freshly fetched GitHub `5.5` commit `68963ad55d272307552b15e0fc10efcbec31cfbe` | All 70 native checks and seven locales passed |
+
+The full same-ZIP acceptance record is retained in compatibility-cache run `2026-10-24T05-01-12-945Z-0.92.39-test.4`. CN, DE, ES, JP, KR, PL and RU each load all 292 packaged CSV entries through the native Mod path.
+
+`prison-homefield` starts a new seeded game for each site. A real four-Spinner crew independently selects, builds and closes each of the six authored enclosures using paid native work. Closed geometry and the player's position survive reload. The same scene verifies native chest opening and resident identity persistence. Existing prison scenes retain actual patrols, regional observation, chamber construction, recapture, source return and the prepared early escape route.
+
+Review corrected missing western connector regions and stale spell/route coordinates in escape analysis. The independent dormancy fixture now places its reserve relative to the new exit instead of the previous map's coordinate; the original assertion and actual native shout remain. These work fixtures maintain health resources during construction. They do not establish finite-resource difficulty or all-build escape rates; #68/#76 retain their intended playtest decision. Earlier mature-route samples keep their original package and 55×45-layout scope.
 
 ## Test.3 quiet density and prison turn performance (2026-10-23)
 
