@@ -184,9 +184,11 @@
         for (const id of Object.keys(prison.patrols)) if (!byId.has(id)) delete prison.patrols[id];
         const assigned = new Set(Object.values(prison.patrols).map((patrol) => patrol.route));
         const used = new Set(Object.keys(prison.patrols));
-        for (let route = 0; route < PATROL_ROUTES.length; route += 1) {
+        const routes = prison.patrolRoutes || PATROL_ROUTES;
+        const starts = prison.patrolStarts || PATROL_STARTS;
+        for (let route = 0; route < routes.length; route += 1) {
             if (assigned.has(route)) continue;
-            let actor = KDMapData.Entities.find(
+            const candidates = KDMapData.Entities.filter(
                 (enemy) =>
                     enemy.hp > 0 &&
                     ["Jumper", "WebCaster", "Tunneler"].includes(enemy.Enemy?.name) &&
@@ -194,9 +196,13 @@
                     !enemy.allied &&
                     !enemy.Enemy.allied,
             );
+            let actor =
+                prison.layoutVersion === 2
+                    ? candidates.find((enemy) => enemy.x === starts[route].x && enemy.y === starts[route].y) ||
+                      candidates[0]
+                    : candidates[0];
             if (!actor && KDMapData.Entities.length >= 300) continue;
-            if (!actor && typeof KinkyDungeonSummonEnemy === "function")
-                actor = summonAt(PATROL_STARTS[route], "Jumper");
+            if (!actor && typeof KinkyDungeonSummonEnemy === "function") actor = summonAt(starts[route], "Jumper");
             if (!actor) continue;
             prison.patrols[actor.id] = { route, waypoint: 0 };
             used.add(String(actor.id));
@@ -208,6 +214,17 @@
     function seedBuilders() {
         const prison = state();
         if (!prison?.mainNestIds || Array.isArray(prison.builderIds)) return;
+        if (prison.layoutVersion === 2) {
+            prison.builderIds = KDMapData.Entities.filter((enemy) => enemy.hp > 0 && enemy.Enemy.name === "Spinner")
+                .sort(
+                    (a, b) =>
+                        Math.hypot(a.x - prison.mainNest.x, a.y - prison.mainNest.y) -
+                        Math.hypot(b.x - prison.mainNest.x, b.y - prison.mainNest.y),
+                )
+                .slice(0, 2)
+                .map((enemy) => enemy.id);
+            return;
+        }
         const created = [];
         for (const point of BUILDER_STARTS) {
             const actor = summonAt(point, "Spinner");
@@ -229,9 +246,25 @@
         api.SpinnerNativeField.reconcile();
     }
 
+    function seedResidents() {
+        const prison = state();
+        if (prison?.layoutVersion !== 2 || !prison.mainNestIds) return;
+        prison.residentIds ||= {};
+        for (const [index, resident] of prison.residents.entries()) {
+            if (Object.hasOwn(prison.residentIds, index)) continue;
+            if (api.availableSpiderlingSlots() <= 0 || KDMapData.Entities.length >= 300) break;
+            const enemy = summonAt(resident, resident.name);
+            if (!enemy) continue;
+            const site = prison.fieldSites.findIndex((field) => field.id === resident.zone);
+            enemy.SpiderlingsNestParentID = prison.mainNestIds[(site < 0 ? index : site) % prison.mainNestIds.length];
+            prison.residentIds[index] = enemy.id;
+        }
+    }
+
     function setup() {
         if (!state()) return;
         initializeMainNest();
+        seedResidents();
         assignPatrols();
         seedBuilders();
         activateConstruction();
@@ -267,7 +300,7 @@
             KDHelpless(enemy)
         )
             return false;
-        const route = PATROL_ROUTES[patrol.route];
+        const route = (prison.patrolRoutes || PATROL_ROUTES)[patrol.route];
         if (!route) return false;
         let waypoint = route[patrol.waypoint % route.length];
         if (enemy.x === waypoint.x && enemy.y === waypoint.y) {

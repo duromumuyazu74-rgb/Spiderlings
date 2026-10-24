@@ -112,7 +112,10 @@
     save();
     const entrance = spawn("NestEntrance", 16, 10, "Enemy");
     expect(Spiderlings.Prison.enter({ entrance, mode: "voluntary" }), "Cannot enter actual prison for dormancy");
-    const reserve = spawn("Spinner", 48, 22, "Enemy");
+    const exit = KDMapData.SpiderlingsPrison.exit;
+    const reservePoint = { x: exit.x - 2, y: exit.y + 2 };
+    expect(KinkyDungeonMapGet(reservePoint.x, reservePoint.y) === "0", "Dormancy reserve is not on native floor");
+    const reserve = spawn("Spinner", reservePoint.x, reservePoint.y, "Enemy");
     KDPlayer().sound = 0;
     Spiderlings.PrisonActivity.prepare(1);
     expect(Spiderlings.PrisonActivity.isResting(reserve), "Unassigned reserve was not resting");

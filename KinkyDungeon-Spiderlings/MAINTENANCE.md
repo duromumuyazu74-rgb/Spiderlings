@@ -13,6 +13,7 @@
 | 单次行动及原生阶段准入       | `SpiderlingsSpinnerDuties.js`、`SpiderlingsNativeActions.js`        |
 | 结构规则与原生事务           | `SpiderlingsSpinnerTopology.js`、`SpiderlingsSpinnerNativeField.js` |
 | 地图事件和读档恢复           | `SpiderlingsSpinnerRuntime.js`                                      |
+| 监牢固定地形、道具与施工位置 | `SpiderlingsPrisonLayout.js`、`SpiderlingsPrison.js`                |
 | 共用测试映射和所有权声明     | `tools/test-impact.json`、`tools/module-contracts.json`             |
 
 其余模块职责见 [RUNTIME.md](../docs/RUNTIME.md)。场地、共用原生行动或原生场景改动使用 `spiderlings-modularity` skill 和 [MODULES.md](../docs/MODULES.md)；共用入口的改动覆盖实际消费者。

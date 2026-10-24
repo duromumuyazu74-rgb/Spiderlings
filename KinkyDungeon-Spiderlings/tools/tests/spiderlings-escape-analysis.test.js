@@ -5,6 +5,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
+const vm = require("node:vm");
+const { runPrisonRoute } = require("../escape-prison.js");
 const { expandPlan, summarize, parseArguments } = require("../analyze-spiderlings-escape.js");
 
 const plan = () => ({
@@ -77,6 +79,62 @@ test("the mature prison plan uses one real prepared save and a finite total rout
     delete source.cases[0].density;
     delete source.preparation;
     assert.throws(() => expandPlan(source), /need mature-prison preparation/);
+});
+
+test("the serialized native route follows saved layout waypoints and retains the old-map fallback", async () => {
+    for (const modern of [true, false]) {
+        const player = { x: 10, y: 10 },
+            calls = [];
+        const events = { tickAfter: {}, afterDamageEnemy: {} };
+        const context = {
+            normalAcceptance: { frame: async () => {} },
+            KDMapData: {
+                GridWidth: 81,
+                GridHeight: 63,
+                SpiderlingsPrison: modern ? { routes: { upper: [{ x: 10, y: 9 }] } } : {},
+            },
+            KDGameData: { RoomType: "prison" },
+            KDEventMapGeneric: events,
+            Spiderlings: {
+                SpinnerNativeField: { compositeById: () => undefined, isSpiderlingsWebCell: () => false },
+                PrisonConstruction: { COMPOSITE: "chamber" },
+                SilkDensity: { state: () => ({ value: 0 }) },
+                SpinnerCapture: { state: () => undefined },
+                SpinnerRecovery: { state: () => undefined },
+            },
+            KDPlayer: () => player,
+            MiniGameKinkyDungeonLevel: 1,
+            KinkyDungeonState: "Game",
+            KinkyDungeonStatStamina: 10,
+            KinkyDungeonStatWill: 10,
+            KinkyDungeonStatMana: 10,
+            KinkyDungeonAllRestraintDynamic: () => [],
+            KinkyDungeonMovableTilesSmartEnemy: "0",
+            KinkyDungeonMapGet: (x, y) => (x > 0 && x < 80 && y > 0 && y < 62 ? "0" : "1"),
+            KDAddEvent(map, trigger, name, callback) {
+                map[trigger][name] = callback;
+            },
+            KDSendInput(type, data) {
+                calls.push({ type, data });
+                if (type === "move") {
+                    player.x += data.dir.x;
+                    player.y += data.dir.y;
+                }
+                if (player.x === 10 && player.y === 9) context.KDGameData.RoomType = "source";
+                events.tickAfter.SpiderlingsEscapeRoute(null, { delta: 1 });
+                return "Move";
+            },
+        };
+        context.globalThis = context;
+        vm.createContext(context);
+        const result = await vm.runInContext(
+            `(${runPrisonRoute.toString()})({ source: {room: "source", floor: 1}, prisonRoom: "prison", maxTurns: 1 })`,
+            context,
+        );
+        assert.deepEqual([calls[0].data.dir.x, calls[0].data.dir.y], modern ? [0, -1] : [1, 0]);
+        assert.equal(result.outcome, modern ? "returned-to-source" : "turn-budget");
+        assert.equal(events.tickAfter.SpiderlingsEscapeRoute, undefined);
+    }
 });
 
 test("removing Cocoon does not count as completing a failed prison route", () => {

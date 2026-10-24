@@ -102,7 +102,8 @@ function runtime() {
                 };
                 context.KDGameData.RoomType = target;
                 context.KinkyDungeonCreateMapGenType.SpiderlingsNestPrison([], [{ x: 0, y: 0 }]);
-                context.KinkyDungeonMapSet(51, 22, "s");
+                const exit = context.KDMapData.SpiderlingsPrison.exit;
+                context.KinkyDungeonMapSet(exit.x, exit.y, "s");
                 slot.data[target] = JSON.parse(JSON.stringify(context.KDMapData));
             } else {
                 context.KDMapData = JSON.parse(JSON.stringify(slot.data[target]));
@@ -118,12 +119,13 @@ function runtime() {
     vm.createContext(context);
     for (const sourceText of [native("KDLairs.ts"), native("KDLairEntrances.ts")])
         vm.runInContext(stripTypeScriptTypes(sourceText), context);
-    vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsPrison.js"), "utf8"), context);
+    for (const file of ["SpiderlingsPrisonLayout.js", "SpiderlingsPrison.js"])
+        vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context);
     return { context, slot, source, cocoon, messages, lairs: vm.runInContext("KDPersonalAlt", context) };
 }
 
 function reachable(map, blocked = () => false) {
-    const start = map.StartPosition;
+    const start = map.SpiderlingsPrison?.chamber || map.StartPosition;
     const seen = new Set([`${start.x},${start.y}`]);
     const pending = [start];
     for (let index = 0; index < pending.length; index += 1) {
@@ -159,7 +161,7 @@ function nestRuntime() {
     let nextId = 100;
     const moves = [];
     const field = { reconciles: 0 };
-    kd.KinkyDungeonMovableTilesEnemy = ["0", "s"];
+    kd.KinkyDungeonMovableTilesEnemy = ["0", "s", "L", "c"];
     kd.KinkyDungeonEntityAt = (x, y) =>
         kd.KDMapData.Entities.find((enemy) => enemy.hp > 0 && enemy.x === x && enemy.y === y);
     kd.KinkyDungeonIsDisabled = () => false;
@@ -228,6 +230,8 @@ function nestRuntime() {
         },
     };
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsCore.js"), "utf8"), kd);
+    kd.Spiderlings.availableSpiderlingSlots = () =>
+        40 - kd.KDMapData.Entities.filter((enemy) => enemy.hp > 0 && enemy.Enemy.name !== "NestEntrance").length;
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsNativeActions.js"), "utf8"), kd);
     vm.runInContext(fs.readFileSync(path.join(modRoot, "SpiderlingsPrisonNest.js"), "utf8"), kd);
     const entrance = { id: 14, x: 15, y: 15, hp: 5, Enemy: { name: "NestEntrance" } };
@@ -252,7 +256,7 @@ test("the native prison floor gets ten reachable mutually supporting nests and a
     }
     const blocked = new Set(nests.map((nest) => `${nest.x},${nest.y}`));
     const walkable = reachable(map, (point) => blocked.has(`${point.x},${point.y}`));
-    assert.equal(walkable.has("51,22"), true);
+    assert.equal(walkable.has(`${state.exit.x},${state.exit.y}`), true);
     for (const nest of nests) {
         assert.equal(
             [
@@ -264,13 +268,13 @@ test("the native prison floor gets ten reachable mutually supporting nests and a
             true,
         );
     }
-    assert.equal(map.Entities.filter((enemy) => enemy.Enemy.name === "Jumper").length, 2);
-    assert.equal(map.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 2);
+    assert.equal(map.Entities.filter((enemy) => enemy.Enemy.name === "Jumper").length, 5);
+    assert.equal(map.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 14);
     assert.equal(map.SpiderlingsSpinnerNativeField.autonomous, true);
     assert.equal(map.SpiderlingsSpinnerNativeField.reconciles, 1);
-    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 11, y: 22 }), false);
+    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed(state.chamber), false);
     assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 20, y: 32 }), false);
-    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 21, y: 22 }), true);
+    assert.equal(r.context.Spiderlings.PrisonNest.ordinaryConstructionAllowed({ x: 28, y: 32 }), true);
 });
 
 test("nest losses, extra nest vacancies and patrol routes persist across exit and return", () => {
@@ -305,7 +309,7 @@ test("nest losses, extra nest vacancies and patrol routes persist across exit an
     assert.equal(kd.KDAIType.hunt.beforemove(patrol, {}, { canSensePlayer: false }), true);
     const originalPrison = kd.KDGameData.RoomType;
     kd.lastPrison = originalPrison;
-    kd.KDGoThruTile(51, 22);
+    kd.KDGoThruTile(kd.KDMapData.SpiderlingsPrison.exit.x, kd.KDMapData.SpiderlingsPrison.exit.y);
     const sourceNest = kd.KDMapData.Entities.find((enemy) => enemy.id === 14);
     assert.equal(kd.Spiderlings.Prison.enter({ entrance: sourceNest }), true);
     assert.equal(kd.KDGameData.RoomType, originalPrison);
@@ -315,10 +319,10 @@ test("nest losses, extra nest vacancies and patrol routes persist across exit an
     assert.equal(kd.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "NestEntrance").length, 16);
     assert.equal(kd.Spiderlings.PrisonNest.livingExtraEntrances(), 5);
     assert.equal(Object.keys(kd.KDMapData.SpiderlingsPrison.patrols).length, 2);
-    assert.equal(kd.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 2);
+    assert.equal(kd.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Spinner").length, 14);
 });
 
-test("both patrol routes keep moving through their shared central crossing before detection", () => {
+test("both patrols travel their authored approach routes before detection", () => {
     const r = nestRuntime();
     const kd = r.context;
     const patrolIds = Object.keys(kd.KDMapData.SpiderlingsPrison.patrols).map(Number);
@@ -328,7 +332,9 @@ test("both patrol routes keep moving through their shared central crossing befor
             const actor = kd.KDMapData.Entities.find((enemy) => enemy.id === id);
             actor.SpiderlingsSpinnerRuntimeDelta = 1;
             kd.KDAIType.hunt.beforemove(actor, {}, { canSensePlayer: false });
-            if (actor.x === 24 && actor.y === 22) reached.add(id);
+            const waypoint =
+                kd.KDMapData.SpiderlingsPrison.patrolRoutes[kd.KDMapData.SpiderlingsPrison.patrols[id].route][0];
+            if (actor.x === waypoint.x && actor.y === waypoint.y) reached.add(id);
         }
     }
     assert.equal(reached.size, 2);
@@ -375,21 +381,24 @@ test("native lair admission keeps the Cocoon and creates a connected prison with
         { ...state.source },
         { room: "", mapMod: "SpiderlingsInfestation", faction: "Maidforce", mapX: 0, mapY: 3 },
     );
-    assert.equal(map.Grid.split("\n")[22][51], "s");
-    assert.equal(map.Tiles["51,22"].RoomType, "");
-    const noNest = (point) => point.x >= 31 && point.x <= 41 && point.y >= 17 && point.y <= 27;
-    assert.equal(reachable(map, noNest).has("51,22"), true, "main nest can be bypassed");
+    assert.equal(map.Grid.split("\n")[state.exit.y][state.exit.x], "s");
+    assert.equal(map.Tiles[`${state.exit.x},${state.exit.y}`].RoomType, "");
+    const bounds = state.mainNestBounds;
+    const noNest = (point) =>
+        point.x >= bounds.left && point.x <= bounds.right && point.y >= bounds.top && point.y <= bounds.bottom;
+    const exitKey = `${state.exit.x},${state.exit.y}`;
+    assert.equal(reachable(map, noNest).has(exitKey), true, "main nest can be bypassed");
     assert.equal(
-        reachable(map, (point) => noNest(point) || point.y <= 12).has("51,22"),
+        reachable(map, (point) => noNest(point) || (point.x >= 28 && point.x <= 65 && point.y <= 24)).has(exitKey),
         true,
         "lower route remains open without the upper route",
     );
     assert.equal(
-        reachable(map, (point) => noNest(point) || point.y >= 32).has("51,22"),
+        reachable(map, (point) => noNest(point) || (point.x >= 28 && point.x <= 65 && point.y >= 44)).has(exitKey),
         true,
         "upper route remains open without the lower route",
     );
-    assert.equal(reachable(map).has("36,22"), true);
+    assert.equal(reachable(map).has(`${state.mainNest.x},${state.mainNest.y}`), true);
     assert.equal(r.messages.includes("SpiderlingsPrisonArrival"), true);
 });
 
@@ -406,11 +415,11 @@ test("native shortcut reuses the same prison after exit, save and recapture", ()
     r.context.KinkyDungeonPlayerEntity.x = 46;
     r.context.KinkyDungeonPlayerEntity.y = 8;
     assert.equal(r.context.Spiderlings.Prison.recapture(), true);
-    assert.equal(r.context.KinkyDungeonPlayerEntity.x, 11);
-    assert.equal(r.context.KinkyDungeonPlayerEntity.y, 22);
+    assert.equal(r.context.KinkyDungeonPlayerEntity.x, map.SpiderlingsPrison.chamber.x);
+    assert.equal(r.context.KinkyDungeonPlayerEntity.y, map.SpiderlingsPrison.chamber.y);
     assert.equal(map.Entities.length, 1);
     assert.equal(map.Tiles["35,22"].built, true);
-    r.context.KDGoThruTile(51, 22);
+    r.context.KDGoThruTile(r.context.KDMapData.SpiderlingsPrison.exit.x, r.context.KDMapData.SpiderlingsPrison.exit.y);
     assert.equal(r.context.KDGameData.RoomType, "");
     assert.equal(r.context.KDMapData.MapMod, "SpiderlingsInfestation");
     assert.equal(r.context.KinkyDungeonPlayerEntity.x, 14);
@@ -420,13 +429,22 @@ test("native shortcut reuses the same prison after exit, save and recapture", ()
     assert.equal(r.context.KDMapData.Entities.length, 1);
     assert.equal(r.context.KDMapData.Tiles["35,22"].built, true);
     assert.equal(r.slot.data[prisonId].Grid, r.context.KDMapData.Grid);
-    r.context.KDMapData.Entities.push({ id: 99, x: 11, y: 22, hp: 5, Enemy: { name: "Spinner" } });
+    r.context.KDMapData.Entities.push({
+        id: 99,
+        ...r.context.KDMapData.SpiderlingsPrison.chamber,
+        hp: 5,
+        Enemy: { name: "Spinner" },
+    });
     r.context.KinkyDungeonPlayerEntity.x = 46;
     r.context.KinkyDungeonPlayerEntity.y = 8;
     assert.equal(r.context.Spiderlings.Prison.recapture(), true);
-    assert.equal(r.context.KinkyDungeonPlayerEntity.x >= 8 && r.context.KinkyDungeonPlayerEntity.x <= 14, true);
-    assert.equal(r.context.KinkyDungeonPlayerEntity.y >= 19 && r.context.KinkyDungeonPlayerEntity.y <= 25, true);
-    assert.notDeepEqual([r.context.KinkyDungeonPlayerEntity.x, r.context.KinkyDungeonPlayerEntity.y], [11, 22]);
+    const chamber = r.context.KDMapData.SpiderlingsPrison.chamber;
+    assert.equal(Math.abs(r.context.KinkyDungeonPlayerEntity.x - chamber.x) <= 3, true);
+    assert.equal(Math.abs(r.context.KinkyDungeonPlayerEntity.y - chamber.y) <= 3, true);
+    assert.notDeepEqual(
+        [r.context.KinkyDungeonPlayerEntity.x, r.context.KinkyDungeonPlayerEntity.y],
+        [chamber.x, chamber.y],
+    );
 });
 
 test("admission does not create a lair for a missing or blocked nest", () => {
@@ -453,7 +471,7 @@ test("source rooms in the same world slot retain separate prisons and return con
     const mainPrison = c.KDGameData.RoomType;
     c.KDMapData.SpiderlingsPrison.retainedDamage = 3;
     c.lastPrison = mainPrison;
-    c.KDGoThruTile(51, 22);
+    c.KDGoThruTile(c.KDMapData.SpiderlingsPrison.exit.x, c.KDMapData.SpiderlingsPrison.exit.y);
     const side = floor("SideRoom");
     const sideNest = { ...nest, id: 15 };
     side.Entities.push(sideNest);
@@ -465,10 +483,13 @@ test("source rooms in the same world slot retain separate prisons and return con
     assert.notEqual(sidePrison, mainPrison);
     assert.equal(vm.runInContext("KDGetLairs(KDGetWorldMapLocation({ x: 0, y: 3 }), 1).length", c), 0);
     assert.equal(c.KDMapData.SpiderlingsPrison.source.room, "SideRoom");
-    assert.equal(c.KDMapData.Tiles["51,22"].RoomType, "SideRoom");
+    assert.equal(
+        c.KDMapData.Tiles[`${c.KDMapData.SpiderlingsPrison.exit.x},${c.KDMapData.SpiderlingsPrison.exit.y}`].RoomType,
+        "SideRoom",
+    );
     c.KDMapData.SpiderlingsPrison.retainedDamage = 7;
     c.lastPrison = sidePrison;
-    c.KDGoThruTile(51, 22);
+    c.KDGoThruTile(c.KDMapData.SpiderlingsPrison.exit.x, c.KDMapData.SpiderlingsPrison.exit.y);
     assert.equal(c.KDGameData.RoomType, "SideRoom");
     assert.equal(c.KDGameData.SpiderlingsPrisonIdentity, undefined);
     for (const [sourceRoom, prisonRoom, damage] of [
@@ -481,7 +502,7 @@ test("source rooms in the same world slot retain separate prisons and return con
         assert.equal(c.KDGameData.RoomType, prisonRoom);
         assert.equal(c.KDMapData.SpiderlingsPrison.retainedDamage, damage);
         c.lastPrison = prisonRoom;
-        c.KDGoThruTile(51, 22);
+        c.KDGoThruTile(c.KDMapData.SpiderlingsPrison.exit.x, c.KDMapData.SpiderlingsPrison.exit.y);
         assert.equal(c.KDGameData.RoomType, sourceRoom);
     }
     assert.equal(Object.keys(slot.lairs).length, 2);
@@ -495,12 +516,15 @@ test("voluntary admission preserves prior identity and avoids Intro across a fir
     assert.equal(c.KDGameData.PrisonerState, "parole");
     assert.equal(c.KDMapData.PrisonState, "Visit");
     assert.equal(c.KDMapData.PrisonType, c.Spiderlings.Prison.ROOM);
-    assert.deepEqual([c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y], [51, 22]);
+    assert.deepEqual(
+        [c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y],
+        [c.KDMapData.SpiderlingsPrison.exit.x, c.KDMapData.SpiderlingsPrison.exit.y],
+    );
     assert.equal(c.Spiderlings.Prison.captured(), false);
     const room = c.KDGameData.RoomType;
     c.lastPrison = room;
     c.KDMapData.SpiderlingsPrison.retainedDamage = 3;
-    c.KDGoThruTile(51, 22);
+    c.KDGoThruTile(c.KDMapData.SpiderlingsPrison.exit.x, c.KDMapData.SpiderlingsPrison.exit.y);
     assert.equal(c.KDGameData.PrisonerState, "parole");
     const savedNest = c.KDMapData.Entities.find((actor) => actor.id === nest.id);
     assert.equal(c.Spiderlings.Prison.enter({ entrance: savedNest, mode: "captured" }), true);
@@ -509,7 +533,7 @@ test("voluntary admission preserves prior identity and avoids Intro across a fir
     assert.equal(c.KDMapData.PrisonState, "Intro");
     assert.equal(c.KDMapData.SpiderlingsPrison.retainedDamage, 3);
     assert.equal(Object.keys(slot.lairs).length, 1);
-    c.KDGoThruTile(51, 22);
+    c.KDGoThruTile(c.KDMapData.SpiderlingsPrison.exit.x, c.KDMapData.SpiderlingsPrison.exit.y);
     assert.equal(c.KDGameData.PrisonerState, "parole");
     assert.equal(c.KDGameData.SpiderlingsPrisonIdentity, undefined);
 });

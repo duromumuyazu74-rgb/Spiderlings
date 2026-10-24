@@ -477,10 +477,12 @@ function prisonScenario() {
         version: 1,
         chamber: { x: 3, y: 3 },
         chamberBounds: { left: 2, top: 2, right: 4, bottom: 4 },
+        exit: { x: 18, y: 10 },
+        seenClues: {},
     };
     c.Spiderlings.SpinnerNativeField = { compositeById: () => undefined };
     c.KDGameData.SpiderlingsPrisonIdentity = { room: "prison", previous: "" };
-    for (const file of ["SpiderlingsPrison.js", "SpiderlingsPrisonConstruction.js"])
+    for (const file of ["SpiderlingsPrisonLayout.js", "SpiderlingsPrison.js", "SpiderlingsPrisonConstruction.js"])
         vm.runInContext(fs.readFileSync(path.join(__dirname, "../..", file), "utf8"), c, { filename: file });
     return current;
 }

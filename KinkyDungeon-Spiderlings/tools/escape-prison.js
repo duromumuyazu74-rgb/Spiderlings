@@ -81,6 +81,8 @@ async function prepareMaturePrison() {
         saved: save(),
         source,
         prisonRoom: KDGameData.RoomType,
+        layoutVersion: KDMapData.SpiderlingsPrison.layoutVersion || 1,
+        mapSize: { width: KDMapData.GridWidth, height: KDMapData.GridHeight },
         preparationTurns,
         layers: field.compositeById(compositeId).layerIds.length,
         entities: KDMapData.Entities.filter((actor) => actor.hp > 0).length,
@@ -183,7 +185,7 @@ async function runPrisonRoute({ source, prisonRoom, maxTurns, spell }) {
         });
     let outcome = "turn-budget";
     try {
-        for (const goal of [
+        for (const goal of KDMapData.SpiderlingsPrison.routes?.upper || [
             { x: 18, y: 22 },
             { x: 18, y: 8 },
             { x: 46, y: 8 },

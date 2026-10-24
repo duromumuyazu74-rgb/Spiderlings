@@ -14,6 +14,15 @@
 
     function regionAt(point) {
         if (!point) return undefined;
+        const regions = state()?.regions;
+        if (regions)
+            return regions.find(
+                (region) =>
+                    point.x >= region.left &&
+                    point.x <= region.right &&
+                    point.y >= region.top &&
+                    point.y <= region.bottom,
+            )?.id;
         if (point.x <= 20 && point.y >= 12 && point.y <= 32) return "chamber";
         if (point.y < 17) return "upper";
         if (point.y > 27) return "lower";

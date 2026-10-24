@@ -34,16 +34,18 @@
         expect(Spiderlings.Prison.enter({ entrance, mode: "voluntary" }), "Regional fixture admission failed");
         for (const name of ["Spinner", "Jumper", "WebCaster", "Tunneler", "Mage"])
             settings["spiderlingsNest" + name + "Weight"] = "0";
+        for (const actor of [...KDMapData.Entities])
+            if (!actor.Enemy?.immobile) KDRemoveEntity(actor, false, false, true);
         const point = Spiderlings.PrisonAlerts.planningPoint;
         const lower = [];
-        for (let y = 37; y < 42 && lower.length < 12; y++)
-            for (let x = 30; x < 46 && lower.length < 12; x++)
+        for (let y = 48; y < 57 && lower.length < 12; y++)
+            for (let x = 30; x < 62 && lower.length < 12; x++)
                 if (KinkyDungeonMapGet(x, y) === "0" && !KinkyDungeonEntityAt(x, y))
                     lower.push(spawn("Spinner", x, y, "Enemy"));
         expect(lower.length === 12, "Regional fixture lacks legal workforce for three shared field permits");
         for (const actor of lower) Object.assign(actor, { aware: false, vp: 0 });
-        const observer = spawn("WebCaster", 24, 8, "Enemy");
-        KDMovePlayer(24, 10, false);
+        const observer = spawn("WebCaster", 32, 12, "Enemy");
+        KDMovePlayer(34, 12, false);
         const remoteIds = lower.map((actor) => actor.id);
         const row = { name: "regional-native", steps: [] };
         rows.push(row);
@@ -90,9 +92,21 @@
             "Distant builders performed no paid travel/work",
         );
         const old = Spiderlings.PrisonAlerts.currentReport();
-        KDMovePlayer(25, 10, false);
-        await turn();
-        const newer = Spiderlings.PrisonAlerts.currentReport();
+        KDMovePlayer(35, 12, false);
+        // The caster can retreat along this short corridor. Let actual native
+        // visual sampling renew the report; do not inject an observation.
+        let newer;
+        row.laterSighting = [];
+        for (let n = 0; n < 6; n++) {
+            await turn();
+            newer = Spiderlings.PrisonAlerts.currentReport();
+            row.laterSighting.push({
+                tick: KinkyDungeonCurrentTick,
+                report: newer,
+                observer: { x: observer.x, y: observer.y },
+            });
+            if (newer?.serial > old?.serial) break;
+        }
         expect(newer?.serial > old?.serial, "Later sighting did not update report");
         const planning = point("lower");
         expect(
@@ -110,8 +124,8 @@
             if (item.name === "SpiderlingsWebbingCocoon" && item.data?.SpiderlingsCocoonOuterWebs)
                 item.data.SpiderlingsCocoonOuterWebs.anchored = false;
         Spiderlings.PrisonEscort.clear();
-        KDMovePlayer(51, 22, false);
-        KDGoThruTile(51, 22, true, true, true, true);
+        KDMovePlayer(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, false);
+        KDGoThruTile(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, true, true, true, true);
         row.immediateExit = { room: KDGameData.RoomType, position: { x: KDPlayer().x, y: KDPlayer().y } };
         // Wait off the connection; native waiting on the return stair confirms
         // another visit and would measure prison time rather than source time.
