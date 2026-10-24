@@ -45,4 +45,18 @@ npm run analyze:escape -- --runtime '<runtime result.json>' --package '<matching
 
 存档计划省略 `equipment`、`density` 和 `knife`，其余字段含义相同。例如比较三种方法与静候策略时，使用实际穿戴的 Cocoon ID，设相同的总预算。工具只对指定拘束执行脱困与等待；拘束已经移除后即停止。完整的多层拆除、破墙、移动和返回来源楼层仍由 [存档 replay](../../DEVELOPMENT.md#save-and-evidence-diagnostics) 与实际路线测试负责。用它支持 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 的数值判断，不能凭拆茧成功关闭成熟四层离场验收。
 
+## 成熟四层监牢路线
+
+[mature-prison.json](mature-prison.json) 提供 `preparation: "mature-prison"`。使用相同 `analyze:escape` 命令，将 `--plan` 换为该文件；每版游戏会重新准备并原生保存一个四层监牢，随后每个种子和策略各自重载该状态。它与 `--save` 输入互斥。
+
+准备沿用现有原生监牢施工 fixture：普通来源房间、一次真实 captured admission、单件普通 Cocoon、Knife，以及 Spinner-only 巢穴增援权重和既有配额。四层必须全部由真实施工动作闭合。只在准备阶段维持精力与意志，正式存档边界满资源一次；之后保留敌人、围场、修补、接触、自然恢复和有限法力，不给每个行动补满资源。它与前文的完整二十四件套装空房矩阵是不同场景。
+
+计划比较立即 Cut、先等 22 回合再 Cut、已掌握 Fireball 的预先施法加 Cut。预先施法最多尝试四次，实际次数受原生法力需求限制，目标交替为已知地图的 `(14,22)` 与 `(11,22)`。原生施法拒绝、未命中和伤害均保留。
+
+拆茧后，`route: true` 沿现有准备路线的四个路标前往出口。脚本根据实际地图找可尝试的相邻格，拥有整张测试地图信息；实体网格只允许作为原生攻击或施法目标，不直接删除。普通移动、碰撞攻击、可支付的 Fireball、捕获对抗中的挣脱输入和阻塞后的等待均走原生入口。它不搜索最优打法，也不拆除所有可能挡路的内层装备。
+
+总预算 360 世界回合同时包含施法、静候、休息、拆茧和离场。`rows[].outcome` 描述目标拘束是否移除；`rows[].route` 单独记录 `cocoon-not-removed`、`no-route`、`blocked`、`turn-budget`、`unexpected-map` 或 `returned-to-source`。只有回到来源房间、主旅程楼层不变且本 Mod 囚犯身份已清除，才记作返回成功。`webHits` 保留真实网实体伤害，路线轨迹包含位置、资源、闭合层数和游戏状态。拘束阶段的精力支出与后续路线的资源快照分别记录。
+
+输出中的 `mature-save.txt` 是本轮生成的原生存档，`fixture` 记录施工回合、四层状态、实际移动蜘蛛数、实体总数、设置和准备干预。它可以用于后续 [replay](../../DEVELOPMENT.md#save-and-evidence-diagnostics)。失败样本保留，完整离场样本也只证明记录中的构筑、资源与脚本策略；#76 的维护者难度判断继续单独记录。
+
 历史文件、适配理由与本轮实测范围见 [适配记录](assessment.zh-CN.md)。

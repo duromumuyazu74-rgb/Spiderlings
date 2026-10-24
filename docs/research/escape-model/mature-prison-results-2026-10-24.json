@@ -1,0 +1,1166 @@
+{
+  "schemaVersion": 1,
+  "package": "Spiderlings_0.92.39-test.3.zip",
+  "resourceUnits": "Native Stat units",
+  "plan": "mature-prison.json",
+  "games": [
+    {
+      "version": "5.4.92",
+      "commit": null,
+      "mainSha256": "2d3041a085cbe475a63227ff40709f6d9c1595c77a58545c69edf359a57605a4",
+      "packageSha256": "67fa70a09373a27403a594b6c0149d9e6888159d73b963a78dc2fcdfe909b864",
+      "generatedAt": "2026-10-24T01:22:33.132Z",
+      "analysisSha256": "1f93a318615ba7be0035a2ac05b963d03734135a3cad9962ccf3692bc3d0e749",
+      "prisonAnalysisSha256": "84a40a8c290d666fee23ecf1f5bdde3171f4aebc6297bb339c727dc36f2df03a",
+      "rawEvidenceSha256": "def13faed08babe8cba1dcd4033f0845d31d8a60489de33789645b3444cef2b0",
+      "fixture": {
+        "source": {
+          "room": "",
+          "floor": 0
+        },
+        "prisonRoom": "0_SpiderlingsNestPrison,0,0",
+        "preparationTurns": 229,
+        "layers": 4,
+        "population": 40,
+        "entities": 201,
+        "density": 0,
+        "saveSha256": "14de8d3913cd544d559bcbb4dd90fd065467f5c1242859d411573c35fab0960f",
+        "interventions": [
+          "Controlled ordinary source map and captured Cocoon admission; Knife supplied once.",
+          "Same Spinner-only reinforcement weights, cap and interval as the native prison construction fixture.",
+          "Will/stamina maintained during construction only; all four layers use real paid builder actions.",
+          "Will/stamina/mana start full at the saved trial boundary; no route-time refill or enemy suppression."
+        ]
+      },
+      "rows": [
+        {
+          "label": "mature-cut-now",
+          "seed": "prison-route-paired-1",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 229,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 178,
+            "restTurns": 155,
+            "costs": {
+              "stamina": 84.45000000000046,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 1,
+              "stamina": 0.5249999999999999,
+              "will": 1.2350000000001022,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-cut-now",
+          "seed": "prison-route-paired-2",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 229,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 178,
+            "restTurns": 155,
+            "costs": {
+              "stamina": 84.45000000000046,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 1,
+              "stamina": 0.5249999999999999,
+              "will": 1.2350000000001022,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-cut-wait22",
+          "seed": "prison-route-paired-1",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 229,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 167,
+            "restTurns": 145,
+            "costs": {
+              "stamina": 80.05000000000025,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 1,
+              "stamina": 0.575,
+              "will": 1.2350000000001022,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-cut-wait22",
+          "seed": "prison-route-paired-2",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 229,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 167,
+            "restTurns": 145,
+            "costs": {
+              "stamina": 80.05000000000025,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 1,
+              "stamina": 0.575,
+              "will": 1.2350000000001022,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-fireball-cut",
+          "seed": "prison-route-paired-1",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 229,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "escaped",
+            "turns": 30,
+            "actions": 8,
+            "restTurns": 0,
+            "costs": {
+              "stamina": 3.225000000000003,
+              "will": 0.01249999999999929
+            },
+            "final": {
+              "turns": 30,
+              "density": 3.385638867342232,
+              "quietAge": 25,
+              "stamina": 6.774999999999997,
+              "will": 9.9875,
+              "mana": 15,
+              "present": false,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 0,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [
+            {
+              "result": "",
+              "manaBefore": 15,
+              "manaAfter": 8.299999999999997,
+              "turns": 1
+            }
+          ],
+          "route": {
+            "outcome": "returned-to-source",
+            "turns": 75,
+            "final": {
+              "turns": 75,
+              "room": "",
+              "floor": 0,
+              "x": 15,
+              "y": 10,
+              "stamina": 1,
+              "will": 0,
+              "mana": 15,
+              "density": 0,
+              "recovery": false,
+              "remaining": [],
+              "gameState": "Game",
+              "ownedPrisonIdentity": false,
+              "closedLayers": 0
+            },
+            "webHits": [
+              {
+                "turns": 3,
+                "x": 14,
+                "y": 23,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 13,
+                "y": 19,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 15,
+                "y": 23,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 16,
+                "y": 20,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 7,
+                "x": 17,
+                "y": 22,
+                "damage": 3
+              },
+              {
+                "turns": 8,
+                "x": 17,
+                "y": 22,
+                "damage": 3
+              },
+              {
+                "turns": 10,
+                "x": 17,
+                "y": 19,
+                "damage": 13,
+                "spell": "Fireball"
+              }
+            ],
+            "milestones": [
+              {
+                "action": "move-or-attack",
+                "turns": 1,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 12,
+                "y": 22,
+                "closedLayers": 2,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "cast",
+                "turns": 3,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 13,
+                "y": 22,
+                "closedLayers": 4,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "move-or-attack",
+                "turns": 4,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 13,
+                "y": 22,
+                "closedLayers": 1,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "move-or-attack",
+                "turns": 11,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 16,
+                "y": 22,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "exit",
+                "turns": 75,
+                "room": "",
+                "floor": 0,
+                "x": 15,
+                "y": 10,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": false
+              }
+            ]
+          },
+          "totalTurns": 105
+        },
+        {
+          "label": "mature-fireball-cut",
+          "seed": "prison-route-paired-2",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 229,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "escaped",
+            "turns": 30,
+            "actions": 8,
+            "restTurns": 0,
+            "costs": {
+              "stamina": 3.225000000000003,
+              "will": 0.01249999999999929
+            },
+            "final": {
+              "turns": 30,
+              "density": 3.385638867342232,
+              "quietAge": 25,
+              "stamina": 6.774999999999997,
+              "will": 9.9875,
+              "mana": 15,
+              "present": false,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 0,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [
+            {
+              "result": "",
+              "manaBefore": 15,
+              "manaAfter": 8.299999999999997,
+              "turns": 1
+            }
+          ],
+          "route": {
+            "outcome": "returned-to-source",
+            "turns": 75,
+            "final": {
+              "turns": 75,
+              "room": "",
+              "floor": 0,
+              "x": 15,
+              "y": 10,
+              "stamina": 1,
+              "will": 0,
+              "mana": 15,
+              "density": 0,
+              "recovery": false,
+              "remaining": [],
+              "gameState": "Game",
+              "ownedPrisonIdentity": false,
+              "closedLayers": 0
+            },
+            "webHits": [
+              {
+                "turns": 3,
+                "x": 14,
+                "y": 23,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 13,
+                "y": 19,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 15,
+                "y": 23,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 16,
+                "y": 20,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 7,
+                "x": 17,
+                "y": 22,
+                "damage": 3
+              },
+              {
+                "turns": 8,
+                "x": 17,
+                "y": 22,
+                "damage": 3
+              },
+              {
+                "turns": 10,
+                "x": 17,
+                "y": 19,
+                "damage": 13,
+                "spell": "Fireball"
+              }
+            ],
+            "milestones": [
+              {
+                "action": "move-or-attack",
+                "turns": 1,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 12,
+                "y": 22,
+                "closedLayers": 2,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "cast",
+                "turns": 3,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 13,
+                "y": 22,
+                "closedLayers": 4,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "move-or-attack",
+                "turns": 4,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 13,
+                "y": 22,
+                "closedLayers": 1,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "move-or-attack",
+                "turns": 11,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 16,
+                "y": 22,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "exit",
+                "turns": 75,
+                "room": "",
+                "floor": 0,
+                "x": 15,
+                "y": 10,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": false
+              }
+            ]
+          },
+          "totalTurns": 105
+        }
+      ]
+    },
+    {
+      "version": "5.5.6",
+      "commit": "ffdbf9d89c45b8fc758fb5325028b48cf5a7e9a3",
+      "mainSha256": "34713e7d21e03da4e9f858aea69eacc76a5d8bd6c2a96a3e6c5a5f46fcf7f3be",
+      "packageSha256": "67fa70a09373a27403a594b6c0149d9e6888159d73b963a78dc2fcdfe909b864",
+      "generatedAt": "2026-10-24T01:22:33.080Z",
+      "analysisSha256": "1f93a318615ba7be0035a2ac05b963d03734135a3cad9962ccf3692bc3d0e749",
+      "prisonAnalysisSha256": "84a40a8c290d666fee23ecf1f5bdde3171f4aebc6297bb339c727dc36f2df03a",
+      "rawEvidenceSha256": "0decfa61921fb4b0a6e191418373f7d35d7b7f26c456898e3016e5365aa5eaad",
+      "fixture": {
+        "source": {
+          "room": "",
+          "floor": 0
+        },
+        "prisonRoom": "0_SpiderlingsNestPrison,0,0",
+        "preparationTurns": 225,
+        "layers": 4,
+        "population": 40,
+        "entities": 207,
+        "density": 0,
+        "saveSha256": "043c9fe81a6e0fe21aa1dedd720db6a10ba07bf71ea469493d47e2f845848eda",
+        "interventions": [
+          "Controlled ordinary source map and captured Cocoon admission; Knife supplied once.",
+          "Same Spinner-only reinforcement weights, cap and interval as the native prison construction fixture.",
+          "Will/stamina maintained during construction only; all four layers use real paid builder actions.",
+          "Will/stamina/mana start full at the saved trial boundary; no route-time refill or enemy suppression."
+        ]
+      },
+      "rows": [
+        {
+          "label": "mature-cut-now",
+          "seed": "prison-route-paired-1",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 225,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 189,
+            "restTurns": 164,
+            "costs": {
+              "stamina": 88.47500000000059,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 0,
+              "stamina": 0.6,
+              "will": 1.2350000000001025,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-cut-now",
+          "seed": "prison-route-paired-2",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 225,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 189,
+            "restTurns": 164,
+            "costs": {
+              "stamina": 88.47500000000059,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 0,
+              "stamina": 0.6,
+              "will": 1.2350000000001025,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-cut-wait22",
+          "seed": "prison-route-paired-1",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 225,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 182,
+            "restTurns": 156,
+            "costs": {
+              "stamina": 85.67500000000047,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 0,
+              "stamina": 0.0749999999999999,
+              "will": 1.2350000000001025,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-cut-wait22",
+          "seed": "prison-route-paired-2",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 225,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "turn-budget",
+            "turns": 360,
+            "actions": 182,
+            "restTurns": 156,
+            "costs": {
+              "stamina": 85.67500000000047,
+              "will": 8.764999999999823
+            },
+            "final": {
+              "turns": 360,
+              "density": 5300,
+              "quietAge": 0,
+              "stamina": 0.0749999999999999,
+              "will": 1.2350000000001025,
+              "mana": 15,
+              "present": true,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 1,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [],
+          "route": {
+            "outcome": "cocoon-not-removed",
+            "turns": 0,
+            "final": null,
+            "webHits": [],
+            "milestones": []
+          },
+          "totalTurns": 360
+        },
+        {
+          "label": "mature-fireball-cut",
+          "seed": "prison-route-paired-1",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 225,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "escaped",
+            "turns": 35,
+            "actions": 11,
+            "restTurns": 0,
+            "costs": {
+              "stamina": 4.475000000000005,
+              "will": 0.03749999999999787
+            },
+            "final": {
+              "turns": 35,
+              "density": 5.277834643346124,
+              "quietAge": 29,
+              "stamina": 5.524999999999995,
+              "will": 9.962500000000002,
+              "mana": 15,
+              "present": false,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 0,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [
+            {
+              "result": "Cast",
+              "manaBefore": 15,
+              "manaAfter": 8.299999999999997,
+              "turns": 1
+            }
+          ],
+          "route": {
+            "outcome": "returned-to-source",
+            "turns": 71,
+            "final": {
+              "turns": 71,
+              "room": "",
+              "floor": 0,
+              "x": 15,
+              "y": 10,
+              "stamina": 10,
+              "will": 0,
+              "mana": 15,
+              "density": 0,
+              "recovery": false,
+              "remaining": [],
+              "gameState": "Game",
+              "ownedPrisonIdentity": false,
+              "closedLayers": 0
+            },
+            "webHits": [
+              {
+                "turns": 3,
+                "x": 14,
+                "y": 22,
+                "damage": 3
+              },
+              {
+                "turns": 3,
+                "x": 17,
+                "y": 20,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 17,
+                "y": 21,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 14,
+                "y": 19,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 15,
+                "y": 23,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 16,
+                "y": 21,
+                "damage": 13,
+                "spell": "Fireball"
+              }
+            ],
+            "milestones": [
+              {
+                "action": "move-or-attack",
+                "turns": 1,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 12,
+                "y": 22,
+                "closedLayers": 4,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "move-or-attack",
+                "turns": 4,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 13,
+                "y": 22,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "exit",
+                "turns": 71,
+                "room": "",
+                "floor": 0,
+                "x": 15,
+                "y": 10,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": false
+              }
+            ]
+          },
+          "totalTurns": 106
+        },
+        {
+          "label": "mature-fireball-cut",
+          "seed": "prison-route-paired-2",
+          "maxTurns": 360,
+          "initial": {
+            "turns": 0,
+            "density": 0,
+            "quietAge": 225,
+            "stamina": 10,
+            "will": 10,
+            "mana": 15,
+            "present": true,
+            "cut": 0,
+            "struggle": 0,
+            "remaining": 1,
+            "room": "0_SpiderlingsNestPrison,0,0",
+            "lastAction": "",
+            "layers": 4
+          },
+          "cocoon": {
+            "outcome": "escaped",
+            "turns": 35,
+            "actions": 11,
+            "restTurns": 0,
+            "costs": {
+              "stamina": 4.475000000000005,
+              "will": 0.03749999999999787
+            },
+            "final": {
+              "turns": 35,
+              "density": 5.277834643346124,
+              "quietAge": 29,
+              "stamina": 5.524999999999995,
+              "will": 9.962500000000002,
+              "mana": 15,
+              "present": false,
+              "cut": 0,
+              "struggle": 0,
+              "remaining": 0,
+              "room": "0_SpiderlingsNestPrison,0,0",
+              "lastAction": "",
+              "layers": 4
+            }
+          },
+          "precasts": [
+            {
+              "result": "Cast",
+              "manaBefore": 15,
+              "manaAfter": 8.299999999999997,
+              "turns": 1
+            }
+          ],
+          "route": {
+            "outcome": "returned-to-source",
+            "turns": 71,
+            "final": {
+              "turns": 71,
+              "room": "",
+              "floor": 0,
+              "x": 15,
+              "y": 10,
+              "stamina": 10,
+              "will": 0,
+              "mana": 15,
+              "density": 0,
+              "recovery": false,
+              "remaining": [],
+              "gameState": "Game",
+              "ownedPrisonIdentity": false,
+              "closedLayers": 0
+            },
+            "webHits": [
+              {
+                "turns": 3,
+                "x": 14,
+                "y": 22,
+                "damage": 3
+              },
+              {
+                "turns": 3,
+                "x": 17,
+                "y": 20,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 17,
+                "y": 21,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 14,
+                "y": 19,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 15,
+                "y": 23,
+                "damage": 13,
+                "spell": "Fireball"
+              },
+              {
+                "turns": 3,
+                "x": 16,
+                "y": 21,
+                "damage": 13,
+                "spell": "Fireball"
+              }
+            ],
+            "milestones": [
+              {
+                "action": "move-or-attack",
+                "turns": 1,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 12,
+                "y": 22,
+                "closedLayers": 4,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "move-or-attack",
+                "turns": 4,
+                "room": "0_SpiderlingsNestPrison,0,0",
+                "floor": 0,
+                "x": 13,
+                "y": 22,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": true
+              },
+              {
+                "action": "exit",
+                "turns": 71,
+                "room": "",
+                "floor": 0,
+                "x": 15,
+                "y": 10,
+                "closedLayers": 0,
+                "gameState": "Game",
+                "ownedPrisonIdentity": false
+              }
+            ]
+          },
+          "totalTurns": 106
+        }
+      ]
+    }
+  ]
+}
