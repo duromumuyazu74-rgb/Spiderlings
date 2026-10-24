@@ -24,7 +24,15 @@
     ".woff2",
     ".txt"
   ],
-  "specialFiles": [".gitignore", ".gitattributes", ".prettierignore", ".editorconfig", "LICENSE", "NOTICE"],
+  "specialFiles": [
+    ".gitignore",
+    ".gitattributes",
+    ".prettierignore",
+    ".editorconfig",
+    "LICENSE",
+    "NOTICE",
+    "escape-model-5.5.4.ipynb"
+  ],
   "legacyFiles": [],
   "grandfatheredCommits": [
     "2ffaaacf0c98af6b04ebd05e0b47d97d83d2897d",

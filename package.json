@@ -16,6 +16,7 @@
     "diagnose:save": "node KinkyDungeon-Spiderlings/tools/save-diagnostics.js",
     "diagnose:replay": "node KinkyDungeon-Spiderlings/tools/replay-spiderlings-save.js",
     "diagnose:evidence": "node KinkyDungeon-Spiderlings/tools/evidence-summary.js",
+    "analyze:escape": "node KinkyDungeon-Spiderlings/tools/analyze-spiderlings-escape.js",
     "run:task": "node KinkyDungeon-Spiderlings/tools/task-runner.js",
     "report:delivery": "node KinkyDungeon-Spiderlings/tools/report-spiderlings-delivery.js",
     "audit:closeout": "node KinkyDungeon-Spiderlings/tools/audit-delivery-closeout.js",

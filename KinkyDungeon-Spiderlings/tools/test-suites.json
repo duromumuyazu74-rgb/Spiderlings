@@ -1,5 +1,6 @@
 {
   "public": [
+    "spiderlings-escape-analysis.test.js",
     "spiderlings-density-activity.test.js",
     "spiderlings-diagnostics.test.js",
     "spiderlings-delivery-closeout.test.js",

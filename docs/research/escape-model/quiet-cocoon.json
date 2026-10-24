@@ -1,0 +1,87 @@
+{
+  "seeds": ["escape-paired-1", "escape-paired-2"],
+  "maxTurns": 240,
+  "cases": [
+    {
+      "label": "single-cut-D0",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Cut",
+      "equipment": "single",
+      "density": 0
+    },
+    { "label": "full-cut-D0", "id": "SpiderlingsWebbingCocoon", "method": "Cut", "equipment": "full", "density": 0 },
+    {
+      "label": "full-cut-D300",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Cut",
+      "equipment": "full",
+      "density": 300
+    },
+    {
+      "label": "full-cut-D300-wait22",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Cut",
+      "equipment": "full",
+      "density": 300,
+      "quietTurns": 22
+    },
+    {
+      "label": "single-remove-D0",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Remove",
+      "equipment": "single",
+      "density": 0
+    },
+    {
+      "label": "full-remove-D0",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Remove",
+      "equipment": "full",
+      "density": 0
+    },
+    {
+      "label": "full-remove-D300",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Remove",
+      "equipment": "full",
+      "density": 300
+    },
+    {
+      "label": "full-remove-D300-wait22",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Remove",
+      "equipment": "full",
+      "density": 300,
+      "quietTurns": 22
+    },
+    {
+      "label": "single-struggle-D0",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Struggle",
+      "equipment": "single",
+      "density": 0
+    },
+    {
+      "label": "full-struggle-D0",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Struggle",
+      "equipment": "full",
+      "density": 0
+    },
+    {
+      "label": "full-struggle-D300",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Struggle",
+      "equipment": "full",
+      "density": 300
+    },
+    {
+      "label": "full-struggle-D300-wait22",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Struggle",
+      "equipment": "full",
+      "density": 300,
+      "quietTurns": 22
+    }
+  ]
+}

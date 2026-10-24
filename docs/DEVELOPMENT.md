@@ -88,6 +88,8 @@ Each scene starts with a named native RNG seed. The shared setup and Hunting Gro
 
 ## Save and evidence diagnostics
 
+For restraint parameter sweeps, quiet-density recovery and copied-save escape costs, use [native escape analysis](research/escape-model/usage.md). It reuses the isolated runtime and actual ZIP, retaining native events and resource costs. These numerical experiments remain separate from full delivery and complete prison-route acceptance.
+
 For saved-field stalls, unexpected objective completion or persisted Journal discovery, inventory every supplied save slot and visited map before selecting a replay. Saves may retain the fault in `KDWorldMap` after the character moves to another floor. These maintenance tools are excluded from the Mod ZIP.
 
 ```powershell
