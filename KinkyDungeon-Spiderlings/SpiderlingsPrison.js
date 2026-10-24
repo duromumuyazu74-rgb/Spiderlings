@@ -6,11 +6,8 @@
     const ENTRANCE = "SpiderlingsPrisonEntrance";
     const STATE = "SpiderlingsPrison";
     const IDENTITY = "SpiderlingsPrisonIdentity";
-    const WIDTH = 55;
-    const HEIGHT = 45;
-    const CHAMBER = Object.freeze({ x: 11, y: 22 });
-    const EXIT = Object.freeze({ x: 51, y: 22 });
-    const MAIN_NEST = Object.freeze({ x: 36, y: 22 });
+    const WIDTH = api.PrisonLayout.width;
+    const HEIGHT = api.PrisonLayout.height;
 
     const text = {
         KDRoomType_SpiderlingsNestPrison: "Spiderlings nest prison",
@@ -31,94 +28,57 @@
         return KDGameData?.RoomType === KDMapData?.RoomType && !!roomState();
     }
 
-    function carveRect(left, top, right, bottom) {
-        for (let y = top; y <= bottom; y += 1) {
-            for (let x = left; x <= right; x += 1) KinkyDungeonMapSet(x, y, "0");
-        }
-    }
-
-    function carveLine(a, b, radius = 1) {
-        if (a.x !== b.x && a.y !== b.y) throw new Error("Spiderlings prison corridors must be orthogonal.");
-        carveRect(
-            Math.min(a.x, b.x) - radius,
-            Math.min(a.y, b.y) - radius,
-            Math.max(a.x, b.x) + radius,
-            Math.max(a.y, b.y) + radius,
-        );
-    }
-
     function generate(_poi, visited) {
-        visited[0].x = CHAMBER.x;
-        visited[0].y = CHAMBER.y;
-        KDMapData.GridWidth = WIDTH;
-        KDMapData.GridHeight = HEIGHT;
-        KDMapData.Grid = Array.from({ length: HEIGHT }, () => "1".repeat(WIDTH) + "\n").join("");
-
-        // The open western floor leaves room for paid Spinner layers. The two
-        // outer circuits bypass the central nest and reconnect before the exit.
-        carveRect(2, 12, 20, 32);
-        carveRect(31, 17, 41, 27);
-        carveRect(49, 20, 53, 24);
-        carveLine({ x: 19, y: 22 }, { x: 51, y: 22 });
-        carveLine({ x: 18, y: 8 }, { x: 47, y: 8 });
-        carveLine({ x: 18, y: 36 }, { x: 47, y: 36 });
-        carveLine({ x: 18, y: 8 }, { x: 18, y: 13 });
-        carveLine({ x: 18, y: 31 }, { x: 18, y: 36 });
-        carveLine({ x: 24, y: 8 }, { x: 24, y: 36 });
-        carveLine({ x: 46, y: 8 }, { x: 46, y: 36 });
-        carveLine({ x: 36, y: 8 }, { x: 36, y: 17 });
-        carveLine({ x: 36, y: 27 }, { x: 36, y: 36 });
-
-        // Small dead ends make the upper and lower routes recognizable without
-        // creating another required route or obstructing the central nest.
-        const spurX = 27 + Math.floor(KDRandom() * 4);
-        carveRect(spurX - 2, 3, spurX + 2, 7);
-        const lowerSpurX = 39 + Math.floor(KDRandom() * 4);
-        carveRect(lowerSpurX - 2, 37, lowerSpurX + 2, 41);
-
-        KDMapData.StartPosition = { ...EXIT };
-        KDMapData.EndPosition = { ...EXIT };
-        KDMapData.PatrolPoints = [
-            { x: 24, y: 8 },
-            { x: 46, y: 8 },
-            { x: 46, y: 36 },
-            { x: 24, y: 36 },
-            { x: 36, y: 22 },
-        ];
-        for (const point of KDMapData.PatrolPoints) {
-            KDMapData.Labels.Patrol ||= [];
-            KDMapData.Labels.Patrol.push({ name: "Patrol", type: "Patrol", assigned: -1, ...point });
+        const layout = api.PrisonLayout.create();
+        const { rows, props, width, height, ...plan } = layout;
+        visited[0].x = layout.chamber.x;
+        visited[0].y = layout.chamber.y;
+        KDMapData.GridWidth = width;
+        KDMapData.GridHeight = height;
+        KDMapData.Grid = rows.map((row) => [...row].map((tile) => (tile === "1" ? "0" : "1")).join("") + "\n").join("");
+        KDMapData.StartPosition = { ...layout.exit };
+        KDMapData.EndPosition = { ...layout.exit };
+        KDMapData.PatrolPoints = layout.patrolRoutes
+            .flat()
+            .filter(
+                (point, index, points) =>
+                    points.findIndex((other) => other.x === point.x && other.y === point.y) === index,
+            );
+        KDMapData.Labels.Patrol = KDMapData.PatrolPoints.map((point) => ({
+            name: "Patrol",
+            type: "Patrol",
+            assigned: -1,
+            ...point,
+        }));
+        for (const point of layout.routes.upper) KDMapData.TilesSkin[`${point.x},${point.y}`] = { skin: "cav" };
+        for (const prop of props) {
+            const key = `${prop.x},${prop.y}`;
+            KinkyDungeonMapSet(prop.x, prop.y, prop.type === "barrel" ? "L" : prop.type === "chest" ? "C" : "c");
+            if (prop.type === "barrel") KinkyDungeonTilesSet(key, { Type: "Barrel" });
+            else if (prop.type === "chest")
+                KinkyDungeonTilesSet(key, { Type: "Chest", Loot: "storage", Roll: KDRandom(), NoTrap: true });
         }
-        for (const [x, y] of [
-            [24, 8],
-            [36, 8],
-            [46, 8],
-            [46, 16],
-            [46, 22],
-            [51, 22],
-        ]) {
-            KDMapData.TilesSkin[`${x},${y}`] = { skin: "cav" };
-        }
-
         const source = KDPersonalAlt[KDGameData.RoomType]?.data?.SpiderlingsPrisonSource;
         if (!source) throw new Error("Spiderlings prison has no source floor.");
-        KDMapData[STATE] = {
-            version: 1,
-            source: { ...source },
-            chamber: { ...CHAMBER },
-            chamberBounds: { left: 8, top: 19, right: 14, bottom: 25 },
-            workBounds: { left: 2, top: 12, right: 20, bottom: 32 },
-            mainNest: { ...MAIN_NEST },
-            mainNestBounds: { left: 31, top: 17, right: 41, bottom: 27 },
-            exit: { ...EXIT },
-            seenClues: {},
-        };
-        KinkyDungeonTilesSet(`${EXIT.x},${EXIT.y}`, {
+        KDMapData[STATE] = { version: 1, source: { ...source }, ...plan, seenClues: {} };
+        KinkyDungeonTilesSet(`${layout.exit.x},${layout.exit.y}`, {
             RoomType: source.room,
             MapMod: source.mapMod,
             Faction: source.faction,
             EscapeMethod: "None",
         });
+    }
+
+    function constructionSites(region) {
+        const map = roomState();
+        if (map?.layoutVersion !== 2) return [];
+        return map.fieldSites
+            .filter((site) => !region || site.region === region)
+            .map((site) => ({
+                ...site,
+                center: { ...site.center },
+                bounds: { ...site.bounds },
+            }));
     }
 
     function hasNativeLairSupport() {
@@ -317,9 +277,15 @@
     function updateClues() {
         if (!isPrison()) return;
         const player = KinkyDungeonPlayerEntity;
-        if (Math.hypot(player.x - CHAMBER.x, player.y - CHAMBER.y) <= 3) tellClue("SpiderlingsPrisonArrival");
-        if (player.x >= 22 && player.x <= 47 && (player.y <= 12 || player.y >= 32)) tellClue("SpiderlingsPrisonTrail");
-        if (Math.hypot(player.x - EXIT.x, player.y - EXIT.y) <= 4) tellClue("SpiderlingsPrisonExit");
+        const map = roomState();
+        if (Math.hypot(player.x - map.chamber.x, player.y - map.chamber.y) <= 3) tellClue("SpiderlingsPrisonArrival");
+        if (
+            map.layoutVersion === 2
+                ? map.routes.upper.some((point) => Math.hypot(player.x - point.x, player.y - point.y) <= 3)
+                : player.x >= 22 && player.x <= 47 && (player.y <= 12 || player.y >= 32)
+        )
+            tellClue("SpiderlingsPrisonTrail");
+        if (Math.hypot(player.x - map.exit.x, player.y - map.exit.y) <= 4) tellClue("SpiderlingsPrisonExit");
     }
 
     if (typeof alts === "object" && typeof KinkyDungeonCreateMapGenType === "object") {
@@ -447,5 +413,15 @@
         KDAddEvent(KDEventMapGeneric, "AfterAdvance", ROOM, updateClues);
         KDAddEvent(KDEventMapGeneric, "tickAfter", ROOM, updateClues);
     }
-    api.Prison = Object.freeze({ ROOM, STATE, enter, isPrison, captured, recapture, onExit, updateClues });
+    api.Prison = Object.freeze({
+        ROOM,
+        STATE,
+        enter,
+        isPrison,
+        captured,
+        recapture,
+        onExit,
+        updateClues,
+        constructionSites,
+    });
 })();

@@ -743,7 +743,7 @@ test("only a pre-scene closed-browser load is retried once with failure evidence
     }
 });
 
-test("full acceptance runs all 69 checks and seven native languages against one ZIP", async (t) => {
+test("full acceptance runs all 70 checks and seven native languages against one ZIP", async (t) => {
     const { verifyGame } = require("../verify-kd-compatibility.js"),
         { file, output } = localePackage(t),
         runs = scenarioRuntimes({}),
@@ -751,7 +751,7 @@ test("full acceptance runs all 69 checks and seven native languages against one 
     const report = await verifyGame({ version: "5.4.92" }, file, output, selection, runs.factory);
     assert.equal(report.status, "passed");
     assert.equal(report.verification.mode, "full");
-    assert.equal(report.checks.length, 69);
+    assert.equal(report.checks.length, 70);
     assert.deepEqual(
         report.checks.map((check) => check.name),
         selection.executed,
@@ -784,7 +784,7 @@ test("selection separates code helpers from state continuation and preserves all
     const full = selectScenarios();
     assert.equal(full.mode, "full");
     assert.equal(full.total, full.executed.length);
-    assert.equal(full.total, 69);
+    assert.equal(full.total, 70);
     assert.equal(full.checks.find((scenario) => scenario.name === "native-locales").kind, "locales");
     for (const scenario of full.checks) {
         if (scenario.kind === "locales") continue;

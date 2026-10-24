@@ -110,7 +110,7 @@
 
         // Crouching uses the real zero-time input path; no patrol movement or
         // waypoint progress is allowed until a paid turn follows.
-        KDMovePlayer(51, 21, false);
+        KDMovePlayer(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y + 1, false);
         const patrolFacts = () =>
             Object.keys(KDMapData.SpiderlingsPrison.patrols).map((id) => {
                 const actor = KDMapData.Entities.find((enemy) => String(enemy.id) === id);
@@ -127,7 +127,7 @@
         for (let n = 0; n < 3; n++) await healthyTurn();
         expect(JSON.stringify(patrolFacts()) !== JSON.stringify(idlePatrols), "Paid patrol movement stopped");
         rows.push({ name: "zero-time-patrol", before: idlePatrols, paid: patrolFacts(), idleTick });
-        KDGoThruTile(51, 22, true, true, true, true);
+        KDGoThruTile(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, true, true, true, true);
 
         // Prepare a second cached source room at the same native world slot.
         // Both admissions, saves, revisits and returns use native map transitions.
@@ -158,7 +158,7 @@
         const sideVictim = KDMapData.SpiderlingsPrison.mainNestIds[0];
         KDMapData.Entities.find((actor) => actor.id === sideVictim).hp = 0;
         restore(save());
-        KDGoThruTile(51, 22, true, true, true, true);
+        KDGoThruTile(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, true, true, true, true);
         expect(KDGameData.RoomType === sideRoom, "Side prison returned to the main room");
         expect(!KDGameData.SpiderlingsPrisonIdentity, "Side-room exit retained captured identity");
         expect(
@@ -173,7 +173,7 @@
             !KDMapData.Entities.some((actor) => actor.id === sideVictim && actor.hp > 0),
             "Side revisit lost destruction",
         );
-        KDGoThruTile(51, 22, true, true, true, true);
+        KDGoThruTile(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, true, true, true, true);
         // Add a test-owned side-to-main stair to exercise the second source's
         // revisit without replacing the native world cache or prison records.
         KinkyDungeonMapSet(14, 10, "H");

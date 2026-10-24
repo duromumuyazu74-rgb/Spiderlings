@@ -38,11 +38,7 @@
         });
     }
     expect(!cocoon(), "First captured chamber did not permit natural Cocoon escape");
-    for (const goal of [
-        { x: 18, y: 8 },
-        { x: 46, y: 8 },
-        { x: 51, y: 22 },
-    ]) {
+    for (const goal of KDMapData.SpiderlingsPrison.routes.upper) {
         let stalls = 0;
         for (let n = 0; n < 200 && KDGameData.RoomType === room; n++) {
             if (KDPlayer().x === goal.x && KDPlayer().y === goal.y) break;

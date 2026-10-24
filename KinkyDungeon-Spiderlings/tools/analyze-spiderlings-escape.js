@@ -194,9 +194,10 @@ async function runCase({ spec, saved, fields }) {
             const spell = KinkyDungeonFindSpell(spec.spell, true);
             if (!KinkyDungeonHasMana(KinkyDungeonGetManaCost(spell))) break;
             const before = snapshot();
+            const castCenter = KDMapData.SpiderlingsPrison?.chamber || KDPlayer();
             const result = KDSendInput("tryCastSpell", {
-                tx: n % 2 ? 11 : 14,
-                ty: 22,
+                tx: castCenter.x + (n % 2 ? 0 : 3),
+                ty: castCenter.y,
                 spellname: spec.spell,
                 player: KDPlayer(),
             });

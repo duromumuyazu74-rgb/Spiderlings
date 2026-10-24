@@ -142,7 +142,10 @@
         );
         const voluntary = { name: "voluntary", arrival: snapshot() };
         rows.push(voluntary);
-        expect(KDPlayer().x === 51 && KDPlayer().y === 22, "Visitor did not spawn at external entrance");
+        expect(
+            KDPlayer().x === KDMapData.SpiderlingsPrison.exit.x && KDPlayer().y === KDMapData.SpiderlingsPrison.exit.y,
+            "Visitor did not spawn at external entrance",
+        );
         expect(KDMapData.PrisonState === "Visit" && !prison.captured(), "Visitor acquired captivity stage");
         expect(KDGameData.PrisonerState === "parole", "Visitor overwrote prior identity");
         expect(!Spiderlings.PrisonConstruction.state()?.stay, "Visitor started chamber timer");
@@ -160,14 +163,14 @@
             KDMapData.Entities.filter((actor) => ids.includes(actor.id)).every((actor) => KDHostile(actor)),
             "Visitor has hostile-spider immunity",
         );
-        KDGoThruTile(51, 22, true, true, true, true);
+        KDGoThruTile(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, true, true, true, true);
         expect(!prison.isPrison() && MiniGameKinkyDungeonLevel === floor, "Visitor return advanced journey");
         expect(KDGameData.PrisonerState === "parole", "Visitor return erased prior identity");
         voluntary.immediateReturn = snapshot();
         const sourceNest = KDMapData.Entities.find((actor) => actor.id === nest.id);
         expect(prison.enter({ entrance: sourceNest, mode: "voluntary" }), "Visitor revisit failed");
         expect(KDGameData.RoomType === room, "Revisit generated another prison");
-        KDMovePlayer(11, 22, false);
+        KDMovePlayer(KDMapData.SpiderlingsPrison.chamber.x, KDMapData.SpiderlingsPrison.chamber.y, false);
         for (let n = 0; n < 55; n++) await healthyTurn();
         expect(!Spiderlings.PrisonConstruction.state()?.stay, "Uncaptured chamber walk started escalation");
         voluntary.chamberNegative = snapshot();
@@ -237,7 +240,7 @@
             captured.breach.push({ tick: KinkyDungeonCurrentTick, remaining: !!item(), progress: item()?.cutProgress });
         }
         captured.breachOutcome = { escapedCocoon: !item(), chamber: Spiderlings.PrisonConstruction.state()?.stay };
-        KDMovePlayer(24, 22, false);
+        KDMovePlayer(27, KDMapData.SpiderlingsPrison.chamber.y, false);
         await healthyTurn();
         expect(Spiderlings.PrisonConstruction.state().stay.phase === "left", "Chamber departure retained timer");
         const layerCount = field.compositeById(Spiderlings.PrisonConstruction.COMPOSITE).layerIds.length;
@@ -263,8 +266,8 @@
             "Extra simultaneous nest limit exceeded",
         );
         settings.spiderlingsMapPopulationCap = "40";
-        KDMovePlayer(51, 22, false);
-        KDGoThruTile(51, 22, true, true, true, true);
+        KDMovePlayer(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, false);
+        KDGoThruTile(KDMapData.SpiderlingsPrison.exit.x, KDMapData.SpiderlingsPrison.exit.y, true, true, true, true);
         expect(!prison.isPrison() && MiniGameKinkyDungeonLevel === floor, "Captured exit advanced journey");
         expect(
             !["jail", "chase"].includes(KDGameData.PrisonerState) && !KDGameData.SpiderlingsPrisonIdentity,
@@ -277,10 +280,8 @@
         );
         expect(
             KDGameData.RoomType === room &&
-                KDPlayer().x >= 8 &&
-                KDPlayer().x <= 14 &&
-                KDPlayer().y >= 19 &&
-                KDPlayer().y <= 25,
+                Math.abs(KDPlayer().x - KDMapData.SpiderlingsPrison.chamber.x) <= 3 &&
+                Math.abs(KDPlayer().y - KDMapData.SpiderlingsPrison.chamber.y) <= 3,
             "Recapture did not use original chamber/map",
         );
         expect(
@@ -429,7 +430,12 @@
             const manaBefore = KinkyDungeonStatMana;
             const result = KDSendInput(
                 "tryCastSpell",
-                { tx: paid % 2 ? 14 : 11, ty: 22, spellname: "Fireball", player: KDPlayer() },
+                {
+                    tx: KDMapData.SpiderlingsPrison.chamber.x + (paid % 2 ? 3 : 0),
+                    ty: KDMapData.SpiderlingsPrison.chamber.y,
+                    spellname: "Fireball",
+                    player: KDPlayer(),
+                },
                 false,
                 true,
             );
@@ -451,12 +457,7 @@
         }
         mage.cocoonEscaped = !item();
         if (!item()) {
-            mageRoute: for (const goal of [
-                { x: 18, y: 22 },
-                { x: 18, y: 8 },
-                { x: 46, y: 8 },
-                { x: 51, y: 22 },
-            ]) {
+            mageRoute: for (const goal of KDMapData.SpiderlingsPrison.routes.upper) {
                 for (let n = 0; n < 160 && KDGameData.RoomType === escapeRoom; n++) {
                     if (KDPlayer().x === goal.x && KDPlayer().y === goal.y) break;
                     const route = KinkyDungeonFindPath(

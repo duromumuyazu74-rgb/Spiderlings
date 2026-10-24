@@ -31,6 +31,36 @@ Patrols spend only positive world-time movement credit. A failed delayed Tunnele
 after the normal grace period even when the native tick counter wraps through zero.
 The Cocoon vigil leaves a dispatched Tunneler's native building spell available at its work site.
 
+## Fixed scene and authored field sites
+
+New prisons use the fixed 81×63 V6 scene. `SpiderlingsPrisonLayout.js` supplies detached map data;
+Prison installs the native terrain, barrel and storage tiles, usable storage chests and return connection.
+The western chamber is centered at `(14,32)`, the mutually supporting original nest cluster at `(57,33)`,
+and the exit at `(76,7)`. The original four-layer chamber construction reserve stays clear.
+
+The upper cross, two middle crosses, lower storage field, main-nest enclosure and final exit cross
+provide six authored construction sites. The three approach routes converge on the final cross at
+`(70,32)`; the exit lies beyond its east arm and the Mage garden. Short straight passages support
+Jumper warnings and WebCaster sightlines, while the lower circuit provides native Tunneler build space
+and nearby Mage positions. Native barrels and empty storage boxes occupy side cells; protected unopened
+chests sit outside declared field bodies, including the storage room's north and south loot niches.
+Interior stone pillars from the diagram are cleared where native polygon validation requires floor.
+
+SpinnerAI validates these saved sites against the current native floor, locks, protected tiles and
+boundary occupancy. It submits candidates to ordinary Projects and Command. Existing population permits,
+the configured simultaneous-project maximum, paid construction, repair, gate work and Capture admission
+continue to apply. Six sites do not reserve six projects or create completed webs at generation.
+The original immobile nest bodies can remain inside the main enclosure; they do not supply free workers.
+
+PrisonNest places the authored regional residents within the shared mobile budget and saves successful
+resident IDs. Loading does not recreate those residents after death. The two patrols use saved route
+coordinates. Reinforcement species weights and the existing patrol replacement policy keep their roles.
+The fixed initial roster is separate from recurring nest reinforcement.
+
+The V6 room record retains schema version 1 and records `layoutVersion: 2` with saved geometry, sites,
+regions and patrols. Admission, recapture, clues, patrols and regional reports consume that saved room
+data; new layout data is installed only during first generation.
+
 ## Construction and intelligence
 
 Idle wild mobile prison spiders rest until a real task, player-origin audible sound or direct damage wakes them. Existing patrols, paid chamber work, capture/recovery and transport retain their owners and timing. Rest skips tactical AI, while statuses, damage, death, occupancy and population accounting continue. Ordinary movement already emits native player sound; awakening investigates the last sound location instead of granting live player tracking. Allies, static nests and web projections keep their own behavior.
@@ -81,7 +111,12 @@ Both targets completed a prepared early escape route back to the source floor. M
 scenes retained 50 failed paid Cut attempts and prepared Mage attempts that failed to remove Cocoon.
 At alpha.15 acceptance, escape/population balance and integration into `test` were still pending.
 
-The native scenario registry includes `prison`, `prison-regions`, `prison-rivals` and `prison-escape`.
+The native scenario registry includes `prison`, `prison-homefield`, `prison-regions`, `prison-rivals` and `prison-escape`.
+`prison-homefield` exercises actual V6 generation, native chest input, resident persistence and an
+isolated four-Spinner crew's paid construction at each of the six authored sites. Each case starts a
+new seeded game and retains its native paid actions, closed geometry and player position across load.
+That work fixture records health
+maintenance and is separate from population pressure or finite-resource difficulty acceptance.
 Final delivery requires all registered scenarios and languages with the same ZIP on KD 5.4.92 and
 a freshly fetched official GitHub 5.5 commit, followed by the full delivery collector.
 The independent `prison-review` scene checks zero-time crouching, separate same-slot source rooms with saved

@@ -689,13 +689,14 @@
     },
     "prison": {
       "tests": [
+        "spiderlings-prison-layout.test.js",
         "spiderlings-density-activity.test.js",
         "spiderlings-prison-escort.test.js",
         "spiderlings-prison-construction.test.js",
         "spiderlings-prison-vigil.test.js"
       ],
       "localTests": ["spiderlings-prison.test.js"],
-      "scenarios": ["prison", "prison-review", "silk-density"],
+      "scenarios": ["prison", "prison-homefield", "prison-review", "silk-density"],
       "reason": "Persistent prison, regional orders, paid transport and chamber construction."
     }
   },
@@ -797,6 +798,7 @@
     "docs/spiderlings-spinner-capture/source/plan.css": ["historical-design"],
     "docs/spiderlings-spinner-capture/source/plan.js": ["historical-design"],
     "docs/spiderlings-spinner-capture/source/simulator.html": ["historical-design"],
+    "SpiderlingsPrisonLayout.js": ["prison"],
     "SpiderlingsPrison.js": ["prison"],
     "SpiderlingsPrisonNest.js": ["prison"],
     "SpiderlingsPrisonEscort.js": ["prison"],
