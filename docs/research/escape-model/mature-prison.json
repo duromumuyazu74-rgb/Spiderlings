@@ -1,0 +1,23 @@
+{
+  "preparation": "mature-prison",
+  "seeds": ["prison-route-paired-1", "prison-route-paired-2"],
+  "maxTurns": 360,
+  "cases": [
+    { "label": "mature-cut-now", "id": "SpiderlingsWebbingCocoon", "method": "Cut", "route": true },
+    {
+      "label": "mature-cut-wait22",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Cut",
+      "quietTurns": 22,
+      "route": true
+    },
+    {
+      "label": "mature-fireball-cut",
+      "id": "SpiderlingsWebbingCocoon",
+      "method": "Cut",
+      "spell": "Fireball",
+      "precasts": 4,
+      "route": true
+    }
+  ]
+}

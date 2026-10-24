@@ -65,6 +65,50 @@ test("saved trials preserve their actual equipment, density and tools", () => {
     assert.throws(() => expandPlan(source, true), /retain their own equipment/);
 });
 
+test("the mature prison plan uses one real prepared save and a finite total route budget", () => {
+    const file = path.resolve(__dirname, "../../../docs/research/escape-model/mature-prison.json");
+    const source = JSON.parse(fs.readFileSync(file, "utf8"));
+    const rows = expandPlan(source);
+    assert.equal(rows.length, 6);
+    assert.ok(rows.every((row) => row.route === true && row.maxTurns === 360));
+    assert.ok(rows.every((row) => row.equipment === undefined && row.density === undefined));
+    source.cases[0].density = 0;
+    assert.throws(() => expandPlan(source), /retain their own equipment/);
+    delete source.cases[0].density;
+    delete source.preparation;
+    assert.throws(() => expandPlan(source), /need mature-prison preparation/);
+});
+
+test("removing Cocoon does not count as completing a failed prison route", () => {
+    const rows = [
+        {
+            label: "prison",
+            seed: "a",
+            outcome: "escaped",
+            turns: 40,
+            actions: 10,
+            costs: { stamina: 4, will: 0 },
+            route: { outcome: "no-route", turns: 12 },
+        },
+        {
+            label: "prison",
+            seed: "b",
+            outcome: "escaped",
+            turns: 40,
+            actions: 10,
+            costs: { stamina: 4, will: 0 },
+            route: { outcome: "returned-to-source", turns: 50 },
+        },
+    ];
+    const result = summarize(rows)[0];
+    assert.equal(result.escaped, 2);
+    assert.equal(result.returnedToSource, 1);
+    assert.deepEqual(
+        result.routes.map((row) => row.outcome),
+        ["no-route", "returned-to-source"],
+    );
+});
+
 test("invalid timing and candidate values are rejected before a native session starts", () => {
     const source = plan();
     source.cases[0].quietTurns = 100;

@@ -6,7 +6,9 @@
           KinkyDungeonGetRestraintByName, Spiderlings, KinkyDungeonUpdateStats,
           KinkyDungeonGetPlayerWeaponDamage, KinkyDungeonCanUseWeapon, KinkyDungeonAllRestraintDynamic,
           KinkyDungeonStatStamina, KinkyDungeonStatWill, KDAddEvent, KDEventMapGeneric,
-          KDSendInput, KDRestraint, KinkyDungeonStruggle, KinkyDungeonSeed */
+          KDSendInput, KDRestraint, KinkyDungeonStruggle, KinkyDungeonSeed,
+          KDPushSpell, KinkyDungeonFindSpell, KinkyDungeonHasMana, KinkyDungeonGetManaCost,
+          KinkyDungeonStatMana, KDPlayer */
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -15,6 +17,7 @@ const { createRuntime, loadPackage } = require("./compatibility/runtime.js");
 const { hash, git } = require("./compatibility/prepare.js");
 const { nativeCodec, readSaveInput, saveSlots } = require("./save-diagnostics.js");
 const { readJson, writeJson, writeText } = require("./task-runner.js");
+const { prepareMaturePrison, runPrisonRoute } = require("./escape-prison.js");
 
 const root = path.resolve(__dirname, "../..");
 const methods = ["Cut", "Remove", "Struggle"];
@@ -36,6 +39,9 @@ function parseArguments(args) {
 }
 
 function expandPlan(plan, saved = false) {
+    if (plan.preparation !== undefined && plan.preparation !== "mature-prison")
+        throw Error("Unknown experiment preparation.");
+    saved ||= plan.preparation === "mature-prison";
     if (!Array.isArray(plan.cases) || !plan.cases.length) throw Error("Plan needs nonempty cases.");
     if (!Array.isArray(plan.seeds) || !plan.seeds.length || plan.seeds.some((seed) => typeof seed !== "string"))
         throw Error("Plan needs explicit string seeds.");
@@ -46,6 +52,11 @@ function expandPlan(plan, saved = false) {
         if (!Number.isSafeInteger(entry.quietTurns ?? 0) || (entry.quietTurns ?? 0) < 0)
             throw Error("quietTurns must be a nonnegative integer.");
         if ((entry.quietTurns ?? 0) >= plan.maxTurns) throw Error("Quiet preparation exhausts the turn budget.");
+        if (!Number.isSafeInteger(entry.precasts ?? 0) || (entry.precasts ?? 0) < 0)
+            throw Error("precasts must be a nonnegative integer.");
+        if ((entry.precasts || entry.route) && plan.preparation !== "mature-prison")
+            throw Error("Prison spells/routes need mature-prison preparation.");
+        if (entry.precasts && entry.spell !== "Fireball") throw Error("Prepared Mage trials use native Fireball.");
         if (saved && ["equipment", "density", "knife"].some((key) => entry[key] !== undefined))
             throw Error("Saved trials retain their own equipment, density and tools; omit fixture overrides.");
         if (!saved && !["single", "full"].includes(entry.equipment))
@@ -73,6 +84,10 @@ function summarize(rows) {
         label,
         samples: trials.length,
         escaped: trials.filter((row) => row.outcome === "escaped").length,
+        returnedToSource: trials.filter((row) => row.route?.outcome === "returned-to-source").length,
+        routes: trials
+            .filter((row) => row.route)
+            .map(({ seed, route }) => ({ seed, outcome: route.outcome, turns: route.turns })),
         outcomes: trials.map(({ seed, outcome, turns }) => ({ seed, outcome, turns })),
         observedTurns: [Math.min(...trials.map((row) => row.turns)), Math.max(...trials.map((row) => row.turns))],
         actions: trials.map((row) => row.actions),
@@ -150,6 +165,7 @@ async function runCase({ spec, saved, fields }) {
             quietAge: Spiderlings.SilkDensity.state().bareTurns,
             stamina: KinkyDungeonStatStamina,
             will: KinkyDungeonStatWill,
+            mana: KinkyDungeonStatMana,
             present: !!item,
             cut: item?.cutProgress || 0,
             struggle: item?.struggleProgress || 0,
@@ -173,6 +189,20 @@ async function runCase({ spec, saved, fields }) {
     };
     let outcome = "turn-budget";
     try {
+        if (spec.spell) KDPushSpell(KinkyDungeonFindSpell(spec.spell, true));
+        for (let n = 0; n < (spec.precasts || 0) && turns < spec.maxTurns; n++) {
+            const spell = KinkyDungeonFindSpell(spec.spell, true);
+            if (!KinkyDungeonHasMana(KinkyDungeonGetManaCost(spell))) break;
+            const before = snapshot();
+            const result = KDSendInput("tryCastSpell", {
+                tx: n % 2 ? 11 : 14,
+                ty: 22,
+                spellname: spec.spell,
+                player: KDPlayer(),
+            });
+            await frame();
+            trace.push({ action: "prepared-cast", result, before, ...snapshot() });
+        }
         for (let n = 0; n < spec.quietTurns && target() && turns < spec.maxTurns; n++)
             if (!(await wait("quiet"))) throw Error("Native quiet input did not advance time.");
         const afterQuiet = snapshot();
@@ -236,12 +266,23 @@ function markdown(report) {
         `游戏提交或 bundle：${report.game.commit || report.game.mainSha256}。`,
         `状态：${report.status}。全部样本与逐步轨迹保存在 result.json。`,
         "",
-        "| 场景 | 脱困/样本 | 观察回合范围，含截尾 | 各样本行动数 | 各样本实际精力支出，Stat 单位 |",
+        "| 场景 | 目标拘束移除/样本 | 拘束阶段观察回合，含截尾 | 脱困行动数 | 拘束阶段精力支出，Stat 单位 |",
         "| --- | --- | --- | --- | --- |",
         ...summarize(report.rows).map(
             (row) =>
                 `| ${row.label} | ${row.escaped}/${row.samples} | ${row.observedTurns.join("–")} | ${row.actions.join(", ")} | ${row.staminaSpent.map((value) => value.toFixed(2)).join(", ")} |`,
         ),
+        ...(report.fixture
+            ? [
+                  "",
+                  "| 场景 | 种子 | 拘束阶段结果 | 完整路线结果 | 总世界回合 |",
+                  "| --- | --- | --- | --- | --- |",
+                  ...report.rows.map(
+                      (row) =>
+                          `| ${row.label} | ${row.seed} | ${row.outcome} | ${row.route?.outcome || "cocoon-not-removed"} | ${row.turns + (row.route?.turns || 0)} |`,
+                  ),
+              ]
+            : []),
         "",
         ...report.limitations.map((line) => `- ${line}`),
         "",
@@ -268,6 +309,7 @@ async function analyze(options) {
         scratch = path.join(root, ".scratch"),
         output = path.resolve(options.output || path.join(scratch, "escape-analysis", randomUUID())),
         relative = path.relative(scratch, output);
+    if (options.save && plan.preparation) throw Error("Choose a saved input or generated preparation, not both.");
     if (!relative || path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`))
         throw Error("Analysis output belongs in this checkout's .scratch directory.");
     if (fs.existsSync(output)) throw Error("Output already exists; choose a new experiment directory.");
@@ -277,6 +319,7 @@ async function analyze(options) {
         generatedAt: new Date().toISOString(),
         sourceCommit: git(root, "rev-parse", "HEAD"),
         analysisSha256: hash(__filename),
+        prisonAnalysisSha256: plan.preparation ? hash(path.join(__dirname, "escape-prison.js")) : null,
         game,
         inputSaveSha256: options.save ? hash(options.save) : null,
         inputSlot: options.save ? options.slot : null,
@@ -285,12 +328,14 @@ async function analyze(options) {
         rows: [],
         status: "running",
         limitations: [
-            saved
-                ? "从复制的原生存档分别重载各样本。仅执行指定拘束的脱困与等待，不搜索完整离场路线。"
-                : "空房受控实验，装备、工具和初始密度按计划准备；没有敌人、修补、攻击或围场。",
+            plan.preparation === "mature-prison"
+                ? "真实四层施工与敌人保留的监牢样本；准备阶段维持资源，正式尝试只使用存档起始资源与原生恢复。"
+                : saved
+                  ? "从复制的原生存档分别重载各样本。仅执行指定拘束的脱困与等待，不搜索完整离场路线。"
+                  : "空房受控实验，装备、工具和初始密度按计划准备；没有敌人、修补、攻击或围场。",
             "资源只在开始时由 fixture 或存档提供，之后遵循原生支出与等待恢复。回合包括准备等待、休息和延迟结算。",
             "未脱困和预算耗尽样本保留。小样本用于配对校准，不估算玩家总体成功率或尾部分位数。",
-            "实验输出不是完整兼容验收，也不完成监牢成熟四层离场验收。",
+            "脚本使用已知地图的固定路线与有限战术；失败不证明玩家无解。实验输出不是完整兼容验收或维护者玩法验收。",
         ],
     };
     const runtime = await createRuntime(game, output);
@@ -300,12 +345,34 @@ async function analyze(options) {
         await runtime.page.evaluate(
             fs.readFileSync(path.join(__dirname, "compatibility/browser/normal-helpers.js"), "utf8"),
         );
+        if (plan.preparation === "mature-prison") {
+            const fixture = await runtime.page.evaluate(prepareMaturePrison);
+            saved = fixture.saved;
+            writeText(path.join(output, "mature-save.txt"), saved);
+            delete fixture.saved;
+            report.fixture = { ...fixture, saveSha256: hash(path.join(output, "mature-save.txt")) };
+            writeJson(path.join(output, "result.json"), report);
+            console.log(
+                `${game.version}: prepared ${fixture.layers} closed layers in ${fixture.preparationTurns} turns`,
+            );
+        }
         for (const spec of cases) {
             await runtime.setContext({ group: "escape-analysis", scenario: spec.label, seed: spec.seed });
-            const row = await runtime.page.evaluate(runCase, { spec, saved, fields: parameterFields });
+            const { route: followRoute, ...caseSpec } = spec;
+            const row = await runtime.page.evaluate(runCase, { spec: caseSpec, saved, fields: parameterFields });
+            if (followRoute && row.outcome === "escaped")
+                row.route = await runtime.page.evaluate(runPrisonRoute, {
+                    source: report.fixture.source,
+                    prisonRoom: report.fixture.prisonRoom,
+                    maxTurns: Math.max(0, spec.maxTurns - row.turns),
+                    spell: spec.spell,
+                });
+            else if (followRoute) row.route = { outcome: "cocoon-not-removed", turns: 0 };
             report.rows.push(row);
             writeJson(path.join(output, "result.json"), report);
-            console.log(`${game.version} ${spec.label} ${spec.seed}: ${row.outcome}, ${row.turns} turns`);
+            console.log(
+                `${game.version} ${spec.label} ${spec.seed}: ${row.outcome}, ${row.turns} turns${row.route ? `; route ${row.route.outcome}, ${row.route.turns} turns` : ""}`,
+            );
         }
         await runtime.settleAssets();
         report.errors = [

@@ -786,6 +786,8 @@
     ".prettierignore": ["repository-policy"],
     ".gitattributes": ["repository-policy"],
     "docs/research/escape-model/quiet-cocoon.json": ["escape-analysis"],
+    "docs/research/escape-model/mature-prison.json": ["escape-analysis"],
+    "docs/research/escape-model/mature-prison-results-2026-10-24.json": ["escape-analysis"],
     "docs/research/escape-model/original/escape-model-5.5.4.ipynb": ["escape-analysis"],
     "docs/research/escape-model/original/escape-model-5.5.4.html": ["escape-analysis"],
     "SpiderlingsFieldCustody.js": ["field-custody"],
