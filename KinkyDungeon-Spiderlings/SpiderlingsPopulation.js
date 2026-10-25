@@ -188,6 +188,7 @@
                 entities.filter(
                     (entity) =>
                         entity.hp > 0 &&
+                        !api.BossEncounter?.isFixedFormation(entity) &&
                         MOBILE.has(typeof entity.Enemy === "string" ? entity.Enemy : entity.Enemy?.name),
                 ).length,
         );

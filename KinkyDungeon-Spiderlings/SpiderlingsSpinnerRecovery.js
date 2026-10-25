@@ -668,6 +668,7 @@
 
     // This is called only by the successful native Spinner player-effect entrance.
     function hit(source) {
+        if (api.BossCapture?.controlling() || api.BossCapture?.peaceful()) return false;
         if (!requested()) return false;
         if (api.FieldCustody?.permitsRecovery(source) === false) return false;
         if (api.SpinnerCapture?.isControllingPlayer?.() || npcCaptureUsesSource(source?.id)) return false;

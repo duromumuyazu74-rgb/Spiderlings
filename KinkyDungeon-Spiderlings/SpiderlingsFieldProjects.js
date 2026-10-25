@@ -916,7 +916,8 @@
         const graph = encounter.topology;
         if (!graph?.composites) return;
         for (const composite of Object.values(graph.composites || {})) {
-            if (api.PrisonConstruction?.ownsComposite?.(composite.id)) continue;
+            if (api.PrisonConstruction?.ownsComposite?.(composite.id) || api.BossFields?.ownsComposite(composite.id))
+                continue;
             const fields = composite.layerIds.map((id) => graph.fields[id]);
             if (
                 !fields.length ||

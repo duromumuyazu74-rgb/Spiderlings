@@ -1,6 +1,23 @@
 {
   "schemaVersion": 1,
   "profiles": {
+    "boss-design-docs": {
+      "tests": [],
+      "localTests": [],
+      "scenarios": [],
+      "reason": "The offline Boss design presentation is not loaded by the Mod. Repository formatting, document links and browser presentation checks cover it."
+    },
+    "boss": {
+      "tests": [
+        "spiderlings-boss.test.js",
+        "spiderlings-population.test.js",
+        "spiderlings-density-activity.test.js",
+        "spiderlings-prison-escort.test.js"
+      ],
+      "localTests": [],
+      "scenarios": ["boss-room", "boss-capture", "boss-combat"],
+      "reason": "Multi-cell boss, native prison side-room return, fixed formations and phase/capture transitions."
+    },
     "foundation": {
       "tests": [
         "spiderlings-feedback.test.js",
@@ -701,6 +718,15 @@
     }
   },
   "files": {
+    "docs/spiderlings-boss-design.html": ["boss-design-docs"],
+    "SpiderlingsBossFootprint.js": ["boss"],
+    "SpiderlingsBossRoom.js": ["boss"],
+    "SpiderlingsBossFields.js": ["boss", "field-work"],
+    "SpiderlingsBossEncounter.js": ["boss"],
+    "SpiderlingsSpellwovenCocoon.js": ["boss", "webbing"],
+    "SpiderlingsSpellwovenArt.js": ["boss", "webbing"],
+    "SpiderlingsBossCapture.js": ["boss"],
+    "SpiderlingsBossView.js": ["boss"],
     "SpiderlingsCore.js": ["foundation"],
     "Spiderlings.js": ["catalogue", "field-custody"],
     "SpiderlingsNativeActions.js": ["native-actions", "field-custody"],

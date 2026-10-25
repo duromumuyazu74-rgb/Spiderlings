@@ -149,7 +149,7 @@
                 )
                     break;
             }
-            expect(composite, "Native AI did not select the authored upper cross");
+            expect(composite, `Native AI did not select authored prison site ${testSite}`);
             const encounter = Spiderlings.SpinnerNativeField.state();
             expect(
                 Spiderlings.SpinnerTopology.captureGeometryReady(encounter.topology, composite.id, KDPlayer()),
