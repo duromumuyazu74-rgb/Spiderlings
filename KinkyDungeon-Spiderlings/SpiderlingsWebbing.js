@@ -226,14 +226,21 @@
         const nativeUnlink = KinkyDungeonUnLinkItem;
         if (nativeUnlink[EXTERNAL_UNLINK_MARKER]) return true;
         const unlinkPreservingExternal = function (item, ...args) {
+            const spellwoven = item?.name === "SpiderlingsSpellwovenCocoon";
             const descriptor =
                 rules.descriptorFor(item && item.name) ||
-                (item?.name === "SpiderlingsSpinnerLegbinder" ? { group: "ItemLegs" } : undefined);
+                (item?.name === "SpiderlingsSpinnerLegbinder"
+                    ? { group: "ItemLegs" }
+                    : spellwoven
+                      ? { group: "ItemDevices" }
+                      : undefined);
             const external = descriptor && item.dynamicLink;
             const definition =
                 external && (typeof KDRestraint == "function" ? KDRestraint(external) : restraintById(external.name));
             const preserve =
-                definition && !rules.owns(external.name) && KinkyDungeonGetRestraintItem(descriptor.group) === item;
+                definition &&
+                (spellwoven || !rules.owns(external.name)) &&
+                KinkyDungeonGetRestraintItem(descriptor.group) === item;
             const result = nativeUnlink.call(this, item, ...args);
             if (preserve && Array.isArray(result) && result.includes(item)) {
                 const restored = KinkyDungeonGetRestraintItem(descriptor.group);
@@ -1015,8 +1022,8 @@
                 allFloors: true,
                 shrine: ["Wrapping", "Latex", "SpiderlingsWebbingCocoon"],
                 addTag: [...CLOSED_TAGS],
-                LinkableBy: [],
-                renderWhenLinked: [],
+                LinkableBy: ["SpiderlingsSpellwovenCocoon"],
+                renderWhenLinked: ["SpiderlingsSpellwovenCocoon"],
                 events: [
                     { inheritLinked: true, trigger: "postApply", type: COCOON_APPLY_EVENT },
                     { inheritLinked: true, trigger: "struggle", type: ESCAPE_SOUND_EVENT },

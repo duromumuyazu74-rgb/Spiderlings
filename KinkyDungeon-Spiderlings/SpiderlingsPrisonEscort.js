@@ -31,6 +31,9 @@
     }
 
     function anchoredItem() {
+        const special = api.BossCapture?.transportItem();
+        if (special) return special;
+        if (api.BossCapture?.state()) return undefined;
         const item = cocoon();
         return item?.data?.[api.WebbingData.COCOON_OUTER_STATE]?.anchored ? item : undefined;
     }
@@ -313,7 +316,12 @@
             !adjacent(player(), entrance)
         )
             return false;
-        const arrived = api.Prison?.isPrison?.() ? api.Prison.recapture() : api.Prison?.enter?.({ entrance, escort });
+        const arrived =
+            record.spellwoven || api.BossRoom?.active()
+                ? api.BossRoom?.returnToPrison(true)
+                : api.Prison?.isPrison?.()
+                  ? api.Prison.recapture()
+                  : api.Prison?.enter?.({ entrance, escort });
         if (arrived !== true) return false;
         clear();
         return true;
@@ -547,6 +555,15 @@
         tickAfter,
         handleEnemyTurn,
         clear,
+        requestSpellwoven(item) {
+            if (!item || api.BossCapture?.transportItem() !== item) return false;
+            clear();
+            const record = start(item);
+            if (!record) return false;
+            record.deadline = 0;
+            record.spellwoven = true;
+            return dispatch(record);
+        },
         ownsActor,
         selectEntrance,
         buildingSite,

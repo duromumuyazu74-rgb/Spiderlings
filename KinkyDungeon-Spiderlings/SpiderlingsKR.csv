@@ -290,3 +290,30 @@ dSpiderlingsNestVisit_EnterGag,둥지로 들어가기
 KinkyDungeonSpiderlingsNestEscort,아기 거미가 고치를 둥지 입구로 옮기려고 다가온다.
 KDBuffName_SpiderlingsSilkDensity,거미줄 밀도
 KDBuffDesc_SpiderlingsSilkDensity,밀도가 높을수록 새끼 거미 구속에서 벗어나는 데 더 많은 노력이 필요합니다. 새끼 거미의 실에 맞지 않고 세계 턴 10회가 지나면 구속된 상태에서도 감소하기 시작합니다.
+NameSpiderlingsMatriarch,둥지 직조 여왕
+NameSpiderlingsMatriarchPart,둥지 직조 여왕
+NameSpiderlingsMatriarchRune,추적 비단 룬
+KDRoomType_SpiderlingsSilkboundCourt,비단 결박의 뜰
+KDSideRoom_SpiderlingsSilkboundCourt,비단 결박의 뜰
+KDEscapeMethodDesc_SpiderlingsSilkboundCourt,여왕을 두 번 쓰러뜨리면 감옥으로 돌아가는 길이 열립니다.
+SpiderlingsCourtEntranceFound,주 둥지 동쪽의 비단 통로가 여왕의 뜰로 이어집니다.
+SpiderlingsCourtLocked,여왕이 통로를 막았습니다. 여왕을 쓰러뜨려야 감옥으로 돌아갈 수 있습니다.
+SpiderlingsCourtVictory,여왕이 쓰러졌습니다. 남쪽 통로로 원래 감옥에 돌아갈 수 있습니다.
+SpiderlingsBossInterlude,여왕이 재생합니다. 표시된 둥지 네 개를 파괴하면 무적 상태가 끝납니다.
+SpiderlingsBossSkill_fan,부채꼴 비단이 방향을 고정했습니다. 세계 턴 TURNS회 남았습니다.
+SpiderlingsBossSkill_ring,비단 고리가 세계 턴 TURNS회 후 닫힙니다.
+SpiderlingsBossSkill_track,떨어지는 비단이 이전 위치를 겨눕니다. 세계 턴 TURNS회 남았습니다.
+SpiderlingsBossSkill_melee,여왕의 발밑에 비단이 모입니다. 세계 턴 TURNS회 남았습니다.
+SpiderlingsBossCaptureWarning,추적 비단 룬이 만들어집니다. 닿기 전에 파괴하세요.
+SpiderlingsBossContestStart,비단이 당신을 여왕에게 끌어당깁니다. 결박 게이지가 차기 전에 벗어나세요.
+SpiderlingsBossEscapeWindow,감기가 끝났습니다. 호송이 시작되기 전 세계 턴 24회 안에 탈출하세요.
+SpiderlingsBossPhase_one,여왕 · 1단계
+SpiderlingsBossPhase_interlude,재생 중 · 둥지 NESTS / 4개 남음
+SpiderlingsBossPhase_two,여왕 · 2단계
+SpiderlingsBossPhase_victory,감옥으로 돌아가는 길이 열림
+SpiderlingsBossLayer,마법 직조 고치 · LAYER / 20겹
+SpiderlingsBossEscapeTime,탈출 제한: 세계 턴 TURNS회
+SpiderlingsBossEscort,호송을 준비 중입니다. 도착하기 전까지 고치에서 벗어날 수 있습니다.
+RestraintSpiderlingsSpellwovenCocoon,마법 직조 고치
+RestraintSpiderlingsSpellwovenCocoonDesc,부드러운 비단이 몸을 감쌉니다. 유효한 탈출 시도가 실패하면 한 겹이 추가되고 조용한 시간이 지나면 밀도가 낮아집니다.
+RestraintSpiderlingsSpellwovenCocoonDesc2,새 실이 기존 직조의 가장자리를 따라 촘촘히 겹쳐집니다.

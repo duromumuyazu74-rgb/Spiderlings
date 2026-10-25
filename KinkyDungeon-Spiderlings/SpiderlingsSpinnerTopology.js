@@ -136,7 +136,8 @@
         bounds.height = bounds.bottom - bounds.top + 1;
         const interiorWidth = bounds.right - bounds.left - 1,
             interiorHeight = bounds.bottom - bounds.top - 1;
-        if (interiorWidth < 1 || interiorHeight < 1 || bounds.width > 13 || bounds.height > 13)
+        const maxDimension = input.maxDimension ?? 13;
+        if (interiorWidth < 1 || interiorHeight < 1 || bounds.width > maxDimension || bounds.height > maxDimension)
             return { valid: false, reason: "dimensions" };
         if (!connected(interior)) return { valid: false, reason: "interior" };
         if (

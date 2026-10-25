@@ -290,3 +290,30 @@ DSpiderlingsNestVisit,洞口通向幼蛛的巢穴，浅色蛛丝标记着返回�
 dSpiderlingsNestVisit_Enter,进入巢穴
 dSpiderlingsNestVisit_EnterGag,进入巢穴
 KinkyDungeonSpiderlingsNestEscort,一只幼蛛前来把你的茧带往巢穴入口。
+NameSpiderlingsMatriarch,织巢主母
+NameSpiderlingsMatriarchPart,织巢主母
+NameSpiderlingsMatriarchRune,追踪丝符
+KDRoomType_SpiderlingsSilkboundCourt,缚丝织庭
+KDSideRoom_SpiderlingsSilkboundCourt,缚丝织庭
+KDEscapeMethodDesc_SpiderlingsSilkboundCourt,两次击败织巢主母，打开返回监牢的通道。
+SpiderlingsCourtEntranceFound,主巢东侧露出一条覆丝通道，通往织巢主母的庭院。
+SpiderlingsCourtLocked,主母封住了通道。击败她才能返回监牢。
+SpiderlingsCourtVictory,主母倒下了。南侧通道已通往原来的监牢。
+SpiderlingsBossInterlude,主母开始再生。摧毁四个标记巢穴，解除她的无敌状态。
+SpiderlingsBossSkill_fan,扇网缚身已锁定方向，还有 TURNS 个世界回合。
+SpiderlingsBossSkill_ring,环丝收缚将在 TURNS 个世界回合后合拢。
+SpiderlingsBossSkill_track,连缀缠丝锁定了旧落点，还有 TURNS 个世界回合。
+SpiderlingsBossSkill_melee,主母足边聚起牵丝，还有 TURNS 个世界回合。
+SpiderlingsBossCaptureWarning,追踪丝符正在成形。在它触及你之前将它击碎。
+SpiderlingsBossContestStart,丝线将你牵向主母。在拘束进度满前挣开蛛丝。
+SpiderlingsBossEscapeWindow,缠绕结束。你有24个世界回合脱茧，超时后幼蛛将前来押送。
+SpiderlingsBossPhase_one,织巢主母 · 一阶段
+SpiderlingsBossPhase_interlude,再生中 · 剩余 NESTS / 4 巢
+SpiderlingsBossPhase_two,织巢主母 · 二阶段
+SpiderlingsBossPhase_victory,返回监牢的通道已开放
+SpiderlingsBossLayer,魔织丝茧 · 第 LAYER / 20 层
+SpiderlingsBossEscapeTime,脱困时限：TURNS 个世界回合
+SpiderlingsBossEscort,幼蛛正在准备押送。送达前仍可自行脱茧。
+RestraintSpiderlingsSpellwovenCocoon,魔织丝茧
+RestraintSpiderlingsSpellwovenCocoonDesc,柔软丝层逐渐包住身体。有效脱困未成功时会再添一层，安静时密度会逐渐下降。
+RestraintSpiderlingsSpellwovenCocoonDesc2,新丝沿着旧丝的边缘铺开，细密地叠入茧面。

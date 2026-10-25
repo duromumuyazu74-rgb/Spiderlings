@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current local development candidate is `Spiderlings_0.92.39-test.4.zip`. Earlier test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+This prison-based branch's current local demo is `Spiderlings_0.92.39-test.7.zip`. Earlier test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,25 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.7 prison Matriarch demo (2026-10-25)
+
+The Boss branch starts from V6 prison commit `04fd7886a3742ef8a86ba87f7146b0553b035347`. A shortcut at prison (64,31), east of the main nest and outside all six authored field sites, enters a persistent Court. The temporary Spinner appearance has a real 3×3 footprint with one health owner. The encounter includes two phases, four original Nest regeneration objectives, paid inward construction, independent body/support schedules, the rune contest and a growing Spellwoven Cocoon. Victory returns to the same prison; defeat uses actual Tunneler construction and native escort before prison admission. [Demo instructions](BOSS-DEMO.zh-CN.md) describe entry and controls.
+
+Package: `Spiderlings_0.92.39-test.7.zip`, 24,996,265 bytes and 193 allowlisted entries. SHA-256: `0acf29b5bcd81fff400ee97eb83d6c83b8fc2baf6c7924aa47f20b031e3249f7`.
+
+| Game input                                                                                        | Verified result                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92                                                                                         | All 73 native checks and seven locales passed |
+| Official KD 5.5.6; freshly fetched GitHub `5.5` commit `12c82f6ecdea40d078838f109453e934cc9525ab` | All 73 native checks and seven locales passed |
+
+Full same-ZIP evidence is retained in compatibility-cache run `2026-10-25T06-05-00-485Z-0.92.39-test.7`. Every CN, DE, ES, JP, KR, PL and RU load resolves all 319 packaged CSV entries through the native Mod path. The ZIP passed exact allowlist and source-byte verification without errors or warnings.
+
+`boss-room` checks nine-cell blocking, movement, edge selection and native melee, one damage application from a direct weapon aura, phase gates, original-Nest identity, save/load, ally preservation and native victory return without regenerating the prison. `boss-capture` exercises actual rune contact, paid escape, five wrapping turns, one layer per effective action, zero-stamina rejection, a retained deadline, real build/escort admission, preserved inner Cocoon identity/progress and defeat/reentry. `boss-combat` runs the independent support/body cadence and actual paid construction of both rings. Existing prison scenes continue to validate all six authored sites and the original escape route.
+
+Capture fixtures isolate support while testing control and shorten the remaining escape window only to exercise its exact timeout boundary. The construction fixture disables Boss offense while measuring paid worker actions. These checks establish native behavior and persistence, not final difficulty for every build. Dedicated artwork, rewards and maintainer balance playtesting remain outside this demo; #165 stays open, and #68/#76 retain their separate mature-prison playtest.
+
+Review and native regressions corrected duplicate part damage from weapon auras, invalid-input growth, inner-item reconstruction on unlink, escort construction blocked by ceasefire, allied-entity cleanup and retry state. Ordinary map generation also required explicit empty terrain/floor definitions for the three authored enemy types. The initial shortcut position overlapped the main nest's authored field; moving it outside the reserve restores all six sites without weakening geometry checks.
 
 ## Test.4 V6 prison layout (2026-10-24)
 

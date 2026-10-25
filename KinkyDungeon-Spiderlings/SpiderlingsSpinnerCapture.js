@@ -316,6 +316,7 @@
     }
 
     function onSuccessfulPlayerHit(enemy) {
+        if (api.BossCapture?.controlling() || api.BossCapture?.peaceful()) return false;
         if (auditSources()) return true;
         const composite = api.SpinnerNativeField?.containingComposite(player());
         if (

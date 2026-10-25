@@ -4,13 +4,14 @@
     const ENEMY = "MageSpiderlings";
     const SPELL = "SpiderlingsMageBolt";
     const ORIGIN = "SpiderlingsMageOrigin";
+    const boltSource = (source) => source?.Enemy?.name === ENEMY || source?.Enemy?.name === "SpiderlingsMatriarch";
 
     if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
         KDAddEvent(KDEventMapGeneric, "launchBullet", ORIGIN, (_event, data) => {
             const shot = data.b?.bullet || data.bullet;
             if (shot?.spell?.name !== SPELL || shot.source == null || !shot.faction) return;
             const source = KDMapData.Entities.find(
-                (entity) => entity.id === shot.source && entity.hp > 0 && entity.Enemy?.name === ENEMY,
+                (entity) => entity.id === shot.source && entity.hp > 0 && boltSource(entity),
             );
             if (!source) return;
             shot[ORIGIN] = {
@@ -28,7 +29,7 @@
             const result = nativeDamage.apply(this, arguments);
             // Native Damage delegates shield and already-hit rejection to KinkyDungeonDealDamage.
             if (spell?.name === SPELL && target?.player && result?.effect) {
-                const source = entity?.Enemy?.name === ENEMY ? entity : mageShot(bullet);
+                const source = boltSource(entity) ? entity : mageShot(bullet);
                 const outcome = globalThis.Spiderlings?.Webbing?.applyEnemyProgression(ENEMY, source, faction);
                 if (outcome?.progressed) globalThis.Spiderlings?.SpellVisuals?.hit(target);
             }
@@ -40,7 +41,7 @@
         if (bullet?.bullet?.spell?.name !== SPELL) return;
         const id = bullet.bullet.source ?? bullet.bullet.spell?.source;
         const live = typeof KDMapData !== "undefined" && KDMapData.Entities.find((entity) => entity.id === id);
-        if (live?.Enemy?.name === ENEMY && (!npc || live.hp > 0)) return live;
+        if (boltSource(live) && (!npc || live.hp > 0)) return live;
         if (!npc || id == null || (live && live.Enemy?.name !== ENEMY)) return;
         const saved = bullet.bullet[ORIGIN];
         if (saved?.sourceId !== id || !saved.faction || saved.faction !== bullet.bullet.faction) return;

@@ -3,7 +3,15 @@
 (() => {
     const api = globalThis.Spiderlings;
     const KEY = "SpiderlingsSilkDensity";
-    const species = new Set(["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"]);
+    const species = new Set([
+        "Spinner",
+        "Jumper",
+        "WebCaster",
+        "Tunneler",
+        "MageSpiderlings",
+        "NestEntrance",
+        "SpiderlingsMatriarch",
+    ]);
     let trailTick;
     const trailSources = new Set();
 
@@ -111,6 +119,13 @@
             "Accumulated spider silk increases the escape work of Spiderlings restraints. It begins to disperse after ten world turns without a qualifying silk hit, even while restrained.",
         );
     }
-    api.SilkDensity = Object.freeze({ state, contact, advance, escapeMultiplier });
+    function refresh() {
+        const current = state();
+        if (!current) return false;
+        current.bareTurns = 0;
+        current.contacted = true;
+        return true;
+    }
+    api.SilkDensity = Object.freeze({ state, contact, advance, escapeMultiplier, refresh });
     installEscape();
 })();

@@ -290,3 +290,30 @@ dSpiderlingsNestVisit_EnterGag,Wejdź do gniazda
 KinkyDungeonSpiderlingsNestEscort,Pajączek zbliża się aby zabrać twój kokon do wejścia gniazda.
 KDBuffName_SpiderlingsSilkDensity,Gęstość pajęczyny
 KDBuffDesc_SpiderlingsSilkDensity,Gęstsza pajęczyna zwiększa wysiłek potrzebny do uwolnienia. Zaczyna zanikać po dziesięciu turach świata bez trafienia pajęczą nicią, nawet gdy nadal jesteś związany.
+NameSpiderlingsMatriarch,Matriarchini Tkająca Gniazda
+NameSpiderlingsMatriarchPart,Matriarchini Tkająca Gniazda
+NameSpiderlingsMatriarchRune,Śledząca runa jedwabiu
+KDRoomType_SpiderlingsSilkboundCourt,Jedwabny Dziedziniec
+KDSideRoom_SpiderlingsSilkboundCourt,Jedwabny Dziedziniec
+KDEscapeMethodDesc_SpiderlingsSilkboundCourt,Pokonaj Matriarchinię dwa razy, aby otworzyć drogę powrotną do więzienia.
+SpiderlingsCourtEntranceFound,Na wschód od głównego gniazda jedwabny korytarz prowadzi na dziedziniec Matriarchini.
+SpiderlingsCourtLocked,Matriarchini zamyka przejście. Pokonaj ją, aby wrócić do więzienia.
+SpiderlingsCourtVictory,Matriarchini pada. Południowe przejście prowadzi z powrotem do więzienia.
+SpiderlingsBossInterlude,Matriarchini się regeneruje. Zniszcz cztery oznaczone gniazda, aby zakończyć jej nietykalność.
+SpiderlingsBossSkill_fan,Wachlarz jedwabiu ustala kierunek: TURNS tur świata.
+SpiderlingsBossSkill_ring,Jedwabny pierścień zamknie się za TURNS tur świata.
+SpiderlingsBossSkill_track,Opadający jedwab oznacza twoją poprzednią pozycję: TURNS tur świata.
+SpiderlingsBossSkill_melee,Jedwab zbiera się wokół nóg Matriarchini: TURNS tur świata.
+SpiderlingsBossCaptureWarning,Powstaje śledząca runa jedwabiu. Zniszcz ją, zanim cię dosięgnie.
+SpiderlingsBossContestStart,Jedwabna nić ciągnie cię ku Matriarchini. Wyrwij się, zanim pasek związania się zapełni.
+SpiderlingsBossEscapeWindow,Owijanie się kończy. Masz 24 tury świata na ucieczkę przed wysłaniem eskorty.
+SpiderlingsBossPhase_one,Matriarchini · pierwsza faza
+SpiderlingsBossPhase_interlude,Regeneracja · pozostało NESTS / 4 gniazd
+SpiderlingsBossPhase_two,Matriarchini · druga faza
+SpiderlingsBossPhase_victory,Droga powrotna do więzienia otwarta
+SpiderlingsBossLayer,Magicznie tkany kokon · warstwa LAYER / 20
+SpiderlingsBossEscapeTime,Czas na ucieczkę: TURNS tur świata
+SpiderlingsBossEscort,Eskorta się przygotowuje. Nadal możesz się uwolnić przed dotarciem na miejsce.
+RestraintSpiderlingsSpellwovenCocoon,Magicznie tkany kokon
+RestraintSpiderlingsSpellwovenCocoonDesc,Miękki jedwab otula ciało. Każda poprawna nieudana próba uwolnienia dodaje warstwę; w spokojnych chwilach gęstość maleje.
+RestraintSpiderlingsSpellwovenCocoonDesc2,Nowe nici układają się na starszym splocie.

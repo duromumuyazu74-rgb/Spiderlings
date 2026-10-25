@@ -71,6 +71,14 @@ const runtimeScripts = [
     "SpiderlingsPrisonConstruction.js",
     "SpiderlingsPrisonEscort.js",
     "SpiderlingsPrisonActivity.js",
+    "SpiderlingsBossFootprint.js",
+    "SpiderlingsBossRoom.js",
+    "SpiderlingsBossFields.js",
+    "SpiderlingsBossEncounter.js",
+    "SpiderlingsSpellwovenCocoon.js",
+    "SpiderlingsSpellwovenArt.js",
+    "SpiderlingsBossCapture.js",
+    "SpiderlingsBossView.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const atlasAssets = [
@@ -811,6 +819,18 @@ function loadRuntime() {
 }
 
 function checkRuntime(state) {
+    for (const name of ["SpiderlingsMatriarch", "SpiderlingsMatriarchPart", "SpiderlingsMatriarchRune"]) {
+        const definition = state.enemies.find((enemy) => enemy.name === name);
+        if (
+            !definition?.terrainTags ||
+            !definition.floors ||
+            Object.keys(definition.floors).length ||
+            definition.allFloors
+        )
+            fail(
+                `${name} must declare native terrainTags and explicit empty floor eligibility; negative weight alone does not bypass native generation reads.`,
+            );
+    }
     const nestSummon = state.spells.find((spell) => spell.name === "SummonNestEntrance");
     if (!nestSummon?.noSprite || !nestSummon.selfcast || nestSummon.onhit !== "summon") {
         fail(
@@ -865,11 +885,11 @@ function checkRuntime(state) {
     }
     const expectedIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash")
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSilkLeash", "SpiderlingsSpellwovenCocoon")
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)
-        .concat(cocoon.model, "SpiderlingsSpinnerLegbinderModel")
+        .concat(cocoon.model, "SpiderlingsSpinnerLegbinderModel", "SpiderlingsSpellwovenCocoonModel")
         .sort();
     const actualIds = state.restraints.map((entry) => entry.name).sort();
     const actualModels = state.models.map((entry) => entry.Name).sort();
@@ -1872,7 +1892,7 @@ function checkTranslations(state) {
         fail(`English fallback ${error}`);
     const currentIds = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.id)
-        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder");
+        .concat(cocoon.id, "SpiderlingsSpinnerLegbinder", "SpiderlingsSpellwovenCocoon");
     const runtimeMessageKeys = [
         "KDModButtonspiderlingsPinkWebbing",
         "KDModButtonspiderlingsEnableHood",
@@ -1947,7 +1967,7 @@ function checkTranslations(state) {
     if (fallbackMissing.length) fail(`English fallback keys are missing: ${fallbackMissing.join(", ")}`);
     if (errors.length === initialErrorCount) {
         pass(
-            "English fallbacks and all seven locales cover twenty-five restraint text triplets, paired outer-layer gates, and the Spinner demo actions.",
+            "English fallbacks and all seven locales cover twenty-six restraint text triplets, paired outer-layer gates, and the Spinner demo actions.",
         );
     }
 }

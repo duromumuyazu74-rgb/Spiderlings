@@ -90,6 +90,14 @@ const scripts = [
     "SpiderlingsPrisonConstruction.js",
     "SpiderlingsPrisonEscort.js",
     "SpiderlingsPrisonActivity.js",
+    "SpiderlingsBossFootprint.js",
+    "SpiderlingsBossRoom.js",
+    "SpiderlingsBossFields.js",
+    "SpiderlingsBossEncounter.js",
+    "SpiderlingsSpellwovenCocoon.js",
+    "SpiderlingsSpellwovenArt.js",
+    "SpiderlingsBossCapture.js",
+    "SpiderlingsBossView.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const lv1Id = (family) => `SpiderlingsWebbingLv1${family}`;
@@ -426,6 +434,7 @@ test("fresh manifest VM exposes active restraints and a Mage bolt with native Da
             ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}`),
             cocoonId,
             "SpiderlingsSpinnerLegbinder",
+            "SpiderlingsSpellwovenCocoon",
             "SpiderlingsSilkLeash",
         ].sort(),
     );
@@ -436,6 +445,7 @@ test("fresh manifest VM exposes active restraints and a Mage bolt with native Da
             ...lv2Families.map((family) => `${lv2Id(family)}Model`),
             ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}Model`),
             "SpiderlingsWebbingCocoonModel",
+            "SpiderlingsSpellwovenCocoonModel",
             "SpiderlingsSpinnerLegbinderModel",
         ].sort(),
     );

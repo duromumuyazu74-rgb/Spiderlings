@@ -62,6 +62,14 @@ const scripts = [
     "SpiderlingsPrisonConstruction.js",
     "SpiderlingsPrisonEscort.js",
     "SpiderlingsPrisonActivity.js",
+    "SpiderlingsBossFootprint.js",
+    "SpiderlingsBossRoom.js",
+    "SpiderlingsBossFields.js",
+    "SpiderlingsBossEncounter.js",
+    "SpiderlingsSpellwovenCocoon.js",
+    "SpiderlingsSpellwovenArt.js",
+    "SpiderlingsBossCapture.js",
+    "SpiderlingsBossView.js",
     "SpiderlingsSpellVisuals.js",
 ];
 const assets = [
@@ -381,6 +389,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
         "SpiderlingsWebbingLv1Stuffing",
         "SpiderlingsWebbingLv1Gag",
         "SpiderlingsWebbingCocoon",
+        "SpiderlingsSpellwovenCocoon",
         "SpiderlingsWebbingLv2Arm",
         "SpiderlingsWebbingLv2Belly",
         "SpiderlingsWebbingLv2Legs",
@@ -399,7 +408,7 @@ test("seven locale files contain the current restraint and Mage text", () => {
         const entries = csvMap(csv);
         assert.equal(
             entries.size,
-            292,
+            319,
             `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping and weapons`,
         );
         for (const key of [
