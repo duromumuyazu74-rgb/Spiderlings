@@ -119,18 +119,21 @@ function stateGroups(checks) {
 }
 
 function parseArguments(args) {
-    const options = { scenarios: [] };
+    const options = { scenarios: [], jobs: 1 };
     for (let i = 0; i < args.length; i++) {
         if (args[i] === "--prepare-only") options.prepareOnly = true;
         else if (args[i] === "--list-scenarios") options.list = true;
         else if (
-            ["--baseline", "--cache", "--package", "--scenario"].includes(args[i]) &&
+            ["--baseline", "--cache", "--package", "--scenario", "--jobs"].includes(args[i]) &&
             args[i + 1] &&
             !args[i + 1].startsWith("--")
         ) {
             const option = args[i].slice(2),
                 value = args[++i];
-            if (option === "scenario") options.scenarios.push(...value.split(","));
+            if (option === "jobs") {
+                if (!["1", "2"].includes(value)) throw new Error("--jobs must be 1 or 2.");
+                options.jobs = Number(value);
+            } else if (option === "scenario") options.scenarios.push(...value.split(","));
             else options[option] = value;
         } else throw new Error(`Unknown or incomplete argument: ${args[i]}`);
     }

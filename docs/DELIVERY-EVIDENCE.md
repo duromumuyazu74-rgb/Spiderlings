@@ -38,6 +38,8 @@ Full compatibility also includes seven native language loads per game, using the
 
 Use this collector for the final local verification instead of composing separate shell commands and collecting their last exit status. Focused checks remain useful while fixing a failure. A generated compatibility input with `verification.mode: "partial"` is rejected even when every selected scene passed; run the full suite before supplying delivery acceptance. Historical/manual records without this field retain their stated scope and the `reported` label.
 
+If only documentation, test expectations or a maintenance check changes after native acceptance, reuse the existing native evidence when its ZIP hash, game builds, official commit and relevant scenario/harness inputs are unchanged. Rerun the affected checks and collect a new final report. A package or native-harness change invalidates the affected native results; a new runtime delivery still requires full dual-version acceptance. An unchanged package does not make an older upstream commit current for a later delivery.
+
 Supply a JSON record for the exact tested ZIP. Paths in `evidence` resolve relative to this JSON file:
 
 ```json

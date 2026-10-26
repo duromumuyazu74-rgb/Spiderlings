@@ -8,7 +8,10 @@ const { auditRepository } = require("./check-spiderlings-modules.js");
 const { selectAffected, validateMappings, collectChanges } = require("./test-impact.js");
 
 const suite = process.argv[2] || "all";
-assert.ok(["public", "all", "affected"].includes(suite), "Choose public, all or affected tests.");
+assert.ok(
+    ["public", "all", "affected", "preflight"].includes(suite),
+    "Choose public, all, affected or preflight tests.",
+);
 const suites = JSON.parse(readFileSync(path.join(__dirname, "test-suites.json"), "utf8"));
 const registered = [...suites.public, ...suites.local];
 const testRoot = path.join(__dirname, "tests");
@@ -20,18 +23,32 @@ assert.deepEqual(
 );
 let selected = suite === "public" ? suites.public : registered;
 let policyTests = false;
-if (suite === "affected") {
+if (suite === "affected" || suite === "preflight") {
     const args = process.argv.slice(3);
     let base = "HEAD",
         planOnly = false,
-        includeLocal = false;
+        includeLocal = suite === "preflight";
     for (let i = 0; i < args.length; i++) {
         if (args[i] === "--plan") planOnly = true;
         else if (args[i] === "--include-local") includeLocal = true;
         else if (args[i] === "--base" && args[i + 1] && !args[i + 1].startsWith("--")) base = args[++i];
-        else throw Error("Use affected [--base <ref>] [--plan] [--include-local].");
+        else throw Error("Use affected [--base <ref>] [--plan] [--include-local], or preflight [--base <ref>].");
     }
     const root = path.resolve(__dirname, "../..");
+    if (suite === "preflight") {
+        assert.ok(!planOnly, "Preflight executes checks; use affected --plan to preview selection.");
+        const check = spawnSync(
+            process.execPath,
+            [path.join(root, ".github/scripts/check-repository.mjs"), "--base", base],
+            {
+                cwd: root,
+                stdio: "inherit",
+                windowsHide: true,
+            },
+        );
+        if (check.error) throw check.error;
+        if (check.status !== 0) process.exit(check.status ?? 1);
+    }
     const manifest = JSON.parse(readFileSync(path.join(__dirname, "../mod.json"), "utf8").replace(/^\uFEFF/, ""));
     const errors = [...auditRepository(), ...validateMappings(suites, manifest)];
     assert.deepEqual(errors, [], errors.join("\n"));

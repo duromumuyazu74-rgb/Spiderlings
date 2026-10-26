@@ -17,6 +17,8 @@ Inspect overlapping dirty changes and preserve them. Resolve compatible overlaps
 
 ## Build
 
+Before a long build or native run, execute `npm run check:preflight -- --base <starting-commit>` from the checkout root. It runs repository and affected regression checks early; the final verification matrix still applies. Evidence reuse after a check-only fix is defined in `docs/DELIVERY-EVIDENCE.md`.
+
 For a requested rebuild/check without a ZIP:
 
 ```powershell

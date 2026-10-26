@@ -70,6 +70,8 @@ npm run report:delivery -- --evidence '<cache>/runs/<run>/acceptance.json'
 
 `--baseline`, `--cache` and `--package` override configured/default paths. `--prepare-only` fetches and prepares the current upstream runtime without claiming gameplay acceptance. A network, build or native-test failure is a failed validation, not permission to label an older cache as current. Native audio play/pause interruptions are retained in the results but excluded from gameplay-error assertions.
 
+The default `--jobs 1` tests the two prepared game versions serially. Opt in with `--jobs 2` to test them concurrently after the shared fetch/build finishes. Each target keeps its own runtime instances and evidence directory; independent scenarios within a target still run in fresh groups, with their explicit continuations unchanged. Both targets finish cleanup before an unexpected target error propagates. `acceptance.json` records `execution.jobs`, elapsed `execution.durationMs` after preparation, and each target's `durationMs`; these timings distinguish completion time from total work. The same option works with focused scenarios. See the [measured comparison](research/compatibility-scheduling-2026-10-26.md) before choosing it for a constrained machine.
+
 For a focused debugging loop, list scenarios and select one or more names:
 
 ```powershell

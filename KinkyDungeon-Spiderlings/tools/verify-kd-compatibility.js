@@ -216,6 +216,7 @@ async function verifyGroup(game, packagePath, output, group, packageSha256, runt
 }
 
 async function verifyGame(game, packagePath, output, selection = selectScenarios(), runtimeFactory = createRuntime) {
+    const started = performance.now();
     fs.mkdirSync(output, { recursive: true });
     const { checks, ...verification } = selection;
     const report = { game, packageSha256: hash(packagePath), verification, checks: [], groups: [] };
@@ -277,8 +278,24 @@ async function verifyGame(game, packagePath, output, selection = selectScenarios
     report.missing = report.groups.flatMap((group) => group.missing || []);
     report.rejections = report.groups.flatMap((group) => group.rejections || []);
     report.diagnostics = report.groups.flatMap((group) => group.diagnostics || []);
+    report.durationMs = Math.round(performance.now() - started);
     fs.writeFileSync(path.join(output, "result.json"), JSON.stringify(report, null, 2) + "\n");
     return report;
+}
+
+async function verifyTargets(games, packagePath, output, selection, jobs = 1, verify = verifyGame) {
+    assert.ok([1, 2].includes(jobs), "Target jobs must be 1 or 2.");
+    const run = async (game) => verify(game, packagePath, path.join(output, game.id), selection);
+    if (jobs === 1) {
+        const results = [];
+        for (const game of games) results.push(await run(game));
+        return results;
+    }
+    // Wait for both targets to finish their own cleanup before propagating a failure.
+    const outcomes = await Promise.allSettled(games.map(run));
+    const failed = outcomes.find((outcome) => outcome.status === "rejected");
+    if (failed) throw failed.reason;
+    return outcomes.map((outcome) => outcome.value);
 }
 
 async function main() {
@@ -323,12 +340,15 @@ async function main() {
         },
         { id: "github", ...upstream, ...latest },
     ];
-    const records = [];
-    for (const game of games) {
-        const result = await verifyGame(game, packagePath, path.join(output, game.id), options.selection);
-        records.push({
+    const started = performance.now();
+    const results = await verifyTargets(games, packagePath, output, options.selection, options.jobs);
+    const execution = { jobs: options.jobs, durationMs: Math.round(performance.now() - started) };
+    const records = games.map((game, index) => {
+        const result = results[index];
+        return {
             gameVersion: game.version,
             status: result.status,
+            durationMs: result.durationMs,
             scope: `${options.selection.mode} native compatibility: ${options.selection.executed.join(", ")}`,
             evidence: `${game.id}/result.json`,
             limitations: [
@@ -342,14 +362,14 @@ async function main() {
                       ]
                     : []),
             ],
-        });
-    }
+        };
+    });
     assert.equal(hash(packagePath), packageSha256, "ZIP changed during verification.");
     const status = records.every((record) => record.status === "passed") ? "passed" : "failed";
     const { checks: _checks, ...verification } = options.selection;
     fs.writeFileSync(
         path.join(output, "acceptance.json"),
-        JSON.stringify({ schemaVersion: 1, packageSha256, upstream, verification, records }, null, 2) + "\n",
+        JSON.stringify({ schemaVersion: 1, packageSha256, upstream, verification, execution, records }, null, 2) + "\n",
     );
     console.log(`Dual-version compatibility ${status} (${verification.mode}): ${output}`);
     if (status !== "passed") process.exitCode = 1;
@@ -360,4 +380,4 @@ if (require.main === module)
         console.error(error.stack);
         process.exitCode = 1;
     });
-module.exports = { verifyGame };
+module.exports = { verifyGame, verifyTargets };
