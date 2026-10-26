@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,Se está formando una runa perseguidora. Destrúye
 SpiderlingsBossContestStart,Un hilo te arrastra hacia la Matriarca. Libérate antes de que se llene la barra de atadura.
 SpiderlingsBossEscapeWindow,La envoltura termina. Tienes 24 turnos del mundo para escapar antes de que se envíe una escolta.
 SpiderlingsBossPhase_one,Matriarca · primera fase
+SpiderlingsBossResonance,Resonancia de seda
+SpiderlingsBossResonanceDesc,La Matriarca mantiene la densidad de seda en la arena e impide que disminuya de forma natural.
 SpiderlingsBossPhase_interlude,Regeneración · quedan NESTS / 4 nidos
 SpiderlingsBossPhase_two,Matriarca · segunda fase
 SpiderlingsBossPhase_victory,Regreso a la prisión abierto

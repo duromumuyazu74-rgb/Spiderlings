@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,追踪丝符正在成形。在它触及你之前�
 SpiderlingsBossContestStart,丝线将你牵向主母。在拘束进度满前挣开蛛丝。
 SpiderlingsBossEscapeWindow,缠绕结束。你有24个世界回合脱茧，超时后幼蛛将前来押送。
 SpiderlingsBossPhase_one,织巢主母 · 一阶段
+SpiderlingsBossResonance,织纹共鸣 · 密度维持
+SpiderlingsBossResonanceDesc,主母正在维持场内的蛛丝密度，阻止其自然衰减。
 SpiderlingsBossPhase_interlude,再生中 · 剩余 NESTS / 4 巢
 SpiderlingsBossPhase_two,织巢主母 · 二阶段
 SpiderlingsBossPhase_victory,返回监牢的通道已开放

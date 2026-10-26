@@ -1,5 +1,71 @@
 (async () => {
     const { expect, turn, photo } = globalThis.normalAcceptance;
+    globalThis.bossAcceptance.enter("boss-resonance-feedback");
+    const resonanceState = Spiderlings.BossEncounter.state();
+    const resonanceBoss = Spiderlings.BossEncounter.boss();
+    resonanceState.nextBody = resonanceState.nextSupport = 10000;
+    resonanceState.nextPulse = resonanceState.clock;
+    resonanceState.warnings = [];
+    for (const enemy of [...KDMapData.Entities])
+        if (enemy !== resonanceBoss && !Spiderlings.BossFootprint.isPart(enemy))
+            KDRemoveEntity(enemy, false, false, true);
+    resonanceState.builderIds = [];
+    KDMovePlayer(resonanceBoss.x, resonanceBoss.y + 3, false);
+    const hud = () => {
+        const data = { stats: {} };
+        KinkyDungeonSendEvent("drawBuffIcons", data);
+        return data.stats.SpiderlingsBossResonance;
+    };
+    const glow = (actor) => kdpixisprites.get("SpiderlingsBossResonance:" + actor);
+    const visible = (sprite) => !!(sprite?.parent && sprite.visible && sprite.renderable && sprite.alpha > 0);
+    const originalSend = KinkyDungeonSendEvent;
+    const resonancePulses = [];
+    let resonanceImage;
+    KinkyDungeonSendEvent = function (event, data) {
+        if (event === "spiderlingsBossResonance")
+            resonancePulses.push({ clock: resonanceState.clock, id: data.enemy.id });
+        return originalSend.apply(this, arguments);
+    };
+    try {
+        await turn();
+        const density = Spiderlings.SilkDensity.state().value;
+        resonanceImage = await photo();
+        expect(resonancePulses.length === 1, "A due native turn did not emit one resonance pulse");
+        for (const actor of ["boss", "player"]) {
+            const sprite = glow(actor);
+            expect(visible(sprite), `Missing native ${actor} resonance glow`);
+            expect(sprite.texture.baseTexture.valid && sprite.texture.orig.width > 1, `Invalid ${actor} aura texture`);
+        }
+        expect(Math.abs(glow("boss").alpha - glow("player").alpha) < 1e-9, "Resonance glows are not synchronized");
+        expect(
+            KDModFiles[KinkyDungeonRootDirectory + "Buffs/buff/buffSpiderlingsBossResonance.png"] ===
+                KDModFiles[KinkyDungeonRootDirectory + "Bullets/SpiderlingsMageRuneIcon.png"],
+            "Status icon did not reuse the delivered rune",
+        );
+        expect(hud()?.icon === "buff/buffSpiderlingsBossResonance", "Resonance status is missing");
+        const texture = KDTex(KinkyDungeonRootDirectory + "Buffs/buff/buffSpiderlingsBossResonance.png");
+        expect(texture?.baseTexture.valid && texture.orig.width > 1, "Resonance status icon is not decoded");
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+        await photo();
+        expect(!visible(glow("boss")) && !visible(glow("player")), "One-second resonance glows did not clear");
+        expect(!!hud(), "Maintenance status ended with the short glow");
+        expect(Spiderlings.SilkDensity.state().value === density, "Rendering changed silk density");
+        for (let index = 0; index < 5; index++) await turn();
+        expect(resonancePulses.length === 1, "Resonance repeated before its six-turn interval");
+        await turn();
+        expect(resonancePulses.length === 2, "The next resonance interval did not fire");
+        resonanceBoss.stun = 3;
+        await photo();
+        expect(!hud(), "Disabled Matriarch retained its maintenance status");
+        expect(!visible(glow("boss")) && !visible(glow("player")), "Disabled Matriarch retained its glow");
+        resonanceBoss.stun = 0;
+        resonanceState.phase = "interlude";
+        expect(!hud(), "Regeneration interlude retained resonance status");
+        resonanceState.phase = "victory";
+        expect(!hud(), "Victory retained resonance status");
+    } finally {
+        KinkyDungeonSendEvent = originalSend;
+    }
     globalThis.bossAcceptance.enter("boss-attack-cadence");
     let encounter = Spiderlings.BossEncounter.state();
     for (let index = 0; index < 24; index++) await turn();
@@ -111,8 +177,9 @@
         walls: walls.length,
         retainedTopology: !!snapshot,
         wallFormations,
-        images: { combat, fields },
+        resonance: { pulses: resonancePulses, nativeTextures: true, statusLifecycle: true },
+        images: { resonance: resonanceImage, combat, fields },
         fixture:
-            "Cadence runs normally; wall placement isolates one due formation; paid-ring fixture disables only Boss offense and removes support.",
+            "Resonance uses paid native turns with other schedules delayed, then samples inactive phase projections; cadence runs normally; wall placement isolates one due formation; paid-ring fixture disables only Boss offense and removes support.",
     };
 })();

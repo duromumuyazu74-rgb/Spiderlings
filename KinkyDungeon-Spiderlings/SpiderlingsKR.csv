@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,추적 비단 룬이 만들어집니다. 닿기 �
 SpiderlingsBossContestStart,비단이 당신을 여왕에게 끌어당깁니다. 결박 게이지가 차기 전에 벗어나세요.
 SpiderlingsBossEscapeWindow,감기가 끝났습니다. 호송이 시작되기 전 세계 턴 24회 안에 탈출하세요.
 SpiderlingsBossPhase_one,여왕 · 1단계
+SpiderlingsBossResonance,직조 공명
+SpiderlingsBossResonanceDesc,여왕이 전장 내 거미줄 밀도를 유지하여 자연스럽게 감소하지 않도록 하고 있습니다.
 SpiderlingsBossPhase_interlude,재생 중 · 둥지 NESTS / 4개 남음
 SpiderlingsBossPhase_two,여왕 · 2단계
 SpiderlingsBossPhase_victory,감옥으로 돌아가는 길이 열림

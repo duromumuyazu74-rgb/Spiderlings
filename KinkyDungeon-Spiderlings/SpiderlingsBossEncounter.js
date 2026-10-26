@@ -20,6 +20,13 @@
     const disabled = (enemy) => !enemy || enemy.hp <= 0 || KinkyDungeonIsDisabled(enemy) || KDHelpless(enemy);
     const paused = () => !!api.BossCapture?.peaceful();
     const hostileResult = (enemy) => ({ idle: false, defeat: false, defeatEnemy: enemy });
+    function resonanceSource() {
+        const saved = state();
+        if (!saved || !["one", "two"].includes(saved.phase) || api.BossCapture?.state()?.phase === "escort")
+            return undefined;
+        const enemy = boss();
+        return disabled(enemy) ? undefined : enemy;
+    }
     function ownsThreat(enemy) {
         if (api.BossFootprint.isBoss(enemy) || api.BossFootprint.isPart(enemy)) return true;
         if (enemy.allied || enemy.Enemy?.allied || KDAllied(enemy) || KDIsInParty(enemy)) return false;
@@ -250,13 +257,13 @@
         );
     }
     function schedule() {
-        const saved = state(),
-            enemy = boss();
-        if (!saved || !["one", "two"].includes(saved.phase) || disabled(enemy)) return;
-        if (api.BossCapture?.state()?.phase === "escort") return;
+        const enemy = resonanceSource();
+        if (!enemy) return;
+        const saved = state();
         if (saved.clock >= saved.nextPulse) {
             api.SilkDensity.refresh();
             saved.nextPulse = saved.clock + 6;
+            KinkyDungeonSendEvent("spiderlingsBossResonance", { enemy });
         }
         if (paused()) return;
         if (saved.clock >= saved.nextSupport) summon();
@@ -566,6 +573,7 @@
     api.BossEncounter = Object.freeze({
         state,
         boss,
+        resonanceSource,
         initialize,
         advance,
         checkDefeat,
