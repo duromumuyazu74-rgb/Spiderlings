@@ -110,6 +110,25 @@
                 }
         return false;
     }
+    if (typeof KinkyDungeonDefeat === "function")
+        KinkyDungeonDefeat = api.Hooks.wrap(
+            "BossRoom.defeat",
+            KinkyDungeonDefeat,
+            (native) =>
+                function () {
+                    if (!active()) return native.apply(this, arguments);
+                    // Native defeat emits its event midway through only one jail branch.
+                    // Own the Court transition before native jail placement can overwrite it.
+                    KDCustomDefeat = "";
+                    KDCustomDefeatEnemy = null;
+                    KinkyDungeonInterruptSleep();
+                    KDResetDialogue();
+                    KDBreakTether(KinkyDungeonPlayerEntity);
+                    KDGameData.KinkyDungeonLeashedPlayer = 0;
+                    KinkyDungeonSendEvent("defeat", {});
+                    returnToPrison(true);
+                },
+        );
     if (
         typeof alts === "object" &&
         typeof KinkyDungeonCreateMapGenType === "object" &&

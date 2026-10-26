@@ -24,7 +24,7 @@ The current candidate retains alpha.19's task/player-sound-driven rest and chamb
 
 ## Current development gameplay
 
-Local candidate `0.92.39-test.4` gives newly generated Nest Prisons a fixed 81×63 scene with an upper cross junction, two connected middle fields, a lower storage field, a main-nest enclosure and a mandatory exit junction beyond the approach routes. Native barrels and chests occupy side areas; actual Spinners build and close the six authored sites under the existing workforce and project limits.
+Local candidate `0.92.39-test.8` includes the fixed 81×63 V6 Nest Prison and the [Matriarch demo](docs/BOSS-DEMO.zh-CN.md). The prison has an upper cross junction, two connected middle fields, a lower storage field, a main-nest enclosure and a mandatory exit junction. Native barrels and chests occupy side areas; actual Spinners build and close the six authored sites under the existing workforce and project limits. The Matriarch occupies nine cells in a separate Court reached from the prison. Victory and defeat return to that same prison; support formations retain safe positions near walls.
 
 Captured field prey retains its field attribution. Spiderlings assigned to interception actively attack competing NPC escorts; other members keep their field duties. Player recovery starts only after an actual inside-to-outside field crossing while wearing the leg bag. Wearing it or moving off-center inside the field does not qualify. Approved contacts use native paid attacks and return the player to the exact nearest reachable center. Maidforce members and both native Adventurer-faction Maid Knights are Spiderlings rivals.
 

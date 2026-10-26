@@ -4,6 +4,7 @@ const scenarios = [
     ["basic", "basic.js"],
     ["boss-capture", "boss-capture.js", null, [], "browser", ["normal-helpers.js", "boss-helpers.js"]],
     ["boss-combat", "boss-combat.js", null, [], "browser", ["normal-helpers.js", "boss-helpers.js"]],
+    ["boss-defeat", "boss-defeat.js", null, [], "browser", ["normal-helpers.js", "boss-helpers.js"]],
     ["escape-text-contract", "escape-text-contract.js"],
     ["wall", "wall.js"],
     ["spinner-outside", "spinner.js", "outside"],

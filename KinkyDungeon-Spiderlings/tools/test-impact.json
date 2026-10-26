@@ -15,7 +15,7 @@
         "spiderlings-prison-escort.test.js"
       ],
       "localTests": [],
-      "scenarios": ["boss-room", "boss-capture", "boss-combat"],
+      "scenarios": ["boss-room", "boss-capture", "boss-combat", "boss-defeat"],
       "reason": "Multi-cell boss, native prison side-room return, fixed formations and phase/capture transitions."
     },
     "foundation": {

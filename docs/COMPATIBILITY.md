@@ -1,6 +1,6 @@
 # Verified game environments
 
-This prison-based branch's current local demo is `Spiderlings_0.92.39-test.7.zip`. Earlier test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+This prison-based branch's current local demo is `Spiderlings_0.92.39-test.8.zip`. Earlier test.7, test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.8 Boss defeat and wall formations (2026-10-26)
+
+Both native defeat branches in the Court return to the source prison's captivity area. BossRoom handles the transition before native jail placement can overwrite the destination or prisoner identity; ordinary maps retain the original defeat call. Support formations keep their preferred positions and search the same quadrant or side when those positions are blocked, retaining four-to-seven-cell distance, distinct cells and the complete 4/6/4 membership. A blocked full formation remains pending without advancing its rotation or cooldown.
+
+Package: `Spiderlings_0.92.39-test.8.zip`, 24,996,663 bytes and 193 allowlisted entries. SHA-256: `34e810109f3e603e2c20007020698a3aace43d52c7135e586d93adffcf1349cd`.
+
+| Game input                                                                                        | Verified result                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92                                                                                         | All 74 native checks and seven locales passed |
+| Official KD 5.5.6; freshly fetched GitHub `5.5` commit `f2528ffb74c7a57fbd3652c786ad15a3fe6b793f` | All 74 native checks and seven locales passed |
+
+Full same-ZIP evidence is retained in compatibility-cache run `2026-10-26T05-55-38-565Z-0.92.39-test.8`. The new `boss-defeat` scene invokes both real native defeat branches, checks prison identity and chamber placement, preserves equipment, saves and reloads captivity, and reenters a fresh phase-one encounter. `boss-combat` additionally verifies all three complete support formations near each of the four walls. These placement fixtures isolate one due formation; the existing normal attack cadence, paid construction, capture and prison scenes remain part of the full run.
+
+The two public regressions reproduce the old defects and pass with the fix. They also cover unchanged native defeat fallback outside the Court and a blocked quadrant's retry without partial spawns. The focused Boss, scenario-runner and test-selection checks pass all 43 tests. Test.7's original evidence below retains its original coverage; it did not test both ordinary native defeat branches or the four wall placements.
 
 ## Test.7 prison Matriarch demo (2026-10-25)
 

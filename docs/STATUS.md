@@ -1,6 +1,6 @@
 # 当前开发进度
 
-核对日期：2026-10-24。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
+核对日期：2026-10-26。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
 ## V6 监牢本地候选
 
@@ -32,9 +32,9 @@ KD 5.5.6 的兼容验收还发现原生延迟布置会挤走已出生的 Nurse�
 
 `test` 包含监狱玩法，当前安装包为 `Spiderlings_0.92.39-test.3.zip`。alpha.19 的历史 Release 和安装包保留，test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
 
-## 织巢主母设计
+## 织巢主母本地试玩
 
-[织巢主母草案](spiderlings-boss-design.zh-CN.md)及其 [HTML 展示页](spiderlings-boss-design.html)记录两阶段战斗、四巢转场、魔织丝茧与实际多格占位要求，后续工作由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。主母应以类似原生龙的体量参与移动、碰撞和攻击判定，具体占格尺寸待原型确认。Boss 本体尚未实现，当前安装包只包含已完成的基础密度规则。
+本地候选 `0.92.39-test.8` 包含实际 `3×3` 占位的主母、两阶段战斗、四巢转场、付费收圈、独立支援轮转、魔织丝茧与真实押送。普通战败和押送都返回原监牢囚禁区，支援在墙边搜索同侧或同象限的安全空地。入口与操作见[试玩说明](BOSS-DEMO.zh-CN.md)，规格见[设计文档](spiderlings-boss-design.zh-CN.md)。[Draft PR #174](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/174) 仍基于 V6 监牢分支；后续平衡、美术和集成由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。发布的 test.3 不包含主母。
 
 ## 巢穴监狱实验
 
