@@ -101,6 +101,9 @@ function setup() {
     c.KDBulletAoECanHitEntity = (bullet, enemy) =>
         Math.max(Math.abs(bullet.x - enemy.x), Math.abs(bullet.y - enemy.y)) <= bullet.radius;
     c.KinkyDungeonSendTextMessage = () => {};
+    c.KinkyDungeonSendEvent = (trigger, data) => {
+        for (const handler of Object.values(c.KDEventMapGeneric[trigger] || {})) handler({}, data);
+    };
     c.KDAllied = (enemy) => enemy.allied === true;
     c.KDIsInParty = (enemy) => enemy.party === true;
     c.KDEventMapWeapon = {
@@ -132,6 +135,134 @@ function setup() {
     c.Spiderlings.BossEncounter.initialize();
     return { c, walls, room, encounter: c.Spiderlings.BossEncounter, footprint: c.Spiderlings.BossFootprint };
 }
+
+function resonanceView() {
+    const fixture = setup();
+    const { c, encounter } = fixture;
+    let clock = 1000;
+    const draws = [];
+    const messages = {};
+    c.CommonTime = () => clock;
+    c.KinkyDungeonIsDisabled = (enemy) => enemy.stun > 0;
+    c.KDCanSeeEnemy = (enemy) => enemy.visible !== false;
+    c.KinkyDungeonVisionGet = () => 1;
+    c.KinkyDungeonGridSizeDisplay = 72;
+    c.KinkyDungeonRootDirectory = "Game/";
+    c.KDModFiles = {
+        "Game/Enemies/Spinner.png": "blob:spinner",
+        "Game/Bullets/SpiderlingsMageRuneIcon.png": "blob:rune",
+    };
+    c.kdgameboard = { addChild: (child) => (child.parent = c.kdgameboard) };
+    c.kdpixisprites = new Map();
+    c.KDDraw = (...args) => draws.push(args);
+    c.DrawTextKD = () => {};
+    c.addTextKey = (key, value) => (messages[key] = value);
+    c.TextGet = (key) => messages[key] || key;
+    c.PIXI = {
+        Graphics: class {
+            clear() {}
+            lineStyle() {
+                return this;
+            }
+            beginFill() {
+                return this;
+            }
+            drawRect() {
+                return this;
+            }
+            endFill() {
+                return this;
+            }
+        },
+    };
+    c.Spiderlings.SpellwovenCocoon = { item: () => undefined };
+    c.Spiderlings.BossCapture = {
+        state: () => undefined,
+        peaceful: () => false,
+        controlling: () => false,
+        advance() {},
+    };
+    encounter.state().nextBody = encounter.state().nextSupport = 10000;
+    encounter.state().nextPulse = 0;
+    load(c, "SpiderlingsBossView.js");
+    return {
+        ...fixture,
+        at: (time) => (clock = time),
+        draw: () => {
+            draws.length = 0;
+            c.KinkyDungeonSendEvent("draw", { CamX: 0, CamY: 0 });
+            return draws;
+        },
+        hud: () => {
+            const data = { stats: {} };
+            c.KinkyDungeonSendEvent("drawBuffIcons", data);
+            return data.stats.SpiderlingsBossResonance;
+        },
+    };
+}
+
+test("resonance keeps its six-turn cadence while projecting one-second synchronized native glows", () => {
+    const { c, encounter, at, draw, hud } = resonanceView();
+    let refreshes = 0;
+    c.Spiderlings.SilkDensity.refresh = () => refreshes++;
+    encounter.advance(0);
+    assert.equal(refreshes, 0);
+    assert.equal(draw().length, 0);
+    encounter.advance(1);
+    assert.equal(refreshes, 1);
+    at(1400);
+    const glows = draw();
+    assert.equal(glows.length, 2);
+    c.KinkyDungeonSendEvent("postMapgen", {});
+    assert.equal(draw().length, 2, "Map setup must retain a pulse emitted during encounter initialization");
+    assert.deepEqual(
+        glows.map((args) => args[3]),
+        ["Game/Aura/Aura.png", "Game/Aura/Aura.png"],
+    );
+    assert.equal(glows[0][9].alpha, glows[1][9].alpha);
+    assert.ok(glows[0][9].alpha > 0 && glows[0][9].alpha <= 0.7);
+    assert.ok(Math.abs(glows[0][6] / glows[1][6] - 3) < 1e-9);
+    assert.equal(hud().icon, "buff/buffSpiderlingsBossResonance");
+    assert.equal(c.KDModFiles["Game/Buffs/buff/buffSpiderlingsBossResonance.png"], "blob:rune");
+    assert.match(hud().text, /preventing its natural decay/);
+    at(2000);
+    assert.equal(draw().length, 0);
+    assert.ok(hud(), "The maintenance indicator must outlast the short glow");
+    assert.equal(refreshes, 1, "Rendering must not refresh density");
+    encounter.advance(5);
+    assert.equal(refreshes, 1);
+    encounter.advance(1);
+    assert.equal(refreshes, 2);
+    at(2300);
+    assert.equal(draw().length, 2);
+});
+
+test("resonance feedback clears on inactive phases, disability, escort, leaving and loading", () => {
+    const { c, encounter, at, draw, hud } = resonanceView();
+    encounter.advance(1);
+    at(1300);
+    assert.equal(draw().length, 2);
+    c.KinkyDungeonSendEvent("afterLoadGame", {});
+    assert.equal(draw().length, 0, "Loading must not replay an old pulse");
+    assert.ok(hud());
+    encounter.boss().stun = 2;
+    assert.equal(hud(), undefined);
+    encounter.boss().stun = 0;
+    for (const phase of ["interlude", "victory"]) {
+        encounter.state().phase = phase;
+        assert.equal(hud(), undefined, phase);
+    }
+    encounter.state().phase = "two";
+    assert.ok(hud());
+    c.Spiderlings.BossCapture.state = () => ({ phase: "escort" });
+    assert.equal(hud(), undefined);
+    c.Spiderlings.BossCapture.state = () => ({ phase: "escape" });
+    c.Spiderlings.BossCapture.peaceful = () => true;
+    assert.ok(hud(), "The existing escape-window resonance remains active");
+    c.Spiderlings.BossRoom.active = () => false;
+    assert.equal(hud(), undefined);
+    assert.equal(draw().length, 0);
+});
 
 test("the enlarged boss has nine occupied cells and moves its whole footprint", () => {
     const { c, walls, encounter, footprint } = setup();

@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,Powstaje śledząca runa jedwabiu. Zniszcz ją, za
 SpiderlingsBossContestStart,Jedwabna nić ciągnie cię ku Matriarchini. Wyrwij się, zanim pasek związania się zapełni.
 SpiderlingsBossEscapeWindow,Owijanie się kończy. Masz 24 tury świata na ucieczkę przed wysłaniem eskorty.
 SpiderlingsBossPhase_one,Matriarchini · pierwsza faza
+SpiderlingsBossResonance,Rezonans pajęczyny
+SpiderlingsBossResonanceDesc,Matriarchini podtrzymuje gęstość pajęczyny na arenie i zapobiega jej naturalnemu zanikaniu.
 SpiderlingsBossPhase_interlude,Regeneracja · pozostało NESTS / 4 gniazd
 SpiderlingsBossPhase_two,Matriarchini · druga faza
 SpiderlingsBossPhase_victory,Droga powrotna do więzienia otwarta

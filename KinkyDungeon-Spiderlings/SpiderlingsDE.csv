@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,Eine verfolgende Seidenrune entsteht. Zerstöre si
 SpiderlingsBossContestStart,Ein Seidenband zieht dich zur Matriarchin. Ziehe dich los, bevor die Fesselungsleiste voll ist.
 SpiderlingsBossEscapeWindow,Die Umwicklung endet. Du hast 24 Weltzüge zur Flucht, bevor eine Eskorte gerufen wird.
 SpiderlingsBossPhase_one,Matriarchin · Phase eins
+SpiderlingsBossResonance,Seidenresonanz
+SpiderlingsBossResonanceDesc,Die Matriarchin hält die Seidendichte in der Arena aufrecht und verhindert ihren natürlichen Abbau.
 SpiderlingsBossPhase_interlude,Regeneration · NESTS / 4 Nester übrig
 SpiderlingsBossPhase_two,Matriarchin · Phase zwei
 SpiderlingsBossPhase_victory,Rückweg ins Gefängnis offen

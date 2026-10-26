@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,Формируется следящая шёлко
 SpiderlingsBossContestStart,Шёлковая нить тянет вас к Матриархине. Освободитесь, пока шкала связывания не заполнилась.
 SpiderlingsBossEscapeWindow,Обматывание закончено. У вас 24 мировых хода на освобождение до отправки конвоя.
 SpiderlingsBossPhase_one,Матриархиня · первая фаза
+SpiderlingsBossResonance,Резонанс паутины
+SpiderlingsBossResonanceDesc,Матриархиня поддерживает плотность паутины на арене и не даёт ей естественным образом рассеиваться.
 SpiderlingsBossPhase_interlude,Восстановление · осталось NESTS / 4 гнезда
 SpiderlingsBossPhase_two,Матриархиня · вторая фаза
 SpiderlingsBossPhase_victory,Путь обратно в тюрьму открыт

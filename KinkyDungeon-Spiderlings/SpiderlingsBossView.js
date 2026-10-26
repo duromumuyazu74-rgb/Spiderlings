@@ -2,17 +2,19 @@
 
 (() => {
     const api = globalThis.Spiderlings;
+    const RESONANCE = "SpiderlingsBossResonance";
+    const RESONANCE_ICON = "buff/buffSpiderlingsBossResonance";
     // The native journal and status UI also request enemy-name artwork without
     // passing through KDDrawEnemySprite. All aliases reuse delivered PNGs.
     if (typeof KDModFiles !== "undefined")
         for (const [name, source] of [
-            ["SpiderlingsMatriarch", "Enemies/Spinner.png"],
-            ["SpiderlingsMatriarchPart", "Enemies/Spinner.png"],
-            ["SpiderlingsMatriarchRune", "Bullets/SpiderlingsMageRuneIcon.png"],
+            ["Enemies/SpiderlingsMatriarch", "Enemies/Spinner.png"],
+            ["Enemies/SpiderlingsMatriarchPart", "Enemies/Spinner.png"],
+            ["Enemies/SpiderlingsMatriarchRune", "Bullets/SpiderlingsMageRuneIcon.png"],
+            ["Buffs/" + RESONANCE_ICON, "Bullets/SpiderlingsMageRuneIcon.png"],
         ]) {
             const target = KinkyDungeonRootDirectory + source;
-            if (KDModFiles[target])
-                KDModFiles[KinkyDungeonRootDirectory + "Enemies/" + name + ".png"] = KDModFiles[target];
+            if (KDModFiles[target]) KDModFiles[KinkyDungeonRootDirectory + name + ".png"] = KDModFiles[target];
         }
     const text = {
         NameSpiderlingsMatriarch: "Nestweaver Matriarch",
@@ -43,11 +45,72 @@
         SpiderlingsBossLayer: "Spellwoven Cocoon · layer LAYER / 20",
         SpiderlingsBossEscapeTime: "Escape window: TURNS world turns",
         SpiderlingsBossEscort: "An escort is preparing. You can still escape before arrival.",
+        SpiderlingsBossResonance: "Weave resonance",
+        SpiderlingsBossResonanceDesc:
+            "The Matriarch is maintaining silk density in the arena, preventing its natural decay.",
     };
     for (const [key, value] of Object.entries(text)) addTextKey(key, value);
     let drawing;
+    let resonancePulse;
     function clear() {
         if (drawing) drawing.clear();
+    }
+    function reset() {
+        clear();
+        resonancePulse = undefined;
+    }
+    KDAddEvent(KDEventMapGeneric, "spiderlingsBossResonance", RESONANCE, (_event, data) => {
+        resonancePulse = { map: KDMapData, bossId: data.enemy.id, started: CommonTime() };
+    });
+    KDAddEvent(KDEventMapGeneric, "drawBuffIcons", RESONANCE, (_event, data) => {
+        if (!api.BossEncounter.resonanceSource()) return;
+        data.stats[RESONANCE] = {
+            text: TextGet(RESONANCE) + ": " + TextGet(RESONANCE + "Desc"),
+            icon: RESONANCE_ICON,
+            category: "buffs",
+            color: "#c9a0e0",
+            bgcolor: "#333333",
+            priority: 40,
+        };
+    });
+    function drawResonance(point, size) {
+        const source = api.BossEncounter.resonanceSource();
+        if (!source || resonancePulse?.map !== KDMapData || resonancePulse.bossId !== source.id) {
+            resonancePulse = undefined;
+            return;
+        }
+        const progress = (CommonTime() - resonancePulse.started) / 1000;
+        if (progress < 0 || progress >= 1) {
+            resonancePulse = undefined;
+            return;
+        }
+        const alpha = 0.7 * Math.sin(Math.PI * progress);
+        const scale = 1.1 + progress * 0.25;
+        const tint = api.getSetting?.("spiderlingsPinkWebbing") === true ? 0xffc3e6 : 0xd6c4e8;
+        for (const [entity, image, id] of [
+            [source, "Aura", "boss"],
+            [KinkyDungeonPlayerEntity, "Aura", "player"],
+        ]) {
+            if (entity !== KinkyDungeonPlayerEntity && !KDCanSeeEnemy(entity)) continue;
+            const [x, y] = point({
+                x: (entity.visual_x ?? entity.x) + (entity.offX || 0) + 0.5,
+                y: (entity.visual_y ?? entity.y) + (entity.offY || 0) + 0.5,
+            });
+            const width = (entity.Enemy?.GFX?.spriteWidth || size) * (entity.scaleX || 1) * scale;
+            const height = (entity.Enemy?.GFX?.spriteHeight || size) * (entity.scaleY || 1) * scale;
+            KDDraw(
+                kdgameboard,
+                kdpixisprites,
+                RESONANCE + ":" + id,
+                KinkyDungeonRootDirectory + "Aura/" + image + ".png",
+                x - width / 2,
+                y - height / 2,
+                width,
+                height,
+                0,
+                { alpha, tint, zIndex: 2.6 },
+            );
+        }
     }
     if (typeof KDDrawEnemySprite === "function")
         KDDrawEnemySprite = api.Hooks.wrap(
@@ -86,7 +149,10 @@
                 20,
             );
         const saved = api.BossEncounter.state();
-        if (!saved) return;
+        if (!saved) {
+            resonancePulse = undefined;
+            return;
+        }
         if (!drawing || drawing.destroyed || drawing.parent !== kdgameboard) {
             if (drawing && !drawing.destroyed) drawing.destroy();
             drawing = new PIXI.Graphics();
@@ -99,6 +165,7 @@
             (p.x - frame.CamX - (pans ? 0 : frame.CamX_offset || 0)) * size,
             (p.y - frame.CamY - (pans ? 0 : frame.CamY_offset || 0)) * size,
         ];
+        drawResonance(point, size);
         for (const warning of saved.warnings) {
             drawing.lineStyle(1.5, 0xf0c477, 0.8).beginFill(0xe8ad55, 0.13);
             for (const cell of warning.cells)
@@ -177,6 +244,11 @@
         if (capture?.phase === "escort")
             DrawTextKD(TextGet("SpiderlingsBossEscort"), 1100, 180, "#f2d398", "#111111", 20);
     });
-    for (const trigger of ["postMapgen", "afterLoadGame", "afterNewGame"])
-        KDAddEvent(KDEventMapGeneric, trigger, "SpiderlingsBossView", clear);
+    KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsBossView", () => {
+        clear();
+        // Encounter initialization can emit the entry pulse earlier in this same event.
+        if (resonancePulse?.map !== KDMapData) resonancePulse = undefined;
+    });
+    for (const trigger of ["afterLoadGame", "afterNewGame"])
+        KDAddEvent(KDEventMapGeneric, trigger, "SpiderlingsBossView", reset);
 })();

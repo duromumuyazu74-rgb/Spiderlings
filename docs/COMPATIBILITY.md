@@ -1,6 +1,6 @@
 # Verified game environments
 
-This prison-based branch's current local demo is `Spiderlings_0.92.39-test.8.zip`. Earlier test.7, test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+This prison-based branch's current local demo is `Spiderlings_0.92.39-test.10.zip`. Earlier test.8, test.7, test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,21 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.10 resonance feedback (2026-10-26)
+
+The Matriarch's existing six-world-turn density refresh now triggers synchronized, one-second glows around the boss and player. Both glows reuse native `Aura/Aura.png`; the status icon reuses the delivered spider rune. The status remains visible while resonance is eligible and clears during regeneration, disability, escort, victory or departure. Drawing does not refresh or increase density. Transient animation clears on loading, while an entry pulse emitted during map initialization remains visible.
+
+Package: `Spiderlings_0.92.39-test.10.zip`, 24,997,997 bytes and 193 allowlisted entries. SHA-256: `9bf16e0d8127019929f510aa9af4fbd4933a433547eaa25cac1aa4a1687ba8b1`.
+
+| Game input                                                                                        | Verified result                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92                                                                                         | All 74 native checks and seven locales passed |
+| Official KD 5.5.6; freshly fetched GitHub `5.5` commit `e2d37266edb6a1a8e30dde4a80fd94dc04583d5a` | All 74 native checks and seven locales passed |
+
+Full same-ZIP evidence is retained in compatibility-cache run `2026-10-26T08-21-12-604Z-0.92.39-test.10`. The extended `boss-combat` scene verifies native pulse timing, both decoded glow textures, icon alias reuse, the independent status lifetime and cleanup. Its controlled phase samples test the display projection; the existing encounter scenarios continue to verify phase transitions and combat. `boss-combat-resonance.png` in each target's result folder records the visible effect.
+
+The focused Boss regression suite also checks zero-time updates, rendering without density mutation, entry-event ordering, load cleanup and inactive eligibility. The two new status strings are registered in English and all seven packaged locales; an independent semantic review found no blocking issue.
 
 ## Test.8 Boss defeat and wall formations (2026-10-26)
 

@@ -308,6 +308,8 @@ SpiderlingsBossCaptureWarning,追跡する糸のルーンが形成されてい�
 SpiderlingsBossContestStart,糸があなたを女王へ引き寄せる。拘束ゲージが満ちる前に振りほどこう。
 SpiderlingsBossEscapeWindow,巻き付けが終わった。護送が始まるまで24ワールドターン以内に脱出しよう。
 SpiderlingsBossPhase_one,女王・第一段階
+SpiderlingsBossResonance,織紋の共鳴
+SpiderlingsBossResonanceDesc,女王が闘技場内の蛛糸密度を維持し、自然な減少を防いでいる。
 SpiderlingsBossPhase_interlude,再生中・残りNESTS / 4巣
 SpiderlingsBossPhase_two,女王・第二段階
 SpiderlingsBossPhase_victory,牢獄への帰路が開いた

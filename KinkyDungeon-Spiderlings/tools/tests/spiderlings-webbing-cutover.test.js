@@ -408,12 +408,14 @@ test("seven locale files contain the current restraint and Mage text", () => {
         const entries = csvMap(csv);
         assert.equal(
             entries.size,
-            319,
-            `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping and weapons`,
+            321,
+            `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping, weapons and Boss resonance`,
         );
         for (const key of [
             "KDBuffName_SpiderlingsSilkDensity",
             "KDBuffDesc_SpiderlingsSilkDensity",
+            "SpiderlingsBossResonance",
+            "SpiderlingsBossResonanceDesc",
             "KDMapMod_SpiderlingsInfestation",
             "KDMapMod_SpiderlingsHuntingGrounds",
             "SpiderlingsInfestationProgress",
