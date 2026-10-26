@@ -266,9 +266,6 @@
         stopDriver();
         if (state()?.phase === "wrap") scheduleWrap();
     });
-    KDAddEvent(KDEventMapGeneric, "defeat", "SpiderlingsBossCapture", () => {
-        if (api.BossRoom.active()) api.BossRoom.returnToPrison(true);
-    });
     api.BossCapture = Object.freeze({
         RUNE,
         state,

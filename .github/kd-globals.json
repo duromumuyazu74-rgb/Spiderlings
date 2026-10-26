@@ -390,5 +390,9 @@
   "KDStartDialog",
   "KinkyDungeonSetTargetLocation",
   "KDResetDialogue",
-  "KinkyDungeonCanSwapWith"
+  "KinkyDungeonCanSwapWith",
+  "KinkyDungeonDefeat",
+  "KDCustomDefeat",
+  "KDCustomDefeatEnemy",
+  "KinkyDungeonInterruptSleep"
 ]

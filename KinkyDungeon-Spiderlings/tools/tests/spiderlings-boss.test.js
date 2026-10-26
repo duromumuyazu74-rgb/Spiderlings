@@ -25,6 +25,57 @@ test("the prison Boss entrance leaves all authored field sites and props intact"
     );
 });
 
+test("both native Boss defeat branches return to the source chamber without native jail aftermath", () => {
+    for (const putInJail of [false, true]) {
+        const { context: c } = runtime();
+        const calls = [];
+        const leasher = { id: 123 };
+        c.KDCustomDefeat = "";
+        c.KDCustomDefeatEnemy = leasher;
+        c.KinkyDungeonDefeat = function (...args) {
+            calls.push({ receiver: this, args });
+            return "native-defeat";
+        };
+        c.KinkyDungeonInterruptSleep = () => {};
+        c.KDResetDialogue = () => {};
+        c.KDBreakTether = (player) => {
+            delete player.leash;
+        };
+        c.KinkyDungeonSendEvent = () => {};
+        c.KDMapData.RoomType = c.KDGameData.RoomType = "court";
+        c.KDMapData.SpiderlingsBossRoom = { source: { room: "prison" } };
+        c.KinkyDungeonPlayerEntity.leash = { entity: leasher.id };
+        c.KDGameData.KinkyDungeonLeashedPlayer = 2;
+        c.KDGameData.PrisonerState = "parole";
+        c.KDGoThruTile = () => {
+            c.KDMapData.RoomType = c.KDGameData.RoomType = "prison";
+            delete c.KDMapData.SpiderlingsBossRoom;
+        };
+        c.Spiderlings.Prison = {
+            isPrison: () => c.KDGameData.RoomType === "prison",
+            recapture: () => {
+                Object.assign(c.KinkyDungeonPlayerEntity, { x: 14, y: 32 });
+                c.KDGameData.SpiderlingsPrisonIdentity = { previous: c.KDGameData.PrisonerState };
+                c.KDGameData.PrisonerState = "jail";
+                return true;
+            },
+        };
+        load(c, "SpiderlingsBossRoom.js");
+        c.KinkyDungeonDefeat(putInJail, leasher);
+        assert.equal(calls.length, 0);
+        assert.equal(c.KDGameData.RoomType, "prison");
+        assert.equal(c.KinkyDungeonPlayerEntity.x, 14);
+        assert.equal(c.KinkyDungeonPlayerEntity.y, 32);
+        assert.equal(c.KDGameData.SpiderlingsPrisonIdentity.previous, "parole");
+        assert.equal(c.KinkyDungeonPlayerEntity.leash, undefined);
+        assert.equal(c.KDGameData.KinkyDungeonLeashedPlayer, 0);
+        const receiver = {};
+        assert.equal(c.KinkyDungeonDefeat.call(receiver, putInJail, leasher), "native-defeat");
+        assert.equal(calls[0].receiver, receiver);
+        assert.deepEqual(calls[0].args, [putInJail, leasher]);
+    }
+});
+
 function setup() {
     const { context: c } = runtime();
     c.KDMapData.GridWidth = c.KDMapData.GridHeight = 41;
@@ -138,6 +189,60 @@ test("a blocked support formation creates no partial group", () => {
         undefined,
     );
     assert.equal(c.KDMapData.Entities.length, before);
+});
+
+test("support keeps complete safe formations at each wall and retries an obstructed quadrant", () => {
+    for (const player of [
+        { x: 3, y: 20 },
+        { x: 37, y: 20 },
+        { x: 20, y: 3 },
+        { x: 20, y: 37 },
+    ]) {
+        const { c, walls, encounter } = setup();
+        const state = encounter.state();
+        c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => !encounter.isFixedFormation(enemy));
+        Object.assign(c.KinkyDungeonPlayerEntity, player);
+        state.nextBody = state.nextPulse = 10000;
+        state.warnings = [];
+        for (const [index, name, count] of [
+            [0, "WebCaster", 4],
+            [1, "Jumper", 6],
+            [2, "MageSpiderlings", 4],
+        ]) {
+            state.supportIndex = index;
+            state.nextSupport = state.clock;
+            encounter.advance(1);
+            const members = c.KDMapData.Entities.filter((enemy) => encounter.isFixedFormation(enemy));
+            assert.equal(members.length, count, `${name} at ${JSON.stringify(player)}`);
+            assert.equal(new Set(members.map((enemy) => `${enemy.x},${enemy.y}`)).size, count);
+            for (const member of members)
+                assert.ok(Math.max(Math.abs(member.x - player.x), Math.abs(member.y - player.y)) >= 4);
+            assert.equal(members.filter((enemy) => enemy.x < player.x).length, count / 2);
+            if (name !== "Jumper")
+                for (const dx of [-1, 1])
+                    for (const dy of [-1, 1])
+                        assert.equal(
+                            members.filter(
+                                (enemy) => Math.sign(enemy.x - player.x) === dx && Math.sign(enemy.y - player.y) === dy,
+                            ).length,
+                            1,
+                        );
+            c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => !encounter.isFixedFormation(enemy));
+        }
+        for (let y = player.y - 7; y < player.y; y++)
+            for (let x = player.x - 7; x < player.x; x++) walls.add(`${x},${y}`);
+        state.supportIndex = 0;
+        state.nextSupport = state.clock;
+        const due = state.nextSupport;
+        encounter.advance(1);
+        assert.equal(state.supportIndex, 0);
+        assert.equal(state.nextSupport, due);
+        assert.equal(c.KDMapData.Entities.filter(encounter.isFixedFormation).length, 0);
+        walls.clear();
+        encounter.advance(1);
+        assert.equal(state.supportIndex, 1);
+        assert.equal(c.KDMapData.Entities.filter(encounter.isFixedFormation).length, 4);
+    }
 });
 
 test("phase one becomes invulnerable and only the original four Nest deaths end regeneration", () => {

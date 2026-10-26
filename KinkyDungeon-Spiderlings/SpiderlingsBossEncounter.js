@@ -160,6 +160,23 @@
                     break;
                 }
             }
+            if (!selected) {
+                const preferred = { x: player.x + dx * 5, y: player.y + (name === "Jumper" ? dy : dy * 5) };
+                const alternatives = [];
+                for (let y = player.y - 7; y <= player.y + 7; y++)
+                    for (let x = player.x - 7; x <= player.x + 7; x++) {
+                        const point = { x, y };
+                        if (
+                            Math.sign(x - player.x) === dx &&
+                            (name === "Jumper" || Math.sign(y - player.y) === dy) &&
+                            distance(point, player) >= 4 &&
+                            legal(point, reserved)
+                        )
+                            alternatives.push(point);
+                    }
+                alternatives.sort((a, b) => distance(a, preferred) - distance(b, preferred) || a.y - b.y || a.x - b.x);
+                selected = alternatives[0];
+            }
             if (!selected) return undefined;
             points.push(selected);
             reserved.add(`${selected.x},${selected.y}`);
