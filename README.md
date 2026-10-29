@@ -6,10 +6,10 @@ Spiderlings adds spider encounters, progressive silk restraints, capture fields 
 
 ## Versions and installation
 
-| Channel                 | Version          | Availability                                                                                                                                   |
-| ----------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Formal release          | `0.92.39fix1`    | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)   |
-| Nest Prison Pre-release | `0.92.39-test.3` | [Download the preview ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.3/Spiderlings_0.92.39-test.3.zip) |
+| Channel                     | Version           | Availability                                                                                                                                  |
+| --------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formal release              | `0.92.39fix1`     | [Download the installable ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)  |
+| Test release: Prison + Boss | `0.92.39-test.11` | [Download the test ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.11/Spiderlings_0.92.39-test.11.zip) |
 
 1. Download the desired formal or preview ZIP from the table above, or build the selected development candidate using the [development guide](docs/DEVELOPMENT.md).
 2. Load that ZIP through the game's Mod manager.
@@ -19,7 +19,7 @@ GitHub's automatic Source code archives are repository downloads, not loadable M
 
 The package is verified on KD 5.4.92 and the specific official `5.5` commit recorded in [COMPATIBILITY.md](docs/COMPATIBILITY.md). Every new runtime delivery fetches and tests the latest official `5.5` commit again. The manifest's broad 5.x hint does not certify untested versions. See [current progress](docs/STATUS.md) for source, package and integration status.
 
-Nest Prison is integrated into `test`. Its test.3 preview adds quiet density decay and shared rivalry-query optimizations, with acceptance on KD 5.4.92 and official 5.5.6. Preview details and the unimplemented multi-cell Matriarch proposal are maintained in the [test-branch progress record](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md). The formal package remains v0.92.39fix1.
+Test.11 combines V6 Nest Prison and the playable Matriarch Boss in one package. It fixes idle Spinners staying beside a quiet Cocoon and clarifies Boss danger areas, countdowns and hit timing. The same ZIP passed all 74 native checks and seven language loads on each of KD 5.4.92 and official KD 5.5.6. See the [Boss entry and play guide](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/BOSS-DEMO.zh-CN.md) and [test-branch progress record](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md). Dedicated Boss artwork, rewards and balance playtesting remain unfinished. Earlier packages remain in [release history](https://github.com/duromumuyazu74-rgb/Spiderlings/releases); the formal package remains v0.92.39fix1.
 
 ## Gameplay
 
