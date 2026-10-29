@@ -47,6 +47,8 @@ npm run test:public
 
 For a change targeting `main`, use `--base origin/main`. `check` includes staged, unstaged and untracked files that are not ignored. It also validates the two README language links and manifest file availability. Format only the named changed files with `npx prettier --write <file...>`.
 
+Before a long build or native acceptance run, use `npm run check:preflight -- --base <starting-commit>` to run repository checks followed by the existing affected public/local tests and selected policy tests. It stops at the first failed stage and leaves native scenes as follow-up recommendations. Use it after relevant source changes; final verification still follows the matrix below.
+
 This section is the authority for verification scope throughout the repository, including package documentation and private tools. Apply every relevant row when a change spans categories.
 
 | Change                                                                             | Required local verification                                                                                                                                                        | Version and installable ZIP                                                                                                       |

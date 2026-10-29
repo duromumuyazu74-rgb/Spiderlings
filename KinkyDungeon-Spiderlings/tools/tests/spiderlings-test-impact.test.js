@@ -15,6 +15,20 @@ const projectFile = "SpiderlingsFieldProjects.js";
 const before = fs.readFileSync(path.join(root, projectFile), "utf8");
 const change = (after) => [{ path: projectFile, before, after }];
 
+test("preflight rejects preview mode and stops at repository failure before launching affected tests", () => {
+    const runner = path.join(__dirname, "../run-spiderlings-tests.js");
+    const preview = spawnSync(process.execPath, [runner, "preflight", "--plan"], { encoding: "utf8" });
+    assert.notEqual(preview.status, 0);
+    assert.match(preview.stderr, /Preflight executes checks/);
+    const failed = spawnSync(
+        process.execPath,
+        [runner, "preflight", "--base", "refs/heads/missing-preflight-fixture"],
+        { encoding: "utf8" },
+    );
+    assert.notEqual(failed.status, 0);
+    assert.doesNotMatch(failed.stdout, /Affected areas:|TAP version/);
+});
+
 test("every runtime script has explicit coverage and every referenced test and scene exists", () => {
     assert.deepEqual(validateMappings(suites, manifest), []);
     for (const file of manifest.fileorder.filter((f) => f.endsWith(".js"))) {

@@ -820,6 +820,77 @@ test("scenario argument errors fail before preparation and explicit full selecti
     ]);
     assert.equal(selectScenarios(selectScenarios().executed).mode, "partial");
     assert.equal(parseArguments(["--list-scenarios"]).list, true);
+    assert.equal(parseArguments([]).jobs, 1);
+    assert.equal(parseArguments(["--jobs", "2"]).jobs, 2);
+    for (const value of ["0", "3", "1.5", "2x", ""]) assert.throws(() => parseArguments(["--jobs", value]));
+});
+
+test("target scheduling preserves serial mode and parallel target order with separate outputs", async () => {
+    const { verifyTargets } = require("../verify-kd-compatibility.js");
+    const games = [{ id: "baseline" }, { id: "github" }];
+    for (const jobs of [1, 2]) {
+        const events = [],
+            selection = selectScenarios(["basic"]);
+        let release;
+        const barrier = new Promise((resolve) => {
+            release = resolve;
+        });
+        const running = verifyTargets(
+            games,
+            "fixture.zip",
+            "output",
+            selection,
+            jobs,
+            async (game, file, folder, selected) => {
+                events.push(`start:${game.id}`);
+                assert.equal(file, "fixture.zip");
+                assert.equal(folder, path.join("output", game.id));
+                assert.equal(selected, selection);
+                if (game.id === "baseline") await barrier;
+                events.push(`finish:${game.id}`);
+                return { id: game.id };
+            },
+        );
+        await Promise.resolve();
+        assert.deepEqual(events, jobs === 1 ? ["start:baseline"] : ["start:baseline", "start:github", "finish:github"]);
+        release();
+        assert.deepEqual(
+            (await running).map((result) => result.id),
+            ["baseline", "github"],
+        );
+        if (jobs === 1)
+            assert.deepEqual(events, ["start:baseline", "finish:baseline", "start:github", "finish:github"]);
+    }
+});
+
+test("parallel target failure waits for the sibling's cleanup", async () => {
+    const { verifyTargets } = require("../verify-kd-compatibility.js");
+    let cleanup,
+        settled = false;
+    const barrier = new Promise((resolve) => {
+        cleanup = resolve;
+    });
+    const failure = new Error("baseline failed");
+    const running = verifyTargets(
+        [{ id: "baseline" }, { id: "github" }],
+        "fixture.zip",
+        "output",
+        selectScenarios(["basic"]),
+        2,
+        async (game) => {
+            if (game.id === "baseline") throw failure;
+            await barrier;
+        },
+    );
+    const rejected = assert
+        .rejects(running, (error) => error === failure)
+        .then(() => {
+            settled = true;
+        });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(settled, false);
+    cleanup();
+    await rejected;
 });
 
 test("late resource failures keep the initiating scene and seed and await response-body completion", () => {

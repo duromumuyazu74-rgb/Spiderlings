@@ -6,6 +6,7 @@
   },
   "scripts": {
     "check": "node .github/scripts/check-repository.mjs",
+    "check:preflight": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js preflight",
     "test": "node --test .github/scripts/check-repository.test.mjs",
     "test:public": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js public",
     "test:affected": "node KinkyDungeon-Spiderlings/tools/run-spiderlings-tests.js affected",
