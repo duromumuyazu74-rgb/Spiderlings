@@ -17,7 +17,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入为 Mod。PR 的 CI artifact 对应具体提交，属于候选包，其验收范围另行记录。
 
-test.11 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，修复闲置 Spinner 在玩家安静结茧后持续贴身及绕墙退离的问题，并改善 Boss 危险区、实时倒计时与命中时机的提示。同一 ZIP 已通过 KD 5.4.92 与官方 KD 5.5.6 验收，详情见 [COMPATIBILITY.md](docs/COMPATIBILITY.md)。逃脱与平衡试玩继续由 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 和 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。旧安装包保留在[发布历史](https://github.com/duromumuyazu74-rgb/Spiderlings/releases)。交付状态见[当前进度](docs/STATUS.md)。
+test.11 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，修复闲置 Spinner 在玩家安静结茧后持续贴身及绕墙退离的问题，并改善 Boss 危险区、实时倒计时与命中时机的提示。同一 ZIP 已通过 KD 5.4.92 与官方 KD 5.5.6 验收，详情见 [COMPATIBILITY.md](docs/COMPATIBILITY.md)。逃脱与平衡试玩继续由 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 和 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。旧版源码保留在 [Git 标签](https://github.com/duromumuyazu74-rgb/Spiderlings/tags)。交付状态见[当前进度](docs/STATUS.md)。
 
 敌方蛛丝命中积累无上限的蛛丝密度，达到 100 且满足原有装备前置后可结茧。密度越高越难摆脱拘束；连续十个世界回合没有合格蛛丝命中后开始消散，仍被拘束时也会衰减。普通敌我关系查询跳过无关的押送与场地争夺检查，减少重复的装备和场地遍历，人口及增援规则保持不变。详情见[实验规则](docs/PRISON-EXPERIMENT.md)。
 

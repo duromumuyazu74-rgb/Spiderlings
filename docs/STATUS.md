@@ -15,7 +15,7 @@ test.11 修正监牢闲置 Spinner 的散开优先级与绕墙退让，并让近
 | 正式版                | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，保留正式 Latest    |
 | 测试版：Prison + Boss | [v0.92.39-test.11](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.11)，统一安装包 |
 
-旧 test.3 与 prison.alpha.19 保留为历史版本。后续专属美术、剧情、奖励与 Boss 平衡由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪；监牢整体逃脱与平衡验收仍由 #68/#76 跟踪。
+Releases 仅保留最新测试版和最新正式版。旧安装包与发布说明已本地归档，源码历史保留在 Git 标签中。后续专属美术、剧情、奖励与 Boss 平衡由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪；监牢整体逃脱与平衡验收仍由 #68/#76 跟踪。
 
 ## V6 监牢 test.4 历史验收
 

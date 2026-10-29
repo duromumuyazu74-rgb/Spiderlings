@@ -151,7 +151,7 @@ Keep commits focused and link the applicable Issue. Publishing only these initia
 
 ## Releases
 
-This section owns the publication policy. Formal releases use `main` after accepted changes merge. Test deliveries normally use a versioned local ZIP or CI artifact. An explicit request for a test Release authorizes a `v<modbuild>` tag and GitHub Pre-release, with `--prerelease --latest=false`; preserve the current formal Latest and existing assets. Both channels require the exact accepted package and successful CI for the reviewed source commit.
+This section owns the publication policy. Formal releases use `main` after accepted changes merge. Test deliveries normally use a versioned local ZIP or CI artifact. An explicit request for a test Release authorizes a `v<modbuild>` tag and GitHub Pre-release, with `--prerelease --latest=false`; preserve the current formal Latest and its installable asset. Both channels require the exact accepted package and successful CI for the reviewed source commit.
 
 Record the release source and integration endpoint before writing: an integrated `test` commit or an explicitly retained development-branch candidate. Publishing a development candidate does not merge its PR or complete Issues that require integration. A formal release must be integrated into `main`. A request to publish a test version does not promote it to formal.
 
@@ -184,7 +184,7 @@ Supply the actual tag, full reviewed commit, notes file and expected formal Late
 
 Finish with the [per-Issue closeout audit](DELIVERY-EVIDENCE.md#issue-closeout), record the publication/download evidence, and resolve each Issue against its own condition. Report any retained draft PR and remaining integration or acceptance work alongside the Release result.
 
-Preserve existing release assets and tags. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
+Keep only the latest formal Release and latest test Pre-release published. When replacing a channel's release, first archive the previous installable ZIP and release notes locally and verify the ZIP's size and SHA-256; then remove the superseded Release page and its remote assets. Preserve all Git tags and source history, and keep the other channel's current release. The repository's Source code downloads contain maintenance files and a nested Mod directory; direct players to the attached installable ZIP.
 
 For a manual verification after repository maintenance, run the `Repository checks` workflow on the selected maintained branch. Manual runs compare against their own checked-out commit and still run policy/public tests and package verification. An unchanged root-directory move is exempt from retroactive content formatting/linting; modified files and all path, manifest and delivery checks remain enforced.
 
