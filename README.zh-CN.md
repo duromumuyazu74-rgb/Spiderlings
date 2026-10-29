@@ -6,10 +6,10 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 ## 版本与安装
 
-| 通道           | 版本             | 获取方式                                                                                                                           |
-| -------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 正式版         | `0.92.39fix1`    | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)     |
-| 巢穴监狱预发布 | `0.92.39-test.3` | [下载预览 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.3/Spiderlings_0.92.39-test.3.zip) |
+| 通道                  | 版本              | 获取方式                                                                                                                             |
+| --------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 正式版                | `0.92.39fix1`     | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)       |
+| 测试版：Prison + Boss | `0.92.39-test.11` | [下载测试 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.11/Spiderlings_0.92.39-test.11.zip) |
 
 1. 从上表下载所需正式版或预览版 ZIP，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
 2. 在游戏 Mod 管理器中载入该 ZIP。
@@ -19,7 +19,7 @@ GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入
 
 安装包已在 KD 5.4.92 和 [COMPATIBILITY.md](docs/COMPATIBILITY.md) 记录的官方 `5.5` 提交上验证。每次新运行时交付都重新拉取并测试最新官方 `5.5`。Manifest 的宽泛 5.x 提示不代表未测试版本也已兼容。源码、安装包和合并状态见[当前进度](docs/STATUS.md)。
 
-巢穴监牢已整合进 `test`。test.3 预览加入安静密度衰减和共享敌我查询优化，并通过 KD 5.4.92 与官方 5.5.6 验收。预览详情及尚未实现的多格织巢主母草案由 [test 分支进度](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)维护。正式安装包仍为 v0.92.39fix1。
+test.11 在同一安装包中包含 V6 巢穴监狱与可玩的织巢主母 Boss，修复闲置 Spinner 在玩家安静结茧后持续贴身的问题，并改善 Boss 危险区、倒计时与命中时机的提示。同一 ZIP 在 KD 5.4.92 与官方 KD 5.5.6 各通过全部 74 项原生检查及七种语言加载。入口与操作见 [Boss 试玩说明](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/BOSS-DEMO.zh-CN.md)，交付状态见 [test 分支进度](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)。Boss 专属美术、奖励与整体平衡试玩仍待完成。旧安装包保留在[发布历史](https://github.com/duromumuyazu74-rgb/Spiderlings/releases)；正式安装包仍为 v0.92.39fix1。
 
 ## 当前玩法
 

@@ -1,10 +1,10 @@
 # 当前开发与发布进度
 
-核对日期：2026-10-23。任务完成条件和发布状态以 GitHub Issues、PR 与 Release 为准。
+核对日期：2026-10-29。任务完成条件和发布状态以 GitHub Issues、PR 与 Release 为准。
 
-正式版仍为 [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)。巢穴监牢已整合进 `test`，当前预览入口为 [0.92.39-test.3](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.3)，包含受缚时的安静密度衰减、全地图共享敌我查询优化及 KD 5.5.6 NPC 出生移位修复。预览通过 1,178 项本地回归，同一 ZIP 在 KD 5.4.92 与官方 5.5.6 各通过 69 项原生检查及七种语言加载。
+正式版仍为 [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)。当前统一测试版为 [0.92.39-test.11](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.11)，同一个包包含 V6 巢穴监牢与织巢主母 Boss，并修复安静结茧后 Spinner 贴身不退、绕墙退离与 Boss 技能预告时机的问题。危险区、实时倒计时和命中反馈已同步改善。1,210 项本地回归通过，同一 ZIP 在 KD 5.4.92 与官方 5.5.6 各通过 74 项原生检查及七种语言加载。
 
-[test 分支进度与证据](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)维护完整测试版状态。[#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 保留成熟围场试玩跟进；维护者已认可人口压力，test.3 的同存档回合计算均值降低约 40.9%。多格织巢主母由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 单独跟踪，目前仍为未实现设计。`main` 的运行时继续对应正式版。
+[test 分支进度与证据](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)维护完整测试版状态。[PR #174](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/174) 统一交付监牢与 Boss；旧 test.3 和 prison.alpha.19 保留为历史版本。[#68](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/68) 与 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 继续跟踪整体逃脱与平衡验收；[#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 保留专属美术、剧情、奖励和 Boss 平衡工作。`main` 的运行时继续对应正式版。
 
 <details>
 <summary>2026-10-09 正式版交付时的记录</summary>
