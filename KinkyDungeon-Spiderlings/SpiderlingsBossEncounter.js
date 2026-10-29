@@ -218,7 +218,7 @@
         saved.nextSupport = saved.clock + (saved.phase === "two" ? 9 : 12);
         return true;
     }
-    function warn(kind, turns = 2, reversed = false) {
+    function warn(kind, turns = 2, reversed = false, startedAt = state().clock) {
         const saved = state(),
             enemy = boss(),
             player = KinkyDungeonPlayerEntity;
@@ -246,15 +246,10 @@
         saved.warnings.push({
             kind,
             cells,
-            at: saved.clock + turns,
+            at: startedAt + turns,
             follow: saved.phase === "two" && !reversed && ["fan", "ring"].includes(kind),
         });
-        KinkyDungeonSendTextMessage(
-            6,
-            TextGet("SpiderlingsBossSkill_" + kind).replace("TURNS", String(turns)),
-            "#e7c77d",
-            turns + 1,
-        );
+        KinkyDungeonSendTextMessage(6, TextGet("SpiderlingsBossSkill_" + kind), "#e7c77d", turns + 1);
     }
     function schedule() {
         const enemy = resonanceSource();
@@ -317,6 +312,10 @@
                 )
                     api.Webbing.applyEnemyProgression("MageSpiderlings", enemy, "Enemy");
                 saved.warnings.splice(saved.warnings.indexOf(warning), 1);
+                KinkyDungeonSendEvent("spiderlingsBossWarningResolved", {
+                    kind: warning.kind,
+                    cells: warning.cells,
+                });
                 if (warning.follow && ["one", "two"].includes(saved.phase) && !paused()) warn(warning.kind, 2, true);
             }
         for (const circle of [...saved.barrages])
@@ -432,7 +431,9 @@
                     enemy.SpiderlingsBossMeleeCredit >= (saved.phase === "two" ? 2 : 3) &&
                     !saved.warnings.length
                 ) {
-                    warn("melee", 1);
+                    // Native enemy actions precede tickAfter. Start this
+                    // warning at the end of the paid turn that creates it.
+                    warn("melee", 1, false, saved.clock + delta);
                     enemy.SpiderlingsBossMeleeCredit = 0;
                 }
                 if (
@@ -492,7 +493,8 @@
         const support = enemy.SpiderlingsBossSupport;
         if (support && delta > 0) {
             if (disabled(enemy)) return hostileResult(enemy);
-            if (!support.fired && saved.clock >= support.castAt) {
+            const actionClock = saved.clock + delta;
+            if (!support.fired && actionClock >= support.castAt) {
                 const spell = enemy.Enemy.name === "MageSpiderlings" ? "SpiderlingsMageCollapse" : "WebSpray";
                 const result = KinkyDungeonCastSpell(
                     support.target.x,
@@ -505,10 +507,10 @@
                 );
                 if (result?.result === "Cast") {
                     support.fired = true;
-                    support.retireAt = saved.clock + (spell === "SpiderlingsMageCollapse" ? 6 : 8);
+                    support.retireAt = actionClock + (spell === "SpiderlingsMageCollapse" ? 6 : 8);
                 }
             }
-            if (support.fired && saved.clock >= support.retireAt) KDRemoveEntity(enemy, false, false, true);
+            if (support.fired && actionClock >= support.retireAt) KDRemoveEntity(enemy, false, false, true);
             return hostileResult(enemy);
         }
         return undefined;

@@ -443,6 +443,16 @@ test("struggle, attack, spell and anchored movement attempts restart the full vi
 test("Mage joins Cocoon dispersal while only pending WebCaster reinforcement delays retreat", () => {
     for (const name of ["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings"]) {
         const runtime = loadRuntime();
+        Object.assign(runtime.context.KDMapData, { GridWidth: 12, GridHeight: 12 });
+        runtime.context.Spiderlings.SpinnerAI = {
+            reportPlayerContact() {},
+            occupancyRoute: () => [
+                { x: 1, y: 0 },
+                { x: 2, y: 1 },
+                { x: 3, y: 2 },
+                { x: 4, y: 2 },
+            ],
+        };
         runtime.manualEquipCocoon();
         const player = runtime.context.KinkyDungeonPlayerEntity;
         Object.assign(player, { x: 0, y: 0 });
@@ -511,6 +521,16 @@ test("vigil stays scoped to hostile spiders and clears on removal, re-equipment 
 
 test("dispersal cancels attacks and sets an outward native goal without moving the entity", () => {
     const runtime = loadRuntime();
+    Object.assign(runtime.context.KDMapData, { GridWidth: 12, GridHeight: 12 });
+    runtime.context.Spiderlings.SpinnerAI = {
+        reportPlayerContact() {},
+        occupancyRoute: () => [
+            { x: 1, y: 0 },
+            { x: 2, y: 1 },
+            { x: 3, y: 2 },
+            { x: 4, y: 2 },
+        ],
+    };
     runtime.manualEquipCocoon();
     const player = runtime.context.KinkyDungeonPlayerEntity;
     Object.assign(player, { x: 0, y: 0 });

@@ -300,16 +300,26 @@ SpiderlingsCourtEntranceFound,Al este del nido principal, un pasaje cubierto de 
 SpiderlingsCourtLocked,La Matriarca sella el pasaje. Derrótala para volver a la prisión.
 SpiderlingsCourtVictory,La Matriarca cae. El pasaje del sur conduce de vuelta a la prisión.
 SpiderlingsBossInterlude,La Matriarca se regenera. Destruye los cuatro nidos marcados para terminar su invulnerabilidad.
-SpiderlingsBossSkill_fan,El abanico de seda fija su dirección: TURNS turnos del mundo.
-SpiderlingsBossSkill_ring,El anillo de seda se cerrará en TURNS turnos del mundo.
-SpiderlingsBossSkill_track,La seda descendente marca tu antigua posición: TURNS turnos del mundo.
-SpiderlingsBossSkill_melee,La seda se reúne alrededor de las patas de la Matriarca: TURNS turnos del mundo.
+SpiderlingsBossSkill_fan,El abanico de seda fija su dirección.
+SpiderlingsBossSkill_ring,Un anillo de seda se reúne alrededor de la Matriarca.
+SpiderlingsBossSkill_track,La seda descendente marca tu antigua posición.
+SpiderlingsBossSkill_melee,La seda se reúne alrededor de las patas de la Matriarca.
 SpiderlingsBossCaptureWarning,Se está formando una runa perseguidora. Destrúyela antes de que te alcance.
 SpiderlingsBossContestStart,Un hilo te arrastra hacia la Matriarca. Libérate antes de que se llene la barra de atadura.
 SpiderlingsBossEscapeWindow,La envoltura termina. Tienes 24 turnos del mundo para escapar antes de que se envíe una escolta.
 SpiderlingsBossPhase_one,Matriarca · primera fase
 SpiderlingsBossResonance,Resonancia de seda
 SpiderlingsBossResonanceDesc,La Matriarca mantiene la densidad de seda en la arena e impide que disminuya de forma natural.
+SpiderlingsBossSkillName_fan,Abanico de seda
+SpiderlingsBossSkillName_ring,Anillo de seda
+SpiderlingsBossSkillName_track,Lluvia de hilos
+SpiderlingsBossSkillName_melee,Atadura cercana
+SpiderlingsBossSkillName_barrage,Ráfaga de seda
+SpiderlingsBossSkillName_capture,Capullo mágico
+SpiderlingsBossSkillName_support,Redes desde cuatro esquinas
+SpiderlingsBossCastCountdown,SKILL · Turnos del mundo restantes: TURNS
+SpiderlingsBossBarrageCountdown,SKILL · Turnos hasta la ráfaga: TURNS · Ráfagas restantes: COUNT
+SpiderlingsBossRuneTracking,La runa de seda perseguidora se acerca
 SpiderlingsBossPhase_interlude,Regeneración · quedan NESTS / 4 nidos
 SpiderlingsBossPhase_two,Matriarca · segunda fase
 SpiderlingsBossPhase_victory,Regreso a la prisión abierto

@@ -56,6 +56,10 @@ Recovery shares player-to-field route queries within a navigation snapshot. Map/
 
 `SpiderlingsNativeActions.js` owns installation of common AI movement, after-movement, attack and spell phases, enemy-loop action dispatch and contact observation. Its interface is `registerBehavior(owner, behavior)` and `install()`.
 
+An idle field member's Cocoon dispersal takes precedence over its fallback holding order, including in prison. Duties selects that action without cancelling real work or control assignments. Webbing supplies the passive-player movement policy and consumes SpinnerAI's occupancy route to the four-to-five-tile retreat band; native movement still checks and pays each step. Retreat may initially move closer to get around an obstruction.
+
+Boss native enemy actions run before the encounter's `tickAfter` clock update. Melee warnings retain a full following turn; fixed support casting and retirement compare against the paid action's ending clock. BossEncounter emits `spiderlingsBossWarningResolved` with the same cells it resolves. BossView uses saved deadlines for the live panel and owns a transient 650 ms resolution flash, cleared on load and map change. Mage support countdowns read MageSpells' own clock; drawing does not create or advance its state.
+
 WebCaster registers its hunt movement/direction preference, Webbing registers Cocoon movement, and the enemy catalogue registers rivalry after-movement. Domain modules own behavior; NativeActions owns ordering, native fallback, call context and phase admission. Re-registering an owner replaces that strategy without nesting another hook.
 
 The enemy catalogue exposes the read-only `Rivalry.isMaid(entity)` query for Maidforce and the two native Adventurer-faction Maid Knights, including its existing protection checks. Mage bolts, runes and area spells consume that identity instead of maintaining their own faction lists. Hunting Grounds prey and the current FieldCustody interception pair remain separate admission sources; native hostility, shields, resistance and hit bookkeeping still control execution.

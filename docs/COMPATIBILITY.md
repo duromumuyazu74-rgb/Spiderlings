@@ -1,6 +1,6 @@
 # Verified game environments
 
-This prison-based branch's current local demo is `Spiderlings_0.92.39-test.10.zip`. Earlier test.8, test.7, test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+This prison-based branch's current local demo is `Spiderlings_0.92.39-test.11.zip`. Earlier test.10, test.8, test.7, test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,25 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.11 prison retreat and Boss telegraphs (2026-10-29)
+
+An idle prison field member now executes Cocoon dispersal instead of retaining its fallback holding order. The retreat uses an occupancy-aware route to clear nearby walls while native movement still pays each step. Actual construction, patrol and escort handlers keep their duties.
+
+Boss melee retains a full visible world turn after native AI creates its warning. Fixed support casting and retirement use the paid action's ending clock. The Boss panel shows live body, support, barrage and capture timing; Mage Collapse uses its own gameplay clock. Warning cells have a connected outline, a red final-turn state and a player-cell marker. Resolution emits a brief render-time flash using the actual hit footprint. Drawing and loading do not replay damage or advance gameplay.
+
+Package: `Spiderlings_0.92.39-test.11.zip`, 25,000,785 bytes and 193 allowlisted entries. SHA-256: `816cb2ab5b97176975d2c14c9d9377b2b986adc80ecce2fd2974765c1afb948d`.
+
+| Game input                                                                                        | Verified result                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92                                                                                         | All 74 native checks and seven locales passed |
+| Official KD 5.5.6; freshly fetched GitHub `5.5` commit `2d71b1fa30303d8fa43be54a11f12f26a0c8a039` | All 74 native checks and seven locales passed |
+
+Full same-ZIP acceptance is retained in cache run `2026-10-29T04-38-06-534Z-0.92.39-test.11`; upstream was checked at `2026-10-29T04:38:06.518Z`. Each locale resolves 331 packaged entries. The extended `cocoon-vigil` scene takes a paid closer first step around a corner and then reaches at least four tiles. `boss-combat` observes the full melee warning, its displayed countdown, one native silk contact on resolution and an unchanged footprint. Final-package screenshots include `boss-combat-meleeWarning.png`, `boss-combat-meleeImpact.png` and `boss-combat-combat.png` in each game's result directory.
+
+The player's copied slot 16 retains a V6 prison after the player has left it. The reproduction reenters that map, steps off the entrance and equips one ordinary Cocoon through the native API. Original actors, geometry, resources and Spiderlings settings remain in the copy. Test.10 held Spinner 1068 one tile away throughout 41 observations after the 25-turn vigil, and the first post-struggle wait erased the earned progress. The final test.11 ZIP reaches approximately 4.24 tiles and retains the first action's progress through that next wait. The original save and installed package were not modified. The replay covers retreat and the first response window; overall prison difficulty remains with #68/#76.
+
+Public regressions cover the original idle-field decision, a necessary closer retreat step, native melee scheduling, the support deadline and read-only countdown projection. The final local delivery report records the repository, policy, complete watcher and exact source/package checks. Dedicated Boss artwork, final rewards and broader balance acceptance remain in #165.
 
 ## Test.10 resonance feedback (2026-10-26)
 

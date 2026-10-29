@@ -141,6 +141,7 @@ function resonanceView() {
     const { c, encounter } = fixture;
     let clock = 1000;
     const draws = [];
+    const textDraws = [];
     const messages = {};
     c.CommonTime = () => clock;
     c.KinkyDungeonIsDisabled = (enemy) => enemy.stun > 0;
@@ -155,7 +156,10 @@ function resonanceView() {
     c.kdgameboard = { addChild: (child) => (child.parent = c.kdgameboard) };
     c.kdpixisprites = new Map();
     c.KDDraw = (...args) => draws.push(args);
-    c.DrawTextKD = () => {};
+    c.DrawTextKD = (text) => textDraws.push(text);
+    c.DrawTextFitKD = (text) => textDraws.push(text);
+    c.kdcanvas = {};
+    c.FillRectKD = () => {};
     c.addTextKey = (key, value) => (messages[key] = value);
     c.TextGet = (key) => messages[key] || key;
     c.PIXI = {
@@ -173,6 +177,15 @@ function resonanceView() {
             endFill() {
                 return this;
             }
+            moveTo() {
+                return this;
+            }
+            lineTo() {
+                return this;
+            }
+            drawCircle() {
+                return this;
+            }
         },
     };
     c.Spiderlings.SpellwovenCocoon = { item: () => undefined };
@@ -180,6 +193,7 @@ function resonanceView() {
         state: () => undefined,
         peaceful: () => false,
         controlling: () => false,
+        contesting: () => false,
         advance() {},
     };
     encounter.state().nextBody = encounter.state().nextSupport = 10000;
@@ -187,9 +201,11 @@ function resonanceView() {
     load(c, "SpiderlingsBossView.js");
     return {
         ...fixture,
+        textDraws,
         at: (time) => (clock = time),
         draw: () => {
             draws.length = 0;
+            textDraws.length = 0;
             c.KinkyDungeonSendEvent("draw", { CamX: 0, CamY: 0 });
             return draws;
         },
@@ -453,4 +469,116 @@ test("victory keeps player allies and their projectiles", () => {
     c.KinkyDungeonDamageEnemy(encounter.boss(), { damage: 10000 });
     assert.ok(c.KDMapData.Entities.includes(ally));
     assert.equal(c.KDMapData.Bullets[0].time, 5);
+});
+
+test("native melee scheduling leaves one visible world turn before its warned hit", () => {
+    const { c, encounter } = setup();
+    const saved = encounter.state(),
+        boss = encounter.boss();
+    saved.clock = 20;
+    saved.nextBody = saved.nextSupport = saved.nextPulse = 10000;
+    saved.warnings = [];
+    saved.lastBodyAt = 0;
+    boss.SpiderlingsBossMeleeCredit = 3;
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: boss.x, y: boss.y + 2 });
+    let hits = 0;
+    c.Spiderlings.Webbing = { applyEnemyProgression: () => hits++ };
+    c.KinkyDungeonEnemyLoop = () => ({ idle: true });
+    c.Spiderlings.NativeActions.install();
+    c.KinkyDungeonEnemyLoop(boss, c.KinkyDungeonPlayerEntity, 1);
+    encounter.advance(1);
+    assert.equal(hits, 0, "A new warning must survive the turn in which native AI created it");
+    assert.equal(saved.warnings.length, 1);
+    assert.equal(saved.warnings[0].at - saved.clock, 1);
+    encounter.advance(1);
+    assert.equal(hits, 1);
+    assert.equal(saved.warnings.length, 0);
+});
+
+test("fixed WebCaster support fires at the advertised native world-turn deadline", () => {
+    const { c, encounter } = setup();
+    const saved = encounter.state();
+    saved.warnings = [];
+    saved.nextBody = saved.nextPulse = saved.nextSupport = 10000;
+    let casts = 0;
+    c.KinkyDungeonCastSpell = () => {
+        casts++;
+        return { result: "Cast" };
+    };
+    c.KinkyDungeonEnemyLoop = () => ({ idle: true });
+    c.Spiderlings.NativeActions.install();
+    const support = c.KDMapData.Entities.filter((enemy) => enemy.SpiderlingsBossSupport);
+    assert.equal(support.length, 4);
+    for (const enemy of support) c.KinkyDungeonEnemyLoop(enemy, c.KinkyDungeonPlayerEntity, 1);
+    encounter.advance(1);
+    assert.equal(casts, 0);
+    for (const enemy of support) c.KinkyDungeonEnemyLoop(enemy, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(casts, 4, "The second paid turn must execute the two-turn cast forecast");
+    encounter.advance(1);
+    assert.ok(support.every((enemy) => enemy.SpiderlingsBossSupport.fired));
+});
+
+test("Boss warnings display the remaining world time without advancing or repeating their hit", () => {
+    const { c, encounter, draw, textDraws, at } = resonanceView();
+    const saved = encounter.state(),
+        resolved = [];
+    saved.warnings = [];
+    saved.bodyIndex = 0;
+    saved.nextBody = 0;
+    saved.nextPulse = 10000;
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 20, y: 8 });
+    let hits = 0;
+    c.Spiderlings.Webbing = { applyEnemyProgression: () => hits++ };
+    c.KDAddEvent(c.KDEventMapGeneric, "spiderlingsBossWarningResolved", "TestBossWarning", (_event, data) =>
+        resolved.push(data),
+    );
+    encounter.advance(1);
+    const snapshot = JSON.stringify(saved);
+    draw();
+    assert.ok(textDraws.includes("Silk fan · world turns left: 2"));
+    draw();
+    assert.equal(JSON.stringify(saved), snapshot);
+    assert.equal(hits, 0);
+    encounter.advance(0.5);
+    draw();
+    assert.ok(textDraws.includes("Silk fan · world turns left: 1.5"));
+    encounter.advance(1.5);
+    assert.equal(hits, 1);
+    assert.equal(resolved.length, 1);
+    assert.equal(resolved[0].kind, "fan");
+    assert.ok(resolved[0].cells.some((cell) => cell.x === 20 && cell.y === 8));
+    at(1100);
+    draw();
+    assert.equal(
+        textDraws.some((text) => text.startsWith("Silk fan ·")),
+        false,
+    );
+    c.KinkyDungeonSendEvent("afterLoadGame", {});
+    at(2000);
+    draw();
+    assert.equal(hits, 1);
+    assert.equal(resolved.length, 1);
+});
+
+test("Boss support countdowns use the Mage charge clock and combine simultaneous casts", () => {
+    const { c, encounter, draw, textDraws } = resonanceView();
+    c.addTextKey("KinkyDungeonSpellSpiderlingsMageCollapse", "Thousand Silk Collapse");
+    const owners = [c.DialogueCreateEnemy(3, 3, "MageSpiderlings"), c.DialogueCreateEnemy(4, 3, "MageSpiderlings")];
+    for (const owner of owners) owner.SpiderlingsBossSupport = { fired: true };
+    c.KDMapData.SpiderlingsMageSpells = {
+        clock: 50,
+        collapses: owners.map((owner) => ({ ownerId: owner.id, explodeAt: 53 })),
+    };
+    draw();
+    assert.equal(textDraws.filter((text) => text === "Thousand Silk Collapse · world turns left: 3").length, 1);
+    c.KDMapData.SpiderlingsMageSpells.clock = 51;
+    encounter.state().clock = 1;
+    draw();
+    assert.ok(textDraws.includes("Thousand Silk Collapse · world turns left: 2"));
+    c.KDMapData.SpiderlingsMageSpells.collapses = [];
+    draw();
+    assert.equal(
+        textDraws.some((text) => text.startsWith("Thousand Silk Collapse ·")),
+        false,
+    );
 });

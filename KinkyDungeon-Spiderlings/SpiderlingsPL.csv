@@ -300,16 +300,26 @@ SpiderlingsCourtEntranceFound,Na wschód od głównego gniazda jedwabny korytarz
 SpiderlingsCourtLocked,Matriarchini zamyka przejście. Pokonaj ją, aby wrócić do więzienia.
 SpiderlingsCourtVictory,Matriarchini pada. Południowe przejście prowadzi z powrotem do więzienia.
 SpiderlingsBossInterlude,Matriarchini się regeneruje. Zniszcz cztery oznaczone gniazda, aby zakończyć jej nietykalność.
-SpiderlingsBossSkill_fan,Wachlarz jedwabiu ustala kierunek: TURNS tur świata.
-SpiderlingsBossSkill_ring,Jedwabny pierścień zamknie się za TURNS tur świata.
-SpiderlingsBossSkill_track,Opadający jedwab oznacza twoją poprzednią pozycję: TURNS tur świata.
-SpiderlingsBossSkill_melee,Jedwab zbiera się wokół nóg Matriarchini: TURNS tur świata.
+SpiderlingsBossSkill_fan,Wachlarz jedwabiu ustala kierunek.
+SpiderlingsBossSkill_ring,Jedwabny pierścień zbiera się wokół Matriarchini.
+SpiderlingsBossSkill_track,Opadający jedwab oznacza twoją poprzednią pozycję.
+SpiderlingsBossSkill_melee,Jedwab zbiera się wokół nóg Matriarchini.
 SpiderlingsBossCaptureWarning,Powstaje śledząca runa jedwabiu. Zniszcz ją, zanim cię dosięgnie.
 SpiderlingsBossContestStart,Jedwabna nić ciągnie cię ku Matriarchini. Wyrwij się, zanim pasek związania się zapełni.
 SpiderlingsBossEscapeWindow,Owijanie się kończy. Masz 24 tury świata na ucieczkę przed wysłaniem eskorty.
 SpiderlingsBossPhase_one,Matriarchini · pierwsza faza
 SpiderlingsBossResonance,Rezonans pajęczyny
 SpiderlingsBossResonanceDesc,Matriarchini podtrzymuje gęstość pajęczyny na arenie i zapobiega jej naturalnemu zanikaniu.
+SpiderlingsBossSkillName_fan,Jedwabny wachlarz
+SpiderlingsBossSkillName_ring,Krąg jedwabiu
+SpiderlingsBossSkillName_track,Deszcz nici
+SpiderlingsBossSkillName_melee,Bliskie spętanie
+SpiderlingsBossSkillName_barrage,Jedwabna salwa
+SpiderlingsBossSkillName_capture,Magiczny kokon
+SpiderlingsBossSkillName_support,Sieci z czterech rogów
+SpiderlingsBossCastCountdown,SKILL · Pozostałe tury świata: TURNS
+SpiderlingsBossBarrageCountdown,SKILL · Tury do salwy: TURNS · Pozostałe salwy: COUNT
+SpiderlingsBossRuneTracking,Zbliża się śledząca runa jedwabiu
 SpiderlingsBossPhase_interlude,Regeneracja · pozostało NESTS / 4 gniazd
 SpiderlingsBossPhase_two,Matriarchini · druga faza
 SpiderlingsBossPhase_victory,Droga powrotna do więzienia otwarta

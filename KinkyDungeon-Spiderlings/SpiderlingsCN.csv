@@ -300,16 +300,26 @@ SpiderlingsCourtEntranceFound,主巢东侧露出一条覆丝通道，通往织�
 SpiderlingsCourtLocked,主母封住了通道。击败她才能返回监牢。
 SpiderlingsCourtVictory,主母倒下了。南侧通道已通往原来的监牢。
 SpiderlingsBossInterlude,主母开始再生。摧毁四个标记巢穴，解除她的无敌状态。
-SpiderlingsBossSkill_fan,扇网缚身已锁定方向，还有 TURNS 个世界回合。
-SpiderlingsBossSkill_ring,环丝收缚将在 TURNS 个世界回合后合拢。
-SpiderlingsBossSkill_track,连缀缠丝锁定了旧落点，还有 TURNS 个世界回合。
-SpiderlingsBossSkill_melee,主母足边聚起牵丝，还有 TURNS 个世界回合。
+SpiderlingsBossSkill_fan,扇网缚身已锁定方向。
+SpiderlingsBossSkill_ring,主母身边聚起环丝收缚的丝网。
+SpiderlingsBossSkill_track,连缀缠丝锁定了旧落点。
+SpiderlingsBossSkill_melee,主母足边聚起牵丝。
 SpiderlingsBossCaptureWarning,追踪丝符正在成形。在它触及你之前将它击碎。
 SpiderlingsBossContestStart,丝线将你牵向主母。在拘束进度满前挣开蛛丝。
 SpiderlingsBossEscapeWindow,缠绕结束。你有24个世界回合脱茧，超时后幼蛛将前来押送。
 SpiderlingsBossPhase_one,织巢主母 · 一阶段
 SpiderlingsBossResonance,织纹共鸣 · 密度维持
 SpiderlingsBossResonanceDesc,主母正在维持场内的蛛丝密度，阻止其自然衰减。
+SpiderlingsBossSkillName_fan,扇网缚身
+SpiderlingsBossSkillName_ring,环丝收缚
+SpiderlingsBossSkillName_track,连缀缠丝
+SpiderlingsBossSkillName_melee,牵丝缠缚
+SpiderlingsBossSkillName_barrage,织弹连珠
+SpiderlingsBossSkillName_capture,魔织结茧
+SpiderlingsBossSkillName_support,四角喷网
+SpiderlingsBossCastCountdown,SKILL · 剩余 TURNS 世界回合
+SpiderlingsBossBarrageCountdown,SKILL · TURNS 回合后连射 · 剩 COUNT 轮
+SpiderlingsBossRuneTracking,追踪丝符正在接近
 SpiderlingsBossPhase_interlude,再生中 · 剩余 NESTS / 4 巢
 SpiderlingsBossPhase_two,织巢主母 · 二阶段
 SpiderlingsBossPhase_victory,返回监牢的通道已开放

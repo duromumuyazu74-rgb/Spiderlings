@@ -117,6 +117,35 @@
         "Guard/field orders kept spiders around the quiet Cocoon",
     );
     rows.push({ mode: "field-guard-orders", steps: fieldSteps });
+    setup("cocoon-vigil-wall-retreat");
+    KDMapData.GridWidth = KDMapData.GridHeight = 12;
+    const retreatFloor = new Set(["8,5", "7,5", "6,5", ...[3, 4, 5, 6, 7, 8, 9].map((y) => `5,${y}`)]);
+    KDMapData.Grid = Array.from(
+        { length: 12 },
+        (_, y) => Array.from({ length: 12 }, (_, x) => (retreatFloor.has(`${x},${y}`) ? "0" : "1")).join("") + "\n",
+    ).join("");
+    KDMapData.Tiles = {};
+    KDMovePlayer(8, 5, false);
+    KinkyDungeonGenNavMap();
+    const wallCocoon = equip();
+    for (let index = 0; index < 25; index++) await turn();
+    const wallSpinner = spawn("Spinner", 5, 3, "Enemy");
+    const retreat = { mode: "wall-retreat", before: snapshot(wallSpinner, wallCocoon), steps: [] };
+    for (let index = 0; index < 16; index++) {
+        await turn();
+        retreat.steps.push(snapshot(wallSpinner, wallCocoon));
+    }
+    const firstStep = retreat.steps.find((step) => step.x !== 5 || step.y !== 3);
+    expect(
+        firstStep && firstStep.distance < retreat.before.distance,
+        "Wall retreat never took the necessary closer step",
+    );
+    expect(
+        retreat.steps.at(-1).distance >= 4,
+        "Native Cocoon retreat stopped in the corner before reaching four tiles",
+    );
+    expect(wallCocoon.cutProgress === 0.4, "Wall retreat repaired the passive Cocoon");
+    rows.push(retreat);
     setup("cocoon-vigil-pending-webcaster");
     const cocoon = equip();
     for (let i = 0; i < 25; i++) await turn();

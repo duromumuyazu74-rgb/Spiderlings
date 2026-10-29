@@ -1,6 +1,6 @@
 # 当前开发进度
 
-核对日期：2026-10-26。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
+核对日期：2026-10-29。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
 ## V6 监牢本地候选
 
@@ -27,14 +27,16 @@ KD 5.5.6 的兼容验收还发现原生延迟布置会挤走已出生的 Nurse�
 | 项目         | 当前状态                                                                                                                                           |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 正式 Release | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，可安装包已发布                                        |
-| 当前测试包   | [test.3 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.3)，含巢穴监牢、安静密度衰减及全地图共享判断优化 |
+| 已发布测试包 | [test.3 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.3)，含巢穴监牢、安静密度衰减及全地图共享判断优化 |
 | 监狱集成     | [PR #164](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/164) 将监狱玩法整合进 `test`；正式版仍为 v0.92.39fix1                             |
 
-`test` 包含监狱玩法，当前安装包为 `Spiderlings_0.92.39-test.3.zip`。alpha.19 的历史 Release 和安装包保留，test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
+`test` 包含监狱玩法，已发布预览安装包为 `Spiderlings_0.92.39-test.3.zip`。alpha.19 的历史 Release 和安装包保留，test.152 的验收记录保留在兼容文档。正式版的行为与 Latest 标记仍保持 v0.92.39fix1。
 
 ## 织巢主母本地试玩
 
-本地候选 `0.92.39-test.8` 包含实际 `3×3` 占位的主母、两阶段战斗、四巢转场、付费收圈、独立支援轮转、魔织丝茧与真实押送。普通战败和押送都返回原监牢囚禁区，支援在墙边搜索同侧或同象限的安全空地。入口与操作见[试玩说明](BOSS-DEMO.zh-CN.md)，规格见[设计文档](spiderlings-boss-design.zh-CN.md)。[Draft PR #174](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/174) 仍基于 V6 监牢分支；后续平衡、美术和集成由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。发布的 test.3 不包含主母。
+本地候选 `0.92.39-test.11` 包含实际 `3×3` 占位的主母、两阶段战斗、四巢转场、付费收圈、独立支援轮转、魔织丝茧与真实押送。普通战败和押送都返回原监牢囚禁区，支援在墙边搜索同侧或同象限的安全空地。入口与操作见[试玩说明](BOSS-DEMO.zh-CN.md)，规格见[设计文档](spiderlings-boss-design.zh-CN.md)。[Draft PR #174](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/174) 仍基于 V6 监牢分支；后续平衡、美术和集成由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。发布的 test.3 不包含主母。
+
+test.11 修正监牢闲置 Spinner 的散开优先级与绕墙退让，并让近身技能、喷网支援的释放时刻与预告一致。Boss 危险区强化边界和临近结算颜色，战斗面板显示实时剩余世界回合，结算时保留短暂闪光。验证范围与包身份见 [兼容记录](COMPATIBILITY.md)。
 
 ## 巢穴监狱实验
 

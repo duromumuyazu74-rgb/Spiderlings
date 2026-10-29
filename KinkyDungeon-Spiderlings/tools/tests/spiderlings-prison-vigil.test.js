@@ -188,3 +188,57 @@ test("ordinary prison builders resume paid work after the Cocoon vigil ends a pl
         JSON.stringify(group),
     );
 });
+
+test("a prison field member with no work retreats instead of holding beside a quiet Cocoon", () => {
+    const { c, builders } = scenario();
+    const enemy = builders[0];
+    Object.assign(enemy, { x: 12, y: 22, aware: true, SpiderlingsSpinnerRuntimeDelta: 1 });
+    c.Spiderlings.SpinnerNativeField.initializeMap({
+        fieldId: "quiet-field",
+        owners: [enemy.id],
+        anchors: [
+            { x: 30, y: 20 },
+            { x: 30, y: 24 },
+        ],
+    });
+    const encounter = c.Spiderlings.SpinnerNativeField.state();
+    encounter.ai ||= { groups: {}, plans: {} };
+    encounter.ai.groups.quietField = { id: "quietField", memberIds: [enemy.id], planId: "quietPlan" };
+    encounter.ai.plans.quietPlan = { id: "quietPlan", status: "ready", fieldIds: [], cells: [] };
+    c.Spiderlings.FieldCommand.ensure(encounter).members[enemy.id] = {
+        home: "quietField",
+        commander: "quietField",
+        phase: "home",
+    };
+    // Projects and AI supply the supported idle-field facts; Duties owns the
+    // decision that must reach the real shared movement and attack phases.
+    c.Spiderlings.FieldProjects = { ...c.Spiderlings.FieldProjects, beginWork: () => undefined };
+    c.Spiderlings.SpinnerAI = {
+        ...c.Spiderlings.SpinnerAI,
+        dutyFacts: () => ({ validPlan: true, nestAttacker: false }),
+    };
+    c.Spiderlings.SpinnerDuties.beginAction(enemy, c.KinkyDungeonPlayerEntity, 1);
+    const data = { canSensePlayer: true, hostile: true, wantsToAttack: true, MovableTiles: "0", AvoidTiles: "" };
+    c.KDAIType.hunt.beforemove(enemy, c.KinkyDungeonPlayerEntity, data);
+    assert.equal(c.Spiderlings.SpinnerDuties.current(enemy).role, "disperse");
+    assert.ok(Math.hypot(enemy.gx - 11, enemy.gy - 22) > 1);
+    assert.equal(data.wantsToAttack, false);
+    assert.equal(c.KDAIType.hunt.attack(enemy), false);
+    assert.equal(c.KDAIType.hunt.spell(enemy), false);
+});
+
+test("quiet Cocoon dispersal can take a closer first step to get around a wall", () => {
+    const { c } = scenario();
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 16, y: 8 });
+    const enemy = { id: 9, x: 13, y: 6, hp: 2, Enemy: { name: "Spinner" } };
+    c.KDMapData.Entities.push(enemy);
+    const floor = new Set(["16,8", "13,6", "13,7", "13,8", "13,9", "13,10", "13,11"]);
+    c.KinkyDungeonMapGet = (x, y) => (floor.has(`${x},${y}`) ? "0" : "1");
+    c.KinkyDungeonEnemyCanMove = (actor, direction) => floor.has(`${actor.x + direction.x},${actor.y + direction.y}`);
+    const data = { wantsToAttack: true, MovableTiles: "0", AvoidTiles: "" };
+    const result = c.Spiderlings.Webbing.disperseCocoonEnemy(enemy, c.KinkyDungeonPlayerEntity, data);
+    assert.equal(result, false);
+    assert.deepEqual({ x: enemy.gx, y: enemy.gy }, { x: 13, y: 7 });
+    assert.equal(data.ignore, true);
+    assert.equal(data.wantsToAttack, false);
+});

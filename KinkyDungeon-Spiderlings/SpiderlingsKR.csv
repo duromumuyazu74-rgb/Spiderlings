@@ -300,16 +300,26 @@ SpiderlingsCourtEntranceFound,주 둥지 동쪽의 비단 통로가 여왕의 �
 SpiderlingsCourtLocked,여왕이 통로를 막았습니다. 여왕을 쓰러뜨려야 감옥으로 돌아갈 수 있습니다.
 SpiderlingsCourtVictory,여왕이 쓰러졌습니다. 남쪽 통로로 원래 감옥에 돌아갈 수 있습니다.
 SpiderlingsBossInterlude,여왕이 재생합니다. 표시된 둥지 네 개를 파괴하면 무적 상태가 끝납니다.
-SpiderlingsBossSkill_fan,부채꼴 비단이 방향을 고정했습니다. 세계 턴 TURNS회 남았습니다.
-SpiderlingsBossSkill_ring,비단 고리가 세계 턴 TURNS회 후 닫힙니다.
-SpiderlingsBossSkill_track,떨어지는 비단이 이전 위치를 겨눕니다. 세계 턴 TURNS회 남았습니다.
-SpiderlingsBossSkill_melee,여왕의 발밑에 비단이 모입니다. 세계 턴 TURNS회 남았습니다.
+SpiderlingsBossSkill_fan,부채꼴 비단이 방향을 고정했습니다.
+SpiderlingsBossSkill_ring,여왕 주위에 비단 고리가 모입니다.
+SpiderlingsBossSkill_track,떨어지는 비단이 이전 위치를 겨눕니다.
+SpiderlingsBossSkill_melee,여왕의 발밑에 비단이 모입니다.
 SpiderlingsBossCaptureWarning,추적 비단 룬이 만들어집니다. 닿기 전에 파괴하세요.
 SpiderlingsBossContestStart,비단이 당신을 여왕에게 끌어당깁니다. 결박 게이지가 차기 전에 벗어나세요.
 SpiderlingsBossEscapeWindow,감기가 끝났습니다. 호송이 시작되기 전 세계 턴 24회 안에 탈출하세요.
 SpiderlingsBossPhase_one,여왕 · 1단계
 SpiderlingsBossResonance,직조 공명
 SpiderlingsBossResonanceDesc,여왕이 전장 내 거미줄 밀도를 유지하여 자연스럽게 감소하지 않도록 하고 있습니다.
+SpiderlingsBossSkillName_fan,부채꼴 거미줄
+SpiderlingsBossSkillName_ring,거미줄 고리
+SpiderlingsBossSkillName_track,추적 거미줄
+SpiderlingsBossSkillName_melee,근접 속박
+SpiderlingsBossSkillName_barrage,거미줄 탄막
+SpiderlingsBossSkillName_capture,마법 고치
+SpiderlingsBossSkillName_support,네 모서리의 거미줄
+SpiderlingsBossCastCountdown,SKILL · 남은 세계 턴: TURNS
+SpiderlingsBossBarrageCountdown,SKILL · TURNS턴 후 연사 · 남은 횟수: COUNT
+SpiderlingsBossRuneTracking,추적 거미줄 룬이 다가오는 중
 SpiderlingsBossPhase_interlude,재생 중 · 둥지 NESTS / 4개 남음
 SpiderlingsBossPhase_two,여왕 · 2단계
 SpiderlingsBossPhase_victory,감옥으로 돌아가는 길이 열림

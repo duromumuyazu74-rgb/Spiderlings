@@ -214,7 +214,9 @@
         // An assigned field member with no executable order holds position.
         // Roaming and target selection belong to the field, not another native AI.
         if (facts.validPlan && duty.role === "native" && duty.category === "delegate-native" && !facts.nestAttacker) {
-            duty.role = "wait";
+            const dispersing = api.Webbing?.isCocoonDispersing?.(enemy, target);
+            duty.role = dispersing ? "disperse" : "wait";
+            if (dispersing) duty.nativeBeforeMove = false;
             duty.nativeAllowed = false;
             duty.handled = true;
         }
