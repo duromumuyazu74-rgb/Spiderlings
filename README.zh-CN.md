@@ -19,7 +19,7 @@ GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入
 
 安装包已在 KD 5.4.92 和 [COMPATIBILITY.md](docs/COMPATIBILITY.md) 记录的官方 `5.5` 提交上验证。每次新运行时交付都重新拉取并测试最新官方 `5.5`。Manifest 的宽泛 5.x 提示不代表未测试版本也已兼容。源码、安装包和合并状态见[当前进度](docs/STATUS.md)。
 
-test.11 在同一安装包中包含 V6 巢穴监狱与可玩的织巢主母 Boss，修复闲置 Spinner 在玩家安静结茧后持续贴身的问题，并改善 Boss 危险区、倒计时与命中时机的提示。同一 ZIP 在 KD 5.4.92 与官方 KD 5.5.6 各通过全部 74 项原生检查及七种语言加载。入口与操作见 [Boss 试玩说明](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/BOSS-DEMO.zh-CN.md)，交付状态见 [test 分支进度](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)。Boss 专属美术、奖励与整体平衡试玩仍待完成。旧安装包保留在[发布历史](https://github.com/duromumuyazu74-rgb/Spiderlings/releases)；正式安装包仍为 v0.92.39fix1。
+test.11 在同一安装包中包含 V6 巢穴监狱与可玩的织巢主母 Boss，修复闲置 Spinner 在玩家安静结茧后持续贴身的问题，并改善 Boss 危险区、倒计时与命中时机的提示。同一 ZIP 在 KD 5.4.92 与官方 KD 5.5.6 各通过全部 74 项原生检查及七种语言加载。入口与操作见 [Boss 试玩说明](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/BOSS-DEMO.zh-CN.md)，交付状态见 [test 分支进度](https://github.com/duromumuyazu74-rgb/Spiderlings/blob/test/docs/STATUS.md)。Boss 专属美术、奖励与整体平衡试玩仍待完成。旧版源码保留在 [Git 标签](https://github.com/duromumuyazu74-rgb/Spiderlings/tags)；正式安装包仍为 v0.92.39fix1。
 
 ## 当前玩法
 
