@@ -536,22 +536,25 @@
             KDEnemyHasFlag(enemy, "overrideMove")
         )
             return true;
-        let goal;
-        let farthest = distance;
-        for (let dx = -1; dx <= 1; dx++)
-            for (let dy = -1; dy <= 1; dy++) {
-                if (!dx && !dy) continue;
-                const dir = { x: dx, y: dy, delta: Math.round(Math.hypot(dx, dy) * 2) / 2 };
-                const range = Math.hypot(enemy.x + dx - player.x, enemy.y + dy - player.y);
-                if (
-                    range > farthest &&
-                    KinkyDungeonEnemyCanMove(enemy, dir, aiData.MovableTiles, aiData.AvoidTiles, aiData.ignoreLocks, 0)
-                ) {
-                    goal = { x: enemy.x + dx, y: enemy.y + dy };
-                    farthest = range;
-                }
+        const destinations = [];
+        for (let y = Math.max(1, player.y - 5); y <= Math.min(KDMapData.GridHeight - 2, player.y + 5); y++)
+            for (let x = Math.max(1, player.x - 5); x <= Math.min(KDMapData.GridWidth - 2, player.x + 5); x++) {
+                const range = Math.hypot(x - player.x, y - player.y);
+                if (range >= 4 && range <= 5) destinations.push({ x, y });
             }
+        // Follow a reachable retreat route even when its first step goes
+        // closer to the prey. Greedy outward steps strand spiders in corners.
+        const goal = api.SpinnerAI.occupancyRoute(enemy, destinations).find(
+            (cell) => cell.x !== enemy.x || cell.y !== enemy.y,
+        );
         if (!goal) return true;
+        const direction = {
+            x: goal.x - enemy.x,
+            y: goal.y - enemy.y,
+            delta: Math.round(Math.hypot(goal.x - enemy.x, goal.y - enemy.y) * 2) / 2,
+        };
+        if (!KinkyDungeonEnemyCanMove(enemy, direction, aiData.MovableTiles, aiData.AvoidTiles, aiData.ignoreLocks, 0))
+            return true;
         enemy.gx = goal.x;
         enemy.gy = goal.y;
         enemy.path = null;

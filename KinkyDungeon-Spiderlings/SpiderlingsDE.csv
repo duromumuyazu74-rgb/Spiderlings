@@ -300,16 +300,26 @@ SpiderlingsCourtEntranceFound,Östlich des Hauptnests führt ein seidener Durchg
 SpiderlingsCourtLocked,Die Matriarchin versperrt den Durchgang. Besiege sie, um ins Gefängnis zurückzukehren.
 SpiderlingsCourtVictory,Die Matriarchin fällt. Der südliche Durchgang führt zurück ins Gefängnis.
 SpiderlingsBossInterlude,Die Matriarchin regeneriert. Zerstöre die vier markierten Nester, um ihre Unverwundbarkeit zu beenden.
-SpiderlingsBossSkill_fan,Der Seidenfächer richtet sich aus: TURNS Weltzüge.
-SpiderlingsBossSkill_ring,Der Seidenring schließt sich in TURNS Weltzügen.
-SpiderlingsBossSkill_track,Fallende Seide markiert deine alte Position: TURNS Weltzüge.
-SpiderlingsBossSkill_melee,Seide sammelt sich um die Füße der Matriarchin: TURNS Weltzüge.
+SpiderlingsBossSkill_fan,Der Seidenfächer richtet sich aus.
+SpiderlingsBossSkill_ring,Ein Seidenring sammelt sich um die Matriarchin.
+SpiderlingsBossSkill_track,Fallende Seide markiert deine alte Position.
+SpiderlingsBossSkill_melee,Seide sammelt sich um die Füße der Matriarchin.
 SpiderlingsBossCaptureWarning,Eine verfolgende Seidenrune entsteht. Zerstöre sie, bevor sie dich erreicht.
 SpiderlingsBossContestStart,Ein Seidenband zieht dich zur Matriarchin. Ziehe dich los, bevor die Fesselungsleiste voll ist.
 SpiderlingsBossEscapeWindow,Die Umwicklung endet. Du hast 24 Weltzüge zur Flucht, bevor eine Eskorte gerufen wird.
 SpiderlingsBossPhase_one,Matriarchin · Phase eins
 SpiderlingsBossResonance,Seidenresonanz
 SpiderlingsBossResonanceDesc,Die Matriarchin hält die Seidendichte in der Arena aufrecht und verhindert ihren natürlichen Abbau.
+SpiderlingsBossSkillName_fan,Seidenfächer
+SpiderlingsBossSkillName_ring,Seidenring
+SpiderlingsBossSkillName_track,Fadenregen
+SpiderlingsBossSkillName_melee,Seidengriff
+SpiderlingsBossSkillName_barrage,Seidensalve
+SpiderlingsBossSkillName_capture,Magiekokon
+SpiderlingsBossSkillName_support,Netzfeuer aus vier Ecken
+SpiderlingsBossCastCountdown,SKILL · Verbleibende Weltzüge: TURNS
+SpiderlingsBossBarrageCountdown,SKILL · Weltzüge bis zur Salve: TURNS · Salven übrig: COUNT
+SpiderlingsBossRuneTracking,Die verfolgende Seidenrune nähert sich
 SpiderlingsBossPhase_interlude,Regeneration · NESTS / 4 Nester übrig
 SpiderlingsBossPhase_two,Matriarchin · Phase zwei
 SpiderlingsBossPhase_victory,Rückweg ins Gefängnis offen

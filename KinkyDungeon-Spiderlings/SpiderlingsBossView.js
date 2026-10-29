@@ -29,10 +29,20 @@
         SpiderlingsCourtVictory: "The Matriarch falls. The southern passage leads back to the prison.",
         SpiderlingsBossInterlude:
             "The Matriarch regenerates. Destroy the four marked nests to end her invulnerability.",
-        SpiderlingsBossSkill_fan: "A silk fan locks its direction: TURNS world turns.",
-        SpiderlingsBossSkill_ring: "A silk ring closes in: TURNS world turns.",
-        SpiderlingsBossSkill_track: "Falling silk marks your old position: TURNS world turns.",
-        SpiderlingsBossSkill_melee: "Silk gathers around the Matriarch's feet: TURNS world turns.",
+        SpiderlingsBossSkill_fan: "A silk fan locks its direction.",
+        SpiderlingsBossSkill_ring: "A silk ring gathers around the Matriarch.",
+        SpiderlingsBossSkill_track: "Falling silk marks your old position.",
+        SpiderlingsBossSkill_melee: "Silk gathers around the Matriarch's feet.",
+        SpiderlingsBossSkillName_fan: "Silk fan",
+        SpiderlingsBossSkillName_ring: "Silk ring",
+        SpiderlingsBossSkillName_track: "Falling silk",
+        SpiderlingsBossSkillName_melee: "Silk grasp",
+        SpiderlingsBossSkillName_barrage: "Silk barrage",
+        SpiderlingsBossSkillName_capture: "Spellwoven Cocoon",
+        SpiderlingsBossSkillName_support: "Four-corner web spray",
+        SpiderlingsBossCastCountdown: "SKILL · world turns left: TURNS",
+        SpiderlingsBossBarrageCountdown: "SKILL · in TURNS turns · COUNT volleys left",
+        SpiderlingsBossRuneTracking: "Tracking silk rune approaching",
         SpiderlingsBossCaptureWarning: "A tracking silk rune is forming. Destroy it before it reaches you.",
         SpiderlingsBossContestStart:
             "A silk tether draws you toward the Matriarch. Pull free before the binding bar fills.",
@@ -52,15 +62,21 @@
     for (const [key, value] of Object.entries(text)) addTextKey(key, value);
     let drawing;
     let resonancePulse;
+    let impacts = [];
     function clear() {
         if (drawing) drawing.clear();
     }
     function reset() {
         clear();
         resonancePulse = undefined;
+        impacts = [];
     }
     KDAddEvent(KDEventMapGeneric, "spiderlingsBossResonance", RESONANCE, (_event, data) => {
         resonancePulse = { map: KDMapData, bossId: data.enemy.id, started: CommonTime() };
+    });
+    KDAddEvent(KDEventMapGeneric, "spiderlingsBossWarningResolved", "SpiderlingsBossView", (_event, data) => {
+        impacts = impacts.filter((impact) => impact.map === KDMapData && CommonTime() - impact.started < 650);
+        impacts.push({ map: KDMapData, started: CommonTime(), cells: data.cells });
     });
     KDAddEvent(KDEventMapGeneric, "drawBuffIcons", RESONANCE, (_event, data) => {
         if (!api.BossEncounter.resonanceSource()) return;
@@ -112,6 +128,140 @@
             );
         }
     }
+    function drawWarnings(saved, point, size) {
+        impacts = impacts.filter((impact) => impact.map === KDMapData && CommonTime() - impact.started < 650);
+        if (saved.phase === "victory") impacts = [];
+        for (const impact of impacts) {
+            const alpha = 0.55 * (1 - (CommonTime() - impact.started) / 650);
+            drawing.lineStyle(0).beginFill(0xffe6bf, alpha);
+            for (const cell of impact.cells)
+                if (KinkyDungeonVisionGet(cell.x, cell.y) > 0) {
+                    const [x, y] = point(cell);
+                    drawing.drawRect(x + 1, y + 1, size - 2, size - 2);
+                }
+            drawing.endFill();
+        }
+        const cells = new Map();
+        for (const warning of saved.warnings)
+            for (const cell of warning.cells) {
+                if (!(KinkyDungeonVisionGet(cell.x, cell.y) > 0)) continue;
+                const key = `${cell.x},${cell.y}`,
+                    remaining = Math.max(0, warning.at - saved.clock);
+                if (!cells.has(key) || remaining < cells.get(key).remaining) cells.set(key, { ...cell, remaining });
+            }
+        for (const cell of cells.values()) {
+            const urgent = cell.remaining <= 1,
+                color = urgent ? 0xff7260 : 0xffbf60;
+            const [x, y] = point(cell);
+            drawing.lineStyle(0).beginFill(color, urgent ? 0.3 : 0.18);
+            drawing.drawRect(x + 1, y + 1, size - 2, size - 2).endFill();
+            drawing.lineStyle(3, color, 1);
+            for (const [dx, dy, x1, y1, x2, y2] of [
+                [0, -1, x, y, x + size, y],
+                [1, 0, x + size, y, x + size, y + size],
+                [0, 1, x, y + size, x + size, y + size],
+                [-1, 0, x, y, x, y + size],
+            ]) {
+                const neighbor = cells.get(`${cell.x + dx},${cell.y + dy}`);
+                if (!neighbor || neighbor.remaining <= 1 !== urgent) drawing.moveTo(x1, y1).lineTo(x2, y2);
+            }
+            if (cell.x === KinkyDungeonPlayerEntity.x && cell.y === KinkyDungeonPlayerEntity.y)
+                drawing.lineStyle(3, 0xffffff, 0.9).drawRect(x + 5, y + 5, size - 10, size - 10);
+        }
+    }
+    function drawPanel(saved, capture, boss, cocoon) {
+        const remaining = (at) => Math.max(0, Math.ceil((at - saved.clock) * 100) / 100);
+        const countdown = (kind, at) =>
+            TextGet("SpiderlingsBossCastCountdown")
+                .replace("SKILL", TextGet("SpiderlingsBossSkillName_" + kind))
+                .replace("TURNS", remaining(at));
+        const rows = [
+            {
+                text: TextGet("SpiderlingsBossPhase_" + saved.phase).replace(
+                    "NESTS",
+                    saved.nests.filter((goal) => !goal.destroyed).length,
+                ),
+                color: "#ecdafa",
+            },
+        ];
+        if (boss && saved.phase !== "victory")
+            rows.push({ text: `${Math.ceil(boss.hp)} / ${boss.Enemy.maxhp}`, color: "#ffffff" });
+        if (cocoon)
+            rows.push({
+                text: TextGet("SpiderlingsBossLayer").replace("LAYER", api.SpellwovenCocoon.layers(cocoon)),
+                color: "#ecdafa",
+            });
+        if (capture?.phase === "escape")
+            rows.push({
+                text: TextGet("SpiderlingsBossEscapeTime").replace("TURNS", remaining(capture.deadline)),
+                color: "#f2d398",
+            });
+        if (capture?.phase === "escort") rows.push({ text: TextGet("SpiderlingsBossEscort"), color: "#f2d398" });
+        const pending = saved.warnings.map((warning) => ({
+            at: warning.at,
+            text: countdown(warning.kind, warning.at),
+        }));
+        if (capture?.phase === "warning") pending.push({ at: capture.due, text: countdown("capture", capture.due) });
+        if (capture?.phase === "rune") pending.push({ at: saved.clock, text: TextGet("SpiderlingsBossRuneTracking") });
+        if (saved.barrages.length) {
+            const at = Math.min(...saved.barrages.map((circle) => circle.nextAt));
+            pending.push({
+                at,
+                text: TextGet("SpiderlingsBossBarrageCountdown")
+                    .replace("SKILL", TextGet("SpiderlingsBossSkillName_barrage"))
+                    .replace("TURNS", remaining(at))
+                    .replace("COUNT", Math.max(...saved.barrages.map((circle) => circle.remaining))),
+            });
+        }
+        if (!api.BossEncounter.paused()) {
+            const support = KDMapData.Entities.filter(
+                (enemy) =>
+                    enemy.hp > 0 &&
+                    enemy.Enemy.name === "WebCaster" &&
+                    enemy.SpiderlingsBossSupport &&
+                    !enemy.SpiderlingsBossSupport.fired &&
+                    !KinkyDungeonIsDisabled(enemy) &&
+                    !KDHelpless(enemy),
+            );
+            if (support.length) {
+                const at = Math.min(...support.map((enemy) => enemy.SpiderlingsBossSupport.castAt));
+                pending.push({ at, text: countdown("support", at) });
+            }
+        }
+        const mageState = KDMapData.SpiderlingsMageSpells;
+        const collapseTimes = new Set(
+            (mageState?.collapses || [])
+                .filter((charge) =>
+                    KDMapData.Entities.some(
+                        (enemy) => enemy.id === charge.ownerId && enemy.hp > 0 && enemy.SpiderlingsBossSupport,
+                    ),
+                )
+                .map((charge) => charge.explodeAt),
+        );
+        for (const explodeAt of collapseTimes) {
+            const turns = Math.max(0, explodeAt - mageState.clock);
+            pending.push({
+                at: saved.clock + turns,
+                text: TextGet("SpiderlingsBossCastCountdown")
+                    .replace("SKILL", TextGet("KinkyDungeonSpellSpiderlingsMageCollapse"))
+                    .replace("TURNS", turns),
+            });
+        }
+        for (const warning of pending.sort((a, b) => a.at - b.at))
+            rows.push({ text: warning.text, color: remaining(warning.at) <= 1 ? "#ff9483" : "#ffd28b" });
+        FillRectKD(kdcanvas, kdpixisprites, "SpiderlingsBossPanel", {
+            Left: 1270,
+            Top: 190,
+            Width: 450,
+            Height: rows.length * 26 + 18,
+            Color: "#191722",
+            alpha: 0.86,
+            zIndex: 109,
+        });
+        rows.forEach((row, index) =>
+            DrawTextFitKD(row.text, 1495, 210 + index * 26, 426, row.color, "#111111", index ? 20 : 22, "center", 110),
+        );
+    }
     if (typeof KDDrawEnemySprite === "function")
         KDDrawEnemySprite = api.Hooks.wrap(
             "BossView.rune",
@@ -139,18 +289,19 @@
         clear();
         if (!frame) return;
         const cocoon = api.SpellwovenCocoon.item();
-        if (cocoon)
-            DrawTextKD(
-                TextGet("SpiderlingsBossLayer").replace("LAYER", api.SpellwovenCocoon.layers(cocoon)),
-                1100,
-                148,
-                "#ecdafa",
-                "#111111",
-                20,
-            );
         const saved = api.BossEncounter.state();
         if (!saved) {
             resonancePulse = undefined;
+            impacts = [];
+            if (cocoon)
+                DrawTextKD(
+                    TextGet("SpiderlingsBossLayer").replace("LAYER", api.SpellwovenCocoon.layers(cocoon)),
+                    1100,
+                    148,
+                    "#ecdafa",
+                    "#111111",
+                    20,
+                );
             return;
         }
         if (!drawing || drawing.destroyed || drawing.parent !== kdgameboard) {
@@ -166,15 +317,7 @@
             (p.y - frame.CamY - (pans ? 0 : frame.CamY_offset || 0)) * size,
         ];
         drawResonance(point, size);
-        for (const warning of saved.warnings) {
-            drawing.lineStyle(1.5, 0xf0c477, 0.8).beginFill(0xe8ad55, 0.13);
-            for (const cell of warning.cells)
-                if (KinkyDungeonVisionGet(cell.x, cell.y) > 0) {
-                    const [x, y] = point(cell);
-                    drawing.drawRect(x + 2, y + 2, size - 4, size - 4);
-                }
-            drawing.endFill();
-        }
+        drawWarnings(saved, point, size);
         for (const circle of saved.barrages) {
             if (!(KinkyDungeonVisionGet(circle.x, circle.y) > 0)) continue;
             const [x, y] = point(circle);
@@ -190,13 +333,7 @@
                 .moveTo(bx + size / 2, by + size / 2)
                 .lineTo(px + size / 2, py + size / 2);
         }
-        const label = TextGet("SpiderlingsBossPhase_" + saved.phase).replace(
-            "NESTS",
-            saved.nests.filter((goal) => !goal.destroyed).length,
-        );
-        DrawTextKD(label, 1100, 90, "#ecdafa", "#111111", 24);
-        if (boss && saved.phase !== "victory")
-            DrawTextKD(`${Math.ceil(boss.hp)} / ${boss.Enemy.maxhp}`, 1100, 118, "#ffffff", "#111111", 20);
+        drawPanel(saved, capture, boss, cocoon);
         if (capture?.phase === "contest") {
             DrawTextKD(
                 TextGet("SpiderlingsSpinnerWeave").replace("{value}", capture.binding).replace("{goal}", "100"),
@@ -229,25 +366,12 @@
                 "#ffffff",
             );
         }
-        if (capture?.phase === "escape")
-            DrawTextKD(
-                TextGet("SpiderlingsBossEscapeTime").replace(
-                    "TURNS",
-                    Math.max(0, Math.ceil(capture.deadline - saved.clock)),
-                ),
-                1100,
-                180,
-                "#f2d398",
-                "#111111",
-                22,
-            );
-        if (capture?.phase === "escort")
-            DrawTextKD(TextGet("SpiderlingsBossEscort"), 1100, 180, "#f2d398", "#111111", 20);
     });
     KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsBossView", () => {
         clear();
         // Encounter initialization can emit the entry pulse earlier in this same event.
         if (resonancePulse?.map !== KDMapData) resonancePulse = undefined;
+        impacts = [];
     });
     for (const trigger of ["afterLoadGame", "afterNewGame"])
         KDAddEvent(KDEventMapGeneric, trigger, "SpiderlingsBossView", reset);

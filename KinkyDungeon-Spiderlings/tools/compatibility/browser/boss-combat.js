@@ -66,9 +66,65 @@
     } finally {
         KinkyDungeonSendEvent = originalSend;
     }
+    globalThis.bossAcceptance.enter("boss-visible-melee-warning");
+    const warningState = Spiderlings.BossEncounter.state(),
+        warningBoss = Spiderlings.BossEncounter.boss();
+    for (const enemy of [...KDMapData.Entities])
+        if (enemy !== warningBoss && !Spiderlings.BossFootprint.isPart(enemy))
+            KDRemoveEntity(enemy, false, false, true);
+    warningState.builderIds = [];
+    warningState.warnings = [];
+    warningState.nextBody = warningState.nextSupport = warningState.nextPulse = 10000;
+    warningState.lastBodyAt = -10;
+    warningBoss.SpiderlingsBossMeleeCredit = 3;
+    KDMovePlayer(warningBoss.x, warningBoss.y + 2, false);
+    const resolvedWarnings = [],
+        warningTexts = [];
+    const nativeText = DrawTextFitKD;
+    DrawTextFitKD = function (text) {
+        if (text.includes(TextGet("SpiderlingsBossSkillName_melee"))) warningTexts.push(text);
+        return nativeText.apply(this, arguments);
+    };
+    KDAddEvent(KDEventMapGeneric, "spiderlingsBossWarningResolved", "CompatibilityBossWarning", (_event, data) =>
+        resolvedWarnings.push(data),
+    );
+    let warningImage, impactImage;
+    try {
+        await turn();
+        expect(
+            warningState.warnings.length === 1 && warningState.warnings[0].kind === "melee",
+            "Melee resolved before its first visible warning frame",
+        );
+        expect(
+            warningState.warnings[0].at - warningState.clock === 1,
+            "Melee warning did not retain a full next world turn",
+        );
+        const cells = JSON.stringify(warningState.warnings[0].cells),
+            clock = warningState.clock;
+        warningImage = await photo();
+        const expected = TextGet("SpiderlingsBossCastCountdown")
+            .replace("SKILL", TextGet("SpiderlingsBossSkillName_melee"))
+            .replace("TURNS", "1");
+        expect(warningTexts.includes(expected), "The live melee countdown was not rendered");
+        expect(warningState.clock === clock && resolvedWarnings.length === 0, "Drawing advanced a pending attack");
+        await turn();
+        expect(
+            resolvedWarnings.length === 1 && warningState.warnings.length === 0,
+            "Warned melee did not resolve once on its advertised turn",
+        );
+        expect(
+            JSON.stringify(resolvedWarnings[0].cells) === cells,
+            "The hit footprint differs from the locked warning",
+        );
+        expect(Spiderlings.SilkDensity.state().value === 10, "Native warned melee did not apply one real silk contact");
+        impactImage = await photo();
+    } finally {
+        DrawTextFitKD = nativeText;
+        delete KDEventMapGeneric.spiderlingsBossWarningResolved.CompatibilityBossWarning;
+    }
     globalThis.bossAcceptance.enter("boss-attack-cadence");
     let encounter = Spiderlings.BossEncounter.state();
-    for (let index = 0; index < 24; index++) await turn();
+    for (let index = 0; index < 25; index++) await turn();
     expect(
         encounter.history
             .filter((entry) => entry.kind === "support")
@@ -178,7 +234,8 @@
         retainedTopology: !!snapshot,
         wallFormations,
         resonance: { pulses: resonancePulses, nativeTextures: true, statusLifecycle: true },
-        images: { resonance: resonanceImage, combat, fields },
+        warningFeedback: { renderedCountdown: true, resolutionEvents: resolvedWarnings.length, sameFootprint: true },
+        images: { resonance: resonanceImage, meleeWarning: warningImage, meleeImpact: impactImage, combat, fields },
         fixture:
             "Resonance uses paid native turns with other schedules delayed, then samples inactive phase projections; cadence runs normally; wall placement isolates one due formation; paid-ring fixture disables only Boss offense and removes support.",
     };
