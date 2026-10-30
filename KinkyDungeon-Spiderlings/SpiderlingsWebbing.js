@@ -68,32 +68,10 @@
     const CROSS_FIRE_MESSAGE = "KinkyDungeonSpiderlingsWebbingInterwoven";
     const CROSS_FIRE_FALLBACK = "The crossing strands weave together and bind another part of your body.";
 
-    function restraintById(id) {
-        if (typeof KinkyDungeonGetRestraintByName == "function") return KinkyDungeonGetRestraintByName(id);
-        return Array.isArray(globalThis.KinkyDungeonRestraints)
-            ? KinkyDungeonRestraints.find((restraint) => restraint.name === id)
-            : undefined;
-    }
-
     function equippedItem(id) {
-        if (typeof KinkyDungeonAllRestraintDynamic == "function") {
-            try {
-                for (const entry of KinkyDungeonAllRestraintDynamic()) {
-                    const item = entry && (entry.item || entry);
-                    if (item && item.name === id) return item;
-                }
-            } catch (_error) {
-                // The group lookup below is the KD 5.5-compatible fallback.
-            }
-        }
-        const restraint = restraintById(id);
-        if (!restraint || typeof KinkyDungeonGetRestraintItem != "function") return undefined;
-        let item = KinkyDungeonGetRestraintItem(restraint.Group);
-        while (item) {
+        for (const { item } of KinkyDungeonAllRestraintDynamic()) {
             if (item.name === id) return item;
-            item = item.dynamicLink;
         }
-        return undefined;
     }
 
     function chainFrom(root) {
@@ -141,25 +119,13 @@
     }
 
     // KD adapter: preserve native item instances while normalizing Spiderlings-owned link order.
-    function replaceGroupRoot(group, previousRoot, nextRoot) {
+    function replaceGroupRoot(previousRoot, nextRoot) {
         if (previousRoot === nextRoot) return true;
-        if (typeof KinkyDungeonReplaceRestraintRoot == "function") {
-            return KinkyDungeonReplaceRestraintRoot(group, previousRoot, nextRoot) !== false;
-        }
-        if (
-            typeof KinkyDungeonInventory != "undefined" &&
-            KinkyDungeonInventory &&
-            typeof KinkyDungeonInventory.get == "function" &&
-            typeof Restraint != "undefined"
-        ) {
-            const equipped = KinkyDungeonInventory.get(Restraint);
-            if (equipped && equipped.get(previousRoot.name) === previousRoot) {
-                equipped.delete(previousRoot.name);
-                equipped.set(nextRoot.name, nextRoot);
-                return true;
-            }
-        }
-        return false;
+        const equipped = KinkyDungeonInventory.get(Restraint);
+        if (equipped.get(previousRoot.name) !== previousRoot) return false;
+        equipped.delete(previousRoot.name);
+        equipped.set(nextRoot.name, nextRoot);
+        return true;
     }
 
     function refreshNormalizedGroup(root) {
@@ -190,7 +156,7 @@
         const changed = resolution.outcome.changed;
         if (!changed) return { normalized: true, changed: false, group, root: previousRoot };
         const nextRoot = ordered[0];
-        if (!replaceGroupRoot(group, previousRoot, nextRoot)) {
+        if (!replaceGroupRoot(previousRoot, nextRoot)) {
             return { normalized: false, changed: false, group, root: previousRoot, reason: "root-replacement-failed" };
         }
         for (let index = 0; index < ordered.length; index++) ordered[index].dynamicLink = ordered[index + 1];
@@ -209,14 +175,7 @@
             for (const pendingGroup of groups) normalizeManualGroup(pendingGroup);
         };
         manualNormalizationQueued = true;
-        if (typeof queueMicrotask == "function") queueMicrotask(flush);
-        else if (typeof Promise == "function") Promise.resolve().then(flush);
-        else if (typeof setTimeout == "function") setTimeout(flush, 0);
-        else {
-            manualNormalizationQueued = false;
-            pendingManualNormalizationGroups.delete(group);
-            return false;
-        }
+        queueMicrotask(flush);
         return true;
     }
 
@@ -235,8 +194,7 @@
                       ? { group: "ItemDevices" }
                       : undefined);
             const external = descriptor && item.dynamicLink;
-            const definition =
-                external && (typeof KDRestraint == "function" ? KDRestraint(external) : restraintById(external.name));
+            const definition = external && KDRestraint(external);
             const preserve =
                 definition &&
                 (spellwoven || !rules.owns(external.name)) &&
@@ -251,7 +209,7 @@
                     restored !== external &&
                     restored.name === external.name &&
                     restored.dynamicLink === external.dynamicLink &&
-                    replaceGroupRoot(descriptor.group, restored, external)
+                    replaceGroupRoot(restored, external)
                 )
                     refreshNormalizedGroup(external);
             }
@@ -264,11 +222,11 @@
 
     const kdAdapter = Object.freeze({
         equip(id, options = {}) {
-            const restraint = restraintById(id);
-            if (!restraint || typeof KinkyDungeonAddRestraint != "function") {
+            const restraint = KinkyDungeonGetRestraintByName(id);
+            if (!restraint) {
                 return { applied: false, id, reason: "missing-runtime" };
             }
-            if (typeof KDCanAddRestraint == "function" && !KDCanAddRestraint(restraint, false, "", false)) {
+            if (!KDCanAddRestraint(restraint, false, "", false)) {
                 return { applied: false, id, reason: "incompatible" };
             }
             const result = KinkyDungeonAddRestraint(
@@ -344,7 +302,7 @@
     function runtimeEnemyCatalog() {
         return defaultLifecycleCatalog().map((descriptor) => ({
             ...descriptor,
-            restraint: restraintById(descriptor.id),
+            restraint: KinkyDungeonGetRestraintByName(descriptor.id),
         }));
     }
 
@@ -389,8 +347,8 @@
     }
 
     function applySelectedRestraint(selectedId, entity, faction) {
-        const restraint = selectedId && restraintById(selectedId);
-        if (!restraint || typeof KinkyDungeonAddRestraint != "function") return false;
+        const restraint = selectedId && KinkyDungeonGetRestraintByName(selectedId);
+        if (!restraint) return false;
         const added = KinkyDungeonAddRestraint(
             restraint,
             0,
@@ -672,7 +630,7 @@
                 type: "enemyBind",
                 source: { kind: "enemy", name: (entity && entity.Enemy && entity.Enemy.name) || profile },
                 profile,
-                random: () => (typeof KDRandom == "function" ? KDRandom() : Math.random()),
+                random: () => KDRandom(),
             },
         });
         if (resolution.outcome.cocoonRepair) {
@@ -728,18 +686,8 @@
     }
 
     function expireWebSpraySlow() {
-        const player = typeof KinkyDungeonPlayerEntity != "undefined" ? KinkyDungeonPlayerEntity : undefined;
-        if (player && typeof KinkyDungeonExpireBuff == "function") {
-            try {
-                KinkyDungeonExpireBuff(player, WEBSPRAY_SLOW_BUFF);
-            } catch (_error) {
-                // The direct buff-map fallback keeps checker and older runtime contexts safe.
-            }
-        }
-        if (typeof KinkyDungeonPlayerBuffs != "undefined" && KinkyDungeonPlayerBuffs) {
-            delete KinkyDungeonPlayerBuffs[WEBSPRAY_SLOW_BUFF];
-        }
-        if (typeof KinkyDungeonCalculateSlowLevel == "function") KinkyDungeonCalculateSlowLevel(0);
+        KinkyDungeonExpireBuff(KinkyDungeonPlayerEntity, WEBSPRAY_SLOW_BUFF);
+        KinkyDungeonCalculateSlowLevel(0);
     }
 
     function syncWebSpraySlow() {
@@ -810,7 +758,7 @@
                 type: "enemyBind",
                 profile: "WebCaster",
                 source: { kind: "enemy", name: "WebCaster" },
-                random: () => (typeof KDRandom == "function" ? KDRandom() : Math.random()),
+                random: () => KDRandom(),
             },
         });
         const id = resolution.outcome.selectedId;
@@ -854,7 +802,7 @@
                         triggerSource: playerEffect && playerEffect.triggerSource,
                         profile: "WebCaster",
                         turn: runtimeWebSprayTurn,
-                        random: () => (typeof KDRandom == "function" ? KDRandom() : Math.random()),
+                        random: () => KDRandom(),
                         position: bullet ? { x: bullet.x, y: bullet.y } : undefined,
                     },
                 });

@@ -326,8 +326,8 @@ test("native inventory equipment normalizes only after a real successful add and
     assert.deepEqual(external.data, { sentinel: true });
 });
 
-test("a failed runtime root replacement leaves the pre-normalization chain intact", () => {
-    const runtime = loadLifecycleRuntime({ KinkyDungeonReplaceRestraintRoot: () => false });
+test("an inventory root stored under another key leaves the pre-normalization chain intact", () => {
+    const runtime = loadLifecycleRuntime();
     const gag = item("SpiderlingsWebbingLv1Gag", { group: "ItemMouth", data: { marker: "gag" } });
     const stuffing = item("SpiderlingsWebbingLv1Stuffing", {
         group: "ItemMouth",
@@ -335,6 +335,7 @@ test("a failed runtime root replacement leaves the pre-normalization chain intac
         dynamicLink: gag,
     });
     runtime.equipment.set("ItemMouth", stuffing);
+    runtime.context.KinkyDungeonInventory.set("Restraint", new Map([["external-key", stuffing]]));
     runtime.context.KinkyDungeonFlags.set("SelfBondage", 1);
 
     runtime.inventoryEvents["postApply:SpiderlingsNormalizeManualChain"]({ trigger: "postApply" }, stuffing, {

@@ -128,6 +128,8 @@ Use these only for package structure. They are not restraint-specific examples.
 
 ### Restraint Data Shape
 
+KD 5.4.92 and official KD 5.5.6 commit `2d71b1fa30303d8fa43be54a11f12f26a0c8a039` both expose `KinkyDungeonAllRestraintDynamic()` entries as `{ item, host }` and store worn roots in `KinkyDungeonInventory.get(Restraint)` by name. Native `KinkyDungeonExpireBuff` owns expiry events and buff-stat cache invalidation. Spiderlings uses these native paths directly. Root replacement retains an identity check before changing the inventory, so an aliased or replaced root is left intact. Neither game provides `KinkyDungeonReplaceRestraintRoot` or `KDModelDefs`; model definitions use `ModelDefs`.
+
 - `KinkiestDungeon-5.5/Game/src/base/KDTypeDefs.ts`
   - `interface restraint extends KDRestraintProps` is the authoritative field shape.
   - Important required/common fields include:

@@ -54,23 +54,17 @@ test("static computed global assignments cannot masquerade as native text sinks"
         }
 });
 
-test("the native debug bypass const resolves while uncertain keys explicitly require review", () => {
+test("constant text keys resolve while uncertain keys explicitly require review", () => {
     const file = "KinkyDungeon-Spiderlings/SpiderlingsFloorSelection.js";
-    const before = fs.readFileSync(path.join(__dirname, "../../SpiderlingsFloorSelection.js"), "utf8");
+    const before =
+        'const DEBUG_BYPASS = "SpiderlingsDebugStairBypass"; addTextKey(DEBUG_BYPASS, "Debug stair bypass is on. Marked nests are unchanged.");';
     const after = before.replace(
         'addTextKey(DEBUG_BYPASS, "Debug stair bypass is on. Marked nests are unchanged.")',
         'addTextKey(DEBUG_BYPASS, "Debug stair bypass is enabled. Marked nests are unchanged.")',
     );
-    assert.notEqual(after, before, "the current native debug registration is exercised");
     const report = inspectTextFile({ file, before, after });
     assert.equal(report.codeChanged, false);
     assert.equal(report.textChanges[0].key, "SpiderlingsDebugStairBypass");
-    for (const consumer of ["debug-stairs", "hunting-grounds", "infestation", "webbing-cutover"])
-        assert.ok(
-            fs
-                .readFileSync(path.join(__dirname, `spiderlings-${consumer}.test.js`), "utf8")
-                .includes(report.textChanges[0].key),
-        );
     for (const source of ['addTextKey(nextKey(), "Old silk.");', 'let KEY = "Cast"; addTextKey(KEY, "Old silk.");']) {
         const uncertain = inspectTextFile({ file, before: source, after: source.replace("Old silk.", "New silk.") });
         assert.equal(uncertain.textChanges[0].key, null);

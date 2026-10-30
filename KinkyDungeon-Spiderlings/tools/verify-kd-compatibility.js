@@ -13,7 +13,8 @@ const repository = path.resolve(__dirname, "../..");
 function configured(name) {
     try {
         return git(repository, "config", "--get", name);
-    } catch {
+    } catch (error) {
+        if (error.status !== 1) throw error;
         return "";
     }
 }

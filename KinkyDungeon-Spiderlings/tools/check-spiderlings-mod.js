@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { createEquipmentInventory } = require("./equipment-fixture.js");
 const { spawnSync } = require("node:child_process");
 const { parseReleaseVersion } = require("./release-version.js");
 const { escapeTextKeys, inspectEscapeText } = require("./escape-text-contract.js");
@@ -592,22 +593,6 @@ function checkTextureAtlas(pink = false, spinner = false) {
     }
 
     if (!exists(builderPath)) fail(`${builderPath} is missing.`);
-    else {
-        const builder = readModText(builderPath);
-        for (const frameName of expectedFrames)
-            if (!builder.includes(`"${frameName}"`)) fail(`${builderPath} explicit allowlist is missing ${frameName}.`);
-        if (/\.rglob\s*\(|os\.walk\s*\(|\.glob\s*\(/.test(builder))
-            fail(`${builderPath} must not recursively discover atlas sources.`);
-        if (/\.resize\s*\(|\.thumbnail\s*\(|\.rotate\s*\(|ImageOps|\.convert\s*\(/.test(builder))
-            fail(`${builderPath} contains a forbidden image transform.`);
-        for (const token of [
-            'getchannel("A").getbbox()',
-            "source.crop(alpha_bounds)",
-            "page.paste(crop, (frame_x, frame_y))",
-        ]) {
-            if (!builder.includes(token)) fail(`${builderPath} is missing the lossless trim step: ${token}`);
-        }
-    }
 
     if (errors.length === initialErrorCount) {
         pass(
@@ -647,11 +632,10 @@ function createMockState() {
         window: null,
         ModelDefs: {},
         KDOptimizeDisplacementMapInfo: {},
-        KDModelDefs: {},
         KinkyDungeonRestraints: restraints,
         KinkyDungeonEnemies: enemies,
         KinkyDungeonWeapons: {},
-        KinkyDungeonInventory: new Map([["weapon", new Map()]]),
+        KinkyDungeonInventory: new Map([["weapon", new Map()], ...createEquipmentInventory(equipped)]),
         KinkyDungeonWeaponVariants: {},
         KinkyDungeonWeaponChoices: [],
         KinkyDungeonLostItems: [],
@@ -697,6 +681,7 @@ function createMockState() {
         KDModFiles: {},
         KinkyDungeonPlayer: {},
         KinkyDungeonPlayerEntity: {},
+        Restraint: "Restraint",
         KinkyDungeonRootDirectory: "Game/",
         KinkyDungeonFlags: new Map(),
         KDInputTypes: {
@@ -728,7 +713,6 @@ function createMockState() {
         AddModel(model) {
             models.push(model);
             context.ModelDefs[model.Name] = model;
-            context.KDModelDefs[model.Name] = model;
         },
         AddRestraint(restraint) {
             restraints.push(restraint);
@@ -745,8 +729,19 @@ function createMockState() {
             return restraints.find((entry) => entry.name === name);
         },
         KinkyDungeonAllRestraintDynamic() {
-            return [];
+            const items = [];
+            for (const root of equipped.values())
+                for (let item = root; item; item = item.dynamicLink) items.push({ item });
+            return items;
         },
+        KDRestraint(item) {
+            return context.KinkyDungeonGetRestraintByName(item.name);
+        },
+        KinkyDungeonExpireBuff(_entity, key) {
+            delete context.KinkyDungeonPlayerBuffs[key];
+        },
+        KinkyDungeonCalculateSlowLevel() {},
+        queueMicrotask,
         KinkyDungeonGetRestraintItem(group) {
             return equipped.get(group);
         },

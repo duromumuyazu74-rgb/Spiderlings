@@ -72,12 +72,6 @@
     let refreshQueued = false;
     let pendingTextureRefreshes = 0;
 
-    function modelDefs() {
-        if (typeof ModelDefs != "undefined" && ModelDefs) return ModelDefs;
-        if (typeof KDModelDefs != "undefined" && KDModelDefs) return KDModelDefs;
-        return {};
-    }
-
     function layers(model) {
         if (!model || !model.Layers) return [];
         return Array.isArray(model.Layers) ? model.Layers : Object.values(model.Layers);
@@ -92,7 +86,7 @@
     }
 
     function texturePaths(modelName) {
-        const model = modelDefs()[modelName];
+        const model = ModelDefs[modelName];
         if (!isOwnedModel(model)) return [];
         const result = new Set();
         for (const layer of layers(model)) {
@@ -111,35 +105,15 @@
     }
 
     function addTextureAlias(texture, key) {
-        try {
-            if (
-                texture &&
-                key &&
-                typeof PIXI != "undefined" &&
-                PIXI &&
-                PIXI.Texture &&
-                typeof PIXI.Texture.addToCache == "function"
-            )
-                PIXI.Texture.addToCache(texture, key);
-        } catch (_error) {
-            // Duplicate or unavailable Pixi aliases are harmless.
-        }
+        if (typeof PIXI != "undefined" && PIXI?.Texture && typeof PIXI.Texture.addToCache == "function")
+            PIXI.Texture.addToCache(texture, key);
     }
 
     function cacheTexture(fullPath, texture) {
-        if (!fullPath || !texture) return;
         addTextureAlias(texture, fullPath);
         if (fullPath.startsWith("Models/")) addTextureAlias(texture, fullPath.slice("Models/".length));
-        try {
-            if (typeof KDModFiles != "undefined" && KDModFiles && KDModFiles[fullPath]) {
-                addTextureAlias(texture, KDModFiles[fullPath]);
-            }
-            if (typeof kdpixitex != "undefined" && kdpixitex && typeof kdpixitex.set == "function") {
-                kdpixitex.set(fullPath, texture);
-            }
-        } catch (_error) {
-            // KD caches may not exist during early load or in headless tests.
-        }
+        if (typeof KDModFiles != "undefined" && KDModFiles[fullPath]) addTextureAlias(texture, KDModFiles[fullPath]);
+        if (typeof kdpixitex != "undefined") kdpixitex.set(fullPath, texture);
     }
 
     function cacheAtlasResult(result) {
@@ -151,13 +125,7 @@
     }
 
     function modFileUrl(runtimePath) {
-        try {
-            if (typeof KDModFiles != "undefined" && KDModFiles && KDModFiles[runtimePath])
-                return KDModFiles[runtimePath];
-        } catch (_error) {
-            // The logical path remains a valid fallback outside a loaded mod zip.
-        }
-        return runtimePath;
+        return (typeof KDModFiles != "undefined" && KDModFiles[runtimePath]) || runtimePath;
     }
 
     function validateAtlasData(atlasPath, atlasData) {
@@ -240,24 +208,10 @@
 
     function loadAtlas(atlasPath) {
         if (atlasLoads.has(atlasPath)) return atlasLoads.get(atlasPath);
-        let promise;
-        try {
-            promise = Promise.resolve(parseAtlas(atlasPath)).catch((error) => {
-                try {
-                    if (typeof console != "undefined" && console && typeof console.warn == "function") {
-                        console.warn(
-                            `[Spiderlings] Webbing atlas failed; using direct PNG fallback: ${atlasPath}`,
-                            error,
-                        );
-                    }
-                } catch (_warningError) {
-                    // Diagnostics must never prevent direct fallback.
-                }
-                return null;
-            });
-        } catch (_error) {
-            promise = Promise.resolve(null);
-        }
+        const promise = parseAtlas(atlasPath).catch((error) => {
+            console.warn(`[Spiderlings] Webbing atlas failed; using direct PNG fallback: ${atlasPath}`, error);
+            return null;
+        });
         atlasLoads.set(atlasPath, promise);
         return promise;
     }
@@ -270,26 +224,15 @@
     function hasTexture(texturePath) {
         const ready = (texture) =>
             !!(texture && texture.baseTexture && texture.valid !== false && texture.baseTexture.valid !== false);
-        try {
+        if (typeof kdpixitex != "undefined" && ready(kdpixitex.get(texturePath))) return true;
+        if (typeof PIXI != "undefined" && PIXI?.utils?.TextureCache) {
+            if (ready(PIXI.utils.TextureCache[texturePath])) return true;
             if (
-                typeof kdpixitex != "undefined" &&
-                kdpixitex &&
-                typeof kdpixitex.get == "function" &&
-                ready(kdpixitex.get(texturePath))
+                typeof KDModFiles != "undefined" &&
+                KDModFiles[texturePath] &&
+                ready(PIXI.utils.TextureCache[KDModFiles[texturePath]])
             )
                 return true;
-            if (typeof PIXI != "undefined" && PIXI && PIXI.utils && PIXI.utils.TextureCache) {
-                if (ready(PIXI.utils.TextureCache[texturePath])) return true;
-                if (
-                    typeof KDModFiles != "undefined" &&
-                    KDModFiles &&
-                    KDModFiles[texturePath] &&
-                    ready(PIXI.utils.TextureCache[KDModFiles[texturePath]])
-                )
-                    return true;
-            }
-        } catch (_error) {
-            // Cache lookup is an optimization only.
         }
         return false;
     }
@@ -301,16 +244,9 @@
         } catch (_error) {
             // Pixi may not be initialized yet; Assets below remains the loader.
         }
-        let loader;
-        try {
-            if (typeof PIXI != "undefined" && PIXI && PIXI.Assets) {
-                // backgroundLoad only acknowledges queuing in Pixi 7.2.1.
-                // Every caller uses this promise as a rendering readiness gate.
-                loader = typeof PIXI.Assets.load == "function" ? PIXI.Assets.load.bind(PIXI.Assets) : undefined;
-            }
-        } catch (_error) {
-            loader = undefined;
-        }
+        // backgroundLoad only acknowledges queuing in Pixi 7.2.1.
+        // Every caller uses this promise as a rendering readiness gate.
+        const loader = typeof PIXI != "undefined" && PIXI?.Assets?.load?.bind(PIXI.Assets);
         let promise;
         try {
             // KD 5.4's resolver turns a logical PNG into an extensionless blob.
@@ -432,7 +368,7 @@
                 }
             }
         };
-        Object.values(modelDefs()).forEach(apply);
+        Object.values(ModelDefs).forEach(apply);
         const player = typeof KinkyDungeonPlayer != "undefined" ? KinkyDungeonPlayer : undefined;
         const characters = typeof KDCurrentModels != "undefined" ? [...KDCurrentModels.keys()] : [];
         if (player && !characters.includes(player)) characters.push(player);
@@ -511,18 +447,10 @@
         }
     }
 
-    function addInventoryEvent(trigger, handler) {
-        if (typeof KDAddEvent == "function") KDAddEvent(KDEventMapInventory, trigger, REFRESH_EVENT, handler);
-        else {
-            KDEventMapInventory[trigger] = KDEventMapInventory[trigger] || {};
-            KDEventMapInventory[trigger][REFRESH_EVENT] = handler;
-        }
-    }
-
     function registerRefreshEvent() {
         if (typeof KDEventMapInventory == "undefined") return false;
         for (const trigger of ["postApply", "postRemoval", "afterDress"]) {
-            addInventoryEvent(trigger, (event, item) => {
+            KDAddEvent(KDEventMapInventory, trigger, REFRESH_EVENT, (event, item) => {
                 if (event && event.trigger === "afterDress") {
                     // Native dressing already refreshes its models. Invalidate only
                     // when a restored copy actually needed its color corrected.

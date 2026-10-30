@@ -21,7 +21,6 @@
     "foundation": {
       "tests": [
         "spiderlings-feedback.test.js",
-        "spiderlings-webbing-cutover.test.js",
         "spiderlings-webbing-cocoon.test.js",
         "spiderlings-webbing-enemy.test.js",
         "spiderlings-spinner-art.test.js",
@@ -63,7 +62,6 @@
     "catalogue": {
       "tests": [
         "spiderlings-feedback.test.js",
-        "spiderlings-webbing-cutover.test.js",
         "spiderlings-webbing-cocoon.test.js",
         "spiderlings-webbing-enemy.test.js",
         "spiderlings-spinner-art.test.js",
@@ -120,13 +118,13 @@
         "spiderlings-spinner-npc-recovery.test.js",
         "spiderlings-webbing-cocoon.test.js",
         "spiderlings-webbing-enemy.test.js",
-        "spiderlings-web-mobility.test.js"
+        "spiderlings-web-mobility.test.js",
+        "spiderlings-jumper-dash.test.js"
       ],
       "localTests": [
         "spiderlings-encounters.test.js",
         "spiderlings-maid-hostility.test.js",
         "spiderlings-hunting-grounds.test.js",
-        "spiderlings-jumper-dash.test.js",
         "spiderlings-webbing-webspray.test.js",
         "spiderlings-spinner-native-contract.test.js"
       ],
@@ -305,20 +303,17 @@
     },
     "jumper": {
       "tests": [
+        "spiderlings-jumper-dash.test.js",
         "spiderlings-spinner-work-obstruction.test.js",
         "spiderlings-webbing-enemy.test.js",
         "spiderlings-native-actions.test.js"
       ],
-      "localTests": ["spiderlings-jumper-dash.test.js", "spiderlings-combat.test.js"],
+      "localTests": ["spiderlings-combat.test.js"],
       "scenarios": ["normal-integration", "action-cadence", "spinner-crowded-control"],
       "reason": "Native dash commitment, payment and interaction with shared yielding."
     },
     "models": {
-      "tests": [
-        "spiderlings-model-runtime.test.js",
-        "spiderlings-webbing-cutover.test.js",
-        "spiderlings-webbing-cocoon.test.js"
-      ],
+      "tests": ["spiderlings-model-runtime.test.js", "spiderlings-webbing-cocoon.test.js"],
       "localTests": [
         "spiderlings-webbing-lv1.test.js",
         "spiderlings-webbing-lifecycle.test.js",
@@ -329,7 +324,6 @@
     },
     "webbing": {
       "tests": [
-        "spiderlings-webbing-cutover.test.js",
         "spiderlings-webbing-cocoon.test.js",
         "spiderlings-webbing-enemy.test.js",
         "spiderlings-runtime-boundaries.test.js",
@@ -887,7 +881,7 @@
     }
   ],
   "runtimeCommon": {
-    "tests": ["spiderlings-module-contracts.test.js", "spiderlings-webbing-cutover.test.js"],
+    "tests": ["spiderlings-module-contracts.test.js"],
     "localTests": ["spiderlings-new-save-smoke.test.js"]
   }
 }

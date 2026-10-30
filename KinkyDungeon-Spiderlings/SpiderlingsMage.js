@@ -40,7 +40,7 @@
     function mageShot(bullet, npc = false) {
         if (bullet?.bullet?.spell?.name !== SPELL) return;
         const id = bullet.bullet.source ?? bullet.bullet.spell?.source;
-        const live = typeof KDMapData !== "undefined" && KDMapData.Entities.find((entity) => entity.id === id);
+        const live = KDMapData.Entities.find((entity) => entity.id === id);
         if (boltSource(live) && (!npc || live.hp > 0)) return live;
         if (!npc || id == null || (live && live.Enemy?.name !== ENEMY)) return;
         const saved = bullet.bullet[ORIGIN];
@@ -70,7 +70,6 @@
             (globalThis.Spiderlings?.Rivalry?.isMaid(target) ||
                 globalThis.Spiderlings?.FieldCustody?.interceptionPair(source, target) ||
                 globalThis.Spiderlings?.HuntingGrounds?.isPrey(source, target)) &&
-            typeof KDHostile === "function" &&
             KDHostile(source, target)
         );
     }

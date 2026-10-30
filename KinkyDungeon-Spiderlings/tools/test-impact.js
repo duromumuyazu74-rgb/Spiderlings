@@ -135,6 +135,10 @@ function selectAffected(inputs, suites, options = {}) {
             reasons.push({ file, kind: "documentation", profiles: [] });
             continue;
         }
+        if (file.startsWith("tools/tests/") && file.endsWith(".test.js") && change.status === "D") {
+            reasons.push({ file, kind: "removed-test", profiles: [] });
+            continue;
+        }
         if (file.startsWith("tools/tests/") && (publicSet.has(ownTest) || localSet.has(ownTest))) {
             addTests([ownTest]);
             reasons.push({ file, kind: "changed-test", profiles: [] });

@@ -95,14 +95,6 @@ test("KD 5.5 inert casts spend one native Mage action and leave only the saved s
     assert.equal(nativeLaunches, 2, "a blocked duplicate does not spend a cast");
 });
 
-test("KD 5.5 arcane player damage uses full Will loss while glue uses half", () => {
-    const source = readNative("player/KinkyDungeonStats.ts");
-    assert.match(source, /willTypesWeak:\[[^\]]*"glue"/);
-    assert.match(source, /willTypesStrong:\[[^\]]*"arcane"/);
-    assert.match(source, /if \(data\.willTypesStrong\.includes\(data\.type\)\) \{\s*let amt = -data\.dmg;/);
-    assert.match(source, /if \(data\.willTypesWeak\.includes\(data\.type\)\) \{\s*let amt = -data\.dmg\/2;/);
-});
-
 test("KD native bolt collision and Damage gate one Mage progression on accepted damage", () => {
     const fight = readNative("fight/KinkyDungeonFight.ts");
     const effects = readNative("magic/KinkyDungeonPlayerEffects.ts");

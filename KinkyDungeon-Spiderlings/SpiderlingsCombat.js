@@ -24,14 +24,7 @@
     const trailHits = new Set();
 
     function eligible(source, target) {
-        return !!(
-            source?.hp > 0 &&
-            target?.hp > 0 &&
-            !target.player &&
-            target.Enemy &&
-            typeof KDHostile === "function" &&
-            KDHostile(source, target)
-        );
+        return !!(source?.hp > 0 && target?.hp > 0 && !target.player && target.Enemy && KDHostile(source, target));
     }
 
     function damageInfo(kind) {
@@ -39,8 +32,8 @@
     }
 
     function pressureNPCShield(target) {
-        if (!(target?.shield > 0) || typeof KinkyDungeonApplyBuffToEntity !== "function") return;
-        const regen = typeof KDGetShieldRegen === "function" ? KDGetShieldRegen(target) : 0;
+        if (!(target.shield > 0)) return;
+        const regen = KDGetShieldRegen(target);
         KinkyDungeonApplyBuffToEntity(target, {
             id: "SpiderlingsWebShieldPressure",
             type: "ShieldDrain",
@@ -50,7 +43,7 @@
     }
 
     function damagePlayer(kind) {
-        if (typeof KinkyDungeonDealDamage === "function") return KinkyDungeonDealDamage(damageInfo(kind));
+        return KinkyDungeonDealDamage(damageInfo(kind));
     }
 
     function silkPayload(source, bind, attack, contact = true) {
@@ -90,8 +83,7 @@
         const data = bullet?.bullet;
         const effect = data?.playerEffect || data?.spell?.playerEffect;
         if (effect?.provenance !== "WebCaster.WebSpray" || !["direct", "trail"].includes(effect.triggerSource)) return;
-        const live =
-            typeof KDMapData !== "undefined" ? KDMapData.Entities.find((e) => e.id === data.source) : undefined;
+        const live = KDMapData.Entities.find((e) => e.id === data.source);
         // Native projectiles outlive their caster and retain source/faction in saves.
         const source =
             live?.hp > 0 && live.Enemy?.name === "WebCaster"

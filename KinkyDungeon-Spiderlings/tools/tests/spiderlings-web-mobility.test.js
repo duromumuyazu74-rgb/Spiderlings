@@ -28,6 +28,8 @@ function fixture() {
             KinkyDungeonMapGet: (x, y) =>
                 x >= 0 && x < 40 && y >= 0 && y < 8 && !blocked.has(`${x},${y}`) ? "." : "1",
             KinkyDungeonTilesGet: () => undefined,
+            KDEffectTileTagsLoc: () => ({}),
+            KDLocks: {},
             KinkyDungeonEnemyAt(x, y) {
                 return context.KDMapData.Entities.find((actor) => actor.x === x && actor.y === y);
             },

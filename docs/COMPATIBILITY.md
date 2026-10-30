@@ -15,6 +15,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.13 runtime and test cleanup (2026-10-30)
+
+The direct-start perks and concise Boss text remain in this package. Runtime adapters use the native inventory, buff expiry, hostility, binding, movement and seeded-random interfaces supplied by the supported games. The nonexistent replacement hook and model-table alias are gone. Root identity checks, external equipment preservation, saved-state validation, transaction rollback and independent direct-PNG fallback remain.
+
+The duplicate migration/source checklist and dependency-source-only checks are removed. Tests no longer pin unrelated global totals or Python source spellings. Jumper regressions use registered Mod definitions and run in the public group. Equipment fixtures exercise the same category/name inventory transition as the game. Configuration lookup preserves Git errors other than an absent key.
+
+Package: `Spiderlings_0.92.39-test.13.zip`, 25,000,386 bytes and 193 allowlisted entries. SHA-256: `a3a1bdbaa59c506c368f6b62907abb7d106f795ab2f65bf612461fe696dbe068`.
+
+The same ZIP passed all 75 native checks and all seven locale loads on each of KD 5.4.92 and official KD 5.5.6 commit `2d71b1fa30303d8fa43be54a11f12f26a0c8a039`. Full acceptance is retained in cache run `2026-10-30T13-47-58-309Z-0.92.39-test.13`. The final package, local checks and source commit are tracked in [#184](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/184).
+
 ## Test.12 direct starts and concise Boss text (2026-10-30)
 
 Two free, mutually exclusive Start perks enter the Nest Prison chamber or the Matriarch's Court. Prison owns creation of the source-floor connection and captured identity; the Court start requests voluntary prison entry before using its native shortcut. Other selected perks still determine equipment. Both starts use native new-game perk initialization and existing persistent map records.

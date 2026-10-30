@@ -79,9 +79,7 @@
 
     function start(item = anchoredItem(), skipNextTick = false) {
         if (!item || inPrisonChamber()) return undefined;
-        const roll = typeof KDRandom === "function" ? KDRandom() : Math.random();
-        const deadline =
-            MIN_TURNS + Math.floor(Math.min(Math.max(roll, 0), 1 - Number.EPSILON) * (MAX_TURNS - MIN_TURNS + 1));
+        const deadline = MIN_TURNS + Math.floor(KDRandom() * (MAX_TURNS - MIN_TURNS + 1));
         return (KDGameData[STATE] = {
             version: 1,
             cocoonId: item.id,
