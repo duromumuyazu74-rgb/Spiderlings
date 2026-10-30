@@ -15,7 +15,19 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.14 initial automatic saves (2026-10-30)
+
+Location starts run on native `afterNewGame`, after equipment perks and temporary MagicHands cleanup. Prison commits its pending admission on `AfterAdvance`, before the native stair save. The initial automatic snapshot therefore contains the selected perks, actual chamber placement and captive identity. Reloading follows the native Intro-to-Jail transition. Re-registering the package removes the previous location handlers from `KDPerkStart`.
+
+The existing `start-perks` scene loads the native automatic snapshot before making any extra save. It covers both starts with ordinary equipment, Silken Awakening and deliberately selected MagicHands, then checks later manual saves and both return connections. The new scene fails against test.13 and passes the test.14 baseline probe. Chamber placement is checked against authored bounds because native scenery can occupy the center tile.
+
+Package: `Spiderlings_0.92.39-test.14.zip`, 25,000,562 bytes and 193 allowlisted entries. SHA-256: `b54b6fa4dabc32041ff556fc6bbbf26b3478baf3899e4a2f4e9a7a279cd470da`.
+
+The same ZIP passed all 75 native checks and seven locale loads on each of KD 5.4.92 and freshly fetched official KD 5.5.6 commit `2d71b1fa30303d8fa43be54a11f12f26a0c8a039`. Full evidence is retained in cache run `2026-10-30T15-26-32-799Z-0.92.39-test.14`. Both automatic-save defects are fixed in the actual packaged flow, including deliberately selected MagicHands. Local delivery and PR results are tracked in [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183).
+
 ## Test.13 runtime and test cleanup (2026-10-30)
+
+Review later reproduced two initial-autosave defects on both tested games: location starts retained temporary MagicHands, and Prison starts saved the visitor entrance before captive placement. Test.12/test.13 save/reload coverage below used an additional manual save and did not cover that initial automatic snapshot. Test.14 addresses this lifecycle gap.
 
 The direct-start perks and concise Boss text remain in this package. Runtime adapters use the native inventory, buff expiry, hostility, binding, movement and seeded-random interfaces supplied by the supported games. The nonexistent replacement hook and model-table alias are gone. Root identity checks, external equipment preservation, saved-state validation, transaction rollback and independent direct-PNG fallback remain.
 

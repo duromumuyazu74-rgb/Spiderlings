@@ -41,6 +41,7 @@ function runtime() {
     const world = { "0,3": slot };
     const journey = { "0,3": { SideRooms: [], RoomType: "", Checkpoint: "grv" } };
     const messages = [];
+    const autosaves = [];
     const context = {
         console,
         Spiderlings: {},
@@ -113,6 +114,15 @@ function runtime() {
             context.KinkyDungeonPlayerEntity.x = start.x;
             context.KinkyDungeonPlayerEntity.y = start.y;
             context.KDEventMapGeneric.AfterAdvance.SpiderlingsNestPrison();
+            autosaves.push(
+                JSON.parse(
+                    JSON.stringify({
+                        map: context.KDMapData,
+                        game: context.KDGameData,
+                        player: context.KinkyDungeonPlayerEntity,
+                    }),
+                ),
+            );
         },
     };
     context.globalThis = context;
@@ -121,7 +131,7 @@ function runtime() {
         vm.runInContext(stripTypeScriptTypes(sourceText), context);
     for (const file of ["SpiderlingsPrisonLayout.js", "SpiderlingsPrison.js"])
         vm.runInContext(fs.readFileSync(path.join(modRoot, file), "utf8"), context);
-    return { context, slot, source, cocoon, messages, lairs: vm.runInContext("KDPersonalAlt", context) };
+    return { context, slot, source, cocoon, messages, autosaves, lairs: vm.runInContext("KDPersonalAlt", context) };
 }
 
 function reachable(map, blocked = () => false) {
@@ -370,12 +380,22 @@ test("a native Jumper carries paid movement points across idle-loop turns", () =
 
 test("a prison start creates the native connection without a source Nest or new equipment", () => {
     for (const mode of ["captured", "voluntary"]) {
-        const { context: c, source, cocoon } = runtime();
+        const { context: c, source, cocoon, autosaves } = runtime();
         assert.equal(source.Entities.length, 0);
         assert.equal(c.Spiderlings.Prison.start(mode), true);
         assert.equal(c.Spiderlings.Prison.isPrison(), true);
         assert.equal(c.Spiderlings.Prison.captured(), mode === "captured");
         assert.equal(c.KDMapData.PrisonState, mode === "captured" ? "Intro" : "Visit");
+        const saved = autosaves.at(-1);
+        assert.equal(saved.map.PrisonState, mode === "captured" ? "Intro" : "Visit");
+        assert.equal(saved.game.PrisonerState === "jail", mode === "captured");
+        assert.deepEqual(saved.player, { ...c.KinkyDungeonPlayerEntity });
+        assert.deepEqual(
+            saved.game.SpiderlingsPrisonIdentity,
+            c.KDGameData.SpiderlingsPrisonIdentity && {
+                ...c.KDGameData.SpiderlingsPrisonIdentity,
+            },
+        );
         assert.equal(c.cocoon, cocoon);
         const { chamber, exit } = c.KDMapData.SpiderlingsPrison;
         if (mode === "captured")

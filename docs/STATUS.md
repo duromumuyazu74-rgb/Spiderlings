@@ -2,7 +2,11 @@
 
 核对日期：2026-10-30。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
-## 本地 test.13 运行时与测试清理
+## 本地 test.14 开局自动存档修复
+
+`0.92.39-test.14` 将两个位置开局移到原生 perk 初始化结束后的 `afterNewGame`，避免自动存档带上临时 `MagicHands`。Prison 在原生 `AfterAdvance` 阶段完成入狱和囚室安置，再由游戏保存。现有开局场景直接读回自动存档，并保留玩家主动选择 `MagicHands` 的情况。同一 ZIP 已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 各通过 75 项原生检查和七语种加载，详见 [test.14 兼容记录](COMPATIBILITY.md#test14-initial-automatic-saves-2026-10-30)。交付与 PR 状态由 [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183) 跟踪。
+
+## test.13 运行时与测试清理
 
 `0.92.39-test.13` 保留两个直接开局 perk，精简原生接口重复检查、装备查询回退及纹理缓存中的异常吞没。装备换根只使用实际库存 Map；仅测试夹具存在的接口和模型表别名已移除。游戏行为继续使用原生随机源，地图、存档、装备实例与回合规则保持原有契约。
 

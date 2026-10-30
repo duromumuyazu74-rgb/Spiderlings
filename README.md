@@ -23,7 +23,7 @@ Hostile silk contacts accumulate uncapped Silk Density, qualifying Cocoon at 100
 
 ## Current development gameplay
 
-Development source `0.92.39-test.13` includes the fixed 81×63 V6 Nest Prison and the [Matriarch demo](docs/BOSS-DEMO.zh-CN.md). The prison has an upper cross junction, two connected middle fields, a lower storage field, a main-nest enclosure and a mandatory exit junction. Native barrels and chests occupy side areas; actual Spinners build and close the six authored sites under the existing workforce and project limits. The Matriarch occupies nine cells in a separate Court reached from the prison. Victory and defeat return to that same prison; support formations retain safe positions near walls.
+Development source `0.92.39-test.14` includes the fixed 81×63 V6 Nest Prison and the [Matriarch demo](docs/BOSS-DEMO.zh-CN.md). The prison has an upper cross junction, two connected middle fields, a lower storage field, a main-nest enclosure and a mandatory exit junction. Native barrels and chests occupy side areas; actual Spinners build and close the six authored sites under the existing workforce and project limits. The Matriarch occupies nine cells in a separate Court reached from the prison. Victory and defeat return to that same prison; support formations retain safe positions near walls.
 
 The Start category offers two free, mutually exclusive perks: Nest prison start begins in the prison chamber; Matriarch start begins in the Court with a connected prison for returns. Other selected perks determine equipment, including Silken Awakening. Boss skill feedback is shorter while retaining warnings and world-turn countdowns. The published download above remains test.11.
 
