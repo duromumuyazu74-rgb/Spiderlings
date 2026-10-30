@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { createEquipmentInventory } = require("../equipment-fixture.js");
 
 const modRoot = path.join(__dirname, "..", "..");
 const families = [
@@ -106,6 +107,12 @@ function loadRuntime(options = {}) {
         KDRandom: () => 0,
         KinkyDungeonPlayer: player,
         KinkyDungeonPlayerEntity: player,
+        Restraint: "Restraint",
+        KinkyDungeonInventory: createEquipmentInventory(equipment),
+        KinkyDungeonExpireBuff() {},
+        KinkyDungeonDealDamage() {
+            return { happened: 0 };
+        },
         KDCurrentModels: new Map([[player, { Poses: { Closed: true, Wristtie: true } }]]),
         KDTapeLink: ["Wrapping"],
         KDTapeRender: ["Wrapping"],
@@ -134,11 +141,6 @@ function loadRuntime(options = {}) {
         },
         KinkyDungeonGetRestraintItem(group) {
             return equipment.get(group);
-        },
-        KinkyDungeonReplaceRestraintRoot(group, previous, next) {
-            if (equipment.get(group) !== previous) return false;
-            equipment.set(group, next);
-            return true;
         },
         KinkyDungeonAllRestraintDynamic() {
             const entries = [];

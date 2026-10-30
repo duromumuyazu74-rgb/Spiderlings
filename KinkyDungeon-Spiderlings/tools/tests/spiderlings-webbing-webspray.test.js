@@ -339,6 +339,9 @@ function loadRuntime(options = {}) {
         KinkyDungeonPlayer: player,
         KinkyDungeonPlayerEntity: player,
         KinkyDungeonPlayerBuffs: buffs,
+        KinkyDungeonDealDamage() {
+            return { happened: 0 };
+        },
         KDGameData: { PrisonerState: "" },
         KDCurrentModels: new Map([[player, { Poses: { Closed: true, Wristtie: true } }]]),
         KDTapeLink: ["Wrapping"],

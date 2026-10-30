@@ -94,12 +94,10 @@
                 actual,
                 Math.max(0, Number(value?.ownedSilk || 0) - Math.max(0, Number(value?.lastSlime || 0) - actual)),
             );
-        if (!(target?.hp > 0) || !(surviving > 0) || typeof KDHelpless !== "function" || !KDHelpless(target))
-            return false;
+        if (!(target?.hp > 0) || !(surviving > 0) || !KDHelpless(target)) return false;
         const owned = Math.min(surviving, Math.max(0, Number(target.boundLevel || 0)));
         const maxhp = target.Enemy?.maxhp;
-        if (!(maxhp > 0) || typeof KDNPCStruggleThreshMult !== "function" || typeof KDGetBindEffectMult !== "function")
-            return false;
+        if (!(maxhp > 0)) return false;
         const fullyBound =
             owned >= maxhp * KDGetBindEffectMult(target) ||
             (target.hp <= 0.1 * maxhp && Math.max(owned, 0.1) > target.hp);
@@ -108,7 +106,7 @@
 
     function status(target) {
         if (!target || target.player || !(target.hp > 0)) return "free";
-        if (typeof KDHelpless === "function" && KDHelpless(target)) return "native-helpless";
+        if (KDHelpless(target)) return "native-helpless";
         const recent = pressure(target);
         const limits = thresholds(target);
         const owned = record(target)?.ownedSilk || 0;

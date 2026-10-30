@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { createEquipmentInventory } = require("../equipment-fixture.js");
 const { inspectEscapeText, escapeTextKeys } = require("../escape-text-contract.js");
 
 const modRoot = path.join(__dirname, "..", "..");
@@ -94,6 +95,11 @@ function loadRuntime(options = {}) {
         KinkyDungeonPlayer: player,
         KinkyDungeonPlayerEntity: player,
         KinkyDungeonPlayerBuffs: buffs,
+        Restraint: "Restraint",
+        KinkyDungeonInventory: createEquipmentInventory(equipment),
+        KinkyDungeonDealDamage() {
+            return { happened: 0 };
+        },
         KinkyDungeonNoMoveFlag: false,
         KDGameData: { PrisonerState: "" },
         KDMapData: { Entities: [] },
@@ -167,11 +173,6 @@ function loadRuntime(options = {}) {
                 }
             }
             return entries;
-        },
-        KinkyDungeonReplaceRestraintRoot(group, previous, next) {
-            if (equipment.get(group) !== previous) return false;
-            equipment.set(group, next);
-            return true;
         },
         KinkyDungeonInventoryGetLoose(name) {
             return loose.get(name);

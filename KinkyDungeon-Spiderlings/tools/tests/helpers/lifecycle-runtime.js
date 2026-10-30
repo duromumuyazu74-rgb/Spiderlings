@@ -1,8 +1,8 @@
 "use strict";
-const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { createEquipmentInventory } = require("../../equipment-fixture.js");
 const modRoot = path.resolve(__dirname, "../../..");
 
 function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
@@ -17,6 +17,7 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
     const errorSounds = [];
     const context = {
         console,
+        KDRandom: () => 0,
         KinkyDungeonEnemies: [],
         KinkyDungeonRestraints: [],
         KinkyDungeonSpellListEnemies: [],
@@ -26,6 +27,9 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
         KDModSettings: {},
         KinkyDungeonFlags: new Map(),
         KinkyDungeonPlayerEntity: { player: true },
+        KinkyDungeonPlayerBuffs: {},
+        Restraint: "Restraint",
+        KinkyDungeonInventory: createEquipmentInventory(equipment),
         KinkyDungeonRootDirectory: "Game/",
         KDInputTypes: {
             struggle(data) {
@@ -47,6 +51,15 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
         KinkyDungeonAddRestraintText() {},
         KinkyDungeonGetRestraintByName(name) {
             return context.KinkyDungeonRestraints.find((restraint) => restraint.name === name);
+        },
+        KDRestraint(item) {
+            return context.KinkyDungeonGetRestraintByName(item.name);
+        },
+        KinkyDungeonExpireBuff(_entity, key) {
+            delete context.KinkyDungeonPlayerBuffs[key];
+        },
+        KinkyDungeonDealDamage() {
+            return { happened: 0 };
         },
         KinkyDungeonGetRestraintItem(group) {
             return equipment.get(group);
@@ -70,11 +83,6 @@ function loadLifecycleRuntime(overrides = {}, beforeLoad, spinner = false) {
                 }
             }
             return entries;
-        },
-        KinkyDungeonReplaceRestraintRoot(group, previous, next) {
-            assert.equal(equipment.get(group), previous);
-            equipment.set(group, next);
-            return true;
         },
         KinkyDungeonInventoryGetLoose(name) {
             return loose.get(name);

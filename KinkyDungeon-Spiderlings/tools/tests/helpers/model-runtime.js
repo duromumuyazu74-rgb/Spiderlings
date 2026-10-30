@@ -2,6 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { createEquipmentInventory } = require("../../equipment-fixture.js");
 const modRoot = path.resolve(__dirname, "../../..");
 
 const families = [
@@ -78,6 +79,12 @@ function loadWebbingRuntime(overrides = {}) {
     const removeCalls = [];
     const context = {
         console,
+        KDRandom: () => 0,
+        queueMicrotask,
+        KinkyDungeonPlayerBuffs: {},
+        KinkyDungeonPlayerEntity: { player: true },
+        Restraint: "Restraint",
+        KinkyDungeonInventory: createEquipmentInventory(equipped),
         KinkyDungeonEnemies: [],
         KinkyDungeonRestraints: [],
         KinkyDungeonSpellListEnemies: [],
@@ -97,7 +104,6 @@ function loadWebbingRuntime(overrides = {}) {
         KDWrappable: "Wrappable",
         ModelDefs: {},
         KDOptimizeDisplacementMapInfo: {},
-        KDModelDefs: {},
         KDMapInit(values) {
             return Object.fromEntries((values || []).map((value) => [value, true]));
         },
@@ -114,7 +120,6 @@ function loadWebbingRuntime(overrides = {}) {
         AddModel(model) {
             models.push(model);
             context.ModelDefs[model.Name] = model;
-            context.KDModelDefs[model.Name] = model;
         },
         KinkyDungeonAddRestraintText(name, displayName, description, flavorText) {
             texts[`Restraint${name}`] = displayName;
@@ -128,6 +133,22 @@ function loadWebbingRuntime(overrides = {}) {
         },
         KinkyDungeonGetRestraintItem(group) {
             return equipped.get(group);
+        },
+        KinkyDungeonAllRestraintDynamic() {
+            const items = [];
+            for (const root of equipped.values())
+                for (let item = root; item; item = item.dynamicLink) items.push({ item });
+            return items;
+        },
+        KDRestraint(item) {
+            return context.KinkyDungeonGetRestraintByName(item.name);
+        },
+        KinkyDungeonExpireBuff(_entity, key) {
+            delete context.KinkyDungeonPlayerBuffs[key];
+        },
+        KinkyDungeonCalculateSlowLevel() {},
+        KinkyDungeonDealDamage() {
+            return { happened: 0 };
         },
         KDCanAddRestraint() {
             return true;

@@ -764,7 +764,7 @@
             KDMapData[MAGE_STATE_FIELD] = "population-capped";
             return false;
         }
-        const random = typeof KDRandom === "function" ? KDRandom : Math.random;
+        const random = KDRandom;
         const options = runtimePlacementOptions(random);
         // Authored points are still pending in native population. Occupying one
         // here would make KinkyDungeonNoEnemy reject that scripted spawn.
@@ -839,7 +839,7 @@
             setSquadState(SQUAD_STATES.POPULATION_CAPPED);
             return false;
         }
-        const random = typeof KDRandom == "function" ? KDRandom : Math.random;
+        const random = KDRandom;
         const placementOptions = runtimePlacementOptions(random);
         const plan = planSquadPlacement(placementOptions);
         if (plan.outcome === "unplaceable") {

@@ -79,8 +79,7 @@
         let speed = KinkyDungeonGetBuffedStat(actor.buffs, "MoveSpeed")
             ? KinkyDungeonMultiplicativeStat(-KinkyDungeonGetBuffedStat(actor.buffs, "MoveSpeed"))
             : 1;
-        if (canSprint && typeof KDEnemyCanSprint === "function" && KDEnemyCanSprint(actor))
-            speed *= actor.Enemy.sprintspeed || KDDefaultEnemySprint;
+        if (canSprint && KDEnemyCanSprint(actor)) speed *= actor.Enemy.sprintspeed || KDDefaultEnemySprint;
         const condition = actor.bind > 0 ? 0.1 : actor.slow > 0 ? 0.5 : KDGameData.SleepTurns > 0 ? 4 : 1;
         return delta * speed * condition;
     }
@@ -129,7 +128,7 @@
             mapTile = KinkyDungeonTilesGet(`${x},${y}`);
         if (!input.tiles.includes(tile) || (input.noDoors && tile === "D")) return false;
         if (!input.ignoreLocks && mapTile?.Lock) {
-            const lock = typeof KDLocks !== "undefined" && KDLocks[mapTile.Lock];
+            const lock = KDLocks[mapTile.Lock];
             if (!lock?.canNPCPass?.(x, y, mapTile, actor)) return false;
         }
         if (input.requireLight && KinkyDungeonVisionGet(x, y) <= 0) return false;
@@ -142,7 +141,7 @@
             return true;
         }
         if (input.blockEnemy && input.occupiedKeys.has(key(cell)) && !goal) return false;
-        const occupant = typeof KinkyDungeonEnemyAt === "function" && KinkyDungeonEnemyAt(x, y);
+        const occupant = KinkyDungeonEnemyAt(x, y);
         return !occupant?.Enemy?.immobile || goal;
     }
 
@@ -151,10 +150,7 @@
         let cost = 0;
         if (!ignoreTrafficLaws) {
             const traffic = { V: 14, N: 30, D: 3, d: -2, g: 9, L: 9, T: 4 };
-            cost =
-                typeof KDEffectTileTagsLoc === "function" && KDEffectTileTagsLoc(`${x},${y}`)?.danger
-                    ? 30
-                    : traffic[tile] || 0;
+            cost = KDEffectTileTagsLoc(`${x},${y}`)?.danger ? 30 : traffic[tile] || 0;
             if (tile === "V" && mapTile?.Sfty) cost = 0;
             cost += (mapTile?.Lock ? 2 : 0) + (mapTile?.OL ? 12 : 0);
             cost += KDMapData.Traffic?.[y]?.[x] || 0;

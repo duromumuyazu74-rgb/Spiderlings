@@ -141,9 +141,9 @@ test("native scene edits expand real state continuations and shared helpers only
 });
 
 test("direct local test edits and renamed tests are retained and unmapped/deleted tests do not trigger everything", () => {
-    const local = selectAffected(["tools/tests/spiderlings-jumper-dash.test.js"], suites);
+    const local = selectAffected(["tools/tests/spiderlings-maid-hostility.test.js"], suites);
     assert.deepEqual(local.tests, []);
-    assert.deepEqual(local.localTests, ["spiderlings-jumper-dash.test.js"]);
+    assert.deepEqual(local.localTests, ["spiderlings-maid-hostility.test.js"]);
     const renamed = selectAffected(
         [
             {
@@ -160,6 +160,7 @@ test("direct local test edits and renamed tests are retained and unmapped/delete
         suites,
     );
     assert.equal(missing.status, "needs-mapping");
+    assert.deepEqual(missing.unknown, ["SpiderlingsUnknown.js"]);
     assert.deepEqual(missing.tests, []);
     assert.equal(missing.nativeScope, "none");
 });

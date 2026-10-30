@@ -15,6 +15,8 @@ function fixture(overrides = {}) {
     c.KDFactionHostile = () => false;
     c.KDEntityHasFlag = () => false;
     c.KDHelpless = (e) => e.boundLevel > 8;
+    c.KDGetShieldRegen = () => 0;
+    c.KinkyDungeonApplyBuffToEntity = () => {};
     c.KDEnemyCanTalk = (e) => !(e.silence > 0);
     c.KDEnemyCanSignal = (e) => !e.Enemy.tags?.nosignal;
     c.KinkyDungeonMakeNoiseSignal = (e) => [e];

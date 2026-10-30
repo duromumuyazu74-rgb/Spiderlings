@@ -7,7 +7,6 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const modRoot = path.join(__dirname, "..", "..");
-const kdEnemyLoopPath = require("../reference-inputs.js").gamePath("Game/src/enemy/KinkyDungeonEnemies.ts");
 
 function plain(value) {
     return JSON.parse(JSON.stringify(value));
@@ -52,15 +51,6 @@ function loadDefinitions(options = {}) {
     return context;
 }
 
-function kd55SpellModeGate(enemy, AIData) {
-    const source = fs.readFileSync(kdEnemyLoopPath, "utf8");
-    const match = source.match(
-        /&& !AIData\.ignore && (?<gate>\(!AIData\.moved \|\| enemy\.Enemy\.castWhileMoving\) && enemy\.Enemy\.attack\.includes\("Spell"\))\s*&& !AIData\.ignoreRanged/,
-    );
-    assert.ok(match, "KD 5.5 enemy spell-loop mode gate must remain discoverable");
-    return Function("enemy", "AIData", `return ${match.groups.gate};`)(enemy, AIData);
-}
-
 test("native numeric-string IDs still clear only their own Dash transport and warnings", () => {
     const source = { id: 17, x: 0, y: 0, hp: 5, Enemy: { name: "Jumper" } };
     const context = loadDefinitions({
@@ -95,24 +85,13 @@ test("native numeric-string IDs still clear only their own Dash transport and wa
     assert.deepEqual(plain(context.KinkyDungeonExtraWarningTiles), [{ spiderlingsJumperDashSourceId: "18" }]);
 });
 
-test("Jumper can enter the KD 5.5 enemy spell loop", () => {
+test("Jumper registers Dash for native spell attacks while moving", () => {
     const context = loadDefinitions();
     const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === "Jumper");
     assert.ok(definition);
 
-    const jumper = { Enemy: definition };
-    const waiting = { moved: false, ignore: false, ignoreRanged: false };
-    assert.equal(
-        kd55SpellModeGate(jumper, waiting),
-        true,
-        "a registered Dash name is unreachable unless Jumper's attack mode passes KD 5.5's real spell-loop gate",
-    );
-});
-
-test("Jumper can enter the spell loop after moving in the same enemy action", () => {
-    const context = loadDefinitions();
-    const definition = context.KinkyDungeonEnemies.find((enemy) => enemy.name === "Jumper");
-    assert.equal(kd55SpellModeGate({ Enemy: definition }, { moved: true, ignore: false, ignoreRanged: false }), true);
+    assert.ok(definition.attack.includes("Spell"));
+    assert.equal(definition.castWhileMoving, true);
 });
 
 test("Dash spell delegates the greater-than-two through four targeting contract to its lifecycle", () => {

@@ -155,6 +155,10 @@ function freshNewSaveRuntime() {
         KDModSettings: {},
         KinkyDungeonFlags: new Map(),
         KinkyDungeonStatsPresets: {},
+        KDRandom: () => 0,
+        KinkyDungeonDealDamage() {
+            return { happened: 0 };
+        },
         KDPerkStart: {},
         KinkyDungeonPlayer: { player: true },
         KinkyDungeonPlayerEntity: { player: true },
@@ -177,7 +181,6 @@ function freshNewSaveRuntime() {
         KDElbowBind: "ElbowBind",
         KDWrappable: "Wrappable",
         ModelDefs: {},
-        KDModelDefs: {},
         KDMapInit(values) {
             return Object.fromEntries((values || []).map((value) => [value, true]));
         },
@@ -194,7 +197,6 @@ function freshNewSaveRuntime() {
         AddModel(model) {
             models.push(model);
             context.ModelDefs[model.Name] = model;
-            context.KDModelDefs[model.Name] = model;
         },
         KinkyDungeonAddRestraintText() {},
         addTextKey() {},
