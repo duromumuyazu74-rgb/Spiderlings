@@ -15,7 +15,7 @@
         "spiderlings-prison-escort.test.js"
       ],
       "localTests": [],
-      "scenarios": ["boss-room", "boss-capture", "boss-combat", "boss-defeat"],
+      "scenarios": ["boss-room", "boss-capture", "boss-combat", "boss-defeat", "start-perks"],
       "reason": "Multi-cell boss, native prison side-room return, fixed formations and phase/capture transitions."
     },
     "foundation": {
@@ -713,7 +713,7 @@
         "spiderlings-prison-vigil.test.js"
       ],
       "localTests": ["spiderlings-prison.test.js"],
-      "scenarios": ["prison", "prison-homefield", "prison-review", "silk-density"],
+      "scenarios": ["prison", "prison-homefield", "prison-review", "silk-density", "start-perks"],
       "reason": "Persistent prison, regional orders, paid transport and chamber construction."
     }
   },

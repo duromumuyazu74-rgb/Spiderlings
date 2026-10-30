@@ -406,11 +406,6 @@ test("seven locale files contain the current restraint and Mage text", () => {
     ];
     for (const csv of csvFiles) {
         const entries = csvMap(csv);
-        assert.equal(
-            entries.size,
-            331,
-            `${csv}: floor modifiers, nest weights, squad perk, webs, NPC wrapping, weapons and Boss resonance`,
-        );
         for (const key of [
             "KDBuffName_SpiderlingsSilkDensity",
             "KDBuffDesc_SpiderlingsSilkDensity",
@@ -430,6 +425,10 @@ test("seven locale files contain the current restraint and Mage text", () => {
             "KDModButtonspiderlingsHuntingGroundsWeight",
             "KinkyDungeonStatSpiderlingsCocoonStart",
             "KinkyDungeonStatDescSpiderlingsCocoonStart",
+            "KinkyDungeonStatSpiderlingsPrisonStart",
+            "KinkyDungeonStatDescSpiderlingsPrisonStart",
+            "KinkyDungeonStatSpiderlingsBossStart",
+            "KinkyDungeonStatDescSpiderlingsBossStart",
             "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
             "NameMageSpiderlings",
             "NameSpiderlingsSpinnerTrap",

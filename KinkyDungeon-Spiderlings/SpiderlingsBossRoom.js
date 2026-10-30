@@ -194,6 +194,24 @@
     }
     for (const event of ["postMapgen", "afterLoadGame", "tickAfter"])
         KDAddEvent(KDEventMapGeneric, event, ROOM, ensureEntrance);
+    if (typeof KinkyDungeonStatsPresets !== "undefined" && typeof KDPerkStart !== "undefined") {
+        KinkyDungeonStatsPresets.SpiderlingsBossStart = {
+            id: "SpiderlingsBossStart",
+            category: "Start",
+            cost: 0,
+            startPriority: 1200,
+            tags: ["start"],
+            block: ["SpiderlingsPrisonStart"],
+        };
+        KDPerkStart.SpiderlingsBossStart = () => {
+            if (!api.Prison.start("voluntary")) throw new Error("Cannot create the Matriarch's source prison.");
+            ensureEntrance();
+            const door = KDMapData[DOOR];
+            if (!door) throw new Error("Cannot open the Matriarch's court.");
+            KDGoThruTile(door.x, door.y, true, true, true, true);
+            if (!active()) throw new Error("Cannot start in the Matriarch's court.");
+        };
+    }
     api.BossRoom = Object.freeze({
         ROOM,
         KEY,

@@ -17,6 +17,8 @@
         DSpiderlingsNestVisit: "The opening leads into the spiders' nest. Pale silk marks a route back.",
         dSpiderlingsNestVisit_Enter: "Enter the nest",
         dSpiderlingsNestVisit_EnterGag: "Enter the nest",
+        KinkyDungeonStatSpiderlingsPrisonStart: "Nest prison start",
+        KinkyDungeonStatDescSpiderlingsPrisonStart: "Start in the cocoon chamber of the Spiderlings nest prison.",
     };
     for (const [key, value] of Object.entries(text)) if (typeof addTextKey === "function") addTextKey(key, value);
 
@@ -148,6 +150,15 @@
             !KDMapData.Entities.includes(entrance)
         )
             return false;
+        return enterFrom(entrance, mode);
+    }
+
+    function start(mode = "captured") {
+        if (!["captured", "voluntary"].includes(mode) || isPrison() || !hasNativeLairSupport()) return false;
+        return enterFrom(KinkyDungeonPlayerEntity, mode);
+    }
+
+    function enterFrom(origin, mode) {
         const slot = KDGetWorldMapLocation({ x: KDMapData.mapX, y: KDMapData.mapY });
         const journey = KDGameData.JourneyMap?.[`${KDGameData.JourneyX},${KDGameData.JourneyY}`];
         if (!slot || !journey || !Array.isArray(journey.SideRooms) || !Array.isArray(KDMapData.PotentialEntrances))
@@ -159,7 +170,7 @@
                 KDPersonalAlt[id]?.data?.SpiderlingsPrisonSource?.room === room,
         );
         const existingShortcut = existing && KDMapData.ShortcutPositions[existing];
-        const point = existingShortcut || portalNear(entrance);
+        const point = existingShortcut || portalNear(origin);
         if (!point) return false;
         if (!existingShortcut)
             KDMapData.PotentialEntrances.push({
@@ -413,10 +424,24 @@
         KDAddEvent(KDEventMapGeneric, "AfterAdvance", ROOM, updateClues);
         KDAddEvent(KDEventMapGeneric, "tickAfter", ROOM, updateClues);
     }
+    if (typeof KinkyDungeonStatsPresets !== "undefined" && typeof KDPerkStart !== "undefined") {
+        KinkyDungeonStatsPresets.SpiderlingsPrisonStart = {
+            id: "SpiderlingsPrisonStart",
+            category: "Start",
+            cost: 0,
+            startPriority: 1200,
+            tags: ["start"],
+            block: ["SpiderlingsBossStart"],
+        };
+        KDPerkStart.SpiderlingsPrisonStart = () => {
+            if (!start()) throw new Error("Cannot start in the Spiderlings nest prison.");
+        };
+    }
     api.Prison = Object.freeze({
         ROOM,
         STATE,
         enter,
+        start,
         isPrison,
         captured,
         recapture,

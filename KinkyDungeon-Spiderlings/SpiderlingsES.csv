@@ -304,12 +304,12 @@ SpiderlingsBossSkill_fan,El abanico de seda fija su dirección.
 SpiderlingsBossSkill_ring,Un anillo de seda se reúne alrededor de la Matriarca.
 SpiderlingsBossSkill_track,La seda descendente marca tu antigua posición.
 SpiderlingsBossSkill_melee,La seda se reúne alrededor de las patas de la Matriarca.
-SpiderlingsBossCaptureWarning,Se está formando una runa perseguidora. Destrúyela antes de que te alcance.
-SpiderlingsBossContestStart,Un hilo te arrastra hacia la Matriarca. Libérate antes de que se llene la barra de atadura.
-SpiderlingsBossEscapeWindow,La envoltura termina. Tienes 24 turnos del mundo para escapar antes de que se envíe una escolta.
+SpiderlingsBossCaptureWarning,Se forma una runa perseguidora. Puedes destruirla.
+SpiderlingsBossContestStart,La seda te arrastra hacia la Matriarca. Libérate para romper el vínculo.
+SpiderlingsBossEscapeWindow,Escapa en 24 turnos del mundo o se enviará una escolta.
 SpiderlingsBossPhase_one,Matriarca · primera fase
 SpiderlingsBossResonance,Resonancia de seda
-SpiderlingsBossResonanceDesc,La Matriarca mantiene la densidad de seda en la arena e impide que disminuya de forma natural.
+SpiderlingsBossResonanceDesc,La Matriarca mantiene la densidad de seda y pausa su disminución natural.
 SpiderlingsBossSkillName_fan,Abanico de seda
 SpiderlingsBossSkillName_ring,Anillo de seda
 SpiderlingsBossSkillName_track,Lluvia de hilos
@@ -317,7 +317,7 @@ SpiderlingsBossSkillName_melee,Atadura cercana
 SpiderlingsBossSkillName_barrage,Ráfaga de seda
 SpiderlingsBossSkillName_capture,Capullo mágico
 SpiderlingsBossSkillName_support,Redes desde cuatro esquinas
-SpiderlingsBossCastCountdown,SKILL · Turnos del mundo restantes: TURNS
+SpiderlingsBossCastCountdown,SKILL · TURNS turnos del mundo
 SpiderlingsBossBarrageCountdown,SKILL · Turnos hasta la ráfaga: TURNS · Ráfagas restantes: COUNT
 SpiderlingsBossRuneTracking,La runa de seda perseguidora se acerca
 SpiderlingsBossPhase_interlude,Regeneración · quedan NESTS / 4 nidos
@@ -325,7 +325,11 @@ SpiderlingsBossPhase_two,Matriarca · segunda fase
 SpiderlingsBossPhase_victory,Regreso a la prisión abierto
 SpiderlingsBossLayer,Capullo tejido con magia · capa LAYER / 20
 SpiderlingsBossEscapeTime,Plazo de escape: TURNS turnos del mundo
-SpiderlingsBossEscort,Se prepara una escolta. Aún puedes liberarte antes de llegar.
+SpiderlingsBossEscort,Se prepara una escolta. Aún puedes liberarte.
+KinkyDungeonStatSpiderlingsPrisonStart,Inicio en la prisión del nido
+KinkyDungeonStatDescSpiderlingsPrisonStart,Empieza en la cámara de capullos de la prisión del nido de arañas.
+KinkyDungeonStatSpiderlingsBossStart,Inicio ante la Matriarca
+KinkyDungeonStatDescSpiderlingsBossStart,Empieza en el Patio de Seda para enfrentarte a la Matriarca Tejenidos.
 RestraintSpiderlingsSpellwovenCocoon,Capullo tejido con magia
 RestraintSpiderlingsSpellwovenCocoonDesc,La seda suave envuelve tu cuerpo. Cada intento válido de escape fallido añade una capa; la densidad disminuye durante la calma.
 RestraintSpiderlingsSpellwovenCocoonDesc2,Los hilos nuevos se entretejen sobre las capas anteriores.

@@ -240,7 +240,7 @@ test("resonance keeps its six-turn cadence while projecting one-second synchroni
     assert.ok(Math.abs(glows[0][6] / glows[1][6] - 3) < 1e-9);
     assert.equal(hud().icon, "buff/buffSpiderlingsBossResonance");
     assert.equal(c.KDModFiles["Game/Buffs/buff/buffSpiderlingsBossResonance.png"], "blob:rune");
-    assert.match(hud().text, /preventing its natural decay/);
+    assert.match(hud().text, /pausing its natural decay/);
     at(2000);
     assert.equal(draw().length, 0);
     assert.ok(hud(), "The maintenance indicator must outlast the short glow");
@@ -535,13 +535,13 @@ test("Boss warnings display the remaining world time without advancing or repeat
     encounter.advance(1);
     const snapshot = JSON.stringify(saved);
     draw();
-    assert.ok(textDraws.includes("Silk fan · world turns left: 2"));
+    assert.ok(textDraws.includes("Silk fan · 2 world turns"));
     draw();
     assert.equal(JSON.stringify(saved), snapshot);
     assert.equal(hits, 0);
     encounter.advance(0.5);
     draw();
-    assert.ok(textDraws.includes("Silk fan · world turns left: 1.5"));
+    assert.ok(textDraws.includes("Silk fan · 1.5 world turns"));
     encounter.advance(1.5);
     assert.equal(hits, 1);
     assert.equal(resolved.length, 1);
@@ -570,11 +570,11 @@ test("Boss support countdowns use the Mage charge clock and combine simultaneous
         collapses: owners.map((owner) => ({ ownerId: owner.id, explodeAt: 53 })),
     };
     draw();
-    assert.equal(textDraws.filter((text) => text === "Thousand Silk Collapse · world turns left: 3").length, 1);
+    assert.equal(textDraws.filter((text) => text === "Thousand Silk Collapse · 3 world turns").length, 1);
     c.KDMapData.SpiderlingsMageSpells.clock = 51;
     encounter.state().clock = 1;
     draw();
-    assert.ok(textDraws.includes("Thousand Silk Collapse · world turns left: 2"));
+    assert.ok(textDraws.includes("Thousand Silk Collapse · 2 world turns"));
     c.KDMapData.SpiderlingsMageSpells.collapses = [];
     draw();
     assert.equal(

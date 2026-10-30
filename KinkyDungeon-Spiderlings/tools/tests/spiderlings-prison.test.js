@@ -368,6 +368,23 @@ test("a native Jumper carries paid movement points across idle-loop turns", () =
     assert.equal(actor.movePoints, 0.75);
 });
 
+test("a prison start creates the native connection without a source Nest or new equipment", () => {
+    for (const mode of ["captured", "voluntary"]) {
+        const { context: c, source, cocoon } = runtime();
+        assert.equal(source.Entities.length, 0);
+        assert.equal(c.Spiderlings.Prison.start(mode), true);
+        assert.equal(c.Spiderlings.Prison.isPrison(), true);
+        assert.equal(c.Spiderlings.Prison.captured(), mode === "captured");
+        assert.equal(c.KDMapData.PrisonState, mode === "captured" ? "Intro" : "Visit");
+        assert.equal(c.cocoon, cocoon);
+        const { chamber, exit } = c.KDMapData.SpiderlingsPrison;
+        if (mode === "captured")
+            assert.deepEqual([c.KinkyDungeonPlayerEntity.x, c.KinkyDungeonPlayerEntity.y], [chamber.x, chamber.y]);
+        assert.equal(c.KDMapData.Tiles[`${exit.x},${exit.y}`].RoomType, "");
+        assert.equal(source.Entities.length, 0);
+    }
+});
+
 test("native lair admission keeps the Cocoon and creates a connected prison with bypasses", () => {
     const r = runtime();
     const nest = { id: 14, x: 15, y: 15, hp: 5, Enemy: { name: "NestEntrance" } };

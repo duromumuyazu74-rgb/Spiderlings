@@ -26,7 +26,7 @@ When a travelling permanent resident receives a protected field contact, Command
 
 ## Shared native actions
 
-Prison owns saved dispatch, admission, prisoner identity cleanup, regional reports, patrols and its
+Prison owns saved dispatch, admission, new-game prison entry, prisoner identity cleanup, regional reports, patrols and its
 chamber teams. It registers action handlers and per-action definition policies with NativeActions.
 Its dedicated chamber composite uses SpinnerNativeField and Topology's current paid-work interfaces;
 PrisonConstruction identifies that composite so ordinary Projects cannot adopt the same work.
@@ -38,7 +38,7 @@ PrisonActivity owns saved rest/alert state and player-noise attribution. It regi
 
 SilkDensity owns the saved uncapped player meter, quiet-time decay clock and HUD projection. Player-hit owners record accepted contacts once; Webbing owns the actual Cocoon/native compatibility transition. Its delayed-action adapter scales only owned restraint work after the native minimum, preserving progress and final native success semantics. Equipped and linked restraints do not stop decay or restart its grace period. The saved `bareTurns` field retains its name for compatibility and now counts quiet time; load restores that clock and the meter.
 
-BossRoom owns its prison shortcut, source record, completion, retry count and native defeat routing back to that prison. BossEncounter owns the saved phase, original-Nest objective identities and separate body/support clocks. BossFootprint owns the synchronized collision parts and resolves their damage to one main entity. BossFields owns its authored inward-ring requests and managed builder group, uses paid NativeField actions and is excluded from ordinary Projects adoption. Ordinary enclosure dimensions keep their existing limit; the two authored Boss rings explicitly request a larger topology limit.
+BossRoom owns its prison shortcut, source record, completion, retry count and native defeat routing back to that prison. Its new-game perk requests voluntary entry through `Prison.start(mode)` before using the native Court shortcut. Both location perks run after equipment perks and only during native new-game perk initialization. BossEncounter owns the saved phase, original-Nest objective identities and separate body/support clocks. BossFootprint owns the synchronized collision parts and resolves their damage to one main entity. BossFields owns its authored inward-ring requests and managed builder group, uses paid NativeField actions and is excluded from ordinary Projects adoption. Ordinary enclosure dimensions keep their existing limit; the two authored Boss rings explicitly request a larger topology limit.
 
 BossCapture owns one player control sequence and its deadline. It cannot overlap ordinary Spinner control. SpellwovenCocoon owns the actual outer item, layers and serialized native-action work, while Webbing declares compatibility with an underlying ordinary Cocoon. SilkDensity supplies accepted contacts and a refresh-only pulse; callers do not write its saved clock. PrisonEscort accepts the explicit special-item request and retains dispatch, construction, native tether and movement ownership. Its destination completes through BossRoom's saved prison connection. Fixed Boss formation membership is a read-only population exclusion; ordinary Nest descendants do not inherit it. Rendering modules do not advance gameplay.
 
