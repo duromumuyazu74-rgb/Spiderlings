@@ -304,12 +304,12 @@ SpiderlingsBossSkill_fan,Der Seidenfächer richtet sich aus.
 SpiderlingsBossSkill_ring,Ein Seidenring sammelt sich um die Matriarchin.
 SpiderlingsBossSkill_track,Fallende Seide markiert deine alte Position.
 SpiderlingsBossSkill_melee,Seide sammelt sich um die Füße der Matriarchin.
-SpiderlingsBossCaptureWarning,Eine verfolgende Seidenrune entsteht. Zerstöre sie, bevor sie dich erreicht.
-SpiderlingsBossContestStart,Ein Seidenband zieht dich zur Matriarchin. Ziehe dich los, bevor die Fesselungsleiste voll ist.
-SpiderlingsBossEscapeWindow,Die Umwicklung endet. Du hast 24 Weltzüge zur Flucht, bevor eine Eskorte gerufen wird.
+SpiderlingsBossCaptureWarning,Eine verfolgende Seidenrune entsteht. Du kannst sie zerstören.
+SpiderlingsBossContestStart,Seide zieht dich zur Matriarchin. Reiße dich los, um die Verbindung zu lösen.
+SpiderlingsBossEscapeWindow,Befreie dich innerhalb von 24 Weltzügen, sonst wird eine Eskorte geschickt.
 SpiderlingsBossPhase_one,Matriarchin · Phase eins
 SpiderlingsBossResonance,Seidenresonanz
-SpiderlingsBossResonanceDesc,Die Matriarchin hält die Seidendichte in der Arena aufrecht und verhindert ihren natürlichen Abbau.
+SpiderlingsBossResonanceDesc,Die Matriarchin erhält die Seidendichte und pausiert ihren natürlichen Abbau.
 SpiderlingsBossSkillName_fan,Seidenfächer
 SpiderlingsBossSkillName_ring,Seidenring
 SpiderlingsBossSkillName_track,Fadenregen
@@ -317,7 +317,7 @@ SpiderlingsBossSkillName_melee,Seidengriff
 SpiderlingsBossSkillName_barrage,Seidensalve
 SpiderlingsBossSkillName_capture,Magiekokon
 SpiderlingsBossSkillName_support,Netzfeuer aus vier Ecken
-SpiderlingsBossCastCountdown,SKILL · Verbleibende Weltzüge: TURNS
+SpiderlingsBossCastCountdown,SKILL · TURNS Weltzüge
 SpiderlingsBossBarrageCountdown,SKILL · Weltzüge bis zur Salve: TURNS · Salven übrig: COUNT
 SpiderlingsBossRuneTracking,Die verfolgende Seidenrune nähert sich
 SpiderlingsBossPhase_interlude,Regeneration · NESTS / 4 Nester übrig
@@ -325,7 +325,11 @@ SpiderlingsBossPhase_two,Matriarchin · Phase zwei
 SpiderlingsBossPhase_victory,Rückweg ins Gefängnis offen
 SpiderlingsBossLayer,Magisch gewebter Kokon · Schicht LAYER / 20
 SpiderlingsBossEscapeTime,Fluchtfenster: TURNS Weltzüge
-SpiderlingsBossEscort,Eine Eskorte wird vorbereitet. Vor der Ankunft kannst du dich noch befreien.
+SpiderlingsBossEscort,Eine Eskorte wird vorbereitet. Du kannst dich noch befreien.
+KinkyDungeonStatSpiderlingsPrisonStart,Start im Nestgefängnis
+KinkyDungeonStatDescSpiderlingsPrisonStart,Beginne in der Kokonkammer des Spinnenbrut-Gefängnisses.
+KinkyDungeonStatSpiderlingsBossStart,Start bei der Matriarchin
+KinkyDungeonStatDescSpiderlingsBossStart,Beginne im Seidenhof und stelle dich der Nestweber-Matriarchin.
 RestraintSpiderlingsSpellwovenCocoon,Magisch gewebter Kokon
 RestraintSpiderlingsSpellwovenCocoonDesc,Weiche Seidenschichten umhüllen deinen Körper. Jeder gültige erfolglose Befreiungsversuch fügt eine Schicht hinzu; in Ruhe nimmt die Dichte ab.
 RestraintSpiderlingsSpellwovenCocoonDesc2,Neue Fäden legen sich eng über das ältere Gewebe.

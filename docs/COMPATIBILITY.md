@@ -15,6 +15,18 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.12 direct starts and concise Boss text (2026-10-30)
+
+Two free, mutually exclusive Start perks enter the Nest Prison chamber or the Matriarch's Court. Prison owns creation of the source-floor connection and captured identity; the Court start requests voluntary prison entry before using its native shortcut. Other selected perks still determine equipment. Both starts use native new-game perk initialization and existing persistent map records.
+
+Boss skill feedback is shorter in English and all seven locales. Warnings, world-turn countdowns, capture controls, the 24-turn escape deadline and density behavior retain their existing effects. Independent text review checked actual escort states and established localized names.
+
+Package: `Spiderlings_0.92.39-test.12.zip`, 25,001,391 bytes and 193 allowlisted entries. SHA-256: `baf490fdb22366ae4e34f470d0c2abb0790518608ecde107af36e02bc5d68312`.
+
+The `start-perks` native scenario starts real new games with each perk, both with and without Silken Awakening. It verifies native selection and exclusion, equipment, save/reload without relocation, Court-to-prison and prison-to-source returns, and the unchanged ordinary start. Screenshots retain the initial prison and Court states.
+
+The same ZIP passed all 75 native checks and all seven locale loads on each of KD 5.4.92 and official KD 5.5.6 commit `2d71b1fa30303d8fa43be54a11f12f26a0c8a039`. Full acceptance is retained in cache run `2026-10-30T12-25-15-354Z-0.92.39-test.12`; upstream was fetched at `2026-10-30T12:25:15.338Z`. The final local delivery checks and source commit are tracked in [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183).
+
 ## Test.11 prison retreat and Boss telegraphs (2026-10-29)
 
 An idle prison field member now executes Cocoon dispersal instead of retaining its fallback holding order. The retreat uses an occupancy-aware route to clear nearby walls while native movement still pays each step. Actual construction, patrol and escort handlers keep their duties.

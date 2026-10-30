@@ -304,12 +304,12 @@ SpiderlingsBossSkill_fan,扇状の糸が向きを固定した。
 SpiderlingsBossSkill_ring,女王の周囲に環状の糸が集まる。
 SpiderlingsBossSkill_track,降り注ぐ糸が元の位置を狙っている。
 SpiderlingsBossSkill_melee,女王の足元に糸が集まる。
-SpiderlingsBossCaptureWarning,追跡する糸のルーンが形成されている。触れられる前に破壊しよう。
-SpiderlingsBossContestStart,糸があなたを女王へ引き寄せる。拘束ゲージが満ちる前に振りほどこう。
-SpiderlingsBossEscapeWindow,巻き付けが終わった。護送が始まるまで24ワールドターン以内に脱出しよう。
+SpiderlingsBossCaptureWarning,追跡する糸のルーンが形成されている。破壊できる。
+SpiderlingsBossContestStart,糸があなたを女王へ引き寄せる。振りほどいて糸を切ろう。
+SpiderlingsBossEscapeWindow,24ワールドターン以内に脱出しないと護送役が派遣される。
 SpiderlingsBossPhase_one,女王・第一段階
 SpiderlingsBossResonance,織紋の共鳴
-SpiderlingsBossResonanceDesc,女王が闘技場内の蛛糸密度を維持し、自然な減少を防いでいる。
+SpiderlingsBossResonanceDesc,女王が蛛糸密度を維持し、自然減少を止めている。
 SpiderlingsBossSkillName_fan,扇状の糸網
 SpiderlingsBossSkillName_ring,環状の糸網
 SpiderlingsBossSkillName_track,追い縫いの糸
@@ -317,7 +317,7 @@ SpiderlingsBossSkillName_melee,近接の糸縛り
 SpiderlingsBossSkillName_barrage,糸弾の連射
 SpiderlingsBossSkillName_capture,魔織の繭
 SpiderlingsBossSkillName_support,四隅の網射
-SpiderlingsBossCastCountdown,SKILL · 残りTURNSワールドターン
+SpiderlingsBossCastCountdown,SKILL · TURNSワールドターン
 SpiderlingsBossBarrageCountdown,SKILL · TURNSターン後に連射 · 残りCOUNT回
 SpiderlingsBossRuneTracking,追尾する糸のルーンが接近中
 SpiderlingsBossPhase_interlude,再生中・残りNESTS / 4巣
@@ -325,7 +325,11 @@ SpiderlingsBossPhase_two,女王・第二段階
 SpiderlingsBossPhase_victory,牢獄への帰路が開いた
 SpiderlingsBossLayer,魔織の繭・第LAYER / 20層
 SpiderlingsBossEscapeTime,脱出期限：あとTURNSワールドターン
-SpiderlingsBossEscort,護送の準備中。到着前ならまだ繭から脱出できる。
+SpiderlingsBossEscort,護送の準備中。まだ脱出できる。
+KinkyDungeonStatSpiderlingsPrisonStart,巣の牢獄から開始
+KinkyDungeonStatDescSpiderlingsPrisonStart,幼グモの巣の牢獄にある繭の部屋から開始する。
+KinkyDungeonStatSpiderlingsBossStart,女王の部屋から開始
+KinkyDungeonStatDescSpiderlingsBossStart,絹縛の庭から開始し、巣織りの女王に挑む。
 RestraintSpiderlingsSpellwovenCocoon,魔織の繭
 RestraintSpiderlingsSpellwovenCocoonDesc,柔らかな糸が体を包む。有効な脱出行動に失敗すると一層増え、静かな時間が続けば糸の密度が下がる。
 RestraintSpiderlingsSpellwovenCocoonDesc2,新しい糸が古い織り目に沿って重なっていく。

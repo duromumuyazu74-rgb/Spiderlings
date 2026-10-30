@@ -19,6 +19,7 @@ const scenarios = [
     ["hidden-wrapping", "hidden-wrapping.js"],
     ["nest-weights", "nest-weights.js"],
     ["squad-perk", "squad-perk.js"],
+    ["start-perks", "start-perks.js", null, [], "browser", ["normal-helpers.js"]],
     ["mage-body", "mage-body.js"],
     ["weapons", "weapons.js"],
     ["weapon-webbing", "weapon-webbing.js"],

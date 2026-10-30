@@ -304,12 +304,12 @@ SpiderlingsBossSkill_fan,Шёлковый веер зафиксировал на
 SpiderlingsBossSkill_ring,Шёлковое кольцо собирается вокруг Матриархини.
 SpiderlingsBossSkill_track,Падающий шёлк отмечает вашу прежнюю позицию.
 SpiderlingsBossSkill_melee,Шёлк собирается у ног Матриархини.
-SpiderlingsBossCaptureWarning,Формируется следящая шёлковая руна. Уничтожьте её, прежде чем она коснётся вас.
-SpiderlingsBossContestStart,Шёлковая нить тянет вас к Матриархине. Освободитесь, пока шкала связывания не заполнилась.
-SpiderlingsBossEscapeWindow,Обматывание закончено. У вас 24 мировых хода на освобождение до отправки конвоя.
+SpiderlingsBossCaptureWarning,Формируется следящая шёлковая руна. Её можно уничтожить.
+SpiderlingsBossContestStart,Шёлк тянет вас к Матриархине. Вырвитесь, чтобы разорвать связь.
+SpiderlingsBossEscapeWindow,Освободитесь за 24 мировых хода, иначе будет отправлен конвой.
 SpiderlingsBossPhase_one,Матриархиня · первая фаза
 SpiderlingsBossResonance,Резонанс паутины
-SpiderlingsBossResonanceDesc,Матриархиня поддерживает плотность паутины на арене и не даёт ей естественным образом рассеиваться.
+SpiderlingsBossResonanceDesc,Матриархиня поддерживает плотность паутины и приостанавливает её естественное рассеивание.
 SpiderlingsBossSkillName_fan,Веер паутины
 SpiderlingsBossSkillName_ring,Кольцо паутины
 SpiderlingsBossSkillName_track,Падающие нити
@@ -317,7 +317,7 @@ SpiderlingsBossSkillName_melee,Ближнее опутывание
 SpiderlingsBossSkillName_barrage,Шёлковый залп
 SpiderlingsBossSkillName_capture,Магический кокон
 SpiderlingsBossSkillName_support,Паутина из четырёх углов
-SpiderlingsBossCastCountdown,SKILL · Осталось мировых ходов: TURNS
+SpiderlingsBossCastCountdown,SKILL · Мировых ходов: TURNS
 SpiderlingsBossBarrageCountdown,SKILL · Ходов до залпа: TURNS · Залпов осталось: COUNT
 SpiderlingsBossRuneTracking,Приближается преследующая шёлковая руна
 SpiderlingsBossPhase_interlude,Восстановление · осталось NESTS / 4 гнезда
@@ -325,7 +325,11 @@ SpiderlingsBossPhase_two,Матриархиня · вторая фаза
 SpiderlingsBossPhase_victory,Путь обратно в тюрьму открыт
 SpiderlingsBossLayer,Магический шёлковый кокон · слой LAYER / 20
 SpiderlingsBossEscapeTime,До отправки конвоя: TURNS мировых ходов
-SpiderlingsBossEscort,Конвой готовится. До прибытия ещё можно выбраться из кокона.
+SpiderlingsBossEscort,Конвой готовится. Ещё можно освободиться.
+KinkyDungeonStatSpiderlingsPrisonStart,Начало в тюрьме гнезда
+KinkyDungeonStatDescSpiderlingsPrisonStart,Начните в коконной камере тюрьмы паучьего гнезда.
+KinkyDungeonStatSpiderlingsBossStart,Начало у Матриархини
+KinkyDungeonStatDescSpiderlingsBossStart,Начните в Шёлковом дворе и сразитесь с Матриархиней гнездоплётов.
 RestraintSpiderlingsSpellwovenCocoon,Магический шёлковый кокон
 RestraintSpiderlingsSpellwovenCocoonDesc,Мягкий шёлк обволакивает тело. Каждая допустимая неудачная попытка освобождения добавляет слой; в тишине плотность уменьшается.
 RestraintSpiderlingsSpellwovenCocoonDesc2,Новые нити ложатся поверх прежнего плетения.

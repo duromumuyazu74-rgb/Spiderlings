@@ -304,12 +304,12 @@ SpiderlingsBossSkill_fan,부채꼴 비단이 방향을 고정했습니다.
 SpiderlingsBossSkill_ring,여왕 주위에 비단 고리가 모입니다.
 SpiderlingsBossSkill_track,떨어지는 비단이 이전 위치를 겨눕니다.
 SpiderlingsBossSkill_melee,여왕의 발밑에 비단이 모입니다.
-SpiderlingsBossCaptureWarning,추적 비단 룬이 만들어집니다. 닿기 전에 파괴하세요.
-SpiderlingsBossContestStart,비단이 당신을 여왕에게 끌어당깁니다. 결박 게이지가 차기 전에 벗어나세요.
-SpiderlingsBossEscapeWindow,감기가 끝났습니다. 호송이 시작되기 전 세계 턴 24회 안에 탈출하세요.
+SpiderlingsBossCaptureWarning,추적 비단 룬이 만들어집니다. 파괴할 수 있습니다.
+SpiderlingsBossContestStart,비단이 당신을 여왕에게 끌어당깁니다. 몸을 빼내 연결을 끊으세요.
+SpiderlingsBossEscapeWindow,세계 턴 24회 안에 탈출하지 않으면 호송대가 파견됩니다.
 SpiderlingsBossPhase_one,여왕 · 1단계
 SpiderlingsBossResonance,직조 공명
-SpiderlingsBossResonanceDesc,여왕이 전장 내 거미줄 밀도를 유지하여 자연스럽게 감소하지 않도록 하고 있습니다.
+SpiderlingsBossResonanceDesc,여왕이 거미줄 밀도를 유지하며 자연 감소를 멈춥니다.
 SpiderlingsBossSkillName_fan,부채꼴 거미줄
 SpiderlingsBossSkillName_ring,거미줄 고리
 SpiderlingsBossSkillName_track,추적 거미줄
@@ -317,7 +317,7 @@ SpiderlingsBossSkillName_melee,근접 속박
 SpiderlingsBossSkillName_barrage,거미줄 탄막
 SpiderlingsBossSkillName_capture,마법 고치
 SpiderlingsBossSkillName_support,네 모서리의 거미줄
-SpiderlingsBossCastCountdown,SKILL · 남은 세계 턴: TURNS
+SpiderlingsBossCastCountdown,SKILL · 세계 턴 TURNS회
 SpiderlingsBossBarrageCountdown,SKILL · TURNS턴 후 연사 · 남은 횟수: COUNT
 SpiderlingsBossRuneTracking,추적 거미줄 룬이 다가오는 중
 SpiderlingsBossPhase_interlude,재생 중 · 둥지 NESTS / 4개 남음
@@ -325,7 +325,11 @@ SpiderlingsBossPhase_two,여왕 · 2단계
 SpiderlingsBossPhase_victory,감옥으로 돌아가는 길이 열림
 SpiderlingsBossLayer,마법 직조 고치 · LAYER / 20겹
 SpiderlingsBossEscapeTime,탈출 제한: 세계 턴 TURNS회
-SpiderlingsBossEscort,호송을 준비 중입니다. 도착하기 전까지 고치에서 벗어날 수 있습니다.
+SpiderlingsBossEscort,호송을 준비 중입니다. 아직 탈출할 수 있습니다.
+KinkyDungeonStatSpiderlingsPrisonStart,둥지 감옥 시작
+KinkyDungeonStatDescSpiderlingsPrisonStart,새끼 거미 둥지 감옥의 고치 방에서 시작합니다.
+KinkyDungeonStatSpiderlingsBossStart,여왕 방 시작
+KinkyDungeonStatDescSpiderlingsBossStart,비단 결박의 뜰에서 시작하여 둥지 직조 여왕에게 도전합니다.
 RestraintSpiderlingsSpellwovenCocoon,마법 직조 고치
 RestraintSpiderlingsSpellwovenCocoonDesc,부드러운 비단이 몸을 감쌉니다. 유효한 탈출 시도가 실패하면 한 겹이 추가되고 조용한 시간이 지나면 밀도가 낮아집니다.
 RestraintSpiderlingsSpellwovenCocoonDesc2,새 실이 기존 직조의 가장자리를 따라 촘촘히 겹쳐집니다.

@@ -8,6 +8,7 @@ const os = require("node:os");
 const { execFileSync, spawnSync } = require("node:child_process");
 const { selectAffected, symbolChanges, validateMappings, collectChanges } = require("../test-impact.js");
 const suites = require("../test-suites.json");
+const { selectScenarios } = require("../compatibility/scenarios.js");
 const manifest = require("../../mod.json");
 const mapping = require("../test-impact.json");
 const root = path.resolve(__dirname, "../..");
@@ -136,7 +137,7 @@ test("native scene edits expand real state continuations and shared helpers only
     assert.ok(!helper.scenarios.includes("rune-hit"));
     const runner = selectAffected(["tools/verify-kd-compatibility.js"], suites);
     assert.equal(runner.nativeScope, "full");
-    assert.equal(runner.scenarios.length, 74);
+    assert.deepEqual(runner.scenarios, selectScenarios().executed);
 });
 
 test("direct local test edits and renamed tests are retained and unmapped/deleted tests do not trigger everything", () => {
