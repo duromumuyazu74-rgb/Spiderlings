@@ -1,6 +1,6 @@
 # Verified game environments
 
-The unified Prison and Boss test release is [Spiderlings_0.92.39-test.11.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.11). Earlier test.10, test.8, test.7, test.4, test.3, alpha.19 and test.152 deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 

@@ -1,37 +1,39 @@
 # 当前开发进度
 
-核对日期：2026-10-30。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
+核对日期：2026-10-31。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
-## 本地 test.14 开局自动存档修复
+## test.14 Pre-release
 
 `0.92.39-test.14` 将两个位置开局移到原生 perk 初始化结束后的 `afterNewGame`，避免自动存档带上临时 `MagicHands`。Prison 在原生 `AfterAdvance` 阶段完成入狱和囚室安置，再由游戏保存。现有开局场景直接读回自动存档，并保留玩家主动选择 `MagicHands` 的情况。同一 ZIP 已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 各通过 75 项原生检查和七语种加载，详见 [test.14 兼容记录](COMPATIBILITY.md#test14-initial-automatic-saves-2026-10-30)。交付与 PR 状态由 [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183) 跟踪。
+
+[PR #185](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/185) 已合入 `test`，运行时集成提交为 `c63afcb411abcf3d67da2a942ef5c813e5d3d30c`，与已验收源码树一致。最终包通过 1,204 项本地回归和内容核验。
+
+| 通道                  | 版本与入口                                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 正式版                | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，保留正式 Latest    |
+| 测试版：Prison + Boss | [v0.92.39-test.14](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14)，统一安装包 |
+
+Releases 保留最新测试版和最新正式版。旧 test.11 安装包与发布说明已本地归档，源码历史保留在 Git 标签中。Boss 专属美术、剧情、奖励与平衡仍由 #165 跟踪；监牢整体逃脱与平衡验收仍由 #68/#76 跟踪。
 
 ## test.13 运行时与测试清理
 
 `0.92.39-test.13` 保留两个直接开局 perk，精简原生接口重复检查、装备查询回退及纹理缓存中的异常吞没。装备换根只使用实际库存 Map；仅测试夹具存在的接口和模型表别名已移除。游戏行为继续使用原生随机源，地图、存档、装备实例与回合规则保持原有契约。
 
-旧迁移测试中重复的清单、源码拼写与总数断言已删除；Jumper 回归转入公共组。安装包内容、图集像素、真实原生行为与语言加载仍由各自原有检查负责。同一 test.13 ZIP 已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 各通过 75 项原生检查和七语种加载，详见 [test.13 兼容记录](COMPATIBILITY.md#test13-runtime-and-test-cleanup-2026-10-30)。本地交付与集成由 [#184](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/184) 跟踪，已发布下载仍为 test.11。
+旧迁移测试中重复的清单、源码拼写与总数断言已删除；Jumper 回归转入公共组。安装包内容、图集像素、真实原生行为与语言加载仍由各自原有检查负责。同一 test.13 ZIP 已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 各通过 75 项原生检查和七语种加载，详见 [test.13 兼容记录](COMPATIBILITY.md#test13-runtime-and-test-cleanup-2026-10-30)。本地交付与集成由 [#184](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/184) 跟踪。
 
 ## test.12 开局 perk 验收
 
 `0.92.39-test.12` 已实现“织巢主母开局”和“幼蛛囚牢开局”，均为 0 点且互斥。前者直接进入织庭，并保留关联监牢用于返回；后者进入监牢囚室。装备由其他已选 perk 决定，可与“丝茧初醒”搭配，读档不重新执行开局。Boss 技能名称和提示已精简，危险预告与世界回合倒计时保留，英文与七种语言同步。
 
-同一安装包已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 提交 `2d71b1fa30303d8fa43be54a11f12f26a0c8a039` 各通过 75 项完整原生检查和七语种加载。包身份见 [test.12 兼容记录](COMPATIBILITY.md#test12-direct-starts-and-concise-boss-text-2026-10-30)，本地交付检查与集成状态由 [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183) 跟踪。已发布测试版仍为下方 test.11。
+同一安装包已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 提交 `2d71b1fa30303d8fa43be54a11f12f26a0c8a039` 各通过 75 项完整原生检查和七语种加载。包身份见 [test.12 兼容记录](COMPATIBILITY.md#test12-direct-starts-and-concise-boss-text-2026-10-30)，本地交付检查与集成状态由 [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183) 跟踪。
 
-## 统一测试版 test.11
+## test.11 历史验收
 
-[0.92.39-test.11 Pre-release](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.11) 在同一个安装包中提供 V6 监牢与织巢主母 Boss。[PR #174](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/174) 统一集成 #171 的监牢实现、#173 的设计以及后续 Boss 实现和修复，目标为 `test`。
+[0.92.39-test.11 历史源码](https://github.com/duromumuyazu74-rgb/Spiderlings/tree/v0.92.39-test.11) 在同一个安装包中提供 V6 监牢与织巢主母 Boss。[PR #174](https://github.com/duromumuyazu74-rgb/Spiderlings/pull/174) 统一集成 #171 的监牢实现、#173 的设计以及后续 Boss 实现和修复，目标为 `test`。
 
 test.11 修正监牢闲置 Spinner 的散开优先级与绕墙退让，并让近身技能、喷网支援的释放时刻与预告一致。Boss 危险区强化边界和临近结算颜色，战斗面板显示实时剩余世界回合，结算时保留短暂闪光。入口与操作见[试玩说明](BOSS-DEMO.zh-CN.md)。
 
 同一最终 ZIP 在 KD 5.4.92 与新拉取的官方 KD 5.5.6 提交 `2d71b1fa30303d8fa43be54a11f12f26a0c8a039` 各通过 74 项原生检查及七语种加载；1,210 项完整本地回归与包内容核验通过。包身份和范围见 [test.11 兼容记录](COMPATIBILITY.md#test11-prison-retreat-and-boss-telegraphs-2026-10-29)。
-
-| 通道                  | 版本与入口                                                                                                      |
-| --------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 正式版                | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，保留正式 Latest    |
-| 测试版：Prison + Boss | [v0.92.39-test.11](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.11)，统一安装包 |
-
-Releases 仅保留最新测试版和最新正式版。旧安装包与发布说明已本地归档，源码历史保留在 Git 标签中。后续专属美术、剧情、奖励与 Boss 平衡由 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪；监牢整体逃脱与平衡验收仍由 #68/#76 跟踪。
 
 ## V6 监牢 test.4 历史验收
 

@@ -9,7 +9,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 | 通道                  | 版本              | 获取方式                                                                                                                                |
 | --------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 正式版                | `0.92.39fix1`     | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)          |
-| 测试版：Prison + Boss | `0.92.39-test.11` | [Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.11/Spiderlings_0.92.39-test.11.zip) |
+| 测试版：Prison + Boss | `0.92.39-test.14` | [Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.14/Spiderlings_0.92.39-test.14.zip) |
 
 1. 下载上表所需通道的 ZIP，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
 2. 在游戏 Mod 管理器中载入该 ZIP。
@@ -17,7 +17,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入为 Mod。PR 的 CI artifact 对应具体提交，属于候选包，其验收范围另行记录。
 
-test.11 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，修复闲置 Spinner 在玩家安静结茧后持续贴身及绕墙退离的问题，并改善 Boss 危险区、实时倒计时与命中时机的提示。同一 ZIP 已通过 KD 5.4.92 与官方 KD 5.5.6 验收，详情见 [COMPATIBILITY.md](docs/COMPATIBILITY.md)。逃脱与平衡试玩继续由 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 和 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。旧版源码保留在 [Git 标签](https://github.com/duromumuyazu74-rgb/Spiderlings/tags)。交付状态见[当前进度](docs/STATUS.md)。
+test.14 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，新增两个 0 点直接开局 perk，并精简 Boss 提示。初始自动存档保留已选 perk、实际出生位置和囚犯身份。同一 ZIP 已在 KD 5.4.92 与官方 KD 5.5.6 各通过 75 项原生检查和七语种加载，另通过 1,204 项本地回归，详情见 [COMPATIBILITY.md](docs/COMPATIBILITY.md)。逃脱与平衡试玩继续由 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 和 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。旧版源码保留在 [Git 标签](https://github.com/duromumuyazu74-rgb/Spiderlings/tags)。交付状态见[当前进度](docs/STATUS.md)。
 
 敌方蛛丝命中积累无上限的蛛丝密度，达到 100 且满足原有装备前置后可结茧。密度越高越难摆脱拘束；连续十个世界回合没有合格蛛丝命中后开始消散，仍被拘束时也会衰减。普通敌我关系查询跳过无关的押送与场地争夺检查，减少重复的装备和场地遍历，人口及增援规则保持不变。详情见[实验规则](docs/PRISON-EXPERIMENT.md)。
 
@@ -25,7 +25,7 @@ test.11 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，修复
 
 开发源码 `0.92.39-test.14` 包含固定 81×63 的 V6 监牢与[织巢主母试玩](docs/BOSS-DEMO.zh-CN.md)。监牢包括上路十字口、中路双连围场、下路库房、主巢围场及三路最终必经的出口十字。原生木桶与宝箱放在侧边区域，真实 Spinner 按现有工人和工程上限逐步施工，六处预设位置均可封闭。主母在监牢相连的独立庭院占据九格，胜利和战败均返回原监牢；支援编队贴墙时仍保留安全落点。
 
-“开局”分类提供两个 0 点且互斥的 perk：“幼蛛囚牢开局”直接进入囚室；“织巢主母开局”直接进入织庭，并建立相连监牢供返回。其他已选 perk 决定装备，可与“丝茧初醒”搭配。Boss 技能提示已精简，仍保留危险预告和世界回合倒计时。上方已发布下载仍为 test.11。
+“开局”分类提供两个 0 点且互斥的 perk：“幼蛛囚牢开局”直接进入囚室；“织巢主母开局”直接进入织庭，并建立相连监牢供返回。其他已选 perk 决定装备，可与“丝茧初醒”搭配。Boss 技能提示已精简，仍保留危险预告和世界回合倒计时。
 
 场地保留已捕获猎物的归属，分配幼蛛主动攻击试图牵走猎物的 NPC，其他成员继续场地职责。玩家必须穿着腿套实际从场地内突破到场地外，才获得回收资格；单穿腿套或在场内偏离中心不会触发。已批准的接触通过原生付费攻击执行，回到最近可达场地的中心格。Maidforce 全派系及原生归属 Adventurer 的两种女仆骑士均与幼蛛敌对。
 
