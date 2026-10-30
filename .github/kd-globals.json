@@ -108,6 +108,7 @@
   "KDPathConditions",
   "KDPFTrim",
   "KDPerkStart",
+  "KDSaveQueue",
   "KDPlayerEffects",
   "KDProcessInput",
   "KDRandom",

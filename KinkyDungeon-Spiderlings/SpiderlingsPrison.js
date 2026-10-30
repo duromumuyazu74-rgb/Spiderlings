@@ -8,6 +8,7 @@
     const IDENTITY = "SpiderlingsPrisonIdentity";
     const WIDTH = api.PrisonLayout.width;
     const HEIGHT = api.PrisonLayout.height;
+    let pendingAdmission;
 
     const text = {
         KDRoomType_SpiderlingsNestPrison: "Spiderlings nest prison",
@@ -207,13 +208,14 @@
             KinkyDungeonTilesGet(`${shortcut.x},${shortcut.y}`)?.RoomType !== lairId
         )
             return false;
-        KDGoThruTile(shortcut.x, shortcut.y, true, true, mode === "voluntary", true);
-        const arrived = KDGameData.RoomType === lairId && isPrison();
-        if (arrived) {
-            if (mode === "captured") return recapture();
-            admit(mode);
+        const admission = { room: lairId, mode, applied: false };
+        pendingAdmission = admission;
+        try {
+            KDGoThruTile(shortcut.x, shortcut.y, true, true, mode === "voluntary", true);
+            return KDGameData.RoomType === lairId && isPrison() && admission.applied;
+        } finally {
+            pendingAdmission = undefined;
         }
-        return arrived;
     }
 
     function captured() {
@@ -421,21 +423,28 @@
         };
     }
     if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        KDAddEvent(KDEventMapGeneric, "AfterAdvance", ROOM, updateClues);
+        KDAddEvent(KDEventMapGeneric, "AfterAdvance", ROOM, () => {
+            // Native stairs save immediately after AfterAdvance on both supported games.
+            if (pendingAdmission?.room === KDGameData.RoomType && isPrison())
+                pendingAdmission.applied =
+                    pendingAdmission.mode === "captured" ? recapture() : admit(pendingAdmission.mode);
+            updateClues();
+        });
         KDAddEvent(KDEventMapGeneric, "tickAfter", ROOM, updateClues);
     }
     if (typeof KinkyDungeonStatsPresets !== "undefined" && typeof KDPerkStart !== "undefined") {
+        delete KDPerkStart.SpiderlingsPrisonStart;
         KinkyDungeonStatsPresets.SpiderlingsPrisonStart = {
             id: "SpiderlingsPrisonStart",
             category: "Start",
             cost: 0,
-            startPriority: 1200,
             tags: ["start"],
             block: ["SpiderlingsBossStart"],
         };
-        KDPerkStart.SpiderlingsPrisonStart = () => {
-            if (!start()) throw new Error("Cannot start in the Spiderlings nest prison.");
-        };
+        KDAddEvent(KDEventMapGeneric, "afterNewGame", "SpiderlingsPrisonStart", () => {
+            if (KinkyDungeonStatsChoice.get("SpiderlingsPrisonStart") && !start())
+                throw new Error("Cannot start in the Spiderlings nest prison.");
+        });
     }
     api.Prison = Object.freeze({
         ROOM,
