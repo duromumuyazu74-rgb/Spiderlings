@@ -94,6 +94,33 @@ test("hostile contacts grow density beyond the Cocoon threshold without a cap", 
     assert.equal(r.buffs.SpiderlingsSilkDensity.type, "SpiderlingsSilkDensity");
 });
 
+test("density HUD selects the prepared tier at each threshold without changing saved density", () => {
+    for (const [value, tier] of [
+        [0, undefined],
+        [1, 1],
+        [99.9, 1],
+        [100, 2],
+        [299.9, 2],
+        [300, 3],
+        [699.9, 3],
+        [700, 4],
+        [1499.9, 4],
+        [1500, 5],
+        [5000, 5],
+    ]) {
+        const r = runtime();
+        r.density.state().value = value;
+        r.c.KDEventMapGeneric.afterLoadGame.SpiderlingsSilkDensity();
+        const buff = r.buffs.SpiderlingsSilkDensity;
+        assert.equal(buff?.buffSpriteSpecific, tier ? "SpiderlingsSilkDensity" + tier : undefined);
+        if (tier) {
+            assert.equal(buff.buffSprite, true);
+            assert.equal(buff.text, String(Math.floor(value)));
+        }
+        assert.equal(r.density.state().value, value);
+    }
+});
+
 test("foreign, allied and duplicate same-source trail contacts do not add density", () => {
     const r = runtime();
     assert.equal(r.density.contact({ ...spider(), allied: true }), false);

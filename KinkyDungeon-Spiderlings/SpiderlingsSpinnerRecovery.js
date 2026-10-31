@@ -1237,7 +1237,7 @@
             id: LEASH,
             module: "SpinnerRecovery",
             stage: "Recovery",
-            model: "Leash",
+            model: "SpiderlingsSilkLeashModel",
             restraint: {
                 inventory: true,
                 removePrison: true,
@@ -1250,7 +1250,7 @@
                 power: 1,
                 weight: -99,
                 harness: true,
-                Model: "Leash",
+                Model: "SpiderlingsSilkLeashModel",
                 unlimited: true,
                 sfxGroup: "Ropes",
                 struggleBreak: true,

@@ -185,7 +185,15 @@ KD 5.4.92 and official KD 5.5.6 commit `2d71b1fa30303d8fa43be54a11f12f26a0c8a039
 - `KinkiestDungeon-5.5/Data/ModelList_TapeLight.ts`
   - Useful reference for Spiderlings web/tape-style restraints and pose-aware wrapping.
 
+### Native status icons
+
+KD 5.4.92 and official KD 5.5.7 use `buffSprite: true` and `buffSpriteSpecific` to resolve `Buffs/buff/buff<ID>.png` in `KDProcessBuffIcons`. A buff needs an `aura` or `labelcolor` to enter the HUD; `labelcolor` displays WebSpray slow without adding a world aura. Register the direct PNGs before runtime scripts. The native counter consumes `text`, and `TextGet` replaces `PowerInt` from the buff's actual power. Density tier selection is presentation only; preserve the saved uncapped value and native slow power.
+
+Both versions replace an existing nonnegative-power buff when the new power is equal, allowing the refreshed density buff to update its icon and count without a new buff ID. The `buff-icons` scene exercises the actual native HUD, decoded 46px files, threshold changes, slow expiration and saved density. Boss combat separately exercises resonance eligibility and its prepared icon.
+
 ### Poses, Layers, And Canvas
+
+- Native `DrawCharacter` can mark an existing view in `ModelContainer.Refresh` after a pose change; the next draw rebuilds that mesh. A visual fixture must draw until that view's pending refresh clears before extracting its mesh. Calling only `RenderModelContainer` on the old view can mix new layer sprites with old pose geometry. The Leash pose scene checks this on KD 5.4.92 and official 5.5.7.
 
 - `KinkiestDungeon-5.5/Data/Poses.ts`
   - Official pose constants such as `ARMPOSES`, `HANDRIGHTPOSES`, `HANDLEFTPOSES`, `FOREHANDRIGHTPOSES`, and `FOREHANDLEFTPOSES`.

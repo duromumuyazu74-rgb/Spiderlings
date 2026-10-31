@@ -152,6 +152,7 @@ function resonanceView() {
     c.KDModFiles = {
         "Game/Enemies/Spinner.png": "blob:spinner",
         "Game/Bullets/SpiderlingsMageRuneIcon.png": "blob:rune",
+        "Game/Buffs/buff/buffSpiderlingsBossResonance.png": "blob:resonance",
     };
     c.kdgameboard = { addChild: (child) => (child.parent = c.kdgameboard) };
     c.kdpixisprites = new Map();
@@ -239,7 +240,7 @@ test("resonance keeps its six-turn cadence while projecting one-second synchroni
     assert.ok(glows[0][9].alpha > 0 && glows[0][9].alpha <= 0.7);
     assert.ok(Math.abs(glows[0][6] / glows[1][6] - 3) < 1e-9);
     assert.equal(hud().icon, "buff/buffSpiderlingsBossResonance");
-    assert.equal(c.KDModFiles["Game/Buffs/buff/buffSpiderlingsBossResonance.png"], "blob:rune");
+    assert.equal(c.KDModFiles["Game/Buffs/buff/buffSpiderlingsBossResonance.png"], "blob:resonance");
     assert.match(hud().text, /pausing its natural decay/);
     at(2000);
     assert.equal(draw().length, 0);

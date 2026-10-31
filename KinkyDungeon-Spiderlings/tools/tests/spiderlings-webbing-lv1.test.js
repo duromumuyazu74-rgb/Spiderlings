@@ -285,6 +285,8 @@ test("the complete runtime registers ten Lv1, five Lv2, eight Lv3 restraints, an
         ...lv2Families.map((entry) => entry.model),
         ...lv3Families.map((family) => `SpiderlingsWebbingLv3${family}Model`),
         "SpiderlingsWebbingCocoonModel",
+        "SpiderlingsSilkLeashModel",
+        "SpiderlingsSilkCollarModel",
     ].sort();
 
     assert.deepEqual(runtime.context.KinkyDungeonRestraints.map((entry) => entry.name).sort(), expectedRestraints);

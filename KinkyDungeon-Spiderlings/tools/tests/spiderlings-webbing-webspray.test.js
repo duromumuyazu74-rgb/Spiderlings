@@ -689,6 +689,9 @@ test("runtime direct/trail hits add one exact item and update one SlowLevel buff
     assert.equal(runtime.addCalls[0][3], "");
     assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.type, "SlowLevel");
     assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.power, 1);
+    assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.buffSpriteSpecific, "SpiderlingsWebSpraySlow1");
+    assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.text, "1");
+    assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.labelcolor, "#ffffff");
 
     const trail = handler(
         runtime.context.KinkyDungeonPlayerEntity,
@@ -746,6 +749,11 @@ test("runtime direct/trail hits add one exact item and update one SlowLevel buff
         );
         assert.equal(capped.effect, true);
         assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.power, expectedPower);
+        assert.equal(
+            runtime.buffs.SpiderlingsWebSpraySlow.buffSpriteSpecific,
+            "SpiderlingsWebSpraySlow" + expectedPower,
+        );
+        assert.equal(runtime.buffs.SpiderlingsWebSpraySlow.text, String(expectedPower));
     }
     assert.equal(runtime.addCalls.length, 6, "same-turn hits re-read equipment and advance each family independently");
     assert.deepEqual(

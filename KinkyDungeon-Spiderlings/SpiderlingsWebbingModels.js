@@ -11,6 +11,9 @@
     const COCOON_FOLDER = "SpiderlingsWebbingCocoon";
     const COCOON_ASSET = `Models/${COCOON_FOLDER}/Cocoon.png`;
     const COCOON_MODEL_ID = "SpiderlingsWebbingCocoonModel";
+    const SILK_LEASH_FOLDER = "SpiderlingsSilkLeash";
+    const SILK_LEASH_MODEL = "SpiderlingsSilkLeashModel";
+    const SILK_COLLAR_MODEL = "SpiderlingsSilkCollarModel";
     const COMMON_CATEGORIES = Object.freeze(["Restraints", "Wrapping", "Latex", "SpiderlingsWebbingLv1"]);
     const LV2_CATEGORIES = Object.freeze(["Restraints", "Wrapping", "Latex", "SpiderlingsWebbingLv2"]);
     const LV3_CATEGORIES = Object.freeze(["Restraints", "Wrapping", "Latex", "SpiderlingsWebbingLv3"]);
@@ -568,6 +571,53 @@
         ),
     );
 
+    function silkLeashModel(collarOnly = false) {
+        const collar = {
+            Name: "LeashCollar",
+            Layer: "Collar",
+            Pri: collarOnly ? 0 : -400,
+            Invariant: true,
+            NoColorize: true,
+            HideWhenOverridden: true,
+        };
+        return {
+            Name: collarOnly ? SILK_COLLAR_MODEL : SILK_LEASH_MODEL,
+            Folder: SILK_LEASH_FOLDER,
+            TopLevel: true,
+            Restraint: true,
+            Categories: ["Restraints", SILK_LEASH_FOLDER],
+            AddPose: collarOnly ? [] : ["Leash"],
+            Layers: ToLayerMap([
+                ...(collarOnly
+                    ? []
+                    : [
+                          {
+                              Name: "Leash",
+                              Layer: "Leash",
+                              Pri: 0,
+                              Invariant: true,
+                              NoColorize: true,
+                              HideWhenOverridden: true,
+                              // Native precedence prevents FreePulled/FrontPulled lookups.
+                              MorphPoses: {
+                                  Kneel: "Kneel",
+                                  KneelClosed: "Kneel",
+                                  Hogtie: "Hogtie",
+                                  HandsBound: "",
+                                  Pulled: "",
+                                  HandsBehind: "",
+                                  Free: "Free",
+                                  Crossed: "Crossed",
+                                  Front: "Front",
+                              },
+                              AppendPose: { Pulled: "Pulled" },
+                          },
+                      ]),
+                collar,
+            ]),
+        };
+    }
+
     function registerModels() {
         if (typeof AddModel != "function" || typeof ToLayerMap != "function" || typeof ToMap != "function")
             return false;
@@ -575,6 +625,8 @@
         for (const definition of lv2Definitions) AddModel(definition.create());
         for (const definition of lv3Definitions) AddModel(definition.create());
         AddModel(cocoonDefinition.create());
+        AddModel(silkLeashModel());
+        AddModel(silkLeashModel(true));
         if (api.applyWebbingColor) api.applyWebbingColor();
         return true;
     }
@@ -585,6 +637,9 @@
         COCOON_ASSET,
         COCOON_FOLDER,
         COCOON_MODEL_ID,
+        SILK_LEASH_FOLDER,
+        SILK_LEASH_MODEL,
+        SILK_COLLAR_MODEL,
         FOLDER,
         LV2_FOLDER,
         LV3_FOLDER,

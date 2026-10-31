@@ -82,6 +82,8 @@ for (const scale of [1, "1"])
         assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.TEXTURE_ATLASES), [
             webbingAtlas,
             pinkAtlas,
+            "TextureAtlas/spiderlings-leash-0.json",
+            "TextureAtlas/spiderlings-leash-pink-0.json",
         ]);
         assert.deepEqual(Array.from(runtime.context.Spiderlings.ModelRuntime.DISPLACEMENT_ASSETS), [
             ...displacementAssets,

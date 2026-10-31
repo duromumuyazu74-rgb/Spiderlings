@@ -1,6 +1,6 @@
 # Verified game environments
 
-The unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The local Silk Leash and status-icon integration candidate is `Spiderlings_0.92.39-test.16.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.16 Silk Leash and status icons (2026-10-31)
+
+This integration adds the artist's white/pink Silk Leash to the current Prison and Matriarch build, with nine cord poses, collar models, independent atlases and direct fallback. New prison-escort carriers retain their native item identity and save a cosmetic marker. It also adopts all eleven prepared 46px status icons: five Web slow stacks, five Silk density tiers and Weave resonance. See [Leash artwork](leash-art.md) and [status icons](buff-icons.md).
+
+Package: `Spiderlings_0.92.39-test.16.zip`, 27,521,832 bytes and 228 allowlisted entries. SHA-256: `b00a4ca5d3d987ac9f75361bda3ef4037010c38f1c57c705f7c4ed11fae4e07e`.
+
+At the maintainer's request, this artwork delivery uses focused verification. The same ZIP passed native `buff-icons`, `boss-combat` and `leash-art` on KD 5.4.92 and freshly fetched official KD 5.5.7 commit `8ca018b861705a37ba568b31ea2d1d126145916d`. The scenes cover native icon decoding and counters, density thresholds, slow expiry, resonance lifecycle, all nine cord poses in both colors, and carrier save/load. Forty character images and both native HUD layouts were visually inspected. Related unit/contract regressions and the two changed registration cases passed.
+
+Focused native evidence is retained in compatibility-cache run `2026-10-31T02-54-54-869Z-0.92.39-test.16`. The complete local regression watcher was not run. A broader native run completed 77 checks and seven locale loads on 5.4.92 before remaining full verification was stopped at the maintainer's request; its logs remain in run `2026-10-31T02-57-18-763Z-0.92.39-test.16`. That interrupted run is not presented as full dual-version acceptance.
 
 ## Test.14 initial automatic saves (2026-10-30)
 
@@ -116,6 +126,23 @@ Full same-ZIP evidence is retained in compatibility-cache run `2026-10-25T06-05-
 Capture fixtures isolate support while testing control and shorten the remaining escape window only to exercise its exact timeout boundary. The construction fixture disables Boss offense while measuring paid worker actions. These checks establish native behavior and persistence, not final difficulty for every build. Dedicated artwork, rewards and maintainer balance playtesting remain outside this demo; #165 stays open, and #68/#76 retain their separate mature-prison playtest.
 
 Review and native regressions corrected duplicate part damage from weapon auras, invalid-input growth, inner-item reconstruction on unlink, escort construction blocked by ceasefire, allied-entity cleanup and retry state. Ordinary map generation also required explicit empty terrain/floor definitions for the three authored enemy types. The initial shortcut position overlapped the main nest's authored field; moving it outside the reserve restores all six sites without weakening geometry checks.
+
+## Test.6 authored Silk Leash (2026-10-25)
+
+This local candidate adopts the artist's white and pink Leash artwork on the V6 prison baseline `04fd7886a3742ef8a86ba87f7146b0553b035347`. It contains nine cord poses and the collar in each color, with independent atlas aliases and complete direct fallback. The existing Pink silk setting updates equipped and restored model copies. See [artwork provenance and mapping](leash-art.md).
+
+`SpiderlingsSilkLeash` uses the owned model. Prison escort retains native warning, equipment and tether operations, marking only newly added native collars/leashes for the corresponding silk appearance. Pre-existing equipment keeps its identity and appearance; native carrier names, IDs, locks and escape progress survive the cosmetic change and reload.
+
+Package: `Spiderlings_0.92.39-test.6.zip`, 27,478,085 bytes and 209 allowlisted entries. SHA-256: `1858e503e023834516de0364c22cbaf9e87478e758bcfa6ada9cfd3ed26cd517`.
+
+| Game input                                                                                        | Verified result                               |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| KD 5.4.92                                                                                         | All 71 native checks and seven locales passed |
+| Official KD 5.5.6; freshly fetched GitHub `5.5` commit `12c82f6ecdea40d078838f109453e934cc9525ab` | All 71 native checks and seven locales passed |
+
+The full same-ZIP acceptance is retained in compatibility-cache run `2026-10-25T05-35-16-720Z-0.92.39-test.6`. `leash-art` resolves and renders all nine poses in both colors, verifies atlas canvas restoration, checks marked native-carrier save/load and retains twenty character images per game. Visual inspection covers the cord's neck/hand placement, kneeling, Hogtie and pulled variants. The fixture waits for the native view's pending mesh rebuild before extracting each pose. `prison` also verifies the actual transport carrier's artwork marker during paid native escort.
+
+Pixel regressions compare all twenty losslessly packed Leash frames with their full-canvas PNG sources. Model regressions cover independent color aliases, direct fallback, live/saved color selection and preservation of foreign carrier identity. The remaining broader prison playtest is still tracked by #68/#76; this art delivery does not establish a new balance outcome or publish a Release.
 
 ## Test.4 V6 prison layout (2026-10-24)
 

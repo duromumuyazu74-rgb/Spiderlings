@@ -288,6 +288,8 @@ DSpiderlingsNestVisit,Die Öffnung führt in das Spinnennest. Helle Seide markie
 dSpiderlingsNestVisit_Enter,Das Nest betreten
 dSpiderlingsNestVisit_EnterGag,Das Nest betreten
 KinkyDungeonSpiderlingsNestEscort,Ein Spinnchen nähert sich um deinen Kokon zu einem Nesteingang zu bringen.
+KDBuffName_SpiderlingsWebSpraySlow,Spinnennetz-Verlangsamung
+KDBuffDesc_SpiderlingsWebSpraySlow,Haftende Spinnenseide erhöht deine Verlangsamungsstufe um PowerInt.
 KDBuffName_SpiderlingsSilkDensity,Seidendichte
 KDBuffDesc_SpiderlingsSilkDensity,Dichtere Seide erhöht den Befreiungsaufwand. Nach zehn Weltzügen ohne erneuten Treffer durch Spinnenseide beginnt sie abzunehmen, auch wenn du noch gefesselt bist.
 NameSpiderlingsMatriarch,Nestweber-Matriarchin

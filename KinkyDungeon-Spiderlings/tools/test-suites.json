@@ -30,6 +30,7 @@
     "spiderlings-web-mobility.test.js",
     "spiderlings-model-runtime.test.js",
     "spiderlings-jumper-dash.test.js",
+    "spiderlings-leash-art.test.js",
     "spiderlings-mage-combat.test.js",
     "spiderlings-mage-visuals.test.js",
     "spiderlings-spell-visuals.test.js",

@@ -1,0 +1,215 @@
+{
+  "frames": {
+    "Models/SpiderlingsSilkLeash/Leash.png": {
+      "frame": {
+        "x": 1,
+        "y": 1,
+        "w": 150,
+        "h": 1348
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1112,
+        "y": 866,
+        "w": 150,
+        "h": 1348
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashFree.png": {
+      "frame": {
+        "x": 153,
+        "y": 1,
+        "w": 623,
+        "h": 959
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1157,
+        "y": 869,
+        "w": 623,
+        "h": 959
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashCrossed.png": {
+      "frame": {
+        "x": 1,
+        "y": 3365,
+        "w": 238,
+        "h": 688
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1163,
+        "y": 868,
+        "w": 238,
+        "h": 688
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashFront.png": {
+      "frame": {
+        "x": 275,
+        "y": 962,
+        "w": 153,
+        "h": 545
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1100,
+        "y": 871,
+        "w": 153,
+        "h": 545
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashPulled.png": {
+      "frame": {
+        "x": 275,
+        "y": 2008,
+        "w": 1125,
+        "h": 200
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 92,
+        "y": 870,
+        "w": 1125,
+        "h": 200
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashKneel.png": {
+      "frame": {
+        "x": 1,
+        "y": 1351,
+        "w": 272,
+        "h": 1148
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1153,
+        "y": 872,
+        "w": 272,
+        "h": 1148
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashKneelPulled.png": {
+      "frame": {
+        "x": 241,
+        "y": 3365,
+        "w": 1021,
+        "h": 613
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 182,
+        "y": 261,
+        "w": 1021,
+        "h": 613
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashHogtie.png": {
+      "frame": {
+        "x": 275,
+        "y": 1509,
+        "w": 538,
+        "h": 497
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 686,
+        "y": 870,
+        "w": 538,
+        "h": 497
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashHogtiePulled.png": {
+      "frame": {
+        "x": 1,
+        "y": 2501,
+        "w": 846,
+        "h": 862
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1192,
+        "y": 52,
+        "w": 846,
+        "h": 862
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    },
+    "Models/SpiderlingsSilkLeash/LeashCollar.png": {
+      "frame": {
+        "x": 241,
+        "y": 3980,
+        "w": 173,
+        "h": 89
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 1169,
+        "y": 765,
+        "w": 173,
+        "h": 89
+      },
+      "sourceSize": {
+        "w": 2480,
+        "h": 3508
+      }
+    }
+  },
+  "meta": {
+    "app": "Spiderlings lossless Webbing atlas builder",
+    "version": "1.0",
+    "image": "spiderlings-leash-0.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 4096,
+      "h": 4096
+    },
+    "scale": "1"
+  }
+}

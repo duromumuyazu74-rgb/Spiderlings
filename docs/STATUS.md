@@ -2,6 +2,12 @@
 
 核对日期：2026-10-31。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
+## test.16 Leash 与状态图标集成
+
+本地候选 `0.92.39-test.16` 包含白色、粉色 Leash，覆盖九种绳体姿势及项圈，沿用现有“粉色蛛丝”设置。Spinner 回收丝绳使用新模型；监牢押送新添加的原生项圈和牵引绳保存各自的外观标记，保留物品 ID、锁及逃脱进度。
+
+蛛网减速、蛛丝密度各有五档状态图标，织纹共鸣使用独立图标。密度换档阈值为 100、300、700、1500，数值仍无上限；图标共用准备稿的单一配色。来源见[状态图标](buff-icons.md)。Leash 的来源、姿势映射和原生载体归属见 [Leash 美术接入](leash-art.md)。按本次指定范围，同一安装包已在 KD 5.4.92 与官方 KD 5.5.7 通过图标、共鸣和 Leash 的定向原生验收，详见 [test.16 验证记录](COMPATIBILITY.md#test16-silk-leash-and-status-icons-2026-10-31)。
+
 ## test.14 Pre-release
 
 `0.92.39-test.14` 将两个位置开局移到原生 perk 初始化结束后的 `afterNewGame`，避免自动存档带上临时 `MagicHands`。Prison 在原生 `AfterAdvance` 阶段完成入狱和囚室安置，再由游戏保存。现有开局场景直接读回自动存档，并保留玩家主动选择 `MagicHands` 的情况。同一 ZIP 已在 KD 5.4.92 与新拉取的官方 KD 5.5.6 各通过 75 项原生检查和七语种加载，详见 [test.14 兼容记录](COMPATIBILITY.md#test14-initial-automatic-saves-2026-10-30)。交付与 PR 状态由 [#183](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/183) 跟踪。

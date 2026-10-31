@@ -91,6 +91,10 @@ const atlasAssets = [
     "TextureAtlas/spiderlings-spinner-0.json",
     "TextureAtlas/spiderlings-spinner-pink-0.png",
     "TextureAtlas/spiderlings-spinner-pink-0.json",
+    "TextureAtlas/spiderlings-leash-0.png",
+    "TextureAtlas/spiderlings-leash-0.json",
+    "TextureAtlas/spiderlings-leash-pink-0.png",
+    "TextureAtlas/spiderlings-leash-pink-0.json",
 ];
 const displacementAssets = [
     "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
@@ -110,6 +114,17 @@ const runtimeAssets = [
     "Items/SpiderlingStaff.png",
     "UI/MapMod/SpiderlingsInfestation.png",
     "UI/MapMod/SpiderlingsHuntingGrounds.png",
+    "Buffs/buff/buffSpiderlingsWebSpraySlow1.png",
+    "Buffs/buff/buffSpiderlingsWebSpraySlow2.png",
+    "Buffs/buff/buffSpiderlingsWebSpraySlow3.png",
+    "Buffs/buff/buffSpiderlingsWebSpraySlow4.png",
+    "Buffs/buff/buffSpiderlingsWebSpraySlow5.png",
+    "Buffs/buff/buffSpiderlingsSilkDensity1.png",
+    "Buffs/buff/buffSpiderlingsSilkDensity2.png",
+    "Buffs/buff/buffSpiderlingsSilkDensity3.png",
+    "Buffs/buff/buffSpiderlingsSilkDensity4.png",
+    "Buffs/buff/buffSpiderlingsSilkDensity5.png",
+    "Buffs/buff/buffSpiderlingsBossResonance.png",
     "Bullets/SpiderWeb.png",
     "Bullets/SpiderlingsMageRune.png",
     "Bullets/SpiderlingsMageRuneIcon.png",
@@ -211,6 +226,26 @@ const runtimeAssets = [
     "Models/SpiderlingsSpinnerLegbinderPink/Stage6.png",
     "Models/SpiderlingsSpinnerLegbinderPink/Stage7.png",
     "Models/SpiderlingsSpinnerLegbinderPink/Tail.png",
+    "Models/SpiderlingsSilkLeash/Leash.png",
+    "Models/SpiderlingsSilkLeash/LeashFree.png",
+    "Models/SpiderlingsSilkLeash/LeashCrossed.png",
+    "Models/SpiderlingsSilkLeash/LeashFront.png",
+    "Models/SpiderlingsSilkLeash/LeashPulled.png",
+    "Models/SpiderlingsSilkLeash/LeashKneel.png",
+    "Models/SpiderlingsSilkLeash/LeashKneelPulled.png",
+    "Models/SpiderlingsSilkLeash/LeashHogtie.png",
+    "Models/SpiderlingsSilkLeash/LeashHogtiePulled.png",
+    "Models/SpiderlingsSilkLeash/LeashCollar.png",
+    "Models/SpiderlingsSilkLeashPink/Leash.png",
+    "Models/SpiderlingsSilkLeashPink/LeashFree.png",
+    "Models/SpiderlingsSilkLeashPink/LeashCrossed.png",
+    "Models/SpiderlingsSilkLeashPink/LeashFront.png",
+    "Models/SpiderlingsSilkLeashPink/LeashPulled.png",
+    "Models/SpiderlingsSilkLeashPink/LeashKneel.png",
+    "Models/SpiderlingsSilkLeashPink/LeashKneelPulled.png",
+    "Models/SpiderlingsSilkLeashPink/LeashHogtie.png",
+    "Models/SpiderlingsSilkLeashPink/LeashHogtiePulled.png",
+    "Models/SpiderlingsSilkLeashPink/LeashCollar.png",
     ...displacementAssets,
     ...atlasAssets,
     ...soundAssets,
@@ -447,6 +482,7 @@ function loadManifest() {
 function checkRuntimeTrees() {
     const actual = [
         ...walkNames(path.join(modRoot, "UI"), "UI"),
+        ...walkNames(path.join(modRoot, "Buffs"), "Buffs"),
         ...walkNames(path.join(modRoot, "Models"), "Models"),
         ...walkNames(path.join(modRoot, "Enemies"), "Enemies"),
         ...walkNames(path.join(modRoot, "Bullets"), "Bullets"),
@@ -498,21 +534,35 @@ function checkOfficialSkirtBoundary() {
     } else pass("KD 5.5 places OverSkirt, SkirtOver, and Skirt above the Lv1 Legs WrappingLegsOver boundary.");
 }
 
-function checkTextureAtlas(pink = false, spinner = false) {
-    const offset = spinner ? 4 : 0;
-    const size = spinner ? 2048 : 4096;
+function checkTextureAtlas(pink = false, family = "Webbing") {
+    const offset = { Webbing: 0, Spinner: 4, Leash: 8 }[family];
+    const size = family === "Spinner" ? 2048 : 4096;
     const initialErrorCount = errors.length;
     const atlasJsonPath = atlasAssets[offset + (pink ? 3 : 1)];
     const atlasPngPath = atlasAssets[offset + (pink ? 2 : 0)];
     const builderPath = "tools/build-spiderlings-atlas.py";
-    const expectedFrames = spinner
-        ? ["Stage1", "Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7", "Tail"].map(
-              (name) => `Models/SpiderlingsSpinnerLegbinder${pink ? "Pink" : ""}/${name}.png`,
-          )
-        : [...families, ...lv2Families, ...lv3Families]
-              .map((entry) => entry.path)
-              .concat(cocoon.path, "Models/SpiderlingsWebbingCocoon/OuterWebs.png")
-              .map((path) => (pink ? path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/") : path));
+    const expectedFrames =
+        family === "Leash"
+            ? [
+                  "Leash",
+                  "LeashFree",
+                  "LeashCrossed",
+                  "LeashFront",
+                  "LeashPulled",
+                  "LeashKneel",
+                  "LeashKneelPulled",
+                  "LeashHogtie",
+                  "LeashHogtiePulled",
+                  "LeashCollar",
+              ].map((name) => `Models/SpiderlingsSilkLeash${pink ? "Pink" : ""}/${name}.png`)
+            : family === "Spinner"
+              ? ["Stage1", "Stage2", "Stage3", "Stage4", "Stage5", "Stage6", "Stage7", "Tail"].map(
+                    (name) => `Models/SpiderlingsSpinnerLegbinder${pink ? "Pink" : ""}/${name}.png`,
+                )
+              : [...families, ...lv2Families, ...lv3Families]
+                    .map((entry) => entry.path)
+                    .concat(cocoon.path, "Models/SpiderlingsWebbingCocoon/OuterWebs.png")
+                    .map((path) => (pink ? path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/") : path));
     let atlas;
     try {
         atlas = JSON.parse(readModText(atlasJsonPath));
@@ -596,7 +646,7 @@ function checkTextureAtlas(pink = false, spinner = false) {
 
     if (errors.length === initialErrorCount) {
         pass(
-            `${pink ? "pink" : "original"} ${spinner ? "Spinner" : "Webbing"} atlas exposes ${expectedFrames.length} aliases; PNG payloads were not inspected by the checker.`,
+            `${pink ? "pink" : "original"} ${family} atlas exposes ${expectedFrames.length} aliases; PNG payloads were not inspected by the checker.`,
         );
     }
 }
@@ -884,7 +934,13 @@ function checkRuntime(state) {
         .sort();
     const expectedModels = [...families, ...lv2Families, ...lv3Families]
         .map((entry) => entry.model)
-        .concat(cocoon.model, "SpiderlingsSpinnerLegbinderModel", "SpiderlingsSpellwovenCocoonModel")
+        .concat(
+            cocoon.model,
+            "SpiderlingsSpinnerLegbinderModel",
+            "SpiderlingsSpellwovenCocoonModel",
+            "SpiderlingsSilkLeashModel",
+            "SpiderlingsSilkCollarModel",
+        )
         .sort();
     const actualIds = state.restraints.map((entry) => entry.name).sort();
     const actualModels = state.models.map((entry) => entry.Name).sort();
@@ -910,7 +966,10 @@ function checkRuntime(state) {
         fail(`runtime model registry is not exact: ${actualModels.join(", ")}`);
     if (JSON.stringify(catalogIds) !== JSON.stringify(expectedIds))
         fail(`central restraint catalog is not exact: ${catalogIds.join(", ")}`);
-    if (JSON.stringify(runtimeAtlases) !== JSON.stringify([atlasAssets[1], atlasAssets[3]]))
+    if (
+        JSON.stringify(runtimeAtlases) !==
+        JSON.stringify([atlasAssets[1], atlasAssets[3], atlasAssets[9], atlasAssets[11]])
+    )
         fail(`runtime atlas list is not exact: ${runtimeAtlases.join(", ")}`);
     if (JSON.stringify(runtimeDisplacements) !== JSON.stringify(displacementAssets))
         fail(`runtime displacement list is not exact: ${runtimeDisplacements.join(", ")}`);
@@ -2012,8 +2071,10 @@ function main() {
     checkOfficialSkirtBoundary();
     checkTextureAtlas();
     checkTextureAtlas(true);
-    checkTextureAtlas(false, true);
-    checkTextureAtlas(true, true);
+    checkTextureAtlas(false, "Spinner");
+    checkTextureAtlas(true, "Spinner");
+    checkTextureAtlas(false, "Leash");
+    checkTextureAtlas(true, "Leash");
     checkSyntax();
     const state = loadRuntime();
     checkRuntime(state);

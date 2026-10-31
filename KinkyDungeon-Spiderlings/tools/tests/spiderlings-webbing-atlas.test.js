@@ -43,6 +43,10 @@ const atlasFiles = [
     "TextureAtlas/spiderlings-spinner-0.json",
     "TextureAtlas/spiderlings-spinner-pink-0.png",
     "TextureAtlas/spiderlings-spinner-pink-0.json",
+    "TextureAtlas/spiderlings-leash-0.png",
+    "TextureAtlas/spiderlings-leash-0.json",
+    "TextureAtlas/spiderlings-leash-pink-0.png",
+    "TextureAtlas/spiderlings-leash-pink-0.json",
 ];
 
 const pinkFrames = expectedFrames.map((path) => path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/"));
@@ -70,6 +74,34 @@ for color, suffix in [("", ""), ("-pink", "Pink")]:
             with Image.open(root / name) as source:
                 assert source.size == (2480, 3508) and source.mode == "RGBA"
                 bounds = source.getchannel("A").getbbox()
+                assert bounds == (offset["x"], offset["y"], offset["x"] + offset["w"], offset["y"] + offset["h"])
+                packed = sheet.crop((frame["x"], frame["y"], frame["x"] + frame["w"], frame["y"] + frame["h"]))
+                assert packed.tobytes() == source.crop(bounds).tobytes(), name
+`;
+    execFileSync("python", ["-B", "-c", script, modRoot], { encoding: "utf8" });
+});
+
+test("Leash sheets restore all twenty authored pose sources without changing RGBA pixels", () => {
+    const script = `
+import json
+import sys
+from pathlib import Path
+from PIL import Image
+root = Path(sys.argv[1])
+parts = ["Leash", "LeashFree", "LeashCrossed", "LeashFront", "LeashPulled", "LeashKneel", "LeashKneelPulled", "LeashHogtie", "LeashHogtiePulled", "LeashCollar"]
+for color, suffix in [("", ""), ("-pink", "Pink")]:
+    atlas = json.loads((root / f"TextureAtlas/spiderlings-leash{color}-0.json").read_text())
+    names = [f"Models/SpiderlingsSilkLeash{suffix}/{part}.png" for part in parts]
+    assert list(atlas["frames"]) == names
+    with Image.open(root / f"TextureAtlas/spiderlings-leash{color}-0.png") as sheet:
+        assert sheet.size == (4096, 4096)
+        for name, entry in atlas["frames"].items():
+            assert entry["rotated"] is False
+            assert entry["sourceSize"] == {"w": 2480, "h": 3508}
+            frame, offset = entry["frame"], entry["spriteSourceSize"]
+            with Image.open(root / name) as source:
+                bounds = source.getchannel("A").getbbox()
+                assert source.size == (2480, 3508) and source.mode == "RGBA"
                 assert bounds == (offset["x"], offset["y"], offset["x"] + offset["w"], offset["y"] + offset["h"])
                 packed = sheet.crop((frame["x"], frame["y"], frame["x"] + frame["w"], frame["y"] + frame["h"]))
                 assert packed.tobytes() == source.crop(bounds).tobytes(), name

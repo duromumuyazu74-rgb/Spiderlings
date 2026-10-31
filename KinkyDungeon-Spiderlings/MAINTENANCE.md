@@ -30,6 +30,8 @@ Manifest 按依赖顺序加载全局 JavaScript 脚本。模块共享 Spiderling
 
 运行素材由用户与画师提供。直接 PNG 是权威输入，两色采用 atlas-first 加载并保留 direct fallback；图集失败按颜色回退，不丢失另一颜色。Spinner 七阶段腿袋与拖尾的来源及动画约定见[美术接入](../docs/spinner-stage-art.md)。模型姿势兼容只扩展到已交付且已验证的素材。
 
+Silk Leash 的九种绳体姿势与项圈采用画师交付的白色、粉色素材，来源及原生押送外观归属见 [Leash 美术接入](../docs/leash-art.md)。两套各十张直接 PNG 保留完整画布，独立图集无损裁切。原生押送新添加的载体只记录外观标记，保留原生物品、牵引和逃脱规则。
+
 Lv1 没有 displacement。Lv2/Lv3 共用对应部位配置：
 
 | 部位   | 目标          | 强度 | 裁切原点     |

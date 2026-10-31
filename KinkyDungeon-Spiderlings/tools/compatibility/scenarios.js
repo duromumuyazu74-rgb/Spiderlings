@@ -2,6 +2,7 @@
 
 const scenarios = [
     ["basic", "basic.js"],
+    ["buff-icons", "buff-icons.js", null, [], "browser", ["normal-helpers.js"]],
     ["boss-capture", "boss-capture.js", null, [], "browser", ["normal-helpers.js", "boss-helpers.js"]],
     ["boss-combat", "boss-combat.js", null, [], "browser", ["normal-helpers.js", "boss-helpers.js"]],
     ["boss-defeat", "boss-defeat.js", null, [], "browser", ["normal-helpers.js", "boss-helpers.js"]],
@@ -65,6 +66,7 @@ const scenarios = [
         "floor-objective-hints",
         "normal-integration",
         "normal-visuals",
+        "leash-art",
         "passage-sites",
         "debug-stairs",
         "floor-weights",
