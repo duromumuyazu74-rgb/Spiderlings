@@ -1,6 +1,6 @@
 # Verified game environments
 
-The local Silk Leash and status-icon integration candidate is `Spiderlings_0.92.39-test.16.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.19.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,12 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.19 integrated Boss fixes and artwork (2026-10-31)
+
+This candidate combines the current test branch's Silk Leash and dedicated status icons with nine adjacent Court rings, distributed builder work, combat admission after final closure, one-attack Boss support Jumpers and the slower tracking rune. The existing artwork and its native scenarios remain included.
+
+The same `Spiderlings_0.92.39-test.19.zip` passed all 77 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.7 commit `b90ca1dcd602ea47b3fc472e8f53b3b6608cade2`. It has 228 allowlisted entries, 27,522,462 bytes and SHA-256 `159b0e4dfcf94167b0f2ae3d6b72488ca6fbf07bfe21eaf38f1c88b7e2d23001`. Full native evidence is retained in run `2026-10-31T04-27-32-515Z-0.92.39-test.19`, including `boss-combat`, `boss-capture`, `buff-icons` and `leash-art`.
 
 ## Test.18 local candidate: slower tracking rune (2026-10-31)
 
