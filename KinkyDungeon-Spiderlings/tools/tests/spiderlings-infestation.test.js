@@ -3,7 +3,9 @@
 const test = require("node:test");
 require("../../SpiderlingsCore.js");
 const assert = require("node:assert/strict");
-const { planNestPlacement, reachableCells } = require("../../SpiderlingsInfestation.js");
+const { EncounterRules } = require("./helpers/encounter-rules.js");
+require("../../SpiderlingsInfestation.js");
+const { planNestPlacement, reachableCells } = globalThis.Spiderlings.Infestation;
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
@@ -16,7 +18,7 @@ function runtime(overrides = {}, nativeSources = []) {
     const population = [];
     const texts = {};
     const context = {
-        Spiderlings: { EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules },
+        Spiderlings: { EncounterRules },
         KDMapMods: {},
         KinkyDungeonEscapeTypes: {},
         KDEventMapGeneric: {},

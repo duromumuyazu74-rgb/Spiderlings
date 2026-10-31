@@ -622,18 +622,15 @@
         return target;
     }
 
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function")
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", CONTROL, restoreScenarioControl);
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        for (const trigger of ["beforeHandleStairs", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
-            KDAddEvent(KDEventMapGeneric, trigger, CONTROL, () => activeScene && teardownScene());
-        KDAddEvent(KDEventMapGeneric, "postMapgen", CONTROL, () => {
-            activeScene = undefined;
-            actorOriginals = new Map();
-            priorProxyEntities = [];
-            delete KDGameData[CONTROL];
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", CONTROL, restoreScenarioControl);
+    for (const trigger of ["beforeHandleStairs", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
+        KDAddEvent(KDEventMapGeneric, trigger, CONTROL, () => activeScene && teardownScene());
+    KDAddEvent(KDEventMapGeneric, "postMapgen", CONTROL, () => {
+        activeScene = undefined;
+        actorOriginals = new Map();
+        priorProxyEntities = [];
+        delete KDGameData[CONTROL];
+    });
 
     if (typeof KDInputTypes !== "undefined")
         KDInputTypes.spiderlingsSpinnerDoorway = () =>

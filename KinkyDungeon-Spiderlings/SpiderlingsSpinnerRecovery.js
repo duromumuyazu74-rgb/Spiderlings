@@ -32,14 +32,6 @@
     const sourceKey = (id) => String(id);
     const cellKey = (cell) => `${cell.x},${cell.y}`;
 
-    function event(map, trigger, type, handler) {
-        if (typeof KDAddEvent === "function") KDAddEvent(map, trigger, type, handler);
-        else {
-            map[trigger] ||= {};
-            map[trigger][type] = handler;
-        }
-    }
-
     function definition(item) {
         if (!item) return undefined;
         if (typeof KDRestraint === "function") return KDRestraint(item);
@@ -1211,17 +1203,17 @@
     }
 
     if (typeof KDEventMapGeneric !== "undefined") {
-        event(KDEventMapGeneric, "canSprint", STATE, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "canSprint", STATE, (_event, data) => {
             if (ownsNativeTether() && strength() > 1 && KDGameData.MovePoints < 1) data.canSprint = false;
         });
     }
     if (typeof KDEventMapGeneric !== "undefined")
-        event(KDEventMapGeneric, "draw", STATE, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "draw", STATE, (_event, data) => {
             drawStrands(data);
         });
 
     if (typeof KDEventMapInventory !== "undefined") {
-        event(KDEventMapInventory, "postRemoval", "SpiderlingsRecoveryAnchor", (_event, item, data) => {
+        KDAddEvent(KDEventMapInventory, "postRemoval", "SpiderlingsRecoveryAnchor", (_event, item, data) => {
             if (data.Character !== KinkyDungeonPlayer || data.add || data.item === item) return;
             const anchored = allItems().some(
                 (candidate) =>
@@ -1230,7 +1222,7 @@
             );
             if (!anchored) KinkyDungeonRemoveRestraintSpecific(item, false, false, false);
         });
-        event(KDEventMapInventory, "beforeStruggleCalc", ESCAPE_EVENT, beforeStruggle);
+        KDAddEvent(KDEventMapInventory, "beforeStruggleCalc", ESCAPE_EVENT, beforeStruggle);
     }
     if (api.restraintCatalog?.register) {
         api.restraintCatalog.register({

@@ -5,7 +5,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const layout = require("../../SpiderlingsHuntingGroundsLayout.js");
+require("./helpers/encounter-rules.js");
+require("../../SpiderlingsHuntingGroundsLayout.js");
+const layout = globalThis.Spiderlings.HuntingGroundsLayout;
 
 function fixture(size = 30, seed = 0.5, blocked = new Set(), metadata) {
     const grid = Array.from({ length: size }, () => Array(size).fill("1"));

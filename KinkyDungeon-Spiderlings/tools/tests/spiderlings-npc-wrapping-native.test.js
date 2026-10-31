@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const { stripTypeScriptTypes } = require("node:module");
 const { gamePath } = require("../reference-inputs.js");
+const { nativeEvents } = require("./helpers/native-events.js");
 
 function nativeFunction(name, file = "enemy/KinkyDungeonEnemies.ts") {
     const source = fs.readFileSync(gamePath(`Game/src/${file}`), "utf8");
@@ -30,6 +31,7 @@ test("Hunting Grounds uses KD's capturable limit while allowing shop and quest N
         Enemy: { name: "QuestMerchant", bound: "Merchant", tags: { quest: true } },
     };
     const context = {
+        ...nativeEvents(),
         Spiderlings: {
             HuntingGrounds: { active: () => true },
             NPCAdhesion: { silkSource: () => undefined },
@@ -62,6 +64,7 @@ test("native KD helpless entry never receives the player or an entity without En
     };
     const map = { Entities: [spider, maid, { id: 3, x: 8, y: 8, hp: 1 }] };
     const context = {
+        ...nativeEvents(),
         Spiderlings: {
             Hooks: { wrap: (_name, native, wrapper) => wrapper(native) },
             NPCAdhesion: { status: () => "free", hasAttributedSilk: () => false },

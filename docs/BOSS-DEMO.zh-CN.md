@@ -1,6 +1,6 @@
 # 织巢主母试玩
 
-本文描述开发候选版 `0.92.39-test.19`，同一 ZIP 同时包含 V6 监牢与 Boss。已发布版本为 [0.92.39-test.14](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14)。主母使用放大的 Spinner 作为临时外观，具有 `3×3` 实际占位，共用一份生命；原生 DragonQueen 的大贴图配置本身不提供多格阻挡。
+本文描述开发候选版 `0.92.39-test.20`，同一 ZIP 同时包含 V6 监牢与 Boss。已发布版本为 [0.92.39-test.14](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14)。主母使用放大的 Spinner 作为临时外观，具有 `3×3` 实际占位，共用一份生命；原生 DragonQueen 的大贴图配置本身不提供多格阻挡。
 
 ## 进入与返回
 

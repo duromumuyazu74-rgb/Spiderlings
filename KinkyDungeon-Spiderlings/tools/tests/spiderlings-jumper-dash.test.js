@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { nativeEvents } = require("./helpers/native-events.js");
 
 const modRoot = path.join(__dirname, "..", "..");
 
@@ -14,6 +15,7 @@ function plain(value) {
 
 function loadDefinitions(options = {}) {
     const context = {
+        ...nativeEvents(),
         console,
         globalThis: null,
         window: null,

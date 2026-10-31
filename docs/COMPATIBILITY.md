@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.19.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.20.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,12 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.20 native registration and test-boundary cleanup (2026-10-31)
+
+Runtime event registration uses the supported game's `KDAddEvent` entry directly. Duplicate registrars and missing-event-API skip branches are removed. Five CommonJS-only exports are removed from the installable scripts; Node fixtures provide the native event environment and consume the same `Spiderlings` namespace as gameplay. Settings refresh handlers share one registration loop. Input/save validation, resource-lifetime checks and rendering fallbacks retain their existing responsibilities.
+
+The same `Spiderlings_0.92.39-test.20.zip` passed all 77 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.7 commit `b90ca1dcd602ea47b3fc472e8f53b3b6608cade2`. It has 228 allowlisted entries, 27,521,616 bytes and SHA-256 `5744b8f523ecc9c9215827300a3fa546a1d70bcb0cf6b26c724aa63275a1ed31`. Full native evidence is retained in run `2026-10-31T06-23-35-944Z-0.92.39-test.20`. Cleanup and integration are tracked in [#190](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/190).
 
 ## Test.19 integrated Boss fixes and artwork (2026-10-31)
 

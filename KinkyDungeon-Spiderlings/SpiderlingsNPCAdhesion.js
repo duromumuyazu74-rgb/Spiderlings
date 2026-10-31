@@ -176,57 +176,55 @@
         api.SpinnerNPCCapture?.auditSources?.();
     }
 
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "beforeDamageEnemy", KEY, (_event, data) => {
-            if (data.incomingDamage?.flags?.includes("SpiderlingsNPCSilk")) {
-                // Contact damage can query exposure before this hit is recorded.
-                // Reconcile old losses now and retain the pre-hit ledger position.
-                reconcile(data.enemy);
-                data.spiderlingsAdhesionBefore = slime(data.enemy);
-                data.spiderlingsAdhesionLastSlime = record(data.enemy)?.lastSlime;
-            }
-        });
-        KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) => {
-            const incoming = data.incomingDamage;
-            if (!incoming?.flags?.includes("SpiderlingsNPCSilk") || data.spiderlingsAdhesionRecorded) return;
-            data.spiderlingsAdhesionRecorded = true;
-            const added = Math.max(0, slime(data.enemy) - Number(data.spiderlingsAdhesionBefore || 0));
-            if (added > 0) {
-                const attack =
-                    incoming.spiderlingsCrossfire || incoming.spiderlingsAttack === "trail"
-                        ? "passive"
-                        : incoming.spiderlingsAttack;
-                recordNativeSilk(
-                    data.attacker || incoming.spiderlingsSource,
-                    data.enemy,
-                    added,
-                    attack,
-                    incoming.spiderlingsActionId,
-                    incoming.spiderlingsContributors,
-                    data.spiderlingsAdhesionLastSlime,
-                );
-            }
-        });
-        KDAddEvent(KDEventMapGeneric, "beforeDamage", KEY, (_event, data) => {
-            if (!record(data?.enemy) || status(data.enemy) !== "full") return;
-            if (data.damage > 0) data.damage *= DAMAGE;
-        });
-        KDAddEvent(KDEventMapGeneric, "enemyMove", KEY, (_event, data) => {
-            if (!data?.cancelmove && (data.enemy.x !== data.lastX || data.enemy.y !== data.lastY))
-                onDisplacement(data.enemy);
-        });
-        KDAddEvent(KDEventMapGeneric, "beforeTeleport", KEY, (_event, data) => {
-            if (data?.willing && blocksVoluntaryMove(data.entity)) data.cancel = true;
-        });
-        KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => {
-            if (!(data?.delta > 0)) return;
-            KDMapData[CLOCK] = now() + data.delta;
-            for (const target of KDMapData.Entities || []) reconcile(target);
-        });
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
-            for (const target of KDMapData.Entities || []) reconcile(target);
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "beforeDamageEnemy", KEY, (_event, data) => {
+        if (data.incomingDamage?.flags?.includes("SpiderlingsNPCSilk")) {
+            // Contact damage can query exposure before this hit is recorded.
+            // Reconcile old losses now and retain the pre-hit ledger position.
+            reconcile(data.enemy);
+            data.spiderlingsAdhesionBefore = slime(data.enemy);
+            data.spiderlingsAdhesionLastSlime = record(data.enemy)?.lastSlime;
+        }
+    });
+    KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) => {
+        const incoming = data.incomingDamage;
+        if (!incoming?.flags?.includes("SpiderlingsNPCSilk") || data.spiderlingsAdhesionRecorded) return;
+        data.spiderlingsAdhesionRecorded = true;
+        const added = Math.max(0, slime(data.enemy) - Number(data.spiderlingsAdhesionBefore || 0));
+        if (added > 0) {
+            const attack =
+                incoming.spiderlingsCrossfire || incoming.spiderlingsAttack === "trail"
+                    ? "passive"
+                    : incoming.spiderlingsAttack;
+            recordNativeSilk(
+                data.attacker || incoming.spiderlingsSource,
+                data.enemy,
+                added,
+                attack,
+                incoming.spiderlingsActionId,
+                incoming.spiderlingsContributors,
+                data.spiderlingsAdhesionLastSlime,
+            );
+        }
+    });
+    KDAddEvent(KDEventMapGeneric, "beforeDamage", KEY, (_event, data) => {
+        if (!record(data?.enemy) || status(data.enemy) !== "full") return;
+        if (data.damage > 0) data.damage *= DAMAGE;
+    });
+    KDAddEvent(KDEventMapGeneric, "enemyMove", KEY, (_event, data) => {
+        if (!data?.cancelmove && (data.enemy.x !== data.lastX || data.enemy.y !== data.lastY))
+            onDisplacement(data.enemy);
+    });
+    KDAddEvent(KDEventMapGeneric, "beforeTeleport", KEY, (_event, data) => {
+        if (data?.willing && blocksVoluntaryMove(data.entity)) data.cancel = true;
+    });
+    KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => {
+        if (!(data?.delta > 0)) return;
+        KDMapData[CLOCK] = now() + data.delta;
+        for (const target of KDMapData.Entities || []) reconcile(target);
+    });
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
+        for (const target of KDMapData.Entities || []) reconcile(target);
+    });
 
     if (typeof KinkyDungeonEnemyLoop === "function") {
         const native = KinkyDungeonEnemyLoop;

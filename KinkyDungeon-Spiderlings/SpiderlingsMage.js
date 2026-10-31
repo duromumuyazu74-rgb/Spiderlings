@@ -6,22 +6,20 @@
     const ORIGIN = "SpiderlingsMageOrigin";
     const boltSource = (source) => source?.Enemy?.name === ENEMY || source?.Enemy?.name === "SpiderlingsMatriarch";
 
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "launchBullet", ORIGIN, (_event, data) => {
-            const shot = data.b?.bullet || data.bullet;
-            if (shot?.spell?.name !== SPELL || shot.source == null || !shot.faction) return;
-            const source = KDMapData.Entities.find(
-                (entity) => entity.id === shot.source && entity.hp > 0 && boltSource(entity),
-            );
-            if (!source) return;
-            shot[ORIGIN] = {
-                sourceId: source.id,
-                faction: shot.faction,
-                allied: !!(source.allied || source.Enemy.allied),
-                ceasefire: source.ceasefire || 0,
-            };
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "launchBullet", ORIGIN, (_event, data) => {
+        const shot = data.b?.bullet || data.bullet;
+        if (shot?.spell?.name !== SPELL || shot.source == null || !shot.faction) return;
+        const source = KDMapData.Entities.find(
+            (entity) => entity.id === shot.source && entity.hp > 0 && boltSource(entity),
+        );
+        if (!source) return;
+        shot[ORIGIN] = {
+            sourceId: source.id,
+            faction: shot.faction,
+            allied: !!(source.allied || source.Enemy.allied),
+            ceasefire: source.ceasefire || 0,
+        };
+    });
 
     if (typeof KDPlayerEffects !== "undefined" && typeof KDPlayerEffects.Damage === "function") {
         const nativeDamage = KDPlayerEffects.Damage;

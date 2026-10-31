@@ -113,8 +113,7 @@
     if (typeof KDBulletAoECanHitEntity === "function") KDBulletAoECanHitEntity = collision(KDBulletAoECanHitEntity);
 
     function event(trigger, name, handler) {
-        if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined")
-            KDAddEvent(KDEventMapGeneric, trigger, name, handler);
+        KDAddEvent(KDEventMapGeneric, trigger, name, handler);
     }
 
     // Slime is shared with native attacks. Attribute only binding actually

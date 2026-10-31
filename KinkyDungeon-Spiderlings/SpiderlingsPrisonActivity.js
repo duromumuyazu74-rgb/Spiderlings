@@ -179,16 +179,14 @@
                 },
         );
 
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "afterNoise", KEY, (_event, data) => hear(data));
-        KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) => {
-            if (data?.dmgDealt > 0 || data?.dmgShieldDealt > 0) wake(data.enemy, "defending");
+    KDAddEvent(KDEventMapGeneric, "afterNoise", KEY, (_event, data) => hear(data));
+    KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", KEY, (_event, data) => {
+        if (data?.dmgDealt > 0 || data?.dmgShieldDealt > 0) wake(data.enemy, "defending");
+    });
+    for (const trigger of ["afterLoadGame", "postMapgen"])
+        KDAddEvent(KDEventMapGeneric, trigger, KEY, () => {
+            taskIds = new Set();
         });
-        for (const trigger of ["afterLoadGame", "postMapgen"])
-            KDAddEvent(KDEventMapGeneric, trigger, KEY, () => {
-                taskIds = new Set();
-            });
-    }
     api.NativeActions?.registerBehavior(KEY, {
         admitAction: (enemy) => (isResting(enemy) ? { idle: true, defeat: false, defeatEnemy: enemy } : undefined),
     });
