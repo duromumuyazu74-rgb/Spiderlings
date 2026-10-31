@@ -15,6 +15,12 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.18 local candidate: slower tracking rune (2026-10-31)
+
+The Matriarch's tracking rune uses a native movement cost of 1.5 instead of 1, reducing its base speed to two thirds. The native movement probe advances four cells for six unit-cost movement actions on both supported games. Actual AI pursuit, contact, tether escape, wrapping and prison transport continue through the existing capture scenario. AI path selection and occupied cells can add waiting time, so the probe measures movement cost separately from total pursuit time.
+
+The same `Spiderlings_0.92.39-test.18.zip` passed the complete 75-check native suite and seven locale loads on KD 5.4.92 and official KD 5.5.7 commit `b90ca1dcd602ea47b3fc472e8f53b3b6608cade2`. It has 193 allowlisted entries, 25,001,193 bytes and SHA-256 `91f23f69c7cf5c7d17459d83e0ebd4f3afa2071ab1ded51140ac966edd6daf05`. Full native evidence is retained in run `2026-10-31T03-50-12-565Z-0.92.39-test.18`.
+
 ## Test.17 local candidate: adjacent Court rings and one-attack Jumpers (2026-10-31)
 
 The eight opening Spinners build nine adjacent rings, from radius 13 down to 5, leaving a 9-by-9 interior. Directional stations and distinct work reservations distribute construction; occupancy-aware routes avoid the Matriarch and other workers. Gates close without waiting for prey entry. Builders stay on construction until the final ring closes, then resume ordinary combat. Existing test.14 ring identities and paid structures are retained while the missing intermediate rings are added.
