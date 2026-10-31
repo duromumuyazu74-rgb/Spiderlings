@@ -36,6 +36,7 @@ The itch tutorials are useful, but some examples are older than the local 5.5 so
   - Mods should be zip files with files at the zip root, not inside a nested mod-name folder. Nested roots can break custom asset loading.
   - `.js` files in zip files may trigger Windows false positives; `.ks` files or 7zip packaging are recommended workarounds.
   - `KDAddEvent(...)` and `HasPerk(...)` are still present in KD 5.5 (`Game/src/effect/KinkyDungeonEvents.ts`, `Game/src/base/KDModUtils.ts`).
+  - KD 5.4.92 `out/main.js:118745` and official 5.5.7 commit `b90ca1dcd602ea47b3fc472e8f53b3b6608cade2`, `Game/src/effect/KinkyDungeonEvents.ts:14320`, provide the same `KDAddEvent(map, trigger, type, handler)` contract. It creates a missing trigger bucket and registers the named handler. The generic and inventory registries are available before native Mod execution; no Mod-side replacement registrar is needed.
 - **Mod JSON**: <https://itch.io/t/4135169/mod-json>
   - Keep `mod.json` populated with `modname`, `moddesc`, `author`, `modbuild`, `gamemajor`, `gameminor`, `gamepatch_min`, `gamepatch_max`, and `priority`.
   - `gamepatch_max: -1` and other `-1` game version fields are official "ignore this datedness field" values.

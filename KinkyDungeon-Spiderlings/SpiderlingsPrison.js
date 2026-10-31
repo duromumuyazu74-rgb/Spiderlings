@@ -422,16 +422,14 @@
             return KinkyDungeonMapGet(candidate.x, candidate.y) === "H";
         };
     }
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        KDAddEvent(KDEventMapGeneric, "AfterAdvance", ROOM, () => {
-            // Native stairs save immediately after AfterAdvance on both supported games.
-            if (pendingAdmission?.room === KDGameData.RoomType && isPrison())
-                pendingAdmission.applied =
-                    pendingAdmission.mode === "captured" ? recapture() : admit(pendingAdmission.mode);
-            updateClues();
-        });
-        KDAddEvent(KDEventMapGeneric, "tickAfter", ROOM, updateClues);
-    }
+    KDAddEvent(KDEventMapGeneric, "AfterAdvance", ROOM, () => {
+        // Native stairs save immediately after AfterAdvance on both supported games.
+        if (pendingAdmission?.room === KDGameData.RoomType && isPrison())
+            pendingAdmission.applied =
+                pendingAdmission.mode === "captured" ? recapture() : admit(pendingAdmission.mode);
+        updateClues();
+    });
+    KDAddEvent(KDEventMapGeneric, "tickAfter", ROOM, updateClues);
     if (typeof KinkyDungeonStatsPresets !== "undefined" && typeof KDPerkStart !== "undefined") {
         delete KDPerkStart.SpiderlingsPrisonStart;
         KinkyDungeonStatsPresets.SpiderlingsPrisonStart = {

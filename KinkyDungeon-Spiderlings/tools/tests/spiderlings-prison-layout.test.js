@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { nativeEvents } = require("./helpers/native-events.js");
 const { modRoot } = require("./helpers/lifecycle-runtime.js");
 const pointKey = (point) => `${point.x},${point.y}`;
 const movable = "023wW][?/HB@l;SsRrdzTgLcNVvt5";
@@ -12,6 +13,7 @@ const movable = "023wW][?/HB@l;SsRrdzTgLcNVvt5";
 function generatedPrison() {
     const messages = [];
     const context = {
+        ...nativeEvents(),
         Spiderlings: {},
         alts: {},
         KinkyDungeonCreateMapGenType: {},

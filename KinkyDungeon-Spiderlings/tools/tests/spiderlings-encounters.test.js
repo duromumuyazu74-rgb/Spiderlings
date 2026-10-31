@@ -9,7 +9,7 @@ const { gamePath } = require("../reference-inputs.js");
 const vm = require("node:vm");
 const { stripTypeScriptTypes } = require("node:module");
 
-const { EncounterRules, ReinforcementRules } = require("../../SpiderlingsEncounters.js");
+const { EncounterRules, ReinforcementRules } = require("./helpers/encounter-rules.js");
 
 function loadCoreRuntime(overrides = {}, nativeSources = []) {
     const context = {

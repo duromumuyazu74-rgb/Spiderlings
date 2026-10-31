@@ -398,26 +398,17 @@
         }
     }
 
-    function addGenericEvent(trigger, type, handler) {
-        if (typeof KDEventMapGeneric == "undefined") return;
-        if (typeof KDAddEvent == "function") KDAddEvent(KDEventMapGeneric, trigger, type, handler);
-        else {
-            KDEventMapGeneric[trigger] = KDEventMapGeneric[trigger] || {};
-            KDEventMapGeneric[trigger][type] = handler;
-        }
-    }
-
     function registerRuntime() {
         if (typeof KDCastConditions != "undefined") {
             KDCastConditions.SpiderlingsJumperDash = (source, target) => runtimeController.canStart(source, target);
         }
-        addGenericEvent("enemyCast", "SpiderlingsJumperDash", (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "enemyCast", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !data.spell || data.spell.name !== "SpiderlingsJumperDash" || !data.enemy) return;
             removeNativeTransportBullet(data.enemy.id);
             const target = data.player?.Enemy && !data.player.player ? data.player : { x: data.tx, y: data.ty };
             runtimeController.commitCast(data.enemy, target);
         });
-        addGenericEvent("tickAfter", "SpiderlingsJumperDash", (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !(Number(data.delta) > 0)) return;
             const outcomes = runtimeController.advancePlayerAction(api.SpinnerCapture?.reactionOpportunity() ?? true);
             for (const outcome of outcomes) {
@@ -426,16 +417,18 @@
                 KinkyDungeonSendEvent("spiderlingsJumperDashResolved", { enemy, outcome: outcome.outcome });
             }
         });
-        addGenericEvent("beforeEnemyLoop", "SpiderlingsJumperDash", (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "beforeEnemyLoop", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !data.enemy) return;
             runtimeController.holdWindingSource(data.enemy);
         });
-        addGenericEvent("afterEnemyTick", "SpiderlingsJumperDash", (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "afterEnemyTick", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || data.allied !== false) return;
             runtimeController.auditSources();
         });
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterLoadGame"]) {
-            addGenericEvent(trigger, "SpiderlingsJumperDashClear", () => runtimeController.clearAll(trigger));
+            KDAddEvent(KDEventMapGeneric, trigger, "SpiderlingsJumperDashClear", () =>
+                runtimeController.clearAll(trigger),
+            );
         }
     }
 

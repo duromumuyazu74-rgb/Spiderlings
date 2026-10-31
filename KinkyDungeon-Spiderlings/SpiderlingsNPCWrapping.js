@@ -125,8 +125,7 @@
     // the visible feedback; no design-policy labels are drawn over NPCs.
     function draw() {}
 
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined")
-        KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => tick(data?.delta));
+    KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => tick(data?.delta));
 
     api.NPCWrapping = Object.freeze({
         DAMAGE_MULTIPLIER,

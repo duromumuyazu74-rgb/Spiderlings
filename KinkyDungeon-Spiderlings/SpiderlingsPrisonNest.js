@@ -362,16 +362,14 @@
             return undefined;
         },
     });
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsPrisonNest", setup);
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsPrisonNest", setup);
-        KDAddEvent(KDEventMapGeneric, "afterEnemyTick", "SpiderlingsPrisonNest", (_event, data) => {
-            if (data?.allied === false && data.delta > 0) {
-                assignPatrols();
-                refreshHostility();
-            }
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsPrisonNest", setup);
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsPrisonNest", setup);
+    KDAddEvent(KDEventMapGeneric, "afterEnemyTick", "SpiderlingsPrisonNest", (_event, data) => {
+        if (data?.allied === false && data.delta > 0) {
+            assignPatrols();
+            refreshHostility();
+        }
+    });
     api.PrisonNest = Object.freeze({
         EXTRA_ENTRANCE_CAP,
         PATROL_ROUTES,

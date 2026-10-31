@@ -3,7 +3,9 @@
 const test = require("node:test");
 require("../../SpiderlingsCore.js");
 const assert = require("node:assert/strict");
-const { planNestPlacement, reachableCells } = require("../../SpiderlingsHuntingGrounds.js");
+const { EncounterRules } = require("./helpers/encounter-rules.js");
+require("../../SpiderlingsHuntingGrounds.js");
+const { planNestPlacement, reachableCells } = globalThis.Spiderlings.HuntingGrounds;
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
@@ -54,7 +56,7 @@ function runtime(overrides = {}, nativeSources = [], withOld = false) {
     const population = [];
     const texts = {};
     const context = {
-        Spiderlings: { EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules },
+        Spiderlings: { EncounterRules },
         KDMapMods: {},
         KinkyDungeonEscapeTypes: {},
         KDEventMapGeneric: {},
@@ -2077,7 +2079,7 @@ test("birth quota selects native mobile definitions before spawning and preserve
 test("ecology budget includes mobile shop guards but excludes scenery, owned field cells and subordinate definitions", () => {
     const r = runtime({
         Spiderlings: {
-            EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules,
+            EncounterRules,
             SpinnerNativeField: { isOwnedProxy: (entity) => entity.proxy },
         },
         KDIsInParty: (entity) => entity.party,
@@ -2129,7 +2131,7 @@ test("six-member roster assigns two guards from the same core and refills only m
 test("a low ordinary map cap still admits complete hunting crews through its twenty extra slots", () => {
     const r = runtime({
         Spiderlings: {
-            EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules,
+            EncounterRules,
             getSetting: () => 0,
         },
     });
@@ -2410,7 +2412,7 @@ test("native generic rank boxes cannot exceed the prey budget with a boss's depe
 test("generic template births respect field reservation while explicit authored templates retain their point", () => {
     const r = runtime({
             Spiderlings: {
-                EncounterRules: require("../../SpiderlingsEncounters.js").EncounterRules,
+                EncounterRules,
                 HuntingGroundsLayout: {
                     earlyPlan: () => undefined,
                     release: () => {},

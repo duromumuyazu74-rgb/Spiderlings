@@ -800,5 +800,4 @@
     });
     layout.SpiderlingsLayoutLoaded = true;
     register();
-    if (typeof module !== "undefined" && module.exports) module.exports = layout;
 })();

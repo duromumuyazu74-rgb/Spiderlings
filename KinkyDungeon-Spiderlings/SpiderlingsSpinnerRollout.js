@@ -76,10 +76,8 @@
         return decisions;
     }
 
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        KDAddEvent(KDEventMapGeneric, "postMapgen", FIELD, () => snapshotMap());
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", FIELD, restore);
-    }
+    KDAddEvent(KDEventMapGeneric, "postMapgen", FIELD, () => snapshotMap());
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", FIELD, restore);
 
     api.SpinnerRollout = Object.freeze({
         FIELD,

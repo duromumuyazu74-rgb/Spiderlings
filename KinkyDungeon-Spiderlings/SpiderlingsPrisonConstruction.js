@@ -421,15 +421,13 @@
     }
     api.NativeActions?.registerBehavior("PrisonConstruction", { handleEnemyTurn });
 
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsPrisonConstruction", (_event, data) =>
-            afterTurn(data?.delta),
-        );
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsPrisonConstruction", () => {
-            const saved = state();
-            if (saved) syncOwners(saved);
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsPrisonConstruction", (_event, data) =>
+        afterTurn(data?.delta),
+    );
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsPrisonConstruction", () => {
+        const saved = state();
+        if (saved) syncOwners(saved);
+    });
     api.PrisonConstruction = Object.freeze({
         COMPOSITE,
         THRESHOLD,

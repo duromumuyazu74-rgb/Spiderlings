@@ -520,8 +520,7 @@
     }
 
     function registerCocoonVigil() {
-        if (typeof KDEventMapGeneric == "undefined") return;
-        addRuntimeEvent(KDEventMapGeneric, "beforeMove", VIGIL_STATE, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "beforeMove", VIGIL_STATE, (_event, data) => {
             if (!data || (!data.x && !data.y)) return;
             const state = cocoonVigil();
             if (state) {
@@ -530,7 +529,7 @@
             }
         });
         // tick runs once before both enemy passes; tickAfter has already lost LastAction.
-        addRuntimeEvent(KDEventMapGeneric, "tick", VIGIL_STATE, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "tick", VIGIL_STATE, (_event, data) => {
             if (!(data?.delta > 0)) return;
             const state = cocoonVigil();
             if (!state) return;
@@ -545,7 +544,7 @@
                     : Math.min(VIGIL_IDLE_TURNS, state.idleTurns + data.delta);
             state.activityPending = false;
         });
-        addRuntimeEvent(KDEventMapGeneric, "afterPlayerCast", VIGIL_STATE, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "afterPlayerCast", VIGIL_STATE, (_event, data) => {
             if (
                 !data?.spell ||
                 data.spell.type === "buff" ||
@@ -557,7 +556,7 @@
             if (state) state.attackSpellPending = true;
         });
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro"]) {
-            addRuntimeEvent(KDEventMapGeneric, trigger, VIGIL_STATE, () => {
+            KDAddEvent(KDEventMapGeneric, trigger, VIGIL_STATE, () => {
                 if (typeof KDMapData != "undefined") delete KDMapData[VIGIL_STATE];
             });
         }
@@ -592,8 +591,7 @@
     }
 
     function registerCocoonOuterEvents() {
-        if (typeof KDEventMapGeneric == "undefined") return false;
-        addRuntimeEvent(KDEventMapGeneric, "tickAfter", COCOON_OUTER_STATE, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "tickAfter", COCOON_OUTER_STATE, (_event, data) => {
             const delta = Number((data && data.delta) || 0);
             if (!(delta > 0)) return;
             const state = equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE];
@@ -602,17 +600,17 @@
                     .map((age) => age + delta)
                     .filter((age) => age < COCOON_STRUGGLE_WINDOW);
         });
-        addRuntimeEvent(KDEventMapGeneric, "beforeMove", COCOON_OUTER_STATE, () => {
+        KDAddEvent(KDEventMapGeneric, "beforeMove", COCOON_OUTER_STATE, () => {
             if (
                 equippedItem(COCOON_ID)?.data?.[COCOON_OUTER_STATE]?.anchored &&
                 typeof KinkyDungeonNoMoveFlag != "undefined"
             )
                 KinkyDungeonNoMoveFlag = true;
         });
-        addRuntimeEvent(KDEventMapGeneric, "afterDress", COCOON_OUTER_STATE, (_event, data) =>
+        KDAddEvent(KDEventMapGeneric, "afterDress", COCOON_OUTER_STATE, (_event, data) =>
             syncCocoonOuterPose(data?.Character),
         );
-        addRuntimeEvent(KDEventMapGeneric, "postRemoval", COCOON_OUTER_STATE, () => syncCocoonOuterPose());
+        KDAddEvent(KDEventMapGeneric, "postRemoval", COCOON_OUTER_STATE, () => syncCocoonOuterPose());
         if (typeof addTextKey == "function") addTextKey(COCOON_ANCHORED_MESSAGE, COCOON_ANCHORED_FALLBACK);
         return true;
     }
@@ -724,14 +722,6 @@
         return resolution.outcome;
     }
 
-    function addRuntimeEvent(eventMap, trigger, type, handler) {
-        if (typeof KDAddEvent == "function") KDAddEvent(eventMap, trigger, type, handler);
-        else {
-            eventMap[trigger] = eventMap[trigger] || {};
-            eventMap[trigger][type] = handler;
-        }
-    }
-
     function pruneCrossfireMark() {
         const player = typeof KinkyDungeonPlayerEntity != "undefined" ? KinkyDungeonPlayerEntity : undefined;
         const casters = api.activeWebCasters(player);
@@ -839,14 +829,14 @@
                 return { sfx: "Null", effect: true };
             };
         }
-        if (typeof KDEventMapGeneric == "undefined") return false;
-        addRuntimeEvent(KDEventMapGeneric, "tick", "SpiderlingsWebSprayPrisonClear", (_event, _data) => {
+
+        KDAddEvent(KDEventMapGeneric, "tick", "SpiderlingsWebSprayPrisonClear", (_event, _data) => {
             pruneCrossfireMark();
             if (typeof KDGameData != "undefined" && KDGameData && KDGameData.PrisonerState === "jail") {
                 clearRuntimeWebSpray("prison");
             }
         });
-        addRuntimeEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsWebSprayInactivity", (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsWebSprayInactivity", (_event, data) => {
             const delta = Number((data && data.delta) || 0);
             if (!(delta > 0)) return;
             const resolution = resolveWebbingAction({
@@ -859,16 +849,13 @@
             syncWebSpraySlow();
         });
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro"]) {
-            addRuntimeEvent(KDEventMapGeneric, trigger, "SpiderlingsWebSprayClear", () =>
-                clearRuntimeWebSpray(trigger),
-            );
+            KDAddEvent(KDEventMapGeneric, trigger, "SpiderlingsWebSprayClear", () => clearRuntimeWebSpray(trigger));
         }
         return true;
     }
 
     function registerPlayerHitDamageEvent() {
-        if (typeof KDEventMapGeneric == "undefined") return false;
-        addRuntimeEvent(KDEventMapGeneric, "beforeDamage", PLAYER_HIT_DAMAGE_EVENT, (_event, data) => {
+        KDAddEvent(KDEventMapGeneric, "beforeDamage", PLAYER_HIT_DAMAGE_EVENT, (_event, data) => {
             const source = data?.attacker || data?.enemy;
             if (
                 !["Spinner", "Jumper"].includes(source?.Enemy?.name) ||
@@ -1005,7 +992,6 @@
     }
 
     function registerManualNormalizeEvent() {
-        if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
             if (
                 typeof KinkyDungeonFlags == "undefined" ||
@@ -1018,12 +1004,11 @@
             const descriptor = rules.descriptorFor(added && added.name);
             if (descriptor && stageNumber(descriptor.stage)) scheduleManualNormalization(descriptor.group);
         };
-        addRuntimeEvent(KDEventMapInventory, "postApply", MANUAL_NORMALIZE_EVENT, handler);
+        KDAddEvent(KDEventMapInventory, "postApply", MANUAL_NORMALIZE_EVENT, handler);
         return true;
     }
 
     function registerCocoonApplyEvent() {
-        if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
             const target = data && data.item ? data.item : item;
             if (!target || target.name !== COCOON_ID || !equippedItem(COCOON_ID)) return;
@@ -1033,14 +1018,13 @@
             syncCocoonOuterPose();
             clearRuntimeWebSpray("cocoon-post-apply");
         };
-        addRuntimeEvent(KDEventMapInventory, "postApply", COCOON_APPLY_EVENT, handler);
+        KDAddEvent(KDEventMapInventory, "postApply", COCOON_APPLY_EVENT, handler);
         return true;
     }
 
     const pendingCocoonResistance = new WeakSet();
     function registerCocoonEscapeEvent() {
-        if (typeof KDEventMapInventory === "undefined") return false;
-        addRuntimeEvent(KDEventMapInventory, "beforeStruggleCalc", COCOON_ESCAPE_EVENT, (_event, item, data) => {
+        KDAddEvent(KDEventMapInventory, "beforeStruggleCalc", COCOON_ESCAPE_EVENT, (_event, item, data) => {
             if (item === data?.restraint && item.name === COCOON_ID && ESCAPE_METHODS.includes(data.struggleType))
                 data.cost *= COCOON_COST_MULT[data.struggleType];
             pendingCocoonResistance.delete(item);
@@ -1056,7 +1040,7 @@
             if (data.struggleType === "Cut" && !data.canCut && !data.hasAffinity) return;
             pendingCocoonResistance.add(item);
         });
-        addRuntimeEvent(KDEventMapInventory, "struggle", COCOON_ESCAPE_EVENT, (_event, item, data) => {
+        KDAddEvent(KDEventMapInventory, "struggle", COCOON_ESCAPE_EVENT, (_event, item, data) => {
             if (
                 item === data?.restraint &&
                 item.name === COCOON_ID &&
@@ -1115,18 +1099,16 @@
     }
 
     function registerFinalEscapeEvent() {
-        if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
             const target = data && (data.restraint || data.item) ? data.restraint || data.item : item;
             if (!isSpiderlingsRestraint(target) || !data) return;
             data.destroyChance = data.struggleType === "Cut" ? 1 : 0;
         };
-        addRuntimeEvent(KDEventMapInventory, "beforeSuccessRemove", FINAL_ESCAPE_EVENT, handler);
+        KDAddEvent(KDEventMapInventory, "beforeSuccessRemove", FINAL_ESCAPE_EVENT, handler);
         return true;
     }
 
     function registerEscapeSoundEvent() {
-        if (typeof KDEventMapInventory == "undefined") return false;
         const handler = (_event, item, data) => {
             if (
                 !data ||
@@ -1139,7 +1121,7 @@
             KinkyDungeonPlaySound(KinkyDungeonRootDirectory + sound);
         };
         for (const trigger of ["struggle", "beforeSuccessRemove"]) {
-            addRuntimeEvent(KDEventMapInventory, trigger, ESCAPE_SOUND_EVENT, handler);
+            KDAddEvent(KDEventMapInventory, trigger, ESCAPE_SOUND_EVENT, handler);
         }
         return true;
     }
@@ -1321,14 +1303,9 @@
     registerCocoonApplyEvent();
     registerCocoonEscapeEvent();
     registerCocoonOuterEvents();
-    addRuntimeEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsHoodPreference", reconcileHoodPreference);
-    addRuntimeEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsHoodPreference", reconcileHoodPreference);
-    addRuntimeEvent(
-        KDEventMapGeneric,
-        "afterLoadGame",
-        "SpiderlingsNativeEscapeProgress",
-        migrateCountedEscapeProgress,
-    );
+    KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsHoodPreference", reconcileHoodPreference);
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsHoodPreference", reconcileHoodPreference);
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsNativeEscapeProgress", migrateCountedEscapeProgress);
     registerCocoonVigil();
     registerFinalEscapeEvent();
     registerEscapeSoundEvent();

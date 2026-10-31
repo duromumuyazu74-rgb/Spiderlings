@@ -72,6 +72,8 @@ Adding a species policy uses the shared registration seam. A shared action-admis
 
 ## Native scenario environments
 
+Runtime scripts publish their interfaces through the native `Spiderlings` namespace. Event registration uses KD's `KDAddEvent` directly; the supported games provide the generic and inventory registries before Mod execution. The installable runtime does not include CommonJS exports or replacement event-registration implementations. Node fixtures provide the native registration boundary and consume the same namespace as gameplay callers.
+
 The scenario registry distinguishes `helpers`, which load code, from `continues`, which requires a preceding scenario's live state. The runner builds a fresh runtime for each state group. Each group loads and verifies the same ZIP; continuation checks stay in their prerequisite's runtime. The existing Spinner capture/art chain and rune/overlay chain remain explicit.
 
 Preparation, diagnostics and teardown belong to the runner and `normalAcceptance`. Scene/helper/native/teardown failures identify the group and initiating check. The runtime is closed in `finally`, including diagnostic failures. Per-group package hashes and evidence are retained in the game report.

@@ -30,13 +30,7 @@
               )?.item
             : undefined;
     const progress = (bag = item()) => Math.max(0, Math.min(1, Number(bag?.data?.wrapProgress) || 0));
-    function event(map, trigger, type, handler) {
-        if (typeof KDAddEvent === "function") KDAddEvent(map, trigger, type, handler);
-        else {
-            map[trigger] ||= {};
-            map[trigger][type] = handler;
-        }
-    }
+
     function refresh() {
         if (typeof KinkyDungeonDressPlayer === "function") KinkyDungeonDressPlayer();
         if (typeof ForceRefreshModels === "function") ForceRefreshModels(KinkyDungeonPlayer);
@@ -152,7 +146,7 @@
         });
     if (typeof KinkyDungeonRefreshRestraintsCache === "function") KinkyDungeonRefreshRestraintsCache();
     if (typeof KDEventMapInventory !== "undefined") {
-        event(KDEventMapInventory, "beforeStruggleCalc", EVENT, (_e, target, data) => {
+        KDAddEvent(KDEventMapInventory, "beforeStruggleCalc", EVENT, (_e, target, data) => {
             if (target !== data?.restraint || target.name !== ID) return;
             const woven = Math.max(0, Math.min(1, Number(target.data?.wrapProgress ?? 1)));
             const scale = 1 / (0.5 + 0.5 * woven);
@@ -462,7 +456,7 @@
         } else if (s.phase === "wrap") wrapTurn(s, delta);
     }
     if (typeof KDEventMapGeneric !== "undefined") {
-        event(KDEventMapGeneric, "afterDress", STATE, (_e, d) => {
+        KDAddEvent(KDEventMapGeneric, "afterDress", STATE, (_e, d) => {
             if (d?.Character && d.Character !== KinkyDungeonPlayer) return;
             if (!state() && !item()) return;
             const mc = KDCurrentModels.get(KinkyDungeonPlayer);
@@ -472,26 +466,26 @@
                 for (const pose of ["Spread", "Kneel", "KneelClosed", "Hogtie"]) delete mc.Poses[pose];
             }
         });
-        event(KDEventMapGeneric, "tick", STATE, () => {
+        KDAddEvent(KDEventMapGeneric, "tick", STATE, () => {
             auditSources();
             turnState = state();
             acted = new Set();
         });
-        event(KDEventMapGeneric, "tickAfter", STATE, (_e, d) => {
+        KDAddEvent(KDEventMapGeneric, "tickAfter", STATE, (_e, d) => {
             if (d?.delta > 0) finishTurn(d.delta);
         });
-        event(KDEventMapGeneric, "beforeMove", STATE, () => {
+        KDAddEvent(KDEventMapGeneric, "beforeMove", STATE, () => {
             if (auditSources()) KinkyDungeonNoMoveFlag = true;
         });
-        event(KDEventMapGeneric, "afterEnemyTick", STATE, () => {
+        KDAddEvent(KDEventMapGeneric, "afterEnemyTick", STATE, () => {
             auditSources();
         });
         for (const trigger of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterNewGame"])
-            event(KDEventMapGeneric, trigger, STATE, () => {
+            KDAddEvent(KDEventMapGeneric, trigger, STATE, () => {
                 clearTemporary(trigger, false);
                 for (const enemy of entities()) delete enemy[REWARD];
             });
-        event(KDEventMapGeneric, "afterLoadGame", STATE, () => {
+        KDAddEvent(KDEventMapGeneric, "afterLoadGame", STATE, () => {
             if (driver) clearTimeout(driver);
             driver = undefined;
             pendingPull = undefined;
@@ -525,7 +519,7 @@
             }
             refresh();
         });
-        event(KDEventMapGeneric, "draw", STATE, (_e, d) => {
+        KDAddEvent(KDEventMapGeneric, "draw", STATE, (_e, d) => {
             const { capture: s } = captureView();
             const admitted = !!s;
             if (now() - lastAnimationFrame >= 50 && (admitted || item())) {

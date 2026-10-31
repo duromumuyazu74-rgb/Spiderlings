@@ -193,18 +193,16 @@
             return result;
         };
     }
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "beforeHandleStairs", "SpiderlingsDebugStairs", (_event, data) => {
-            if (data.AdvanceAmount !== 0 && typeof KDMapData !== "undefined") {
-                grants.delete(KDMapData[DEBUG_BYPASS]);
-                delete KDMapData[DEBUG_BYPASS];
-            }
-        });
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsDebugStairs", () => {
-            grants.clear();
-            if (typeof KDMapData !== "undefined") delete KDMapData[DEBUG_BYPASS];
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "beforeHandleStairs", "SpiderlingsDebugStairs", (_event, data) => {
+        if (data.AdvanceAmount !== 0 && typeof KDMapData !== "undefined") {
+            grants.delete(KDMapData[DEBUG_BYPASS]);
+            delete KDMapData[DEBUG_BYPASS];
+        }
+    });
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsDebugStairs", () => {
+        grants.clear();
+        if (typeof KDMapData !== "undefined") delete KDMapData[DEBUG_BYPASS];
+    });
     if (
         typeof KDJourneySlotTypes === "undefined" ||
         typeof KDJourneySlotTypes.basic !== "function" ||
@@ -214,13 +212,11 @@
         return;
 
     // Native KD reads persisted settings only after executing every Mod script.
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "afterModSettingsLoad", JOURNEY_UPGRADE, upgradeSettings);
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", JOURNEY_UPGRADE, upgradeJourney);
-        KDAddEvent(KDEventMapGeneric, "afterNewGame", JOURNEY_UPGRADE, () => {
-            KDGameData[JOURNEY_UPGRADE] = true;
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "afterModSettingsLoad", JOURNEY_UPGRADE, upgradeSettings);
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", JOURNEY_UPGRADE, upgradeJourney);
+    KDAddEvent(KDEventMapGeneric, "afterNewGame", JOURNEY_UPGRADE, () => {
+        KDGameData[JOURNEY_UPGRADE] = true;
+    });
 
     let pending = false;
     const nativeBasic = KDJourneySlotTypes.basic;

@@ -108,6 +108,7 @@ test("KD native bolt collision and Damage gate one Mage progression on accepted 
     const damageCalls = [];
     let dealt = 0.5;
     const context = {
+        ...require("./helpers/native-events.js").nativeEvents(),
         Spiderlings: { Webbing: { applyEnemyProgression: (...args) => binds.push(args) } },
         KDMapData: { Entities: [mage] },
         KinkyDungeonPlayerEntity: player,

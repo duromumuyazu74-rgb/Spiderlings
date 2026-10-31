@@ -453,23 +453,21 @@
         if (record.phase === "pending" && record.elapsed >= record.deadline) dispatch(record);
     }
 
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "enemyCast", STATE, (_event, data) => {
-            if (
-                state()?.phase === "building" &&
-                sameId(data?.enemy?.id, state().builderId) &&
-                data?.spell?.name === "SummonNestEntrance"
-            )
-                state().buildCastTick = tick();
-        });
-        KDAddEvent(KDEventMapGeneric, "tickAfter", STATE, tickAfter);
-        KDAddEvent(KDEventMapGeneric, "postRemoval", STATE, () => {
-            if (!anchoredItem()) clear();
-        });
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", STATE, () => {
-            if (!anchoredItem()) clear();
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "enemyCast", STATE, (_event, data) => {
+        if (
+            state()?.phase === "building" &&
+            sameId(data?.enemy?.id, state().builderId) &&
+            data?.spell?.name === "SummonNestEntrance"
+        )
+            state().buildCastTick = tick();
+    });
+    KDAddEvent(KDEventMapGeneric, "tickAfter", STATE, tickAfter);
+    KDAddEvent(KDEventMapGeneric, "postRemoval", STATE, () => {
+        if (!anchoredItem()) clear();
+    });
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", STATE, () => {
+        if (!anchoredItem()) clear();
+    });
 
     if (typeof KDLeashReason !== "undefined")
         KDLeashReason[STATE] = (entity) => {

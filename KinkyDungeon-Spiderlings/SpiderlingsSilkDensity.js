@@ -112,18 +112,16 @@
         );
     }
 
-    if (typeof KDAddEvent === "function" && typeof KDEventMapGeneric !== "undefined") {
-        KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => advance(Number(data?.delta || 0)));
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
-            trailSources.clear();
-            trailTick = undefined;
-            syncHud();
-        });
-        KDAddEvent(KDEventMapGeneric, "afterNewGame", KEY, () => {
-            if (typeof KDGameData !== "undefined") delete KDGameData[KEY];
-            syncHud();
-        });
-    }
+    KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => advance(Number(data?.delta || 0)));
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, () => {
+        trailSources.clear();
+        trailTick = undefined;
+        syncHud();
+    });
+    KDAddEvent(KDEventMapGeneric, "afterNewGame", KEY, () => {
+        if (typeof KDGameData !== "undefined") delete KDGameData[KEY];
+        syncHud();
+    });
     if (typeof addTextKey === "function") {
         addTextKey("KDBuffName_" + KEY, "Silk density");
         addTextKey(

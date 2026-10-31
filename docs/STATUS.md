@@ -2,6 +2,10 @@
 
 核对日期：2026-10-31。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
+## test.20 运行时与测试边界清理
+
+开发候选 `0.92.39-test.20` 直接使用原生事件注册入口，移除重复兼容分支和仅供 Node 测试使用的运行时导出。测试通过实际 `Spiderlings` 命名空间调用功能。双版本完整原生验证见 [test.20 验证记录](COMPATIBILITY.md#test20-native-registration-and-test-boundary-cleanup-2026-10-31)，集成由 [#190](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/190) 跟踪。
+
 ## test.19 Boss 行为与当前美术集成
 
 开发候选 `0.92.39-test.19` 包含 test.16 的 Leash 和状态图标，以及九圈紧贴围场、八方向协作施工、最内圈闭合后攻击、召唤 Jumper 攻击后退场和追踪丝符减速。丝符的基础移动耗时为每格 1.5 个世界回合。

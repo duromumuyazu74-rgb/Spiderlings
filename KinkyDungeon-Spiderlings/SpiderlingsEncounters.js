@@ -658,19 +658,13 @@
     // 挂接 KD 设置事件，让配置变化无需手改 mod 文件即可生效。
     api.registerModConfig = function () {
         api.ensureModSettings();
-        if (typeof KDEventMapGeneric == "undefined") return;
-        KDEventMapGeneric["afterModSettingsLoad"] = KDEventMapGeneric["afterModSettingsLoad"] || {};
-        KDEventMapGeneric["afterModSettingsLoad"][MOD_ID] = (_e, _data) => {
-            api.ensureModSettings();
-            api.refreshNestEntranceSummons();
-            if (api.applyWebbingColor) api.applyWebbingColor(true);
-        };
-        KDEventMapGeneric["afterModConfig"] = KDEventMapGeneric["afterModConfig"] || {};
-        KDEventMapGeneric["afterModConfig"][MOD_ID] = (_e, _data) => {
-            api.ensureModSettings();
-            api.refreshNestEntranceSummons();
-            if (api.applyWebbingColor) api.applyWebbingColor(true);
-        };
+
+        for (const trigger of ["afterModSettingsLoad", "afterModConfig"])
+            KDAddEvent(KDEventMapGeneric, trigger, MOD_ID, () => {
+                api.ensureModSettings();
+                api.refreshNestEntranceSummons();
+                if (api.applyWebbingColor) api.applyWebbingColor(true);
+            });
     };
 
     // English fallback labels for the configuration screen.
@@ -1082,17 +1076,9 @@
 
     api.runNestReinforcements = runNestReinforcements;
     api.registerEncounterEvents = function () {
-        if (typeof KDEventMapGeneric == "undefined") return;
-        if (typeof KDAddEvent == "function") {
-            KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsGuaranteedSquad", runGuaranteedSpiderlingSquad);
-            KDAddEvent(KDEventMapGeneric, "afterEnemyTick", "SpiderlingsNestReinforcement", runNestReinforcements);
-            KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", "SpiderlingsNestNPCThreat", recordNestNPCAttack);
-        } else {
-            KDEventMapGeneric.postMapgen = KDEventMapGeneric.postMapgen || {};
-            KDEventMapGeneric.postMapgen.SpiderlingsGuaranteedSquad = runGuaranteedSpiderlingSquad;
-            KDEventMapGeneric.afterEnemyTick = KDEventMapGeneric.afterEnemyTick || {};
-            KDEventMapGeneric.afterEnemyTick.SpiderlingsNestReinforcement = runNestReinforcements;
-        }
+        KDAddEvent(KDEventMapGeneric, "postMapgen", "SpiderlingsGuaranteedSquad", runGuaranteedSpiderlingSquad);
+        KDAddEvent(KDEventMapGeneric, "afterEnemyTick", "SpiderlingsNestReinforcement", runNestReinforcements);
+        KDAddEvent(KDEventMapGeneric, "afterDamageEnemy", "SpiderlingsNestNPCThreat", recordNestNPCAttack);
     };
 
     if (typeof KinkyDungeonStatsPresets !== "undefined")
@@ -1102,11 +1088,4 @@
     api.registerModConfig();
     api.registerModConfigText();
     api.registerEncounterEvents();
-
-    if (typeof module != "undefined" && module.exports) {
-        module.exports = {
-            EncounterRules: api.EncounterRules,
-            ReinforcementRules: api.ReinforcementRules,
-        };
-    }
 })();

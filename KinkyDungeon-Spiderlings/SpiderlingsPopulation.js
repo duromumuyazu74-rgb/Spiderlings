@@ -699,5 +699,4 @@
         NPC_NEST_CLEARANCE,
         isNestSiteClear,
     });
-    if (typeof module !== "undefined" && module.exports) module.exports = population;
 })();

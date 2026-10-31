@@ -482,7 +482,6 @@
     }
 
     function registerRefreshEvent() {
-        if (typeof KDEventMapInventory == "undefined") return false;
         for (const trigger of ["postApply", "postRemoval", "afterDress"]) {
             KDAddEvent(KDEventMapInventory, trigger, REFRESH_EVENT, (event, item) => {
                 if (event && event.trigger === "afterDress") {

@@ -267,10 +267,8 @@
             return true;
         },
     });
-    if (typeof KDEventMapGeneric !== "undefined" && typeof KDAddEvent === "function") {
-        KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsPrisonAlerts", (_event, data) => advance(data?.delta));
-        KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsPrisonAlerts", audit);
-    }
+    KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsPrisonAlerts", (_event, data) => advance(data?.delta));
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", "SpiderlingsPrisonAlerts", audit);
     api.PrisonAlerts = {
         regionAt,
         currentReport,
