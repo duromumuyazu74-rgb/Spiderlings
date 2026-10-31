@@ -221,7 +221,7 @@
             terrainTags: {},
             floors: KDMapInit([]),
             followRange: 1,
-            movePoints: 1,
+            movePoints: 1.5,
             attackPoints: 1,
             attack: "MeleeEffect",
             attackRange: 1,

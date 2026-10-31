@@ -10,6 +10,17 @@
     encounter.warnings = [];
     KinkyDungeonStatStamina = KinkyDungeonStatStaminaMax;
     expect(Spiderlings.BossCapture.start(boss), "Cannot start rune telegraph");
+    for (let n = 0; n < 6 && Spiderlings.BossCapture.state()?.phase === "warning"; n++) await turn();
+    const trackingRune = KDMapData.Entities.find((enemy) => enemy.id === Spiderlings.BossCapture.state()?.runeId);
+    expect(trackingRune, "Rune telegraph did not produce the tracking actor");
+    let runeSteps = 0;
+    // Measure the native movement cost separately from AI path selection and occupancy waits.
+    for (let n = 0; n < 6; n++) {
+        const previous = { x: trackingRune.x, y: trackingRune.y };
+        KinkyDungeonEnemyTryMove(trackingRune, { x: 0, y: 1, delta: 1 }, 1, trackingRune.x, trackingRune.y + 1, false);
+        runeSteps += Math.max(Math.abs(trackingRune.x - previous.x), Math.abs(trackingRune.y - previous.y));
+    }
+    expect(runeSteps === 4, `Tracking rune moved ${runeSteps} cells in six native movement actions instead of four`);
     for (let turnCount = 0; turnCount < 40 && Spiderlings.BossCapture.state()?.phase !== "contest"; turnCount++)
         await turn();
     expect(
@@ -148,10 +159,12 @@
     return {
         ok: true,
         scenario: "boss-capture",
+        runePace: { nativeMovementActions: 6, steps: runeSteps },
         prisonRoom,
         itemId,
         layers,
         images: { contest: contestImage, cocoon: cocoonImage },
-        fixture: "Support isolated; timeout shortened only after real rune, contest, wrapping and escape work.",
+        fixture:
+            "Support isolated; six native movement actions measure rune cost before real AI pursuit and contact; timeout shortened only after real rune, contest, wrapping and escape work.",
     };
 })();
