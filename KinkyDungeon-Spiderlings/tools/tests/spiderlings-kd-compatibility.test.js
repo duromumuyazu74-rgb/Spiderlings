@@ -783,6 +783,7 @@ test("selection separates code helpers from state continuation and preserves all
     const full = selectScenarios();
     assert.equal(full.mode, "full");
     assert.equal(full.total, full.executed.length);
+    assert.deepEqual(full.checks.find((scenario) => scenario.name === "leash-art").helpers, ["normal-helpers.js"]);
     assert.equal(full.checks.find((scenario) => scenario.name === "native-locales").kind, "locales");
     for (const scenario of full.checks) {
         if (scenario.kind === "locales") continue;

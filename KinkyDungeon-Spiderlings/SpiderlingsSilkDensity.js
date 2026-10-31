@@ -36,6 +36,18 @@
             duration: 2,
             aura: "#d6c4e8",
             auraSprite: "Null",
+            buffSprite: true,
+            buffSpriteSpecific:
+                KEY +
+                (current.value >= 1500
+                    ? 5
+                    : current.value >= 700
+                      ? 4
+                      : current.value >= 300
+                        ? 3
+                        : current.value >= 100
+                          ? 2
+                          : 1),
             text: String(Math.floor(current.value)),
         });
     }

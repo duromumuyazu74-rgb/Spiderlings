@@ -1,6 +1,6 @@
-"""Build lossless Webbing and Spinner runtime texture atlases per color.
+"""Build lossless Webbing, Spinner and Leash runtime texture atlases per color.
 
-The sixty-six source PNGs are an explicit compatibility fallback and are never
+The source PNGs are an explicit compatibility fallback and are never
 rewritten.  This builder reads their alpha bounds, copies those RGBA pixels
 without resampling, and records the original canvas offset in Pixi v7
 spritesheet metadata.
@@ -96,6 +96,33 @@ SPINNER_PINK_SOURCES = (
     "Models/SpiderlingsSpinnerLegbinderPink/Stage6.png",
     "Models/SpiderlingsSpinnerLegbinderPink/Stage7.png",
     "Models/SpiderlingsSpinnerLegbinderPink/Tail.png",
+)
+
+
+LEASH_SOURCES = (
+    "Models/SpiderlingsSilkLeash/Leash.png",
+    "Models/SpiderlingsSilkLeash/LeashFree.png",
+    "Models/SpiderlingsSilkLeash/LeashCrossed.png",
+    "Models/SpiderlingsSilkLeash/LeashFront.png",
+    "Models/SpiderlingsSilkLeash/LeashPulled.png",
+    "Models/SpiderlingsSilkLeash/LeashKneel.png",
+    "Models/SpiderlingsSilkLeash/LeashKneelPulled.png",
+    "Models/SpiderlingsSilkLeash/LeashHogtie.png",
+    "Models/SpiderlingsSilkLeash/LeashHogtiePulled.png",
+    "Models/SpiderlingsSilkLeash/LeashCollar.png",
+)
+
+LEASH_PINK_SOURCES = (
+    "Models/SpiderlingsSilkLeashPink/Leash.png",
+    "Models/SpiderlingsSilkLeashPink/LeashFree.png",
+    "Models/SpiderlingsSilkLeashPink/LeashCrossed.png",
+    "Models/SpiderlingsSilkLeashPink/LeashFront.png",
+    "Models/SpiderlingsSilkLeashPink/LeashPulled.png",
+    "Models/SpiderlingsSilkLeashPink/LeashKneel.png",
+    "Models/SpiderlingsSilkLeashPink/LeashKneelPulled.png",
+    "Models/SpiderlingsSilkLeashPink/LeashHogtie.png",
+    "Models/SpiderlingsSilkLeashPink/LeashHogtiePulled.png",
+    "Models/SpiderlingsSilkLeashPink/LeashCollar.png",
 )
 
 
@@ -246,6 +273,8 @@ def build() -> None:
     build_page("spiderlings-webbing-pink-0", PINK_SOURCES)
     build_page("spiderlings-spinner-0", SPINNER_SOURCES, 2048)
     build_page("spiderlings-spinner-pink-0", SPINNER_PINK_SOURCES, 2048)
+    build_page("spiderlings-leash-0", LEASH_SOURCES)
+    build_page("spiderlings-leash-pink-0", LEASH_PINK_SOURCES)
 
 
 if __name__ == "__main__":

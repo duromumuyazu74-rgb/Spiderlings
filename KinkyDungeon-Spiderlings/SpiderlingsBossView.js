@@ -11,7 +11,6 @@
             ["Enemies/SpiderlingsMatriarch", "Enemies/Spinner.png"],
             ["Enemies/SpiderlingsMatriarchPart", "Enemies/Spinner.png"],
             ["Enemies/SpiderlingsMatriarchRune", "Bullets/SpiderlingsMageRuneIcon.png"],
-            ["Buffs/" + RESONANCE_ICON, "Bullets/SpiderlingsMageRuneIcon.png"],
         ]) {
             const target = KinkyDungeonRootDirectory + source;
             if (KDModFiles[target]) KDModFiles[KinkyDungeonRootDirectory + name + ".png"] = KDModFiles[target];

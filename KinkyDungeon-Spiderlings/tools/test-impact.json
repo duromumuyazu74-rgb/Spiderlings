@@ -1,6 +1,12 @@
 {
   "schemaVersion": 1,
   "profiles": {
+    "buff-icons": {
+      "tests": ["spiderlings-density-activity.test.js", "spiderlings-boss.test.js"],
+      "localTests": ["spiderlings-webbing-webspray.test.js"],
+      "scenarios": ["buff-icons", "boss-combat"],
+      "reason": "Native status icons, density tiers, WebSpray stacks and resonance artwork."
+    },
     "boss-design-docs": {
       "tests": [],
       "localTests": [],
@@ -39,6 +45,7 @@
         "spiderlings-spinner-passage.test.js",
         "spiderlings-web-mobility.test.js",
         "spiderlings-model-runtime.test.js",
+        "spiderlings-leash-art.test.js",
         "spiderlings-mage-combat.test.js",
         "spiderlings-mage-visuals.test.js",
         "spiderlings-spell-visuals.test.js",
@@ -313,13 +320,17 @@
       "reason": "Native dash commitment, payment and interaction with shared yielding."
     },
     "models": {
-      "tests": ["spiderlings-model-runtime.test.js", "spiderlings-webbing-cocoon.test.js"],
+      "tests": [
+        "spiderlings-model-runtime.test.js",
+        "spiderlings-leash-art.test.js",
+        "spiderlings-webbing-cocoon.test.js"
+      ],
       "localTests": [
         "spiderlings-webbing-lv1.test.js",
         "spiderlings-webbing-lifecycle.test.js",
         "spiderlings-webbing-atlas.test.js"
       ],
-      "scenarios": ["basic", "normal-visuals", "feedback-blindfolds"],
+      "scenarios": ["basic", "normal-visuals", "feedback-blindfolds", "leash-art"],
       "reason": "Equipment model registration, texture readiness and pose layers."
     },
     "webbing": {
@@ -863,6 +874,7 @@
     }
   },
   "prefixes": {
+    "Buffs/": ["buff-icons"],
     "Models/": ["models"],
     "DisplacementMaps/": ["models"],
     "TextureAtlas/": ["models", "field-art"],

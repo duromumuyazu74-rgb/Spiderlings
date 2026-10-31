@@ -12,6 +12,7 @@
         "SpiderlingsWebbingLv3",
         "SpiderlingsWebbingCocoon",
         "SpiderlingsSpinnerLegbinder",
+        "SpiderlingsSilkLeash",
     ]);
     const DISPLACEMENT_ASSETS = Object.freeze([
         "DisplacementMaps/SpiderlingsWebbingLv2ArmSquish.png",
@@ -47,6 +48,23 @@
         "Models/SpiderlingsWebbingCocoon/Cocoon.png",
         "Models/SpiderlingsWebbingCocoon/OuterWebs.png",
     ]);
+    const SILK_LEASH_FRAMES = Object.freeze([
+        "Models/SpiderlingsSilkLeash/Leash.png",
+        "Models/SpiderlingsSilkLeash/LeashFree.png",
+        "Models/SpiderlingsSilkLeash/LeashCrossed.png",
+        "Models/SpiderlingsSilkLeash/LeashFront.png",
+        "Models/SpiderlingsSilkLeash/LeashPulled.png",
+        "Models/SpiderlingsSilkLeash/LeashKneel.png",
+        "Models/SpiderlingsSilkLeash/LeashKneelPulled.png",
+        "Models/SpiderlingsSilkLeash/LeashHogtie.png",
+        "Models/SpiderlingsSilkLeash/LeashHogtiePulled.png",
+        "Models/SpiderlingsSilkLeash/LeashCollar.png",
+    ]);
+    const SILK_ART_MARKER = "SpiderlingsSilkLeashArtwork";
+    const SILK_CARRIERS = Object.freeze({
+        BasicLeash: "SpiderlingsSilkLeashModel",
+        BasicCollar: "SpiderlingsSilkCollarModel",
+    });
     const ATLAS_DEFINITIONS = Object.freeze([
         Object.freeze({
             path: "TextureAtlas/spiderlings-webbing-0.json",
@@ -58,6 +76,18 @@
             image: "TextureAtlas/spiderlings-webbing-pink-0.png",
             frames: Object.freeze(
                 WEBBING_ATLAS_FRAMES.map((path) => path.replace(/(SpiderlingsWebbing(?:Lv[123]|Cocoon))\//, "$1Pink/")),
+            ),
+        }),
+        Object.freeze({
+            path: "TextureAtlas/spiderlings-leash-0.json",
+            image: "TextureAtlas/spiderlings-leash-0.png",
+            frames: SILK_LEASH_FRAMES,
+        }),
+        Object.freeze({
+            path: "TextureAtlas/spiderlings-leash-pink-0.json",
+            image: "TextureAtlas/spiderlings-leash-pink-0.png",
+            frames: Object.freeze(
+                SILK_LEASH_FRAMES.map((path) => path.replace("SpiderlingsSilkLeash/", "SpiderlingsSilkLeashPink/")),
             ),
         }),
     ]);
@@ -88,6 +118,9 @@
     function texturePaths(modelName) {
         const model = ModelDefs[modelName];
         if (!isOwnedModel(model)) return [];
+        if (model.Folder?.replace(/Pink$/, "") === "SpiderlingsSilkLeash") {
+            return SILK_LEASH_FRAMES.map((path) => path.replace("SpiderlingsSilkLeash/", `${model.Folder}/`));
+        }
         const result = new Set();
         for (const layer of layers(model)) {
             if (layer.DisplacementSprite && layer.DisplacementInvariant) {
@@ -349,7 +382,7 @@
         KDDraw.spiderlingsColoredArtwork = true;
     }
 
-    // Both atlases are preloaded at startup into independent color aliases.
+    // Model atlases are preloaded at startup into independent color aliases.
     // Switching folders reuses them without loading per-item PNGs on each hit.
     function syncWebbingColor() {
         let changed = false;
@@ -400,6 +433,7 @@
     }
 
     function modelNameForItem(item) {
+        if (item?.data?.[SILK_ART_MARKER] && SILK_CARRIERS[item.name]) return SILK_CARRIERS[item.name];
         if (
             !item ||
             !item.name ||
@@ -468,20 +502,49 @@
         return true;
     }
 
+    function markSilkLeashArtwork(item) {
+        if (!SILK_CARRIERS[item?.name] || item.data?.[SILK_ART_MARKER]) return false;
+        item.data = { ...item.data, [SILK_ART_MARKER]: true };
+        refreshPlayerModelSoon(item);
+        return true;
+    }
+
+    function registerSilkCarrierArtwork() {
+        if (typeof KDAddModel !== "function") return;
+        KDAddModel = api.Hooks.wrap(
+            "ModelRuntime.silkCarrierArtwork",
+            KDAddModel,
+            (native) =>
+                function (...args) {
+                    const item = args[5];
+                    const name = item?.data?.[SILK_ART_MARKER] && SILK_CARRIERS[item.name];
+                    const model = name && ModelDefs[name];
+                    // Prison's native carrier retains its ID, lock and escape progress.
+                    // Only the model passed to the native dressing boundary changes.
+                    if (model) args[2] = model;
+                    return native.apply(this, args);
+                },
+        );
+    }
+
     api.loadSpiderlingsTextureAtlases = loadTextureAtlases;
     api.applyWebbingColor = applyWebbingColor;
     api.preloadSpiderlingsDisplacementTextures = preloadDisplacementTextures;
     api.preloadSpiderlingsTextures = preloadTextures;
     api.refreshSpiderlingsPlayerModelSoon = refreshPlayerModelSoon;
     api.registerSpiderlingsRefreshEvent = registerRefreshEvent;
+    api.markSilkLeashArtwork = markSilkLeashArtwork;
     api.ModelRuntime = Object.freeze({
         MODEL_CATEGORIES: Object.freeze([...MODEL_CATEGORIES]),
         TEXTURE_ATLASES,
         DISPLACEMENT_ASSETS,
+        SILK_ART_MARKER,
+        SILK_LEASH_FRAMES,
     });
 
     registerColoredArtwork();
     loadTextureAtlases();
     preloadDisplacementTextures();
     registerRefreshEvent();
+    registerSilkCarrierArtwork();
 })();

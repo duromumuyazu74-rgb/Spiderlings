@@ -1,3 +1,5 @@
+KDBuffName_SpiderlingsWebSpraySlow,蛛网减速
+KDBuffDesc_SpiderlingsWebSpraySlow,黏附的蛛丝使你的移动减慢 PowerInt 级。
 KDBuffName_SpiderlingsSilkDensity,蛛丝密度
 KDBuffDesc_SpiderlingsSilkDensity,蛛丝越密越难摆脱幼蛛拘束。连续十个世界回合未被幼蛛蛛丝命中后开始消散，仍被拘束时也会衰减。
 NameSpinner,织网幼蛛

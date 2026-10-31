@@ -38,13 +38,17 @@
         }
         expect(Math.abs(glow("boss").alpha - glow("player").alpha) < 1e-9, "Resonance glows are not synchronized");
         expect(
-            KDModFiles[KinkyDungeonRootDirectory + "Buffs/buff/buffSpiderlingsBossResonance.png"] ===
-                KDModFiles[KinkyDungeonRootDirectory + "Bullets/SpiderlingsMageRuneIcon.png"],
-            "Status icon did not reuse the delivered rune",
+            KDModFiles[KinkyDungeonRootDirectory + "Buffs/buff/buffSpiderlingsBossResonance.png"] &&
+                KDModFiles[KinkyDungeonRootDirectory + "Buffs/buff/buffSpiderlingsBossResonance.png"] !==
+                    KDModFiles[KinkyDungeonRootDirectory + "Bullets/SpiderlingsMageRuneIcon.png"],
+            "Resonance status did not use its prepared icon",
         );
         expect(hud()?.icon === "buff/buffSpiderlingsBossResonance", "Resonance status is missing");
         const texture = KDTex(KinkyDungeonRootDirectory + "Buffs/buff/buffSpiderlingsBossResonance.png");
-        expect(texture?.baseTexture.valid && texture.orig.width > 1, "Resonance status icon is not decoded");
+        expect(
+            texture?.baseTexture.valid && texture.orig.width === 46 && texture.orig.height === 46,
+            "Resonance status icon is not decoded at its supplied size",
+        );
         await new Promise((resolve) => setTimeout(resolve, 1100));
         await photo();
         expect(!visible(glow("boss")) && !visible(glow("player")), "One-second resonance glows did not clear");

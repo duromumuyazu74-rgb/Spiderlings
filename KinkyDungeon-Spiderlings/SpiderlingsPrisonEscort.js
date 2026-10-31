@@ -377,7 +377,16 @@
                 if (goal) moveToward(enemy, goal, delta);
             } else if (delta > 0) {
                 // Native leash warnings expire between enemy turns; progress them every paid world turn.
-                if (!KDPlayerLeashed(player())) KDTryToLeash(enemy, player(), delta, false);
+                if (!KDPlayerLeashed(player())) {
+                    const groups = ["ItemNeck", "ItemNeckRestraints"];
+                    const previous = groups.map((group) => KinkyDungeonGetRestraintItem(group));
+                    KDTryToLeash(enemy, player(), delta, false);
+                    groups.forEach((group, index) => {
+                        const item = KinkyDungeonGetRestraintItem(group);
+                        if (item && item !== previous[index] && !sameId(item.id, previous[index]?.id))
+                            api.markSilkLeashArtwork?.(item);
+                    });
+                }
                 if (KDPlayerLeashed(player()) && !player().leash) {
                     const carrier = KinkyDungeonGetRestraintItem("ItemNeckRestraints");
                     KinkyDungeonAttachTetherToEntity(TETHER_LENGTH, enemy, player(), STATE, undefined, 6, carrier);

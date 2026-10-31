@@ -288,6 +288,8 @@ DSpiderlingsNestVisit,Otwór prowadzi do pajęczego gniazda. Jasny jedwab wskazu
 dSpiderlingsNestVisit_Enter,Wejdź do gniazda
 dSpiderlingsNestVisit_EnterGag,Wejdź do gniazda
 KinkyDungeonSpiderlingsNestEscort,Pajączek zbliża się aby zabrać twój kokon do wejścia gniazda.
+KDBuffName_SpiderlingsWebSpraySlow,Spowolnienie pajęczyną
+KDBuffDesc_SpiderlingsWebSpraySlow,Lepka pajęczyna zwiększa twój poziom spowolnienia o PowerInt.
 KDBuffName_SpiderlingsSilkDensity,Gęstość pajęczyny
 KDBuffDesc_SpiderlingsSilkDensity,Gęstsza pajęczyna zwiększa wysiłek potrzebny do uwolnienia. Zaczyna zanikać po dziesięciu turach świata bez trafienia pajęczą nicią, nawet gdy nadal jesteś związany.
 NameSpiderlingsMatriarch,Matriarchini Tkająca Gniazda

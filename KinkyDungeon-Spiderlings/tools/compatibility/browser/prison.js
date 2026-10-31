@@ -332,6 +332,14 @@
                 await healthyTurn();
                 transport.steps.push(snapshot());
                 const current = escort.state();
+                if (current?.phase === "escort") {
+                    const carrier = KinkyDungeonGetRestraintItem("ItemNeckRestraints");
+                    expect(
+                        carrier?.data?.[Spiderlings.ModelRuntime.SILK_ART_MARKER],
+                        "The prison escort retained placeholder leash artwork",
+                    );
+                    transport.silkCarrier = { name: carrier.name, id: carrier.id };
+                }
                 if (fallback && !prison.isPrison()) expect(mobiles().length <= 1, "Fallback bypassed capacity");
                 if (current && current.elapsed < deadline)
                     expect(current.phase === "pending", "Dispatch occurred before saved deadline");

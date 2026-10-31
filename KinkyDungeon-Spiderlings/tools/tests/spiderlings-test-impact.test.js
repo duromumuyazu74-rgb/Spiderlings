@@ -138,6 +138,7 @@ test("native scene edits expand real state continuations and shared helpers only
     const runner = selectAffected(["tools/verify-kd-compatibility.js"], suites);
     assert.equal(runner.nativeScope, "full");
     assert.deepEqual(runner.scenarios, selectScenarios().executed);
+    assert.ok(runner.scenarios.includes("leash-art"));
 });
 
 test("direct local test edits and renamed tests are retained and unmapped/deleted tests do not trigger everything", () => {

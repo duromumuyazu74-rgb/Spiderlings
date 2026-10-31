@@ -158,6 +158,34 @@ test("unrelated faction pairs skip Cocoon inventory scans even when a rival hold
     assert.equal(reads, 0);
 });
 
+test("escort artwork claims newly added native carriers without changing existing equipment", () => {
+    for (const existingCollar of [false, true]) {
+        const s = scenario();
+        const slots = new Map();
+        const oldCollar = { name: "BasicCollar", id: 90, cutProgress: 0.3, data: { foreign: true } };
+        if (existingCollar) slots.set("ItemNeck", oldCollar);
+        s.context.KinkyDungeonGetRestraintItem = (group) => slots.get(group);
+        const nativeLeash = s.context.KDTryToLeash;
+        s.context.KDTryToLeash = (...args) => {
+            nativeLeash(...args);
+            if (!slots.has("ItemNeck")) slots.set("ItemNeck", { name: "BasicCollar", id: 91 });
+            slots.set("ItemNeckRestraints", { name: "BasicLeash", id: 92 });
+        };
+        const marked = [];
+        s.context.Spiderlings.markSilkLeashArtwork = (item) => marked.push(item);
+        s.escort.onAnchored(s.cocoon);
+        s.turn(31);
+        s.escort.handleEnemyTurn(s.spinner, s.player, 1);
+        assert.deepEqual(
+            marked.map((item) => item.name),
+            existingCollar ? ["BasicLeash"] : ["BasicCollar", "BasicLeash"],
+        );
+        assert.equal(s.escort.state().phase, "escort");
+        if (existingCollar) assert.equal(slots.get("ItemNeck"), oldCollar);
+        assert.deepEqual(oldCollar, { name: "BasicCollar", id: 90, cutProgress: 0.3, data: { foreign: true } });
+    }
+});
+
 test("only anchored Cocoon starts one saved 30–50 turn dispatch", () => {
     const ordinary = scenario();
     ordinary.cocoon.data.SpiderlingsCocoonOuterWebs.anchored = false;

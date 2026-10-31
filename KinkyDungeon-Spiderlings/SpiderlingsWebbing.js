@@ -703,6 +703,10 @@
                 duration: 9999,
                 infinite: true,
                 player: true,
+                labelcolor: "#ffffff",
+                buffSprite: true,
+                buffSpriteSpecific: WEBSPRAY_SLOW_BUFF + runtimeWebSprayState.stacks,
+                text: String(runtimeWebSprayState.stacks),
                 tags: ["SpiderlingsWebSprayTransient"],
             });
         }
@@ -777,7 +781,14 @@
 
     // Runtime integration stays below the pure resolver so KD event quirks cannot leak into state rules.
     function registerWebSprayRuntime() {
-        if (typeof addTextKey == "function") addTextKey(CROSS_FIRE_MESSAGE, CROSS_FIRE_FALLBACK);
+        if (typeof addTextKey == "function") {
+            addTextKey(CROSS_FIRE_MESSAGE, CROSS_FIRE_FALLBACK);
+            addTextKey("KDBuffName_" + WEBSPRAY_SLOW_BUFF, "Web slow");
+            addTextKey(
+                "KDBuffDesc_" + WEBSPRAY_SLOW_BUFF,
+                "Clinging spider silk increases your slow level by PowerInt.",
+            );
+        }
         if (typeof KDPlayerEffects != "undefined" && KDPlayerEffects) {
             KDPlayerEffects[WEBSPRAY_EFFECT] = (_target, _damage, playerEffect, _spell, faction, bullet, entity) => {
                 if (

@@ -449,6 +449,8 @@ test("fresh manifest VM exposes active restraints and a Mage bolt with native Da
             "SpiderlingsWebbingCocoonModel",
             "SpiderlingsSpellwovenCocoonModel",
             "SpiderlingsSpinnerLegbinderModel",
+            "SpiderlingsSilkLeashModel",
+            "SpiderlingsSilkCollarModel",
         ].sort(),
     );
     assert.equal(runtime.context.Spiderlings.LooseWebbing, undefined);
