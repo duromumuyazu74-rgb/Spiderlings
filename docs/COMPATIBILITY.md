@@ -15,6 +15,16 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
 
+## Test.17 local candidate: adjacent Court rings and one-attack Jumpers (2026-10-31)
+
+The eight opening Spinners build nine adjacent rings, from radius 13 down to 5, leaving a 9-by-9 interior. Directional stations and distinct work reservations distribute construction; occupancy-aware routes avoid the Matriarch and other workers. Gates close without waiting for prey entry. Builders stay on construction until the final ring closes, then resume ordinary combat. Existing test.14 ring identities and paid structures are retained while the missing intermediate rings are added.
+
+Boss support Jumpers retire without death drops after a resolved Dash or native melee hit, miss or block. A cancelled wind-up does not retire the actor. Ordinary Jumpers retain their existing consumption rules.
+
+The same `Spiderlings_0.92.39-test.17.zip` passed the complete 75-check native suite and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.7 commit `8ca018b861705a37ba568b31ea2d1d126145916d`. The ZIP has 193 allowlisted entries, 25,001,186 bytes and SHA-256 `53a1e67478dd964700349776d97be250b9b01d0b96c8549f52704880316af8a8`. Full native evidence is retained in run `2026-10-31T02-51-12-179Z-0.92.39-test.17`. This is a local candidate; the published test release remains test.14.
+
+The construction scene disables Boss offense, removes support and keeps the player outside the rings. Both games completed 648 physical web cells in 718 world turns, with paid contributions from all eight builders, work spread across eight directions and no builder attack before final closure. The scene then observes native attacks after closure. Dash checks retain both reaction opportunities and verify removal after both a hit and an evasion. These controlled observations establish construction and retirement behavior; they do not determine combat balance with active Boss offense. Regression coverage also reconstructs legacy two-ring state and checks that ordinary Jumpers remain unaffected.
+
 ## Test.16 Silk Leash and status icons (2026-10-31)
 
 This integration adds the artist's white/pink Silk Leash to the current Prison and Matriarch build, with nine cord poses, collar models, independent atlases and direct fallback. New prison-escort carriers retain their native item identity and save a cosmetic marker. It also adopts all eleven prepared 46px status icons: five Web slow stacks, five Silk density tiers and Weave resonance. See [Leash artwork](leash-art.md) and [status icons](buff-icons.md).

@@ -419,7 +419,12 @@
         });
         addGenericEvent("tickAfter", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !(Number(data.delta) > 0)) return;
-            runtimeController.advancePlayerAction(api.SpinnerCapture?.reactionOpportunity() ?? true);
+            const outcomes = runtimeController.advancePlayerAction(api.SpinnerCapture?.reactionOpportunity() ?? true);
+            for (const outcome of outcomes) {
+                if (outcome.outcome === "cancelled") continue;
+                const enemy = runtimeWorld.findSource(outcome.sourceId);
+                KinkyDungeonSendEvent("spiderlingsJumperDashResolved", { enemy, outcome: outcome.outcome });
+            }
         });
         addGenericEvent("beforeEnemyLoop", "SpiderlingsJumperDash", (_event, data) => {
             if (!data || !data.enemy) return;
