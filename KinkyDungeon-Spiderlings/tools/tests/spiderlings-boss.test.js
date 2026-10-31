@@ -322,6 +322,106 @@ test("ordinary decorated ground supports all eight fixed builders without consum
     assert.equal(c.Spiderlings.availableSpiderlingSlots(), 24);
 });
 
+test("Boss builders finish every inward ring before returning to ordinary combat", () => {
+    const { c, encounter } = setup();
+    c.Spiderlings.FieldCommand = { syncManagedCrew() {} };
+    c.KDMapData.StartPosition = { x: 2, y: 2 };
+    c.KDMapData.EndPosition = { x: 38, y: 38 };
+    load(c, "SpiderlingsBossFields.js");
+    c.Spiderlings.BossFields.initialize();
+    const outer = Object.values(c.Spiderlings.SpinnerNativeField.state().topology.composites)[0];
+    outer.autoSeal = outer.closureArmed = false;
+    const legacyId = outer.id.replace(/:0$/, ":1");
+    assert.equal(
+        c.Spiderlings.SpinnerNativeField.addEnclosure({
+            compositeId: legacyId,
+            groupId: outer.groupId,
+            owners: encounter.state().builderIds,
+            layers: [
+                {
+                    id: legacyId + ":layer",
+                    maxDimension: 27,
+                    vertices: [
+                        { x: 11, y: 11 },
+                        { x: 29, y: 11 },
+                        { x: 29, y: 29 },
+                        { x: 11, y: 29 },
+                    ],
+                    core: { x: 20, y: 20 },
+                    gate: { x: 29, y: 20 },
+                },
+            ],
+        }).added,
+        true,
+    );
+    delete encounter.state().ringLayout;
+    encounter.state().ringIndex = 1;
+    c.Spiderlings.BossFields.advance();
+    assert.equal(encounter.state().ringIndex, 0, "Legacy saves first fill the missing adjacent rings");
+    let attacks = 0;
+    c.KinkyDungeonEnemyLoop = () => {
+        attacks++;
+        return { idle: true };
+    };
+    c.Spiderlings.NativeActions.install();
+    const worker = c.KDMapData.Entities.find((enemy) => encounter.state().builderIds.includes(enemy.id));
+    for (const radius of [13, 12, 11, 10, 9, 8, 7, 6, 5]) {
+        c.Spiderlings.BossFields.advance();
+        let graph = c.Spiderlings.SpinnerNativeField.state().topology;
+        const ring = Object.values(graph.composites).find(
+            (entry) => graph.fields[entry.layerIds[0]].vertices[0].x === 20 - radius,
+        );
+        assert.equal(graph.fields[ring.layerIds[0]].vertices[0].x, 20 - radius);
+        // A damaged link can be waiting for its rebuild cooldown with no work available.
+        const nextWork = c.Spiderlings.SpinnerTopology.nextWorkAction;
+        c.Spiderlings.SpinnerTopology.nextWorkAction = () => undefined;
+        c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerTopology.nextWorkAction = nextWork;
+        assert.equal(attacks, 0, "An unfinished ring must retain its builders");
+        for (
+            let actions = 0;
+            actions < 400 && !ring.layerIds.every((id) => c.Spiderlings.SpinnerTopology.isLayerClosed(graph, id));
+            actions++
+        ) {
+            const action = nextWork(graph, worker.id, worker, [], ring.layerIds);
+            assert.ok(action, "The ring must offer a construction action");
+            graph = c.Spiderlings.SpinnerTopology.applyAction(
+                graph,
+                { ...action, ownerId: worker.id },
+                { inBounds: true, floor: true, protected: false, occupied: false },
+            ).state;
+            c.Spiderlings.SpinnerNativeField.state().topology = graph;
+        }
+        assert.ok(ring.layerIds.every((id) => c.Spiderlings.SpinnerTopology.isLayerClosed(graph, id)));
+        c.Spiderlings.BossFields.advance();
+    }
+    c.Spiderlings.SpinnerNativeField.handleEnemyTurn = () => undefined;
+    assert.equal(Object.keys(c.Spiderlings.SpinnerNativeField.state().topology.composites).length, 9);
+    assert.ok(c.Spiderlings.SpinnerNativeField.compositeById(legacyId), "The saved paid ring keeps its identity");
+    c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+    assert.equal(attacks, 1);
+});
+
+test("only Boss support Jumpers retire after a resolved attack", () => {
+    for (const trigger of [
+        "hit",
+        "missPlayer",
+        "blockPlayer",
+        "NPCHitNPC",
+        "missEnemy",
+        "blockEnemy",
+        "spiderlingsJumperDashResolved",
+    ]) {
+        const { c, encounter } = setup();
+        const [support] = encounter.spawnFormation(["Jumper"], [{ x: 3, y: 3 }], "support");
+        const ordinary = c.DialogueCreateEnemy(4, 4, "Jumper");
+        c.KinkyDungeonSendEvent(trigger, { enemy: ordinary, outcome: "evaded" });
+        assert.ok(c.KDMapData.Entities.includes(ordinary));
+        c.KinkyDungeonSendEvent(trigger, { enemy: support, outcome: "evaded" });
+        assert.ok(!c.KDMapData.Entities.includes(support), trigger);
+    }
+});
+
 test("a blocked support formation creates no partial group", () => {
     const { c, encounter } = setup();
     const before = c.KDMapData.Entities.length;

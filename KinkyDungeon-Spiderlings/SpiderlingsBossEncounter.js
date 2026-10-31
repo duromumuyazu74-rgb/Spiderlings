@@ -572,6 +572,20 @@
         );
     KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => advance(Number(data?.delta || 0)));
     KDAddEvent(KDEventMapGeneric, "postMapgen", KEY, initialize);
+    for (const trigger of [
+        "hit",
+        "missPlayer",
+        "blockPlayer",
+        "NPCHitNPC",
+        "missEnemy",
+        "blockEnemy",
+        "spiderlingsJumperDashResolved",
+    ])
+        KDAddEvent(KDEventMapGeneric, trigger, KEY, (_event, data) => {
+            const enemy = data.enemy;
+            if (enemy?.Enemy.name === "Jumper" && fixed(enemy) && enemy.SpiderlingsBossFormation.kind === "support")
+                KDRemoveEntity(enemy, false, false, true);
+        });
     api.BossEncounter = Object.freeze({
         state,
         boss,

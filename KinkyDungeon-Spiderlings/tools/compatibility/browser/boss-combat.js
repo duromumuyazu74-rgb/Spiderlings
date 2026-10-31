@@ -187,39 +187,109 @@
             wallFormations.push({ player: point, name, positions: members.map(({ x, y }) => ({ x, y })) });
         }
     }
+    const jumperResults = [];
+    for (const evade of [false, true]) {
+        globalThis.bossAcceptance.enter("boss-support-jumper-" + evade);
+        encounter = Spiderlings.BossEncounter.state();
+        const owner = Spiderlings.BossEncounter.boss();
+        owner.stun = 10000;
+        encounter.nextBody = encounter.nextSupport = encounter.nextPulse = 10000;
+        encounter.warnings = [];
+        for (const enemy of [...KDMapData.Entities])
+            if (enemy !== owner && !Spiderlings.BossFootprint.isPart(enemy)) KDRemoveEntity(enemy, false, false, true);
+        KDMovePlayer(20, 20, false);
+        const [jumper] = Spiderlings.BossEncounter.spawnFormation(["Jumper"], [{ x: 24, y: 20 }], "support");
+        let winding = false;
+        for (let n = 0; n < 12 && !winding; n++) {
+            await turn();
+            winding = Spiderlings.JumperDash.runtimeController.snapshot().some((entry) => entry.sourceId === jumper.id);
+        }
+        expect(winding, "Boss support Jumper did not start its native Dash");
+        expect(KDMapData.Entities.includes(jumper), "Jumper retired before its attack resolved");
+        if (evade) KDMovePlayer(20, 22, false);
+        await turn();
+        expect(KDMapData.Entities.includes(jumper), "Jumper lost the second reaction opportunity");
+        await turn();
+        expect(!KDMapData.Entities.includes(jumper), "Boss Jumper remained after its resolved Dash");
+        expect(!Spiderlings.JumperDash.runtimeController.snapshot().length, "Retired Jumper left a pending attack");
+        jumperResults.push({ evade, retired: true });
+    }
     globalThis.bossAcceptance.enter("boss-paid-rings");
     encounter = Spiderlings.BossEncounter.state();
     const boss = Spiderlings.BossEncounter.boss();
     boss.stun = 10000;
     encounter.nextBody = encounter.nextSupport = encounter.nextPulse = 10000;
     encounter.warnings = [];
+    // The builders must close and shrink even when the player stands outside all rings.
+    KDMovePlayer(3, 20, false);
     for (const enemy of [...KDMapData.Entities])
         if (enemy !== boss && !Spiderlings.BossFootprint.isPart(enemy) && !encounter.builderIds.includes(enemy.id))
             KDRemoveEntity(enemy, false, false, true);
     let complete = false,
         turns = 0;
-    for (; turns < 400 && !complete; turns++) {
+    const paidByBuilder = new Map(),
+        earlyWork = [],
+        builderAttacks = [];
+    const applyPaid = Spiderlings.SpinnerNativeField.applyPaidAction;
+    Spiderlings.SpinnerNativeField.applyPaidAction = function (actor, action) {
+        const result = applyPaid.apply(this, arguments);
+        if (result.applied && encounter.builderIds.includes(actor.id)) {
+            paidByBuilder.set(actor.id, (paidByBuilder.get(actor.id) || 0) + 1);
+            if (encounter.ringIndex === 0 && turns < 12) earlyWork.push({ id: actor.id, ...action.cell });
+        }
+        return result;
+    };
+    KDAddEvent(KDEventMapGeneric, "beforeAttack", "CompatibilityBossBuilders", (_event, data) => {
+        if (encounter.builderIds.includes(data.enemy?.id))
+            builderAttacks.push({ id: data.enemy.id, complete: !!encounter.ringsComplete });
+    });
+    for (; turns < 800 && !complete; turns++) {
         await turn();
         const graph = Spiderlings.SpinnerNativeField.state()?.topology;
         const rings = Object.values(graph?.composites || {}).filter((ring) =>
             Spiderlings.BossFields.ownsComposite(ring.id),
         );
         complete =
-            rings.length === 2 &&
+            rings.length === 9 &&
+            encounter.ringsComplete &&
             rings.every((ring) => ring.layerIds.every((id) => Spiderlings.SpinnerTopology.isLayerClosed(graph, id)));
     }
+    Spiderlings.SpinnerNativeField.applyPaidAction = applyPaid;
+    expect(paidByBuilder.size === 8, "Some opening builders never contributed paid work");
+    expect(
+        new Set(earlyWork.map((cell) => (Math.round(Math.atan2(cell.y - 20, cell.x - 20) / (Math.PI / 4)) + 8) % 8))
+            .size === 8,
+        "Opening construction did not spread across eight directions: " + JSON.stringify(earlyWork),
+    );
+    expect(!builderAttacks.some((attack) => !attack.complete), "A builder attacked before the final ring closed");
     expect(
         complete,
-        "Eight builders did not finish two real paid rings: " +
+        "Eight builders did not finish nine adjacent paid rings: " +
             JSON.stringify({
                 turns,
                 ring: encounter.ringIndex,
                 graph: Spiderlings.SpinnerNativeField.state()?.topology?.composites,
+                workers: KDMapData.Entities.filter((enemy) => encounter.builderIds.includes(enemy.id)).map((enemy) => ({
+                    id: enemy.id,
+                    x: enemy.x,
+                    y: enemy.y,
+                    stun: enemy.stun,
+                    movePoints: enemy.movePoints,
+                    work: Spiderlings.SpinnerTopology.nextWorkAction(
+                        Spiderlings.SpinnerNativeField.state().topology,
+                        enemy.id,
+                        enemy,
+                    ),
+                })),
             }),
     );
     const walls = KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "SpiderlingsSpinnerTrap");
     expect(walls.length > 80, "Closed rings have no physical web projections");
     const fields = await photo();
+    KDMovePlayer(20, 20, false);
+    for (let n = 0; n < 20 && !builderAttacks.length; n++) await turn();
+    expect(builderAttacks.length > 0, "Completed builders did not resume native attacks");
+    delete KDEventMapGeneric.beforeAttack.CompatibilityBossBuilders;
     const snapshot = JSON.stringify(Spiderlings.SpinnerNativeField.state().topology);
     for (const id of encounter.builderIds) {
         const enemy = KDMapData.Entities.find((actor) => actor.id === id);
@@ -237,6 +307,8 @@
         walls: walls.length,
         retainedTopology: !!snapshot,
         wallFormations,
+        jumperResults,
+        construction: { paidByBuilder: [...paidByBuilder], earlyWork, builderAttacks },
         resonance: { pulses: resonancePulses, nativeTextures: true, statusLifecycle: true },
         warningFeedback: { renderedCountdown: true, resolutionEvents: resolvedWarnings.length, sameFootprint: true },
         images: { resonance: resonanceImage, meleeWarning: warningImage, meleeImpact: impactImage, combat, fields },

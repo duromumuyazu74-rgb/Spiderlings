@@ -387,6 +387,15 @@
         return true;
     }
 
+    function sealEnclosure(compositeId) {
+        const graph = state()?.topology,
+            composite = graph?.composites[compositeId];
+        if (!composite || composite.autoSeal) return;
+        composite.autoSeal = true;
+        composite.closureArmed = true;
+        topology().refresh(graph);
+    }
+
     function setOwners(fieldId, ownerIds) {
         const encounter = state(),
             field = fieldById(encounter, fieldId);
@@ -1090,6 +1099,7 @@
         commitProjectStructure,
         retireField,
         setOwners,
+        sealEnclosure,
         initializeMap,
         initializeEnclosure,
         applyPaidAction,

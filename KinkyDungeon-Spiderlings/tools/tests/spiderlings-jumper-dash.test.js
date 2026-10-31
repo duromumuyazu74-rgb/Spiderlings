@@ -316,8 +316,11 @@ test("KD pre-started special cooldown still commits enemyCast into the visible D
     assert.equal(source.immobile, 1, "the winding Jumper is held for this enemy action");
     assert.deepEqual([source.x, source.y], [0, 0]);
 
+    const resolved = [];
+    context.KinkyDungeonSendEvent = (event, data) => resolved.push({ event, enemy: data.enemy, outcome: data.outcome });
     genericEvents.tickAfter.SpiderlingsJumperDash("tickAfter", { delta: 1 });
     genericEvents.tickAfter.SpiderlingsJumperDash("tickAfter", { delta: 1 });
+    assert.equal(resolved.length, 0);
     assert.deepEqual([source.x, source.y], [0, 0]);
     genericEvents.tickAfter.SpiderlingsJumperDash("tickAfter", { delta: 1 });
     assert.deepEqual([source.x, source.y], [3, 0]);
@@ -325,6 +328,7 @@ test("KD pre-started special cooldown still commits enemyCast into the visible D
     assert.equal(progressCalls, 1);
     assert.equal(source.hp, 0);
     assert.equal(warnings.length, 0);
+    assert.deepEqual(resolved, [{ event: "spiderlingsJumperDashResolved", enemy: source, outcome: "hit-progressed" }]);
 
     source.immobile = 0;
     genericEvents.beforeEnemyLoop.SpiderlingsJumperDash("beforeEnemyLoop", { enemy: source });

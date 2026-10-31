@@ -4,15 +4,28 @@
 (() => {
     const api = globalThis.Spiderlings;
     const GROUP = "spiderlings-boss-court";
+    const RADII = [13, 12, 11, 10, 9, 8, 7, 6, 5];
+    const STATIONS = [
+        [-1, -1],
+        [0, -1],
+        [1, -1],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [-1, 1],
+        [-1, 0],
+    ];
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     const state = () => api.BossEncounter?.state();
     const group = () => `${GROUP}:${api.BossRoom.state().attempts}`;
-    const idFor = (index) => `${group()}:${index}`;
+    // Preserve the two paid rings from test.14; new intermediate rings have radius-based IDs.
+    const idFor = (index) =>
+        `${group()}:${RADII[index] === 13 ? 0 : RADII[index] === 9 ? 1 : "radius-" + RADII[index]}`;
     const owners = () =>
         (state()?.builderIds || []).filter((id) => KDMapData.Entities.some((enemy) => enemy.id === id && enemy.hp > 0));
     function addRing(index, ids) {
         const center = api.BossRoom.CENTER,
-            radius = index ? 9 : 13;
+            radius = RADII[index];
         const left = center.x - radius,
             right = center.x + radius,
             top = center.y - radius,
@@ -22,6 +35,7 @@
             compositeId: idFor(index),
             groupId: group(),
             owners: ids,
+            autoSeal: true,
             layers: [
                 {
                     id: `${idFor(index)}:layer`,
@@ -44,37 +58,73 @@
         const saved = state(),
             ids = owners();
         if (!saved || !ids.length) return;
-        api.FieldCommand.syncManagedCrew(group(), ids);
+        if (saved.ringLayout !== 2) {
+            saved.ringLayout = 2;
+            saved.ringIndex = 0;
+            saved.ringsComplete = false;
+        }
+        api.FieldCommand.syncManagedCrew(group(), saved.ringsComplete ? [] : ids);
         if (!api.SpinnerNativeField.compositeById(idFor(0))) addRing(0, ids);
         saved.ringIndex ||= 0;
     }
     function advance() {
         const saved = state(),
             ids = owners();
-        if (!saved || saved.phase === "victory" || !ids.length) return;
+        if (!saved || saved.phase === "victory" || saved.ringsComplete || !ids.length) return;
         initialize();
         const current = api.SpinnerNativeField.compositeById(idFor(saved.ringIndex));
         const graph = api.SpinnerNativeField.state()?.topology;
         if (!current || !graph) return;
+        // Existing test.14 saves used prey-triggered gates, which can stall outside the ring.
+        api.SpinnerNativeField.sealEnclosure(current.id);
         for (const id of current.layerIds) api.SpinnerNativeField.setOwners(id, ids);
-        if (
-            saved.ringIndex === 0 &&
-            current.layerIds.every((id) => api.SpinnerTopology.isLayerClosed(graph, id)) &&
-            addRing(1, ids)
-        )
-            saved.ringIndex = 1;
+        if (!current.layerIds.every((id) => api.SpinnerTopology.isLayerClosed(graph, id))) return;
+        if (saved.ringIndex < RADII.length - 1) {
+            if (api.SpinnerNativeField.compositeById(idFor(saved.ringIndex + 1)) || addRing(saved.ringIndex + 1, ids))
+                saved.ringIndex++;
+        } else {
+            saved.ringsComplete = true;
+            api.FieldCommand.syncManagedCrew(group(), []);
+        }
     }
     function handleEnemyTurn(enemy, _target, delta) {
         const saved = state();
-        if (!saved || !saved.builderIds.includes(enemy.id) || !(delta > 0) || saved.phase === "victory")
+        if (
+            !saved ||
+            !saved.builderIds.includes(enemy.id) ||
+            saved.ringsComplete ||
+            !(delta > 0) ||
+            saved.phase === "victory"
+        )
             return undefined;
         const result = { idle: false, defeat: false, defeatEnemy: enemy };
         if (KinkyDungeonIsDisabled(enemy) || KDHelpless(enemy)) return result;
         const graph = api.SpinnerNativeField.state()?.topology;
         const ring = graph?.composites?.[idFor(saved.ringIndex || 0)];
         if (!ring) return result;
-        const action = api.SpinnerTopology.nextWorkAction(graph, enemy.id, enemy, [], ring.layerIds);
-        if (!action?.cell) return saved.ringIndex === 1 ? undefined : result;
+        const reserved = [];
+        let action;
+        for (const id of owners()) {
+            const worker = KDMapData.Entities.find((actor) => actor.id === id);
+            if (KinkyDungeonIsDisabled(worker) || KDHelpless(worker)) continue;
+            const index = saved.builderIds.indexOf(id),
+                [dx, dy] = STATIONS[index],
+                radius = RADII[saved.ringIndex],
+                center = api.BossRoom.CENTER,
+                station = { x: center.x + dx * radius, y: center.y + dy * radius };
+            const assigned = api.SpinnerTopology.nextWorkAction(graph, id, station, reserved, ring.layerIds);
+            if (assigned) reserved.push(api.SpinnerTopology.workKey(assigned));
+            if (id === enemy.id) {
+                action = assigned;
+                break;
+            }
+        }
+        if (!action?.cell) return result;
+        if (distance(enemy, action.cell) <= 1) {
+            if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta))
+                api.SpinnerNativeField.applyPaidAction(enemy, { ...action, ownerId: enemy.id });
+            return result;
+        }
         const sites = [];
         for (let dy = -1; dy <= 1; dy++)
             for (let dx = -1; dx <= 1; dx++) {
@@ -85,45 +135,14 @@
                     !snapshot.inBounds ||
                     !snapshot.floor ||
                     snapshot.protected ||
-                    (snapshot.occupied && distance(enemy, point))
+                    (snapshot.actorOccupied && distance(enemy, point))
                 )
                     continue;
-                const path = distance(enemy, point)
-                    ? KinkyDungeonFindPath(
-                          enemy.x,
-                          enemy.y,
-                          point.x,
-                          point.y,
-                          false,
-                          false,
-                          false,
-                          KinkyDungeonMovableTilesEnemy,
-                          undefined,
-                          undefined,
-                          undefined,
-                          enemy,
-                      )
-                    : [];
-                if (!distance(enemy, point) || path?.length) sites.push({ point, path });
+                sites.push(point);
             }
-        sites.sort((a, b) => a.path.length - b.path.length);
-        const site = sites[0];
-        if (!site) return result;
-        if (!distance(enemy, site.point)) {
-            if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta))
-                api.SpinnerNativeField.applyPaidAction(enemy, { ...action, ownerId: enemy.id });
-        } else {
-            const next = site.path[0];
-            if (next)
-                KinkyDungeonEnemyTryMove(
-                    enemy,
-                    { x: next.x - enemy.x, y: next.y - enemy.y },
-                    delta,
-                    next.x,
-                    next.y,
-                    false,
-                );
-        }
+        const next = sites.length && api.SpinnerAI.occupancyRoute(enemy, sites).find((cell) => distance(enemy, cell));
+        if (next)
+            KinkyDungeonEnemyTryMove(enemy, { x: next.x - enemy.x, y: next.y - enemy.y }, delta, next.x, next.y, false);
         return result;
     }
     api.NativeActions.registerBehavior("BossFields", { handleEnemyTurn });
