@@ -452,6 +452,75 @@
         };
     }
 
+    // Breadth-first trees from one origin over an unblocked terrain graph. A terrain
+    // change builds a new graph, so the graph's identity keys its trees.
+    const unblockedTrees = new WeakMap();
+
+    function unblockedTree(neighbors, start) {
+        let trees = unblockedTrees.get(neighbors);
+        if (!trees) unblockedTrees.set(neighbors, (trees = new Map()));
+        let parent = trees.get(start);
+        if (parent) return parent;
+        parent = new Map([[start, null]]);
+        const queue = [start];
+        for (let index = 0; index < queue.length; index++)
+            for (const neighbor of neighbors.get(queue[index]) || [])
+                if (!parent.has(neighbor.key)) {
+                    parent.set(neighbor.key, { from: queue[index], corners: neighbor.corners });
+                    queue.push(neighbor.key);
+                }
+        trees.set(start, parent);
+        return parent;
+    }
+
+    // Equals routeOnSnapshot(...).length > 0 without searching from the start for every
+    // enclosure candidate after each terrain change. A goal outside the unblocked tree
+    // has no route. Otherwise a search spreads from the goal around the blockers until it
+    // meets a cell whose tree path to the start avoids every blocker; joined, the two
+    // paths form a route. Exhausting the search proves there is none, because the start
+    // itself is such a cell. Terrain moves are symmetric, so searching from the goal
+    // answers the same question.
+    function routeExists(snapshot, from, to, blocked, passable, neighbors, work) {
+        const start = cellKey(from),
+            goal = cellKey(to);
+        if (!passable.has(start) || blocked.has(start) || !passable.has(goal) || blocked.has(goal)) return false;
+        if (!neighbors) {
+            if (work) work.routeChecks++;
+            return routeOnSnapshot(snapshot, from, to, blocked, passable).length > 0;
+        }
+        const parent = unblockedTree(neighbors, start);
+        if (!parent.has(goal)) return false;
+        const stepClear = (key) => !blocked.has(key) && !parent.get(key).corners?.some((corner) => blocked.has(corner));
+        const clear = new Map([[start, true]]),
+            treePathClear = (key) => {
+                const path = [];
+                for (; !clear.has(key); key = parent.get(key).from) path.push(key);
+                let result = clear.get(key);
+                for (let index = path.length - 1; index >= 0; index--) {
+                    result &&= stepClear(path[index]);
+                    clear.set(path[index], result);
+                }
+                return result;
+            };
+        if (treePathClear(goal)) return true;
+        if (work) work.routeChecks++;
+        const queue = [goal],
+            seen = new Set(queue);
+        for (let index = 0; index < queue.length; index++) {
+            if (treePathClear(queue[index])) return true;
+            for (const neighbor of neighbors.get(queue[index]) || [])
+                if (
+                    !seen.has(neighbor.key) &&
+                    !blocked.has(neighbor.key) &&
+                    !neighbor.corners?.some((corner) => blocked.has(corner))
+                ) {
+                    seen.add(neighbor.key);
+                    queue.push(neighbor.key);
+                }
+        }
+        return false;
+    }
+
     function reachableGate(
         snapshot,
         center,
@@ -472,10 +541,7 @@
                 tile = byKey.get(cellKey(exterior));
             if (!tile?.floor || tile.locked) continue;
             if (
-                origins.every((origin) => {
-                    if (work) work.routeChecks++;
-                    return routeOnSnapshot(snapshot, origin, exterior, blocked, passable, neighbors).length > 0;
-                })
+                origins.every((origin) => routeExists(snapshot, origin, exterior, blocked, passable, neighbors, work))
             ) {
                 cache?.set(cacheKey, gate);
                 return gate;
