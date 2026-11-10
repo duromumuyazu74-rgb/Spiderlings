@@ -5422,3 +5422,76 @@ test("existing topology adoption registers each independent field with its own c
         if (["adopt-a", "adopt-b"].includes(p.compositeId))
             assert.equal(c.Spiderlings.FieldCommand.residency(native.state(), p.groupId).minimum, 1);
 });
+
+test("replacement site scans of projects that start together are spread across the scan interval", () => {
+    // Two rooms off the main corridor, each with its own crew and nearby Maidforce target.
+    const workers = [
+            [4, 3],
+            [5, 3],
+            [6, 3],
+            [5, 2],
+            [4, 17],
+            [5, 17],
+            [6, 17],
+            [5, 18],
+        ].map(([x, y], i) => spinner(i + 1, x, y)),
+        targets = [
+            { id: 81, x: 5, y: 8, hp: 4, Enemy: { name: "Maidforce" } },
+            { id: 82, x: 5, y: 12, hp: 4, Enemy: { name: "Maidforce" } },
+        ],
+        r = runtime([...workers, ...targets]),
+        c = r.context;
+    c.Spiderlings.SpinnerPassagePlanner = undefined;
+    c.Spiderlings.getSetting = (key) => (key === "spiderlingsCaptureFieldLimit" ? "2" : undefined);
+    const snapshot = {
+        width: 40,
+        height: 20,
+        cells: [],
+        entrances: [{ x: 1, y: 10 }],
+        exits: [{ x: 38, y: 10 }],
+        nests: [],
+    };
+    for (let y = 1; y < 19; y++)
+        for (let x = 1; x < 39; x++) {
+            const floor =
+                (x >= 3 && x <= 7 && ((y >= 2 && y <= 6) || (y >= 14 && y <= 18))) ||
+                (x === 5 && y >= 2 && y <= 18) ||
+                y === 10;
+            snapshot.cells.push({ x, y, floor, walkable: floor, wall: !floor, protected: false, locked: false });
+        }
+    Object.assign(c.KDMapData, {
+        GridWidth: 40,
+        GridHeight: 20,
+        StartPosition: snapshot.entrances[0],
+        EndPosition: snapshot.exits[0],
+    });
+    const floor = new Set(snapshot.cells.filter((cell) => cell.floor).map(cellKeyForTest));
+    c.KinkyDungeonMapGet = (x, y) => (floor.has(`${x},${y}`) ? "." : "1");
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 35, y: 10 });
+    const scans = new Map(),
+        last = new Map();
+    for (let turn = 0; turn < 16; turn++) {
+        start(r, snapshot);
+        for (const worker of workers) c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
+        c.Spiderlings.SpinnerAI.completePositiveTurn(1);
+        c.KinkyDungeonCurrentTick++;
+        const ai = c.Spiderlings.SpinnerNativeField.state().ai;
+        let scanned = 0;
+        for (const group of Object.values(ai.groups)) {
+            const searched = ai.plans[group.planId]?.lifecycle?.lastSearchTurn;
+            if (searched === undefined || searched === last.get(group.id)) continue;
+            last.set(group.id, searched);
+            scans.set(group.id, [...(scans.get(group.id) || []), searched]);
+            scanned++;
+        }
+        assert.ok(scanned <= 1, `turn ${turn}: two projects must not both run a full site scan`);
+    }
+    assert.equal(scans.size, 2, "both small projects must take part in replacement scans");
+    for (const [groupId, turns] of scans) {
+        assert.ok(turns.length >= 3, `${groupId} kept scanning: ${turns}`);
+        for (let n = 1; n < turns.length; n++) {
+            const gap = turns[n] - turns[n - 1];
+            assert.ok(gap >= 4 && gap <= 5, `${groupId} scan gap ${gap}: ${turns}`);
+        }
+    }
+});

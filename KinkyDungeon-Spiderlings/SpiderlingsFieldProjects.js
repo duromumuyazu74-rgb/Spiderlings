@@ -1408,6 +1408,9 @@
                 delete life.replacement;
         }
         if (life.lastSearchTurn !== undefined && clock - life.lastSearchTurn < SEARCH_INTERVAL) return false;
+        // A due group that misses this turn's scan budget stays due and scans on a later turn.
+        if (!(planner.siteScanBudget > 0)) return false;
+        planner.siteScanBudget--;
         life.lastSearchTurn = clock;
         const candidate = adapter.candidates(group, offered, true)[0];
         const available = candidate ? adapter.workersFor(candidate, offered) : [];
@@ -1754,6 +1757,11 @@
                 const plan = ai.plans[group.planId];
                 return plan && !["invalid", "abandoned", "retired"].includes(plan.status) && !group.cancelled;
             });
+        // Each replacement site scan examines every candidate cell. Groups whose plans
+        // started together would otherwise all scan on the same turn of every interval,
+        // so each turn admits only an even share of the active projects. At least one
+        // scan stays available for a plan selected earlier in this same turn.
+        planner.siteScanBudget = Math.max(1, Math.ceil(activeProjects().length / SEARCH_INTERVAL));
         ai.projects ||= { version: 1, coverage: [], unmet: [] };
         ai.projects.permits = permits();
         ai.projects.maximum = maximum;
