@@ -11,7 +11,10 @@
     KDMapData.StartPosition = { x: 1, y: 1 };
     KDMapData.EndPosition = { x: 28, y: 1 };
     KDMovePlayer(14, 10, false);
-    const homeNest = spawn("NestEntrance", 5, 5);
+    // The home nest replaces missing roles. A summoned Tunneler heads for the
+    // open west breach and could dig a nest on it, invalidating the saved plan
+    // before the repair closes; this corner leaves it no time to arrive.
+    const homeNest = spawn("NestEntrance", 27, 3);
     const builder = spawn("Spinner", 13, 10);
     builder.SpiderlingsNestParentID = homeNest.id;
     builder.SpiderlingsHuntRole = "builder";
