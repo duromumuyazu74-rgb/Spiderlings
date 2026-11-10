@@ -96,8 +96,51 @@
         return target.player ? KDHostile(member) : KDHostile(member, target);
     }
 
+    function routeGraph(snapshot, includeDoors) {
+        const passable = new Set(
+                (snapshot?.cells || [])
+                    .filter((cell) => (includeDoors ? cell.walkable : cell.floor) && !cell.locked)
+                    .map(cellKey),
+            ),
+            neighbors = new Map();
+        for (const key of passable) {
+            const [x, y] = key.split(",").map(Number);
+            neighbors.set(
+                key,
+                DIRECTIONS.flatMap((direction) => {
+                    const next = `${x + direction.x},${y + direction.y}`;
+                    return passable.has(next)
+                        ? [
+                              {
+                                  key: next,
+                                  corners:
+                                      direction.x && direction.y
+                                          ? [`${x + direction.x},${y}`, `${x},${y + direction.y}`]
+                                          : undefined,
+                              },
+                          ]
+                        : [];
+                }),
+            );
+        }
+        return { passable, neighbors };
+    }
+
+    // Terrain adjacency is static for one cached native snapshot. Occupancy and
+    // work cells stay per-query blockers, so repeated routes share this graph.
+    function snapshotRouteGraph(snapshot, includeDoors = false) {
+        if (!snapshot || mapCache?.snapshot !== snapshot) return undefined;
+        const slot = includeDoors ? "walkableGraph" : "floorGraph";
+        mapCache[slot] ||= routeGraph(snapshot, includeDoors);
+        return mapCache[slot];
+    }
+
     function routeOnSnapshot(snapshot, from, to, blocked = new Set(), passable, neighbors) {
         if (!from || !to) return [];
+        if (!passable) {
+            const graph = snapshotRouteGraph(snapshot);
+            if (graph) ({ passable, neighbors } = graph);
+        }
         const cells =
                 passable || new Set((snapshot?.cells || []).filter((cell) => cell.floor && !cell.locked).map(cellKey)),
             start = cellKey(from),
@@ -149,19 +192,26 @@
     }
 
     function routeDistances(snapshot, work, blocked = new Set(), includeDoors = false) {
-        const passable = new Set(
-                (snapshot?.cells || [])
-                    .filter(
-                        (cell) =>
-                            (includeDoors ? (cell.walkable ?? cell.floor) : cell.floor) &&
-                            !cell.locked &&
-                            !blocked.has(cellKey(cell)),
-                    )
-                    .map(cellKey),
-            ),
+        const graph = blocked.size === 0 ? snapshotRouteGraph(snapshot, includeDoors) : undefined;
+        if (graph && !graph.neighborKeys)
+            graph.neighborKeys = new Map(
+                Array.from(graph.neighbors, ([key, entries]) => [key, entries.map((entry) => entry.key)]),
+            );
+        const passable =
+                graph?.passable ||
+                new Set(
+                    (snapshot?.cells || [])
+                        .filter(
+                            (cell) =>
+                                (includeDoors ? (cell.walkable ?? cell.floor) : cell.floor) &&
+                                !cell.locked &&
+                                !blocked.has(cellKey(cell)),
+                        )
+                        .map(cellKey),
+                ),
             fields = new Map(),
-            neighbors = new Map();
-        for (const key of passable) {
+            neighbors = graph?.neighborKeys || new Map();
+        for (const key of graph ? [] : passable) {
             const [x, y] = key.split(",").map(Number);
             neighbors.set(
                 key,
@@ -377,39 +427,21 @@
         return cells;
     }
 
+    function mainRouteKeys(snapshot) {
+        if (mapCache?.snapshot === snapshot && mapCache.mainRouteKeys) return mapCache.mainRouteKeys;
+        const keys = new Set(routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey));
+        if (mapCache?.snapshot === snapshot) mapCache.mainRouteKeys = keys;
+        return keys;
+    }
+
     function enclosureGeometryFor(snapshot, includeDoors = false) {
-        const byKey = new Map((snapshot.cells || []).map((cell) => [cellKey(cell), cell])),
-            passable = new Set(
-                (snapshot.cells || [])
-                    .filter((cell) => (includeDoors ? cell.walkable : cell.floor) && !cell.locked)
-                    .map(cellKey),
-            ),
-            neighbors = new Map();
-        for (const key of passable) {
-            const [x, y] = key.split(",").map(Number);
-            neighbors.set(
-                key,
-                DIRECTIONS.flatMap((direction) => {
-                    const next = `${x + direction.x},${y + direction.y}`;
-                    return passable.has(next)
-                        ? [
-                              {
-                                  key: next,
-                                  corners:
-                                      direction.x && direction.y
-                                          ? [`${x + direction.x},${y}`, `${x},${y + direction.y}`]
-                                          : undefined,
-                              },
-                          ]
-                        : [];
-                }),
-            );
-        }
+        const { passable, neighbors } =
+            snapshotRouteGraph(snapshot, includeDoors) || routeGraph(snapshot, includeDoors);
         return {
-            byKey,
+            byKey: snapshotCellsByKey(snapshot),
             passable,
             neighbors,
-            routeKeys: new Set(routeOnSnapshot(snapshot, snapshot.entrances?.[0], snapshot.exits?.[0]).map(cellKey)),
+            routeKeys: mainRouteKeys(snapshot),
             gateCache: new Map(),
         };
     }
@@ -1067,7 +1099,10 @@
                 : routeDistances(snapshot, work),
             entities = input.entities || KDMapData.Entities;
         let lines, enclosureGeometry, prisonSnapshot;
-        const interceptionRoutes = new Map();
+        // An unobstructed target-to-exit route depends only on static terrain.
+        if (mapCache?.snapshot === snapshot && !(mapCache.interceptionRoutes?.size <= 256))
+            mapCache.interceptionRoutes = new Map();
+        const interceptionRoutes = mapCache?.snapshot === snapshot ? mapCache.interceptionRoutes : new Map();
         // Occupancy is refreshed every turn; gate connectivity depends only on geometry and endpoints.
         const signature = geometrySignature(snapshot),
             currentLines = () => {
@@ -1685,9 +1720,9 @@
                 ).map(cellKey),
                 cellKey(KinkyDungeonPlayerEntity),
             ]),
-            passable = new Set(snapshot.cells.filter((cell) => cell.walkable && !cell.locked).map(cellKey));
+            { passable, neighbors } = snapshotRouteGraph(snapshot, true);
         const destinations = Array.isArray(destination) ? destination : [destination];
-        return routeOnSnapshot(snapshot, enemy, destinations, blocked, passable);
+        return routeOnSnapshot(snapshot, enemy, destinations, blocked, passable, neighbors);
     }
 
     function constructionYield(enemy) {

@@ -129,13 +129,15 @@
         const values = new Int32Array(index.nodes.length).fill(-1);
         const start = index.nodeIds.get(key(from));
         if (start === undefined || blocked.has(key(from))) return values;
-        const queue = [start];
+        const queue = [start],
+            // Unblocked distance fields are the common case and need no per-edge key.
+            obstructed = blocked.size > 0;
         values[start] = 0;
         for (let offset = 0; offset < queue.length; offset++) {
             const node = queue[offset];
             if (validation) index.metrics.validationVisits++;
             for (const next of index.neighbors[node]) {
-                if (values[next] >= 0 || blocked.has(key(index.nodes[next]))) continue;
+                if (values[next] >= 0 || (obstructed && blocked.has(key(index.nodes[next])))) continue;
                 values[next] = values[node] + 1;
                 queue.push(next);
             }

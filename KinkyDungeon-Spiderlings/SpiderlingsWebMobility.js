@@ -14,6 +14,11 @@
     const same = (a, b) => a.x === b.x && a.y === b.y;
     const web = (cell, keys) =>
         keys ? keys.has(key(cell)) : api.SpinnerNativeField?.isSpiderlingsWebCell(cell) === true;
+    const webAt = (x, y, name, keys) =>
+        keys ? keys.has(name) : api.SpinnerNativeField?.isSpiderlingsWebCell({ x, y }) === true;
+    // Searches stay inside the map and its one-cell border, far below this span.
+    const CELL_SPAN = 4096,
+        cellId = (x, y) => (y + 2) * CELL_SPAN + x + 2;
 
     function isMobileSpider(actor) {
         const tags = actor?.Enemy?.tags;
@@ -122,35 +127,35 @@
         );
     }
 
-    function passable(actor, x, y, input, goal = false) {
+    // `name` is the cell's native "x,y" key, built once by the search.
+    function passable(actor, x, y, name, input, goal = false) {
         const tile = KinkyDungeonMapGet(x, y),
-            cell = { x, y },
-            mapTile = KinkyDungeonTilesGet(`${x},${y}`);
+            mapTile = KinkyDungeonTilesGet(name);
         if (!input.tiles.includes(tile) || (input.noDoors && tile === "D")) return false;
         if (!input.ignoreLocks && mapTile?.Lock) {
             const lock = KDLocks[mapTile.Lock];
             if (!lock?.canNPCPass?.(x, y, mapTile, actor)) return false;
         }
         if (input.requireLight && KinkyDungeonVisionGet(x, y) <= 0) return false;
-        if (input.needDoorMemory && tile === "d" && !KDOpenDoorTiles.includes(KDMapData.TilesMemory?.[`${x},${y}`]))
+        if (input.needDoorMemory && tile === "d" && !KDOpenDoorTiles.includes(KDMapData.TilesMemory?.[name]))
             return false;
         if (input.blockPlayer && KinkyDungeonPlayerEntity.x === x && KinkyDungeonPlayerEntity.y === y && !goal)
             return false;
-        if (web(cell, input.webKeys)) {
-            if (input.occupiedKeys.has(key(cell))) return false;
+        if (webAt(x, y, name, input.webKeys)) {
+            if (input.occupiedKeys.has(name)) return false;
             return true;
         }
-        if (input.blockEnemy && input.occupiedKeys.has(key(cell)) && !goal) return false;
+        if (input.blockEnemy && input.occupiedKeys.has(name) && !goal) return false;
         const occupant = KinkyDungeonEnemyAt(x, y);
         return !occupant?.Enemy?.immobile || goal;
     }
 
-    function trafficCost(x, y, tile, ignoreTrafficLaws, ignoreAllWeighting) {
-        const mapTile = KinkyDungeonTilesGet(`${x},${y}`);
+    function trafficCost(x, y, name, tile, ignoreTrafficLaws, ignoreAllWeighting) {
+        const mapTile = KinkyDungeonTilesGet(name);
         let cost = 0;
         if (!ignoreTrafficLaws) {
             const traffic = { V: 14, N: 30, D: 3, d: -2, g: 9, L: 9, T: 4 };
-            cost = KDEffectTileTagsLoc(`${x},${y}`)?.danger ? 30 : traffic[tile] || 0;
+            cost = KDEffectTileTagsLoc(name)?.danger ? 30 : traffic[tile] || 0;
             if (tile === "V" && mapTile?.Sfty) cost = 0;
             cost += (mapTile?.Lock ? 2 : 0) + (mapTile?.OL ? 12 : 0);
             cost += KDMapData.Traffic?.[y]?.[x] || 0;
@@ -220,46 +225,51 @@
         // once, rather than once per incoming edge and diagonal corner check.
         // Keep these results inside this call so later movement, doors and light
         // changes still use the existing route invalidation and tick lifetime.
+        // Every edge re-reads its cells, so the search numbers them instead of
+        // rebuilding "x,y" strings; the native key is built once per new cell.
         const passages = new Map(),
             costs = new Map(),
             canPass = (x, y, goal = false) => {
-                const cellKey = `${x},${y}:${+goal}`;
-                if (!passages.has(cellKey)) passages.set(cellKey, passable(actor, x, y, input, goal));
-                return passages.get(cellKey);
+                const id = cellId(x, y) * 2 + (goal ? 1 : 0);
+                if (!passages.has(id)) passages.set(id, passable(actor, x, y, `${x},${y}`, input, goal));
+                return passages.get(id);
             },
             stepCost = (x, y) => {
-                const cellKey = `${x},${y}`;
-                if (!costs.has(cellKey))
+                const id = cellId(x, y);
+                if (!costs.has(id)) {
+                    const name = `${x},${y}`;
                     costs.set(
-                        cellKey,
-                        (web({ x, y }, input.webKeys) ? WEB_COST : 1) +
+                        id,
+                        (webAt(x, y, name, input.webKeys) ? WEB_COST : 1) +
                             trafficCost(
                                 x,
                                 y,
+                                name,
                                 KinkyDungeonMapGet(x, y),
                                 input.ignoreTrafficLaws,
                                 input.ignoreAllWeighting,
                             ),
                     );
-                return costs.get(cellKey);
+                }
+                return costs.get(id);
             },
             heuristic = (x, y) => Math.max(Math.abs(end.x - x), Math.abs(end.y - y)) * WEB_COST,
             heap = [],
-            best = new Map([[key(start), 0]]),
+            startId = cellId(start.x, start.y),
+            best = new Map([[startId, 0]]),
             parent = new Map(),
             limit = input.trimLongDistance && typeof KDPFTrim === "number" ? KDPFTrim : 10000;
         push(heap, { ...start, g: 0, f: heuristic(start.x, start.y) });
         let visited = 0;
         while (heap.length && visited++ < limit) {
             const current = pop(heap),
-                currentKey = key(current);
-            if (current.g !== best.get(currentKey)) continue;
+                currentId = cellId(current.x, current.y);
+            if (current.g !== best.get(currentId)) continue;
             if (same(current, end)) {
                 const path = [];
-                let cursor = currentKey;
-                while (cursor !== key(start)) {
-                    const [x, y] = cursor.split(",").map(Number);
-                    path.push({ x, y });
+                let cursor = currentId;
+                while (cursor !== startId) {
+                    path.push({ x: (cursor % CELL_SPAN) - 2, y: Math.floor(cursor / CELL_SPAN) - 2 });
                     cursor = parent.get(cursor);
                 }
                 path.reverse();
@@ -277,10 +287,10 @@
                         continue;
                     const step = stepCost(x, y),
                         nextCost = current.g + step,
-                        nextKey = `${x},${y}`;
-                    if (nextCost >= (best.get(nextKey) ?? Infinity)) continue;
-                    best.set(nextKey, nextCost);
-                    parent.set(nextKey, currentKey);
+                        nextId = cellId(x, y);
+                    if (nextCost >= (best.get(nextId) ?? Infinity)) continue;
+                    best.set(nextId, nextCost);
+                    parent.set(nextId, currentId);
                     push(heap, { x, y, g: nextCost, f: nextCost + heuristic(x, y) });
                 }
         }

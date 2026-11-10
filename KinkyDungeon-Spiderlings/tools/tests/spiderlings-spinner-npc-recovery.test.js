@@ -242,10 +242,13 @@ test("NPC departure requests native pursuit before a fresh binding hit and after
     const r = fixture(),
         source = r.sources[0];
     assert.equal(r.api.wantsPursuit(source, r.target), false);
+    assert.equal(r.api.pursues(source), false, "no recorded departure means no pursuit target");
     r.breach();
     source.x = 14;
     const before = JSON.stringify(r.api.state());
     assert.equal(r.api.wantsPursuit(source, r.target), true);
+    assert.equal(r.api.pursues(source), true);
+    assert.equal(r.api.pursues({ ...source, id: 99 }), false);
     assert.equal(JSON.stringify(r.api.state()), before);
     assert.equal(r.api.wantsPursuit(source, r.c.KinkyDungeonPlayerEntity), false);
     assert.equal(r.api.wantsPursuit({ ...source, id: 99 }, r.target), false);
@@ -265,6 +268,7 @@ test("NPC departure requests native pursuit before a fresh binding hit and after
     r.c.Spiderlings.NPCWrapping = undefined;
     r.target.x = 5;
     assert.equal(r.api.wantsPursuit(source, r.target), false, "returning to the field releases pursuit");
+    assert.equal(r.api.pursues(source), false);
     assert.deepEqual(r.itemCalls, []);
 });
 

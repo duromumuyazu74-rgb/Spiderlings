@@ -60,6 +60,16 @@
         );
     }
 
+    // A pursuit needs its target's recorded recovery or departure, so only
+    // those targets are examined. Most turns have none.
+    function pursues(source) {
+        const targets = new Set([...Object.keys(records()), ...Object.keys(departures())]);
+        return (
+            targets.size > 0 &&
+            entities().some((target) => targets.has(targetKey(target)) && wantsPursuit(source, target))
+        );
+    }
+
     function usesEntity(id, exceptTargetId) {
         if (id === undefined) return false;
         return Object.values(records()).some(
@@ -417,6 +427,7 @@
         recordForTarget,
         departureForTarget,
         wantsPursuit,
+        pursues,
         onEnemyMove,
         onSuccessfulNativeSpinnerHit,
         handleEnemyTurn,
