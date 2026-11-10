@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.21.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.22.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.22 turn-performance candidate (2026-11-11)
+
+Unobstructed distance fields stay on the route graph across turns (at most 64 origins) and the actor-occupancy table is shared while no actor has moved, lowering Hunting Grounds window means by about 3–8%. Replacement site scans share a per-turn budget of max(1, ceil(active projects / 4)), so projects started together no longer scan on the same turn; turns of at least 1.5× the window median fell from 24.5 to 14.5 per run. Enclosure gate reachability is answered from one breadth-first tree per origin over unblocked terrain instead of about 430 full-map searches after each door change; the slowest Hunting Grounds turns fell from 179 to 114 ms (cat7) and from 148 to 105 ms (lib12).
+
+Each change was measured with the same seed on KD 5.4.92 against the source just before it, as the mean of two rounds; Infestation stayed within noise. After the distance-field and gate-tree changes, the 60-turn map state on five floors matches except native `spriteID` and the diagnostic counters `plannerWorkLast/Peak.routeChecks`. A replacement scan that misses the budget runs on a later turn.
+
+The same `Spiderlings_0.92.39-test.22.zip` passed all 77 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `0be6a0361d7f03252efc6c7269db6942d2c10f98`, unchanged since test.21. It has 228 allowlisted entries, 27,466,752 bytes and SHA-256 `4ac2382851de61d29e81163a9c67a8ce028937fde783d8f6d20ec068fca82364`. Full native evidence is retained in run `2026-11-10T17-02-38-911Z-0.92.39-test.22`.
 
 ## Test.21 turn-performance candidate (2026-11-10)
 
