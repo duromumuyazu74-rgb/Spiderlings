@@ -16,6 +16,8 @@
             { x: -1, y: 1 },
             { x: -1, y: -1 },
         ];
+    // Bounds retained origins on one map; each field holds one entry per walkable cell.
+    const SHARED_DISTANCE_FIELDS = 64;
     const clone = (value) => JSON.parse(JSON.stringify(value));
     const cellKey = (cell) => `${cell.x},${cell.y}`;
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
@@ -23,6 +25,7 @@
     let preparedTick = -1;
     let observedGroups = new Map();
     let mapCache;
+    let occupancyCache;
     let passageCache;
     let enclosureGates;
 
@@ -209,7 +212,9 @@
                         )
                         .map(cellKey),
                 ),
-            fields = new Map(),
+            // An unobstructed field depends only on static terrain and its origin, so
+            // callers within and across turns share it. Blocked queries stay private.
+            fields = graph ? (graph.distanceFields ||= new Map()) : new Map(),
             neighbors = graph?.neighborKeys || new Map();
         for (const key of graph ? [] : passable) {
             const [x, y] = key.split(",").map(Number);
@@ -245,6 +250,7 @@
                     }
                 }
                 fields.set(start, field);
+                if (graph && fields.size > SHARED_DISTANCE_FIELDS) fields.delete(fields.keys().next().value);
             }
             return fields.get(start).get(goal) ?? Infinity;
         };
@@ -1712,14 +1718,61 @@
         );
     }
 
+    // Every route query blocks the same living actors, minus the mover. The rows
+    // record each value that decision reads, so any move, death, arrival or
+    // reordering rebuilds the table and an unchanged map shares it.
+    function actorOccupancy() {
+        const entities = KDMapData.Entities,
+            player = KinkyDungeonPlayerEntity,
+            blocks = (entity) => entity.hp > 0 && !api.SpinnerNativeField.isOwnedProxy(entity),
+            cached = occupancyCache;
+        if (
+            cached?.entities === entities &&
+            cached.rows.length === entities.length &&
+            cached.playerX === player.x &&
+            cached.playerY === player.y &&
+            cached.rows.every((row, index) => {
+                const entity = entities[index];
+                return (
+                    row.entity === entity &&
+                    row.id === entity.id &&
+                    row.x === entity.x &&
+                    row.y === entity.y &&
+                    row.blocks === blocks(entity)
+                );
+            })
+        )
+            return cached;
+        const counts = new Map(),
+            byId = new Map(),
+            rows = [];
+        const add = (key) => counts.set(key, (counts.get(key) || 0) + 1);
+        for (const entity of entities) {
+            const row = { entity, id: entity.id, x: entity.x, y: entity.y, blocks: blocks(entity) };
+            rows.push(row);
+            if (!row.blocks) continue;
+            const key = cellKey(entity);
+            add(key);
+            if (!byId.has(entity.id)) byId.set(entity.id, []);
+            byId.get(entity.id).push(key);
+        }
+        add(cellKey(player));
+        occupancyCache = { entities, rows, counts, byId, playerX: player.x, playerY: player.y };
+        return occupancyCache;
+    }
+
     function occupancyRoute(enemy, destination) {
         const snapshot = nativeMapSnapshot(),
-            blocked = new Set([
-                ...KDMapData.Entities.filter(
-                    (entity) => entity.hp > 0 && entity.id !== enemy.id && !api.SpinnerNativeField.isOwnedProxy(entity),
-                ).map(cellKey),
-                cellKey(KinkyDungeonPlayerEntity),
-            ]),
+            occupancy = actorOccupancy(),
+            own = occupancy.byId.get(enemy.id),
+            // Read-only view of "every blocker except this mover" for the route search.
+            blocked = {
+                has(key) {
+                    const total = occupancy.counts.get(key);
+                    if (!total || !own) return !!total;
+                    return total > own.reduce((sum, mine) => sum + (mine === key ? 1 : 0), 0);
+                },
+            },
             { passable, neighbors } = snapshotRouteGraph(snapshot, true);
         const destinations = Array.isArray(destination) ? destination : [destination];
         return routeOnSnapshot(snapshot, enemy, destinations, blocked, passable, neighbors);
