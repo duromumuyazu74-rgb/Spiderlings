@@ -1856,6 +1856,19 @@ test("a cramped map selects its largest reachable legal ring without inventing s
         assert.equal(plan.fieldIds.length, Math.max(1, plan.radius - 1));
         assert.ok(plan.cells.every((key) => snapshot.cells.some((cell) => cellKeyForTest(cell) === key)));
     }
+    // In a 7x5 room every radius-2 ring spans the full height, cutting the west entrance
+    // from the east exit; only a radius-1 ring leaves both sides an outside approach.
+    const worker = spinner(1, 8, 4),
+        r = runtime([worker]),
+        snapshot = mapSnapshot();
+    delete snapshot.candidateLines;
+    snapshot.cells = snapshot.cells.filter((cell) => cell.x >= 5 && cell.x <= 11 && cell.y >= 2 && cell.y <= 6);
+    snapshot.entrances = [{ x: 5, y: 4 }];
+    snapshot.exits = [{ x: 11, y: 4 }];
+    const ai = start(r, snapshot),
+        plan = ai.plans[Object.values(ai.groups)[0].planId];
+    assert.equal(plan.kind, "enclosure");
+    assert.equal(plan.radius, 1, "A ring that separates the entrance from the exit has no reachable gate");
 });
 
 test("enclosure proposals keep mobile prey off every ring and stationary actors out of the usable core", () => {
