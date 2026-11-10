@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.20.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.21.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.21 turn-performance candidate (2026-11-10)
+
+Spinner planning reuses turn-invariant route, structure and rivalry facts, and rivalry prey checks run in cost order. On KD 5.4.92 with the same seed over 60 waited turns, median Hunting Grounds turns fell from 72–127 ms to 39–80 ms and Infestation turns from 40–52 ms to 26–28 ms. The map state after those turns matches test.20 except native `spriteID` timestamps and the diagnostic counter `plannerWorkLast.routeChecks`.
+
+The same `Spiderlings_0.92.39-test.21.zip` passed all 77 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `0be6a0361d7f03252efc6c7269db6942d2c10f98`. It has 228 allowlisted entries, 27,464,724 bytes and SHA-256 `35b46f22586ca3d01a79cdde2679a63f458af4b62b4539a024c751eedb4640df`. Full native evidence is retained in run `2026-11-10T14-02-12-044Z-0.92.39-test.21`.
+
+KD 5.5.12 loads some assets asynchronously: a one-second overlay after a native reload, 1×1 placeholder item textures and pose meshes rebuilt after their textures load. The acceptance scenarios now wait for these before checking; their assertions are unchanged, and the published test.20 package fails the previous scenarios in the same way. `saved-field-guard` remains nondeterministic on 5.5.12: draw frames advance `KDRandom`, so a nest can summon a Tunneler that digs a new nest on the saved ring and the planner retires the field. It passed in this run.
 
 ## Test.20 native registration and test-boundary cleanup (2026-10-31)
 
