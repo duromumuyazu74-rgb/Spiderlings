@@ -42,6 +42,17 @@ const SPIDERLINGS = globalThis.Spiderlings;
             KDMapData.SpiderlingsHuntingGrounds?.garrisonVersion >= 2
         );
     }
+    // One native target selection compares a single actor with every nearby
+    // entity. Faction, party and custody facts are fixed during that synchronous
+    // pass, so each entity is classified once instead of once per pair.
+    let selectionFacts = null;
+    function selectionFact(entity, name, classify) {
+        if (!selectionFacts || !entity) return classify(entity);
+        let facts = selectionFacts.get(entity);
+        if (!facts) selectionFacts.set(entity, (facts = {}));
+        if (!(name in facts)) facts[name] = classify(entity);
+        return facts[name];
+    }
     function isHuntingPrey(enemy, other) {
         return (
             onHuntingGrounds() &&
@@ -53,11 +64,19 @@ const SPIDERLINGS = globalThis.Spiderlings;
             !other.Enemy.tags?.scenery &&
             !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other) &&
             isIndependentNPC(other) &&
-            SPIDERLINGS.HuntingGrounds.independentCombatant(other)
+            isIndependentCombatant(other)
+        );
+    }
+    function isIndependentCombatant(entity) {
+        return selectionFact(entity, "combatant", (subject) =>
+            SPIDERLINGS.HuntingGrounds.independentCombatant(subject),
         );
     }
     SPIDERLINGS.HuntingGrounds = { active: onHuntingGrounds, isPrey: isHuntingPrey };
     function isIndependentNPC(entity) {
+        return selectionFact(entity, "independent", classifyIndependentNPC);
+    }
+    function classifyIndependentNPC(entity) {
         return (
             entity?.Enemy &&
             entity.hp > 0 &&
@@ -70,6 +89,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
         );
     }
     function isHostileSpiderlingTarget(entity) {
+        return selectionFact(entity, "spiderling", classifyHostileSpiderlingTarget);
+    }
+    function classifyHostileSpiderlingTarget(entity) {
         return (
             entity &&
             targets.has(entity.Enemy?.name) &&
@@ -82,12 +104,15 @@ const SPIDERLINGS = globalThis.Spiderlings;
         );
     }
     function isMaidRival(entity) {
+        return selectionFact(entity, "maid", classifyMaidRival);
+    }
+    function classifyMaidRival(entity) {
         return (
             entity?.Enemy &&
             (KDGetFaction(entity) === "Maidforce" ||
                 (["MaidKnightHeavy", "MaidKnightLight"].includes(entity.Enemy.name) &&
                     KDGetFaction(entity) === "Adventurer")) &&
-            (!onHuntingGrounds() || SPIDERLINGS.HuntingGrounds.independentCombatant(entity)) &&
+            (!onHuntingGrounds() || isIndependentCombatant(entity)) &&
             !entity.allied &&
             !entity.Enemy.allied &&
             !(entity.ceasefire > 0) &&
@@ -96,6 +121,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
         );
     }
     function isHostileWebTarget(entity) {
+        return selectionFact(entity, "web", classifyHostileWebTarget);
+    }
+    function classifyHostileWebTarget(entity) {
         return (
             SPIDERLINGS.SpinnerNativeField?.isOwnedProxy(entity) === true &&
             KDGetFaction(entity) === "Enemy" &&
@@ -123,7 +151,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             isMaidRival(entity) ||
             isHostileSpiderlingTarget(entity) ||
-            (onHuntingGrounds() && isIndependentNPC(entity) && SPIDERLINGS.HuntingGrounds.independentCombatant(entity))
+            (onHuntingGrounds() && isIndependentNPC(entity) && isIndependentCombatant(entity))
         );
     }
     function perceivesRival(enemy, target) {
@@ -148,9 +176,18 @@ const SPIDERLINGS = globalThis.Spiderlings;
     KDHostile.spiderlingsMaidHostility = true;
     if (typeof KinkyDungeonNearestPlayer == "function") {
         const nativeNearest = KinkyDungeonNearestPlayer;
-        KinkyDungeonNearestPlayer = function (enemy, requireVision, decoy, visionRadius, aiData) {
+        KinkyDungeonNearestPlayer = function (enemy, _requireVision, decoy) {
             if (zeroTimeUpdate || !decoy || !(enemy?.hp > 0) || !isRivalActor(enemy))
                 return nativeNearest.apply(this, arguments);
+            const outerFacts = selectionFacts;
+            selectionFacts = outerFacts || new Map();
+            try {
+                return selectRival.apply(this, arguments);
+            } finally {
+                selectionFacts = outerFacts;
+            }
+        };
+        const selectRival = function (enemy, requireVision, decoy, visionRadius, aiData) {
             let radius = visionRadius || KDEnemyVisionRadius(enemy);
             if (!visionRadius && enemy.blind && !enemy.aware) radius = 1.5;
             const player = KinkyDungeonPlayerEntity;

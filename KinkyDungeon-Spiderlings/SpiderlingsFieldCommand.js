@@ -123,11 +123,19 @@
     }
 
     function requestStaffing(encounter, entry) {
+        // The summary reads each member several times; its entity is fixed for this synchronous count.
+        const found = new Map(),
+            entityFor = (member) => {
+                if (!found.has(member))
+                    found.set(
+                        member,
+                        KDMapData.Entities.find((entity) => same(entity.id, member.id)),
+                    );
+                return found.get(member);
+            };
         const deployed = requestMembers(encounter, entry).filter(
-            (member) =>
-                entry.kind !== "residency" || eligible(KDMapData.Entities.find((entity) => same(entity.id, member.id))),
+            (member) => entry.kind !== "residency" || eligible(entityFor(member)),
         );
-        const entityFor = (member) => KDMapData.Entities.find((entity) => same(entity.id, member.id));
         const present = (member) => member.phase !== "returning" && atSite(entityFor(member), entry.fieldId, encounter);
         const capable = deployed.filter((member) => servesRequest(entityFor(member), entry, encounter));
         return {
@@ -207,7 +215,7 @@
             entity?.SpiderlingsChamberBuilder ||
             entity?.SpiderlingsTaskNestDefenderTarget !== undefined ||
             api.FieldCustody?.assigned(entity) ||
-            KDMapData.Entities.some((target) => api.SpinnerNPCRecovery?.wantsPursuit?.(entity, target))
+            api.SpinnerNPCRecovery?.pursues?.(entity)
         );
     }
 

@@ -4530,7 +4530,11 @@ test("pending NPC recovery pursuit cannot be borrowed across fields", () => {
     const { c, command, encounter, receiver, distances } = loanScene();
     const prey = { id: 91, x: 7, y: 6, hp: 20, Enemy: { name: "MaidKnightHeavy" } };
     c.KDMapData.Entities.push(prey);
-    c.Spiderlings.SpinnerNPCRecovery = { wantsPursuit: (source, target) => source.id !== 4 && target === prey };
+    const wantsPursuit = (source, target) => source.id !== 4 && target === prey;
+    c.Spiderlings.SpinnerNPCRecovery = {
+        wantsPursuit,
+        pursues: (source) => c.KDMapData.Entities.some((target) => wantsPursuit(source, target)),
+    };
     const request = command.request(encounter, receiver.id, "recovery", 2, { x: 13, y: 6 });
     command.allocate(encounter, distances);
     assert.equal(request.deployed, 0);

@@ -799,8 +799,52 @@
         return { state: next, added: true };
     }
 
+    const solidByState = new WeakMap();
+
+    // Every value solidCells reads, in reading order. Replaced graphs and
+    // in-place structure edits both change it, so a match proves reuse is exact.
+    function solidStamp(state) {
+        const stamp = [];
+        for (const anchor of state.anchors || [])
+            stamp.push(anchor.id, anchor.x, anchor.y, !!anchor.built, anchor.hp > 0, !!anchor.collapsed);
+        for (const link of state.links || []) {
+            const built = link.builtCells || [];
+            stamp.push(link.id, link.a, link.b, link.hp > 0, !!link.collapsed, !!link.connected, built.length);
+            for (const cell of built) stamp.push(cell.x, cell.y);
+        }
+        return stamp;
+    }
+
+    function solidState(state) {
+        const stamp = solidStamp(state),
+            cached = solidByState.get(state);
+        if (cached?.stamp.length === stamp.length && stamp.every((value, index) => value === cached.stamp[index]))
+            return cached;
+        const cells = computeSolidCells(state);
+        // Results are shared between callers; an accidental write must fail loudly.
+        for (const cell of cells) {
+            Object.freeze(cell.anchorIds);
+            Object.freeze(cell.linkIds);
+            Object.freeze(cell);
+        }
+        const entry = { stamp, cells: Object.freeze(cells), keys: undefined };
+        solidByState.set(state, entry);
+        return entry;
+    }
+
     function solidCells(state) {
         if (!state || state.collapsed) return [];
+        return solidState(state).cells;
+    }
+
+    function solidKeySet(state) {
+        if (!state || state.collapsed) return new Set();
+        const entry = solidState(state);
+        entry.keys ||= new Set(entry.cells.map(key));
+        return entry.keys;
+    }
+
+    function computeSolidCells(state) {
         const cells = new Map();
         for (const anchor of state.anchors || [])
             if (anchor.built && anchor.hp > 0 && !anchor.collapsed)
@@ -842,7 +886,7 @@
                     return link?.prepared && link.hp > 0 && !link.collapsed;
                 })
             );
-        const solids = solidKeys || new Set(solidCells(state).map(key)),
+        const solids = solidKeys || solidKeySet(state),
             gate = key(field.gateCell);
         if (!field.boundaryCells.every((cell) => key(cell) === gate || solids.has(key(cell)))) return false;
         return state.links
@@ -864,7 +908,7 @@
                     );
                 })
             );
-        const solids = solidKeys || new Set(solidCells(state).map(key));
+        const solids = solidKeys || solidKeySet(state);
         return (
             field.boundaryCells.every((cell) => solids.has(key(cell))) &&
             state.links.filter((link) => link.owners.includes(field.id)).every((link) => link.connected && link.hp > 0)
@@ -872,7 +916,7 @@
     }
 
     function refresh(state) {
-        const solidKeys = new Set(solidCells(state).map(key));
+        const solidKeys = solidKeySet(state);
         for (const field of Object.values(state.fields || {}).sort((a, b) => a.layer - b.layer)) {
             if (field.retired) {
                 field.phase = "retired";
@@ -1672,7 +1716,7 @@
 
     function flood(state, start, map, goal) {
         const floors = new Set(map.floor || []),
-            blocked = new Set(solidCells(state).map(key)),
+            blocked = solidKeySet(state),
             initial = key(start),
             queue = [point(start)],
             seen = new Set([initial]);
@@ -1754,7 +1798,7 @@
 
     function inspect(state) {
         const snapshot = clone(state);
-        snapshot.solidCells = solidCells(snapshot);
+        snapshot.solidCells = clone(solidCells(snapshot));
         return snapshot;
     }
 

@@ -63,6 +63,37 @@ test("explicit retirement preserves paid residual silk but ends capture and grad
     assert.equal(topology.solidCells(state).length, 0);
 });
 
+test("physical cells follow in-place structure edits while unchanged queries share one read-only result", () => {
+    const topology = rules(),
+        clear = (cell) => ({ cell, inBounds: true, floor: true, protected: false, occupied: false });
+    let state = topology.createEnclosure({
+        compositeId: "shared",
+        owners: [1, 2],
+        map: floorMap(),
+        layers: [{ id: "shared-inner", vertices: rectangle(10, 6, 14, 10), gate: { x: 10, y: 8 } }],
+    });
+    for (let n = 0; n < 80; n++) {
+        const action = topology.nextWorkAction(state, 1, { x: 12, y: 8 });
+        if (!action) break;
+        state = topology.applyAction(state, { ...action, ownerId: 1 }, clear(action.cell)).state;
+    }
+    const built = topology.solidCells(state),
+        before = JSON.stringify(built);
+    assert.equal(topology.solidCells(state), built);
+    assert.throws(() => built.push({ x: 0, y: 0, anchorIds: [], linkIds: [] }), { name: "TypeError" });
+    assert.throws(() => built[0].linkIds.push("foreign"), { name: "TypeError" });
+    const link = state.links.find((entry) => entry.builtCells.length > 0),
+        hp = link.hp,
+        lost = link.builtCells.at(-1);
+    link.hp = 0;
+    assert.ok(topology.solidCells(state).length < built.length, "a broken link stops being solid in the same graph");
+    link.hp = hp;
+    link.builtCells.pop();
+    assert.ok(!topology.solidCells(state).some((cell) => cell.x === lost.x && cell.y === lost.y));
+    link.builtCells.push(lost);
+    assert.equal(JSON.stringify(topology.solidCells(state)), before);
+});
+
 test("retirement preserves shared active silk and occupied residuals until they become unused", () => {
     const topology = rules();
     let state = topology.createPhysicalGraph({
