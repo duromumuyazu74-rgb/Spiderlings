@@ -82,13 +82,17 @@
             KinkyDungeonCastSpell(x, 10, KinkyDungeonFindSpell(name, true), mage).result === "Cast",
             `Mage cast failed: ${name}`,
         );
-    const reload = () => {
+    const reload = async () => {
         const id = mage.id,
             saved = KinkyDungeonSaveGame(true);
         const data = typeof saved === "string" ? saved : LZString.compressToBase64(JSON.stringify(saved));
         expect(KinkyDungeonLoadGame(data, true), "Native save reload failed");
         mage = KDMapData.Entities.find((enemy) => enemy.id === id);
         expect(mage, "Reload lost the Mage");
+        // KD 5.5 skips drawing the scene for one second after a native load; 5.4 has no such overlay.
+        const deadline = performance.now() + 3000;
+        while (typeof KDShowLoading !== "undefined" && KDShowLoading && performance.now() < deadline)
+            await new Promise((resolve) => setTimeout(resolve, 50));
     };
     setup();
     await check("idle", false);
@@ -105,7 +109,7 @@
     KinkyDungeonAdvanceTime(0, true);
     await check("bolt-zero-time", true);
     expect(JSON.stringify(mage.SpiderlingsMageCastGlow) === record, "Zero time changed body glow");
-    reload();
+    await reload();
     await check("bolt-reloaded", true);
     expect(JSON.stringify(mage.SpiderlingsMageCastGlow) === record, "Reload consumed body glow");
     await turn();
@@ -123,7 +127,7 @@
         await new Promise((resolve) => setTimeout(resolve, 1200));
         await check(`${name}-after-real-time`, true);
         images[name + "-charging"] = document.querySelector("canvas").toDataURL("image/png");
-        reload();
+        await reload();
         await check(`${name}-reloaded`, true);
         for (let count = 0; count < 7; count++) {
             const state = KDMapData.SpiderlingsMageSpells;
