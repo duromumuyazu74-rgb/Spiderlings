@@ -53,6 +53,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
         if (!(name in facts)) facts[name] = classify(entity);
         return facts[name];
     }
+    function factionOf(entity) {
+        return selectionFact(entity, "faction", KDGetFaction);
+    }
     function isHuntingPrey(enemy, other) {
         return (
             onHuntingGrounds() &&
@@ -60,9 +63,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
             other !== enemy &&
             other?.Enemy &&
             other.Enemy.name !== "NestEntrance" &&
-            KDGetFaction(other) !== KDGetFaction(enemy) &&
             !other.Enemy.tags?.scenery &&
             !SPIDERLINGS.SpinnerNativeField?.isOwnedProxy?.(other) &&
+            factionOf(other) !== factionOf(enemy) &&
             isIndependentNPC(other) &&
             isIndependentCombatant(other)
         );
@@ -95,7 +98,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
         return (
             entity &&
             targets.has(entity.Enemy?.name) &&
-            KDGetFaction(entity) === "Enemy" &&
+            factionOf(entity) === "Enemy" &&
             !entity.allied &&
             !entity.Enemy.allied &&
             !(entity.ceasefire > 0) &&
@@ -109,9 +112,9 @@ const SPIDERLINGS = globalThis.Spiderlings;
     function classifyMaidRival(entity) {
         return (
             entity?.Enemy &&
-            (KDGetFaction(entity) === "Maidforce" ||
+            (factionOf(entity) === "Maidforce" ||
                 (["MaidKnightHeavy", "MaidKnightLight"].includes(entity.Enemy.name) &&
-                    KDGetFaction(entity) === "Adventurer")) &&
+                    factionOf(entity) === "Adventurer")) &&
             (!onHuntingGrounds() || isIndependentCombatant(entity)) &&
             !entity.allied &&
             !entity.Enemy.allied &&
@@ -126,7 +129,7 @@ const SPIDERLINGS = globalThis.Spiderlings;
     function classifyHostileWebTarget(entity) {
         return (
             SPIDERLINGS.SpinnerNativeField?.isOwnedProxy(entity) === true &&
-            KDGetFaction(entity) === "Enemy" &&
+            factionOf(entity) === "Enemy" &&
             !entity.allied &&
             !entity.Enemy.allied &&
             !(entity.ceasefire > 0)
