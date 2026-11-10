@@ -65,10 +65,74 @@ function syncUpstream(cache, source = remote, ref = branch) {
     };
 }
 
+function containsImage(directory) {
+    return fs
+        .readdirSync(directory, { withFileTypes: true })
+        .some((entry) =>
+            entry.isDirectory()
+                ? containsImage(path.join(directory, entry.name))
+                : entry.name.toLowerCase().endsWith(".png"),
+        );
+}
+
+// Upstream loads one model atlas per Models folder once its generator exists. Its own
+// script writes configs into the checkout, so derive the same packs here instead.
+function modelFolders(upstream) {
+    if (!fs.existsSync(path.join(upstream.root, "tools", "gen_model_atlas_confs.py"))) return undefined;
+    const models = path.join(upstream.root, "Models");
+    return fs
+        .readdirSync(models, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && containsImage(path.join(models, entry.name)))
+        .map((entry) => entry.name)
+        .sort();
+}
+
+function packModelFolders(upstream, output, executable, folders) {
+    const fd = fs.openSync(path.join(output, "pack-model-folders.log"), "w");
+    try {
+        for (const [name, directory] of [
+            ["models", "models"],
+            ["models_mobile", "mobile"],
+        ]) {
+            const base = fs.readFileSync(path.join(upstream.root, "tools", `wtxpck.${name}.conf`), "utf8"),
+                atlases = path.join(output, "TextureAtlas", directory),
+                configs = path.join(output, "model-folders", directory);
+            fs.mkdirSync(atlases, { recursive: true });
+            fs.mkdirSync(configs, { recursive: true });
+            for (const folder of folders) {
+                const file = path.join(configs, `wtxpck.${name}.${folder}.conf`);
+                fs.writeFileSync(
+                    file,
+                    base
+                        .replace(
+                            /^input=.*;/gm,
+                            `input=${path.join(upstream.root, "Models", folder).replaceAll("\\", "/")}/;`,
+                        )
+                        .replace(/^prefix=.*;/gm, `prefix=Models/${folder};`)
+                        .replace(/^output=.*;/gm, `output=${atlases.replaceAll("\\", "/")}/;`)
+                        .replace(/^atlas_prefix=.*;/gm, `atlas_prefix=${name}_${folder}_;`),
+                );
+                execFileSync(executable, [file], { cwd: configs, windowsHide: true, stdio: ["ignore", fd, fd] });
+                if (!fs.existsSync(path.join(atlases, `${name}_${folder}_0000.json`)))
+                    throw new Error(
+                        `Upstream ${name} atlas for ${folder} was not generated; inspect pack-model-folders.log.`,
+                    );
+            }
+        }
+    } finally {
+        fs.closeSync(fd);
+    }
+}
+
 function compile(upstream, cache) {
     const output = path.join(cache, "builds", upstream.commit);
     const receipt = path.join(output, "prepared.json");
-    if (fs.existsSync(receipt)) return JSON.parse(fs.readFileSync(receipt, "utf8"));
+    const folders = modelFolders(upstream);
+    if (fs.existsSync(receipt)) {
+        const prepared = JSON.parse(fs.readFileSync(receipt, "utf8"));
+        // A build prepared before per-folder atlases were packed is incomplete for this commit.
+        if (!folders || prepared.modelFolderAtlases === folders.length) return prepared;
+    }
     fs.mkdirSync(output, { recursive: true });
     const configPath = path.join(upstream.root, "tsconfig.json");
     const config = ts.readConfigFile(configPath, ts.sys.readFile);
@@ -117,6 +181,7 @@ function compile(upstream, cache) {
             throw new Error(`Upstream ${name} atlas was not generated; inspect pack-${name}.log.`);
         }
     }
+    if (folders) packModelFolders(upstream, output, executable, folders);
     const result = {
         root: upstream.root,
         overlay: output,
@@ -125,6 +190,7 @@ function compile(upstream, cache) {
         compiler: ts.version,
         compilerMode: "noCheck transpilation; native runtime acceptance follows",
         mainSha256: hash(path.join(output, "out/main.js")),
+        ...(folders ? { modelFolderAtlases: folders.length } : {}),
     };
     fs.writeFileSync(receipt, JSON.stringify(result, null, 2) + "\n");
     return result;
