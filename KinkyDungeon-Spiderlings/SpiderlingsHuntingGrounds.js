@@ -864,12 +864,18 @@
                     !prey.some((target) => target.id === contacts[identity].targetId)
                 )
                     delete contacts[identity];
+            const radii = new Map(),
+                radiusOf = (member) => {
+                    if (!radii.has(member)) radii.set(member, perceptionRadius(member));
+                    return radii.get(member);
+                };
             for (const [identity, members] of groups) {
                 const seen = prey.filter((target) =>
                     members.some(
                         (member) =>
                             !(typeof KinkyDungeonIsDisabled === "function" && KinkyDungeonIsDisabled(member)) &&
                             !(typeof KDHelpless === "function" && KDHelpless(member)) &&
+                            withinPerception(member, target, radiusOf(member)) &&
                             KDHostile(member, target) &&
                             perceives(member, target),
                     ),
@@ -951,15 +957,18 @@
             perceives(enemy, nativeTarget)
         )
             return nativeTarget;
-        if (!chosen && enemy.SpiderlingsHuntRole)
+        if (!chosen && enemy.SpiderlingsHuntRole) {
+            const radius = perceptionRadius(enemy);
             chosen = KDMapData.Entities.filter(
                 (entity) =>
+                    withinPerception(enemy, entity, radius) &&
                     independentCombatant(entity) &&
                     entity !== enemy &&
                     KDHostile(enemy, entity) &&
                     !(typeof KDHelpless === "function" && KDHelpless(entity)) &&
                     perceives(enemy, entity),
             ).sort((a, b) => distance(enemy, a) - distance(enemy, b) || a.id - b.id)[0];
+        }
         if (!chosen) return nativeTarget;
         enemy.aware = true;
         enemy.tx = chosen.x;
@@ -968,9 +977,19 @@
         return chosen;
     }
 
+    function perceptionRadius(actor) {
+        return actor.blind && !actor.aware ? 1.5 : KDEnemyVisionRadius(actor);
+    }
+
+    // Native sight fails beyond the perception radius, so a scan can reject
+    // distant entities before asking for their faction or hostility.
+    function withinPerception(actor, target, radius) {
+        return Math.hypot(actor.x - target.x, actor.y - target.y) <= radius;
+    }
+
     function perceives(actor, target) {
         if (!actor || !target || target.player) return false;
-        const radius = actor.blind && !actor.aware ? 1.5 : KDEnemyVisionRadius(actor);
+        const radius = perceptionRadius(actor);
         return (
             KinkyDungeonCheckLOS(
                 actor,
