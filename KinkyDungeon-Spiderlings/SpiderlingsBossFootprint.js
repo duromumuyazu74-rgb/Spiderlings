@@ -185,7 +185,9 @@
             KDNearbyEnemies,
             (native) =>
                 function () {
-                    return [...new Set(native.apply(this, arguments).map(root).filter(Boolean))];
+                    const found = native.apply(this, arguments);
+                    // Only footprint parts need resolving; ordinary floors have none.
+                    return found.some(isPart) ? [...new Set(found.map(root).filter(Boolean))] : found;
                 },
         );
     if (typeof KDDrawEnemySprite === "function")
