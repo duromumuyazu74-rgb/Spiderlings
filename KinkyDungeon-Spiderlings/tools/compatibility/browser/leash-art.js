@@ -32,9 +32,10 @@
         ["hogtie-pulled", "Wristtie", "Hogtie", ["Pulled"], "LeashHogtiePulled"],
     ];
     const view = "silk-leash-acceptance";
-    const draw = () => {
+    const draw = async () => {
         let mesh;
-        for (let pass = 0; pass < 4; pass++) {
+        // KD 5.5 rebuilds a pose mesh only after its model textures have loaded, so pause between passes.
+        for (let pass = 0; pass < 60; pass++) {
             mesh = DrawCharacter(
                 KinkyDungeonPlayer,
                 0,
@@ -52,6 +53,7 @@
             // A changed native pose schedules a new mesh for the next draw.
             // Rendering the old container immediately produces a mixed-pose image.
             if (!KDCurrentModels.get(KinkyDungeonPlayer).Refresh.has(view)) break;
+            await new Promise((resolve) => setTimeout(resolve, 50));
         }
         const mc = KDCurrentModels.get(KinkyDungeonPlayer);
         expect(!mc.Refresh.has(view), "Native pose mesh is still awaiting its rebuild");
@@ -72,7 +74,7 @@
             await Spiderlings.applyWebbingColor(true);
             await Spiderlings.preloadSpiderlingsTextures(modelName, true);
             KinkyDungeonDressPlayer(KinkyDungeonPlayer, false, true);
-            draw();
+            await draw();
             await renderFrame();
             for (const [name, arms, legs, extras, sprite] of cases) {
                 const mc = KDCurrentModels.get(KinkyDungeonPlayer);
@@ -86,7 +88,7 @@
                 expect(KDModFiles[expected], `Missing packaged pose: ${expected}`);
                 ForceRefreshModels(KinkyDungeonPlayer);
                 drawn = [];
-                const mesh = draw();
+                const mesh = await draw();
                 const actual = drawn.find((entry) => entry.path === expected && entry.visible);
                 expect(actual, `Native character did not draw ${expected}: ${JSON.stringify(drawn)}`);
                 const texture = KDTex(expected);
@@ -129,7 +131,7 @@
         await Spiderlings.applyWebbingColor(true);
         await renderFrame();
         KinkyDungeonDressPlayer(KinkyDungeonPlayer, false, true);
-        const mesh = draw();
+        const mesh = await draw();
         const names = KinkyDungeonPlayer.Appearance.map((entry) => entry.Model?.Name);
         expect(
             names.includes(modelName) && names.includes("SpiderlingsSilkCollarModel"),

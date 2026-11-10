@@ -318,7 +318,12 @@
         KinkyDungeonItemCheck(11, 10);
         expect(KinkyDungeonInventoryGetWeapon(STAFF), "Dropped weapon could not be picked up");
         for (const weapon of [TOME, STAFF]) {
-            const tex = KDTex(KinkyDungeonRootDirectory + `Items/${weapon}.png`);
+            // KD 5.5 answers with a 1x1 placeholder until the item image has decoded.
+            let tex = KDTex(KinkyDungeonRootDirectory + `Items/${weapon}.png`);
+            for (let wait = 0; !tex?.baseTexture?.valid && wait < 60; wait++) {
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                tex = KDTex(KinkyDungeonRootDirectory + `Items/${weapon}.png`);
+            }
             expect(tex && tex.width === 72 && tex.height === 72, `${weapon} inventory art missing`);
         }
         records.push({ scenario: "loot-and-art", missingWeapon: STAFF, nativePickup: true });

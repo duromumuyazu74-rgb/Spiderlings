@@ -6,7 +6,13 @@
         reserveArea,
         preparationSeed;
     globalThis.compatibilityEnvironment = { preparations: [] };
-    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const frame = async () => {
+        // KD 5.5 skips drawing the scene for one second after a native load; 5.4 has no such overlay.
+        const deadline = performance.now() + 3000;
+        while (typeof KDShowLoading !== "undefined" && KDShowLoading && performance.now() < deadline)
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+    };
     const renderFrame = async () => {
         await frame();
         await frame();
