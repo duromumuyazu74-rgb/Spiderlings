@@ -10,7 +10,7 @@ It uses current shared modules and the behavior baseline of formal release `v0.9
 An equipped Cocoon must have anchored outer webs. Its saved dispatch deadline is 30–50 world turns.
 Losing eligibility cancels the task. Dispatch selects a reachable hostile living nest within 12 Euclidean
 tiles. Otherwise an eligible Tunneler travels to a legal site and uses the native
-`SummonNestEntrance` selfcast, cooldown, delayed summon and Tunneler consumption. At capacity the task
+`SummonNestEntrance` selfcast and cooldown, then a two-turn dig that turns the Tunneler into the nest. At capacity the task
 reuses a living Tunneler or waits. Real Spiderlings use native leash warnings, tethering and paid movement.
 The player and carrier must reach the selected nest before forced admission.
 

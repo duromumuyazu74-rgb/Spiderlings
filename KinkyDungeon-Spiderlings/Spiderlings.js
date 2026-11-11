@@ -573,7 +573,6 @@ SPIDERLINGS.addEnemies([
         weight: 2,
         movePoints: 1.5,
         attackPoints: 2,
-        suicideOnSpell: true,
         fullBoundBonus: 1,
         attack: "Spell",
         attackWidth: 1,
@@ -932,34 +931,23 @@ SPIDERLINGS.addSpells([
         playerEffect: {},
     },
 
-    //Summon new Nest Entrance - This will need serous tuning to prevent runaway spawning
-    // 召唤新的巢穴入口；如果觉得怪物滚雪球太快，优先调 manacost、channel 或 NestEntrance 的 enemyCountSpellLimit。
-    // selfcast 将法术落点锁定到 Tunneler 自身；aoe 仍决定其脚下附近的可用召唤格。
+    //Dig a new Nest Entrance
+    // Tunneler 在原地按原生 channel 蓄力挖掘，期间显示预警格；蓄力结束且未被打断时自身变成巢穴（SpiderlingsTunnelerDig.js）。
+    // 完成的挖掘会消耗 Tunneler，所以 manacost 只决定被打断后再次挖掘的间隔：4 × 2 + 8 + 1 = 17 回合。
     {
         enemySpell: true,
         name: "SummonNestEntrance",
-        noSprite: true,
         selfcast: true,
         minRange: 0,
         sfx: "Bones",
-        manacost: 24,
+        manacost: 4,
         components: ["Verbal"],
         level: 4,
         projectileTargeting: true,
         castRange: 50,
-        type: "inert",
-        onhit: "summon",
-        summon: [{ name: "NestEntrance", count: 1, strict: true }],
-        time: 12,
-        power: 0,
-        delay: 1,
-        range: 0.5,
-        size: 1,
-        aoe: 1.5,
-        lifetime: 1,
-        speed: 1,
-        playerEffect: {},
-        channel: 3,
+        type: "special",
+        special: "SpiderlingsNestDig",
+        channel: 2,
     },
 
     //SpiderWeb - Generic terrain webbing

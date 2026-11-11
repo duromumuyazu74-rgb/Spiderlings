@@ -319,6 +319,16 @@
       "scenarios": ["normal-integration", "action-cadence", "spinner-crowded-control", "attack-telegraphs"],
       "reason": "Native dash commitment, payment and interaction with shared yielding."
     },
+    "tunneler-dig": {
+      "tests": [
+        "spiderlings-tunneler-dig.test.js",
+        "spiderlings-spell-visuals.test.js",
+        "spiderlings-prison-escort.test.js"
+      ],
+      "localTests": [],
+      "scenarios": ["attack-telegraphs", "prison", "prison-review"],
+      "reason": "Native AI dig channel, interruption, nest opening and the shared prison builder."
+    },
     "models": {
       "tests": [
         "spiderlings-model-runtime.test.js",
@@ -761,6 +771,7 @@
     "SpiderlingsMageSpells.js": ["mage-spells"],
     "SpiderlingsMageVisuals.js": ["mage-visuals"],
     "SpiderlingsJumperDash.js": ["jumper", "field-custody"],
+    "SpiderlingsTunnelerDig.js": ["tunneler-dig"],
     "SpiderlingsModelRuntime.js": ["models"],
     "SpiderlingsWebbingModels.js": ["models"],
     "SpiderlingsWebbingData.js": ["webbing"],

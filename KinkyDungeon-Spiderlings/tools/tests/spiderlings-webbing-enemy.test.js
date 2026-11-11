@@ -686,9 +686,8 @@ test("Spinner/Jumper definitions use exact effect progression and leave summon-o
     assert.deepEqual(plain(tunneler.spells), ["SummonNestEntrance"]);
     assert.equal(tunneler.effect, undefined);
     assert.ok(summonNestEntrance, "Tunneler's NestEntrance summon spell must be registered");
-    assert.equal(summonNestEntrance.selfcast, true, "NestEntrance summons must be centered on the Tunneler");
+    assert.equal(summonNestEntrance.selfcast, true, "the nest dig must be centered on the Tunneler");
     assert.equal(summonNestEntrance.castRange, 50, "self-casting must not change when the Tunneler may cast");
-    assert.equal(summonNestEntrance.aoe, 1.5, "self-casting must retain the local free-tile search radius");
     assert.equal(nest.attack, "Spell");
     assert.equal(nest.effect, undefined);
 });
