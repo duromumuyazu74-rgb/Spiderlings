@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.23.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.24.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.24 map-generation and site-scan candidate (2026-11-11)
+
+Hunting Grounds floors no longer regenerate the whole map dozens of times. Native map creation retries until a jail point exists, and the GuaranteedCell set piece that provides it needs a POI outside every special area; the layout's temporary protection for nest anchors and hunting sites usually covered them all. The layout now keeps one eligible POI and the cell built on it clear, trying the unconstrained layout first and regenerating the maze within its existing five attempts. Across 15 seeds on grv5, cat7, lib12 and tmb9, whole-floor regenerations on the 60 Hunting Grounds floors fell from 840 to 43, and generation time from a 537 ms median and 3.1 s maximum to 314 ms and 0.77 s. Three objective nests remain on every floor. The optional large hunting site remains on 56 of 60 floors (previously 60); the rest take the existing fallback when three nests do not fit beside it. Ordinary and Infestation floors generate identically apart from native `spriteID`. A 4.8–5.1 s floor seen during this work is native: tmb9 seed `gen-4` spends 4.2 s in `KDCreateBoringness` with or without the Mod.
+
+Replacement site scans validate passages with a node mask instead of per-edge key strings and test enclosure squares in place; the 60-turn map state on five floors is unchanged apart from `spriteID`. On the same perf-a floors the slowest turns fell from 109–120 to 95–98 ms (cat7) and from 96–97 to 83–86 ms (lib12), and one scan from about 30 to 10 ms.
+
+The same `Spiderlings_0.92.39-test.24.zip` passed all 78 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `0be6a0361d7f03252efc6c7269db6942d2c10f98`, unchanged since test.21. It has 228 allowlisted entries, 27,471,164 bytes and SHA-256 `91cf0f1ac609e1170ea529c4fc1dee505fbc3527ebc1401463bcda640115070b`. Full native evidence is retained in run `2026-11-11T04-10-06-356Z-0.92.39-test.24`.
 
 ## Test.23 native attack warnings (2026-11-11)
 
