@@ -38,6 +38,7 @@ const runtimeScripts = [
     "SpiderlingsMageRunes.js",
     "SpiderlingsMageVisuals.js",
     "SpiderlingsJumperDash.js",
+    "SpiderlingsTunnelerDig.js",
     "SpiderlingsWebbingModels.js",
     "SpiderlingsWebbingData.js",
     "SpiderlingsWebbingRules.js",
@@ -877,10 +878,12 @@ function checkRuntime(state) {
             );
     }
     const nestSummon = state.spells.find((spell) => spell.name === "SummonNestEntrance");
-    if (!nestSummon?.noSprite || !nestSummon.selfcast || nestSummon.onhit !== "summon") {
-        fail(
-            "Nest excavation must retain native self-cast summoning without requesting a nonexistent projectile sprite.",
-        );
+    if (
+        !nestSummon?.selfcast ||
+        !(nestSummon.channel > 0) ||
+        typeof state.context.KinkyDungeonSpellSpecials[nestSummon.special] !== "function"
+    ) {
+        fail("Nest excavation must remain a channelled native self-cast with a registered dig handler.");
     }
 
     const player = { player: true };

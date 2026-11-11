@@ -1064,6 +1064,26 @@ test("attack-style warnings use KD's enemy wind-up images, with Special and earl
     assert.equal(drawWith({}).drawn, 1, "Fogged cells stay hidden");
 });
 
+test("a Tunneler dig shows a Special enemy wind-up on the dig tile in its colour, early until the last turn", () => {
+    const r = fixture();
+    r.c.KinkyDungeonSpellSpecials = {};
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../../SpiderlingsTunnelerDig.js"), "utf8"), r.c);
+    const tunneler = { id: 7, x: 2, y: 3, hp: 1, channel: 2, Enemy: { name: "Tunneler", color: "#FF00FF" } };
+    r.c.KDMapData.Entities.push(tunneler);
+    r.c.KinkyDungeonSpellSpecials.SpiderlingsNestDig({}, {}, 2, 3, 2, 3, tunneler, tunneler);
+    const layer = (image) => r.draw().filter((d) => d[2].includes("_dig_") && d[3] === `Game/${image}`);
+    const early = layer("WarningColorSpecialBasic.png");
+    assert.equal(early.length, 1);
+    assert.equal(early[0][0], r.c.kdwarningboardOver);
+    assert.equal(early[0][9].tint, 0xff00ff);
+    assert.deepEqual(early[0].slice(4, 6), [144, 216], "the tile covers the dig cell");
+    tunneler.channel = 1;
+    assert.equal(layer("WarningColorSpecial.png").length, 1);
+    assert.equal(layer("WarningColorSpecialBasic.png").length, 0);
+    tunneler.hp = 0;
+    assert.equal(layer("WarningColorSpecial.png").length, 0, "a knocked-out Tunneler leaves no warning");
+});
+
 test("pending Mage warnings that threaten the player enter KD's danger record each world turn", () => {
     const r = fixture();
     const threats = new Set([1]);

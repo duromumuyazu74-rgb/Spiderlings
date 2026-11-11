@@ -222,7 +222,8 @@
             floors: KDMapInit([]),
             followRange: 1,
             movePoints: 1.5,
-            attackPoints: 1,
+            // The second attack point is KD's own one-turn wind-up tile before the rune lands.
+            attackPoints: 2,
             attack: "MeleeEffect",
             attackRange: 1,
             attackWidth: 1,

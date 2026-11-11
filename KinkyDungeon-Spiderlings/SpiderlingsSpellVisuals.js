@@ -812,6 +812,15 @@
             drawCollapse(collapse, weapons.clock, `weapon_${collapse.ownerId}`);
         nativeWarning(`${KEY}_danger`, [...warningCells.values()], { color: MAGE_WARNING, corner: cellCorner });
         warningCells.clear();
+        // A Tunneler dig is an enemy skill wind-up on the nest tile, in the Tunneler's colour; early until its last turn.
+        for (const dig of api.TunnelerDig?.pending() || [])
+            nativeWarning(`${KEY}_dig_${dig.id}`, [dig], {
+                color: Number.parseInt(dig.color.slice(1), 16),
+                corner: cellCorner,
+                style: "attack",
+                special: true,
+                early: dig.remaining > 1,
+            });
         for (const [id, effect] of impacts) {
             const age = (now() - effect.start) / DURATION;
             if (age >= 1) {

@@ -243,6 +243,12 @@ KD draws enemy attack wind-ups in `KinkyDungeonDrawEnemiesWarning` with `Warning
 
 A projectile with `damage: "inert"` gets no flight warning unless its spell sets `alwaysWarn`, as native binding bolts such as `EnemyLatexRestraintBolt` do. Enemy cast text `KinkyDungeonSpellCast<Spell>` is sent in `#ff8844` only for `msg: true` or self-cast spells. Native summon bullets announce `KinkyDungeonSummonSingle<Enemy>` or `KinkyDungeonSummonMulti<Enemy>`, and melee hits read `Attack<Enemy>` with an optional suffix. A missing key displays `[NotFound] <key>`, so an effect-only attacker such as the Matriarch rune still needs its `Attack<Enemy>` text.
 
+### Enemy wind-ups and channels (0.92.39-test.25)
+
+An enemy in attack range adds `delta` to `attackPoints` and attacks when it reaches `Enemy.attackPoints`; it cannot move and attack in the same turn. With 1 point the attack lands on the first in-range turn and hits regardless of the player's position. With 2 the first turn sets `warningTiles`, which KD draws in `Enemy.color`, and the attack only hits a player still inside them. The Matriarch rune uses this native one-turn wind-up.
+
+An AI cast sets `enemy.channel = spell.channel` before `KinkyDungeonCastSpell`. Each enemy update then spends it, skips that enemy's AI while it is positive and sends `enemyStatusEnd` with `channel` when it ends. Stun and freeze are spent earlier in the same update and send their own `enemyStatusEnd`, so a one-turn stun has already ended by `tickAfter`. `suicideOnSpell` applies after a native AI cast returns `Cast`. Spell `special` handlers run for enemy casts in 5.4.92 and 5.5 and receive the caster as the seventh argument. The Tunneler dig is such a handler: its channel is the wind-up, and `SpiderlingsTunnelerDig.js` opens the nest when it ends.
+
 ### Enemy artwork color selection
 
 Spiderlings `0.92.36-test.11` extends the existing draw-time color selection to the exact rooted `Enemies/Spinner.png`, `Tunneler.png`, `WebCaster.png` and `NestEntrance.png` paths. The supplied body and silk layers are composited at their original coordinates into separate normal and pink PNGs. Jumper has one delivered image shared by both settings. Register all nine enemy PNGs before scripts and keep them outside the restraint atlas.
