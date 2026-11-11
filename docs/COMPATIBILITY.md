@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.22.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.23.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,12 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.23 native attack warnings (2026-11-11)
+
+Spiderling attack warnings now use KD's own warning tiles and messages. Mage Hex, Collapse and mark blasts draw native spell warning tiles in the Mage spell colour and enter KD's per-turn danger record, which stops auto-wait and fast movement and plays the warning sound on the player's tile. Matriarch skills draw native enemy wind-up tiles in her colour: the ordinary tile for silk grasp, the Special tile for fan, ring and falling silk, and the dimmer early tile until the hit lands on the next turn. WebSpray shows its native flight path and WebCaster uses the Spiderling family colour. Jumper Dash, Hex, Collapse and Matriarch skill announcements use the native enemy cast colour; the Jumper line is hidden while the Jumper is unseen. Visible Nest arrivals and new Tunneler nests show their summon text; the Tunneler nest and Matriarch rune hit previously displayed `[NotFound]`. Damage, ranges, timing, cooldowns and AI are unchanged.
+
+The new `attack-telegraphs` native scene photographs each warning and checks these contracts; the test.22 package misses 15 of them on both versions. The same `Spiderlings_0.92.39-test.23.zip` passed all 78 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `0be6a0361d7f03252efc6c7269db6942d2c10f98`, unchanged since test.21. It has 228 allowlisted entries, 27,469,662 bytes and SHA-256 `cf2e4896851e97ba36ea4628edc2343da70cea5b23b7f8b7ce937c192446d7bf`. Full native evidence is retained in run `2026-11-11T01-19-34-113Z-0.92.39-test.23`.
 
 ## Test.22 turn-performance candidate (2026-11-11)
 
