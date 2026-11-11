@@ -598,6 +598,37 @@
             ),
             candidates = [];
         if (!origin) return candidates;
+        // Every map cell is a candidate center; test its square in place, keyed once per cell.
+        const clearCell = (x, y, ring, size, cell) => {
+            const name = `${x},${y}`,
+                tile = byKey.get(name);
+            return (
+                tile?.floor &&
+                !stationary.has(name) &&
+                !tile.locked &&
+                !tile.protected &&
+                !reserved.has(name) &&
+                (!group.homeRegion ||
+                    (ring !== size && ring !== 0) ||
+                    (api.PrisonAlerts.regionAt((cell ||= { x, y })) === group.homeRegion &&
+                        api.PrisonNest.ordinaryConstructionAllowed(cell))) &&
+                (ring < Math.min(size, 2) || !occupied.has(name))
+            );
+        };
+        // Outer ring first, then inner rings outward, then the center.
+        const squareClear = (center, size) => {
+            for (let step = 0; step < size; step++) {
+                const ring = step ? step : size;
+                for (let y = center.y - ring; y <= center.y + ring; y++)
+                    for (let x = center.x - ring; x <= center.x + ring; x++)
+                        if (
+                            Math.max(Math.abs(x - center.x), Math.abs(y - center.y)) === ring &&
+                            !clearCell(x, y, ring, size)
+                        )
+                            return false;
+            }
+            return !!clearCell(center.x, center.y, 0, size, center);
+        };
         // Distance scores choose between equal sizes. Nearby fallback sites must
         // not hide a larger reachable enclosure from the global planner.
         for (const nearby of geometry?.candidateCenters ? [null] : [true, false]) {
@@ -619,27 +650,7 @@
                         .filter((size) => size >= minimumRadius && (!center.radius || size === center.radius))
                         .find(
                             (size) =>
-                                [
-                                    ...ringCells(center, size),
-                                    ...Array.from({ length: size - 1 }, (_, index) =>
-                                        ringCells(center, index + 1),
-                                    ).flat(),
-                                    center,
-                                ].every((cell) => {
-                                    const tile = byKey.get(cellKey(cell));
-                                    return (
-                                        tile?.floor &&
-                                        !stationary.has(cellKey(cell)) &&
-                                        !tile.locked &&
-                                        !tile.protected &&
-                                        !reserved.has(cellKey(cell)) &&
-                                        (!group.homeRegion ||
-                                            (distance(cell, center) !== size && distance(cell, center) !== 0) ||
-                                            (api.PrisonAlerts.regionAt(cell) === group.homeRegion &&
-                                                api.PrisonNest.ordinaryConstructionAllowed(cell))) &&
-                                        (distance(cell, center) < Math.min(size, 2) || !occupied.has(cellKey(cell)))
-                                    );
-                                }) &&
+                                squareClear(center, size) &&
                                 reachableGate(
                                     snapshot,
                                     center,
