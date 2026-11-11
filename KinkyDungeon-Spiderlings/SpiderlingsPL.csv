@@ -13,21 +13,22 @@ KillNestEntrance,Wejście do gniazda zapada się. Cienkie nici odrywają się od
 NameWebCaster,Młody pająk miotacz sieci
 KillWebCaster,Młody pająk miotacz sieci kuli się i wycofuje w ciemność.
 KinkyDungeonSpellSummonSpinner,Przywołaj prządkę
-KinkyDungeonSummonSummonSpinner,Młody pająk prządka wychodzi z ciemności, ciągnąc nici między cienkimi odnóżami.
+KinkyDungeonSummonSingleSpinner,Młody pająk prządka wychodzi z ciemności, ciągnąc nici między cienkimi odnóżami.
 KinkyDungeonSpellCastSummonSpinner,Z ciemności dobiega cichy tupot; młody pająk prządka zaraz się pojawi.
 KinkyDungeonSpellSummonJumper,Przywołaj skoczka
-KinkyDungeonSummonSummonJumper,Młody pająk skoczek wyskakuje i lekko stawia cienkie odnóża na ziemi.
+KinkyDungeonSummonSingleJumper,Młody pająk skoczek wyskakuje i lekko stawia cienkie odnóża na ziemi.
 KinkyDungeonSpellCastSummonJumper,Z ciemności dobiega pospieszny szelest; młody pająk skoczek zaraz się pojawi.
 KinkyDungeonSpellSpiderlingsJumperDash,Szarża skoczka
 KinkyDungeonSpellCastSpiderlingsJumperDash,Młody pająk skoczek wpatruje się w ziemię pod tobą, obniża ciało i ciasno podkurcza odnóża.
 KinkyDungeonSpellSummonWebCaster,Przywołaj miotacza sieci
-KinkyDungeonSummonSummonWebCaster,Młody pająk miotacz sieci wychodzi, ciągnąc za sobą lepką nić.
+KinkyDungeonSummonSingleWebCaster,Młody pająk miotacz sieci wychodzi, ciągnąc za sobą lepką nić.
 KinkyDungeonSpellCastSummonWebCaster,Lepki jedwab wyciąga się z ciemności; młody pająk miotacz sieci zaraz się pojawi.
 KinkyDungeonSpellSummonTunneler,Przywołaj kopacza
-KinkyDungeonSummonSummonTunneler,Młody pająk kopacz wychodzi z ciemności i przemyka po ziemi.
+KinkyDungeonSummonSingleTunneler,Młody pająk kopacz wychodzi z ciemności i przemyka po ziemi.
+KinkyDungeonSummonSingleMageSpiderlings,Młody pająk mag wypełza z ukrycia, a po jego jedwabiu migocze słabe światło.
 KinkyDungeonSpellCastSummonTunneler,Z ciemności dobiega ciche skrobanie; młody pająk kopacz zaraz się pojawi.
 KinkyDungeonSpellSummonNestEntrance,Wykop pajęcze gniazdo
-KinkyDungeonSummonSummonNestEntrance,Ziemia pęka, odsłaniając otwór pokryty jedwabiem; pojawiło się nowe wejście do gniazda!
+KinkyDungeonSummonSingleNestEntrance,Ziemia pęka, odsłaniając otwór pokryty jedwabiem; pojawiło się nowe wejście do gniazda!
 KinkyDungeonSpellCastSummonNestEntrance,Młody pająk kopacz przywiera do ziemi i kopie, a jedwab rozchodzi się wzdłuż szczelin!
 KinkyDungeonSpellWebSpray,Strumień pajęczyny
 KinkyDungeonSpellCastWebSpray,Młody pająk miotacz sieci wystrzeliwuje ku tobie wiązkę lepkiego jedwabiu; nici nagle rozwierają się w powietrzu!
@@ -295,6 +296,7 @@ KDBuffDesc_SpiderlingsSilkDensity,Gęstsza pajęczyna zwiększa wysiłek potrzeb
 NameSpiderlingsMatriarch,Matriarchini Tkająca Gniazda
 NameSpiderlingsMatriarchPart,Matriarchini Tkająca Gniazda
 NameSpiderlingsMatriarchRune,Śledząca runa jedwabiu
+AttackSpiderlingsMatriarchRune,Śledząca runa jedwabiu pęka na tobie, a jej nici cię chwytają.
 KDRoomType_SpiderlingsSilkboundCourt,Jedwabny Dziedziniec
 KDSideRoom_SpiderlingsSilkboundCourt,Jedwabny Dziedziniec
 KDEscapeMethodDesc_SpiderlingsSilkboundCourt,Pokonaj Matriarchinię dwa razy, aby otworzyć drogę powrotną do więzienia.

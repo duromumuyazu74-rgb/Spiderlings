@@ -15,7 +15,9 @@ function fixture({ mageSpells = false } = {}) {
         fills = [],
         polygons = [],
         labels = [],
-        lineStyles = [];
+        lineStyles = [],
+        dangerRecords = [],
+        sounds = [];
     const geometryAllocations = { sets: 0 };
     let clock = 0,
         pink = false;
@@ -170,10 +172,26 @@ function fixture({ mageSpells = false } = {}) {
         StandalonePatched: true,
         kdgameboard: board,
         kdbulletboard: {},
+        kdwarningboard: { name: "kdwarningboard" },
+        kdwarningboardOver: { name: "kdwarningboardOver" },
+        KDToggles: { ForceWarnings: true, FlashingWarning: false },
+        KDWarningFlashSpeed: 1,
+        KDWarningFlashPerDelta: 100,
+        KDWarningFlashBPerDelta: 100,
+        KDAnimSpeed: 1,
+        KDAddWarning: (tile) => dangerRecords.push(tile),
+        KinkyDungeonPlaySound: (src) => sounds.push(src),
         kdpixisprites: new Map(),
         KDEventMapGeneric: {},
+        // Native generic events run every registered handler in registration order.
         KDAddEvent: (_map, event, _key, fn) => {
-            events[event] = fn;
+            const previous = events[event];
+            events[event] = previous
+                ? (...args) => {
+                      previous(...args);
+                      return fn(...args);
+                  }
+                : fn;
         },
         KDPlayerEffects: {
             SpiderlingsWebbingEnemyBind: () => ({ effect: true }),
@@ -229,6 +247,10 @@ function fixture({ mageSpells = false } = {}) {
         events,
         geometryAllocations,
         draws,
+        // The tinted colour layer of each native Mage warning tile.
+        danger: () => draws.filter((d) => d[2].includes("_danger_") && d[2].endsWith("_wc")),
+        dangerRecords,
+        sounds,
         lines,
         dots,
         fills,
@@ -250,7 +272,7 @@ test("Hex preserves sixteen warning cells and switches to ground silk without co
     const r = fixture();
     const state = r.state({ fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }] });
     r.draw();
-    const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
+    const danger = () => r.danger();
     assert.equal(danger().length, 16);
     const positions = danger().map((d) => d.slice(4, 6));
     const core = () => r.draws.find((d) => d[2].endsWith("hex_1"));
@@ -442,10 +464,11 @@ test("Collapse keeps its fixed cut-corner danger mask while its strands gather i
     const r = fixture();
     const state = r.state({ collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }] });
     r.draw();
-    const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
+    const danger = () => r.danger();
     const positions = danger().map((d) => d.slice(4, 6));
     assert.equal(danger().length, 21);
-    const cells = new Set(danger().map((d) => `${d[4] / 72 - 0.5},${d[5] / 72 - 0.5}`));
+    // Native warning tiles are drawn from the cell's top-left corner.
+    const cells = new Set(danger().map((d) => `${d[4] / 72},${d[5] / 72}`));
     for (const corner of ["2,2", "2,6", "6,2", "6,6"]) assert.equal(cells.has(corner), false);
     const strands = () => r.lines.filter((_line, i) => r.lineStyles[i]?.width === 1.4);
     const initial = strands().map((line) => Math.hypot(line[0] - 324, line[1] - 324));
@@ -478,7 +501,7 @@ test("Tome charge tiers deepen the weave while preserving the same twenty-one da
     for (const stage of [1, 2, 3]) {
         collapse.stage = stage;
         r.draw();
-        const danger = r.draws.filter((d) => d[2].includes("danger_")).map((d) => d.slice(4, 6));
+        const danger = r.danger().map((d) => d.slice(4, 6));
         assert.equal(danger.length, 21);
         if (cells) assert.deepEqual(danger, cells);
         cells = danger;
@@ -496,7 +519,7 @@ test("mark bursts keep exact footprints and visibly resolve before fading withou
         const r = fixture();
         const state = r.state({ blasts: [{ x: 4, y: 4, stacks, detonateAt: 2 }] });
         r.draw();
-        assert.equal(r.draws.filter((d) => d[2].includes("danger_")).length, (stacks * 2 - 1) ** 2);
+        assert.equal(r.danger().length, (stacks * 2 - 1) ** 2);
         assert.equal(r.fills.length, 0);
         assert.equal(r.labels.length, 0);
         state.clock = 2;
@@ -896,7 +919,7 @@ test("Mage warning keeps all dangerous cells while silk moves inward, without nu
     const state = r.state({ collapses: [{ x: 4, y: 4, ownerId: 1, startAt: 0, explodeAt: 3 }] });
     r.draw();
     assert.equal(r.labels.length, 0);
-    const danger = () => r.draws.filter((d) => d[2].includes("danger_"));
+    const danger = () => r.danger();
     assert.equal(danger().length, 21);
     const positions = danger().map((d) => d.slice(4, 6));
     const silk = () => r.lines.filter((_line, i) => r.lineStyles[i]?.width === 1.4);
@@ -916,13 +939,13 @@ test("persistent warnings restore from saved phase without numeric labels and ke
     const r = fixture();
     r.state({ clock: 1, collapses: [{ x: 4, y: 4, ownerId: 1, startAt: 0, explodeAt: 3 }] });
     r.draw();
-    const positions = r.draws.filter((d) => d[2].includes("danger_")).map((d) => d.slice(4, 6));
+    const positions = r.danger().map((d) => d.slice(4, 6));
     const saved = JSON.stringify(r.c.KDMapData);
     r.c.KDMapData = JSON.parse(saved);
     r.events.afterLoadGame();
     r.draw();
     assert.deepEqual(
-        r.draws.filter((d) => d[2].includes("danger_")).map((d) => d.slice(4, 6)),
+        r.danger().map((d) => d.slice(4, 6)),
         positions,
     );
     assert.equal(r.labels.length, 0);
@@ -975,14 +998,95 @@ test("Mage cast descriptions express inward gathering in English and all seven l
     }
 });
 
-test("warning backing stays faint while every native dangerous-cell marker remains visible", () => {
+test("Mage area warnings draw KD's spell warning tiles in the spell colour and follow the native toggle", () => {
     const r = fixture();
     r.state({ collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }] });
     r.draw();
-    const backing = r.draws.filter((d) => d[3].endsWith("WarningBacking.png"));
+    const layer = (image) => r.draws.filter((d) => d[2].includes("_danger_") && d[3] === `Game/${image}`);
+    const color = layer("WarningColorSpell.png"),
+        backing = layer("WarningBacking.png"),
+        highlight = layer("WarningBackingHighlight.png");
+    assert.equal(color.length, 21);
+    assert.ok(color.every((d) => d[0] === r.c.kdwarningboardOver && d[9].tint === 0xa77bdc && d[9].alpha === 0.5));
     assert.equal(backing.length, 21);
-    assert.ok(backing.every((d) => d[9].alpha <= 0.04));
-    assert.equal(r.draws.filter((d) => d[3].endsWith("WarningColorSpell.png") && d[9].alpha >= 0.48).length, 21);
+    assert.ok(backing.every((d) => d[0] === r.c.kdwarningboard && d[9].tint === 0xa77bdc && d[9].alpha === 0.5));
+    assert.equal(highlight.length, 21);
+    assert.ok(highlight.every((d) => d[9].tint === undefined));
+    // Overlapping warnings share one native tile per cell.
+    r.state({
+        collapses: [{ x: 4, y: 4, startAt: 0, explodeAt: 3, ownerId: 1 }],
+        blasts: [{ x: 4, y: 4, stacks: 2, detonateAt: 2 }],
+    });
+    r.draw();
+    assert.equal(r.danger().length, 21);
+    r.c.KDToggles.ForceWarnings = false;
+    r.c.KDMouseInPlayableArea = () => false;
+    r.draw();
+    assert.equal(r.danger().length, 0);
+    assert.ok(r.lines.length > 0, "The gathering strands remain without native tiles");
+    r.c.KDMouseInPlayableArea = () => true;
+    r.draw();
+    assert.equal(r.danger().length, 21);
+});
+
+test("attack-style warnings use KD's enemy wind-up images, with Special and early Basic variants", () => {
+    const r = fixture();
+    const cells = [
+        { x: 2, y: 3 },
+        { x: 3, y: 3 },
+    ];
+    const drawWith = (options) => {
+        r.draws.length = 0;
+        const drawn = r.c.Spiderlings.SpellVisuals.nativeWarning("boss", cells, {
+            color: 0xcdb4ff,
+            corner: (cell) => [cell.x * 72, cell.y * 72],
+            style: "attack",
+            ...options,
+        });
+        const byImage = (image) => r.draws.filter((d) => d[3] === `Game/${image}`);
+        return { drawn, byImage };
+    };
+    const early = drawWith({ special: true, early: true });
+    assert.equal(early.drawn, 2);
+    const color = early.byImage("WarningColorSpecialBasic.png");
+    assert.equal(color.length, 2);
+    assert.ok(color.every((d) => d[0] === r.c.kdwarningboardOver && d[9].tint === 0xcdb4ff && d[9].alpha === 1));
+    assert.ok(early.byImage("WarningBacking.png").every((d) => d[9].alpha === 0.25 && d[9].tint === 0xcdb4ff));
+    assert.ok(early.byImage("WarningBackingHighlight.png").every((d) => d[9].alpha === 0.5));
+    const highlight = early.byImage("WarningHighlightSpecialBasic.png");
+    assert.deepEqual(highlight[0].slice(4, 8), [143, 215, 74, 74]);
+    const final = drawWith({ special: false, early: false });
+    assert.equal(final.byImage("WarningColor.png").length, 2);
+    assert.equal(final.byImage("WarningHighlight.png").length, 2);
+    assert.ok(final.byImage("WarningBacking.png").every((d) => d[9].alpha === 0.75));
+    assert.ok(final.byImage("WarningBackingHighlight.png").every((d) => d[9].alpha === 0.8));
+    r.c.KinkyDungeonVisionGet = (x) => (x === 2 ? 0 : 1);
+    assert.equal(drawWith({}).drawn, 1, "Fogged cells stay hidden");
+});
+
+test("pending Mage warnings that threaten the player enter KD's danger record each world turn", () => {
+    const r = fixture();
+    const threats = new Set([1]);
+    r.c.Spiderlings.MageSpells = { threatensPlayer: (effect) => threats.has(effect.ownerId) };
+    r.state({
+        clock: 0,
+        fields: [{ x: 2, y: 2, ownerId: 1, activateAt: 3, endAt: 6 }],
+        collapses: [{ x: 10, y: 10, startAt: 0, explodeAt: 3, ownerId: 2 }],
+        blasts: [{ x: 20, y: 20, stacks: 1, detonateAt: 2, ownerId: 1 }],
+    });
+    r.events.tickAfter(null, { delta: 1 });
+    const cells = r.dangerRecords.map((tile) => `${tile.x},${tile.y}`);
+    assert.equal(cells.length, 17);
+    assert.ok(cells.includes("3,3") && cells.includes("20,20") && !cells.includes("10,10"));
+    assert.ok(r.dangerRecords.every((tile) => tile.type === 2 && tile.sx === tile.x && tile.sy === tile.y));
+    assert.deepEqual(r.sounds, ["Game/Audio/Warning.ogg"]);
+    r.c.KDToggles.WarningSound = false;
+    r.events.tickAfter(null, { delta: 1 });
+    assert.equal(r.sounds.length, 1);
+    threats.clear();
+    r.dangerRecords.length = 0;
+    r.events.tickAfter(null, { delta: 1 });
+    assert.equal(r.dangerRecords.length, 0);
 });
 
 test("gathering uses bounded thin strands whose heads move inward, not repeated web decals", () => {
@@ -998,7 +1102,7 @@ test("gathering uses bounded thin strands whose heads move inward, not repeated 
     r.time(1800);
     r.draw();
     assert.ok(mean() < outer);
-    assert.equal(r.draws.filter((d) => d[2].includes("danger_")).length, 21);
+    assert.equal(r.danger().length, 21);
     assert.equal(r.labels.length, 0);
 });
 

@@ -249,7 +249,8 @@
             at: startedAt + turns,
             follow: saved.phase === "two" && !reversed && ["fan", "ring"].includes(kind),
         });
-        KinkyDungeonSendTextMessage(6, TextGet("SpiderlingsBossSkill_" + kind), "#e7c77d", turns + 1);
+        // Skill announcements use the native enemy cast colour.
+        KinkyDungeonSendTextMessage(6, TextGet("SpiderlingsBossSkill_" + kind), "#ff8844", turns + 1);
     }
     function schedule() {
         const enemy = resonanceSource();

@@ -1064,6 +1064,18 @@
                 continue;
             }
             api.FieldCommand?.reportNest?.(nest, { status: "spawned", createdId: created[0].id, species: enemyName });
+            // Native summon spells announce visible arrivals; a direct Nest spawn uses the same message and gate.
+            if (typeof KinkyDungeonSendTextMessage == "function" && typeof TextGet == "function")
+                KinkyDungeonSendTextMessage(
+                    6,
+                    TextGet("KinkyDungeonSummonSingle" + enemyName),
+                    typeof KDBaseWhite != "undefined" ? KDBaseWhite : "#ffffff",
+                    2,
+                    undefined,
+                    true,
+                    created[0],
+                    "Combat",
+                );
 
             created[0][NEST_PARENT_ID_FIELD] = nest.id;
             if (missingRoles)

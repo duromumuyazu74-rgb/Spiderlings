@@ -13,21 +13,22 @@ KillNestEntrance,La entrada del nido se derrumba. Unas hebras finas se desprende
 NameWebCaster,Cría de araña escupidora
 KillWebCaster,La cría de araña escupidora se encoge y retrocede hacia la oscuridad.
 KinkyDungeonSpellSummonSpinner,Invocar hiladora
-KinkyDungeonSummonSummonSpinner,Una cría de araña hiladora sale de la oscuridad, con hebras de seda entre sus patas finas.
+KinkyDungeonSummonSingleSpinner,Una cría de araña hiladora sale de la oscuridad, con hebras de seda entre sus patas finas.
 KinkyDungeonSpellCastSummonSpinner,Un leve repiqueteo llega de la oscuridad; una cría de araña hiladora está a punto de aparecer.
 KinkyDungeonSpellSummonJumper,Invocar saltadora
-KinkyDungeonSummonSummonJumper,Una cría de araña saltadora sale de un salto y posa suavemente sus patas en el suelo.
+KinkyDungeonSummonSingleJumper,Una cría de araña saltadora sale de un salto y posa suavemente sus patas en el suelo.
 KinkyDungeonSpellCastSummonJumper,Un susurro apresurado llega de la oscuridad; una cría de araña saltadora está a punto de aparecer.
 KinkyDungeonSpellSpiderlingsJumperDash,Embestida saltadora
 KinkyDungeonSpellCastSpiderlingsJumperDash,La cría de araña saltadora fija la mirada en el suelo bajo tus pies, baja el cuerpo y recoge bien sus patas.
 KinkyDungeonSpellSummonWebCaster,Invocar escupidora
-KinkyDungeonSummonSummonWebCaster,Una cría de araña escupidora sale arrastrando una hebra de seda pegajosa.
+KinkyDungeonSummonSingleWebCaster,Una cría de araña escupidora sale arrastrando una hebra de seda pegajosa.
 KinkyDungeonSpellCastSummonWebCaster,La seda pegajosa se extiende desde la oscuridad; una cría de araña escupidora está a punto de aparecer.
 KinkyDungeonSpellSummonTunneler,Invocar excavadora
-KinkyDungeonSummonSummonTunneler,Una cría de araña excavadora sale de la oscuridad y corretea por el suelo.
+KinkyDungeonSummonSingleTunneler,Una cría de araña excavadora sale de la oscuridad y corretea por el suelo.
+KinkyDungeonSummonSingleMageSpiderlings,Una cría de araña maga sale arrastrándose, con una luz tenue parpadeando en su seda.
 KinkyDungeonSpellCastSummonTunneler,Un leve arañar llega de la oscuridad; una cría de araña excavadora está a punto de aparecer.
 KinkyDungeonSpellSummonNestEntrance,Excavar un nido de arañas
-KinkyDungeonSummonSummonNestEntrance,El suelo se abre en un hueco cubierto de seda; ha aparecido una nueva entrada de nido.
+KinkyDungeonSummonSingleNestEntrance,El suelo se abre en un hueco cubierto de seda; ha aparecido una nueva entrada de nido.
 KinkyDungeonSpellCastSummonNestEntrance,La cría de araña excavadora se agacha a cavar mientras la seda se extiende por las grietas.
 KinkyDungeonSpellWebSpray,Rociar telaraña
 KinkyDungeonSpellCastWebSpray,La cría de araña escupidora lanza hacia ti un haz de seda pegajosa; las hebras se abren en el aire.
@@ -295,6 +296,7 @@ KDBuffDesc_SpiderlingsSilkDensity,La seda acumulada aumenta el esfuerzo para lib
 NameSpiderlingsMatriarch,Matriarca Tejenidos
 NameSpiderlingsMatriarchPart,Matriarca Tejenidos
 NameSpiderlingsMatriarchRune,Runa de seda perseguidora
+AttackSpiderlingsMatriarchRune,La runa de seda perseguidora estalla contra ti y sus hebras te atrapan.
 KDRoomType_SpiderlingsSilkboundCourt,Patio de Seda
 KDSideRoom_SpiderlingsSilkboundCourt,Patio de Seda
 KDEscapeMethodDesc_SpiderlingsSilkboundCourt,Derrota dos veces a la Matriarca para abrir el regreso a la prisión.

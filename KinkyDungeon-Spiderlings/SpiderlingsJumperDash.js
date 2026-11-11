@@ -316,11 +316,12 @@
                             ? "KinkyDungeonSpellCastSpiderlingsJumperDash"
                             : "KinkyDungeonSpellCastSpiderlingsJumperDashNPC",
                     ),
-                    typeof KDBaseWhite != "undefined" ? KDBaseWhite : "#ffffff",
+                    // Native enemy cast colour; passing the Jumper hides the line when it is out of sight.
+                    "#ff8844",
                     4,
                     undefined,
                     undefined,
-                    undefined,
+                    state.source,
                     "Combat",
                 );
             }

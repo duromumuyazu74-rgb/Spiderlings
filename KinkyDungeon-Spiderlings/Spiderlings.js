@@ -479,6 +479,7 @@ SPIDERLINGS.addEnemies([
     {
         name: "WebCaster",
         clusterWith: "spiderlings",
+        color: "#FF00FF",
         tags: KDMapInit(["WebCaster", "spiderlings", "opendoors", "ranged", "unflinching", "hunter", "glueresist"]),
         evasion: 0,
         disarm: 0.25,
@@ -748,6 +749,8 @@ SPIDERLINGS.addSpells([
         enemySpell: true,
         name: "SpiderlingsMageHex",
         noSprite: true,
+        // Delayed area spells announce their cast through the native enemy cast message.
+        msg: true,
         noCastMsg: false,
         color: "#a77bdc",
         school: "Latex",
@@ -769,6 +772,8 @@ SPIDERLINGS.addSpells([
         enemySpell: true,
         name: "SpiderlingsMageCollapse",
         noSprite: true,
+        // Delayed area spells announce their cast through the native enemy cast message.
+        msg: true,
         noCastMsg: false,
         color: "#a77bdc",
         school: "Latex",
@@ -999,6 +1004,8 @@ SPIDERLINGS.addSpells([
         enemySpell: true,
         name: "WebSpray",
         color: "#ffffff",
+        // Like native binding bolts, show the flight path although the spray itself deals inert damage.
+        alwaysWarn: true,
         sfx: "Miss",
         school: "Latex",
         manacost: 4,
@@ -1060,19 +1067,19 @@ addTextKey(
     "The Spiderling Mage gathers a glowing ball of silk and sends it forward.",
 );
 addTextKey("KinkyDungeonSpellSummonSpinner", "Summon Spinner");
-addTextKey("KinkyDungeonSummonSummonSpinner", "A Spiderling Spinner steps into view along a strand of silk.");
+addTextKey("KinkyDungeonSummonSingleSpinner", "A Spiderling Spinner steps into view along a strand of silk.");
 addTextKey(
     "KinkyDungeonSpellCastSummonSpinner",
     "Tiny footsteps rustle along the silk. A Spiderling Spinner is about to emerge.",
 );
 
 addTextKey("KinkyDungeonSpellSummonJumper", "Summon Jumper");
-addTextKey("KinkyDungeonSummonSummonJumper", "A Spiderling Jumper hops into view and unfolds its legs.");
+addTextKey("KinkyDungeonSummonSingleJumper", "A Spiderling Jumper hops into view and unfolds its legs.");
 addTextKey("KinkyDungeonSpellCastSummonJumper", "Rustling draws closer. A Spiderling Jumper is about to emerge.");
 
 addTextKey("KinkyDungeonSpellSummonWebCaster", "Summon Web Caster");
 addTextKey(
-    "KinkyDungeonSummonSummonWebCaster",
+    "KinkyDungeonSummonSingleWebCaster",
     "A Spiderling Web Caster crawls into view, trailing silk along the ground.",
 );
 addTextKey(
@@ -1081,7 +1088,11 @@ addTextKey(
 );
 
 addTextKey("KinkyDungeonSpellSummonTunneler", "Summon Tunneler");
-addTextKey("KinkyDungeonSummonSummonTunneler", "A Spiderling Tunneler emerges and scurries along the ground.");
+addTextKey("KinkyDungeonSummonSingleTunneler", "A Spiderling Tunneler emerges and scurries along the ground.");
+addTextKey(
+    "KinkyDungeonSummonSingleMageSpiderlings",
+    "A Spiderling Mage creeps into view, faint light flickering along its silk.",
+);
 addTextKey(
     "KinkyDungeonSpellCastSummonTunneler",
     "Scratching comes from beneath the ground. A Spiderling Tunneler is about to emerge.",
@@ -1089,7 +1100,7 @@ addTextKey(
 
 addTextKey("KinkyDungeonSpellSummonNestEntrance", "Dig a Spiderling Nest");
 addTextKey(
-    "KinkyDungeonSummonSummonNestEntrance",
+    "KinkyDungeonSummonSingleNestEntrance",
     "A new nest entrance opens in the ground, its edges lined with silk.",
 );
 addTextKey(

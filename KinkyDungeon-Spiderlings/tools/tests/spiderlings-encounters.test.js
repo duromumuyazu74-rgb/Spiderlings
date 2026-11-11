@@ -60,9 +60,13 @@ test("fresh nest settings reach the runtime selector while saved zero and custom
         ],
     ]) {
         const nest = { id: 11, x: 2, y: 2, hp: 12, aware: true, Enemy: { name: "NestEntrance", visionRadius: 30 } };
-        const births = [];
+        const births = [],
+            announcements = [];
         let rolls = 0;
         const kd = loadCoreRuntime({
+            TextGet: (key) => key,
+            KinkyDungeonSendTextMessage: (priority, text, _color, _time, _noPush, noDupe, entity) =>
+                announcements.push({ priority, text, noDupe, entity: entity?.id }),
             KDModSettings: { Spiderlings: { ...saved } },
             KDMapData: { Entities: [nest] },
             KinkyDungeonPlayerEntity: { player: true, x: 5, y: 5 },
@@ -81,7 +85,14 @@ test("fresh nest settings reach the runtime selector while saved zero and custom
         for (const [key, value] of Object.entries(saved)) assert.equal(kd.KDModSettings.Spiderlings[key], value);
         assert.equal(kd.Spiderlings.runNestReinforcements({}, { allied: false, delta: 2 }), 1);
         assert.deepEqual(births, [selected]);
+        // Like a native summon spell, a visible arrival is announced; KD drops it while the cell is unseen.
+        assert.deepEqual(announcements, [
+            { priority: 6, text: `KinkyDungeonSummonSingle${selected}`, noDupe: true, entity: 100 },
+        ]);
     }
+    const runtime = fs.readFileSync(path.join(__dirname, "../../Spiderlings.js"), "utf8");
+    for (const species of ["Spinner", "Jumper", "WebCaster", "Tunneler", "MageSpiderlings", "NestEntrance"])
+        assert.ok(runtime.includes(`"KinkyDungeonSummonSingle${species}"`), `${species} arrival text`);
 });
 
 test("global field demand receives Nest reports without granting perception or an extra spawn", () => {
