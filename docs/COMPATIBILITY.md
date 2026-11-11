@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.25.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current development candidate and published unified Prison and Boss test release is [Spiderlings_0.92.39-test.25.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.25). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -22,6 +22,8 @@ A Tunneler no longer opens a nest the moment it casts. Native AI casting still p
 The Matriarch's tracking rune now needs two attack points. KD shows its own one-turn wind-up tile in the rune colour, and a player who steps off that tile is not caught; with one point the rune landed on its first turn in range regardless of position.
 
 The same `Spiderlings_0.92.39-test.25.zip` passed all 78 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `0be6a0361d7f03252efc6c7269db6942d2c10f98`, unchanged since test.21. It has 229 allowlisted entries, 27,472,805 bytes and SHA-256 `92ab3118f7b9bd5ed35e554771da025eaa1cf2f43b8ceb34a3bbe012a05416cb`. Full native evidence is retained in run `2026-11-11T05-54-15-103Z-0.92.39-test.25`. Repository check, npm test (12), npm run test:local (1225) and the complete local watcher on the final ZIP pass.
+
+This exact ZIP is published as Pre-release [v0.92.39-test.25](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.25) from integrated `test` commit `ebafa5403b4db7789110c7217dacf5483ea0805c`, whose tree matches the accepted source. Publication verification read back the tag, Pre-release channel, bilingual notes and formal Latest `v0.92.39fix1`, then downloaded the asset and matched its size and SHA-256.
 
 ## Test.24 map-generation and site-scan candidate (2026-11-11)
 
