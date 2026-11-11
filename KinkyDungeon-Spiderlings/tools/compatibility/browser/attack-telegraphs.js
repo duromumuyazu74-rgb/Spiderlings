@@ -179,26 +179,30 @@
         KDMovePlayer(12, 10, false);
         const tunneler = spawn("Tunneler", 10, 10);
         const tunnelerLog = KinkyDungeonMessageLog.length;
-        expect(
-            KinkyDungeonCastSpell(10, 10, KinkyDungeonFindSpell("SummonNestEntrance", true), tunneler).result ===
-                "Cast",
-            "Tunneler nest fixture cast failed",
-        );
-        for (let i = 0; i < 2; i++) await turn();
+        const nests = () => KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "NestEntrance").length;
+        // Let the native AI cast the dig. It applies suicideOnSpell and the cast cooldown; a direct
+        // KinkyDungeonCastSpell skips both, so the surviving Tunneler digs a second nest on its next turn.
+        let tunnelerTurns = 0;
+        for (; tunnelerTurns < 6 && !nests(); tunnelerTurns++) await turn();
         const tunnelerRow = {
             kind: "tunneler-nest",
+            turns: tunnelerTurns,
             messages: logFrom(tunnelerLog),
-            nests: KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "NestEntrance").length,
+            nests: nests(),
+            tunnelerRemains: KDMapData.Entities.includes(tunneler),
         };
         rows.push(tunnelerRow);
         images["tunneler-nest"] = await photo();
+        const nestMessage = TextGet("KinkyDungeonSummonSingleNestEntrance");
         check(
-            KDMapData.Entities.some((enemy) => enemy.Enemy.name === "NestEntrance"),
-            "Tunneler fixture did not open a nest",
+            tunnelerRow.nests === 1 &&
+                !tunnelerRow.tunnelerRemains &&
+                tunnelerRow.messages.filter((entry) => entry.text === nestMessage).length === 1,
+            "One Tunneler dig must open exactly one announced nest",
             tunnelerRow,
         );
         check(
-            tunnelerRow.messages.length > 0 && !tunnelerRow.messages.some((entry) => unresolved(entry.text)),
+            !tunnelerRow.messages.some((entry) => unresolved(entry.text)),
             "Tunneler nest message is missing its text",
             tunnelerRow.messages,
         );
