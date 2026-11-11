@@ -1,6 +1,6 @@
 # Verified game environments
 
-The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.24.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The combined Boss, Silk Leash and status-icon development candidate is `Spiderlings_0.92.39-test.25.zip`. The published unified Prison and Boss test release is [Spiderlings_0.92.39-test.14.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.14). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.25 Tunneler dig and Matriarch rune wind-ups (2026-11-11)
+
+A Tunneler no longer opens a nest the moment it casts. Native AI casting still pays the dig, and its two-turn native channel now holds the Tunneler on its tile. KD's Special enemy wind-up tile marks that tile in the Tunneler colour, using the early variant until the last turn, and the tile enters KD's per-turn danger record. When the channel ends the Tunneler becomes a nest on exactly that tile. A stun, freeze, binding or displacement first cancels the dig and keeps the Tunneler; knocking it out cancels the dig with it. Because a finished dig consumes the Tunneler, the spell cost now only sets the retry delay after an interruption: 17 turns instead of 57.
+
+The Matriarch's tracking rune now needs two attack points. KD shows its own one-turn wind-up tile in the rune colour, and a player who steps off that tile is not caught; with one point the rune landed on its first turn in range regardless of position.
+
+The same `Spiderlings_0.92.39-test.25.zip` passed all 78 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `0be6a0361d7f03252efc6c7269db6942d2c10f98`, unchanged since test.21. It has 229 allowlisted entries, 27,472,805 bytes and SHA-256 `92ab3118f7b9bd5ed35e554771da025eaa1cf2f43b8ceb34a3bbe012a05416cb`. Full native evidence is retained in run `2026-11-11T05-54-15-103Z-0.92.39-test.25`. Repository check, npm test (12), npm run test:local (1225) and the complete local watcher on the final ZIP pass.
 
 ## Test.24 map-generation and site-scan candidate (2026-11-11)
 
