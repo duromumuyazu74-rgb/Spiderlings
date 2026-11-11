@@ -1890,6 +1890,22 @@ test("enclosure proposals keep mobile prey off every ring and stationary actors 
     }
 });
 
+test("mobile prey inside the first ring keeps a radius-two enclosure site", () => {
+    for (const prey of [undefined, { id: 70, x: 9, y: 5, hp: 10, Enemy: { name: "FixturePrey" } }]) {
+        const r = runtime([spinner(1, 7, 6), ...(prey ? [prey] : [])]),
+            snapshot = mapSnapshot();
+        delete snapshot.candidateLines;
+        snapshot.cells = snapshot.cells.filter((cell) => cell.x >= 5 && cell.x < 12 && cell.y >= 2 && cell.y < 9);
+        snapshot.entrances = [{ x: 5, y: 5 }];
+        snapshot.exits = [{ x: 11, y: 5 }];
+        const ai = start(r, snapshot),
+            plan = ai.plans[Object.values(ai.groups)[0].planId];
+        assert.equal(plan.kind, "enclosure", prey ? "prey" : "empty");
+        assert.equal(plan.radius, 2, prey ? "prey" : "empty");
+        assert.deepEqual({ x: plan.center.x, y: plan.center.y }, { x: 8, y: 5 }, prey ? "prey" : "empty");
+    }
+});
+
 test("expanding a radius-two core adds the next geometric ring instead of duplicating the first", () => {
     const worker = spinner(1, 7, 6),
         r = runtime([worker]),
