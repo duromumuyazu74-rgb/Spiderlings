@@ -21,7 +21,7 @@
         "spiderlings-prison-escort.test.js"
       ],
       "localTests": [],
-      "scenarios": ["boss-room", "boss-capture", "boss-combat", "boss-defeat", "start-perks"],
+      "scenarios": ["boss-room", "boss-capture", "boss-combat", "boss-defeat", "start-perks", "attack-telegraphs"],
       "reason": "Multi-cell boss, native prison side-room return, fixed formations and phase/capture transitions."
     },
     "foundation": {
@@ -170,7 +170,7 @@
         "spiderlings-hunting-grounds.test.js",
         "spiderlings-maid-hostility.test.js"
       ],
-      "scenarios": ["nest-weights", "squad-perk", "hunting-grounds", "floor-weights"],
+      "scenarios": ["nest-weights", "squad-perk", "hunting-grounds", "floor-weights", "attack-telegraphs"],
       "reason": "Encounter registration controls native species admission and reinforcement."
     },
     "settings": {
@@ -299,7 +299,7 @@
         "spiderlings-webbing-enemy.test.js"
       ],
       "localTests": ["spiderlings-mage-spells-native.test.js"],
-      "scenarios": ["friendly-mage", "owned-effects", "mage-timing", "mage-rivalry"],
+      "scenarios": ["friendly-mage", "owned-effects", "mage-timing", "mage-rivalry", "attack-telegraphs"],
       "reason": "Mage area spells and their delayed visual/control lifecycle."
     },
     "mage-visuals": {
@@ -316,7 +316,7 @@
         "spiderlings-native-actions.test.js"
       ],
       "localTests": ["spiderlings-combat.test.js"],
-      "scenarios": ["normal-integration", "action-cadence", "spinner-crowded-control"],
+      "scenarios": ["normal-integration", "action-cadence", "spinner-crowded-control", "attack-telegraphs"],
       "reason": "Native dash commitment, payment and interaction with shared yielding."
     },
     "models": {
@@ -593,7 +593,15 @@
         "spiderlings-weapon-webbing.test.js"
       ],
       "localTests": [],
-      "scenarios": ["rune-hit", "target-overlay", "owned-effects", "npc-cocoon-visuals", "normal-visuals"],
+      "scenarios": [
+        "rune-hit",
+        "target-overlay",
+        "owned-effects",
+        "npc-cocoon-visuals",
+        "normal-visuals",
+        "attack-telegraphs",
+        "mage-timing"
+      ],
       "reason": "Shared visual consumers cover spell, weapon and NPC owned effects."
     },
     "translations": {

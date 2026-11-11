@@ -13,21 +13,22 @@ KillNestEntrance,둥지 입구가 무너졌다. 가장자리의 가는 거미줄
 NameWebCaster,새끼 거미 거미줄 투사자
 KillWebCaster,새끼 거미 거미줄 투사자가 몸을 웅크린 채 물러나 어둠 속으로 숨는다.
 KinkyDungeonSpellSummonSpinner,방적자 소환
-KinkyDungeonSummonSummonSpinner,새끼 거미 방적자가 어둠 속에서 기어 나온다. 가는 다리 사이에 실이 늘어져 있다.
+KinkyDungeonSummonSingleSpinner,새끼 거미 방적자가 어둠 속에서 기어 나온다. 가는 다리 사이에 실이 늘어져 있다.
 KinkyDungeonSpellCastSummonSpinner,어둠 속에서 자잘한 발소리가 들린다. 새끼 거미 방적자가 곧 모습을 드러낼 듯하다.
 KinkyDungeonSpellSummonJumper,도약자 소환
-KinkyDungeonSummonSummonJumper,새끼 거미 도약자가 튀어나와 가는 다리로 가볍게 땅을 딛는다.
+KinkyDungeonSummonSingleJumper,새끼 거미 도약자가 튀어나와 가는 다리로 가볍게 땅을 딛는다.
 KinkyDungeonSpellCastSummonJumper,어둠 속에서 급한 바스락거림이 들린다. 새끼 거미 도약자가 곧 모습을 드러낼 듯하다.
 KinkyDungeonSpellSpiderlingsJumperDash,도약자의 급습
 KinkyDungeonSpellCastSpiderlingsJumperDash,새끼 거미 도약자가 발밑 땅을 응시하며 몸을 낮추고 가는 다리를 바짝 모은다.
 KinkyDungeonSpellSummonWebCaster,거미줄 투사자 소환
-KinkyDungeonSummonSummonWebCaster,새끼 거미 거미줄 투사자가 끈끈한 실 한 가닥을 끌며 기어 나온다.
+KinkyDungeonSummonSingleWebCaster,새끼 거미 거미줄 투사자가 끈끈한 실 한 가닥을 끌며 기어 나온다.
 KinkyDungeonSpellCastSummonWebCaster,어둠 속에서 끈끈한 실이 뻗어 나온다. 새끼 거미 거미줄 투사자가 곧 나타날 듯하다.
 KinkyDungeonSpellSummonTunneler,굴착자 소환
-KinkyDungeonSummonSummonTunneler,새끼 거미 굴착자가 어둠 속에서 나와 바닥을 따라 바스락거리며 기어간다.
+KinkyDungeonSummonSingleTunneler,새끼 거미 굴착자가 어둠 속에서 나와 바닥을 따라 바스락거리며 기어간다.
+KinkyDungeonSummonSingleMageSpiderlings,새끼 거미 마법사가 기어 나온다. 실을 따라 희미한 빛이 일렁인다.
 KinkyDungeonSpellCastSummonTunneler,어둠 속에서 작게 땅을 긁는 소리가 난다. 새끼 거미 굴착자가 곧 나타날 듯하다.
 KinkyDungeonSpellSummonNestEntrance,거미 둥지 파기
-KinkyDungeonSummonSummonNestEntrance,땅이 갈라져 실로 뒤덮인 구멍이 열린다. 새 둥지 입구가 나타났다!
+KinkyDungeonSummonSingleNestEntrance,땅이 갈라져 실로 뒤덮인 구멍이 열린다. 새 둥지 입구가 나타났다!
 KinkyDungeonSpellCastSummonNestEntrance,새끼 거미 굴착자가 바닥에 엎드려 땅을 파고, 갈라진 틈을 따라 실이 퍼져 나간다!
 KinkyDungeonSpellWebSpray,거미줄 분사
 KinkyDungeonSpellCastWebSpray,새끼 거미 거미줄 투사자가 끈끈한 실뭉치를 쏘아 보낸다. 실이 공중에서 갑자기 펼쳐진다!
@@ -295,6 +296,7 @@ KDBuffDesc_SpiderlingsSilkDensity,밀도가 높을수록 새끼 거미 구속에
 NameSpiderlingsMatriarch,둥지 직조 여왕
 NameSpiderlingsMatriarchPart,둥지 직조 여왕
 NameSpiderlingsMatriarchRune,추적 비단 룬
+AttackSpiderlingsMatriarchRune,추적 비단 룬이 당신에게 부딪혀 터지고, 실이 몸을 붙잡는다.
 KDRoomType_SpiderlingsSilkboundCourt,비단 결박의 뜰
 KDSideRoom_SpiderlingsSilkboundCourt,비단 결박의 뜰
 KDEscapeMethodDesc_SpiderlingsSilkboundCourt,여왕을 두 번 쓰러뜨리면 감옥으로 돌아가는 길이 열립니다.

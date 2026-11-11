@@ -13,21 +13,22 @@ KillNestEntrance,Der Nesteingang bricht ein. Feine Seidenfäden lösen sich vom 
 NameWebCaster,Spinnenjunges Netzwerfer
 KillWebCaster,Das Spinnenjunge Netzwerfer zieht sich zusammen und weicht ins Dunkel zurück.
 KinkyDungeonSpellSummonSpinner,Spinner beschwören
-KinkyDungeonSummonSummonSpinner,Ein Spinnenjunges Spinner krabbelt aus dem Dunkel, Seidenfäden zwischen den feinen Beinen.
+KinkyDungeonSummonSingleSpinner,Ein Spinnenjunges Spinner krabbelt aus dem Dunkel, Seidenfäden zwischen den feinen Beinen.
 KinkyDungeonSpellCastSummonSpinner,Leises Trippeln kommt aus dem Dunkel; gleich wird ein Spinnenjunges Spinner auftauchen.
 KinkyDungeonSpellSummonJumper,Springer beschwören
-KinkyDungeonSummonSummonJumper,Ein Spinnenjunges Springer schnellt hervor und landet leichtfüßig auf dem Boden.
+KinkyDungeonSummonSingleJumper,Ein Spinnenjunges Springer schnellt hervor und landet leichtfüßig auf dem Boden.
 KinkyDungeonSpellCastSummonJumper,Hastiges Rascheln kommt aus dem Dunkel; gleich wird ein Spinnenjunges Springer auftauchen.
 KinkyDungeonSpellSpiderlingsJumperDash,Springer-Sprungangriff
 KinkyDungeonSpellCastSpiderlingsJumperDash,Das Spinnenjunge Springer starrt auf den Boden unter dir, senkt den Körper und zieht seine feinen Beine eng an.
 KinkyDungeonSpellSummonWebCaster,Netzwerfer beschwören
-KinkyDungeonSummonSummonWebCaster,Ein Spinnenjunges Netzwerfer krabbelt hervor und zieht einen klebrigen Seidenfaden hinter sich her.
+KinkyDungeonSummonSingleWebCaster,Ein Spinnenjunges Netzwerfer krabbelt hervor und zieht einen klebrigen Seidenfaden hinter sich her.
 KinkyDungeonSpellCastSummonWebCaster,Klebrige Seide spannt sich aus dem Dunkel; gleich wird ein Spinnenjunges Netzwerfer auftauchen.
 KinkyDungeonSpellSummonTunneler,Gräber beschwören
-KinkyDungeonSummonSummonTunneler,Ein Spinnenjunges Gräber kommt aus dem Dunkel und huscht über den Boden.
+KinkyDungeonSummonSingleTunneler,Ein Spinnenjunges Gräber kommt aus dem Dunkel und huscht über den Boden.
+KinkyDungeonSummonSingleMageSpiderlings,Ein Spinnenjunges Magier krabbelt hervor, schwaches Licht flackert über seine Seide.
 KinkyDungeonSpellCastSummonTunneler,Leises Scharren kommt aus dem Dunkel; gleich wird ein Spinnenjunges Gräber auftauchen.
 KinkyDungeonSpellSummonNestEntrance,Spinnennest graben
-KinkyDungeonSummonSummonNestEntrance,Der Boden reißt zu einem seidenbedeckten Loch auf; ein neuer Nesteingang ist entstanden!
+KinkyDungeonSummonSingleNestEntrance,Der Boden reißt zu einem seidenbedeckten Loch auf; ein neuer Nesteingang ist entstanden!
 KinkyDungeonSpellCastSummonNestEntrance,Das Spinnenjunge Gräber kauert am Boden und scharrt, während Seide die Risse entlangwächst!
 KinkyDungeonSpellWebSpray,Netzstrahl
 KinkyDungeonSpellCastWebSpray,Das Spinnenjunge Netzwerfer spritzt klebrige Seide auf dich; Fäden fächern sich in der Luft auf!
@@ -295,6 +296,7 @@ KDBuffDesc_SpiderlingsSilkDensity,Dichtere Seide erhöht den Befreiungsaufwand. 
 NameSpiderlingsMatriarch,Nestweber-Matriarchin
 NameSpiderlingsMatriarchPart,Nestweber-Matriarchin
 NameSpiderlingsMatriarchRune,Verfolgende Seidenrune
+AttackSpiderlingsMatriarchRune,Die verfolgende Seidenrune zerplatzt an dir, und ihre Fäden halten dich fest.
 KDRoomType_SpiderlingsSilkboundCourt,Seidenhof
 KDSideRoom_SpiderlingsSilkboundCourt,Seidenhof
 KDEscapeMethodDesc_SpiderlingsSilkboundCourt,Besiege die Matriarchin zweimal, um den Rückweg ins Gefängnis zu öffnen.

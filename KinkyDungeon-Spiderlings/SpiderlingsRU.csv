@@ -13,21 +13,22 @@ KillNestEntrance,Вход в гнездо обрушивается. Тонкие
 NameWebCaster,Паучонок-плеватель
 KillWebCaster,Паучонок-плеватель съёживается и отступает в темноту.
 KinkyDungeonSpellSummonSpinner,Призвать прядильщика
-KinkyDungeonSummonSummonSpinner,Паучонок-прядильщик выползает из темноты, протягивая шёлковые нити между тонкими лапками.
+KinkyDungeonSummonSingleSpinner,Паучонок-прядильщик выползает из темноты, протягивая шёлковые нити между тонкими лапками.
 KinkyDungeonSpellCastSummonSpinner,Из темноты доносится тихий топот; вот-вот появится паучонок-прядильщик.
 KinkyDungeonSpellSummonJumper,Призвать прыгуна
-KinkyDungeonSummonSummonJumper,Паучонок-прыгун выскакивает наружу и легко опускает тонкие лапки на землю.
+KinkyDungeonSummonSingleJumper,Паучонок-прыгун выскакивает наружу и легко опускает тонкие лапки на землю.
 KinkyDungeonSpellCastSummonJumper,Из темноты доносится торопливый шорох; вот-вот появится паучонок-прыгун.
 KinkyDungeonSpellSpiderlingsJumperDash,Прыжковая атака прыгуна
 KinkyDungeonSpellCastSpiderlingsJumperDash,Паучонок-прыгун впивается взглядом в землю у твоих ног, припадает к ней и тесно подбирает тонкие лапки.
 KinkyDungeonSpellSummonWebCaster,Призвать плевателя
-KinkyDungeonSummonSummonWebCaster,Паучонок-плеватель выползает наружу, волоча за собой липкую нить.
+KinkyDungeonSummonSingleWebCaster,Паучонок-плеватель выползает наружу, волоча за собой липкую нить.
 KinkyDungeonSpellCastSummonWebCaster,Из темноты тянется липкий шёлк; вот-вот появится паучонок-плеватель.
 KinkyDungeonSpellSummonTunneler,Призвать землекопа
-KinkyDungeonSummonSummonTunneler,Паучонок-землекоп выбирается из темноты и шуршит по земле.
+KinkyDungeonSummonSingleTunneler,Паучонок-землекоп выбирается из темноты и шуршит по земле.
+KinkyDungeonSummonSingleMageSpiderlings,Паучонок-маг выползает наружу; по его шёлку пробегает слабый свет.
 KinkyDungeonSpellCastSummonTunneler,Из темноты доносится тихое скребущее шуршание; вот-вот появится паучонок-землекоп.
 KinkyDungeonSpellSummonNestEntrance,Выкопать паучье гнездо
-KinkyDungeonSummonSummonNestEntrance,Земля раскалывается, открывая покрытую шёлком дыру; появился новый вход в гнездо!
+KinkyDungeonSummonSingleNestEntrance,Земля раскалывается, открывая покрытую шёлком дыру; появился новый вход в гнездо!
 KinkyDungeonSpellCastSummonNestEntrance,Паучонок-землекоп припадает к земле и роет, а по трещинам расползается шёлк!
 KinkyDungeonSpellWebSpray,Струя паутины
 KinkyDungeonSpellCastWebSpray,Паучонок-плеватель выпрыскивает к тебе пучок липкого шёлка; нити внезапно раскрываются в воздухе!
@@ -295,6 +296,7 @@ KDBuffDesc_SpiderlingsSilkDensity,Плотная паутина требует �
 NameSpiderlingsMatriarch,Матриархиня гнездоплётов
 NameSpiderlingsMatriarchPart,Матриархиня гнездоплётов
 NameSpiderlingsMatriarchRune,Следящая шёлковая руна
+AttackSpiderlingsMatriarchRune,Следящая шёлковая руна лопается о вас, и её нити цепляются за тело.
 KDRoomType_SpiderlingsSilkboundCourt,Шёлковый двор
 KDSideRoom_SpiderlingsSilkboundCourt,Шёлковый двор
 KDEscapeMethodDesc_SpiderlingsSilkboundCourt,Победите Матриархиню дважды, чтобы открыть путь обратно в тюрьму.

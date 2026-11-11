@@ -250,6 +250,7 @@ test("KD pre-started special cooldown still commits enemyCast into the visible D
     const bullets = [{ bullet: { source: 10, spell: { name: "SpiderlingsJumperDash" } } }];
     const warnings = [];
     const messages = [];
+    const announcements = [];
     const damages = [];
     const physicalPathChecks = [];
     let progressCalls = 0;
@@ -287,8 +288,9 @@ test("KD pre-started special cooldown still commits enemyCast into the visible D
                 damages.push({ ...damage });
                 return { happened: 1 };
             },
-            KinkyDungeonSendTextMessage: (_priority, text) => {
+            KinkyDungeonSendTextMessage: (_priority, text, color, _time, _noPush, _noDupe, entity) => {
                 messages.push(text);
+                announcements.push({ color, entity });
                 return true;
             },
             TextGet: (key) => key,
@@ -312,6 +314,9 @@ test("KD pre-started special cooldown still commits enemyCast into the visible D
     assert.equal(warnings[0].warning.color, "#ff66ff");
     assert.deepEqual([warnings[0].warning.x, warnings[0].warning.y], [4, 0]);
     assert.deepEqual(messages, ["KinkyDungeonSpellCastSpiderlingsJumperDash"]);
+    // Native enemy cast colour; the source entity lets KD drop the line while the Jumper is unseen.
+    assert.equal(announcements[0].color, "#ff8844");
+    assert.equal(announcements[0].entity, source);
 
     source.immobile = 0; // KD 5.5 decays timed statuses before beforeEnemyLoop.
     genericEvents.beforeEnemyLoop.SpiderlingsJumperDash("beforeEnemyLoop", { enemy: source });

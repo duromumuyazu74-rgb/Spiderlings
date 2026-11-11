@@ -19,6 +19,7 @@
         NameSpiderlingsMatriarch: "Nestweaver Matriarch",
         NameSpiderlingsMatriarchPart: "Nestweaver Matriarch",
         NameSpiderlingsMatriarchRune: "Tracking silk rune",
+        AttackSpiderlingsMatriarchRune: "The tracking silk rune bursts against you, and its threads catch hold.",
         KinkyDungeonStatSpiderlingsBossStart: "Matriarch start",
         KinkyDungeonStatDescSpiderlingsBossStart: "Start in the Silkbound Court to face the Nestweaver Matriarch.",
         KDRoomType_SpiderlingsSilkboundCourt: "Silkbound Court",
@@ -145,15 +146,34 @@
                 if (!(KinkyDungeonVisionGet(cell.x, cell.y) > 0)) continue;
                 const key = `${cell.x},${cell.y}`,
                     remaining = Math.max(0, warning.at - saved.clock);
-                if (!cells.has(key) || remaining < cells.get(key).remaining) cells.set(key, { ...cell, remaining });
+                if (!cells.has(key) || remaining < cells.get(key).remaining)
+                    cells.set(key, { ...cell, remaining, special: warning.kind !== "melee" });
             }
+        // Native attack wind-ups: silk grasp uses the ordinary tile, skills the Special tile, and both use the
+        // early (Basic) tile until the attack lands on the next world turn.
+        const groups = new Map();
         for (const cell of cells.values()) {
-            const urgent = cell.remaining <= 1,
-                color = urgent ? 0xff7260 : 0xffbf60;
+            const early = cell.remaining > 1,
+                key = `${cell.special ? "special" : "attack"}${early ? "_early" : ""}`;
+            if (!groups.has(key)) groups.set(key, { special: cell.special, early, cells: [] });
+            groups.get(key).cells.push(cell);
+        }
+        const color = warningColor();
+        let order = 0;
+        for (const [key, group] of groups)
+            api.SpellVisuals?.nativeWarning(`SpiderlingsBossView_warning_${key}`, group.cells, {
+                color,
+                corner: point,
+                style: "attack",
+                special: group.special,
+                early: group.early,
+                order: order++,
+            });
+        // A thin boundary keeps large fan and ring areas readable while native tiles flash.
+        for (const cell of cells.values()) {
+            const urgent = cell.remaining <= 1;
             const [x, y] = point(cell);
-            drawing.lineStyle(0).beginFill(color, urgent ? 0.3 : 0.18);
-            drawing.drawRect(x + 1, y + 1, size - 2, size - 2).endFill();
-            drawing.lineStyle(3, color, 1);
+            drawing.lineStyle(1.5, color, urgent ? 0.8 : 0.45);
             for (const [dx, dy, x1, y1, x2, y2] of [
                 [0, -1, x, y, x + size, y],
                 [1, 0, x + size, y, x + size, y + size],
@@ -163,9 +183,12 @@
                 const neighbor = cells.get(`${cell.x + dx},${cell.y + dy}`);
                 if (!neighbor || neighbor.remaining <= 1 !== urgent) drawing.moveTo(x1, y1).lineTo(x2, y2);
             }
-            if (cell.x === KinkyDungeonPlayerEntity.x && cell.y === KinkyDungeonPlayerEntity.y)
-                drawing.lineStyle(3, 0xffffff, 0.9).drawRect(x + 5, y + 5, size - 10, size - 10);
         }
+    }
+    // KD tints enemy attack warnings with the attacker's colour.
+    function warningColor() {
+        const color = api.BossEncounter.boss()?.Enemy?.color || "#cdb4ff";
+        return parseInt(color.slice(1), 16);
     }
     function drawPanel(saved, capture, boss, cocoon) {
         const remaining = (at) => Math.max(0, Math.ceil((at - saved.clock) * 100) / 100);
@@ -283,6 +306,11 @@
                     return "";
                 },
         );
+    // Runs after BossEncounter advances its clock in the same world turn.
+    KDAddEvent(KDEventMapGeneric, "tickAfter", "SpiderlingsBossViewDanger", () => {
+        const saved = api.BossEncounter.state();
+        if (saved?.warnings.length) api.SpellVisuals?.nativeDanger(saved.warnings.flatMap((warning) => warning.cells));
+    });
     KDAddEvent(KDEventMapGeneric, "draw", "SpiderlingsBossView", (_event, frame) => {
         clear();
         if (!frame) return;

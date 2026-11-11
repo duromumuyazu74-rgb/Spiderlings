@@ -397,5 +397,17 @@
   "KinkyDungeonDefeat",
   "KDCustomDefeat",
   "KDCustomDefeatEnemy",
-  "KinkyDungeonInterruptSleep"
+  "KinkyDungeonInterruptSleep",
+  "KDMouseInPlayableArea",
+  "KDMousePlayableAreaStatusFade",
+  "KDWarningFlashSpeed",
+  "KDAnimSpeed",
+  "KDWarningFlashBPerDelta",
+  "KDWarningFlashPerDelta",
+  "kdwarningboard",
+  "kdwarningboardOver",
+  "KDAddWarning",
+  "KinkyDungeonMessageLog",
+  "KDBulletWarnings",
+  "KDGetWarnings"
 ]

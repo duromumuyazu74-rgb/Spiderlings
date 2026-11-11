@@ -5,7 +5,8 @@
     const api = globalThis.Spiderlings;
     const KEY = "SpiderlingsSpellVisuals";
     const PURPLE = 0xc9a0e0;
-    const WARNING = 0xf2c66f;
+    // The Mage spells' own native colour, as KD tints spell warnings with the casting spell.
+    const MAGE_WARNING = 0xa77bdc;
     const DURATION = 240;
     const BURST_DURATION = 520;
     const LAYERS = Object.freeze({ ground: -0.05, area: 2.4, actor: 2.5, feedback: 2.6 });
@@ -18,6 +19,7 @@
     let seenBursts = new WeakSet();
     let burstSerial = 0;
     const dashes = [];
+    const warningCells = new Map();
     const bulletFrames = new Map();
     let built = new WeakMap();
     let map;
@@ -134,6 +136,84 @@
         ];
     }
 
+    // KD draws warning tiles while the pointer is over the map, or always with its ForceWarnings option.
+    function nativeWarningsShown() {
+        if (typeof KDToggles === "undefined") return true;
+        return (
+            !!KDToggles.ForceWarnings ||
+            (typeof KDMouseInPlayableArea === "function" && KDMouseInPlayableArea()) ||
+            (typeof KDMousePlayableAreaStatusFade !== "undefined" && !!KDMousePlayableAreaStatusFade)
+        );
+    }
+
+    function nativeFlash(index, spacing) {
+        if (typeof KDToggles === "undefined" || !KDToggles.FlashingWarning) return 1;
+        const phase = (index * spacing + KDWarningFlashSpeed * performance.now() * KDAnimSpeed) % 2000;
+        return Math.cos((2 * Math.PI * phase) / 2000) * 0.39 + 0.6;
+    }
+
+    // Draws KD's own warning tiles: "spell" matches bullet and area warnings, "attack" an enemy attack wind-up,
+    // with the native Special and early (Basic) variants. `corner` maps a cell to its top-left screen point.
+    function nativeWarning(id, cells, { color, corner, style = "spell", special = false, early = false, order = 0 }) {
+        if (!nativeWarningsShown()) return 0;
+        const size = KinkyDungeonGridSizeDisplay,
+            variant = (special ? "Special" : "") + (early ? "Basic" : "");
+        let drawn = 0;
+        for (const cell of cells) {
+            if (!visible(cell.x, cell.y)) continue;
+            const [left, top] = corner(cell),
+                key = `${id}_${cell.x}_${cell.y}`;
+            const draw = (board, part, image, alpha, zIndex, tint, grow = 0) =>
+                KDDraw(
+                    board,
+                    kdpixisprites,
+                    `${key}_${part}`,
+                    KinkyDungeonRootDirectory + image,
+                    left - grow,
+                    top - grow,
+                    size + grow * 2,
+                    size + grow * 2,
+                    undefined,
+                    { alpha, zIndex, ...(tint === undefined ? {} : { tint }) },
+                );
+            if (style === "spell") {
+                const alpha = 0.5 * nativeFlash(order + drawn, KDWarningFlashBPerDelta);
+                draw(kdwarningboardOver, "wc", "WarningColorSpell.png", alpha, -0.1, color);
+                draw(kdwarningboard, "wb", "WarningBacking.png", alpha, -0.2, color);
+                draw(kdwarningboard, "wbh", "WarningBackingHighlight.png", alpha, -0.21);
+            } else {
+                const flash = nativeFlash(order, KDWarningFlashPerDelta);
+                draw(kdwarningboardOver, "wc", `WarningColor${variant}.png`, flash, 2.22, color);
+                draw(kdwarningboard, "wb", "WarningBacking.png", (early ? 0.25 : 0.75) * flash, 0.21, color);
+                draw(kdwarningboard, "wbh", "WarningBackingHighlight.png", (early ? 0.5 : 0.8) * flash, 0.2);
+                draw(kdwarningboard, "wh", `WarningHighlight${variant}.png`, flash, 2.2, undefined, 1);
+            }
+            drawn += 1;
+        }
+        return drawn;
+    }
+
+    // Registers cells in KD's danger record, which interrupts auto-wait and fast movement, and plays the native
+    // warning sound when the player stands inside. KD clears the record at the start of every world turn.
+    function nativeDanger(cells, source = 0) {
+        if (typeof KDAddWarning !== "function") return false;
+        const player = KinkyDungeonPlayerEntity;
+        let inside = false;
+        for (const cell of cells) {
+            KDAddWarning({ source, type: 2, sx: cell.x, sy: cell.y, x: cell.x, y: cell.y });
+            if (cell.x === player.x && cell.y === player.y) inside = true;
+        }
+        // KD 5.4.92 has no separate warning-sound option; KinkyDungeonPlaySound applies the general sound setting.
+        if (inside && !(typeof KDToggles !== "undefined" && KDToggles.WarningSound === false))
+            KinkyDungeonPlaySound(KinkyDungeonRootDirectory + "Audio/Warning.ogg");
+        return inside;
+    }
+
+    function cellCorner(cell) {
+        const [x, y] = xy(cell.x, cell.y);
+        return [x - KinkyDungeonGridSizeDisplay / 2, y - KinkyDungeonGridSizeDisplay / 2];
+    }
+
     function sprite(id, path, x, y, scale = 1, alpha = 1, rotation = 0, zIndex = -0.1, target, tint, clip = false) {
         if (alpha <= 0 || (!clip && !visible(target?.x ?? x, target?.y ?? y, target))) return;
         const bounds = clip ? visibleSpriteRectangles(x, y, scale) : undefined;
@@ -248,35 +328,11 @@
         }
     }
 
-    function warning(cells, id, effect, clock, start, end, x, y, core, stage = 1) {
+    // Native tiles for overlapping warnings are merged per frame, as KD merges bullet warnings by cell.
+    function warning(cells, id, effect, clock, start, end, x, y, core, stage = 1, nativeTiles = true) {
         if (!cells.some((cell) => visible(cell.x, cell.y))) return;
-        outline(cells, false, WARNING, 0.12, 1);
-        for (const cell of cells) {
-            sprite(
-                `backing_${id}_${cell.x}_${cell.y}`,
-                "WarningBacking.png",
-                cell.x,
-                cell.y,
-                1,
-                0.035,
-                0,
-                -0.3,
-                undefined,
-                WARNING,
-            );
-            sprite(
-                `danger_${id}_${cell.x}_${cell.y}`,
-                "WarningColorSpell.png",
-                cell.x,
-                cell.y,
-                1,
-                0.48,
-                0,
-                2.22,
-                undefined,
-                WARNING,
-            );
-        }
+        outline(cells, false, MAGE_WARNING, 0.12, 1);
+        if (nativeTiles) for (const cell of cells) warningCells.set(`${cell.x},${cell.y}`, cell);
         let phase = charging.get(effect);
         if (!phase || phase.clock !== clock) {
             phase = { clock, at: now() };
@@ -374,9 +430,13 @@
         );
     }
 
+    const hexCells = (field) => square(field.x, field.y, 4);
+    const collapseCells = (collapse) => square(collapse.x - 2, collapse.y - 2, 5, 5, false);
+    const blastCells = (blast) => square(blast.x - blast.stacks + 1, blast.y - blast.stacks + 1, blast.stacks * 2 - 1);
+
     function drawCollapse(collapse, clock, id) {
         warning(
-            square(collapse.x - 2, collapse.y - 2, 5, 5, false),
+            collapseCells(collapse),
             `collapse_${id}`,
             collapse,
             clock,
@@ -394,7 +454,7 @@
         if (state) {
             for (const field of state.fields) {
                 const pending = field.activateAt > state.clock;
-                const cells = square(field.x, field.y, 4);
+                const cells = hexCells(field);
                 if (!cells.some((cell) => visible(cell.x, cell.y))) continue;
                 if (pending) {
                     warning(
@@ -429,10 +489,8 @@
             for (const collapse of state.collapses) drawCollapse(collapse, state.clock, collapse.ownerId);
             for (const blast of state.blasts)
                 if (blast.detonateAt > state.clock) {
-                    const radius = blast.stacks - 1;
-                    const cells = square(blast.x - radius, blast.y - radius, radius * 2 + 1);
                     warning(
-                        cells,
+                        blastCells(blast),
                         `mark_${blast.x}_${blast.y}`,
                         blast,
                         state.clock,
@@ -499,6 +557,9 @@
                     bullet.x,
                     bullet.y,
                     `rune_core_${bullet.x}_${bullet.y}`,
+                    1,
+                    // The triggered rune is a native bullet; KD already draws and records its 3x3 warning.
+                    false,
                 );
             }
         for (const [blast, started] of bursts) {
@@ -743,11 +804,14 @@
     function drawFrame(data) {
         frame = data;
         for (const drawing of drawings.values()) drawing.clear();
+        warningCells.clear();
         drawMage();
         drawCocoons();
         const weapons = api.Weapons?.visualState();
         for (const collapse of weapons?.collapses || [])
             drawCollapse(collapse, weapons.clock, `weapon_${collapse.ownerId}`);
+        nativeWarning(`${KEY}_danger`, [...warningCells.values()], { color: MAGE_WARNING, corner: cellCorner });
+        warningCells.clear();
         for (const [id, effect] of impacts) {
             const age = (now() - effect.start) / DURATION;
             if (age >= 1) {
@@ -919,7 +983,23 @@
     for (const event of ["postMapgen", "defeat", "passout", "postPrisonIntro", "afterLoadGame"])
         KDAddEvent(KDEventMapGeneric, event, KEY, reset);
 
+    // Runs after MageSpells advances its clock in the same world turn.
+    KDAddEvent(KDEventMapGeneric, "tickAfter", `${KEY}Danger`, () => {
+        const state = KDMapData?.SpiderlingsMageSpells;
+        if (!state || !api.MageSpells) return;
+        const cells = new Map();
+        const add = (effect, list) => {
+            if (api.MageSpells.threatensPlayer(effect)) for (const cell of list) cells.set(`${cell.x},${cell.y}`, cell);
+        };
+        for (const field of state.fields) if (field.activateAt > state.clock) add(field, hexCells(field));
+        for (const collapse of state.collapses) add(collapse, collapseCells(collapse));
+        for (const blast of state.blasts) if (blast.detonateAt > state.clock) add(blast, blastCells(blast));
+        nativeDanger([...cells.values()]);
+    });
+
     api.SpellVisuals = Object.freeze({
+        nativeWarning,
+        nativeDanger,
         hit,
         burst,
         dash(source, to) {

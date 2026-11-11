@@ -351,5 +351,10 @@
             delete KDMapData[KEY];
         });
 
-    api.MageSpells = Object.freeze({ choose, collapseDistance, markFor });
+    // Pending fields, collapses and mark blasts bind the player only when their caster is hostile.
+    function threatensPlayer(effect) {
+        return KDHostile(mageSource(effect.ownerId, effect.ownerFaction), KinkyDungeonPlayerEntity);
+    }
+
+    api.MageSpells = Object.freeze({ choose, collapseDistance, markFor, threatensPlayer });
 })();

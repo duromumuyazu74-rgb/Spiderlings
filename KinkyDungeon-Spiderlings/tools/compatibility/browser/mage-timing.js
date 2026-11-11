@@ -4,6 +4,8 @@
         images = {};
     const setup = (seed) => {
         nativeSetup(seed);
+        // Native warning tiles otherwise appear only while the pointer is over the map.
+        KDToggles.ForceWarnings = true;
         KinkyDungeonBulletsVisual.clear();
         KDDamageQueue.length = 0;
         KinkyDungeonFloaters.length = 0;
@@ -200,7 +202,8 @@
                         if (Spiderlings.MageSpells.collapseDistance(12, 10, { x, y }) >= 0) affected.push({ x, y });
                 expect(affected.length === 21, "Collapse footprint is not 21 cells");
                 images[`${color}-collapse-${mode}-warning`] = await photo();
-                const danger = () => rendered(`danger_collapse_${caster.id}_`);
+                // One merged native tile per dangerous cell; count its tinted colour layer.
+                const danger = () => rendered("danger_").filter((sprite) => sprite.id.endsWith("_wc"));
                 const trails = () => {
                     const ground = kdgameboard.children.find((g) => g.name === "SpiderlingsSpellVisuals_ground");
                     return (ground?.geometry?.graphicsData || [])
