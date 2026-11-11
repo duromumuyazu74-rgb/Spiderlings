@@ -463,6 +463,74 @@ test("TileMaze retries retain the native placement list references and discard f
     assert.deepEqual(chestList, [{ x: 2, y: 3, attempt: 2 }]);
 });
 
+test("protected set-piece areas leave the native jail cell a POI instead of regenerating the floor", () => {
+    const source = fs.readFileSync(path.join(__dirname, "../../SpiderlingsHuntingGroundsLayout.js"), "utf8");
+    const generate = (jailPoints) => {
+        let mazes = 0;
+        const protectedAreas = [],
+            context = {
+                Spiderlings: {},
+                KDMapData: {
+                    MapMod: "SpiderlingsHuntingGrounds",
+                    RoomType: "",
+                    GridWidth: 30,
+                    GridHeight: 30,
+                    Tiles: {},
+                    JailPoints: jailPoints,
+                    StartPosition: { x: 1, y: 1 },
+                    EndPosition: { x: 28, y: 28 },
+                },
+                KDSetPieces: [{ Name: "GuaranteedCell", tags: ["jail"], Radius: 5, Max: 1, xPad: 2 }],
+                KinkyDungeonCreateMapGenType: {
+                    TileMaze(poi) {
+                        mazes++;
+                        poi.splice(0, poi.length, { x: 5, y: 8, requireTags: [], favor: ["GuaranteedCell"] });
+                    },
+                },
+                KinkyDungeonPlaceSetPieces() {
+                    protectedAreas.push(...context.KDMapData.SpecialAreas.map((area) => ({ ...area })));
+                },
+                KinkyDungeonMapGet: () => "0",
+                KinkyDungeonTilesGet: (name) => context.KDMapData.Tiles[name],
+                KinkyDungeonTilesSet: (name, value) => (context.KDMapData.Tiles[name] = value),
+                KinkyDungeonMapSet() {},
+                KDRandom: () => 0.5,
+            };
+        vm.createContext(context);
+        vm.runInContext(source, context);
+        context.KinkyDungeonCreateMapGenType.TileMaze([], [], 30, 30, 1, 1, 1, {});
+        context.KinkyDungeonPlaceSetPieces([]);
+        return { mazes, protectedAreas: protectedAreas.map(({ x, y, radius }) => ({ x, y, radius })) };
+    };
+    // Native tests a 5x5 cell on POI (5,8) from (4,8) and rejects it within radius + 3 of an area.
+    const cell = { x: 4, y: 8 },
+        kept = generate([]);
+    assert.equal(kept.mazes, 1);
+    assert.ok(kept.protectedAreas.length >= 6);
+    for (const area of kept.protectedAreas) {
+        assert.ok(
+            Math.max(Math.abs(area.x - cell.x), Math.abs(area.y - cell.y)) > area.radius + 3,
+            JSON.stringify(area),
+        );
+        // The 5x5 cell spans x 3-7 and y 6-10; its patrol point and guards stand at x 8.
+        assert.ok(
+            area.x + area.radius < 3 ||
+                area.x - area.radius > 8 ||
+                area.y + area.radius < 6 ||
+                area.y - area.radius > 10,
+            JSON.stringify(area),
+        );
+    }
+    // A maze that already generated a jail point keeps the unconstrained layout, which covers the POI.
+    const native = generate([{ x: 3, y: 3, type: "jail" }]);
+    assert.equal(native.mazes, 1);
+    assert.ok(
+        native.protectedAreas.some(
+            (area) => Math.max(Math.abs(area.x - cell.x), Math.abs(area.y - cell.y)) <= area.radius + 3,
+        ),
+    );
+});
+
 test("native walkable slash flooring does not discard a legal large hunting site", () => {
     const map = fixture(30),
         site = map.shaped.huntingSites[1],

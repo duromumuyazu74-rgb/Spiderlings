@@ -3,6 +3,7 @@
 /* global KinkyDungeonPlaceChests: writable, KinkyDungeonPlaceDoors: writable, KinkyDungeonPlaceShrines: writable */
 /* global KinkyDungeonPlaceChargers: writable, KinkyDungeonPlaceSpecialTiles: writable, KinkyDungeonPlaceLore: writable */
 /* global KinkyDungeonPlaceSetPieces: writable, KinkyDungeonPlaceJailEntrances: writable */
+/* global KDSetPieces */
 
 (() => {
     const spiderlings = (globalThis.Spiderlings = globalThis.Spiderlings || {});
@@ -16,6 +17,16 @@
         { x: 0, y: 1 },
         { x: 0, y: -1 },
     ];
+    // Anchors carry no radius; they are reserved and shielded from native set pieces at this radius.
+    const GUARD_RADIUS = 4;
+    // A protected square clears a native set piece by the native special-area margin from its
+    // check point and does not overlap anything the piece builds.
+    const leavesSite = (center, radius, site) =>
+        chebyshev(center, site) > radius + site.margin &&
+        (center.x + radius < site.left ||
+            center.x - radius > site.right ||
+            center.y + radius < site.top ||
+            center.y - radius > site.bottom);
     const earlyPlans = new WeakMap();
     const reservations = new WeakMap();
     const carveable = "1234XrR";
@@ -132,11 +143,15 @@
         };
         const natural = (x, y) =>
             !planned.has(`${x},${y}`) && unclaimed(x, y) && (tile(x, y) === "0" || carveable.includes(tile(x, y)));
+        // A native set-piece site that every protected area must leave clear.
+        const keep = options.keep;
+        const leavesKeep = (center, radius) => !keep || leavesSite(center, radius, keep);
         const candidates = [];
         for (let y = 4; y < height - 4; y += 1)
             for (let x = 4; x < width - 4; x += 1) {
                 const center = { x, y };
                 if (
+                    leavesKeep(center, GUARD_RADIUS) &&
                     footprint(center, 3, natural) &&
                     [options.start, options.end, ...(options.shortcuts || [])]
                         .filter(Boolean)
@@ -306,6 +321,7 @@
                     ...center,
                     radius: [4, 3, 2].find(
                         (radius) =>
+                            leavesKeep(center, radius) &&
                             footprint(center, radius, natural) &&
                             anchors.every((anchor) => chebyshev(anchor, center) > radius + 3) &&
                             huntingSites.every((placed) => chebyshev(placed, center) > radius + placed.radius),
@@ -345,6 +361,11 @@
             diagnostics.failure = "usable-anchors";
             return null;
         }
+        // Callers may try several layouts on one generated maze; reject before any terrain changes.
+        if (options.accept && !options.accept({ anchors: usableAnchors, huntingSites, largeHuntingSite: largeSite })) {
+            diagnostics.failure = "rejected";
+            return null;
+        }
         for (const name of proposed) {
             const [x, y] = name.split(",").map(Number);
             set(x, y, "0");
@@ -352,7 +373,7 @@
         const reserved = [];
         if (options.reserve)
             for (const center of [...usableAnchors, ...huntingSites]) {
-                const radius = usableAnchors.includes(center) ? 4 : center.radius;
+                const radius = usableAnchors.includes(center) ? GUARD_RADIUS : center.radius;
                 for (let y = center.y - radius; y <= center.y + radius; y += 1)
                     for (let x = center.x - radius; x <= center.x + radius; x += 1)
                         if (
@@ -653,6 +674,54 @@
         };
     }
 
+    // Native CreateMap regenerates the whole floor until a jail point exists. A TileMaze
+    // floor without a generated jail tile relies on the GuaranteedCell set piece, which
+    // native code skips when every eligible POI lies within a special area's margin.
+    function jailCell(POI, width, height) {
+        if (KDMapData.JailPoints?.some((point) => !point.type || ["jail", "dropoff"].includes(point.type))) return null;
+        const piece =
+            typeof KDSetPieces === "undefined" ? null : KDSetPieces.find((entry) => entry.Name === "GuaranteedCell");
+        if (!piece || !Array.isArray(POI)) return null;
+        const size = piece.Radius,
+            half = Math.floor(size / 2),
+            tags = piece.tags || ["decorative"],
+            margin = Math.ceil(size / 2);
+        const eligible = POI.filter((point) => {
+            const x = point.x - half,
+                y = point.y - half;
+            return (
+                !point.used &&
+                (point.favor?.includes(piece.Name) ||
+                    !point.requireTags?.length ||
+                    point.requireTags.some((tag) => tags.includes(tag))) &&
+                x > Math.ceil(piece.xPad || 5) &&
+                x < width - size - (piece.xPadEnd || 2) &&
+                y > Math.ceil(piece.yPad || 2) &&
+                y < height - size - (piece.yPadEnd || 2)
+            );
+        });
+        // Native measures special-area distance from the cell west of the POI. The cell's
+        // east door leads to a patrol point and two guard spawns one column past its walls.
+        const keeps = eligible.map((point) => ({
+            x: point.x - 1,
+            y: point.y,
+            margin,
+            left: point.x - half,
+            right: point.x - half + size,
+            top: point.y - half,
+            bottom: point.y - half + size - 1,
+        }));
+        return {
+            keeps,
+            clear: (plan) =>
+                keeps.some((keep) =>
+                    [...plan.anchors, ...plan.huntingSites].every((area) =>
+                        leavesSite(area, area.radius || GUARD_RADIUS, keep),
+                    ),
+                ),
+        };
+    }
+
     function register() {
         if (typeof KinkyDungeonCreateMapGenType === "undefined" || !KinkyDungeonCreateMapGenType.TileMaze) return;
         const original = KinkyDungeonCreateMapGenType.TileMaze;
@@ -704,7 +773,7 @@
                 const plan = earlyPlans.get(KDMapData);
                 const temporary = [...(plan?.anchors || []), ...(plan?.huntingSites || [])].map((point) => ({
                     ...point,
-                    radius: point.radius || 4,
+                    radius: point.radius || GUARD_RADIUS,
                 }));
                 if (temporary.length) (KDMapData.SpecialAreas = KDMapData.SpecialAreas || []).push(...temporary);
                 try {
@@ -749,29 +818,44 @@
                 }
                 result = original.apply(this, args);
                 if (!eligible) break;
-                const diagnostics = {};
-                const shaped = shapeTerrain({
-                    diagnostics,
-                    fallback: attempt === 4,
-                    width: KDMapData.GridWidth,
-                    height: KDMapData.GridHeight,
-                    tile: KinkyDungeonMapGet,
-                    meta: (x, y) => KinkyDungeonTilesGet(`${x},${y}`),
-                    set: KinkyDungeonMapSet,
-                    random: KDRandom,
-                    start: KDMapData.StartPosition,
-                    end: KDMapData.EndPosition,
-                    shortcuts: Object.values(KDMapData.ShortcutPositions || {}),
-                    planned: [
-                        ...(args[0] || []),
-                        ...(args[7]?.chestlist || []),
-                        ...(args[7]?.traps || []),
-                        ...(args[7]?.shrinelist || []),
-                        ...(args[7]?.chargerlist || []),
-                        ...(args[7]?.spawnpoints || []),
-                    ],
-                    reserve: (x, y) => KinkyDungeonTilesSet(`${x},${y}`, { OL: true, SpiderlingsLayoutReserve: true }),
-                });
+                const last = attempt === 4,
+                    jail = jailCell(args[0], KDMapData.GridWidth, KDMapData.GridHeight),
+                    accept = (plan) => !!plan.largeHuntingSite && (!jail || jail.clear(plan)),
+                    // The unconstrained layout first; then one layout per eligible jail POI held clear.
+                    trials = [undefined, ...(jail?.keeps || [])].map((keep) => ({ keep, accept }));
+                // The final attempt keeps the large site over the jail POI, then accepts any layout.
+                if (last && jail) trials.push({ accept: (plan) => !!plan.largeHuntingSite });
+                if (last) trials.push({});
+                let diagnostics = {},
+                    shaped = null;
+                for (const trial of trials) {
+                    diagnostics = {};
+                    shaped = shapeTerrain({
+                        ...trial,
+                        diagnostics,
+                        fallback: last,
+                        width: KDMapData.GridWidth,
+                        height: KDMapData.GridHeight,
+                        tile: KinkyDungeonMapGet,
+                        meta: (x, y) => KinkyDungeonTilesGet(`${x},${y}`),
+                        set: KinkyDungeonMapSet,
+                        random: KDRandom,
+                        start: KDMapData.StartPosition,
+                        end: KDMapData.EndPosition,
+                        shortcuts: Object.values(KDMapData.ShortcutPositions || {}),
+                        planned: [
+                            ...(args[0] || []),
+                            ...(args[7]?.chestlist || []),
+                            ...(args[7]?.traps || []),
+                            ...(args[7]?.shrinelist || []),
+                            ...(args[7]?.chargerlist || []),
+                            ...(args[7]?.spawnpoints || []),
+                        ],
+                        reserve: (x, y) =>
+                            KinkyDungeonTilesSet(`${x},${y}`, { OL: true, SpiderlingsLayoutReserve: true }),
+                    });
+                    if (shaped) break;
+                }
                 if (shaped) {
                     shaped.attempts = attempt + 1;
                     const reserved = new Set();
@@ -780,7 +864,7 @@
                     reservations.set(KDMapData, reserved);
                 }
                 earlyPlans.set(KDMapData, shaped || { failed: true, attempts: attempt + 1, diagnostics });
-                if (shaped && ((shaped.largeHuntingSite && shaped.anchors.length >= 3) || attempt === 4)) break;
+                if (shaped) break;
             }
             return result;
         };
