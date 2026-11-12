@@ -10,6 +10,12 @@
     const ENTRY = Object.freeze({ x: 64, y: 31 });
     const CENTER = Object.freeze({ x: 20, y: 20 });
     const EXIT = Object.freeze({ x: 20, y: 37 });
+    // The outermost Court ring stands on the floor edge; rock surrounds the square.
+    const RADIUS = 11;
+    const LAYOUT = 2;
+    const inArena = (point) => Math.max(Math.abs(point.x - CENTER.x), Math.abs(point.y - CENTER.y)) <= RADIUS;
+    // The south passage keeps the native main path to the return tile; the edge ring seals it.
+    const floor = (point) => inArena(point) || (point.x === EXIT.x && point.y > CENTER.y && point.y <= EXIT.y);
     const state = () => KDMapData?.[KEY];
     const active = () => !!state() && KDMapData.RoomType === KDGameData.RoomType;
     let returning = false;
@@ -56,20 +62,87 @@
             KinkyDungeonSendTextMessage(7, TextGet("SpiderlingsCourtEntranceFound"), "#cdb4ff", 4);
         }
     }
+    function refreshNavigation() {
+        KDUpdateEnemyCache = true;
+        KDPathCache = new Map();
+        KDPathCacheIgnoreLocks = new Map();
+        KinkyDungeonGenNavMap(CENTER);
+        api.WebMobility?.invalidateNavigation(true);
+    }
+    // Free arena floor nearest to the origin, for actors displaced by a layout change.
+    function nearestFree(origin = CENTER) {
+        let best;
+        for (let y = CENTER.y - RADIUS; y <= CENTER.y + RADIUS; y++)
+            for (let x = CENTER.x - RADIUS; x <= CENTER.x + RADIUS; x++) {
+                if (!KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(x, y)) || KinkyDungeonEntityAt(x, y))
+                    continue;
+                const d = Math.max(Math.abs(x - origin.x), Math.abs(y - origin.y));
+                if (!best || d < best.d) best = { x, y, d };
+            }
+        return best && { x: best.x, y: best.y };
+    }
+    // Phase-two Nests open 2x2 alcoves in the rock diagonally beyond each arena corner.
+    // The first cell holds the Nest; the others face the arena corner.
+    function nestAlcove(corner) {
+        const sx = corner % 2 ? 1 : -1,
+            sy = corner > 1 ? 1 : -1;
+        const x = CENTER.x + sx * (RADIUS + 2),
+            y = CENTER.y + sy * (RADIUS + 2);
+        return [
+            { x, y },
+            { x: x - sx, y },
+            { x, y: y - sy },
+            { x: x - sx, y: y - sy },
+        ];
+    }
+    function openNestAlcove(corner) {
+        const cells = nestAlcove(corner);
+        let opened = false;
+        for (const cell of cells)
+            if (KinkyDungeonMapGet(cell.x, cell.y) === "1") opened = KinkyDungeonMapSet(cell.x, cell.y, "0") || opened;
+        if (opened) refreshNavigation();
+        return cells;
+    }
+    function arenaGrid() {
+        return Array.from(
+            { length: 41 },
+            (_, y) => Array.from({ length: 41 }, (_, x) => (floor({ x, y }) ? "0" : "1")).join("") + "\n",
+        ).join("");
+    }
+    // Courts saved with the previous 39x39 floor and outer band restart on the current arena.
+    function migrate() {
+        if (!active() || state().layout === LAYOUT) return false;
+        for (let y = 1; y < KDMapData.GridHeight - 1; y++)
+            for (let x = 1; x < KDMapData.GridWidth - 1; x++) {
+                const inside = floor({ x, y }),
+                    rock = KinkyDungeonMapGet(x, y) === "1";
+                if (inside === rock) KinkyDungeonMapSet(x, y, inside ? "0" : "1");
+            }
+        state().layout = LAYOUT;
+        for (const entity of [...KDMapData.Entities]) {
+            if (floor(entity) || api.BossFootprint?.isPart(entity)) continue;
+            const spot = (entity.allied || KDAllied(entity)) && nearestFree(entity);
+            if (spot) KDMoveEntity(entity, spot.x, spot.y, false);
+            else KDRemoveEntity(entity, false, false, true);
+        }
+        if (!floor(KinkyDungeonPlayerEntity)) {
+            const spot = nearestFree();
+            if (spot) KDMovePlayer(spot.x, spot.y, false);
+        }
+        refreshNavigation();
+        return true;
+    }
     function generate(_poi, visited) {
         const source = KDPersonalAlt[KDGameData.RoomType]?.data?.SpiderlingsCourtSource;
         if (!source) throw new Error("Silkbound Court requires its source prison.");
         KDMapData.GridWidth = 41;
         KDMapData.GridHeight = 41;
-        KDMapData.Grid = Array.from(
-            { length: 41 },
-            (_, y) => Array.from({ length: 41 }, (_, x) => (x && y && x < 40 && y < 40 ? "0" : "1")).join("") + "\n",
-        ).join("");
+        KDMapData.Grid = arenaGrid();
         visited[0].x = CENTER.x;
         visited[0].y = CENTER.y;
         KDMapData.StartPosition = { ...CENTER };
         KDMapData.EndPosition = { ...EXIT };
-        KDMapData[KEY] = { version: 1, source: { ...source }, attempts: 1, complete: false };
+        KDMapData[KEY] = { version: 1, layout: LAYOUT, source: { ...source }, attempts: 1, complete: false };
         KinkyDungeonTilesSet(`${EXIT.x},${EXIT.y}`, {
             RoomType: source.room,
             MapMod: source.mapMod,
@@ -219,6 +292,12 @@
         ENTRY,
         CENTER,
         EXIT,
+        RADIUS,
+        inArena,
+        nearestFree,
+        nestAlcove,
+        openNestAlcove,
+        migrate,
         active,
         state,
         ensureEntrance,

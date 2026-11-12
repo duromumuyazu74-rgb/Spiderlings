@@ -6,12 +6,20 @@
     const NAME = api.BossFootprint.NAME;
     const BODY = ["fan", "ring", "track", "barrage", "capture"];
     const SUPPORT = ["WebCaster", "Jumper", "MageSpiderlings"];
-    const CENTERS = [
-        { x: 5, y: 5 },
-        { x: 35, y: 5 },
-        { x: 5, y: 35 },
-        { x: 35, y: 35 },
+    // Nine Jumpers leap at the 3x3 around the player; the player's own cell goes first.
+    const COMBO = [
+        [0, 0],
+        [-1, -1],
+        [0, -1],
+        [1, -1],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [-1, 1],
+        [-1, 0],
     ];
+    const STEPS = COMBO.slice(1);
+    const key = (point) => `${point.x},${point.y}`;
     const state = () => (api.BossRoom.active() ? KDMapData[KEY] : undefined);
     const boss = () =>
         KDMapData.Entities.find((enemy) => api.BossFootprint.isBoss(enemy) && enemy.id === state()?.bossId);
@@ -49,24 +57,22 @@
             if (removedIds.has(bullet.source ?? bullet.bullet?.source) && bullet.bullet?.faction !== "Player")
                 bullet.time = 0;
     }
-    function legal(point, reserved = new Set()) {
+    // Formations stay on the arena floor; only phase-two Nests use the corner alcoves.
+    function legal(point, reserved = new Set(), alcove = false) {
         return (
-            point.x > 1 &&
-            point.y > 1 &&
-            point.x < 39 &&
-            point.y < 39 &&
+            (alcove || api.BossRoom.inArena(point)) &&
             KinkyDungeonGroundTiles.includes(KinkyDungeonMapGet(point.x, point.y)) &&
             !KinkyDungeonEntityAt(point.x, point.y) &&
-            !reserved.has(`${point.x},${point.y}`)
+            !reserved.has(key(point))
         );
     }
-    function spawnFormation(names, points, kind) {
+    function spawnFormation(names, points, kind, options = {}) {
         const reserved = new Set();
         if (
             names.length !== points.length ||
             points.some((point) => {
-                if (!legal(point, reserved)) return true;
-                reserved.add(`${point.x},${point.y}`);
+                if (!legal(point, reserved, options.alcove)) return true;
+                reserved.add(key(point));
                 return false;
             })
         )
@@ -90,14 +96,19 @@
         return created;
     }
     function initialize() {
-        if (!api.BossRoom.active() || api.BossRoom.state().complete) return;
+        if (!api.BossRoom.active()) return;
+        if (api.BossRoom.migrate() && state()) state().restart = true;
+        if (api.BossRoom.state().complete) return;
         if (state()?.restart) {
             clearThreats();
             delete KDMapData[KEY];
             api.BossRoom.startNextAttempt();
         }
         if (state()) return;
-        const enemy = DialogueCreateEnemy(20, 5, NAME);
+        const center = api.BossRoom.CENTER,
+            edge = api.BossRoom.RADIUS - 1;
+        // She enters from the north edge, inside the first ring and clear of the north builder.
+        const enemy = DialogueCreateEnemy(center.x, center.y - edge + 2, NAME);
         if (!enemy) return;
         enemy.faction = "Enemy";
         enemy.aware = true;
@@ -120,83 +131,145 @@
             history: [],
         };
         api.BossFootprint.sync(enemy);
+        // Eight builders start just inside the edge ring, one per compass direction.
         const builders = spawnFormation(
             Array(8).fill("Spinner"),
-            [
-                { x: 7, y: 7 },
-                { x: 20, y: 7 },
-                { x: 33, y: 7 },
-                { x: 33, y: 20 },
-                { x: 33, y: 33 },
-                { x: 20, y: 33 },
-                { x: 7, y: 33 },
-                { x: 7, y: 20 },
-            ],
+            STEPS.map(([dx, dy]) => ({ x: center.x + dx * edge, y: center.y + dy * edge })),
             "builder",
         );
         state().builderIds = (builders || []).map((actor) => actor.id);
         api.BossFields?.initialize();
         schedule();
     }
-    function supportPositions(name) {
+    // One caster per quadrant around the player. A quadrant against the shrinking rings
+    // borrows the left/right side, then the opposite side; closer rings relax the spacing.
+    function supportPositions() {
         const player = KinkyDungeonPlayerEntity;
-        const wanted =
-            name === "Jumper"
-                ? [
-                      [-1, -1],
-                      [-1, 0],
-                      [-1, 1],
-                      [1, -1],
-                      [1, 0],
-                      [1, 1],
-                  ]
-                : [
-                      [-1, -1],
-                      [1, -1],
-                      [-1, 1],
-                      [1, 1],
-                  ];
-        const points = [],
-            reserved = new Set();
-        for (const [dx, dy] of wanted) {
-            let selected;
-            for (const radius of [5, 6, 7, 4]) {
-                const point = { x: player.x + dx * radius, y: player.y + (name === "Jumper" ? dy : dy * radius) };
-                if (legal(point, reserved)) {
-                    selected = point;
-                    break;
+        for (const minimum of [4, 3, 2]) {
+            const points = [],
+                reserved = new Set();
+            for (const [dx, dy] of [
+                [-1, -1],
+                [1, -1],
+                [-1, 1],
+                [1, 1],
+            ]) {
+                let selected;
+                for (const [sx, sy] of [
+                    [dx, dy],
+                    [-dx, dy],
+                    [dx, -dy],
+                    [-dx, -dy],
+                ]) {
+                    const preferred = { x: player.x + sx * 5, y: player.y + sy * 5 },
+                        candidates = [];
+                    for (let y = player.y - 7; y <= player.y + 7; y++)
+                        for (let x = player.x - 7; x <= player.x + 7; x++) {
+                            const point = { x, y };
+                            if (
+                                Math.sign(x - player.x) === sx &&
+                                Math.sign(y - player.y) === sy &&
+                                distance(point, player) >= minimum &&
+                                legal(point, reserved)
+                            )
+                                candidates.push(point);
+                        }
+                    candidates.sort(
+                        (a, b) => distance(a, preferred) - distance(b, preferred) || a.y - b.y || a.x - b.x,
+                    );
+                    selected = candidates[0];
+                    if (selected) break;
                 }
+                if (!selected) break;
+                points.push(selected);
+                reserved.add(key(selected));
             }
-            if (!selected) {
-                const preferred = { x: player.x + dx * 5, y: player.y + (name === "Jumper" ? dy : dy * 5) };
-                const alternatives = [];
-                for (let y = player.y - 7; y <= player.y + 7; y++)
-                    for (let x = player.x - 7; x <= player.x + 7; x++) {
-                        const point = { x, y };
-                        if (
-                            Math.sign(x - player.x) === dx &&
-                            (name === "Jumper" || Math.sign(y - player.y) === dy) &&
-                            distance(point, player) >= 4 &&
-                            legal(point, reserved)
-                        )
-                            alternatives.push(point);
-                    }
-                alternatives.sort((a, b) => distance(a, preferred) - distance(b, preferred) || a.y - b.y || a.x - b.x);
-                selected = alternatives[0];
-            }
-            if (!selected) return undefined;
-            points.push(selected);
-            reserved.add(`${selected.x},${selected.y}`);
+            if (points.length === 4) return points;
         }
-        return points;
+        return undefined;
+    }
+    function comboTargets(player) {
+        const open = (point) =>
+            api.BossRoom.inArena(point) &&
+            KinkyDungeonMovableTilesSmartEnemy.includes(KinkyDungeonMapGet(point.x, point.y)) &&
+            !KinkyDungeonEnemyAt(point.x, point.y);
+        const cells = COMBO.map(([dx, dy]) => ({ x: player.x + dx, y: player.y + dy }));
+        const usable = cells.filter(open);
+        // A walled or occupied cell is covered by the nearest open cell of the same 3x3.
+        return cells.map((cell) =>
+            open(cell)
+                ? cell
+                : usable.reduce((best, other) =>
+                      Math.hypot(other.x - cell.x, other.y - cell.y) < Math.hypot(best.x - cell.x, best.y - cell.y)
+                          ? other
+                          : best,
+                  ),
+        );
+    }
+    // Leap lines of Jumpers already placed, so later Jumpers do not stand in them.
+    function leapLine(from, to) {
+        const steps = Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y)),
+            cells = [];
+        for (let step = 1; step < steps; step++)
+            cells.push(
+                key({
+                    x: Math.round(from.x + ((to.x - from.x) * step) / steps),
+                    y: Math.round(from.y + ((to.y - from.y) * step) / steps),
+                }),
+            );
+        return cells;
+    }
+    // Each Jumper starts within its own Dash range (more than two, at most four cells) of
+    // its target, preferably behind it as seen from the player. Candidates come best first.
+    function comboOrigins(target, offset, player, lanes) {
+        const candidates = [];
+        for (let y = target.y - 4; y <= target.y + 4; y++)
+            for (let x = target.x - 4; x <= target.x + 4; x++) {
+                const point = { x, y },
+                    reach = Math.hypot(x - target.x, y - target.y);
+                if (!(reach > 2 && reach <= 4) || distance(point, player) < 2 || lanes.has(key(point))) continue;
+                if (!legal(point) || !KinkyDungeonCheckPath(x, y, target.x, target.y, false, true, 1, false)) continue;
+                const away = Math.hypot(x - player.x, y - player.y),
+                    length = Math.hypot(offset[0], offset[1]),
+                    behind = length ? ((x - player.x) * offset[0] + (y - player.y) * offset[1]) / (away * length) : 0;
+                candidates.push({ point, score: Math.abs(reach - 3) - behind * 2 });
+            }
+        candidates.sort((a, b) => a.score - b.score || a.point.y - b.point.y || a.point.x - b.point.x);
+        return candidates.map((candidate) => candidate.point);
+    }
+    function summonCombo() {
+        const player = { x: KinkyDungeonPlayerEntity.x, y: KinkyDungeonPlayerEntity.y },
+            targets = comboTargets(player),
+            lanes = new Set(),
+            members = [];
+        targets.forEach((target, index) => {
+            // KD samples cells beside the leap line, including the Jumper's own cell, so the
+            // Dash itself decides whether a placed Jumper can leap; a refused one tries the next cell.
+            for (const origin of comboOrigins(target, COMBO[index], player, lanes).slice(0, 8)) {
+                const [jumper] = spawnFormation(["Jumper"], [origin], "support") || [];
+                if (!jumper) continue;
+                jumper.SpiderlingsBossCombo = { x: target.x, y: target.y };
+                if (!api.JumperDash.runtimeController.begin(jumper, target, { afterAction: true }).started) {
+                    KDRemoveEntity(jumper, false, false, true);
+                    continue;
+                }
+                for (const cell of leapLine(origin, target)) lanes.add(cell);
+                members.push(jumper);
+                return;
+            }
+        });
+        return members;
     }
     function summon() {
         const saved = state(),
-            name = SUPPORT[saved.supportIndex % 3],
-            points = supportPositions(name);
-        if (!points) return false;
-        const members = spawnFormation(Array(points.length).fill(name), points, "support");
-        if (!members) return false;
+            name = SUPPORT[saved.supportIndex % 3];
+        let members;
+        if (name === "Jumper") members = summonCombo();
+        else {
+            const points = supportPositions();
+            members = points && spawnFormation(Array(points.length).fill(name), points, "support");
+        }
+        if (!members?.length) return false;
         const target = { x: KinkyDungeonPlayerEntity.x, y: KinkyDungeonPlayerEntity.y };
         members.forEach((enemy, index) => {
             if (name === "Jumper") return;
@@ -342,17 +415,11 @@
         const saved = state();
         for (const goal of saved.nests) {
             if (goal.spawned) continue;
-            const center = CENTERS[goal.corner];
-            const positions = [
-                center,
-                { x: center.x - 1, y: center.y + 1 },
-                { x: center.x, y: center.y + 1 },
-                { x: center.x + 1, y: center.y + 1 },
-            ];
             const formation = spawnFormation(
                 ["NestEntrance", "Spinner", "Spinner", "Spinner"],
-                positions,
+                api.BossRoom.openNestAlcove(goal.corner),
                 "nest-guard",
+                { alcove: true },
             );
             if (!formation) continue;
             goal.spawned = true;
@@ -370,7 +437,7 @@
             delete saved.tracking;
             api.BossCapture?.interrupt(false);
             enemy.hp = 2.8;
-            saved.nests = CENTERS.map((_point, corner) => ({ corner, spawned: false, destroyed: false }));
+            saved.nests = [0, 1, 2, 3].map((corner) => ({ corner, spawned: false, destroyed: false }));
             spawnNests();
             KinkyDungeonSendTextMessage(10, TextGet("SpiderlingsBossInterlude"), "#cdb4ff", 6);
             return true;
@@ -413,6 +480,47 @@
             schedule();
         }
     }
+    // The next footprint step toward melee reach of the target. Her footprint stays off the
+    // ring under construction, so the crew can close each ring around her; after a ring
+    // closes she first steps back inside the next one.
+    function bossStep(enemy, target) {
+        if (!target) return undefined;
+        const center = api.BossRoom.CENTER,
+            limit = (api.BossFields?.currentRadius() ?? api.BossRoom.RADIUS) - 2;
+        const reach = (point) => distance(api.BossFootprint.nearest(point, target), target);
+        const outside = distance(enemy, center) > limit;
+        if (!outside && reach(enemy) <= 2) return undefined;
+        const done = (point) => (outside ? distance(point, center) <= limit : reach(point) <= 2);
+        const score = (point) => (outside ? distance(point, center) : reach(point));
+        const directions = [...STEPS].sort(
+            ([ax, ay], [bx, by]) =>
+                Math.hypot(target.x - enemy.x - ax, target.y - enemy.y - ay) -
+                Math.hypot(target.x - enemy.x - bx, target.y - enemy.y - by),
+        );
+        const start = { x: enemy.x, y: enemy.y },
+            parents = new Map([[key(start), undefined]]),
+            queue = [start];
+        let best = start;
+        for (let index = 0; index < queue.length; index++) {
+            const node = queue[index];
+            if (node !== start && done(node)) {
+                best = node;
+                break;
+            }
+            if (score(node) < score(best)) best = node;
+            for (const [dx, dy] of directions) {
+                const next = { x: node.x + dx, y: node.y + dy };
+                if (parents.has(key(next)) || (!outside && distance(next, center) > limit)) continue;
+                if (!api.BossFootprint.canPlace(enemy, next.x, next.y)) continue;
+                parents.set(key(next), node);
+                queue.push(next);
+            }
+        }
+        if (best === start) return undefined;
+        let step = best;
+        while (parents.get(key(step)) !== start) step = parents.get(key(step));
+        return step;
+    }
     function handleEnemyTurn(enemy, target, delta) {
         const saved = state();
         if (!saved) return undefined;
@@ -424,8 +532,9 @@
                 !paused() &&
                 !api.BossCapture?.contesting()
             ) {
-                enemy.SpiderlingsBossMoveCredit = (enemy.SpiderlingsBossMoveCredit || 0) + delta;
-                enemy.SpiderlingsBossMeleeCredit = (enemy.SpiderlingsBossMeleeCredit || 0) + delta;
+                // A blocked turn keeps one ready step instead of banking a burst of moves.
+                enemy.SpiderlingsBossMoveCredit = Math.min(2, (enemy.SpiderlingsBossMoveCredit || 0) + delta);
+                enemy.SpiderlingsBossMeleeCredit = Math.min(3, (enemy.SpiderlingsBossMeleeCredit || 0) + delta);
                 if (
                     distance(api.BossFootprint.nearest(enemy, target), target) <= 1 &&
                     saved.clock >= (saved.lastBodyAt || 0) + 4 &&
@@ -437,28 +546,22 @@
                     warn("melee", 1, false, saved.clock + delta);
                     enemy.SpiderlingsBossMeleeCredit = 0;
                 }
-                if (
-                    enemy.SpiderlingsBossMoveCredit >= 2 &&
-                    distance(api.BossFootprint.nearest(enemy, target), target) > 2
-                ) {
-                    const directions = [
-                        [Math.sign(target.x - enemy.x), Math.sign(target.y - enemy.y)],
-                        [Math.sign(target.x - enemy.x), 0],
-                        [0, Math.sign(target.y - enemy.y)],
-                    ];
-                    const step = directions.find(
-                        ([x, y]) => (x || y) && api.BossFootprint.canPlace(enemy, enemy.x + x, enemy.y + y),
-                    );
-                    if (step) {
-                        KDMoveEntity(enemy, enemy.x + step[0], enemy.y + step[1], true);
-                        enemy.SpiderlingsBossMoveCredit -= 2;
-                    }
+                const step = enemy.SpiderlingsBossMoveCredit >= 2 && bossStep(enemy, target);
+                if (step) {
+                    KDMoveEntity(enemy, step.x, step.y, true);
+                    if (enemy.x === step.x && enemy.y === step.y) enemy.SpiderlingsBossMoveCredit -= 2;
                 }
             }
             return hostileResult(enemy);
         }
         if (saved.phase === "victory") return hostileResult(enemy);
         if (api.PrisonEscort?.ownsActor(enemy)) return undefined;
+        // A combo Jumper exists for its one leap; an interrupted or reloaded leap also ends it.
+        if (enemy.SpiderlingsBossCombo) {
+            if (!api.JumperDash.runtimeController.snapshot().some((entry) => entry.sourceId === enemy.id))
+                KDRemoveEntity(enemy, false, false, true);
+            return hostileResult(enemy);
+        }
         if (paused() && target?.player) {
             if (api.BossCapture?.state()?.phase === "escort" && !enemy.Enemy.immobile && !disabled(enemy)) {
                 const escortId = api.PrisonEscort.state()?.escortId;
@@ -573,6 +676,7 @@
         );
     KDAddEvent(KDEventMapGeneric, "tickAfter", KEY, (_event, data) => advance(Number(data?.delta || 0)));
     KDAddEvent(KDEventMapGeneric, "postMapgen", KEY, initialize);
+    KDAddEvent(KDEventMapGeneric, "afterLoadGame", KEY, initialize);
     for (const trigger of [
         "hit",
         "missPlayer",

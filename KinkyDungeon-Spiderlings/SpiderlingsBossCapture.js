@@ -86,18 +86,54 @@
         return "Struggle";
     }
     function ensureServiceCrew() {
+        const center = api.BossRoom.CENTER;
         for (const name of ["Tunneler", "Spinner"]) {
             if (KDMapData.Entities.some((enemy) => enemy.hp > 0 && enemy.Enemy.name === name && !enemy.allied))
                 continue;
-            for (const point of [
-                { x: 36, y: 20 },
-                { x: 36, y: 21 },
-                { x: 37, y: 20 },
-                { x: 37, y: 21 },
-            ]) {
-                if (api.BossEncounter.spawnFormation([name], [point], "escort")) break;
+            // The crew enters at the free floor nearest the east edge, inside every closed ring.
+            const point = api.BossRoom.nearestFree({ x: center.x + api.BossRoom.RADIUS, y: center.y });
+            if (point) api.BossEncounter.spawnFormation([name], [point], "escort");
+        }
+    }
+    // The next cell on the shortest route from the player to a cell beside the Matriarch.
+    // Open floor is preferred; her own Court webs are crossed only when no open route exists.
+    function pullStep(source) {
+        const start = { x: player().x, y: player().y },
+            key = (cell) => `${cell.x},${cell.y}`;
+        const kind = (cell) => {
+            if (!KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(cell.x, cell.y))) return undefined;
+            const occupant = KinkyDungeonEntityAt(cell.x, cell.y);
+            if (!occupant) return "open";
+            return api.SpinnerNativeField.isOwnedProxy(occupant) ? occupant : undefined;
+        };
+        const directions = [];
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) directions.push([dx, dy]);
+        directions.sort(
+            ([ax, ay], [bx, by]) =>
+                Math.hypot(source.x - start.x - ax, source.y - start.y - ay) -
+                Math.hypot(source.x - start.x - bx, source.y - start.y - by),
+        );
+        for (const tear of [false, true]) {
+            const parents = new Map([[key(start), undefined]]),
+                queue = [start];
+            for (let index = 0; index < queue.length; index++) {
+                const node = queue[index];
+                if (node !== start && distance(node, api.BossFootprint.nearest(source, node)) === 1) {
+                    let step = node;
+                    while (parents.get(key(step)) !== start) step = parents.get(key(step));
+                    const blocker = kind(step);
+                    return { ...step, web: blocker === "open" ? undefined : blocker };
+                }
+                for (const [dx, dy] of directions) {
+                    const next = { x: node.x + dx, y: node.y + dy },
+                        found = kind(next);
+                    if (parents.has(key(next)) || !found || (found !== "open" && !tear)) continue;
+                    parents.set(key(next), node);
+                    queue.push(next);
+                }
             }
         }
+        return undefined;
     }
     function advance(delta) {
         const current = state(),
@@ -136,19 +172,12 @@
             if (KinkyDungeonIsDisabled(source) || KDHelpless(source)) return;
             const nearest = api.BossFootprint.nearest(source, player());
             if (distance(player(), nearest) > 1) {
-                const dx = Math.sign(nearest.x - player().x),
-                    dy = Math.sign(nearest.y - player().y);
-                const next = [
-                    { x: player().x + dx, y: player().y + dy },
-                    { x: player().x + dx, y: player().y },
-                    { x: player().x, y: player().y + dy },
-                ].find(
-                    (point) =>
-                        distance(point, player()) > 0 &&
-                        KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(point.x, point.y)) &&
-                        !KinkyDungeonEntityAt(point.x, point.y),
-                );
+                const next = pullStep(source);
                 if (!next) return;
+                // The silk tears through one of her own webs rather than stalling behind it. Link
+                // damage falls to a quarter away from anchors, so four times its health breaks it.
+                if (next.web) api.SpinnerNativeField.onNativeDamage({ enemy: next.web, dmgDealt: next.web.hp * 4 });
+                if (KinkyDungeonEntityAt(next.x, next.y)) return;
                 pulling = true;
                 try {
                     KDMovePlayer(next.x, next.y, false);

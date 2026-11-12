@@ -39,7 +39,39 @@
     const level = MiniGameKinkyDungeonLevel;
     KDGoThruTile(door.x, door.y, true, true, true, true);
     expect(Spiderlings.BossRoom.active(), "Native prison shortcut did not enter Boss room");
+    const arena = [
+        [8, 20, "1"],
+        [9, 20, "0"],
+        [31, 31, "0"],
+        [32, 31, "1"],
+        [20, 8, "1"],
+        [20, 36, "0"],
+    ];
+    const arenaMismatch = () => arena.filter(([x, y, tile]) => (KinkyDungeonMapGet(x, y) === "1") !== (tile === "1"));
+    expect(!arenaMismatch().length, "Court floor is not the 23x23 arena: " + JSON.stringify(arenaMismatch()));
+    // A Court saved by test.25 or earlier: open 39x39 floor, Matriarch north of the outer ring.
+    const legacyId = Spiderlings.BossEncounter.boss().id;
+    for (let y = 1; y < 40; y++) for (let x = 1; x < 40; x++) KinkyDungeonMapSet(x, y, "0");
+    delete Spiderlings.BossRoom.state().layout;
+    KDMoveEntity(Spiderlings.BossEncounter.boss(), 20, 5, true);
+    KDMovePlayer(4, 36, false);
+    restore(save());
+    expect(
+        Spiderlings.BossRoom.state().layout === 2 &&
+            Spiderlings.BossRoom.state().attempts === 2 &&
+            Spiderlings.BossEncounter.state()?.phase === "one" &&
+            Spiderlings.BossEncounter.boss()?.id !== legacyId &&
+            !arenaMismatch().length &&
+            Spiderlings.BossRoom.inArena(KDPlayer()),
+        "A legacy Court did not restart on the current arena: " +
+            JSON.stringify({
+                room: Spiderlings.BossRoom.state(),
+                mismatch: arenaMismatch(),
+                player: { x: KDPlayer().x, y: KDPlayer().y },
+            }),
+    );
     let boss = Spiderlings.BossEncounter.boss();
+    expect(boss.x === 20 && boss.y === 12, "The Matriarch did not enter inside the edge ring");
     expect(boss && boss.Enemy.GFX.spriteWidth === 216, "Enlarged Spinner demo was not registered");
     expect(
         Spiderlings.BossFootprint.cells(boss).every((point) => KinkyDungeonEnemyAt(point.x, point.y)),
@@ -52,14 +84,14 @@
             JSON.stringify({
                 state: Spiderlings.BossEncounter.state(),
                 cells: [
-                    [7, 7],
-                    [20, 7],
-                    [33, 7],
-                    [33, 20],
-                    [33, 33],
-                    [20, 33],
-                    [7, 33],
-                    [7, 20],
+                    [10, 10],
+                    [20, 10],
+                    [30, 10],
+                    [30, 20],
+                    [30, 30],
+                    [20, 30],
+                    [10, 30],
+                    [10, 20],
                 ].map(([x, y]) => ({
                     x,
                     y,
@@ -146,7 +178,7 @@
     );
     KDGoThruTile(Spiderlings.BossRoom.EXIT.x, Spiderlings.BossRoom.EXIT.y, true, true, true, true);
     expect(Spiderlings.BossRoom.active(), "Unfinished Boss allowed return stairs");
-    const ally = spawn("Spinner", 3, 3, "Player");
+    const ally = spawn("Spinner", 12, 28, "Player");
     ally.allied = true;
     KinkyDungeonDamageEnemy(
         boss,
@@ -182,10 +214,10 @@
                     goal,
                     nests: Spiderlings.BossEncounter.state().nests,
                     grid: [
-                        [5, 5],
-                        [35, 5],
-                        [5, 35],
-                        [35, 35],
+                        [7, 7],
+                        [33, 7],
+                        [7, 33],
+                        [33, 33],
                     ].map(([x, y]) => ({
                         x,
                         y,
@@ -193,6 +225,11 @@
                         enemy: KinkyDungeonEntityAt(x, y)?.Enemy?.name,
                     })),
                 }),
+        );
+        const [alcove] = Spiderlings.BossRoom.nestAlcove(goal.corner);
+        expect(
+            nest.x === alcove.x && nest.y === alcove.y && !Spiderlings.BossRoom.inArena(nest),
+            "Original Nest is not in its corner alcove beyond the rings",
         );
         nest.hp = 0;
         KDRemoveEntity(nest, true, false, false);

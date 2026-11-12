@@ -156,15 +156,87 @@
         "Reentry resumed the defeated attempt instead of restarting phase one",
     );
     expect(Spiderlings.BossRoom.state().attempts === 2, "Retry count did not advance once");
+
+    globalThis.bossAcceptance.enter("matriarch-tether-route");
+    encounter = Spiderlings.BossEncounter.state();
+    boss = Spiderlings.BossEncounter.boss();
+    for (const enemy of [...KDMapData.Entities])
+        if (enemy !== boss && !Spiderlings.BossFootprint.isPart(enemy)) KDRemoveEntity(enemy, false, false, true);
+    encounter.builderIds = [];
+    encounter.nextBody = encounter.nextSupport = encounter.nextPulse = 10000;
+    encounter.warnings = [];
+    // Start from an established tether; the rune and contest admission are covered above.
+    const tether = (label) => {
+        encounter.capture = {
+            phase: "contest",
+            sourceId: boss.id,
+            due: encounter.clock,
+            binding: 0,
+            escape: 0,
+            startedAt: encounter.clock - 1,
+        };
+        return label;
+    };
+    const reel = async (label) => {
+        const trail = [];
+        for (let n = 0; n < 20 && Spiderlings.BossCapture.state()?.phase === "contest"; n++) {
+            await turn();
+            trail.push({ x: KDPlayer().x, y: KDPlayer().y, binding: Spiderlings.BossCapture.state()?.binding });
+        }
+        expect(
+            Spiderlings.BossCapture.state()?.phase === "wrap",
+            `${label}: the tether did not reel the player in: ` +
+                JSON.stringify({ trail, boss: { x: boss.x, y: boss.y } }),
+        );
+        Spiderlings.BossCapture.interrupt(true);
+        return trail;
+    };
+    KDMovePlayer(20, 18, false);
+    const blockers = [19, 20, 21].map(
+        (x) => Spiderlings.BossEncounter.spawnFormation(["Spinner"], [{ x, y: 15 }], "test")[0],
+    );
+    for (const blocker of blockers) blocker.stun = 10000;
+    const aroundSpiders = await reel(tether("Spiders across the direct line"));
+    for (const blocker of blockers) KDRemoveEntity(blocker, false, false, true);
+    KDMovePlayer(20, 18, false);
+    const cage = Spiderlings.SpinnerNativeField.addEnclosure({
+        compositeId: "compatibility-tether-cage",
+        groupId: "compatibility-tether-cage",
+        owners: [boss.id],
+        built: true,
+        autoSeal: true,
+        layers: [
+            {
+                id: "compatibility-tether-cage:layer",
+                vertices: [
+                    { x: boss.x - 3, y: boss.y - 3 },
+                    { x: boss.x + 3, y: boss.y - 3 },
+                    { x: boss.x + 3, y: boss.y + 3 },
+                    { x: boss.x - 3, y: boss.y + 3 },
+                ],
+                core: { x: boss.x, y: boss.y },
+                gate: { x: boss.x + 3, y: boss.y },
+            },
+        ],
+    });
+    const caged = () => KDMapData.Entities.filter(Spiderlings.SpinnerNativeField.isOwnedProxy).length;
+    const cageCells = caged();
+    expect(cage.added && cageCells === 24, `The web cage around the Matriarch was not built: ${cageCells}`);
+    const throughWeb = await reel(tether("A closed web ring between them"));
+    const tornCells = cageCells - caged();
+    expect(tornCells > 0 && tornCells < cageCells, `The tether tore ${tornCells} of ${cageCells} web cells`);
+    const routeImage = await photo();
+    Spiderlings.SpinnerNativeField.retireField("compatibility-tether-cage:layer");
     return {
         ok: true,
         scenario: "boss-capture",
+        tetherRoutes: { aroundSpiders, throughWeb, tornCells },
         runePace: { nativeMovementActions: 6, steps: runeSteps },
         prisonRoom,
         itemId,
         layers,
-        images: { contest: contestImage, cocoon: cocoonImage },
+        images: { contest: contestImage, cocoon: cocoonImage, route: routeImage },
         fixture:
-            "Support isolated; six native movement actions measure rune cost before real AI pursuit and contact; timeout shortened only after real rune, contest, wrapping and escape work.",
+            "Support isolated; six native movement actions measure rune cost before real AI pursuit and contact; timeout shortened only after real rune, contest, wrapping and escape work; tether routes start from an established contest with stunned blockers or a prebuilt web cage.",
     };
 })();
