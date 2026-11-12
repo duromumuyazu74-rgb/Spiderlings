@@ -76,7 +76,21 @@ test("both native Boss defeat branches return to the source chamber without nati
     }
 });
 
-function setup() {
+// The Court is a 23x23 floor (9..31) in a 41x41 rock map, with one decorated ground tile.
+function courtMap(c, walls, opened = new Set()) {
+    const floor = (x, y) => x >= 9 && y >= 9 && x <= 31 && y <= 31;
+    c.KinkyDungeonMapGet = (x, y) =>
+        walls.has(`${x},${y}`) || !(floor(x, y) || opened.has(`${x},${y}`)) ? "1" : x === 10 && y === 30 ? "2" : "0";
+    c.KinkyDungeonMapSet = (x, y, value) => {
+        if (value === "0") opened.add(`${x},${y}`);
+        else opened.delete(`${x},${y}`);
+        return true;
+    };
+    c.KinkyDungeonGenNavMap = () => {};
+    return opened;
+}
+
+function setup({ room: saved = { layout: 2 } } = {}) {
     const { context: c } = runtime();
     c.KDMapData.GridWidth = c.KDMapData.GridHeight = 41;
     c.KDMapData.RoomType = c.KDGameData.RoomType = "court";
@@ -85,8 +99,8 @@ function setup() {
     const walls = new Set();
     c.KinkyDungeonGroundTiles = "023";
     c.KinkyDungeonMovableTilesEnemy = "023";
-    c.KinkyDungeonMapGet = (x, y) =>
-        x <= 0 || y <= 0 || x >= 40 || y >= 40 || walls.has(`${x},${y}`) ? "1" : x === 7 && y === 33 ? "2" : "0";
+    c.KinkyDungeonMovableTilesSmartEnemy = "023";
+    const opened = courtMap(c, walls);
     c.KinkyDungeonDamageEnemy = (enemy, damage) => {
         enemy.hp -= damage.damage;
         return damage.damage;
@@ -120,20 +134,29 @@ function setup() {
         definitions.forEach((definition) => c.Spiderlings.registerNamed(c.KinkyDungeonEnemies, definition));
     for (const name of ["Spinner", "WebCaster", "Jumper", "Tunneler", "MageSpiderlings", "NestEntrance"])
         c.KinkyDungeonEnemies.push({ name, maxhp: 5, movePoints: 1, tags: { spiderlings: true } });
-    const room = { complete: false };
-    c.Spiderlings.BossRoom = {
-        active: () => true,
-        state: () => room,
-        complete: () => {
-            room.complete = true;
-        },
-        CENTER: { x: 20, y: 20 },
-    };
+    const room = (c.KDMapData.SpiderlingsBossRoom = {
+        version: 1,
+        source: { room: "prison" },
+        attempts: 1,
+        complete: false,
+        ...saved,
+    });
     c.Spiderlings.SilkDensity = { refresh: () => {} };
+    c.Spiderlings.SpinnerCapture.holdsSpiderAttack = () => false;
+    c.KinkyDungeonEnemyAt = (x, y) => c.KDMapData.Entities.findLast((entity) => entity.x === x && entity.y === y);
+    load(c, "SpiderlingsJumperDash.js");
     load(c, "SpiderlingsBossFootprint.js");
+    load(c, "SpiderlingsBossRoom.js");
     load(c, "SpiderlingsBossEncounter.js");
     c.Spiderlings.BossEncounter.initialize();
-    return { c, walls, room, encounter: c.Spiderlings.BossEncounter, footprint: c.Spiderlings.BossFootprint };
+    return {
+        c,
+        walls,
+        opened,
+        room,
+        encounter: c.Spiderlings.BossEncounter,
+        footprint: c.Spiderlings.BossFootprint,
+    };
 }
 
 function resonanceView() {
@@ -198,6 +221,7 @@ function resonanceView() {
         advance() {},
     };
     encounter.state().nextBody = encounter.state().nextSupport = 10000;
+    encounter.state().warnings = [];
     encounter.state().nextPulse = 0;
     load(c, "SpiderlingsBossView.js");
     return {
@@ -276,7 +300,8 @@ test("resonance feedback clears on inactive phases, disability, escort, leaving 
     c.Spiderlings.BossCapture.state = () => ({ phase: "escape" });
     c.Spiderlings.BossCapture.peaceful = () => true;
     assert.ok(hud(), "The existing escape-window resonance remains active");
-    c.Spiderlings.BossRoom.active = () => false;
+    // Leaving the Court for another room deactivates it.
+    c.KDGameData.RoomType = "prison";
     assert.equal(hud(), undefined);
     assert.equal(draw().length, 0);
 });
@@ -284,15 +309,16 @@ test("resonance feedback clears on inactive phases, disability, escort, leaving 
 test("the enlarged boss has nine occupied cells and moves its whole footprint", () => {
     const { c, walls, encounter, footprint } = setup();
     const boss = encounter.boss();
+    assert.deepEqual({ x: boss.x, y: boss.y }, { x: 20, y: 12 }, "She enters inside the edge ring");
     assert.equal(c.KinkyDungeonEntityAt(boss.x + 1, boss.y).id, boss.id);
     assert.equal(footprint.cells(boss).filter((point) => c.KinkyDungeonEntityAt(point.x, point.y)).length, 9);
-    walls.add("22,5");
-    c.KDMoveEntity(boss, 21, 5, true);
+    walls.add("22,12");
+    c.KDMoveEntity(boss, 21, 12, true);
     assert.equal(boss.x, 20);
     walls.clear();
-    c.KDMoveEntity(boss, 21, 5, true);
+    c.KDMoveEntity(boss, 21, 12, true);
     assert.equal(boss.x, 21);
-    assert.equal(c.KinkyDungeonEntityAt(19, 5), undefined);
+    assert.equal(c.KinkyDungeonEntityAt(19, 12), undefined);
     assert.equal(footprint.cells(boss).filter((point) => c.KinkyDungeonEntityAt(point.x, point.y)).length, 9);
 });
 
@@ -316,6 +342,8 @@ test("edge melee damage and an area covering nine cells resolve to one health po
 test("ordinary decorated ground supports all eight fixed builders without consuming population slots", () => {
     const { c, encounter } = setup();
     assert.equal(encounter.state().builderIds.length, 8);
+    const builders = c.KDMapData.Entities.filter((enemy) => encounter.state().builderIds.includes(enemy.id));
+    assert.ok(builders.every((enemy) => Math.max(Math.abs(enemy.x - 20), Math.abs(enemy.y - 20)) === 10));
     load(c, "SpiderlingsPopulation.js");
     assert.equal(c.Spiderlings.availableSpiderlingSlots(), 25);
     c.DialogueCreateEnemy(2, 2, "Spinner");
@@ -327,37 +355,10 @@ test("Boss builders finish every inward ring before returning to ordinary combat
     c.Spiderlings.FieldCommand = { syncManagedCrew() {} };
     c.KDMapData.StartPosition = { x: 2, y: 2 };
     c.KDMapData.EndPosition = { x: 38, y: 38 };
+    // The player stands on the second ring's line; that only delays the cell.
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 14, y: 10 });
     load(c, "SpiderlingsBossFields.js");
     c.Spiderlings.BossFields.initialize();
-    const outer = Object.values(c.Spiderlings.SpinnerNativeField.state().topology.composites)[0];
-    outer.autoSeal = outer.closureArmed = false;
-    const legacyId = outer.id.replace(/:0$/, ":1");
-    assert.equal(
-        c.Spiderlings.SpinnerNativeField.addEnclosure({
-            compositeId: legacyId,
-            groupId: outer.groupId,
-            owners: encounter.state().builderIds,
-            layers: [
-                {
-                    id: legacyId + ":layer",
-                    maxDimension: 27,
-                    vertices: [
-                        { x: 11, y: 11 },
-                        { x: 29, y: 11 },
-                        { x: 29, y: 29 },
-                        { x: 11, y: 29 },
-                    ],
-                    core: { x: 20, y: 20 },
-                    gate: { x: 29, y: 20 },
-                },
-            ],
-        }).added,
-        true,
-    );
-    delete encounter.state().ringLayout;
-    encounter.state().ringIndex = 1;
-    c.Spiderlings.BossFields.advance();
-    assert.equal(encounter.state().ringIndex, 0, "Legacy saves first fill the missing adjacent rings");
     let attacks = 0;
     c.KinkyDungeonEnemyLoop = () => {
         attacks++;
@@ -365,8 +366,9 @@ test("Boss builders finish every inward ring before returning to ordinary combat
     };
     c.Spiderlings.NativeActions.install();
     const worker = c.KDMapData.Entities.find((enemy) => encounter.state().builderIds.includes(enemy.id));
-    for (const radius of [13, 12, 11, 10, 9, 8, 7, 6, 5]) {
+    for (const radius of [11, 10, 9, 8, 7, 6, 5]) {
         c.Spiderlings.BossFields.advance();
+        assert.equal(c.Spiderlings.BossFields.currentRadius(), radius);
         let graph = c.Spiderlings.SpinnerNativeField.state().topology;
         const ring = Object.values(graph.composites).find(
             (entry) => graph.fields[entry.layerIds[0]].vertices[0].x === 20 - radius,
@@ -396,8 +398,8 @@ test("Boss builders finish every inward ring before returning to ordinary combat
         c.Spiderlings.BossFields.advance();
     }
     c.Spiderlings.SpinnerNativeField.handleEnemyTurn = () => undefined;
-    assert.equal(Object.keys(c.Spiderlings.SpinnerNativeField.state().topology.composites).length, 9);
-    assert.ok(c.Spiderlings.SpinnerNativeField.compositeById(legacyId), "The saved paid ring keeps its identity");
+    assert.equal(Object.keys(c.Spiderlings.SpinnerNativeField.state().topology.composites).length, 7);
+    assert.equal(c.Spiderlings.BossFields.currentRadius(), 5);
     c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
     assert.equal(attacks, 1);
 });
@@ -413,8 +415,8 @@ test("only Boss support Jumpers retire after a resolved attack", () => {
         "spiderlingsJumperDashResolved",
     ]) {
         const { c, encounter } = setup();
-        const [support] = encounter.spawnFormation(["Jumper"], [{ x: 3, y: 3 }], "support");
-        const ordinary = c.DialogueCreateEnemy(4, 4, "Jumper");
+        const [support] = encounter.spawnFormation(["Jumper"], [{ x: 13, y: 13 }], "support");
+        const ordinary = c.DialogueCreateEnemy(14, 14, "Jumper");
         c.KinkyDungeonSendEvent(trigger, { enemy: ordinary, outcome: "evaded" });
         assert.ok(c.KDMapData.Entities.includes(ordinary));
         c.KinkyDungeonSendEvent(trigger, { enemy: support, outcome: "evaded" });
@@ -425,72 +427,136 @@ test("only Boss support Jumpers retire after a resolved attack", () => {
 test("a blocked support formation creates no partial group", () => {
     const { c, encounter } = setup();
     const before = c.KDMapData.Entities.length;
-    assert.equal(
-        encounter.spawnFormation(
-            ["Spinner", "Spinner"],
-            [
-                { x: 3, y: 3 },
-                { x: 20, y: 20 },
-            ],
-            "support",
-        ),
-        undefined,
-    );
+    for (const blocked of [
+        { x: 20, y: 20 },
+        { x: 5, y: 20 },
+    ])
+        assert.equal(
+            encounter.spawnFormation(["Spinner", "Spinner"], [{ x: 13, y: 13 }, blocked], "support"),
+            undefined,
+        );
     assert.equal(c.KDMapData.Entities.length, before);
 });
 
-test("support keeps complete safe formations at each wall and retries an obstructed quadrant", () => {
+function dueSupport(encounter, index) {
+    const state = encounter.state();
+    state.nextBody = state.nextPulse = 10000;
+    state.warnings = [];
+    state.supportIndex = index;
+    state.nextSupport = state.clock;
+    encounter.advance(1);
+}
+
+test("caster support keeps four safe casters at each arena edge and waits when boxed in", () => {
     for (const player of [
-        { x: 3, y: 20 },
-        { x: 37, y: 20 },
-        { x: 20, y: 3 },
-        { x: 20, y: 37 },
+        { x: 9, y: 20 },
+        { x: 31, y: 20 },
+        { x: 20, y: 9 },
+        { x: 20, y: 31 },
     ]) {
         const { c, walls, encounter } = setup();
-        const state = encounter.state();
         c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => !encounter.isFixedFormation(enemy));
         Object.assign(c.KinkyDungeonPlayerEntity, player);
-        state.nextBody = state.nextPulse = 10000;
-        state.warnings = [];
-        for (const [index, name, count] of [
-            [0, "WebCaster", 4],
-            [1, "Jumper", 6],
-            [2, "MageSpiderlings", 4],
+        for (const [index, name] of [
+            [0, "WebCaster"],
+            [2, "MageSpiderlings"],
         ]) {
-            state.supportIndex = index;
-            state.nextSupport = state.clock;
-            encounter.advance(1);
+            dueSupport(encounter, index);
             const members = c.KDMapData.Entities.filter((enemy) => encounter.isFixedFormation(enemy));
-            assert.equal(members.length, count, `${name} at ${JSON.stringify(player)}`);
-            assert.equal(new Set(members.map((enemy) => `${enemy.x},${enemy.y}`)).size, count);
-            for (const member of members)
+            assert.equal(members.length, 4, `${name} at ${JSON.stringify(player)}`);
+            assert.ok(members.every((enemy) => enemy.Enemy.name === name));
+            assert.equal(new Set(members.map((enemy) => `${enemy.x},${enemy.y}`)).size, 4);
+            for (const member of members) {
                 assert.ok(Math.max(Math.abs(member.x - player.x), Math.abs(member.y - player.y)) >= 4);
-            assert.equal(members.filter((enemy) => enemy.x < player.x).length, count / 2);
-            if (name !== "Jumper")
-                for (const dx of [-1, 1])
-                    for (const dy of [-1, 1])
-                        assert.equal(
-                            members.filter(
-                                (enemy) => Math.sign(enemy.x - player.x) === dx && Math.sign(enemy.y - player.y) === dy,
-                            ).length,
-                            1,
-                        );
+                assert.ok(member.x >= 9 && member.x <= 31 && member.y >= 9 && member.y <= 31);
+            }
             c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => !encounter.isFixedFormation(enemy));
         }
-        for (let y = player.y - 7; y < player.y; y++)
-            for (let x = player.x - 7; x < player.x; x++) walls.add(`${x},${y}`);
-        state.supportIndex = 0;
-        state.nextSupport = state.clock;
-        const due = state.nextSupport;
-        encounter.advance(1);
+        const state = encounter.state();
+        // Rings closed tight around the player leave no cell two steps away.
+        for (let y = 9; y <= 31; y++)
+            for (let x = 9; x <= 31; x++)
+                if (Math.max(Math.abs(x - player.x), Math.abs(y - player.y)) >= 2) walls.add(`${x},${y}`);
+        dueSupport(encounter, 0);
         assert.equal(state.supportIndex, 0);
-        assert.equal(state.nextSupport, due);
+        assert.ok(state.nextSupport <= state.clock, "A boxed-in formation retries on the next turn");
         assert.equal(c.KDMapData.Entities.filter(encounter.isFixedFormation).length, 0);
         walls.clear();
         encounter.advance(1);
         assert.equal(state.supportIndex, 1);
         assert.equal(c.KDMapData.Entities.filter(encounter.isFixedFormation).length, 4);
     }
+});
+
+test("casters inside the final 9x9 ring still form a full group", () => {
+    const { c, walls, encounter } = setup();
+    c.KDMapData.Entities = c.KDMapData.Entities.filter((enemy) => !encounter.isFixedFormation(enemy));
+    for (let y = 9; y <= 31; y++)
+        for (let x = 9; x <= 31; x++) if (Math.max(Math.abs(x - 20), Math.abs(y - 20)) > 4) walls.add(`${x},${y}`);
+    Object.assign(c.KinkyDungeonPlayerEntity, { x: 18, y: 21 });
+    dueSupport(encounter, 0);
+    const members = c.KDMapData.Entities.filter((enemy) => encounter.isFixedFormation(enemy));
+    assert.equal(members.length, 4);
+    assert.ok(members.every((enemy) => Math.max(Math.abs(enemy.x - 18), Math.abs(enemy.y - 21)) >= 2));
+});
+
+test("summoned Jumpers leap at every open cell of the player's 3x3 with their own Dash", () => {
+    for (const [player, blocked] of [
+        [{ x: 20, y: 20 }, []],
+        // Walled or occupied cells are covered by the nearest open cells of the same 3x3.
+        [{ x: 9, y: 9 }, []],
+        [{ x: 20, y: 20 }, ["21,19", "21,20", "21,21"]],
+    ]) {
+        const { c, walls, encounter } = setup();
+        c.KDMapData.Entities = c.KDMapData.Entities.filter(
+            (enemy) => !encounter.isFixedFormation(enemy) || enemy === encounter.boss() || enemy.SpiderlingsBossParent,
+        );
+        Object.assign(c.KinkyDungeonPlayerEntity, player);
+        for (const cell of blocked) walls.add(cell);
+        dueSupport(encounter, 1);
+        const leaps = c.Spiderlings.JumperDash.runtimeController.snapshot();
+        const jumpers = c.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Jumper");
+        assert.equal(leaps.length, 9, JSON.stringify(player));
+        assert.equal(jumpers.length, 9);
+        assert.equal(encounter.state().supportIndex, 2);
+        const open = [];
+        for (let dy = -1; dy <= 1; dy++)
+            for (let dx = -1; dx <= 1; dx++)
+                if (c.KinkyDungeonMapGet(player.x + dx, player.y + dy) !== "1")
+                    open.push(`${player.x + dx},${player.y + dy}`);
+        assert.deepEqual(new Set(leaps.map((leap) => `${leap.target.x},${leap.target.y}`)), new Set(open));
+        assert.equal(
+            `${leaps[0].target.x},${leaps[0].target.y}`,
+            `${player.x},${player.y}`,
+            "The first leap covers the player's own cell",
+        );
+        for (const jumper of jumpers) {
+            const leap = leaps.find((entry) => entry.sourceId === jumper.id);
+            const reach = Math.hypot(jumper.x - leap.target.x, jumper.y - leap.target.y);
+            assert.ok(reach > 2 && reach <= 4, "Each Jumper starts within its own Dash range");
+            assert.ok(Math.max(Math.abs(jumper.x - player.x), Math.abs(jumper.y - player.y)) >= 2);
+            assert.ok(encounter.isFixedFormation(jumper));
+        }
+    }
+});
+
+test("a combo Jumper leaves once its leap ends without resolving", () => {
+    const { c, encounter } = setup();
+    dueSupport(encounter, 1);
+    const controller = c.Spiderlings.JumperDash.runtimeController;
+    const jumper = c.KDMapData.Entities.find((enemy) => enemy.id === controller.snapshot()[0].sourceId);
+    let nativeTurns = 0;
+    c.KinkyDungeonEnemyLoop = () => {
+        nativeTurns++;
+        return { idle: true };
+    };
+    c.Spiderlings.NativeActions.install();
+    c.KinkyDungeonEnemyLoop(jumper, c.KinkyDungeonPlayerEntity, 1);
+    assert.ok(c.KDMapData.Entities.includes(jumper), "A winding Jumper waits for its leap");
+    controller.clearAll("afterLoadGame");
+    c.KinkyDungeonEnemyLoop(jumper, c.KinkyDungeonPlayerEntity, 1);
+    assert.ok(!c.KDMapData.Entities.includes(jumper));
+    assert.equal(nativeTurns, 0);
 });
 
 test("phase one becomes invulnerable and only the original four Nest deaths end regeneration", () => {
@@ -501,7 +567,15 @@ test("phase one becomes invulnerable and only the original four Nest deaths end 
     const hp = boss.hp;
     c.KinkyDungeonDamageEnemy(boss, { damage: 100 });
     assert.equal(boss.hp, hp);
-    const unrelated = c.DialogueCreateEnemy(10, 10, "NestEntrance");
+    // Each Nest opens an alcove in the rock beyond its arena corner.
+    assert.deepEqual(
+        c.KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "NestEntrance").map(
+            (nest) => `${nest.x},${nest.y}`,
+        ),
+        ["7,7", "33,7", "7,33", "33,33"],
+    );
+    assert.equal(c.KinkyDungeonMapGet(8, 8), "0");
+    const unrelated = c.DialogueCreateEnemy(12, 14, "NestEntrance");
     c.KDRemoveEntity(unrelated, true);
     assert.equal(encounter.state().nests.filter((goal) => goal.destroyed).length, 0);
     for (const goal of encounter.state().nests)
@@ -516,7 +590,7 @@ test("phase one becomes invulnerable and only the original four Nest deaths end 
 
 test("an occupied original Nest corner retries without duplicating completed corners", () => {
     const { c, encounter } = setup();
-    const blocker = c.DialogueCreateEnemy(35, 35, "Spinner");
+    const blocker = c.DialogueCreateEnemy(33, 33, "Spinner");
     c.KinkyDungeonDamageEnemy(encounter.boss(), { damage: 10000 });
     const first = encounter
         .state()

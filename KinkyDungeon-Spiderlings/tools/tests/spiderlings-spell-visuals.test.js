@@ -1094,6 +1094,11 @@ test("pending Mage warnings that threaten the player enter KD's danger record ea
         collapses: [{ x: 10, y: 10, startAt: 0, explodeAt: 3, ownerId: 2 }],
         blasts: [{ x: 20, y: 20, stacks: 1, detonateAt: 2, ownerId: 1 }],
     });
+    // KD 5.4.92 has no warning-sound option and no Audio/Warning.ogg.
+    r.events.tickAfter(null, { delta: 1 });
+    assert.deepEqual(r.sounds, []);
+    r.dangerRecords.length = 0;
+    r.c.KDToggles.WarningSound = true;
     r.events.tickAfter(null, { delta: 1 });
     const cells = r.dangerRecords.map((tile) => `${tile.x},${tile.y}`);
     assert.equal(cells.length, 17);

@@ -141,95 +141,159 @@
         "Body axis stopped while support was active",
     );
     const combat = await photo();
+    const isolate = (keep = []) => {
+        for (const enemy of [...KDMapData.Entities])
+            if (
+                enemy !== Spiderlings.BossEncounter.boss() &&
+                !Spiderlings.BossFootprint.isPart(enemy) &&
+                !keep.includes(enemy.id)
+            )
+                KDRemoveEntity(enemy, false, false, true);
+    };
+    const quiet = (state) => {
+        state.nextBody = state.nextSupport = state.nextPulse = 10000;
+        state.warnings = [];
+        // Melee needs a recent body skill to have aged; this keeps her movement without attacks.
+        state.lastBodyAt = 1e9;
+    };
     globalThis.bossAcceptance.enter("boss-wall-support");
     encounter = Spiderlings.BossEncounter.state();
     const wallFormations = [];
-    encounter.nextBody = encounter.nextPulse = 10000;
-    encounter.warnings = [];
+    // A disabled Matriarch schedules nothing, so she stays active with her attacks held.
+    quiet(encounter);
     for (const point of [
-        { x: 3, y: 20 },
-        { x: 37, y: 20 },
-        { x: 20, y: 3 },
-        { x: 20, y: 37 },
+        { x: 9, y: 20 },
+        { x: 31, y: 20 },
+        { x: 20, y: 9 },
+        { x: 20, y: 31 },
     ]) {
-        for (const [index, name, count] of [
-            [0, "WebCaster", 4],
-            [1, "Jumper", 6],
-            [2, "MageSpiderlings", 4],
+        for (const [index, name] of [
+            [0, "WebCaster"],
+            [2, "MageSpiderlings"],
         ]) {
-            for (const enemy of [...KDMapData.Entities])
-                if (enemy !== Spiderlings.BossEncounter.boss() && !Spiderlings.BossFootprint.isPart(enemy))
-                    KDRemoveEntity(enemy, false, false, true);
+            isolate();
             KDMovePlayer(point.x, point.y, false);
             encounter.supportIndex = index;
             encounter.nextSupport = encounter.clock;
             await turn();
             const members = KDMapData.Entities.filter(Spiderlings.BossEncounter.isFixedFormation);
-            expect(members.length === count, `Incomplete ${name} formation at ${point.x},${point.y}`);
-            expect(new Set(members.map((enemy) => `${enemy.x},${enemy.y}`)).size === count, "Support overlaps itself");
+            expect(members.length === 4, `Incomplete ${name} formation at ${point.x},${point.y}`);
+            expect(new Set(members.map((enemy) => `${enemy.x},${enemy.y}`)).size === 4, "Support overlaps itself");
             expect(
-                members.every((enemy) => Math.max(Math.abs(enemy.x - point.x), Math.abs(enemy.y - point.y)) >= 4),
-                "Wall fallback placed support too close",
+                members.every(
+                    (enemy) =>
+                        Math.max(Math.abs(enemy.x - point.x), Math.abs(enemy.y - point.y)) >= 4 &&
+                        Spiderlings.BossRoom.inArena(enemy),
+                ),
+                "Edge fallback placed support too close or outside the arena",
             );
-            expect(
-                members.filter((enemy) => enemy.x < point.x).length === count / 2,
-                "Wall fallback lost the east/west formation",
-            );
-            if (name !== "Jumper")
-                for (const dx of [-1, 1])
-                    for (const dy of [-1, 1])
-                        expect(
-                            members.filter(
-                                (enemy) => Math.sign(enemy.x - point.x) === dx && Math.sign(enemy.y - point.y) === dy,
-                            ).length === 1,
-                            "Wall fallback lost a quadrant",
-                        );
             wallFormations.push({ player: point, name, positions: members.map(({ x, y }) => ({ x, y })) });
         }
     }
     const jumperResults = [];
+    let comboImage;
     for (const evade of [false, true]) {
         globalThis.bossAcceptance.enter("boss-support-jumper-" + evade);
         encounter = Spiderlings.BossEncounter.state();
-        const owner = Spiderlings.BossEncounter.boss();
-        owner.stun = 10000;
-        encounter.nextBody = encounter.nextSupport = encounter.nextPulse = 10000;
-        encounter.warnings = [];
-        for (const enemy of [...KDMapData.Entities])
-            if (enemy !== owner && !Spiderlings.BossFootprint.isPart(enemy)) KDRemoveEntity(enemy, false, false, true);
+        quiet(encounter);
+        isolate();
         KDMovePlayer(20, 20, false);
-        const [jumper] = Spiderlings.BossEncounter.spawnFormation(["Jumper"], [{ x: 24, y: 20 }], "support");
-        let winding = false;
-        for (let n = 0; n < 12 && !winding; n++) {
+        const outcomes = [];
+        KDAddEvent(KDEventMapGeneric, "spiderlingsJumperDashResolved", "CompatibilityBossCombo", (_event, data) =>
+            outcomes.push(data.outcome),
+        );
+        try {
+            encounter.supportIndex = 1;
+            encounter.nextSupport = encounter.clock;
             await turn();
-            winding = Spiderlings.JumperDash.runtimeController.snapshot().some((entry) => entry.sourceId === jumper.id);
+            const leaps = Spiderlings.JumperDash.runtimeController.snapshot();
+            const jumpers = KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Jumper");
+            expect(leaps.length === 9 && jumpers.length === 9, "The summon did not start nine Jumper leaps");
+            const targets = new Set(leaps.map((leap) => `${leap.target.x},${leap.target.y}`));
+            for (let dy = -1; dy <= 1; dy++)
+                for (let dx = -1; dx <= 1; dx++)
+                    expect(targets.has(`${20 + dx},${20 + dy}`), "The combo left a cell of the 3x3 uncovered");
+            for (const jumper of jumpers) {
+                const leap = leaps.find((entry) => entry.sourceId === jumper.id);
+                const reach = Math.hypot(jumper.x - leap.target.x, jumper.y - leap.target.y);
+                expect(reach > 2 && reach <= 4, "A Jumper started outside its own Dash range");
+            }
+            expect(
+                KinkyDungeonExtraWarningTiles.filter((tile) => tile.spiderlingsJumperDashSourceId !== undefined)
+                    .length === 9,
+                "The combo did not show nine native Dash warning tiles",
+            );
+            if (!evade) comboImage = await photo();
+            // Two steps leave the 3x3 within the two reaction actions.
+            if (evade) KDMovePlayer(23, 20, false);
+            await turn();
+            expect(
+                KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "Jumper").length === 9 && !outcomes.length,
+                "The combo landed before the second reaction action",
+            );
+            await turn();
+            expect(!KDMapData.Entities.some((enemy) => enemy.Enemy.name === "Jumper"), "Combo Jumpers remained");
+            expect(!Spiderlings.JumperDash.runtimeController.snapshot().length, "A combo leap is still pending");
+            expect(
+                evade === !outcomes.some((outcome) => outcome.startsWith("hit")),
+                `Combo outcomes do not match the player's position: ${JSON.stringify(outcomes)}`,
+            );
+            jumperResults.push({ evade, outcomes, targets: [...targets] });
+        } finally {
+            delete KDEventMapGeneric.spiderlingsJumperDashResolved.CompatibilityBossCombo;
         }
-        expect(winding, "Boss support Jumper did not start its native Dash");
-        expect(KDMapData.Entities.includes(jumper), "Jumper retired before its attack resolved");
-        if (evade) KDMovePlayer(20, 22, false);
-        await turn();
-        expect(KDMapData.Entities.includes(jumper), "Jumper lost the second reaction opportunity");
-        await turn();
-        expect(!KDMapData.Entities.includes(jumper), "Boss Jumper remained after its resolved Dash");
-        expect(!Spiderlings.JumperDash.runtimeController.snapshot().length, "Retired Jumper left a pending attack");
-        jumperResults.push({ evade, retired: true });
     }
+    globalThis.bossAcceptance.enter("boss-movement");
+    encounter = Spiderlings.BossEncounter.state();
+    quiet(encounter);
+    isolate();
+    encounter.builderIds = [];
+    let mover = Spiderlings.BossEncounter.boss();
+    const reach = () =>
+        Math.max(
+            Math.abs(Spiderlings.BossFootprint.nearest(mover, KDPlayer()).x - KDPlayer().x),
+            Math.abs(Spiderlings.BossFootprint.nearest(mover, KDPlayer()).y - KDPlayer().y),
+        );
+    // A wall across the arena leaves a gap at its east end; greedy steps would stall against it.
+    const barrier = [];
+    for (let x = 9; x <= 26; x++) barrier.push({ x, y: 17 });
+    for (const cell of barrier) KinkyDungeonMapSet(cell.x, cell.y, "1");
+    KDMovePlayer(14, 26, false);
+    const path = [];
+    let movementTurns = 0;
+    for (; movementTurns < 80 && reach() > 2; movementTurns++) {
+        await turn();
+        path.push({ x: mover.x, y: mover.y });
+    }
+    for (const cell of barrier) KinkyDungeonMapSet(cell.x, cell.y, "0");
+    expect(reach() <= 2, "The Matriarch did not path around the wall to the player: " + JSON.stringify(path));
+    expect(
+        path.every((cell) => Math.max(Math.abs(cell.x - 20), Math.abs(cell.y - 20)) <= 9),
+        "The Matriarch stepped onto the edge ring",
+    );
+    // After a ring closes she steps back inside the next one before chasing again.
+    encounter.ringIndex = 4;
+    KDMovePlayer(20, 9, false);
+    for (let n = 0; n < 4; n++) await turn();
+    expect(
+        Math.max(Math.abs(mover.x - 20), Math.abs(mover.y - 20)) <= 5,
+        `The Matriarch stayed on the ring under construction at ${mover.x},${mover.y}`,
+    );
+    encounter.ringIndex = 0;
+    const movement = { turns: movementTurns, path };
     globalThis.bossAcceptance.enter("boss-paid-rings");
     encounter = Spiderlings.BossEncounter.state();
-    const boss = Spiderlings.BossEncounter.boss();
-    boss.stun = 10000;
-    encounter.nextBody = encounter.nextSupport = encounter.nextPulse = 10000;
-    encounter.warnings = [];
-    // The builders must close and shrink even when the player stands outside all rings.
-    KDMovePlayer(3, 20, false);
-    for (const enemy of [...KDMapData.Entities])
-        if (enemy !== boss && !Spiderlings.BossFootprint.isPart(enemy) && !encounter.builderIds.includes(enemy.id))
-            KDRemoveEntity(enemy, false, false, true);
+    mover = Spiderlings.BossEncounter.boss();
+    quiet(encounter);
+    // The player stands on the second ring's line: it is still planned and closes once she leaves.
+    KDMovePlayer(14, 10, false);
+    isolate(encounter.builderIds);
     let complete = false,
         turns = 0;
     const paidByBuilder = new Map(),
         earlyWork = [],
-        builderAttacks = [];
+        builderAttacks = [],
+        closedAt = [];
     const applyPaid = Spiderlings.SpinnerNativeField.applyPaidAction;
     Spiderlings.SpinnerNativeField.applyPaidAction = function (actor, action) {
         const result = applyPaid.apply(this, arguments);
@@ -243,16 +307,27 @@
         if (encounter.builderIds.includes(data.enemy?.id))
             builderAttacks.push({ id: data.enemy.id, complete: !!encounter.ringsComplete });
     });
-    for (; turns < 800 && !complete; turns++) {
+    // A ring that just closed can leave her on the next line for the step she needs to leave it.
+    let onRing = 0,
+        footprintOnRing = 0;
+    for (; turns < 400 && !complete; turns++) {
         await turn();
+        if (encounter.ringIndex >= 1 && KDPlayer().y === 10) KDMovePlayer(20, 22, false);
+        const radius = Spiderlings.BossFields.currentRadius();
+        onRing =
+            Math.max(Math.abs(mover.x - 20), Math.abs(mover.y - 20)) + 1 >= radius && !encounter.ringsComplete
+                ? onRing + 1
+                : 0;
+        footprintOnRing = Math.max(footprintOnRing, onRing);
         const graph = Spiderlings.SpinnerNativeField.state()?.topology;
         const rings = Object.values(graph?.composites || {}).filter((ring) =>
             Spiderlings.BossFields.ownsComposite(ring.id),
         );
-        complete =
-            rings.length === 9 &&
-            encounter.ringsComplete &&
-            rings.every((ring) => ring.layerIds.every((id) => Spiderlings.SpinnerTopology.isLayerClosed(graph, id)));
+        const closed = rings.filter((ring) =>
+            ring.layerIds.every((id) => Spiderlings.SpinnerTopology.isLayerClosed(graph, id)),
+        );
+        if (closed.length > closedAt.length) closedAt.push(turns);
+        complete = rings.length === 7 && encounter.ringsComplete && closed.length === 7;
     }
     Spiderlings.SpinnerNativeField.applyPaidAction = applyPaid;
     expect(paidByBuilder.size === 8, "Some opening builders never contributed paid work");
@@ -264,9 +339,10 @@
     expect(!builderAttacks.some((attack) => !attack.complete), "A builder attacked before the final ring closed");
     expect(
         complete,
-        "Eight builders did not finish nine adjacent paid rings: " +
+        "Eight builders did not finish seven adjacent paid rings: " +
             JSON.stringify({
                 turns,
+                closedAt,
                 ring: encounter.ringIndex,
                 graph: Spiderlings.SpinnerNativeField.state()?.topology?.composites,
                 workers: KDMapData.Entities.filter((enemy) => encounter.builderIds.includes(enemy.id)).map((enemy) => ({
@@ -274,19 +350,15 @@
                     x: enemy.x,
                     y: enemy.y,
                     stun: enemy.stun,
-                    movePoints: enemy.movePoints,
-                    work: Spiderlings.SpinnerTopology.nextWorkAction(
-                        Spiderlings.SpinnerNativeField.state().topology,
-                        enemy.id,
-                        enemy,
-                    ),
                 })),
             }),
     );
+    expect(closedAt[0] <= 80, `The edge ring took ${closedAt[0]} turns to close`);
+    expect(turns <= 300, `Seven rings took ${turns} turns to close`);
+    expect(footprintOnRing <= 4, `The Matriarch stood on a ring under construction for ${footprintOnRing} turns`);
     const walls = KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "SpiderlingsSpinnerTrap");
-    expect(walls.length > 80, "Closed rings have no physical web projections");
+    expect(walls.length === 448, `Closed rings project ${walls.length} web cells instead of 448`);
     const fields = await photo();
-    KDMovePlayer(20, 20, false);
     for (let n = 0; n < 20 && !builderAttacks.length; n++) await turn();
     expect(builderAttacks.length > 0, "Completed builders did not resume native attacks");
     delete KDEventMapGeneric.beforeAttack.CompatibilityBossBuilders;
@@ -304,15 +376,24 @@
         ok: true,
         scenario: "boss-combat",
         turns,
+        closedAt,
         walls: walls.length,
         retainedTopology: !!snapshot,
         wallFormations,
         jumperResults,
+        movement,
         construction: { paidByBuilder: [...paidByBuilder], earlyWork, builderAttacks },
         resonance: { pulses: resonancePulses, nativeTextures: true, statusLifecycle: true },
         warningFeedback: { renderedCountdown: true, resolutionEvents: resolvedWarnings.length, sameFootprint: true },
-        images: { resonance: resonanceImage, meleeWarning: warningImage, meleeImpact: impactImage, combat, fields },
+        images: {
+            resonance: resonanceImage,
+            meleeWarning: warningImage,
+            meleeImpact: impactImage,
+            combat,
+            combo: comboImage,
+            fields,
+        },
         fixture:
-            "Resonance uses paid native turns with other schedules delayed, then samples inactive phase projections; cadence runs normally; wall placement isolates one due formation; paid-ring fixture disables only Boss offense and removes support.",
+            "Resonance uses paid native turns with other schedules delayed, then samples inactive phase projections; cadence runs normally; edge placement and the Jumper combo isolate one due formation with her attacks held; movement removes builders and adds a temporary wall; the paid-ring fixture removes support and keeps her moving without attacks.",
     };
 })();

@@ -43,7 +43,7 @@
             return isEligible(source, target, true);
         }
 
-        function start(source, target, committedByKD) {
+        function start(source, target, committedByKD, options) {
             const sourceId = source && source.id;
             if (sourceId === undefined || states.has(sourceId)) return { started: false, reason: "already-winding-up" };
             if (!isEligible(source, target, !committedByKD)) return { started: false, reason: "ineligible" };
@@ -55,7 +55,8 @@
                 target: { x: Number(target.x), y: Number(target.y) },
                 targetId: target.Enemy && !target.player ? target.id : undefined,
                 opportunities: 0,
-                skipNextAdvance: true,
+                // A wind-up begun after this action's own advance already leaves two full actions.
+                skipNextAdvance: !options?.afterAction,
                 warningColor: CONFIG.warningColor,
             };
             states.set(sourceId, state);
@@ -65,8 +66,8 @@
             return { started: true, sourceId, target: { ...state.target } };
         }
 
-        function begin(source, target) {
-            return start(source, target, false);
+        function begin(source, target, options) {
+            return start(source, target, false, options);
         }
 
         function commitCast(source, target) {

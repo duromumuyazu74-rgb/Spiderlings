@@ -4,23 +4,12 @@
 (() => {
     const api = globalThis.Spiderlings;
     const GROUP = "spiderlings-boss-court";
-    const RADII = [13, 12, 11, 10, 9, 8, 7, 6, 5];
-    const STATIONS = [
-        [-1, -1],
-        [0, -1],
-        [1, -1],
-        [1, 0],
-        [1, 1],
-        [0, 1],
-        [-1, 1],
-        [-1, 0],
-    ];
+    // The outermost ring stands on the arena edge; the last one leaves a 9x9 interior.
+    const RADII = [11, 10, 9, 8, 7, 6, 5];
     const distance = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     const state = () => api.BossEncounter?.state();
     const group = () => `${GROUP}:${api.BossRoom.state().attempts}`;
-    // Preserve the two paid rings from test.14; new intermediate rings have radius-based IDs.
-    const idFor = (index) =>
-        `${group()}:${RADII[index] === 13 ? 0 : RADII[index] === 9 ? 1 : "radius-" + RADII[index]}`;
+    const idFor = (index) => `${group()}:radius-${RADII[index]}`;
     const owners = () =>
         (state()?.builderIds || []).filter((id) => KDMapData.Entities.some((enemy) => enemy.id === id && enemy.hp > 0));
     function addRing(index, ids) {
@@ -50,7 +39,12 @@
                     gate: { x: right, y: center.y },
                 },
             ],
-            map: { ...map, protected: map.protected.filter((cell) => cell !== `${center.x},${center.y}`) },
+            // Anyone standing on the line only delays that cell; the ring is still planned.
+            map: {
+                ...map,
+                occupied: [],
+                protected: map.protected.filter((cell) => cell !== `${center.x},${center.y}`),
+            },
         });
         return plan.added;
     }
@@ -58,14 +52,15 @@
         const saved = state(),
             ids = owners();
         if (!saved || !ids.length) return;
-        if (saved.ringLayout !== 2) {
-            saved.ringLayout = 2;
-            saved.ringIndex = 0;
-            saved.ringsComplete = false;
-        }
+        saved.ringIndex ||= 0;
         api.FieldCommand.syncManagedCrew(group(), saved.ringsComplete ? [] : ids);
         if (!api.SpinnerNativeField.compositeById(idFor(0))) addRing(0, ids);
-        saved.ringIndex ||= 0;
+    }
+    // The ring under construction, or the innermost one once all are closed.
+    function currentRadius() {
+        const saved = state();
+        if (!saved) return RADII[0];
+        return saved.ringsComplete ? RADII.at(-1) : RADII[Math.min(saved.ringIndex || 0, RADII.length - 1)];
     }
     function advance() {
         const saved = state(),
@@ -75,8 +70,6 @@
         const current = api.SpinnerNativeField.compositeById(idFor(saved.ringIndex));
         const graph = api.SpinnerNativeField.state()?.topology;
         if (!current || !graph) return;
-        // Existing test.14 saves used prey-triggered gates, which can stall outside the ring.
-        api.SpinnerNativeField.sealEnclosure(current.id);
         for (const id of current.layerIds) api.SpinnerNativeField.setOwners(id, ids);
         if (!current.layerIds.every((id) => api.SpinnerTopology.isLayerClosed(graph, id))) return;
         if (saved.ringIndex < RADII.length - 1) {
@@ -86,6 +79,31 @@
             saved.ringsComplete = true;
             api.FieldCommand.syncManagedCrew(group(), []);
         }
+    }
+    // Once per world turn, pair each able builder with remaining work, closest pair first,
+    // so the last cells and the gate go to whoever is nearest instead of by roster order.
+    let plan;
+    function assignments(saved, graph, ring) {
+        if (plan?.clock === saved.clock && plan.ring === ring.id && plan.graph === graph) return plan.actions;
+        const actions = new Map(),
+            reserved = [],
+            pending = owners()
+                .map((id) => KDMapData.Entities.find((actor) => actor.id === id))
+                .filter((worker) => !KinkyDungeonIsDisabled(worker) && !KDHelpless(worker));
+        while (pending.length) {
+            let best;
+            for (const worker of pending) {
+                const action = api.SpinnerTopology.nextWorkAction(graph, worker.id, worker, reserved, ring.layerIds);
+                if (action?.cell && (!best || distance(worker, action.cell) < best.distance))
+                    best = { worker, action, distance: distance(worker, action.cell) };
+            }
+            if (!best) break;
+            actions.set(best.worker.id, best.action);
+            reserved.push(api.SpinnerTopology.workKey(best.action));
+            pending.splice(pending.indexOf(best.worker), 1);
+        }
+        plan = { clock: saved.clock, ring: ring.id, graph, actions };
+        return actions;
     }
     function handleEnemyTurn(enemy, _target, delta) {
         const saved = state();
@@ -102,23 +120,7 @@
         const graph = api.SpinnerNativeField.state()?.topology;
         const ring = graph?.composites?.[idFor(saved.ringIndex || 0)];
         if (!ring) return result;
-        const reserved = [];
-        let action;
-        for (const id of owners()) {
-            const worker = KDMapData.Entities.find((actor) => actor.id === id);
-            if (KinkyDungeonIsDisabled(worker) || KDHelpless(worker)) continue;
-            const index = saved.builderIds.indexOf(id),
-                [dx, dy] = STATIONS[index],
-                radius = RADII[saved.ringIndex],
-                center = api.BossRoom.CENTER,
-                station = { x: center.x + dx * radius, y: center.y + dy * radius };
-            const assigned = api.SpinnerTopology.nextWorkAction(graph, id, station, reserved, ring.layerIds);
-            if (assigned) reserved.push(api.SpinnerTopology.workKey(assigned));
-            if (id === enemy.id) {
-                action = assigned;
-                break;
-            }
-        }
+        const action = assignments(saved, graph, ring).get(enemy.id);
         if (!action?.cell) return result;
         if (distance(enemy, action.cell) <= 1) {
             if (api.SpinnerNativeField.accrueConstructionAction(enemy, delta))
@@ -147,8 +149,10 @@
     }
     api.NativeActions.registerBehavior("BossFields", { handleEnemyTurn });
     api.BossFields = Object.freeze({
+        RADII,
         initialize,
         advance,
+        currentRadius,
         ownsComposite: (id) => !!state() && id.startsWith(GROUP + ":"),
     });
 })();

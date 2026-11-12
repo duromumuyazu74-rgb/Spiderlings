@@ -203,8 +203,9 @@
             KDAddWarning({ source, type: 2, sx: cell.x, sy: cell.y, x: cell.x, y: cell.y });
             if (cell.x === player.x && cell.y === player.y) inside = true;
         }
-        // KD 5.4.92 has no separate warning-sound option; KinkyDungeonPlaySound applies the general sound setting.
-        if (inside && !(typeof KDToggles !== "undefined" && KDToggles.WarningSound === false))
+        // Only games with the warning-sound option ship Audio/Warning.ogg; KD 5.4.92 has neither and
+        // its media element reports a load error. KinkyDungeonPlaySound applies the general sound setting.
+        if (inside && typeof KDToggles !== "undefined" && KDToggles.WarningSound === true)
             KinkyDungeonPlaySound(KinkyDungeonRootDirectory + "Audio/Warning.ogg");
         return inside;
     }
