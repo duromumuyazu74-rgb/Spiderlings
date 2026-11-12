@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current development candidate is `Spiderlings_0.92.39-test.27.zip`. The latest published unified Prison and Boss test release is [Spiderlings_0.92.39-test.25.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.25). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current development candidate and published unified Prison and Boss test release is [Spiderlings_0.92.39-test.27.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.27). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -22,6 +22,8 @@ The Matriarch now walks on Spiderlings webs like other spiders. A web cell with 
 The `boss-combat` movement scene now builds a closed web ring around the player; she walks across it and reaches melee range. A unit regression steps her footprint onto a web row and keeps rock blocking. The seven paid rings close at the same turns as in test.26.
 
 The same `Spiderlings_0.92.39-test.27.zip` passed all 78 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `e4abc0064d2373d095ac04c6d0e298e3a8be5290`. It has 229 allowlisted entries, 27,476,871 bytes and SHA-256 `2be05c2166cfd2b3ad8c3aadb50efa97818d955f8a61c51684dcae96f44dfeba`. Full native evidence is retained in run `2026-11-12T06-48-57-451Z-0.92.39-test.27`. Repository check, npm test (12), npm run test:local (1229) and the complete local watcher on the final ZIP pass.
+
+This exact ZIP is published as Pre-release [v0.92.39-test.27](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.27) from integrated `test` commit `8419933559fbf1566dd08638e4a1dadb705a753e`, whose tree matches the accepted source. Publication verification read back the tag, Pre-release channel, bilingual notes and formal Latest `v0.92.39fix1`, then downloaded the asset and matched its size and SHA-256.
 
 ## Test.26 Matriarch movement, Jumper combo and Court rings (2026-11-12)
 
