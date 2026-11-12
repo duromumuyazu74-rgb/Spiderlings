@@ -56,12 +56,6 @@
         api.FieldCommand.syncManagedCrew(group(), saved.ringsComplete ? [] : ids);
         if (!api.SpinnerNativeField.compositeById(idFor(0))) addRing(0, ids);
     }
-    // The ring under construction, or the innermost one once all are closed.
-    function currentRadius() {
-        const saved = state();
-        if (!saved) return RADII[0];
-        return saved.ringsComplete ? RADII.at(-1) : RADII[Math.min(saved.ringIndex || 0, RADII.length - 1)];
-    }
     function advance() {
         const saved = state(),
             ids = owners();
@@ -149,10 +143,8 @@
     }
     api.NativeActions.registerBehavior("BossFields", { handleEnemyTurn });
     api.BossFields = Object.freeze({
-        RADII,
         initialize,
         advance,
-        currentRadius,
         ownsComposite: (id) => !!state() && id.startsWith(GROUP + ":"),
     });
 })();

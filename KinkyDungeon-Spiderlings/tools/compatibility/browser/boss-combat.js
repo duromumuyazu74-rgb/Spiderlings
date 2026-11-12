@@ -267,20 +267,46 @@
     }
     for (const cell of barrier) KinkyDungeonMapSet(cell.x, cell.y, "0");
     expect(reach() <= 2, "The Matriarch did not path around the wall to the player: " + JSON.stringify(path));
+    // She walks on webs like other spiders: a closed web ring around the player does not stop her.
+    KDMovePlayer(24, 13, false);
+    const cage = Spiderlings.SpinnerNativeField.addEnclosure({
+        compositeId: "compatibility-web-cage",
+        groupId: "compatibility-web-cage",
+        owners: [mover.id],
+        built: true,
+        autoSeal: true,
+        layers: [
+            {
+                id: "compatibility-web-cage:layer",
+                vertices: [
+                    { x: 21, y: 10 },
+                    { x: 27, y: 10 },
+                    { x: 27, y: 16 },
+                    { x: 21, y: 16 },
+                ],
+                core: { x: 24, y: 13 },
+                gate: { x: 27, y: 13 },
+            },
+        ],
+    });
+    const webAt = (cell) =>
+        KDMapData.Entities.some(
+            (enemy) => Spiderlings.SpinnerNativeField.isOwnedProxy(enemy) && enemy.x === cell.x && enemy.y === cell.y,
+        );
+    expect(cage.added && webAt({ x: 21, y: 13 }), "The web cage around the player was not built");
+    const crossing = [];
+    let onWeb = false;
+    for (let n = 0; n < 60 && reach() > 2; n++) {
+        await turn();
+        crossing.push({ x: mover.x, y: mover.y });
+        onWeb ||= Spiderlings.BossFootprint.cells(mover).some(webAt);
+    }
     expect(
-        path.every((cell) => Math.max(Math.abs(cell.x - 20), Math.abs(cell.y - 20)) <= 9),
-        "The Matriarch stepped onto the edge ring",
+        reach() <= 2 && onWeb,
+        "The Matriarch did not walk across the web ring to the player: " + JSON.stringify({ crossing, onWeb }),
     );
-    // After a ring closes she steps back inside the next one before chasing again.
-    encounter.ringIndex = 4;
-    KDMovePlayer(20, 9, false);
-    for (let n = 0; n < 4; n++) await turn();
-    expect(
-        Math.max(Math.abs(mover.x - 20), Math.abs(mover.y - 20)) <= 5,
-        `The Matriarch stayed on the ring under construction at ${mover.x},${mover.y}`,
-    );
-    encounter.ringIndex = 0;
-    const movement = { turns: movementTurns, path };
+    Spiderlings.SpinnerNativeField.retireField("compatibility-web-cage:layer");
+    const movement = { turns: movementTurns, path, crossing };
     globalThis.bossAcceptance.enter("boss-paid-rings");
     encounter = Spiderlings.BossEncounter.state();
     mover = Spiderlings.BossEncounter.boss();
@@ -307,18 +333,9 @@
         if (encounter.builderIds.includes(data.enemy?.id))
             builderAttacks.push({ id: data.enemy.id, complete: !!encounter.ringsComplete });
     });
-    // A ring that just closed can leave her on the next line for the step she needs to leave it.
-    let onRing = 0,
-        footprintOnRing = 0;
     for (; turns < 400 && !complete; turns++) {
         await turn();
         if (encounter.ringIndex >= 1 && KDPlayer().y === 10) KDMovePlayer(20, 22, false);
-        const radius = Spiderlings.BossFields.currentRadius();
-        onRing =
-            Math.max(Math.abs(mover.x - 20), Math.abs(mover.y - 20)) + 1 >= radius && !encounter.ringsComplete
-                ? onRing + 1
-                : 0;
-        footprintOnRing = Math.max(footprintOnRing, onRing);
         const graph = Spiderlings.SpinnerNativeField.state()?.topology;
         const rings = Object.values(graph?.composites || {}).filter((ring) =>
             Spiderlings.BossFields.ownsComposite(ring.id),
@@ -355,7 +372,6 @@
     );
     expect(closedAt[0] <= 80, `The edge ring took ${closedAt[0]} turns to close`);
     expect(turns <= 300, `Seven rings took ${turns} turns to close`);
-    expect(footprintOnRing <= 4, `The Matriarch stood on a ring under construction for ${footprintOnRing} turns`);
     const walls = KDMapData.Entities.filter((enemy) => enemy.Enemy.name === "SpiderlingsSpinnerTrap");
     expect(walls.length === 448, `Closed rings project ${walls.length} web cells instead of 448`);
     const fields = await photo();
@@ -394,6 +410,6 @@
             fields,
         },
         fixture:
-            "Resonance uses paid native turns with other schedules delayed, then samples inactive phase projections; cadence runs normally; edge placement and the Jumper combo isolate one due formation with her attacks held; movement removes builders and adds a temporary wall; the paid-ring fixture removes support and keeps her moving without attacks.",
+            "Resonance uses paid native turns with other schedules delayed, then samples inactive phase projections; cadence runs normally; edge placement and the Jumper combo isolate one due formation with her attacks held; movement removes builders and adds a temporary wall, then a prebuilt web cage around the player; the paid-ring fixture removes support and keeps her moving without attacks.",
     };
 })();

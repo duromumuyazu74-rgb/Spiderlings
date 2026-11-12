@@ -24,12 +24,13 @@
             y: Math.max(enemy.y - 1, Math.min(enemy.y + 1, target.y)),
         };
     }
+    // Like other spiders, she walks on Spiderlings webs: a web cell holding no actor is open to her footprint.
     function canPlace(enemy, x, y) {
         return cells(enemy, x, y).every((point) => {
             if (!KinkyDungeonMovableTilesEnemy.includes(KinkyDungeonMapGet(point.x, point.y))) return false;
             if (KinkyDungeonTilesGet(`${point.x},${point.y}`)?.Lock) return false;
             const occupant = KinkyDungeonEntityAt(point.x, point.y);
-            return !occupant || root(occupant) === enemy;
+            return !occupant || root(occupant) === enemy || !!api.SpinnerNativeField?.canTraverse(enemy, occupant);
         });
     }
     function sync(enemy) {
