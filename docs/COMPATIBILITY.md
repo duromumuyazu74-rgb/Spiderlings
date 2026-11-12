@@ -1,6 +1,6 @@
 # Verified game environments
 
-The current development candidate is `Spiderlings_0.92.39-test.26.zip`. The latest published unified Prison and Boss test release is [Spiderlings_0.92.39-test.25.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.25). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
+The current development candidate is `Spiderlings_0.92.39-test.27.zip`. The latest published unified Prison and Boss test release is [Spiderlings_0.92.39-test.25.zip](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.25). Earlier deliveries retain their own evidence below. Every runtime delivery must pass KD 5.4.92 and the latest fetched official GitHub `5.5` commit. The repeatable command is `npm run test:compatibility`; see [setup and coverage](DEVELOPMENT.md#dual-version-runtime-acceptance).
 
 Its `mod.json` uses the native major-version hint with minor and patch checks disabled:
 
@@ -14,6 +14,14 @@ Its `mod.json` uses the native major-version hint with minor and patch checks di
 ```
 
 The native Mod manager compares enabled major/minor fields for equality and uses inclusive enabled patch bounds; `-1` skips a field. It cannot express the two separate supported targets in one manifest. This hint avoids a false mismatch on either tested version; it does not establish compatibility with every 5.x build. The exact tested versions and commits below define the verified scope. The old local 5.5.0 tree remains a historical reference.
+
+## Test.27 Matriarch walks on webs (2026-11-12)
+
+The Matriarch now walks on Spiderlings webs like other spiders. A web cell with no actor on it is open to her 3×3 footprint, and the web stays standing. Her test.26 limit to the ring under construction is removed: web cells under a spider do not count as occupied, so builders still lay silk beneath her. Her footprint stays off the floor's edge row only. There a builder has rock behind it and cannot reach the edge-ring cell between her legs, and in a test fight that ring stayed open for as long as she stood at the edge. Inner rings can be finished from the outer webs, which builders walk on.
+
+The `boss-combat` movement scene now builds a closed web ring around the player; she walks across it and reaches melee range. A unit regression steps her footprint onto a web row and keeps rock blocking. The seven paid rings close at the same turns as in test.26.
+
+The same `Spiderlings_0.92.39-test.27.zip` passed all 78 native checks and seven locale loads on KD 5.4.92 and freshly fetched official KD 5.5.12 commit `e4abc0064d2373d095ac04c6d0e298e3a8be5290`. It has 229 allowlisted entries, 27,476,871 bytes and SHA-256 `2be05c2166cfd2b3ad8c3aadb50efa97818d955f8a61c51684dcae96f44dfeba`. Full native evidence is retained in run `2026-11-12T06-48-57-451Z-0.92.39-test.27`. Repository check, npm test (12), npm run test:local (1229) and the complete local watcher on the final ZIP pass.
 
 ## Test.26 Matriarch movement, Jumper combo and Court rings (2026-11-12)
 
