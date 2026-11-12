@@ -9,7 +9,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 | 通道                  | 版本              | 获取方式                                                                                                                                |
 | --------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 正式版                | `0.92.39fix1`     | [下载可安装 ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39fix1/Spiderlings_0.92.39fix1.zip)          |
-| 测试版：Prison + Boss | `0.92.39-test.25` | [Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.25/Spiderlings_0.92.39-test.25.zip) |
+| 测试版：Prison + Boss | `0.92.39-test.27` | [Pre-release ZIP](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/download/v0.92.39-test.27/Spiderlings_0.92.39-test.27.zip) |
 
 1. 下载上表所需通道的 ZIP，或按[开发说明](docs/DEVELOPMENT.md)构建选定的开发候选。
 2. 在游戏 Mod 管理器中载入该 ZIP。
@@ -17,7 +17,7 @@ Spiderlings 为 Kinky Dungeon 增加幼蛛遭遇、分部位递进的蛛丝拘�
 
 GitHub 自动生成的 Source code 压缩包是源码下载，不能直接载入为 Mod。PR 的 CI artifact 对应具体提交，属于候选包，其验收范围另行记录。
 
-test.25 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，加入蛛丝牵绳美术与状态图标、KD 原生攻击预警、掘穴挖巢与主母追踪丝符的事前预警，并加快回合和狩猎场建图。同一 ZIP 已在 KD 5.4.92 与官方 KD 5.5.12 各通过 78 项原生检查和七语种加载，另通过 1,225 项本地回归，详情见 [COMPATIBILITY.md](docs/COMPATIBILITY.md)。逃脱与平衡试玩继续由 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 和 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。旧版源码保留在 [Git 标签](https://github.com/duromumuyazu74-rgb/Spiderlings/tags)。交付状态见[当前进度](docs/STATUS.md)。
+test.27 在同一安装包中包含 V6 巢穴监狱和织巢主母 Boss，以及蛛丝牵绳美术、状态图标和 KD 原生攻击预警。本版修复主母战：主母会追击玩家并能走在蛛网上，缩小后的织庭从边缘向内逐圈闭合，召唤的跳蛛以组合技扑向玩家所在的 3×3，牵丝会绕开阻挡拉人。同一 ZIP 已在 KD 5.4.92 与官方 KD 5.5.12 各通过 78 项原生检查和七语种加载，另通过 1,229 项本地回归，详情见 [COMPATIBILITY.md](docs/COMPATIBILITY.md)。逃脱与平衡试玩继续由 [#76](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/76) 和 [#165](https://github.com/duromumuyazu74-rgb/Spiderlings/issues/165) 跟踪。旧版源码保留在 [Git 标签](https://github.com/duromumuyazu74-rgb/Spiderlings/tags)。交付状态见[当前进度](docs/STATUS.md)。
 
 敌方蛛丝命中积累无上限的蛛丝密度，达到 100 且满足原有装备前置后可结茧。密度越高越难摆脱拘束；连续十个世界回合没有合格蛛丝命中后开始消散，仍被拘束时也会衰减。普通敌我关系查询跳过无关的押送与场地争夺检查，减少重复的装备和场地遍历，人口及增援规则保持不变。详情见[实验规则](docs/PRISON-EXPERIMENT.md)。
 

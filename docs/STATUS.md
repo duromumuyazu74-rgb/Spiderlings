@@ -2,6 +2,17 @@
 
 核对日期：2026-11-12。本页汇总测试开发与监狱玩法的集成，任务状态以 GitHub Issues 和 PR 为准。
 
+## test.27 Pre-release
+
+[v0.92.39-test.27](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.27) 发布自 `test` 集成提交 `8419933559fbf1566dd08638e4a1dadb705a753e`，附件是通过双版本完整验收的同一 ZIP（27,476,871 字节，SHA-256 `2be05c2166cfd2b3ad8c3aadb50efa97818d955f8a61c51684dcae96f44dfeba`）。test.26 未单独发布，其修复全部包含在 test.27 中。发布验证读回了标签、预发布通道、中英文发布说明和正式 Latest，并实际下载附件，核对了大小与 SHA-256。
+
+| 通道                  | 版本与入口                                                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 正式版                | [v0.92.39fix1](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39fix1)，保留正式 Latest    |
+| 测试版：Prison + Boss | [v0.92.39-test.27](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.27)，统一安装包 |
+
+Releases 保留最新测试版和最新正式版。旧 test.25 安装包与发布说明已本地归档，源码历史保留在 Git 标签中。Boss 专属美术、剧情、奖励与平衡仍由 #165 跟踪；监牢整体逃脱与平衡验收仍由 #68/#76 跟踪。
+
 ## test.25 Pre-release
 
 [v0.92.39-test.25](https://github.com/duromumuyazu74-rgb/Spiderlings/releases/tag/v0.92.39-test.25) 发布自 `test` 集成提交 `ebafa5403b4db7789110c7217dacf5483ea0805c`，附件是通过双版本完整验收的同一 ZIP（27,472,805 字节，SHA-256 `92ab3118f7b9bd5ed35e554771da025eaa1cf2f43b8ceb34a3bbe012a05416cb`）。发布验证读回了标签、预发布通道、中英文发布说明和正式 Latest，并实际下载附件，核对了大小与 SHA-256。
