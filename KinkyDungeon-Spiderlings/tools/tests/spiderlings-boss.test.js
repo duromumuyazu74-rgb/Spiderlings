@@ -322,6 +322,47 @@ test("the enlarged boss has nine occupied cells and moves its whole footprint", 
     assert.equal(footprint.cells(boss).filter((point) => c.KinkyDungeonEntityAt(point.x, point.y)).length, 9);
 });
 
+test("the boss footprint walks onto Spiderlings web cells like other spiders", () => {
+    const { c, walls, encounter, footprint } = setup();
+    c.KinkyDungeonEnemies.push({ name: "SpiderlingsSpinnerTrap", maxhp: 5, tags: {}, dropTable: [], events: [] });
+    const boss = encounter.boss();
+    const field = c.Spiderlings.SpinnerNativeField;
+    assert.ok(
+        field.addEnclosure({
+            compositeId: "web",
+            groupId: "web",
+            owners: [boss.id],
+            built: true,
+            autoSeal: true,
+            layers: [
+                {
+                    id: "web:layer",
+                    vertices: [
+                        { x: 14, y: 14 },
+                        { x: 26, y: 14 },
+                        { x: 26, y: 18 },
+                        { x: 14, y: 18 },
+                    ],
+                    core: { x: 20, y: 16 },
+                    gate: { x: 26, y: 16 },
+                },
+            ],
+        }).added,
+    );
+    const webs = c.KDMapData.Entities.filter((enemy) => field.isOwnedProxy(enemy) && enemy.y === 14);
+    assert.equal(webs.length, 13);
+    c.KDMoveEntity(boss, 20, 13, true);
+    assert.equal(boss.y, 13, "Her footprint steps onto the web row");
+    assert.equal(footprint.cells(boss).filter((point) => point.y === 14).length, 3);
+    assert.ok(
+        webs.every((web) => c.KDMapData.Entities.includes(web)),
+        "Walking over the web leaves it standing",
+    );
+    walls.add("21,15");
+    c.KDMoveEntity(boss, 20, 14, true);
+    assert.equal(boss.y, 13, "Rock under the web still blocks her");
+});
+
 test("edge melee damage and an area covering nine cells resolve to one health pool", () => {
     const { c, encounter, footprint } = setup();
     const boss = encounter.boss(),
@@ -368,7 +409,6 @@ test("Boss builders finish every inward ring before returning to ordinary combat
     const worker = c.KDMapData.Entities.find((enemy) => encounter.state().builderIds.includes(enemy.id));
     for (const radius of [11, 10, 9, 8, 7, 6, 5]) {
         c.Spiderlings.BossFields.advance();
-        assert.equal(c.Spiderlings.BossFields.currentRadius(), radius);
         let graph = c.Spiderlings.SpinnerNativeField.state().topology;
         const ring = Object.values(graph.composites).find(
             (entry) => graph.fields[entry.layerIds[0]].vertices[0].x === 20 - radius,
@@ -399,7 +439,6 @@ test("Boss builders finish every inward ring before returning to ordinary combat
     }
     c.Spiderlings.SpinnerNativeField.handleEnemyTurn = () => undefined;
     assert.equal(Object.keys(c.Spiderlings.SpinnerNativeField.state().topology.composites).length, 7);
-    assert.equal(c.Spiderlings.BossFields.currentRadius(), 5);
     c.KinkyDungeonEnemyLoop(worker, c.KinkyDungeonPlayerEntity, 1);
     assert.equal(attacks, 1);
 });

@@ -480,18 +480,16 @@
             schedule();
         }
     }
-    // The next footprint step toward melee reach of the target. Her footprint stays off the
-    // ring under construction, so the crew can close each ring around her; after a ring
-    // closes she first steps back inside the next one.
+    // The next footprint step toward melee reach of the target. She walks on webs like other
+    // spiders, and builders may lay silk beneath her, so the rings do not bound her path. Her
+    // footprint stays off the floor's edge row only: with rock behind it, no builder could reach
+    // the edge-ring cell between her legs, and that ring could not close while she stood there.
     function bossStep(enemy, target) {
         if (!target) return undefined;
         const center = api.BossRoom.CENTER,
-            limit = (api.BossFields?.currentRadius() ?? api.BossRoom.RADIUS) - 2;
+            limit = api.BossRoom.RADIUS - 2;
         const reach = (point) => distance(api.BossFootprint.nearest(point, target), target);
-        const outside = distance(enemy, center) > limit;
-        if (!outside && reach(enemy) <= 2) return undefined;
-        const done = (point) => (outside ? distance(point, center) <= limit : reach(point) <= 2);
-        const score = (point) => (outside ? distance(point, center) : reach(point));
+        if (reach(enemy) <= 2) return undefined;
         const directions = [...STEPS].sort(
             ([ax, ay], [bx, by]) =>
                 Math.hypot(target.x - enemy.x - ax, target.y - enemy.y - ay) -
@@ -503,14 +501,14 @@
         let best = start;
         for (let index = 0; index < queue.length; index++) {
             const node = queue[index];
-            if (node !== start && done(node)) {
+            if (node !== start && reach(node) <= 2) {
                 best = node;
                 break;
             }
-            if (score(node) < score(best)) best = node;
+            if (reach(node) < reach(best)) best = node;
             for (const [dx, dy] of directions) {
                 const next = { x: node.x + dx, y: node.y + dy };
-                if (parents.has(key(next)) || (!outside && distance(next, center) > limit)) continue;
+                if (parents.has(key(next)) || distance(next, center) > limit) continue;
                 if (!api.BossFootprint.canPlace(enemy, next.x, next.y)) continue;
                 parents.set(key(next), node);
                 queue.push(next);
